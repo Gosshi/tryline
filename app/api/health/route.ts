@@ -1,10 +1,14 @@
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 import { getPublicEnv, getServerEnv, hasConfiguredValue } from "@/lib/env";
 import { getOpenAIClient } from "@/lib/llm/client";
 
+import type { Database } from "@/lib/db/types";
+
 async function checkSupabase(): Promise<"ok" | "error"> {
-  const { NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_URL } = getPublicEnv();
+  const { NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_URL } =
+    getPublicEnv();
 
   if (
     !hasConfiguredValue(NEXT_PUBLIC_SUPABASE_URL) ||
@@ -14,15 +18,22 @@ async function checkSupabase(): Promise<"ok" | "error"> {
   }
 
   try {
-    const response = await fetch(new URL("/auth/v1/settings", NEXT_PUBLIC_SUPABASE_URL), {
-      headers: {
-        apikey: NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+    const client = createClient<Database>(
+      NEXT_PUBLIC_SUPABASE_URL,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
       },
-      next: { revalidate: 0 },
+    );
+    const { error } = await client.from("competitions").select("*", {
+      count: "exact",
+      head: true,
     });
 
-    return response.ok ? "ok" : "error";
+    return error ? "error" : "ok";
   } catch {
     return "error";
   }
@@ -46,7 +57,10 @@ async function checkOpenAI(): Promise<"ok" | "error"> {
 }
 
 export async function GET() {
-  const [supabase, openai] = await Promise.all([checkSupabase(), checkOpenAI()]);
+  const [supabase, openai] = await Promise.all([
+    checkSupabase(),
+    checkOpenAI(),
+  ]);
 
   return NextResponse.json({
     status: "ok",
