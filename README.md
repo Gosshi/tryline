@@ -8,7 +8,7 @@
 
 ## ステータス
 
-pre-alpha、プライベート開発中。ローンチ目標: Rugby Championship 2026（2026年8月）。スケール目標: Rugby World Cup 2027（2027年10〜11月）。
+pre-alpha、プライベート開発中。ローンチ目標: Six Nations 2027（2027年2〜3月）。スケール目標: Rugby World Cup 2027（2027年10〜11月）。
 
 ## アーキテクチャ
 

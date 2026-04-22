@@ -49,3 +49,18 @@
 **決定**: Rugby Championship。12 試合、戦術レベルが高く、日本語コンテンツが薄い海外リーグ。
 
 **影響**: 2026年 8 月初旬に MVP を間に合わせるハードデッドライン。最優先でスクレイパーを RC のデータソース（オールブラックス、ワラビーズ、スプリングボクス、プーマス）に対応させる。
+
+## D007 — MVP ローンチ対象を Six Nations 2027 に変更（2026-04、D006 を supersede）
+
+**背景**: 2026 年の Rugby Championship は World Rugby のカレンダー再編に伴い実施されない見通しであることが判明した。D006 の前提としていた大会が成立しないため、Phase 1 のドッグフード対象を見直す必要がある。
+
+**決定**: MVP ローンチ対象を Six Nations 2027（2027年2〜3月）に変更する。6 チーム総当たり 15 試合で、短期間に十分な試合数を確保でき、日本語の分析コンテンツ需要も引き続き見込める。
+
+**代替案と却下理由**:
+- Nations Championship 2026: 構造・放映権が 2026-04 時点で未確定であり、MVP の前提としてリスクが大きい
+- Autumn Nations Series 2026: Nations Championship への吸収可能性があり、2026 年の大会形態が未確定
+- Japan League One: 「海外リーグ観戦」というプロダクト仮説から外れる
+
+**影響**: `p1-match-ingestion.md` を Six Nations 2027 向けに改訂し、`competitions` シードの slug、対象チーム、試合数を変更する。Phase 1 の検証対象は England / France / Ireland / Scotland / Wales / Italy の 6 代表戦に移る。
+
+**D006 との関係**: D006 は履歴として残すが、本決定で supersede する。以後の Phase 1 仕様書と Codex プロンプトは D007 を優先して参照する。
