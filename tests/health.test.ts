@@ -10,6 +10,7 @@ describe("/api/health", () => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = ANON_KEY;
     process.env.NEXT_PUBLIC_SUPABASE_URL = API_URL;
     process.env.OPENAI_API_KEY = "";
+    process.env.SCRAPER_USER_AGENT = "Tryline Test Bot/1.0 (+test@example.com)";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "";
   });
 
