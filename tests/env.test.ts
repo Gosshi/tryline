@@ -11,12 +11,14 @@ describe("getServerEnv", () => {
         NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
         SUPABASE_SERVICE_ROLE_KEY: "",
         OPENAI_API_KEY: "",
+        SCRAPER_USER_AGENT: "",
       }),
     ).toEqual({
       NEXT_PUBLIC_SUPABASE_URL: "",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
       SUPABASE_SERVICE_ROLE_KEY: "",
       OPENAI_API_KEY: "",
+      SCRAPER_USER_AGENT: "",
     });
   });
 
@@ -26,6 +28,7 @@ describe("getServerEnv", () => {
         NEXT_PUBLIC_SUPABASE_URL: "",
         NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
         OPENAI_API_KEY: "",
+        SCRAPER_USER_AGENT: "",
       }),
     ).toThrow(ZodError);
   });
