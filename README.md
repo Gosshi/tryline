@@ -16,14 +16,14 @@ pre-alpha、プライベート開発中。ローンチ目標: Rugby Championship
 
 1. **データソース** — 公開ラグビーサイト（robots.txt 準拠のスクレイパー）、Reddit の試合スレッド
 2. **取り込み・ストレージ** — Supabase postgres、スケジュール実行の cron
-3. **LLM 生成** — Claude API、試合ごとに 5 段階のコンテンツ生成パイプライン
+3. **LLM 生成** — OpenAI API、試合ごとに 5 段階のコンテンツ生成パイプライン
 4. **Web アプリ** — Next.js 15 PWA、試合単位のビュー、AI チャット
 
 詳細は `/docs/architecture.md` を参照。
 
 ## 技術スタック
 
-Next.js 15 / TypeScript / Supabase / Claude API / Stripe / Vercel / Tailwind / shadcn/ui
+Next.js 15 / TypeScript / Supabase / OpenAI API / Stripe / Vercel / Tailwind / shadcn/ui
 
 ## 開発
 
@@ -37,12 +37,11 @@ Next.js 15 / TypeScript / Supabase / Claude API / Stripe / Vercel / Tailwind / s
 
 ## ローカル環境セットアップ
 
-```
+```bash
 pnpm install
 cp .env.example .env.local
-# Supabase、Claude API のキーを記入
-pnpm supabase start
-pnpm db:migrate
+# Supabase と OpenAI API の値を記入
+pnpm supabase:start
 pnpm dev
 ```
 
