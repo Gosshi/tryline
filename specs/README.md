@@ -26,4 +26,5 @@ Phase 1 — Rugby Championship 2026 ローンチ（2026年 8 月）に向けた 
 
 ## 仕様書一覧
 
-（仕様書が作られ次第、ここに追加）
+- `p0-foundation.md` — Next.js + Supabase + Claude API の実装基盤セットアップ
+- `p1-content-pipeline.md` — 試合ごとのプレビュー／レビュー 5 段階生成パイプライン

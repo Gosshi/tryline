@@ -56,3 +56,4 @@ next-env.d.ts
 # AI ツール状態
 .claude/
 .codex/
+.playwright-mcp/
