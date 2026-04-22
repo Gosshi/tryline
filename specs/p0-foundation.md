@@ -2,7 +2,7 @@
 
 ## 背景
 
-Tryline の Phase 1 開発は 2026年8月の Rugby Championship ローンチに向けて進行します。以後の全仕様書（`p1-content-pipeline.md` 等）が前提とする、Next.js + Supabase + Claude API の実装基盤を先に整備する必要があります。本仕様書は、Codex がゼロから動くスケルトンを構築するための受け入れ基準を定めます。
+Tryline の Phase 1 開発は 2027年2〜3月の Six Nations 2027 ローンチに向けて進行します。以後の全仕様書（`p1-content-pipeline.md` 等）が前提とする、Next.js + Supabase + Claude API の実装基盤を先に整備する必要があります。本仕様書は、Codex がゼロから動くスケルトンを構築するための受け入れ基準を定めます。
 
 この基盤が完成した段階では、ビジネスロジックは含まれていません。以降の機能仕様書が「このプロジェクトの上に載る」ための土台のみを提供します。
 

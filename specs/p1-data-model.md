@@ -40,8 +40,8 @@ Tryline は「試合中心のデータモデル」を設計不変条件として
 ```sql
 create table competitions (
   id uuid primary key default gen_random_uuid(),
-  slug text not null unique,                 -- 'rugby-championship-2026'
-  name text not null,                        -- 'Rugby Championship 2026'
+  slug text not null unique,                 -- 'six-nations-2027'
+  name text not null,                        -- 'Six Nations 2027'
   country text,                              -- 統括団体の国コード（任意）
   season text not null,                      -- '2026'
   start_date date,
