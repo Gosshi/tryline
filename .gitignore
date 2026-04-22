@@ -3,6 +3,7 @@
 /.pnp
 .pnp.js
 .yarn/install-state.gz
+.pnpm-store/
 
 # テスト
 /coverage
@@ -40,6 +41,7 @@ pnpm-debug.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+tsconfig.tsbuildinfo
 
 # Supabase
 **/supabase/.branches
