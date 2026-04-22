@@ -12,7 +12,7 @@ type SupabaseStatus = {
 let bootstrappedStatus: SupabaseStatus | undefined;
 
 function runSupabase(args: string[]) {
-  execFileSync("pnpm", ["supabase", ...args], {
+  execFileSync("supabase", args, {
     cwd: process.cwd(),
     stdio: "pipe",
     env: process.env,
@@ -20,7 +20,7 @@ function runSupabase(args: string[]) {
 }
 
 function readSupabaseStatus() {
-  const raw = execFileSync("pnpm", ["supabase", "status", "-o", "json"], {
+  const raw = execFileSync("supabase", ["status", "-o", "json"], {
     cwd: process.cwd(),
     stdio: "pipe",
     env: process.env,
