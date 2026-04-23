@@ -24,11 +24,11 @@
 - `lib/scrapers/` を再発明しない。共通基盤の `fetchWithPolicy` / `saveRawData` を必ず経由する
 - `match_events` は本 PR では空でも可（「パース仕様（Wikipedia）」末尾のスコープ調整参照）
 
-## 実装前のアクション
+## 実装前のアクション（2026-04 時点で Owner 側確認済、再確認のみ）
 
-1. Wikipedia の 2027 Six Nations Championship 記事の実際のタイトル・URL・表構造を確認する（ブラウザまたは `curl`）
-2. `robots.txt` が `/wiki/` 配下のクロールを許可していることを確認する
-3. 「未解決の質問 1」に対し、実際の記事タイトルを Owner に報告する（実装を停止して確認を待つ）
+1. Wikipedia 記事タイトルは `2027 Six Nations Championship`、URL は `https://en.wikipedia.org/wiki/2027_Six_Nations_Championship`（本文表示名は `2027 Men's Six Nations Championship` だが URL は前者）。Codex は URL が到達可能かだけ `curl -I` で確認すれば十分
+2. `robots.txt` は `/wiki/` 全体を許可（禁止は `/wiki/Special:` 等の namespace のみ）。User-Agent は `SCRAPER_USER_AGENT` を送る
+3. ページ構造は `div.vevent.summary` 前提（仕様書「パース仕様（Wikipedia）」）。`table.wikitable` 前提ではないので注意。`div.vevent` が 1 件も取れない場合は実装停止し Owner に報告
 
 ## 要件
 
