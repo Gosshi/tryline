@@ -64,3 +64,25 @@
 **影響**: `p1-match-ingestion.md` を Six Nations 2027 向けに改訂し、`competitions` シードの slug、対象チーム、試合数を変更する。Phase 1 の検証対象は England / France / Ireland / Scotland / Wales / Italy の 6 代表戦に移る。
 
 **D006 との関係**: D006 は履歴として残すが、本決定で supersede する。以後の Phase 1 仕様書と Codex プロンプトは D007 を優先して参照する。
+
+## D008 — LLM プロバイダを OpenAI に変更（2026-04、D003 を supersede）
+
+**背景**: D003 は Anthropic Claude（Haiku / Sonnet）でパイプラインを組む前提だったが、Owner は OpenAI を採用する方針を選んだ。p0-foundation 実装時点で既に `lib/llm/client.ts` は OpenAI SDK で構築済みであり、`.env` も `OPENAI_API_KEY` を使っている。ドキュメントと仕様書だけが Claude ベースの記述で残っており、整合性が取れていなかった。
+
+**決定**: Tryline の LLM プロバイダは OpenAI とする。モデルは以下の 2 つに集約し、`lib/llm/models.ts` の `MODELS` 定数で一元管理する。
+
+- `MODELS.FAST = "gpt-4o-mini"` — 抽出・Reddit フィルタ・品質チェック等、コスト感度の高い段階
+- `MODELS.NARRATIVE = "gpt-4o"` — 日本語ナラティブ生成
+
+**代替案と却下理由**:
+- Anthropic Claude（D003 当初案）: Owner が OpenAI を選択済み
+- `o1-mini` / `o1` をナラティブに使用: 推論特化でコストが高く、ナラティブ生成には現時点で不要（将来の品質要件次第で再検討）
+- `gpt-4.1` 系: 候補だが、2026-04 時点では `gpt-4o` 系が安定・情報量多で当面優位
+
+**影響**:
+- 仕様書・ドキュメントから「Claude」「Anthropic」「Haiku」「Sonnet」「ANTHROPIC_API_KEY」の記述を削除し、OpenAI モデル名 / `OPENAI_API_KEY` に置換する（本 PR で一括実施）
+- D003 の段階別モデル割り当て（Haiku を 1・2・3・5、Sonnet を 4）は「`FAST` を 1・2・3・5、`NARRATIVE` を 4」として解釈を引き継ぐ
+- モデル ID 変更時は `lib/llm/models.ts` の 1 箇所だけを書き換えればよい。仕様書には具体モデル名を直書きしない方針に寄せる（参照は `MODELS.FAST` / `MODELS.NARRATIVE`）
+- コスト感は D003 の「プレビューあたり $0.15 以下」目標を引き継ぐが、OpenAI 価格で再計算する必要あり（p1-content-pipeline 着手時に見直し）
+
+**D003 との関係**: D003 は履歴として残すが、本決定で supersede する。以後の Phase 1 仕様書と Codex プロンプトは D008 を優先して参照する。

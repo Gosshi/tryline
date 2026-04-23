@@ -11,7 +11,7 @@
 - プロジェクト規約は `AGENTS.md` を必ず最初に読む（特に「セキュリティ最優先ルール」と「設計の不変条件」）
 - システム設計は `/docs/architecture.md`、過去の判断は `/docs/decisions.md` を読む
 - 前提となる基盤:
-  - `p0-foundation.md` — Next.js / Supabase / Claude API / Vitest のセットアップ
+  - `p0-foundation.md` — Next.js / Supabase / OpenAI API / Vitest のセットアップ
   - `p1-data-model.md` — `match_raw_data.expires_at` のスキーマ（デフォルト `now() + interval '7 days'`）
   - `p1-scraping-infra.md` — `saveRawData` の insert 方針（重複許容、履歴を残す）
   - `p1-match-ingestion.md` — `CRON_SECRET` と `lib/cron/auth.ts` の既存パターン

@@ -12,7 +12,7 @@
 - システム設計は `/docs/architecture.md` の「データフロー」と「スクレイピングルール」を読む
 - 過去の判断は `/docs/decisions.md` を読む（特に `D007` Six Nations 2027 を MVP ローンチ対象に）
 - 前提となる基盤:
-  - `p0-foundation.md` — Next.js / Supabase / Claude API のセットアップ
+  - `p0-foundation.md` — Next.js / Supabase / OpenAI API のセットアップ
   - `p1-data-model.md` — `competitions` / `teams` / `matches` / `match_raw_data` / `match_events` スキーマ
   - `p1-scraping-infra.md` — `lib/scrapers/` の共通基盤（`fetchWithPolicy` / `saveRawData` 等）
 - 既存の `lib/env.ts`、`lib/db/server.ts`、`lib/scrapers/*.ts`、`tests/` のパターンを踏襲する
