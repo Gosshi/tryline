@@ -1,6 +1,10 @@
 # Codex プロンプト: p1-reddit-ingestion
 
-以下の内容をそのまま Codex にコピペして使用します。
+> ⚠️ **現時点では Codex に投入しないこと（2026-04、D009）**
+>
+> Reddit Responsible Builder Policy 承認待ち。Owner が Reddit Developer Support の承認を取得し、`.env.local` に `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` を設定できる状態になってから本プロンプトを使用する。それまでは Phase 1 パイプラインは `docs/codex-prompts/p1-content-pipeline.md`（4 段階構成）を優先する。
+
+以下の内容は Reddit 承認後にそのまま Codex にコピペして使用します。
 
 ---
 
