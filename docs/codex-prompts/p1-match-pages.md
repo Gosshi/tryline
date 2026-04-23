@@ -23,7 +23,7 @@
 - **試合一覧 `/` と試合詳細 `/matches/[id]` の 2 ページのみ**。認証 UI・チーム個別ページ・選手ページ・AI チャットは対象外
 - `specs/p1-match-pages.md`「対象外」セクションの項目を絶対に実装しない
 - `teams` テーブルへのカラム追加・RLS ポリシー変更は一切行わない
-- LLM 呼び出し・Claude API 連携は本 PR では行わない（プレースホルダーは静的文字列）
+- LLM 呼び出し・OpenAI API 連携は本 PR では行わない（プレースホルダーは静的文字列）
 - 新規 shadcn/ui コンポーネントの追加禁止（既存の `Button` / `Card` のみで実装する）
 - 日付ライブラリ（`date-fns-tz` 等）の追加禁止（`Intl.DateTimeFormat` で実装）
 
@@ -67,7 +67,7 @@
 ## やってはいけないこと
 
 - 認証 UI（ログイン・サインアップ）の実装
-- LLM 呼び出し・Claude API 連携・プレビュー／レビューの実データ生成
+- LLM 呼び出し・OpenAI API 連携・プレビュー／レビューの実データ生成
 - `teams` / `matches` / `competitions` テーブルへのカラム追加
 - `supabase/migrations/` への新規マイグレーション追加
 - RLS ポリシーの追加・変更

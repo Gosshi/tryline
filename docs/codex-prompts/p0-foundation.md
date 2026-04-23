@@ -33,7 +33,7 @@
 - `pnpm install && pnpm dev` で 3000 ポートに仮トップページが表示できる
 - `pnpm supabase start` でローカル Supabase が起動する
 - `pnpm lint` / `pnpm typecheck` / `pnpm test` が全てグリーン
-- `GET /api/health` が 200 を返し、Supabase と Anthropic の疎通結果が JSON で返る
+- `GET /api/health` が 200 を返し、Supabase と OpenAI の疎通結果が JSON で返る
 - `.github/workflows/ci.yml` が追加され、main への PR で上記 3 コマンドが走る
 - `.env.example` が `/specs/p0-foundation.md` で要求される変数をすべて含む（既存ファイルを更新）
 - `README.md` の「ローカル環境セットアップ」手順が実際にその通り動く（必要なら README を更新）

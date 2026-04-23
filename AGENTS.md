@@ -8,7 +8,7 @@
 
 ### 機密ファイル・情報の取り扱い
 - `.env`、`.env.*`、`secrets/`、`credentials/`、`*.pem`、`*.key` 等の機密ファイルを一切読まない・出力しない
-- API キー、トークン、パスワード、Stripe secret key、Supabase service role key、Claude API key、データベース接続文字列を決して出力・ログ・コミットしない
+- API キー、トークン、パスワード、Stripe secret key、Supabase service role key、OpenAI API key、データベース接続文字列を決して出力・ログ・コミットしない
 - `.gitignore` に記載されたファイルへのアクセスは原則禁止
 - 機密情報の確認が必要な場合は、Owner 自身に確認してもらう
 
@@ -16,7 +16,7 @@
 以下のコマンドは実行前に必ず Owner の明示的承認を求める:
 - `rm -rf`、`rm -r`、ワイルドカード削除（`rm *` 等）
 - `curl` / `wget` による外部 URL への通信（スクレイピング仕様書に明記されたソース以外）
-- `cat .env`、`echo $ANTHROPIC_API_KEY` 等、機密情報を出力しうるコマンド
+- `cat .env`、`echo $OPENAI_API_KEY` 等、機密情報を出力しうるコマンド
 - `git push --force`、`git reset --hard`、ブランチ削除
 - `psql` / `supabase db` で本番データベースに対する書き込み・DDL 実行
 - `DROP TABLE`、`TRUNCATE`、`DELETE FROM` を含む SQL
@@ -83,7 +83,7 @@ Tryline は、海外ラグビーリーグ（Six Nations、Premiership、URC、To
 - Next.js 15（App Router、RSC）
 - TypeScript strict モード
 - Supabase（postgres + auth + RLS）
-- Claude API（抽出・QA は Haiku、ナラティブは Sonnet）
+- OpenAI API（抽出・QA は `gpt-4o-mini`、ナラティブは `gpt-4o`。モデル ID は `lib/llm/models.ts` で集中管理）
 - Stripe（Phase 2 から決済）
 - Vercel（ホスティング + cron）
 - Tailwind CSS + shadcn/ui
@@ -94,7 +94,7 @@ Tryline は、海外ラグビーリーグ（Six Nations、Premiership、URC、To
 /app              — Next.js ルート
 /components       — React コンポーネント
 /lib              — 共通ユーティリティ
-  /llm            — Claude API ラッパー、プロンプトテンプレート
+  /llm            — OpenAI API ラッパー、プロンプトテンプレート
   /scrapers       — ソース別クローラ（robots.txt 対応）
   /db             — Supabase クライアント、型付きクエリ
 /specs            — Claude Code が作成した Codex 向け仕様書（権威ある文書）

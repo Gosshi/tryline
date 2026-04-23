@@ -26,7 +26,7 @@ Phase 1 — Six Nations 2027 ローンチ（2027年 2〜3 月）に向けた MVP
 
 ## 仕様書一覧
 
-- `p0-foundation.md` — Next.js + Supabase + Claude API の実装基盤セットアップ
+- `p0-foundation.md` — Next.js + Supabase + OpenAI API の実装基盤セットアップ
 - `p1-data-model.md` — 試合中心のコアデータモデル（スキーマ + RLS）
 - `p1-scraping-infra.md` — 全スクレイパー共通の robots / レート制限 / fetcher 基盤
 - `p1-match-ingestion.md` — Six Nations 2027 の fixtures / results 取り込み

@@ -11,7 +11,7 @@
 - プロジェクト規約は `AGENTS.md` を必ず最初に読む（特に「設計の不変条件」のスクレイピング関連、「著作権への配慮」）
 - システム設計は `/docs/architecture.md`、過去の判断は `/docs/decisions.md` を読む
 - 前提となる基盤:
-  - `p0-foundation.md` — Next.js / Supabase / Claude API / Vitest のセットアップ
+  - `p0-foundation.md` — Next.js / Supabase / OpenAI API / Vitest のセットアップ
   - `p1-data-model.md` — `match_raw_data` スキーマ
   - `p1-scraping-infra.md` — `lib/scrapers/` の `fetchWithPolicy` / `saveRawData`
   - `p1-match-ingestion.md` — `lib/cron/auth.ts` と cron エンドポイントのパターン
