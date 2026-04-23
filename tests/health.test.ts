@@ -12,6 +12,7 @@ describe("/api/health", () => {
     process.env.OPENAI_API_KEY = "";
     process.env.SCRAPER_USER_AGENT = "Tryline Test Bot/1.0 (+test@example.com)";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "";
+    process.env.CRON_SECRET = "test-cron-secret";
   });
 
   it("returns 200 when the competitions table is reachable via Supabase", async () => {
