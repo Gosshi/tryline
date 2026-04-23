@@ -23,6 +23,7 @@ describe("fetchWithPolicy", () => {
     process.env.OPENAI_API_KEY = "";
     process.env.SCRAPER_USER_AGENT = "Tryline Test Bot/1.0 (+test@example.com)";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "";
+    process.env.CRON_SECRET = "test-cron-secret";
 
     robotsMock.isAllowed.mockResolvedValue(true);
     rateLimitMock.acquireSlot.mockResolvedValue(undefined);
@@ -34,9 +35,8 @@ describe("fetchWithPolicy", () => {
 
     vi.stubGlobal("fetch", fetchMock);
 
-    const { fetchWithPolicy, RobotsDisallowedError } = await import(
-      "@/lib/scrapers"
-    );
+    const { fetchWithPolicy, RobotsDisallowedError } =
+      await import("@/lib/scrapers");
 
     await expect(
       fetchWithPolicy("https://example.com/blocked"),
@@ -78,7 +78,10 @@ describe("fetchWithPolicy", () => {
       "https://example.com/article",
       process.env.SCRAPER_USER_AGENT,
     );
-    expect(rateLimitMock.acquireSlot).toHaveBeenCalledWith("example.com", 3_000);
+    expect(rateLimitMock.acquireSlot).toHaveBeenCalledWith(
+      "example.com",
+      3_000,
+    );
   });
 
   it("retries 5xx responses with exponential backoff and throws FetchError after exceeding max retries", async () => {
@@ -116,7 +119,9 @@ describe("fetchWithPolicy", () => {
   });
 
   it("does not retry 4xx responses", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response("missing", { status: 404 }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("missing", { status: 404 }));
 
     vi.stubGlobal("fetch", fetchMock);
 

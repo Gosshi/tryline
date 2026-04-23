@@ -3,7 +3,10 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { saveRawData } from "@/lib/scrapers/raw-data";
 
-import { ensureSupabaseTestEnvironment, insertMatchFixture } from "../db/helpers";
+import {
+  ensureSupabaseTestEnvironment,
+  insertMatchFixture,
+} from "../db/helpers";
 
 describe("saveRawData", () => {
   beforeAll(() => {
@@ -14,6 +17,7 @@ describe("saveRawData", () => {
     process.env.OPENAI_API_KEY = "";
     process.env.SCRAPER_USER_AGENT = "Tryline Test Bot/1.0 (+test@example.com)";
     process.env.SUPABASE_SERVICE_ROLE_KEY = SERVICE_ROLE_KEY;
+    process.env.CRON_SECRET = "test-cron-secret";
   });
 
   it("inserts into match_raw_data and relies on the database default for expires_at", async () => {

@@ -7,6 +7,7 @@ describe("getServerEnv", () => {
   it("accepts blank but declared runtime variables", () => {
     expect(
       getServerEnv({
+        CRON_SECRET: "",
         NEXT_PUBLIC_SUPABASE_URL: "",
         NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
         SUPABASE_SERVICE_ROLE_KEY: "",
@@ -16,6 +17,7 @@ describe("getServerEnv", () => {
     ).toEqual({
       NEXT_PUBLIC_SUPABASE_URL: "",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
+      CRON_SECRET: "",
       SUPABASE_SERVICE_ROLE_KEY: "",
       OPENAI_API_KEY: "",
       SCRAPER_USER_AGENT: "",
@@ -27,6 +29,7 @@ describe("getServerEnv", () => {
       getServerEnv({
         NEXT_PUBLIC_SUPABASE_URL: "",
         NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
+        CRON_SECRET: "",
         OPENAI_API_KEY: "",
         SCRAPER_USER_AGENT: "",
       }),
