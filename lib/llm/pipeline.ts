@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { notifyContentRejected } from "@/lib/llm/notify";
+import { notifyContentRejected, notifyCostAlert } from "@/lib/llm/notify";
 import { calculateCostUsd } from "@/lib/llm/pricing";
 import { assembleMatchContentInput } from "@/lib/llm/stages/assemble";
 import { extractTacticalPoints } from "@/lib/llm/stages/extract-facts";
@@ -10,6 +10,8 @@ import { evaluateNarrativeQuality } from "@/lib/llm/stages/qa";
 
 import type { Json } from "@/lib/db/types";
 import type { ContentType, QaResult } from "@/lib/llm/types";
+
+const COST_ALERT_THRESHOLD_USD = 0.20;
 
 export type PipelineResult = {
   matchId: string;
@@ -68,6 +70,8 @@ export async function generateMatchContent(matchId: string, contentType: Content
     status: "success",
   });
 
+  let totalCostUsd = 0;
+
   const stage2StartedAt = Date.now();
   let tactical;
   try {
@@ -85,17 +89,20 @@ export async function generateMatchContent(matchId: string, contentType: Content
     throw error;
   }
 
+  const stage2CostUsd = calculateCostUsd({
+    modelVersion: tactical.modelVersion,
+    inputTokens: tactical.usage.inputTokens,
+    outputTokens: tactical.usage.outputTokens,
+  });
+  totalCostUsd += stage2CostUsd;
+
   await logPipelineRun({
     matchId,
     contentType,
     stage: 2,
     inputHash: hashInput(assembled),
     output: tactical.result,
-    costUsd: calculateCostUsd({
-      modelVersion: tactical.modelVersion,
-      inputTokens: tactical.usage.inputTokens,
-      outputTokens: tactical.usage.outputTokens,
-    }),
+    costUsd: stage2CostUsd,
     durationMs: Date.now() - stage2StartedAt,
     status: "success",
   });
@@ -119,6 +126,13 @@ export async function generateMatchContent(matchId: string, contentType: Content
     modelVersion = narrative.modelVersion;
     promptVersion = narrative.promptVersion;
 
+    const stage3CostUsd = calculateCostUsd({
+      modelVersion: narrative.modelVersion,
+      inputTokens: narrative.usage.inputTokens,
+      outputTokens: narrative.usage.outputTokens,
+    });
+    totalCostUsd += stage3CostUsd;
+
     await logPipelineRun({
       matchId,
       contentType,
@@ -128,11 +142,7 @@ export async function generateMatchContent(matchId: string, contentType: Content
         temperature: narrative.temperature,
         content: narrative.content,
       },
-      costUsd: calculateCostUsd({
-        modelVersion: narrative.modelVersion,
-        inputTokens: narrative.usage.inputTokens,
-        outputTokens: narrative.usage.outputTokens,
-      }),
+      costUsd: stage3CostUsd,
       durationMs: Date.now() - stage3StartedAt,
       status: "success",
     });
@@ -175,17 +185,20 @@ export async function generateMatchContent(matchId: string, contentType: Content
 
     finalQa = qaResponse.result;
 
+    const stage4CostUsd = calculateCostUsd({
+      modelVersion: qaResponse.modelVersion,
+      inputTokens: qaResponse.usage.inputTokens,
+      outputTokens: qaResponse.usage.outputTokens,
+    });
+    totalCostUsd += stage4CostUsd;
+
     await logPipelineRun({
       matchId,
       contentType,
       stage: 4,
       inputHash: hashInput({ narrative: narrative.content }),
       output: qaResponse.result,
-      costUsd: calculateCostUsd({
-        modelVersion: qaResponse.modelVersion,
-        inputTokens: qaResponse.usage.inputTokens,
-        outputTokens: qaResponse.usage.outputTokens,
-      }),
+      costUsd: stage4CostUsd,
       durationMs: Date.now() - stage4StartedAt,
       status: qaResponse.result.verdict === "retry" ? "retry" : "success",
     });
@@ -226,7 +239,11 @@ export async function generateMatchContent(matchId: string, contentType: Content
   }
 
   if (persistedStatus === "draft") {
-    await notifyContentRejected(matchId, contentType);
+    await notifyContentRejected(matchId, contentType, finalQa);
+  }
+
+  if (totalCostUsd > COST_ALERT_THRESHOLD_USD) {
+    await notifyCostAlert(matchId, contentType, totalCostUsd, COST_ALERT_THRESHOLD_USD);
   }
 
   return {
