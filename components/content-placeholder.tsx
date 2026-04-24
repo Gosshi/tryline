@@ -1,31 +1,24 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 type ContentPlaceholderProps = {
   type: "preview" | "recap";
+  state: "pre_window" | "preparing" | "unavailable";
 };
 
-const COPY = {
+const COPY: Record<
+  ContentPlaceholderProps["type"],
+  Record<ContentPlaceholderProps["state"], string>
+> = {
   preview: {
-    body: "プレビューは試合開始 48 時間前に公開予定",
-    title: "プレビュー",
+    pre_window: "プレビューは試合開始 48 時間前に公開予定",
+    preparing: "プレビューを準備中です",
+    unavailable: "このプレビューは公開されませんでした",
   },
   recap: {
-    body: "レビューは試合終了 1 時間後に公開予定",
-    title: "レビュー",
+    pre_window: "レビューは試合終了 1 時間後に公開予定",
+    preparing: "レビューを準備中です",
+    unavailable: "このレビューは公開されませんでした",
   },
-} as const;
+};
 
-export function ContentPlaceholder({ type }: ContentPlaceholderProps) {
-  const copy = COPY[type];
-
-  return (
-    <Card className="border-dashed border-slate-300 bg-slate-50/60">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{copy.title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-slate-500">{copy.body}</p>
-      </CardContent>
-    </Card>
-  );
+export function ContentPlaceholder({ state, type }: ContentPlaceholderProps) {
+  return <p className="text-sm text-slate-500">{COPY[type][state]}</p>;
 }

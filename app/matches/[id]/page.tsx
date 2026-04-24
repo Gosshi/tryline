@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { ContentPlaceholder } from "@/components/content-placeholder";
+import { MatchContentSection } from "@/components/match-content-section";
 import { MatchHeader } from "@/components/match-header";
 import { Button } from "@/components/ui/button";
+import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchById } from "@/lib/db/queries/matches";
+import { extractDescription } from "@/lib/match-content/description";
 
 import type { Metadata } from "next";
 
@@ -16,9 +18,14 @@ type MatchDetailPageProps = {
 
 export const revalidate = 60;
 
-export async function generateMetadata({ params }: MatchDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: MatchDetailPageProps): Promise<Metadata> {
   const { id } = await params;
-  const match = await getMatchById(id);
+  const [match, content] = await Promise.all([
+    getMatchById(id),
+    getPublishedContentForMatch(id),
+  ]);
 
   if (!match) {
     return {
@@ -26,14 +33,26 @@ export async function generateMetadata({ params }: MatchDetailPageProps): Promis
     };
   }
 
-  return {
-    title: `${match.homeTeam.name} vs ${match.awayTeam.name} - Tryline`,
-  };
+  const title = `${match.homeTeam.name} vs ${match.awayTeam.name} - Tryline`;
+
+  if (content.preview) {
+    return {
+      description: extractDescription(content.preview.contentMdJa),
+      title,
+    };
+  }
+
+  return { title };
 }
 
-export default async function MatchDetailPage({ params }: MatchDetailPageProps) {
+export default async function MatchDetailPage({
+  params,
+}: MatchDetailPageProps) {
   const { id } = await params;
-  const match = await getMatchById(id);
+  const [match, publishedContent] = await Promise.all([
+    getMatchById(id),
+    getPublishedContentForMatch(id),
+  ]);
 
   if (!match) {
     notFound();
@@ -51,8 +70,16 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
         <MatchHeader match={match} />
 
         <section className="space-y-4">
-          <ContentPlaceholder type="preview" />
-          <ContentPlaceholder type="recap" />
+          <MatchContentSection
+            content={publishedContent.preview}
+            contentType="preview"
+            match={match}
+          />
+          <MatchContentSection
+            content={publishedContent.recap}
+            contentType="recap"
+            match={match}
+          />
         </section>
       </div>
     </main>
