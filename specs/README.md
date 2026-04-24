@@ -35,3 +35,4 @@ Phase 1 — Six Nations 2027 ローンチ（2027年 2〜3 月）に向けた MVP
 - `p1-reddit-ingestion.md` — r/rugbyunion マッチスレッドの取り込み（**D009 により実装保留中**、Reddit 承認後に再開）
 - `p1-content-pipeline.md` — 試合ごとのプレビュー／レビュー 4 段階生成パイプライン（D009、元は 5 段階。D010 で未解決事項を決着）
 - `p1-match-content-display.md` — `/matches/[id]` のプレースホルダーを `match_content.status = 'published'` の実表示に差し替え
+- `p1-squad-ingestion.md` — Wikipedia からスカッド / ラインアップを取り込み `projected_lineups` を実データ化（B1）
