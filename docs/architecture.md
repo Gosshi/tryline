@@ -54,12 +54,18 @@ match_chats        — ユーザー × 試合の会話状態
 
 ## LLM 利用予算
 
-D003 時点の見積りは Anthropic Claude 前提だった（プレビュー $0.08 / レビュー $0.15 / QA $0.02、チャットは Haiku $0.02 / Sonnet $0.15）。D008 で OpenAI（`gpt-4o-mini` / `gpt-4o`）に変更したため、試合あたりコストと AI チャットコストは `specs/p1-content-pipeline.md` 着手時に再算出する。
+D010 で OpenAI 価格による 1 試合あたりコストを確定（詳細は `specs/p1-content-pipeline.md` のコスト目標セクション）:
+
+- プレビュー: ~$0.035（リトライ 2 回の最悪値 ~$0.10）
+- レビュー: ~$0.045（リトライ 2 回の最悪値 ~$0.13）
+- Six Nations 2027（15 試合 × preview+recap）合計: 最悪でも ~$4
+- AI チャットコストは `p1-ai-chat.md`（後続仕様書）着手時に別途試算
 
 原則は不変:
 - 試合あたり固定コストはユーザー数に依存しない（`match_id` 単位で共有キャッシュ）
 - AI チャットのみユーザー単位の変動コスト
 - アプリケーション層で上限を強制する。無料層: 1 日 5 回のチャットまで。Premium: 無制限
+- コスト監視は Phase 1 では `pipeline_runs.cost_usd` の DB クエリのみ。Slack 連携は Phase 2（`p1-observability.md`）
 
 ## セキュリティモデル
 
