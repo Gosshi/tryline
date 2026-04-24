@@ -142,6 +142,50 @@ export type Database = {
           },
         ];
       };
+      match_content: {
+        Row: {
+          content_md_ja: string;
+          content_type: string;
+          generated_at: string;
+          id: string;
+          match_id: string;
+          model_version: string;
+          prompt_version: string;
+          qa_scores: Json;
+          status: string;
+        };
+        Insert: {
+          content_md_ja: string;
+          content_type: string;
+          generated_at?: string;
+          id?: string;
+          match_id: string;
+          model_version: string;
+          prompt_version: string;
+          qa_scores: Json;
+          status?: string;
+        };
+        Update: {
+          content_md_ja?: string;
+          content_type?: string;
+          generated_at?: string;
+          id?: string;
+          match_id?: string;
+          model_version?: string;
+          prompt_version?: string;
+          qa_scores?: Json;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_content_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       match_events: {
         Row: {
           created_at: string;
@@ -301,6 +345,56 @@ export type Database = {
             columns: ["home_team_id"];
             isOneToOne: false;
             referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pipeline_runs: {
+        Row: {
+          content_type: string;
+          cost_usd: number | null;
+          created_at: string;
+          duration_ms: number | null;
+          error_message: string | null;
+          id: string;
+          input_hash: string | null;
+          match_id: string | null;
+          output: Json | null;
+          stage: number;
+          status: string | null;
+        };
+        Insert: {
+          content_type: string;
+          cost_usd?: number | null;
+          created_at?: string;
+          duration_ms?: number | null;
+          error_message?: string | null;
+          id?: string;
+          input_hash?: string | null;
+          match_id?: string | null;
+          output?: Json | null;
+          stage: number;
+          status?: string | null;
+        };
+        Update: {
+          content_type?: string;
+          cost_usd?: number | null;
+          created_at?: string;
+          duration_ms?: number | null;
+          error_message?: string | null;
+          id?: string;
+          input_hash?: string | null;
+          match_id?: string | null;
+          output?: Json | null;
+          stage?: number;
+          status?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_runs_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
             referencedColumns: ["id"];
           },
         ];
