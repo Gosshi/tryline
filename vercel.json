@@ -1,0 +1,9 @@
+{
+  "crons": [
+    { "path": "/api/cron/orchestrate", "schedule": "0 * * * *" },
+    { "path": "/api/cron/ingest-fixtures", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/ingest-results", "schedule": "0 */3 * * *" },
+    { "path": "/api/cron/ingest-squads", "schedule": "0 2 * * 0" },
+    { "path": "/api/cron/cleanup-raw-data", "schedule": "0 4 * * *" }
+  ]
+}
