@@ -86,3 +86,30 @@
 - コスト感は D003 の「プレビューあたり $0.15 以下」目標を引き継ぐが、OpenAI 価格で再計算する必要あり（p1-content-pipeline 着手時に見直し）
 
 **D003 との関係**: D003 は履歴として残すが、本決定で supersede する。以後の Phase 1 仕様書と Codex プロンプトは D008 を優先して参照する。
+
+## D009 — Phase 1 を 4 段階パイプラインに縮退、Reddit は承認後に再追加（2026-04）
+
+**背景**: 2025-11 に Reddit が Responsible Builder Policy を導入し、新規 API アプリは全て事前承認制に移行した。商用利用は別途承認必須で、承認目安は 7 日、却下リスクも存在する。Tryline は ¥980/月 の有料プランを持つため商用扱いとなり、`specs/p1-reddit-ingestion.md`（PR #16 でマージ済み）は承認が下りるまで実装できない。Six Nations 2027 ローンチ（2027-02〜03）のクリティカルパスを Reddit 承認に依存させるリスクが高い。
+
+**決定**: Phase 1 のコンテンツパイプラインは 4 段階構成とする。
+
+1. 集約
+2. 事実抽出（`MODELS.FAST`）
+3. ナラティブ生成（`MODELS.NARRATIVE`）
+4. 品質評価（`MODELS.FAST`）
+
+Reddit フィルタ（元の段階 3）は削除せず「承認後に差し込む拡張点」として温存する。ナラティブ段階の入力に `additionalSignals: AdditionalSignal[]` を定義し、Phase 1 では常に空配列を渡す。Reddit 承認または他ソース採用時は、新段階が同 shape の配列を返すだけでナラティブ側の変更は不要。
+
+**代替案と却下理由**:
+- **Reddit 承認待ちで Phase 1 を止める**: 7 日〜未知の遅延を Six Nations 2027 クリティカルパスに載せるのは容認不可
+- **別ソース（公式プレス、RugbyPass 等）を Phase 1 に組み込む**: 新規スクレイパーは robots.txt / ToS 確認 / 仕様書作成コストがかかる。縮退でも MVP 品質は成立するため先送り
+- **Reddit を恒久的に外す**: コミュニティ・シグナルは将来の差別化要素として価値が高い。恒久除外は失う情報量が大きい
+
+**影響**:
+- `specs/p1-content-pipeline.md` を 4 段階に改訂（段階番号繰り上げ、`additionalSignals` 型定義追加）
+- `CLAUDE.md` / `AGENTS.md` / `docs/architecture.md` の「5 段階」記述を「Phase 1 は 4 段階」に更新
+- `specs/p1-reddit-ingestion.md` / `docs/codex-prompts/p1-reddit-ingestion.md` は削除せず、先頭に「Reddit 承認後に実装、現時点では着手禁止」のバナーを追加。承認取得時にそのまま復活可能
+- Owner は並行して Reddit Developer Support に承認申請を提出する（テンプレート: `docs/reddit-approval-request.md`）
+- MVP 品質への影響: コミュニティ発の戦術的色味は Phase 1 で提供されない。公式統計 + 過去対戦 + LLM 生成で日本語プレビューは成立するが、「海外ファンの視点」は Phase 2 以降
+
+**Reddit との関係**: `specs/p1-reddit-ingestion.md` を supersede しない（温存）。承認取得時点で本決定を発展的に解消し、段階追加として別 PR で仕様改訂する。

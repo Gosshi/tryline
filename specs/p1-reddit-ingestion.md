@@ -1,5 +1,14 @@
 # Reddit スレッド取り込み（p1-reddit-ingestion）
 
+> ⚠️ **実装保留中（2026-04、D009）**
+>
+> Reddit Responsible Builder Policy（2025-11 導入、2026-03 更新）により、新規 API アプリの作成は事前承認制に移行しました。Tryline は有料プランがあるため商用扱いで、Reddit Developer Support への承認申請が必要です。**承認取得まで本仕様書は実装着手禁止**。Phase 1 は 4 段階パイプライン（`specs/p1-content-pipeline.md`）で進行します。
+>
+> 承認取得時の再開手順:
+> 1. Owner が取得した `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` / `SCRAPER_USER_AGENT` を `.env.local` に投入
+> 2. `specs/p1-content-pipeline.md` の段階 3 として本仕様書の出力を差し込む改訂 PR を作成
+> 3. 本バナーを削除し、D009 を supersede する新 decision record を追加
+
 ## 背景
 
 `p1-content-pipeline.md` 段階 3「Reddit フィルタ」は r/rugbyunion のマッチスレッド（pre-match thread / post-match thread）の投稿・コメントを LLM でフィルタする前提です。そのため本仕様書は、**r/rugbyunion から試合単位でスレッドを特定し、生 JSON を `match_raw_data` に保存する**取り込みのみを対象にします。フィルタ・要約・スコアリングは content-pipeline 側で扱います。

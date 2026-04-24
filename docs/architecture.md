@@ -28,17 +28,19 @@ users              — 認証、サブスクプラン、関心設定
 match_chats        — ユーザー × 試合の会話状態
 ```
 
-## コンテンツパイプライン（5 段階）
+## コンテンツパイプライン（Phase 1 は 4 段階）
 
-完全な仕様は `/specs/p1-content-pipeline.md` を参照。
+完全な仕様は `/specs/p1-content-pipeline.md` を参照。D009 により Phase 1 は 4 段階で運用し、Reddit フィルタ段階は Responsible Builder Policy 承認後に追加する。
 
 概要:
 
 1. **集約** — 生データを構造化 JSON に整理、LLM は使わない
 2. **事実抽出** — `MODELS.FAST`（`gpt-4o-mini`）が直近の試合データから戦術ポイント 3 つを抽出
-3. **Reddit フィルタ** — `MODELS.FAST` が試合スレッド投稿の戦術的価値を判定
-4. **ナラティブ** — `MODELS.NARRATIVE`（`gpt-4o`）が日本語 1,500 字のプレビュー・レビューを生成
-5. **品質チェック** — `MODELS.FAST` が 3 軸で評価、リトライまたは公開
+3. **ナラティブ** — `MODELS.NARRATIVE`（`gpt-4o`）が日本語 1,500 字のプレビュー・レビューを生成。`additionalSignals` 引数（Phase 1 は空配列）で将来の外部シグナル段階を受け取れる形
+4. **品質チェック** — `MODELS.FAST` が 3 軸で評価、リトライまたは公開
+
+将来の段階（Phase 1 では非実装）:
+- **外部シグナル収集**（Reddit 承認後に段階 3 として挿入、または他ソース）— 試合スレッド等の戦術的価値を判定し、`AdditionalSignal[]` 形式でナラティブに渡す
 
 1 試合あたりのコスト: OpenAI 価格で再試算予定（`specs/p1-content-pipeline.md` 着手時）
 
