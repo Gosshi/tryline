@@ -36,7 +36,10 @@ match_content (
   match_id uuid references matches not null,
   content_type text not null check (content_type in ('preview', 'recap', 'tactical_notes')),
   content_md_ja text not null,
-  model_version text not null,
+  model_version text not null,                 -- 物理バージョン（例: 'gpt-4o-2024-11-20'）
+  prompt_version text not null,                -- プロンプトテンプレートの semver（例: 'preview@1.0.0'）
+  status text not null default 'draft'
+    check (status in ('draft', 'published', 'rejected')),
   generated_at timestamptz not null default now(),
   qa_scores jsonb not null,
   unique (match_id, content_type)
@@ -60,7 +63,18 @@ pipeline_runs (
 
 インデックス:
 - 試合ページでの参照用: `match_content (match_id, content_type)`
+- 公開状態フィルタ用: `match_content (status, match_id, content_type)` — `/matches/[id]` は `status = 'published'` のみ読む
 - デバッグ用: `pipeline_runs (match_id, stage)`
+
+`model_version` / `prompt_version` の意図:
+- `model_version` は OpenAI が返す **物理モデル ID**（`gpt-4o-2024-11-20` 等）を保存する。`MODELS.NARRATIVE` の論理名だけだと、OpenAI 側で背後バージョンが更新されたときに再生成対象を特定できない
+- `prompt_version` は `/lib/llm/prompts/*.ts` 側で semver 文字列を定数エクスポートし、呼び出し時に書き込む。プロンプト改訂時は旧コンテンツの再生成判定に使う
+
+`status` の運用（`Q3 / a` の決定事項）:
+- 段階 4 の verdict が `publish` → パイプラインが自動的に `status = 'published'` にして `match_content` へ upsert
+- 段階 4 の verdict が `reject`（リトライ上限後）→ `status = 'draft'`（または `'rejected'`、下記参照）で保存し、Slack 通知
+- Owner は Supabase Studio で `status` カラムを手動更新することで公開可否を切り替える。MVP では管理 UI を作らない
+- `reject` 時の挙動は「`draft` で保存して Slack 通知する」「`rejected` で保存して Slack 通知する」の 2 択があるが、本仕様書は **`draft` で保存する**。理由: Owner が Studio で `'published'` に上げるのが通常運用、`'rejected'` は Owner が明示的に却下した場合のみ使う予約値とする
 
 ## パイプライン段階
 
@@ -144,9 +158,22 @@ type AdditionalSignal = {
 ```
 
 判定ロジック:
-- すべてのスコアが 3 以上 → publish（公開）
-- いずれかが 2 以下 → retry（段階 3 を別の temperature で再実行）
-- 2 回のリトライ後も通過しない → reject、手動レビューキューへ
+- すべてのスコアが 3 以上 → publish（`match_content.status = 'published'` で upsert）
+- いずれかが 2 以下 → retry（段階 3 を別の temperature で再実行、下記「リトライ戦略」参照）
+- 2 回のリトライ後も通過しない → reject（`match_content.status = 'draft'` で upsert + Slack 通知、Owner が Supabase Studio で手動公開可否を判断）
+
+### リトライ戦略（`Q2` の決定事項）
+
+段階 3 のナラティブは既に `MODELS.NARRATIVE`（最上位モデル）を使用しているため、**モデル昇格はしない**。temperature の振幅のみで挙動を変える。
+
+- 初回: `temperature = 0.7`
+- リトライ 1 回目: `temperature = 0.9`（発想の幅を広げる方向）
+- リトライ 2 回目: `temperature = 0.4`（事実寄りに引き締める方向）
+- それでも QA が通らなければ reject
+
+段階 4 の QA 自体が JSON パース不能で返した場合に限り、**同一入力で 1 回だけ再実行**する（判定ロジック外の保護）。2 回目も JSON 不能なら pipeline_runs に `failed` で記録し、段階 3 出力を `status = 'draft'` で保存。
+
+段階 2 の事実抽出が JSON 不能な場合も同様に 1 回だけ再実行。2 回目も不能ならパイプライン全体を abort し、`pipeline_runs.status = 'failed'` で記録する。
 
 ## API サーフェス
 
@@ -167,27 +194,71 @@ POST /api/cron/generate-content
 
 ## UI サーフェス
 
-UI は直接持たない。生成コンテンツは既存の試合詳細ページ仕様 `p1-match-detail-page.md` 経由で読まれる。
+UI は直接持たない。生成コンテンツは `p1-match-pages.md`（試合詳細ページ、既存）と、後続仕様書 `p1-match-content-display.md`（`ContentPlaceholder` を実コンテンツに差し替える改訂、Claude Code が別 PR で起票）経由で読まれる。読み取り条件は `match_content.status = 'published'` のみ。
 
-## コスト目標
+## 実行タイミング（`Q1` の決定事項）
 
-D003 の Claude 前提見積り（プレビュー $0.08〜0.12 / レビュー $0.15〜0.20）は D008 による OpenAI 切り替えで要再算出。本仕様書の実装着手前に、`MODELS.FAST` / `MODELS.NARRATIVE` の最新価格で試算し直し、このセクションを更新する（Codex プロンプト側で明示）。
+本仕様書に含まれる cron エンドポイント `POST /api/cron/generate-content` は、Owner 指定の `matchIds` を同期的に処理する最小構成。実際のスケジューリング（Vercel Cron）は後続仕様書 `p1-pipeline-scheduling.md` で別途定義するが、想定タイミングは以下で固定する:
 
-目標超過のアラート方針（50% 超過でアラート）は維持する。
+- **プレビュー**: キックオフの **T-48h** に生成。ローンチ前の大会開幕日はバックフィルで全試合一括実行
+- **レビュー**: 試合終了（`matches.status = 'finished'`）から **T+1h** で即時生成。公式詳細スタッツの到着を待たない
+
+T+1h 即時を採用する理由: 日本時間で Six Nations の試合終了は早朝になるため、通勤時刻までにレビューが読める UX を優先する。Wikipedia の記事は試合終了直後にスコアと主要イベント（トライ・カード）が反映され、レビューの 4 章構成（全体像 / ターニングポイント / MOM / 次戦示唆）は主要イベントのみで成立する。詳細スタッツの遅延により品質劣化が顕著であれば Phase 2 で遅延オプションを追加検討する。
+
+## コスト目標（D010 で確定）
+
+OpenAI 価格（2026-04 時点の概算、Codex は実装前に OpenAI 公式価格ページで最終確認すること）による 1 試合あたりコスト:
+
+| 段階 | モデル | 入力 tok | 出力 tok | 単価 × 試算 |
+|---|---|---|---|---|
+| 1 集約 | なし | — | — | $0.00 |
+| 2 事実抽出 | `MODELS.FAST`（`gpt-4o-mini`） | ~3,000 | ~500 | ~$0.001 |
+| 3 ナラティブ（プレビュー 1,500 字） | `MODELS.NARRATIVE`（`gpt-4o`） | ~3,500 | ~2,500 | ~$0.034 |
+| 3 ナラティブ（レビュー 2,000 字） | `MODELS.NARRATIVE`（`gpt-4o`） | ~3,500 | ~3,500 | ~$0.044 |
+| 4 QA | `MODELS.FAST` | ~3,000 | ~200 | ~$0.0006 |
+
+**1 試合あたりの上限**:
+- プレビュー: ~$0.035（リトライ 2 回の最悪値で ~$0.10）
+- レビュー: ~$0.045（リトライ 2 回の最悪値で ~$0.13）
+- Six Nations 2027（15 試合 × preview+recap）の大会合計: 最悪でも ~$4
+
+**アラート方針（`Q3 / d` の決定事項）**:
+- 閾値: 1 試合あたり $0.20（上記最悪値 + 余裕）
+- Phase 1 は通知を実装しない。`pipeline_runs.cost_usd` の集計クエリを Owner が定期確認する運用で回す
+- 閾値超過が 2 回連続で発生したら Owner 判断で Phase 2 前倒しで Slack webhook 連携を追加
+- Slack 連携は `p1-observability.md`（後続仕様書）に含める予定
 
 ## 受け入れ条件
 
+- [ ] `match_content` に `status` / `model_version` / `prompt_version` カラムが存在し、check 制約が効いている
+- [ ] `match_content (status, match_id, content_type)` のインデックスが作成されている
+- [ ] `model_version` に OpenAI が返す物理モデル ID（`gpt-4o-2024-11-20` 等）が保存される（`MODELS.NARRATIVE` の論理名ではない）
+- [ ] `prompt_version` が `/lib/llm/prompts/*.ts` から semver でエクスポートされ、呼び出し時に書き込まれる
 - [ ] Six Nations 2027 の 15 試合について、プレビュー + レビューがエンドツーエンドで手動介入なしに生成される
 - [ ] パイプラインは 1 試合あたり 30 秒以内に完了する
-- [ ] QA リトライが機能する。段階あたり最大 2 回
+- [ ] QA リトライが機能する。段階 3 は temperature `0.7 → 0.9 → 0.4` の順で最大 2 回リトライ
+- [ ] 段階 2 / 段階 4 が JSON パース不能な場合は同一入力で 1 回だけ再実行される
+- [ ] QA verdict が `publish` の場合、`match_content.status = 'published'` で upsert される
+- [ ] QA verdict が `reject`（リトライ上限後）の場合、`match_content.status = 'draft'` で upsert され、Slack 通知がスキップされず送信可能な形で（webhook URL 未設定でも実装自体は存在して）コードに残る。Slack webhook 実装自体は Phase 2（`p1-observability.md`）で良いが、呼び出し地点は Phase 1 で確保する
+- [ ] `/matches/[id]` のコンテンツ読み出しは `status = 'published'` のみが対象（`p1-match-content-display.md` で差し替え PR）
 - [ ] `match_content` テーブルにスクレイプした生テキストが一切含まれない（LLM が書き直した日本語のみ）
 - [ ] ナラティブ段階が `additionalSignals` 引数を受け取り、空配列でも正常に生成できる（Phase 1 実装時の動作確認）
-- [ ] すべての LLM 呼び出しについて `pipeline_runs` にコスト追跡行が書き込まれる
+- [ ] すべての LLM 呼び出しについて `pipeline_runs` にコスト追跡行（`cost_usd`）が書き込まれる
 - [ ] Owner が 10 件の生成プレビューをレビューし、7 件以上を「公開して良い」と判定
+
+## 決定事項（旧「未解決の質問」からの確定、D010）
+
+Owner 決定（2026-04-24）。以下は Codex への指示として扱う。
+
+1. **レビュー生成タイミング**: 試合終了後 **T+1h で即時実行**。公式詳細スタッツの到着を待たない（上記「実行タイミング」参照）
+2. **リトライ戦略**: 段階 3 は **temperature の振幅のみ**（`0.7 → 0.9 → 0.4`）。モデル昇格は行わない。段階 2 / 段階 4 の JSON パース不能は同一入力で 1 回だけ再実行
+3. **手動レビューフロー**: **Slack 通知 + Supabase Studio 運用**。`match_content.status` カラムの手動更新で公開可否を切り替える。管理 UI は Phase 2 以降
+4. **Reddit 却下時の代替外部シグナル**: **Phase 1 では追加しない**。`additionalSignals: []` 前提で成立させる。Reddit 承認結果（目安 7 日）を待ち、却下時は Phase 1 後半で別仕様書を起票
+5. **`match_content.status` カラム追加**: 採用する（`draft` / `published` / `rejected`）
+6. **`model_version` 書式**: OpenAI が返す **物理バージョン**（`gpt-4o-2024-11-20` 等）
+7. **`prompt_version` カラム追加**: 採用する。semver 文字列（`'preview@1.0.0'` 等）
+8. **コストアラート**: Phase 1 は `pipeline_runs.cost_usd` の **DB クエリで監視**。Slack 連携は Phase 2（`p1-observability.md`）
 
 ## 未解決の質問
 
-1. レビュー生成は公式マッチレポート公開を待つか、T+1h 時点で即時実行するか（Phase 1 は外部シグナルなしで走るので、即時 vs 遅延の品質差を検証する必要）
-2. リトライ時は別モデル（QA を `MODELS.FAST` → `MODELS.NARRATIVE`）にするか、temperature だけ変えるか
-3. 管理画面に手動レビューキュー UI が必要か、MVP では Slack 通知で十分か
-4. Reddit 承認が下りなかった場合の代替外部シグナル源（公式プレス、RugbyPass 等）を Phase 1 中に試行するか、Phase 2 に送るか
+現時点なし。疑問が生じた場合は Codex が実装前に Owner に確認する。
