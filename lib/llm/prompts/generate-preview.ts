@@ -1,6 +1,6 @@
 import type { AdditionalSignal, AssembledContentInput, TacticalPoint } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@1.0.0";
+export const PROMPT_VERSION = "preview@1.1.0";
 
 export function buildGeneratePreviewPrompt(
   assembled: AssembledContentInput,
@@ -17,6 +17,7 @@ export function buildGeneratePreviewPrompt(
     "構成: 1)両チーム現状(400-500字) 2)戦術ポイント展開(600-700字) 3)キープレイヤーと予想(300-400字)。",
     "事実は入力データと一致させること。直接引用は15語以内。",
     "出力は日本語マークダウン本文のみ。",
+    "強調記号（**、*、__、_）・コードブロック（```）・引用（>）は使用禁止。見出し(#)と箇条書き(-)のみ使用すること。",
     `試合データ: ${JSON.stringify(assembled)}`,
     `戦術ポイント: ${JSON.stringify(tacticalPoints)}`,
     signalsBlock,
