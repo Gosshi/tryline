@@ -225,5 +225,10 @@ export async function scrapeMatchLineup(matchPageUrl: string): Promise<Wikipedia
 
 ## 未解決の質問
 
-1. **テスト用 Wikipedia URL**: `WIKIPEDIA_SQUAD_URL` の開発・テスト時のデフォルト値として、既存の 2025 Six Nations スカッドページ URL を `WIKIPEDIA_SQUAD_URL` に設定する運用でよいか。Codex は `.env.example` にコメント付きで記載すること。
-2. **`matches.external_ids.wikipedia_url` の設定タイミング**: `ingest-lineups` は `matches.external_ids.wikipedia_url` が設定されていることを前提とするが、Six Nations 2027 の試合 Wikipedia URL は大会数ヶ月前まで確定しない。Codex は URL 未設定の場合に 400 を返すが、URL の投入方法（Supabase Studio での手動更新 / 別スクレイパー）は C1 仕様書策定時に決定する。
+現時点なし。疑問が生じた場合は Codex が実装前に Owner に確認する。
+
+## 決着済み事項
+
+1. **テスト用 Wikipedia URL**: `WIKIPEDIA_SQUAD_URL` の開発・テスト時のデフォルト値として、既存の 2025 Six Nations スカッドページ URL を使用する運用で決定。Codex は `.env.example` にコメント付きで記載すること。
+
+2. **`matches.external_ids.wikipedia_url` の設定方法**: Owner が Supabase Studio で手動入力する。Wikipedia の試合ページ URL はパターンが規則的（`https://en.wikipedia.org/wiki/2027_Six_Nations_Championship_–_[HomeTeam]_v_[AwayTeam]`）なため、15 試合分を試合ページ作成後に一括入力する運用とする。Codex は URL が未設定の場合に 400 を返し、運用手順を `docs/runbooks/` に別途記載する（C1 仕様書策定時）。
