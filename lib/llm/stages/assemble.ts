@@ -10,6 +10,50 @@ function average(values: number[]) {
   return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2));
 }
 
+async function loadProjectedLineup(
+  matchId: string,
+  teamId: string,
+): Promise<AssembledContentInput["projected_lineups"]["home"]> {
+  const db = getSupabaseServerClient();
+
+  const { data: matchLineups, error: lineupsError } = await db
+    .from("match_lineups")
+    .select("jersey_number, is_starter, player:players(name, position)")
+    .eq("match_id", matchId)
+    .eq("team_id", teamId)
+    .order("jersey_number", { ascending: true });
+
+  if (lineupsError) {
+    throw lineupsError;
+  }
+
+  if ((matchLineups ?? []).length > 0) {
+    return matchLineups.map((item) => ({
+      name: item.player?.name ?? "",
+      position: item.player?.position ?? null,
+      jersey_number: item.jersey_number,
+      is_starter: item.is_starter,
+    }));
+  }
+
+  const { data: players, error: playersError } = await db
+    .from("players")
+    .select("name, position, caps")
+    .eq("team_id", teamId)
+    .order("caps", { ascending: false, nullsFirst: false });
+
+  if (playersError) {
+    throw playersError;
+  }
+
+  return (players ?? []).map((player) => ({
+    name: player.name,
+    position: player.position,
+    jersey_number: null,
+    is_starter: null,
+  }));
+}
+
 export async function assembleMatchContentInput(matchId: string): Promise<AssembledContentInput> {
   const db = getSupabaseServerClient();
 
@@ -140,6 +184,11 @@ export async function assembleMatchContentInput(matchId: string): Promise<Assemb
     })
     .filter((value): value is number => typeof value === "number");
 
+  const [homeProjectedLineups, awayProjectedLineups] = await Promise.all([
+    loadProjectedLineup(matchId, homeTeamId),
+    loadProjectedLineup(matchId, awayTeamId),
+  ]);
+
   return {
     match: {
       id: match.id,
@@ -156,8 +205,8 @@ export async function assembleMatchContentInput(matchId: string): Promise<Assemb
     },
     h2h_last_5: h2hLast5,
     projected_lineups: {
-      home: [],
-      away: [],
+      home: homeProjectedLineups,
+      away: awayProjectedLineups,
     },
     injuries: {
       home: [],

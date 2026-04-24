@@ -7,6 +7,8 @@ import {
   fetchWithPolicy,
   isAllowed,
   saveRawData,
+  scrapeSquads,
+  scrapeMatchLineup,
 } from "@/lib/scrapers";
 
 describe("scrapers index exports", () => {
@@ -17,5 +19,7 @@ describe("scrapers index exports", () => {
     expect(acquireSlot).toBeTypeOf("function");
     expect(FetchError).toBeTypeOf("function");
     expect(RobotsDisallowedError).toBeTypeOf("function");
+    expect(scrapeSquads).toBeTypeOf("function");
+    expect(scrapeMatchLineup).toBeTypeOf("function");
   });
 });

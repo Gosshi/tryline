@@ -66,10 +66,12 @@ describe("database constraints and defaults", () => {
     const teams = await anon.from("teams").select("id");
     const matches = await anon.from("matches").select("id");
     const matchEvents = await anon.from("match_events").select("id");
+    const matchLineups = await anon.from("match_lineups").select("id");
 
     expect(competitions.error).toBeNull();
     expect(teams.error).toBeNull();
     expect(matches.error).toBeNull();
     expect(matchEvents.error).toBeNull();
+    expect(matchLineups.error).toBeNull();
   });
 });

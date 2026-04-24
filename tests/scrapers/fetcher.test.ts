@@ -24,6 +24,7 @@ describe("fetchWithPolicy", () => {
     process.env.SCRAPER_USER_AGENT = "Tryline Test Bot/1.0 (+test@example.com)";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "";
     process.env.CRON_SECRET = "test-cron-secret";
+    process.env.WIKIPEDIA_SQUAD_URL = "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
 
     robotsMock.isAllowed.mockResolvedValue(true);
     rateLimitMock.acquireSlot.mockResolvedValue(undefined);

@@ -82,8 +82,18 @@ export type AssembledContentInput = {
     status: string;
   }>;
   projected_lineups: {
-    home: string[];
-    away: string[];
+    home: Array<{
+      name: string;
+      position: string | null;
+      jersey_number: number | null;
+      is_starter: boolean | null;
+    }>;
+    away: Array<{
+      name: string;
+      position: string | null;
+      jersey_number: number | null;
+      is_starter: boolean | null;
+    }>;
   };
   injuries: {
     home: string[];
