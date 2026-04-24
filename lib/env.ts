@@ -11,6 +11,7 @@ const serverEnvSchema = publicEnvSchema.extend({
   SCRAPER_USER_AGENT: z.string(),
   SUPABASE_SERVICE_ROLE_KEY: z.string(),
   WIKIPEDIA_SQUAD_URL: z.string().url(),
+  SLACK_WEBHOOK_URL: z.string().url().optional(),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
