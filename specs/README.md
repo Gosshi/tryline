@@ -36,3 +36,4 @@ Phase 1 — Six Nations 2027 ローンチ（2027年 2〜3 月）に向けた MVP
 - `p1-content-pipeline.md` — 試合ごとのプレビュー／レビュー 4 段階生成パイプライン（D009、元は 5 段階。D010 で未解決事項を決着）
 - `p1-match-content-display.md` — `/matches/[id]` のプレースホルダーを `match_content.status = 'published'` の実表示に差し替え
 - `p1-squad-ingestion.md` — Wikipedia からスカッド / ラインアップを取り込み `projected_lineups` を実データ化（B1）
+- `p1-pipeline-scheduling.md` — Vercel Cron で全 cron ジョブを自動実行・オーケストレーター定義（C1）
