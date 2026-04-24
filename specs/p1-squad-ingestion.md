@@ -210,25 +210,25 @@ export async function scrapeMatchLineup(matchPageUrl: string): Promise<Wikipedia
 
 ## 受け入れ条件
 
-1. `POST /api/cron/ingest-squads` を実行すると `players` テーブルに 6 チーム全選手が upsert される（Wikipedia ページが存在する場合）
-2. Wikipedia ページが存在しない / ラインアップセクションがない場合、両スクレイパーはエラーを投げず空配列または `null` を返す
-3. `POST /api/cron/ingest-lineups?match_id=<uuid>` を実行すると `match_lineups` が upsert される（`announced_at` 含む）
-4. `players` に存在しない選手が `ingest-lineups` で登場した場合、自動的に `players` へ insert される（エラーにならない）
-5. `assemble.ts` は `match_lineups` にデータがある試合では `projected_lineups` に jersey_number と is_starter を含む配列を返す
-6. `match_lineups` が空の試合では `players` テーブルのスカッドデータへフォールバックする（`jersey_number: null`, `is_starter: null`）
-7. `players` も空の場合のみ `projected_lineups` が空配列になる
-8. `match_lineups` の RLS: anon + authenticated で select 可、write は service_role のみ
-9. `pnpm typecheck` が通る（`AssembledContentInput` 型変更に追随したモック更新を含む）
-10. `pnpm test` が全グリーン（パイプライン 6 本 + コンテンツ表示 5 本 + 本仕様書の新規テスト）
-11. 実ネットワークを叩くテストを含めない（Wikipedia スクレイパーは全てモック）
-12. 両 cron エンドポイントで `CRON_SECRET` 認証が機能する
+- [ ] `POST /api/cron/ingest-squads` を実行すると `players` テーブルに 6 チーム全選手が upsert される（Wikipedia ページが存在する場合）
+- [ ] Wikipedia ページが存在しない / ラインアップセクションがない場合、両スクレイパーはエラーを投げず空配列または `null` を返す
+- [ ] `POST /api/cron/ingest-lineups?match_id=<uuid>` を実行すると `match_lineups` が upsert される（`announced_at` 含む）
+- [ ] `players` に存在しない選手が `ingest-lineups` で登場した場合、自動的に `players` へ insert される（エラーにならない）
+- [ ] `assemble.ts` は `match_lineups` にデータがある試合では `projected_lineups` に jersey_number と is_starter を含む配列を返す
+- [ ] `match_lineups` が空の試合では `players` テーブルのスカッドデータへフォールバックする（`jersey_number: null`, `is_starter: null`）
+- [ ] `players` も空の場合のみ `projected_lineups` が空配列になる
+- [ ] `match_lineups` の RLS: anon + authenticated で select 可、write は service_role のみ
+- [ ] `pnpm typecheck` が通る（`AssembledContentInput` 型変更に追随したモック更新を含む）
+- [ ] `pnpm test` が全グリーン（パイプライン 6 本 + コンテンツ表示 5 本 + 本仕様書の新規テスト）
+- [ ] 実ネットワークを叩くテストを含めない（Wikipedia スクレイパーは全てモック）
+- [ ] 両 cron エンドポイントで `CRON_SECRET` 認証が機能する
+
+## 決定事項
+
+1. **テスト用 Wikipedia URL**: `WIKIPEDIA_SQUAD_URL` の開発・テスト時のデフォルト値として、既存の 2025 Six Nations スカッドページ URL を使用する。Codex は `.env.example` にコメント付きで記載すること。
+
+2. **`matches.external_ids.wikipedia_url` の設定方法**: Owner が Supabase Studio で手動入力する。Wikipedia の試合ページ URL はパターンが規則的（`https://en.wikipedia.org/wiki/2027_Six_Nations_Championship_–_[HomeTeam]_v_[AwayTeam]`）なため、15 試合分を試合ページ作成後に一括入力する運用とする。Codex は URL が未設定の場合に 400 を返し、運用手順を `docs/runbooks/` に別途記載する（C1 仕様書策定時）。
 
 ## 未解決の質問
 
 現時点なし。疑問が生じた場合は Codex が実装前に Owner に確認する。
-
-## 決着済み事項
-
-1. **テスト用 Wikipedia URL**: `WIKIPEDIA_SQUAD_URL` の開発・テスト時のデフォルト値として、既存の 2025 Six Nations スカッドページ URL を使用する運用で決定。Codex は `.env.example` にコメント付きで記載すること。
-
-2. **`matches.external_ids.wikipedia_url` の設定方法**: Owner が Supabase Studio で手動入力する。Wikipedia の試合ページ URL はパターンが規則的（`https://en.wikipedia.org/wiki/2027_Six_Nations_Championship_–_[HomeTeam]_v_[AwayTeam]`）なため、15 試合分を試合ページ作成後に一括入力する運用とする。Codex は URL が未設定の場合に 400 を返し、運用手順を `docs/runbooks/` に別途記載する（C1 仕様書策定時）。
