@@ -241,6 +241,65 @@ export type Database = {
           },
         ];
       };
+      match_lineups: {
+        Row: {
+          announced_at: string | null;
+          created_at: string;
+          id: string;
+          is_starter: boolean;
+          jersey_number: number;
+          match_id: string;
+          player_id: string;
+          source_url: string;
+          team_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          announced_at?: string | null;
+          created_at?: string;
+          id?: string;
+          jersey_number: number;
+          match_id: string;
+          player_id: string;
+          source_url: string;
+          team_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          announced_at?: string | null;
+          created_at?: string;
+          id?: string;
+          jersey_number?: number;
+          match_id?: string;
+          player_id?: string;
+          source_url?: string;
+          team_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_lineups_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "match_lineups_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "match_lineups_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       match_raw_data: {
         Row: {
           expires_at: string;
