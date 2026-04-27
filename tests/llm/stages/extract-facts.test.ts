@@ -50,6 +50,11 @@ describe("extractTacticalPoints", () => {
 
     expect(result.result.tactical_points).toHaveLength(3);
     expect(result.attempts).toBe(1);
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jsonMode: true,
+      }),
+    );
   });
 
   it("retries once when first response is invalid JSON", async () => {
@@ -75,5 +80,10 @@ describe("extractTacticalPoints", () => {
 
     expect(result.attempts).toBe(2);
     expect(openAIMock.createTextResponse).toHaveBeenCalledTimes(2);
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jsonMode: true,
+      }),
+    );
   });
 });

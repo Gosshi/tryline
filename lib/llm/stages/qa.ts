@@ -58,6 +58,7 @@ export async function evaluateNarrativeQuality(options: {
       model: MODELS.FAST,
       input: prompt,
       temperature: 0,
+      jsonMode: true,
     });
 
     try {

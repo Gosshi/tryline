@@ -27,6 +27,11 @@ describe("evaluateNarrativeQuality", () => {
     });
 
     expect(result.result.verdict).toBe("publish");
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jsonMode: true,
+      }),
+    );
   });
 
   it("returns retry when any score <= 2 and retry count < 2", async () => {
@@ -42,6 +47,11 @@ describe("evaluateNarrativeQuality", () => {
 
     const result = await evaluateNarrativeQuality({ contentType: "preview", narrative: "body", retryCount: 1 });
     expect(result.result.verdict).toBe("retry");
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jsonMode: true,
+      }),
+    );
   });
 
   it("returns reject when retry count is already 2", async () => {
@@ -57,5 +67,10 @@ describe("evaluateNarrativeQuality", () => {
 
     const result = await evaluateNarrativeQuality({ contentType: "preview", narrative: "body", retryCount: 2 });
     expect(result.result.verdict).toBe("reject");
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jsonMode: true,
+      }),
+    );
   });
 });

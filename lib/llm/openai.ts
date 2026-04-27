@@ -17,6 +17,7 @@ export async function createTextResponse(options: {
   model: string;
   input: string;
   temperature?: number;
+  jsonMode?: boolean;
 }): Promise<OpenAITextResponse> {
   const client = getOpenAIClient();
 
@@ -24,6 +25,7 @@ export async function createTextResponse(options: {
     model: options.model,
     input: options.input,
     temperature: options.temperature,
+    ...(options.jsonMode ? { text: { format: { type: "json_object" } } } : {}),
   });
 
   return {
