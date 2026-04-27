@@ -36,6 +36,7 @@ export async function extractTacticalPoints(input: AssembledContentInput): Promi
       model: MODELS.FAST,
       input: prompt,
       temperature: 0.2,
+      jsonMode: true,
     });
 
     try {
