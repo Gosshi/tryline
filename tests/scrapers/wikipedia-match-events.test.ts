@@ -40,9 +40,8 @@ const MATCH_EVENTS_HTML = `
 
 describe("wikipedia match events scraper", () => {
   it("parses scoring rows and expands multiple minutes", async () => {
-    const { parseMatchEventsFromVeventHtml } = await import(
-      "@/lib/scrapers/wikipedia-match-events"
-    );
+    const { parseMatchEventsFromVeventHtml } =
+      await import("@/lib/scrapers/wikipedia-match-events");
     const result = parseMatchEventsFromVeventHtml(MATCH_EVENTS_HTML);
 
     expect(result).toHaveLength(13);

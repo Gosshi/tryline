@@ -164,10 +164,16 @@ async function main() {
       const html = await response.text();
       const parsedMatches = parseWikipediaSixNationsHtml(html);
       veventByKey = new Map(
-        parsedMatches.map((m) => [`${m.homeTeamName}_${m.awayTeamName}`, m.rawHtml]),
+        parsedMatches.map((m) => [
+          `${m.homeTeamName}_${m.awayTeamName}`,
+          m.rawHtml,
+        ]),
       );
     } catch (error) {
-      console.warn(`Unable to fetch season page for ${competition.slug}:`, error);
+      console.warn(
+        `Unable to fetch season page for ${competition.slug}:`,
+        error,
+      );
       continue;
     }
 
