@@ -1,9 +1,11 @@
 import { MatchCard } from "@/components/match-card";
 import { RoundHeading } from "@/components/round-heading";
+import { StandingsTable } from "@/components/standings-table";
 import {
   getLatestCompetitionWithMatches,
   listMatchesForCompetition,
 } from "@/lib/db/queries/matches";
+import { getStandingsForCompetition } from "@/lib/db/queries/standings";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 
 import type { Metadata } from "next";
@@ -75,7 +77,7 @@ export default async function HomePage() {
 
   if (!competition) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-slate-50">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:px-8">
           <p className="text-sm text-slate-500">
             現在表示できる試合はありません
@@ -85,7 +87,10 @@ export default async function HomePage() {
     );
   }
 
-  const matches = await listMatchesForCompetition(competition.slug);
+  const [matches, standings] = await Promise.all([
+    listMatchesForCompetition(competition.slug),
+    getStandingsForCompetition(competition.slug),
+  ]);
   const groupedMatches = groupMatchesByRound(matches);
   const dateRange = formatDateRange(competition.startDate, competition.endDate);
 
@@ -115,6 +120,8 @@ export default async function HomePage() {
             </section>
           ))
         )}
+
+        <StandingsTable standings={standings} />
       </div>
     </main>
   );
