@@ -122,6 +122,15 @@ describe("upsertMatches", () => {
 
     expect(resultsRun.matchesInserted).toBe(0);
     expect(resultsRun.matchesUpdated).toBe(2);
+    expect(resultsRun.records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          previousStatus: "scheduled",
+          status: "finished",
+          statusChangedToFinished: true,
+        }),
+      ]),
+    );
 
     const updatedMatch = await service
       .from("matches")

@@ -61,17 +61,35 @@ describe("database constraints and defaults", () => {
 
     expect(eventInsert.error).toBeNull();
 
+    const standingsInsert = await service.from("competition_standings").insert({
+      competition_id: (
+        await service
+          .from("matches")
+          .select("competition_id")
+          .eq("id", matchId)
+          .single()
+      ).data!.competition_id,
+      team_id: homeTeamId,
+      position: 1,
+    });
+
+    expect(standingsInsert.error).toBeNull();
+
     const anon = createAnonClient();
     const competitions = await anon.from("competitions").select("id");
     const teams = await anon.from("teams").select("id");
     const matches = await anon.from("matches").select("id");
     const matchEvents = await anon.from("match_events").select("id");
     const matchLineups = await anon.from("match_lineups").select("id");
+    const competitionStandings = await anon
+      .from("competition_standings")
+      .select("id");
 
     expect(competitions.error).toBeNull();
     expect(teams.error).toBeNull();
     expect(matches.error).toBeNull();
     expect(matchEvents.error).toBeNull();
     expect(matchLineups.error).toBeNull();
+    expect(competitionStandings.error).toBeNull();
   });
 });

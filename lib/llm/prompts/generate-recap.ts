@@ -1,6 +1,10 @@
-import type { AdditionalSignal, AssembledContentInput, TacticalPoint } from "@/lib/llm/types";
+import type {
+  AdditionalSignal,
+  AssembledContentInput,
+  TacticalPoint,
+} from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@1.2.0";
+export const PROMPT_VERSION = "recap@1.3.0";
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -11,6 +15,17 @@ export function buildGenerateRecapPrompt(
     additionalSignals.length === 0
       ? ""
       : `外部シグナル(距離を取った帰属表現で利用): ${JSON.stringify(additionalSignals)}`;
+  const standingsBlock =
+    assembled.competition_standings.length === 0
+      ? ""
+      : [
+          `現在の大会順位表（この試合前時点）: ${JSON.stringify(assembled.competition_standings)}`,
+          "順位争い・Grand Slam・木のスプーン等の大会文脈をレビューに組み込むこと。",
+        ].join("\n");
+  const matchEventsBlock =
+    assembled.match_events.length === 0
+      ? ""
+      : `スコアリングイベント（tryスコアラー・コンバージョン・ペナルティ・カード等）は以下のデータのみを根拠に記述すること:\n${JSON.stringify(assembled.match_events)}`;
 
   return [
     "あなたは日本語のラグビー専門編集者です。試合レビューをマークダウンで作成してください。",
@@ -20,6 +35,8 @@ export function buildGenerateRecapPrompt(
     "強調記号（**、*、__、_）・コードブロック（```）・引用（>）は使用禁止。見出し(#)と箇条書き(-)のみ使用すること。",
     "選手名・チーム名は英語表記のまま使用すること（カタカナ変換しない）。",
     `試合データ: ${JSON.stringify(assembled)}`,
+    matchEventsBlock,
+    standingsBlock,
     `戦術ポイント: ${JSON.stringify(tacticalPoints)}`,
     signalsBlock,
   ]

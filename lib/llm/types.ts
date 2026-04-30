@@ -81,6 +81,27 @@ export type AssembledContentInput = {
     away_score: number | null;
     status: string;
   }>;
+  match_events: Array<{
+    type: string;
+    minute: number | null;
+    team_name: string;
+    player_name: string;
+    is_penalty_try?: boolean;
+  }>;
+  competition_standings: Array<{
+    position: number;
+    team_name: string;
+    played: number;
+    won: number;
+    drawn: number;
+    lost: number;
+    points_for: number;
+    points_against: number;
+    tries_for: number;
+    bonus_points_try: number;
+    bonus_points_losing: number;
+    total_points: number;
+  }>;
   projected_lineups: {
     home: Array<{
       name: string;

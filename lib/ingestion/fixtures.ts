@@ -5,8 +5,10 @@ import {
   WIKIPEDIA_SIX_NATIONS_2027_SOURCE,
   WIKIPEDIA_SIX_NATIONS_2027_URL,
 } from "@/lib/ingestion/sources/wikipedia-six-nations-2027";
+import { upsertCompetitionStandings } from "@/lib/ingestion/standings";
 import { upsertMatches } from "@/lib/ingestion/upsert";
 import { fetchWithPolicy, saveRawData } from "@/lib/scrapers";
+import { parseCompetitionStandingsHtml } from "@/lib/scrapers/wikipedia-standings";
 
 import type { Json } from "@/lib/db/types";
 import type { ParsedWikipediaMatch } from "@/lib/ingestion/sources/wikipedia-six-nations-2027";
@@ -94,9 +96,12 @@ export async function ingestSixNations2027Fixtures() {
   const response = await fetchWithPolicy(WIKIPEDIA_SIX_NATIONS_2027_URL);
   const html = await response.text();
   const parsedMatches = parseWikipediaSixNations2027Html(html);
+  const parsedStandings = parseCompetitionStandingsHtml(html);
   const competitionId = await getCompetitionId();
   const teamLookup = await getTeamLookup(
-    parsedMatches.flatMap((match) => [match.homeTeamName, match.awayTeamName]),
+    parsedMatches
+      .flatMap((match) => [match.homeTeamName, match.awayTeamName])
+      .concat(parsedStandings.map((row) => row.teamName)),
   );
   const resolvedMatches = resolveParsedMatches(
     parsedMatches,
@@ -119,8 +124,14 @@ export async function ingestSixNations2027Fixtures() {
     ),
   );
 
+  const standingsResult = await upsertCompetitionStandings({
+    competitionId,
+    rows: parsedStandings,
+    teamLookup,
+  });
+
   console.info(
-    `Ingested Six Nations 2027 fixtures: inserted=${result.matchesInserted} updated=${result.matchesUpdated}`,
+    `Ingested Six Nations 2027 fixtures: inserted=${result.matchesInserted} updated=${result.matchesUpdated} standings_upserted=${standingsResult.upserted}`,
   );
 
   return {
@@ -129,6 +140,7 @@ export async function ingestSixNations2027Fixtures() {
       matches_inserted: result.matchesInserted,
       matches_updated: result.matchesUpdated,
       raw_data_rows: result.records.length,
+      standings_upserted: standingsResult.upserted,
     },
   };
 }

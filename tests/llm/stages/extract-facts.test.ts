@@ -20,6 +20,8 @@ const assembled = {
   },
   recent_form: { home: [], away: [] },
   h2h_last_5: [],
+  match_events: [],
+  competition_standings: [],
   projected_lineups: { home: [], away: [] },
   injuries: { home: [], away: [] },
   key_stats: {

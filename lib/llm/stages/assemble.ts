@@ -1,5 +1,6 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
 
+import type { Json } from "@/lib/db/types";
 import type { AssembledContentInput } from "@/lib/llm/types";
 
 function average(values: number[]) {
@@ -7,7 +8,17 @@ function average(values: number[]) {
     return null;
   }
 
-  return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2));
+  return Number(
+    (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2),
+  );
+}
+
+function asJsonObject(value: Json): Record<string, Json> {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return {};
+  }
+
+  return value as Record<string, Json>;
 }
 
 async function loadProjectedLineup(
@@ -54,7 +65,92 @@ async function loadProjectedLineup(
   }));
 }
 
-export async function assembleMatchContentInput(matchId: string): Promise<AssembledContentInput> {
+async function loadCompetitionStandings(
+  competitionId: string | undefined,
+): Promise<AssembledContentInput["competition_standings"]> {
+  if (!competitionId) {
+    return [];
+  }
+
+  const db = getSupabaseServerClient();
+  const { data, error } = await db
+    .from("competition_standings")
+    .select(
+      `
+        position,
+        played,
+        won,
+        drawn,
+        lost,
+        points_for,
+        points_against,
+        tries_for,
+        bonus_points_try,
+        bonus_points_losing,
+        total_points,
+        team:teams(name)
+      `,
+    )
+    .eq("competition_id", competitionId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => ({
+    bonus_points_losing: row.bonus_points_losing,
+    bonus_points_try: row.bonus_points_try,
+    drawn: row.drawn,
+    lost: row.lost,
+    played: row.played,
+    points_against: row.points_against,
+    points_for: row.points_for,
+    position: row.position,
+    team_name: row.team?.name ?? "",
+    total_points: row.total_points,
+    tries_for: row.tries_for,
+    won: row.won,
+  }));
+}
+
+async function loadMatchEvents(
+  matchId: string,
+  status: string,
+): Promise<AssembledContentInput["match_events"]> {
+  if (status !== "finished") {
+    return [];
+  }
+
+  const db = getSupabaseServerClient();
+  const { data, error } = await db
+    .from("match_events")
+    .select("type, minute, metadata, team:teams(name)")
+    .eq("match_id", matchId)
+    .order("minute", { ascending: true, nullsFirst: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((event) => {
+    const metadata = asJsonObject(event.metadata);
+    const playerName = metadata.player_name;
+    const isPenaltyTry = metadata.is_penalty_try;
+
+    return {
+      ...(isPenaltyTry === true ? { is_penalty_try: true } : {}),
+      minute: event.minute,
+      player_name: typeof playerName === "string" ? playerName : "",
+      team_name: event.team?.name ?? "",
+      type: event.type,
+    };
+  });
+}
+
+export async function assembleMatchContentInput(
+  matchId: string,
+): Promise<AssembledContentInput> {
   const db = getSupabaseServerClient();
 
   const { data: match, error: matchError } = await db
@@ -62,6 +158,7 @@ export async function assembleMatchContentInput(matchId: string): Promise<Assemb
     .select(
       `
         id,
+        competition_id,
         kickoff_at,
         status,
         venue,
@@ -101,7 +198,9 @@ export async function assembleMatchContentInput(matchId: string): Promise<Assemb
     )
     .lt("kickoff_at", match.kickoff_at)
     .in("status", ["finished"])
-    .or(`home_team_id.eq.${homeTeamId},away_team_id.eq.${homeTeamId},home_team_id.eq.${awayTeamId},away_team_id.eq.${awayTeamId}`)
+    .or(
+      `home_team_id.eq.${homeTeamId},away_team_id.eq.${homeTeamId},home_team_id.eq.${awayTeamId},away_team_id.eq.${awayTeamId}`,
+    )
     .order("kickoff_at", { ascending: false })
     .limit(20);
 
@@ -110,7 +209,10 @@ export async function assembleMatchContentInput(matchId: string): Promise<Assemb
   }
 
   const homeRecent = (recentMatches ?? [])
-    .filter((item) => item.home_team_id === homeTeamId || item.away_team_id === homeTeamId)
+    .filter(
+      (item) =>
+        item.home_team_id === homeTeamId || item.away_team_id === homeTeamId,
+    )
     .slice(0, 5)
     .map((item) => ({
       match_id: item.id,
@@ -123,7 +225,10 @@ export async function assembleMatchContentInput(matchId: string): Promise<Assemb
     }));
 
   const awayRecent = (recentMatches ?? [])
-    .filter((item) => item.home_team_id === awayTeamId || item.away_team_id === awayTeamId)
+    .filter(
+      (item) =>
+        item.home_team_id === awayTeamId || item.away_team_id === awayTeamId,
+    )
     .slice(0, 5)
     .map((item) => ({
       match_id: item.id,
@@ -138,7 +243,8 @@ export async function assembleMatchContentInput(matchId: string): Promise<Assemb
   const h2hLast5 = (recentMatches ?? [])
     .filter(
       (item) =>
-        (item.home_team_id === homeTeamId && item.away_team_id === awayTeamId) ||
+        (item.home_team_id === homeTeamId &&
+          item.away_team_id === awayTeamId) ||
         (item.home_team_id === awayTeamId && item.away_team_id === homeTeamId),
     )
     .slice(0, 5)
@@ -184,10 +290,18 @@ export async function assembleMatchContentInput(matchId: string): Promise<Assemb
     })
     .filter((value): value is number => typeof value === "number");
 
-  const [homeProjectedLineups, awayProjectedLineups] = await Promise.all([
-    loadProjectedLineup(matchId, homeTeamId),
-    loadProjectedLineup(matchId, awayTeamId),
-  ]);
+  const [
+    homeProjectedLineups,
+    awayProjectedLineups,
+    competitionStandings,
+    matchEvents,
+  ] =
+    await Promise.all([
+      loadProjectedLineup(matchId, homeTeamId),
+      loadProjectedLineup(matchId, awayTeamId),
+      loadCompetitionStandings(match.competition_id),
+      loadMatchEvents(matchId, match.status),
+    ]);
 
   return {
     match: {
@@ -204,6 +318,8 @@ export async function assembleMatchContentInput(matchId: string): Promise<Assemb
       away: awayRecent,
     },
     h2h_last_5: h2hLast5,
+    match_events: matchEvents,
+    competition_standings: competitionStandings,
     projected_lineups: {
       home: homeProjectedLineups,
       away: awayProjectedLineups,
