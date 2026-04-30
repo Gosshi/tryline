@@ -56,7 +56,7 @@ describe("MatchCard", () => {
 
     expect(screen.getByText("24")).toHaveClass("text-slate-950");
     expect(screen.getByText("21")).toHaveClass("text-slate-400");
-    expect(screen.getByText("FRA")).toHaveClass("text-slate-400");
+    expect(screen.getByText("FRA 🇫🇷")).toHaveClass("text-slate-400");
     expect(screen.getByText("Ireland")).toHaveClass("text-slate-900");
   });
 

@@ -1,6 +1,5 @@
 import { ContentPlaceholder } from "@/components/content-placeholder";
 import { MatchContent } from "@/components/match-content";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { deriveContentState } from "@/lib/match-content/state";
 
 import type { PublishedMatchContent } from "@/lib/db/queries/match-content";
@@ -17,6 +16,11 @@ const TITLES = {
   recap: "レビュー",
 } as const;
 
+const SUBTITLES = {
+  preview: "Match Preview",
+  recap: "Match Review",
+} as const;
+
 export function MatchContentSection({
   content,
   contentType,
@@ -30,17 +34,21 @@ export function MatchContentSection({
   });
 
   return (
-    <Card className="border-slate-200 bg-white">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{TITLES[contentType]}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {content ? (
-          <MatchContent content={content} contentType={contentType} />
-        ) : (
-          <ContentPlaceholder state={state} type={contentType} />
-        )}
-      </CardContent>
-    </Card>
+    <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+      <div className="mb-4 border-b border-slate-100 pb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+          {SUBTITLES[contentType]}
+        </p>
+        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
+          {TITLES[contentType]}
+        </h2>
+      </div>
+
+      {content ? (
+        <MatchContent content={content} contentType={contentType} />
+      ) : (
+        <ContentPlaceholder state={state} type={contentType} />
+      )}
+    </section>
   );
 }
