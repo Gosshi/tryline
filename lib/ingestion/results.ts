@@ -8,7 +8,7 @@ import {
 } from "@/lib/ingestion/sources/wikipedia-six-nations-2027";
 import { upsertMatches } from "@/lib/ingestion/upsert";
 import { fetchWithPolicy, saveRawData } from "@/lib/scrapers";
-import { buildMatchWikipediaUrl, scrapeMatchEvents } from "@/lib/scrapers/wikipedia-match-events";
+import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 
 import type { Json } from "@/lib/db/types";
 import type { ParsedWikipediaMatch } from "@/lib/ingestion/sources/wikipedia-six-nations-2027";
@@ -39,7 +39,7 @@ async function getCompetition() {
   const client = getSupabaseServerClient();
   const { data, error } = await client
     .from("competitions")
-    .select("id, season")
+    .select("id")
     .eq("slug", SIX_NATIONS_2027_COMPETITION_SLUG)
     .single();
 
@@ -143,12 +143,7 @@ export async function ingestSixNations2027Results() {
       continue;
     }
 
-    const matchUrl = buildMatchWikipediaUrl({
-      awayTeamName: match.awayTeamName,
-      homeTeamName: match.homeTeamName,
-      year: competition.season,
-    });
-    const events = await scrapeMatchEvents(matchUrl);
+    const events = parseMatchEventsFromVeventHtml(match.rawHtml);
     const upsertedEvents = await upsertMatchEvents({
       awayTeamId: match.awayTeamId,
       events,

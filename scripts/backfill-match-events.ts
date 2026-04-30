@@ -1,9 +1,8 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { upsertMatchEvents } from "@/lib/ingestion/events";
-import {
-  buildMatchWikipediaUrl,
-  scrapeMatchEvents,
-} from "@/lib/scrapers/wikipedia-match-events";
+import { parseWikipediaSixNationsHtml } from "@/lib/ingestion/sources/wikipedia-six-nations";
+import { fetchWithPolicy } from "@/lib/scrapers";
+import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 
 type CliOptions = {
   dryRun: boolean;
@@ -127,56 +126,89 @@ async function loadTargetMatches(competitions: CompetitionRow[]) {
 async function main() {
   const options = parseOptions(process.argv.slice(2));
   const competitions = await loadCompetitions(options.year);
-  const competitionById = new Map(
-    competitions.map((competition) => [competition.id, competition]),
-  );
   const matches = await loadTargetMatches(competitions);
-  let eventsFound = 0;
-  let eventsInserted = 0;
+
+  const matchesByCompetition = new Map<string, MatchRow[]>();
+  for (const match of matches) {
+    const group = matchesByCompetition.get(match.competition_id) ?? [];
+    group.push(match);
+    matchesByCompetition.set(match.competition_id, group);
+  }
 
   console.log(
     `Target finished Six Nations matches without events: ${matches.length}`,
   );
 
-  for (const [index, match] of matches.entries()) {
-    const competition = competitionById.get(match.competition_id);
-    const homeTeamName = match.home_team?.name;
-    const awayTeamName = match.away_team?.name;
+  let eventsFound = 0;
+  let eventsInserted = 0;
+  let firstSeason = true;
 
-    if (!competition || !homeTeamName || !awayTeamName) {
-      console.warn(`Skipping match with missing competition/team data: ${match.id}`);
+  for (const competition of competitions) {
+    const competitionMatches = matchesByCompetition.get(competition.id) ?? [];
+
+    if (competitionMatches.length === 0) {
       continue;
     }
 
-    const matchUrl = buildMatchWikipediaUrl({
-      awayTeamName,
-      homeTeamName,
-      year: competition.season,
-    });
-    const events = await scrapeMatchEvents(matchUrl);
+    if (!firstSeason) {
+      await sleep(1_000);
+    }
+    firstSeason = false;
 
-    eventsFound += events.length;
+    const year = competition.slug.replace("six-nations-", "");
+    const pageUrl = `https://en.wikipedia.org/wiki/${year}_Six_Nations_Championship`;
 
-    if (options.dryRun) {
-      console.log(
-        `[dry-run] ${competition.season} ${homeTeamName} v ${awayTeamName}: ${events.length} events`,
+    let veventByKey: Map<string, string>;
+    try {
+      const response = await fetchWithPolicy(pageUrl);
+      const html = await response.text();
+      const parsedMatches = parseWikipediaSixNationsHtml(html);
+      veventByKey = new Map(
+        parsedMatches.map((m) => [`${m.homeTeamName}_${m.awayTeamName}`, m.rawHtml]),
       );
-    } else {
-      const result = await upsertMatchEvents({
-        awayTeamId: match.away_team_id,
-        events,
-        homeTeamId: match.home_team_id,
-        matchId: match.id,
-      });
-
-      eventsInserted += result.inserted;
-      console.log(
-        `Inserted ${result.inserted} events for ${competition.season} ${homeTeamName} v ${awayTeamName}`,
-      );
+    } catch (error) {
+      console.warn(`Unable to fetch season page for ${competition.slug}:`, error);
+      continue;
     }
 
-    if (index < matches.length - 1) {
-      await sleep(1_000);
+    for (const match of competitionMatches) {
+      const homeTeamName = match.home_team?.name;
+      const awayTeamName = match.away_team?.name;
+
+      if (!homeTeamName || !awayTeamName) {
+        console.warn(`Skipping match with missing team data: ${match.id}`);
+        continue;
+      }
+
+      const rawHtml = veventByKey.get(`${homeTeamName}_${awayTeamName}`);
+
+      if (!rawHtml) {
+        console.warn(
+          `No vevent found for ${competition.season} ${homeTeamName} v ${awayTeamName}`,
+        );
+        continue;
+      }
+
+      const events = parseMatchEventsFromVeventHtml(rawHtml);
+      eventsFound += events.length;
+
+      if (options.dryRun) {
+        console.log(
+          `[dry-run] ${competition.season} ${homeTeamName} v ${awayTeamName}: ${events.length} events`,
+        );
+      } else {
+        const result = await upsertMatchEvents({
+          awayTeamId: match.away_team_id,
+          events,
+          homeTeamId: match.home_team_id,
+          matchId: match.id,
+        });
+
+        eventsInserted += result.inserted;
+        console.log(
+          `Inserted ${result.inserted} events for ${competition.season} ${homeTeamName} v ${awayTeamName}`,
+        );
+      }
     }
   }
 

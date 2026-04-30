@@ -1,203 +1,155 @@
 import { load } from "cheerio";
 
-import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
-
 export type ParsedMatchEvent = {
-  type: "try" | "conversion" | "penalty_goal" | "drop_goal" | "yellow_card" | "red_card";
-  minute: number | null;
-  teamSide: "home" | "away";
-  playerName: string;
   isPenaltyTry: boolean;
+  minute: number | null;
+  playerName: string;
+  teamSide: "home" | "away";
+  type:
+    | "conversion"
+    | "drop_goal"
+    | "penalty_goal"
+    | "red_card"
+    | "try"
+    | "yellow_card";
 };
 
 type MatchEventType = ParsedMatchEvent["type"];
 type TeamSide = ParsedMatchEvent["teamSide"];
 
-export const WIKIPEDIA_TEAM_NAME_BY_DB_NAME: Record<string, string> = {
-  england: "England",
-  france: "France",
-  ireland: "Ireland",
-  italy: "Italy",
-  scotland: "Scotland",
-  wales: "Wales",
+// Bold inline labels as they appear in Wikipedia Six Nations season page vevent blocks.
+// Each label corresponds to an event type. The key is the label text, lowercased.
+const BOLD_LABEL_TO_TYPE: Record<string, MatchEventType> = {
+  "con:": "conversion",
+  "cons:": "conversion",
+  "dg:": "drop_goal",
+  "drop goal:": "drop_goal",
+  "drop goals:": "drop_goal",
+  "drop:": "drop_goal",
+  "pen:": "penalty_goal",
+  "penalties:": "penalty_goal",
+  "penalty:": "penalty_goal",
+  "pens:": "penalty_goal",
+  "red card:": "red_card",
+  "red cards:": "red_card",
+  "red:": "red_card",
+  "sin bin:": "yellow_card",
+  "sin-bin:": "yellow_card",
+  "tries:": "try",
+  "try:": "try",
+  "yellow card:": "yellow_card",
+  "yellow cards:": "yellow_card",
+  "yellow:": "yellow_card",
 };
 
-const EVENT_TYPE_BY_LABEL: Record<string, MatchEventType> = {
-  "drop goals": "drop_goal",
-  cons: "conversion",
-  conversions: "conversion",
-  pens: "penalty_goal",
-  penalties: "penalty_goal",
-  "penalty goals": "penalty_goal",
-  "red cards": "red_card",
-  tries: "try",
-  "yellow cards": "yellow_card",
-};
-
-function normalizeWhitespace(value: string) {
+function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function normalizeLabel(value: string) {
-  return normalizeWhitespace(value)
-    .replace(/:$/, "")
-    .toLowerCase();
-}
-
-function normalizePlayerName(value: string) {
-  return normalizeWhitespace(value)
-    .replace(/\(pen\)/gi, "")
-    .replace(/\bpenalty try\b/gi, "Penalty try")
-    .replace(/^[,;]+|[,;]+$/g, "")
-    .trim();
-}
-
-function isEmptyEventText(value: string) {
-  const normalized = normalizeWhitespace(value).toLowerCase();
-
-  return (
-    normalized === "" ||
-    normalized === "none" ||
-    normalized === "n/a" ||
-    normalized === "-" ||
-    normalized === "–" ||
-    normalized === "—"
-  );
-}
-
-function textWithoutReferences(html: string) {
-  const $ = load(html);
-
-  $("sup.reference, .reference, style, script").remove();
-
-  return normalizeWhitespace($.root().text().replace(/\[[^\]]+\]/g, ""));
-}
-
-function parseMinutes(value: string) {
+function parseMinutes(value: string): Array<number | null> {
   const minutes = [...value.matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g)].map(
     (match) => Number(match[1]),
   );
-
   return minutes.length > 0 ? minutes : [null];
 }
 
-function parseEventCell(
-  cellText: string,
-  type: MatchEventType,
-  teamSide: TeamSide,
-): ParsedMatchEvent[] {
-  if (isEmptyEventText(cellText)) {
-    return [];
-  }
-
-  const matches = [...cellText.matchAll(/([^()]+?)\s*\(([^)]*)\)/g)];
-
-  if (matches.length === 0) {
-    return cellText
-      .split(/[,;]/)
-      .map((part) => normalizePlayerName(part))
-      .filter(Boolean)
-      .map((playerName) => ({
-        isPenaltyTry: type === "try" && /penalty try/i.test(playerName),
-        minute: null,
-        playerName,
-        teamSide,
-        type,
-      }));
-  }
-
-  return matches.flatMap((match, index) => {
-    const rawName = match[1] ?? "";
-    const rawMinutes = match[2] ?? "";
-    const segmentStart = match.index ?? 0;
-    const segmentEnd = matches[index + 1]?.index ?? cellText.length;
-    const segment = cellText.slice(segmentStart, segmentEnd);
-    const isPenaltyTry =
-      type === "try" && (/\bpen\b/i.test(segment) || /penalty try/i.test(segment));
-    const playerName = normalizePlayerName(rawName) || "Penalty try";
-
-    if (!/\d/.test(rawMinutes) && normalizePlayerName(rawName) === "") {
-      return [];
-    }
-
-    return parseMinutes(rawMinutes).map((minute) => ({
-      isPenaltyTry,
-      minute,
-      playerName,
-      teamSide,
-      type,
-    }));
-  });
-}
-
-export function parseWikipediaMatchEventsHtml(html: string): ParsedMatchEvent[] {
-  const $ = load(html);
-  const rows = $("table.infobox tr, table.vevent tr");
+// Parses the outer HTML of a single scoring <td> cell.
+// Players appear as <a> links; "Penalty try" appears as plain text.
+// Bold labels separate event type sections; <br> terminates each player entry.
+//
+// Note: <td> outside a <table> is stripped by HTML parsers; content lands in <body>.
+// We iterate $("body").contents() rather than looking for a <td> element.
+function parseScoringCell(cellHtml: string, teamSide: TeamSide): ParsedMatchEvent[] {
+  const $ = load(cellHtml);
   const events: ParsedMatchEvent[] = [];
+  let currentType: MatchEventType | null = null;
+  let currentPlayer: string | null = null;
+  let minutesBuffer = "";
 
-  rows.each((_, row) => {
-    const cells = $(row).children("th, td");
-
-    if (cells.length < 3) {
+  function flush() {
+    if (!currentType || !currentPlayer) {
+      minutesBuffer = "";
+      currentPlayer = null;
       return;
     }
 
-    const label = normalizeLabel($(cells[0]).text());
-    const type = EVENT_TYPE_BY_LABEL[label];
+    const isPenaltyTry =
+      currentType === "try" && /penalty try/i.test(currentPlayer);
+    const playerName = isPenaltyTry
+      ? "Penalty try"
+      : normalizeWhitespace(currentPlayer);
 
-    if (!type) {
-      return;
+    if (playerName) {
+      for (const minute of parseMinutes(minutesBuffer)) {
+        events.push({ isPenaltyTry, minute, playerName, teamSide, type: currentType });
+      }
     }
 
-    const homeText = textWithoutReferences($.html(cells[1]) ?? "");
-    const awayText = textWithoutReferences($.html(cells[2]) ?? "");
+    minutesBuffer = "";
+    currentPlayer = null;
+  }
 
-    events.push(...parseEventCell(homeText, type, "home"));
-    events.push(...parseEventCell(awayText, type, "away"));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  $("body").contents().each((_, node: any) => {
+    if (node.type === "tag") {
+      const tag: string = (node.tagName ?? "").toLowerCase();
+
+      if (tag === "b") {
+        flush();
+        const labelText = normalizeWhitespace($(node).text()).toLowerCase();
+        currentType = BOLD_LABEL_TO_TYPE[labelText] ?? null;
+      } else if (tag === "a") {
+        flush();
+        currentPlayer = normalizeWhitespace($(node).text());
+      } else if (tag === "br") {
+        flush();
+      }
+    } else if (node.type === "text") {
+      const text: string = node.data ?? "";
+
+      if (currentPlayer !== null) {
+        minutesBuffer += text;
+      } else if (currentType !== null) {
+        // "Penalty try" appears as plain text (no <a> tag)
+        const trimmed = normalizeWhitespace(text);
+
+        if (/^penalty try/i.test(trimmed)) {
+          flush();
+          currentPlayer = "Penalty try";
+          minutesBuffer = trimmed.slice("Penalty try".length);
+        }
+      }
+    }
   });
 
+  flush();
   return events;
 }
 
-function resolveWikipediaTeamName(dbTeamName: string) {
-  const resolved = WIKIPEDIA_TEAM_NAME_BY_DB_NAME[normalizeWhitespace(dbTeamName).toLowerCase()];
+// rawHtml is the outer HTML of a div.vevent.summary block from a Wikipedia Six Nations season page.
+// The scoring table's detail row (font-size:85%) has td[0]=home scoring, td[2]=away scoring.
+export function parseMatchEventsFromVeventHtml(rawHtml: string): ParsedMatchEvent[] {
+  const $ = load(rawHtml);
 
-  if (!resolved) {
-    throw new Error(`Unknown Six Nations team name for Wikipedia URL: ${dbTeamName}`);
-  }
+  const scoringRow = $("tr")
+    .filter((_, el) => ($(el).attr("style") ?? "").includes("font-size:85%"))
+    .first();
 
-  return resolved;
-}
-
-export function buildMatchWikipediaUrl(params: {
-  year: string;
-  homeTeamName: string;
-  awayTeamName: string;
-}): string {
-  // Note: this follows the spec URL shape, but real Six Nations 2024 match
-  // pages checked during implementation all returned 404. If this keeps
-  // happening for target seasons, revisit the data source before relying on
-  // match_events population.
-  const homeTeamName = resolveWikipediaTeamName(params.homeTeamName);
-  const awayTeamName = resolveWikipediaTeamName(params.awayTeamName);
-  const title = `${params.year}_Six_Nations_Championship_–_${homeTeamName}_v_${awayTeamName}`;
-
-  return `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`;
-}
-
-export async function scrapeMatchEvents(matchUrl: string): Promise<ParsedMatchEvent[]> {
-  try {
-    const response = await fetchWithPolicy(matchUrl);
-    const html = await response.text();
-    const events = parseWikipediaMatchEventsHtml(html);
-
-    if (events.length === 0) {
-      console.warn(`No match events found in Wikipedia infobox: ${matchUrl}`);
-    }
-
-    return events;
-  } catch (error) {
-    console.warn(`Unable to scrape match events from ${matchUrl}`, error);
+  if (!scoringRow.length) {
     return [];
   }
+
+  const cells = scoringRow.children("td");
+
+  if (cells.length < 3) {
+    return [];
+  }
+
+  const homeHtml = $.html(cells.eq(0)) ?? "";
+  const awayHtml = $.html(cells.eq(2)) ?? "";
+
+  return [
+    ...parseScoringCell(homeHtml, "home"),
+    ...parseScoringCell(awayHtml, "away"),
+  ];
 }

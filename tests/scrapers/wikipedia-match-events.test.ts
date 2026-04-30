@@ -1,58 +1,49 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-const fetcherMock = vi.hoisted(() => ({
-  fetchWithPolicy: vi.fn(),
-}));
-
-vi.mock("@/lib/scrapers/fetcher", () => fetcherMock);
-
+// Matches the actual structure of Wikipedia Six Nations season page vevent blocks.
+// Bold inline labels (Try:, Con:, Pen:, etc.) separate event type sections per team cell.
 const MATCH_EVENTS_HTML = `
-  <table class="infobox vevent">
-    <tbody>
-      <tr>
-        <th>Tries</th>
-        <td>Player A (23', 45'), Penalty try (68') (pen)</td>
-        <td>none</td>
-      </tr>
-      <tr>
-        <th>Cons</th>
-        <td>Player B (24', 46', 69')</td>
-        <td>Player C (13')</td>
-      </tr>
-      <tr>
-        <th>Pens</th>
-        <td>—</td>
-        <td>Player C (8', 52', 65')</td>
-      </tr>
-      <tr>
-        <th>Drop goals</th>
-        <td></td>
-        <td>Player D (44')</td>
-      </tr>
-      <tr>
-        <th>Yellow cards</th>
-        <td>Player E (56')</td>
-        <td>none</td>
-      </tr>
-      <tr>
-        <th>Red cards</th>
-        <td>none</td>
-        <td>Player F</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="vevent summary" id="Home_v_Away">
+    <table style="float:left;width:15%;table-layout:fixed">
+      <tbody><tr><td>1 February 2025<br>20:00 CET</td></tr></tbody>
+    </table>
+    <table style="float:left;width:61%;table-layout:fixed;text-align:center">
+      <tbody>
+        <tr style="vertical-align:top;font-weight:bold">
+          <td class="vcard" style="width:39%;text-align:right">Home Team</td>
+          <td style="width:22%">43–0</td>
+          <td class="vcard" style="width:39%;text-align:left">Away Team</td>
+        </tr>
+        <tr style="font-size:85%;vertical-align:top">
+          <td style="text-align:right">
+            <b>Try:</b> <a>Player A</a> (2) 23', 45'<br>
+            Penalty try (pen) 68'<br>
+            <b>Con:</b> <a>Player B</a> (3/3) 24', 46', 69'<br>
+            <b>Yellow card:</b> <a>Player E</a> 56'
+          </td>
+          <td><a rel="nofollow" href="#">Report</a></td>
+          <td style="text-align:left">
+            <b>Con:</b> <a>Player C</a> 13'<br>
+            <b>Pen:</b> <a>Player C</a> (3) 8', 52', 65'<br>
+            <b>Drop goal:</b> <a>Player D</a> 44'<br>
+            <b>Red card:</b> <a>Player F</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <table style="float:left;width:24%;table-layout:fixed">
+      <tbody><tr><td>Venue</td></tr></tbody>
+    </table>
+    <div style="clear:both"></div>
+  </div>
 `;
 
 describe("wikipedia match events scraper", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("parses scoring rows and expands multiple minutes", async () => {
-    const { parseWikipediaMatchEventsHtml } = await import(
+    const { parseMatchEventsFromVeventHtml } = await import(
       "@/lib/scrapers/wikipedia-match-events"
     );
-    const result = parseWikipediaMatchEventsHtml(MATCH_EVENTS_HTML);
+    const result = parseMatchEventsFromVeventHtml(MATCH_EVENTS_HTML);
 
     expect(result).toHaveLength(13);
     expect(result.slice(0, 3)).toEqual([
@@ -85,34 +76,5 @@ describe("wikipedia match events scraper", () => {
       playerName: "Player F",
       isPenaltyTry: false,
     });
-  });
-
-  it("builds encoded Wikipedia URLs with an en dash", async () => {
-    const { buildMatchWikipediaUrl } = await import(
-      "@/lib/scrapers/wikipedia-match-events"
-    );
-    const url = buildMatchWikipediaUrl({
-      year: "2024",
-      homeTeamName: "England",
-      awayTeamName: "France",
-    });
-
-    expect(decodeURIComponent(url)).toBe(
-      "https://en.wikipedia.org/wiki/2024_Six_Nations_Championship_–_England_v_France",
-    );
-  });
-
-  it("uses fetchWithPolicy and returns an empty array on fetch errors", async () => {
-    fetcherMock.fetchWithPolicy.mockRejectedValueOnce(new Error("404"));
-
-    const { scrapeMatchEvents } = await import(
-      "@/lib/scrapers/wikipedia-match-events"
-    );
-    const result = await scrapeMatchEvents(
-      "https://en.wikipedia.org/wiki/2024_Six_Nations_Championship_%E2%80%93_England_v_France",
-    );
-
-    expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledTimes(1);
-    expect(result).toEqual([]);
   });
 });
