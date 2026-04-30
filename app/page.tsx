@@ -70,9 +70,6 @@ export default async function HomePage() {
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         <header className="space-y-3 border-b border-slate-200 pb-6">
-          <span className="inline-block rounded-full bg-emerald-500 px-3 py-0.5 text-xs font-semibold uppercase tracking-widest text-white">
-            Tryline
-          </span>
           <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
             {competition.name}
             <span className="mt-1 block text-2xl font-normal text-slate-400 sm:ml-3 sm:mt-0 sm:inline sm:text-3xl">
