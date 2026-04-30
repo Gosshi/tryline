@@ -63,7 +63,11 @@ function PlayerColumn({
 
       {bench.length > 0 && (
         <>
-          <div className="my-3 h-px bg-slate-100" />
+          <div className="my-3 flex items-center gap-2">
+            <div className="h-px flex-1 bg-slate-100" />
+            <span className="text-xs text-slate-400">控え</span>
+            <div className="h-px flex-1 bg-slate-100" />
+          </div>
           <div className="space-y-1">
             {bench.map((player) => (
               <PlayerRow
@@ -108,7 +112,9 @@ function PlayerRow({
       >
         <span className="truncate">{player.playerName}</span>
         {player.position && (
-          <span className="ml-2 text-xs text-slate-400">{player.position}</span>
+          <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
+            {player.position}
+          </span>
         )}
       </span>
     </div>

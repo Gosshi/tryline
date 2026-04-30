@@ -46,4 +46,17 @@ describe("MatchLineupsSection", () => {
     expect(screen.getByText("Starting Fly-half")).toBeInTheDocument();
     expect(screen.getByText("Fly-half")).toBeInTheDocument();
   });
+
+  it("renders a bench divider when replacements are available", () => {
+    render(
+      <MatchLineupsSection
+        awayTeamName="France"
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        players={[player, { ...player, isStarter: false, jerseyNumber: 21 }]}
+      />,
+    );
+
+    expect(screen.getByText("控え")).toBeInTheDocument();
+  });
 });
