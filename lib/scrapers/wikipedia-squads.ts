@@ -68,6 +68,7 @@ export function parseWikipediaSquadsHtml(html: string): WikipediaSquadPlayer[] {
   tables.each((_, table) => {
     const $table = $(table);
     const heading =
+      $table.prevAll("div.mw-heading").first().find("h2, h3").text() ||
       $table.prevAll("h2, h3").first().find(".mw-headline").text() ||
       $table.prevAll("h2, h3").first().text();
     const teamSlug = toTeamSlug(heading);
