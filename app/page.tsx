@@ -4,12 +4,15 @@ import {
   getLatestCompetitionWithMatches,
   listMatchesForCompetition,
 } from "@/lib/db/queries/matches";
+import { formatCompetitionTitle } from "@/lib/format/competition";
 
 import type { Metadata } from "next";
 
 export const revalidate = 60;
 
-function groupMatchesByRound(matches: Awaited<ReturnType<typeof listMatchesForCompetition>>) {
+function groupMatchesByRound(
+  matches: Awaited<ReturnType<typeof listMatchesForCompetition>>,
+) {
   const grouped = new Map<number | null, typeof matches>();
 
   for (const match of matches) {
@@ -31,12 +34,28 @@ function groupMatchesByRound(matches: Awaited<ReturnType<typeof listMatchesForCo
   });
 }
 
-function formatDateRange(startDate: string | null, endDate: string | null) {
+function formatDateJa(dateStr: string): string {
+  const date = new Date(`${dateStr}T00:00:00`);
+
+  return new Intl.DateTimeFormat("ja-JP", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatDateRange(
+  startDate: string | null,
+  endDate: string | null,
+): string | null {
   if (!startDate && !endDate) {
     return null;
   }
 
-  return [startDate, endDate].filter(Boolean).join(" 〜 ");
+  return [startDate, endDate]
+    .filter((date): date is string => date !== null)
+    .map(formatDateJa)
+    .join(" 〜 ");
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -46,7 +65,9 @@ export async function generateMetadata(): Promise<Metadata> {
     return { title: "Tryline" };
   }
 
-  return { title: `${competition.name} ${competition.season} - Tryline` };
+  return {
+    title: `${formatCompetitionTitle(competition.name, competition.season)} - Tryline`,
+  };
 }
 
 export default async function HomePage() {
@@ -56,7 +77,9 @@ export default async function HomePage() {
     return (
       <main className="min-h-screen bg-white">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:px-8">
-          <p className="text-sm text-slate-500">現在表示できる試合はありません</p>
+          <p className="text-sm text-slate-500">
+            現在表示できる試合はありません
+          </p>
         </div>
       </main>
     );
@@ -71,10 +94,7 @@ export default async function HomePage() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         <header className="space-y-3 border-b border-slate-200 pb-6">
           <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-            {competition.name}
-            <span className="mt-1 block text-2xl font-normal text-slate-400 sm:ml-3 sm:mt-0 sm:inline sm:text-3xl">
-              {competition.season}
-            </span>
+            {formatCompetitionTitle(competition.name, competition.season)}
           </h1>
           {dateRange && <p className="text-sm text-slate-500">{dateRange}</p>}
         </header>

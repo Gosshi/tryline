@@ -1,3 +1,4 @@
+import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +39,10 @@ export function MatchHeader({ match }: MatchHeaderProps) {
       <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
         <div className="flex items-center justify-between gap-4">
           <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-            {match.competition.name} {match.competition.season}
+            {formatCompetitionTitle(
+              match.competition.name,
+              match.competition.season,
+            )}
             {match.round !== null ? ` · Round ${match.round}` : ""}
           </p>
           <StatusBadge status={match.status} />
