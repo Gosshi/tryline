@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
+    "tsx": "node tools/run-ts.cjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "supabase:start": "supabase start",
