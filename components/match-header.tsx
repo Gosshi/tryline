@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
+import { cn } from "@/lib/utils";
 
 import { StatusBadge } from "./status-badge";
 
@@ -22,64 +22,88 @@ function getVenueTimezone(teamSlug: string) {
   return TEAM_TIMEZONES[teamSlug] ?? "Europe/London";
 }
 
-function getScoreline(match: MatchDetail) {
+function getScoreline(match: MatchDetail): string {
   if (match.status !== "finished") {
     return "—";
   }
 
-  return `${match.homeScore ?? 0} - ${match.awayScore ?? 0}`;
+  return `${match.homeScore ?? 0} – ${match.awayScore ?? 0}`;
 }
 
 export function MatchHeader({ match }: MatchHeaderProps) {
   const localTimezone = getVenueTimezone(match.homeTeam.slug);
 
   return (
-    <Card className="border-slate-200">
-      <CardHeader className="gap-4 pb-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
-            <CardTitle className="text-2xl tracking-tight text-slate-950">
-              {match.homeTeam.name} vs {match.awayTeam.name}
-            </CardTitle>
-            <p className="text-sm text-slate-600">
-              {match.homeTeam.shortCode} vs {match.awayTeam.shortCode}
-            </p>
-          </div>
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
+      <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
+        <div className="flex items-center justify-between gap-4">
+          <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            {match.competition.name} {match.competition.season}
+            {match.round !== null ? ` · Round ${match.round}` : ""}
+          </p>
           <StatusBadge status={match.status} />
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="space-y-5">
-        <div className="text-center">
-          <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Score</p>
-          <p className="mt-2 text-4xl font-semibold tracking-tight text-slate-950">
+      <div className="px-5 py-7 sm:px-6 sm:py-8">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-5">
+          <TeamBlock
+            align="right"
+            name={match.homeTeam.name}
+            shortCode={match.homeTeam.shortCode}
+          />
+
+          <p
+            className={cn(
+              "px-1 text-center text-4xl font-black tabular-nums tracking-tight sm:px-4 sm:text-5xl",
+              match.status === "finished" ? "text-slate-950" : "text-slate-300",
+            )}
+          >
             {getScoreline(match)}
           </p>
+
+          <TeamBlock
+            align="left"
+            name={match.awayTeam.name}
+            shortCode={match.awayTeam.shortCode}
+          />
         </div>
 
-        <div className="grid gap-4 text-sm text-slate-700 sm:grid-cols-2">
-          <div className="space-y-1">
-            <p className="font-medium text-slate-900">キックオフ（JST）</p>
-            <time className="block" dateTime={match.kickoffAt}>
-              {formatKickoffJst(match.kickoffAt)}
-            </time>
-          </div>
-          <div className="space-y-1">
-            <p className="font-medium text-slate-900">現地時刻</p>
-            <time className="block" dateTime={match.kickoffAt}>
-              {formatKickoffLocal(match.kickoffAt, localTimezone)}
-            </time>
-          </div>
-          <div className="space-y-1">
-            <p className="font-medium text-slate-900">会場</p>
-            <p>{match.venue ?? "会場未定"}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="font-medium text-slate-900">節</p>
-            <p>{match.round === null ? "節未定" : `第 ${match.round} 節`}</p>
-          </div>
+        <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
+          <time dateTime={match.kickoffAt}>
+            <span className="font-semibold text-slate-700">JST</span>{" "}
+            {formatKickoffJst(match.kickoffAt)}
+          </time>
+          <time dateTime={match.kickoffAt}>
+            <span className="font-semibold text-slate-700">現地</span>{" "}
+            {formatKickoffLocal(match.kickoffAt, localTimezone)}
+          </time>
+          {match.venue && <span>{match.venue}</span>}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
+  );
+}
+
+function TeamBlock({
+  align,
+  name,
+  shortCode,
+}: {
+  align: "left" | "right";
+  name: string;
+  shortCode: string;
+}) {
+  return (
+    <div
+      className={align === "right" ? "min-w-0 text-right" : "min-w-0 text-left"}
+    >
+      <p className="truncate text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+        {shortCode}
+      </p>
+      <p className="mt-1 truncate text-xs font-medium leading-tight text-slate-400 sm:text-sm">
+        {name}
+      </p>
+    </div>
   );
 }
