@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import { cn } from "@/lib/utils";
 
@@ -12,43 +11,51 @@ type MatchCardProps = {
   match: MatchListItem;
 };
 
-function getScoreline(match: MatchListItem) {
+function getScoreline(match: MatchListItem): string {
   if (match.status !== "finished") {
     return "—";
   }
 
-  return `${match.homeScore ?? 0} - ${match.awayScore ?? 0}`;
+  return `${match.homeScore ?? 0} – ${match.awayScore ?? 0}`;
 }
 
 export function MatchCard({ match }: MatchCardProps) {
   return (
-    <Link className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400" href={`/matches/${match.id}`}>
-      <Card className="h-full border-slate-200 transition-colors hover:border-slate-300 hover:bg-slate-50/70">
-        <CardContent className="space-y-4 p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <StatusBadge status={match.status} />
-            <time className="text-sm text-slate-600" dateTime={match.kickoffAt}>
-              {formatKickoffJst(match.kickoffAt)}
-            </time>
+    <Link
+      className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+      href={`/matches/${match.id}`}
+    >
+      <article className="h-full rounded-xl border border-slate-200 bg-white p-5 transition-colors hover:border-slate-400 hover:bg-slate-50">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <time className="text-xs font-medium text-slate-500" dateTime={match.kickoffAt}>
+            {formatKickoffJst(match.kickoffAt)}
+          </time>
+          <StatusBadge status={match.status} />
+        </div>
+
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <div className="text-right">
+            <p className="text-xl font-bold text-slate-900">{match.homeTeam.shortCode}</p>
+            <p className="text-xs leading-tight text-slate-400">{match.homeTeam.name}</p>
           </div>
 
-          <div className="space-y-2 text-center">
-            <p className="text-lg font-semibold tracking-tight text-slate-900">
-              {match.homeTeam.shortCode} vs {match.awayTeam.shortCode}
-            </p>
-            <p
-              className={cn(
-                "text-2xl font-semibold",
-                match.status === "finished" ? "text-slate-950" : "text-slate-500",
-              )}
-            >
-              {getScoreline(match)}
-            </p>
-          </div>
+          <p
+            className={cn(
+              "px-3 text-3xl font-bold tabular-nums",
+              match.status === "finished" ? "text-slate-950" : "text-slate-300",
+            )}
+          >
+            {getScoreline(match)}
+          </p>
 
-          <p className="text-sm text-slate-600">{match.venue ?? "会場未定"}</p>
-        </CardContent>
-      </Card>
+          <div className="text-left">
+            <p className="text-xl font-bold text-slate-900">{match.awayTeam.shortCode}</p>
+            <p className="text-xs leading-tight text-slate-400">{match.awayTeam.name}</p>
+          </div>
+        </div>
+
+        {match.venue && <p className="mt-4 text-xs text-slate-400">{match.venue}</p>}
+      </article>
     </Link>
   );
 }
