@@ -49,8 +49,6 @@ export function ensureSupabaseTestEnvironment() {
     bootstrappedStatus = readSupabaseStatus();
   }
 
-  runSupabase(["db", "reset", "--yes"]);
-
   return bootstrappedStatus;
 }
 
