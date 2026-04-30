@@ -21,8 +21,14 @@ export type MatchUpsertCounts = {
 
 export type UpsertedMatch = MatchUpsertCounts & {
   records: Array<{
+    awayTeamId: string;
+    candidateIndex: number;
     externalIds: Record<string, Json>;
+    homeTeamId: string;
     id: string;
+    previousStatus: string | null;
+    status: "finished" | "scheduled";
+    statusChangedToFinished: boolean;
   }>;
 };
 
@@ -115,10 +121,11 @@ export async function upsertMatches(
   let matchesInserted = 0;
   let matchesUpdated = 0;
 
-  for (const candidate of candidates) {
+  for (const [candidateIndex, candidate] of candidates.entries()) {
     const existing = await findExistingMatch(candidate);
 
     if (existing) {
+      const previousStatus = existing.status;
       const update = buildMatchUpdate(existing, candidate);
       const { data, error } = await client
         .from("matches")
@@ -133,8 +140,15 @@ export async function upsertMatches(
 
       matchesUpdated += 1;
       records.push({
+        awayTeamId: candidate.awayTeamId,
+        candidateIndex,
         externalIds: asJsonObject(data.external_ids),
+        homeTeamId: candidate.homeTeamId,
         id: data.id,
+        previousStatus,
+        status: candidate.status,
+        statusChangedToFinished:
+          previousStatus !== "finished" && candidate.status === "finished",
       });
       continue;
     }
@@ -165,8 +179,14 @@ export async function upsertMatches(
 
     matchesInserted += 1;
     records.push({
+      awayTeamId: candidate.awayTeamId,
+      candidateIndex,
       externalIds: asJsonObject(data.external_ids),
+      homeTeamId: candidate.homeTeamId,
       id: data.id,
+      previousStatus: null,
+      status: candidate.status,
+      statusChangedToFinished: false,
     });
   }
 

@@ -20,6 +20,8 @@ const assembled = {
   },
   recent_form: { home: [], away: [] },
   h2h_last_5: [],
+  match_events: [],
+  competition_standings: [],
   projected_lineups: { home: [], away: [] },
   injuries: { home: [], away: [] },
   key_stats: {
@@ -58,9 +60,27 @@ describe("generateNarrative", () => {
       usage: { inputTokens: 10, outputTokens: 20 },
     });
 
-    await generateNarrative({ assembled, tacticalPoints: [], contentType: "preview", additionalSignals: [], attempt: 0 });
-    await generateNarrative({ assembled, tacticalPoints: [], contentType: "preview", additionalSignals: [], attempt: 1 });
-    await generateNarrative({ assembled, tacticalPoints: [], contentType: "preview", additionalSignals: [], attempt: 2 });
+    await generateNarrative({
+      assembled,
+      tacticalPoints: [],
+      contentType: "preview",
+      additionalSignals: [],
+      attempt: 0,
+    });
+    await generateNarrative({
+      assembled,
+      tacticalPoints: [],
+      contentType: "preview",
+      additionalSignals: [],
+      attempt: 1,
+    });
+    await generateNarrative({
+      assembled,
+      tacticalPoints: [],
+      contentType: "preview",
+      additionalSignals: [],
+      attempt: 2,
+    });
 
     expect(openAIMock.createTextResponse).toHaveBeenNthCalledWith(
       1,

@@ -34,6 +34,75 @@ export type Database = {
   };
   public: {
     Tables: {
+      competition_standings: {
+        Row: {
+          bonus_points_losing: number;
+          bonus_points_try: number;
+          competition_id: string;
+          drawn: number;
+          id: string;
+          lost: number;
+          played: number;
+          points_against: number;
+          points_for: number;
+          position: number;
+          team_id: string;
+          total_points: number;
+          tries_for: number;
+          updated_at: string;
+          won: number;
+        };
+        Insert: {
+          bonus_points_losing?: number;
+          bonus_points_try?: number;
+          competition_id: string;
+          drawn?: number;
+          id?: string;
+          lost?: number;
+          played?: number;
+          points_against?: number;
+          points_for?: number;
+          position: number;
+          team_id: string;
+          total_points?: number;
+          tries_for?: number;
+          updated_at?: string;
+          won?: number;
+        };
+        Update: {
+          bonus_points_losing?: number;
+          bonus_points_try?: number;
+          competition_id?: string;
+          drawn?: number;
+          id?: string;
+          lost?: number;
+          played?: number;
+          points_against?: number;
+          points_for?: number;
+          position?: number;
+          team_id?: string;
+          total_points?: number;
+          tries_for?: number;
+          updated_at?: string;
+          won?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "competition_standings_competition_id_fkey";
+            columns: ["competition_id"];
+            isOneToOne: false;
+            referencedRelation: "competitions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "competition_standings_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       competition_teams: {
         Row: {
           competition_id: string;
@@ -192,7 +261,7 @@ export type Database = {
           id: string;
           match_id: string;
           metadata: Json;
-          minute: number;
+          minute: number | null;
           player_id: string | null;
           team_id: string;
           type: string;
@@ -202,7 +271,7 @@ export type Database = {
           id?: string;
           match_id: string;
           metadata?: Json;
-          minute: number;
+          minute?: number | null;
           player_id?: string | null;
           team_id: string;
           type: string;
@@ -212,7 +281,7 @@ export type Database = {
           id?: string;
           match_id?: string;
           metadata?: Json;
-          minute?: number;
+          minute?: number | null;
           player_id?: string | null;
           team_id?: string;
           type?: string;
@@ -258,6 +327,7 @@ export type Database = {
           announced_at?: string | null;
           created_at?: string;
           id?: string;
+          is_starter?: boolean;
           jersey_number: number;
           match_id: string;
           player_id: string;
@@ -269,6 +339,7 @@ export type Database = {
           announced_at?: string | null;
           created_at?: string;
           id?: string;
+          is_starter?: boolean;
           jersey_number?: number;
           match_id?: string;
           player_id?: string;

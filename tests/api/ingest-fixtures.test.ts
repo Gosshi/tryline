@@ -17,7 +17,8 @@ describe("/api/cron/ingest-fixtures", () => {
     process.env.SCRAPER_USER_AGENT = "Tryline Test Bot/1.0 (+test@example.com)";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "";
     process.env.CRON_SECRET = "test-cron-secret";
-    process.env.WIKIPEDIA_SQUAD_URL = "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
+    process.env.WIKIPEDIA_SQUAD_URL =
+      "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
 
     fixturesMock.ingestSixNations2027Fixtures.mockResolvedValue({
       competition: "six-nations-2027",
@@ -25,6 +26,7 @@ describe("/api/cron/ingest-fixtures", () => {
         matches_inserted: 2,
         matches_updated: 0,
         raw_data_rows: 2,
+        standings_upserted: 6,
       },
     });
   });
@@ -60,6 +62,7 @@ describe("/api/cron/ingest-fixtures", () => {
         matches_inserted: 2,
         matches_updated: 0,
         raw_data_rows: 2,
+        standings_upserted: 6,
       },
       status: "ok",
     });
