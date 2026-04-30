@@ -1,5 +1,6 @@
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
+import { getMatchOutcome } from "@/lib/format/match-outcome";
 import { cn } from "@/lib/utils";
 
 import { StatusBadge } from "./status-badge";
@@ -23,16 +24,9 @@ function getVenueTimezone(teamSlug: string) {
   return TEAM_TIMEZONES[teamSlug] ?? "Europe/London";
 }
 
-function getScoreline(match: MatchDetail): string {
-  if (match.status !== "finished") {
-    return "—";
-  }
-
-  return `${match.homeScore ?? 0} – ${match.awayScore ?? 0}`;
-}
-
 export function MatchHeader({ match }: MatchHeaderProps) {
   const localTimezone = getVenueTimezone(match.homeTeam.slug);
+  const outcome = getMatchOutcome(match);
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
@@ -53,6 +47,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
         <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-5">
           <TeamBlock
             align="right"
+            dimmed={outcome === "away_win"}
             name={match.homeTeam.name}
             shortCode={match.homeTeam.shortCode}
           />
@@ -63,11 +58,14 @@ export function MatchHeader({ match }: MatchHeaderProps) {
               match.status === "finished" ? "text-slate-950" : "text-slate-300",
             )}
           >
-            {getScoreline(match)}
+            {match.status === "finished"
+              ? `${match.homeScore ?? 0} – ${match.awayScore ?? 0}`
+              : "—"}
           </p>
 
           <TeamBlock
             align="left"
+            dimmed={outcome === "home_win"}
             name={match.awayTeam.name}
             shortCode={match.awayTeam.shortCode}
           />
@@ -91,10 +89,12 @@ export function MatchHeader({ match }: MatchHeaderProps) {
 
 function TeamBlock({
   align,
+  dimmed,
   name,
   shortCode,
 }: {
   align: "left" | "right";
+  dimmed: boolean;
   name: string;
   shortCode: string;
 }) {
@@ -102,10 +102,20 @@ function TeamBlock({
     <div
       className={align === "right" ? "min-w-0 text-right" : "min-w-0 text-left"}
     >
-      <p className="truncate text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+      <p
+        className={cn(
+          "truncate text-2xl font-black tracking-tight sm:text-3xl",
+          dimmed ? "text-slate-400" : "text-slate-900",
+        )}
+      >
         {shortCode}
       </p>
-      <p className="mt-1 truncate text-xs font-medium leading-tight text-slate-400 sm:text-sm">
+      <p
+        className={cn(
+          "mt-1 truncate text-xs font-medium leading-tight sm:text-sm",
+          dimmed ? "text-slate-300" : "text-slate-400",
+        )}
+      >
         {name}
       </p>
     </div>

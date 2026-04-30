@@ -10,7 +10,11 @@ import { MatchCard } from "@/components/match-card";
 import type { MatchListItem } from "@/lib/db/queries/matches";
 
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+  default: ({
+    children,
+    href,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a href={href} {...props}>
       {children}
     </a>
@@ -38,7 +42,7 @@ const baseMatch: MatchListItem = {
 };
 
 describe("MatchCard", () => {
-  it("renders a finished scoreline", () => {
+  it("renders a finished scoreline and dims the losing team", () => {
     render(
       <MatchCard
         match={{
@@ -50,7 +54,10 @@ describe("MatchCard", () => {
       />,
     );
 
-    expect(screen.getByText("24 – 21")).toBeInTheDocument();
+    expect(screen.getByText("24")).toHaveClass("text-slate-950");
+    expect(screen.getByText("21")).toHaveClass("text-slate-400");
+    expect(screen.getByText("FRA")).toHaveClass("text-slate-400");
+    expect(screen.getByText("Ireland")).toHaveClass("text-slate-900");
   });
 
   it("renders an em dash for a scheduled match", () => {

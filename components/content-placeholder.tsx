@@ -19,6 +19,23 @@ const COPY: Record<
   },
 };
 
+const ICON: Record<ContentPlaceholderProps["state"], string> = {
+  pre_window: "🕐",
+  preparing: "⏳",
+  unavailable: "—",
+};
+
 export function ContentPlaceholder({ state, type }: ContentPlaceholderProps) {
-  return <p className="text-sm text-slate-500">{COPY[type][state]}</p>;
+  return (
+    <div className="flex items-start gap-3 rounded-lg bg-slate-50 px-4 py-4">
+      <span
+        aria-hidden
+        className="mt-0.5 shrink-0 text-lg leading-none"
+        role="img"
+      >
+        {ICON[state]}
+      </span>
+      <p className="text-sm text-slate-500">{COPY[type][state]}</p>
+    </div>
+  );
 }
