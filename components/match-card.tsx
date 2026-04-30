@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
+import { getTeamFlag } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
 import { StatusBadge } from "./status-badge";
@@ -41,7 +42,7 @@ export function MatchCard({ match }: MatchCardProps) {
                 awayWon ? "text-slate-400" : "text-slate-900",
               )}
             >
-              {match.homeTeam.shortCode}
+              {getTeamFlag(match.homeTeam.slug)} {match.homeTeam.shortCode}
             </p>
             <p
               className={cn(
@@ -97,7 +98,7 @@ export function MatchCard({ match }: MatchCardProps) {
                 homeWon ? "text-slate-400" : "text-slate-900",
               )}
             >
-              {match.awayTeam.shortCode}
+              {match.awayTeam.shortCode} {getTeamFlag(match.awayTeam.slug)}
             </p>
             <p
               className={cn(

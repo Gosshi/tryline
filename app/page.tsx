@@ -91,7 +91,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         <header className="space-y-3 border-b border-slate-200 pb-6">
           <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
             {formatCompetitionTitle(competition.name, competition.season)}

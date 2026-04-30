@@ -1,6 +1,7 @@
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
+import { getTeamFlag } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
 import { StatusBadge } from "./status-badge";
@@ -48,6 +49,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
           <TeamBlock
             align="right"
             dimmed={outcome === "away_win"}
+            flag={getTeamFlag(match.homeTeam.slug)}
             name={match.homeTeam.name}
             shortCode={match.homeTeam.shortCode}
           />
@@ -66,6 +68,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
           <TeamBlock
             align="left"
             dimmed={outcome === "home_win"}
+            flag={getTeamFlag(match.awayTeam.slug)}
             name={match.awayTeam.name}
             shortCode={match.awayTeam.shortCode}
           />
@@ -90,11 +93,13 @@ export function MatchHeader({ match }: MatchHeaderProps) {
 function TeamBlock({
   align,
   dimmed,
+  flag,
   name,
   shortCode,
 }: {
   align: "left" | "right";
   dimmed: boolean;
+  flag: string;
   name: string;
   shortCode: string;
 }) {
@@ -108,7 +113,7 @@ function TeamBlock({
           dimmed ? "text-slate-400" : "text-slate-900",
         )}
       >
-        {shortCode}
+        {align === "right" ? `${flag} ${shortCode}` : `${shortCode} ${flag}`}
       </p>
       <p
         className={cn(
