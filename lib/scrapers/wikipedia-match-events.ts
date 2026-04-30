@@ -89,7 +89,6 @@ function parseScoringCell(cellHtml: string, teamSide: TeamSide): ParsedMatchEven
     currentPlayer = null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   $("body").contents().each((_, node: any) => {
     if (node.type === "tag") {
       const tag: string = (node.tagName ?? "").toLowerCase();

@@ -50,7 +50,7 @@ describe("MatchCard", () => {
       />,
     );
 
-    expect(screen.getByText("24 - 21")).toBeInTheDocument();
+    expect(screen.getByText("24 – 21")).toBeInTheDocument();
   });
 
   it("renders an em dash for a scheduled match", () => {

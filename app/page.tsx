@@ -1,16 +1,13 @@
 import { MatchCard } from "@/components/match-card";
 import { RoundHeading } from "@/components/round-heading";
-import { listMatchesForCompetition } from "@/lib/db/queries/matches";
+import {
+  getLatestCompetitionWithMatches,
+  listMatchesForCompetition,
+} from "@/lib/db/queries/matches";
 
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Six Nations 2027 - Tryline",
-};
-
 export const revalidate = 60;
-
-const COMPETITION_SLUG = "six-nations-2027";
 
 function groupMatchesByRound(matches: Awaited<ReturnType<typeof listMatchesForCompetition>>) {
   const grouped = new Map<number | null, typeof matches>();
@@ -34,25 +31,59 @@ function groupMatchesByRound(matches: Awaited<ReturnType<typeof listMatchesForCo
   });
 }
 
+function formatDateRange(startDate: string | null, endDate: string | null) {
+  if (!startDate && !endDate) {
+    return null;
+  }
+
+  return [startDate, endDate].filter(Boolean).join(" 〜 ");
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const competition = await getLatestCompetitionWithMatches();
+
+  if (!competition) {
+    return { title: "Tryline" };
+  }
+
+  return { title: `${competition.name} ${competition.season} - Tryline` };
+}
+
 export default async function HomePage() {
-  const matches = await listMatchesForCompetition(COMPETITION_SLUG);
+  const competition = await getLatestCompetitionWithMatches();
+
+  if (!competition) {
+    return (
+      <main className="min-h-screen bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:px-8">
+          <p className="text-sm text-slate-500">現在表示できる試合はありません</p>
+        </div>
+      </main>
+    );
+  }
+
+  const matches = await listMatchesForCompetition(competition.slug);
   const groupedMatches = groupMatchesByRound(matches);
+  const dateRange = formatDateRange(competition.startDate, competition.endDate);
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#eef2f7_100%)]">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 md:px-8">
-        <header className="space-y-3">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Tryline</p>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-              Six Nations 2027
-            </h1>
-            <p className="text-sm text-slate-600 sm:text-base">2027-02-06 〜 2027-03-20</p>
-          </div>
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
+        <header className="space-y-3 border-b border-slate-200 pb-6">
+          <span className="inline-block rounded-full bg-emerald-500 px-3 py-0.5 text-xs font-semibold uppercase tracking-widest text-white">
+            Tryline
+          </span>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
+            {competition.name}
+            <span className="mt-1 block text-2xl font-normal text-slate-400 sm:ml-3 sm:mt-0 sm:inline sm:text-3xl">
+              {competition.season}
+            </span>
+          </h1>
+          {dateRange && <p className="text-sm text-slate-500">{dateRange}</p>}
         </header>
 
         {matches.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
+          <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
             試合が登録されていません
           </p>
         ) : (

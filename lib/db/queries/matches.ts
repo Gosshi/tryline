@@ -19,6 +19,14 @@ export type MatchDetail = MatchListItem & {
   competition: { slug: string; name: string; season: string };
 };
 
+export type CompetitionSummary = {
+  slug: string;
+  name: string;
+  season: string;
+  startDate: string | null;
+  endDate: string | null;
+};
+
 type BaseMatchRow = {
   id: string;
   kickoff_at: string;
@@ -44,6 +52,16 @@ type MatchDetailRow = BaseMatchRow & {
     slug: string;
     name: string;
     season: string;
+  } | null;
+};
+
+type LatestCompetitionRow = {
+  competition: {
+    slug: string;
+    name: string;
+    season: string;
+    start_date: string | null;
+    end_date: string | null;
   } | null;
 };
 
@@ -110,6 +128,50 @@ async function getCompetitionBySlug(competitionSlug: string) {
   }
 
   return data;
+}
+
+export async function getLatestCompetitionWithMatches(): Promise<CompetitionSummary | null> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        kickoff_at,
+        competition:competitions!matches_competition_id_fkey (
+          slug,
+          name,
+          season,
+          start_date,
+          end_date
+        )
+      `,
+    )
+    .eq("status", "finished")
+    .order("kickoff_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data || !data.competition) {
+    return null;
+  }
+
+  const { competition } = data satisfies LatestCompetitionRow;
+
+  if (!competition) {
+    return null;
+  }
+
+  return {
+    endDate: competition.end_date,
+    name: competition.name,
+    season: competition.season,
+    slug: competition.slug,
+    startDate: competition.start_date,
+  };
 }
 
 export async function listMatchesForCompetition(
