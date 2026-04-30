@@ -23,6 +23,31 @@ type HistoricalMatchResult = {
 type TeamLookup = Record<string, string>;
 
 const YEAR_CONFIG = {
+  2020: {
+    endDate: "2020-10-31",
+    page: "2020_Six_Nations_Championship",
+    startDate: "2020-02-01",
+  },
+  2021: {
+    endDate: "2021-10-30",
+    page: "2021_Six_Nations_Championship",
+    startDate: "2021-02-06",
+  },
+  2022: {
+    endDate: "2022-03-19",
+    page: "2022_Six_Nations_Championship",
+    startDate: "2022-02-05",
+  },
+  2023: {
+    endDate: "2023-03-18",
+    page: "2023_Six_Nations_Championship",
+    startDate: "2023-02-04",
+  },
+  2024: {
+    endDate: "2024-03-16",
+    page: "2024_Six_Nations_Championship",
+    startDate: "2024-02-02",
+  },
   2025: {
     endDate: "2025-03-15",
     page: "2025_Six_Nations_Championship",
@@ -36,12 +61,20 @@ const YEAR_CONFIG = {
 } as const;
 
 function parseYearArg(value: string | undefined): SupportedYear {
-  if (value === "2025" || value === "2026") {
+  if (
+    value === "2020" ||
+    value === "2021" ||
+    value === "2022" ||
+    value === "2023" ||
+    value === "2024" ||
+    value === "2025" ||
+    value === "2026"
+  ) {
     return Number(value) as SupportedYear;
   }
 
   console.error(
-    "Usage: pnpm tsx scripts/import-six-nations-results.ts <2025|2026>",
+    "Usage: pnpm tsx scripts/import-six-nations-results.ts <2020|2021|2022|2023|2024|2025|2026>",
   );
   process.exit(1);
 }

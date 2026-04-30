@@ -20,6 +20,21 @@ type HistoricalMatchResult = {
 };
 
 const YEAR_CONFIG = {
+  2020: {
+    url: "https://en.wikipedia.org/wiki/2020_Six_Nations_Championship",
+  },
+  2021: {
+    url: "https://en.wikipedia.org/wiki/2021_Six_Nations_Championship",
+  },
+  2022: {
+    url: "https://en.wikipedia.org/wiki/2022_Six_Nations_Championship",
+  },
+  2023: {
+    url: "https://en.wikipedia.org/wiki/2023_Six_Nations_Championship",
+  },
+  2024: {
+    url: "https://en.wikipedia.org/wiki/2024_Six_Nations_Championship",
+  },
   2025: {
     url: "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship",
   },
@@ -38,12 +53,20 @@ const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
 };
 
 function parseYearArg(value: string | undefined): SupportedYear {
-  if (value === "2025" || value === "2026") {
+  if (
+    value === "2020" ||
+    value === "2021" ||
+    value === "2022" ||
+    value === "2023" ||
+    value === "2024" ||
+    value === "2025" ||
+    value === "2026"
+  ) {
     return Number(value) as SupportedYear;
   }
 
   console.error(
-    "Usage: pnpm tsx scripts/extract-six-nations-wikipedia.ts <2025|2026>",
+    "Usage: pnpm tsx scripts/extract-six-nations-wikipedia.ts <2020|2021|2022|2023|2024|2025|2026>",
   );
   process.exit(1);
 }
@@ -65,15 +88,18 @@ async function main() {
   const response = await fetchWithPolicy(sourceUrl);
   const html = await response.text();
   const parsedMatches = parseWikipediaSixNationsHtml(html);
+  const finishedMatches = parsedMatches.filter(
+    (match) => match.status === "finished",
+  );
 
-  if (parsedMatches.length !== 15) {
+  if (finishedMatches.length !== 15) {
     console.error(
-      `Expected 15 Six Nations ${year} matches, got ${parsedMatches.length}.`,
+      `Expected 15 finished Six Nations ${year} matches, got ${finishedMatches.length}.`,
     );
     process.exit(1);
   }
 
-  const results: HistoricalMatchResult[] = parsedMatches.map((match) => {
+  const results: HistoricalMatchResult[] = finishedMatches.map((match) => {
     if (match.homeScore === null || match.awayScore === null) {
       console.error(
         `Missing score for Six Nations ${year}: ${match.homeTeamName} vs ${match.awayTeamName}`,
