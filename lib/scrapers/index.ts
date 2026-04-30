@@ -17,9 +17,7 @@ export {
   parseWikipediaLineupHtml,
 } from "@/lib/scrapers/wikipedia-lineups";
 export {
-  buildMatchWikipediaUrl,
-  parseWikipediaMatchEventsHtml,
-  scrapeMatchEvents,
+  parseMatchEventsFromVeventHtml,
 } from "@/lib/scrapers/wikipedia-match-events";
 export {
   parseCompetitionStandingsHtml,
