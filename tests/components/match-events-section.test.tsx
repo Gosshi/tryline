@@ -32,32 +32,32 @@ describe("MatchEventsSection", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders nothing when only unsupported event types are available", () => {
-    const { container } = render(
-      <MatchEventsSection
-        awayTeamName="France"
-        events={[{ ...event, type: "substitution" }]}
-        homeTeamId="home-team"
-        homeTeamName="Ireland"
-      />,
-    );
-
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it("groups scoring events by team and type", () => {
+  it("renders scoring events in minute order by team side", () => {
     render(
       <MatchEventsSection
         awayTeamName="France"
-        events={[event]}
+        events={[
+          {
+            ...event,
+            id: "00000000-0000-0000-0000-000000000102",
+            minute: 23,
+            playerName: "Away Kicker",
+            teamId: "away-team",
+            type: "penalty_goal",
+          },
+          event,
+        ]}
         homeTeamId="home-team"
         homeTeamName="Ireland"
       />,
     );
 
     expect(screen.getByText("得点経過")).toBeInTheDocument();
-    expect(screen.getAllByText("トライ")).toHaveLength(2);
-    expect(screen.getByText("Home Scorer")).toBeInTheDocument();
+    expect(screen.getByText("Home Scorer トライ")).toBeInTheDocument();
+    expect(
+      screen.getByText("Away Kicker ペナルティゴール"),
+    ).toBeInTheDocument();
     expect(screen.getByText("12'")).toBeInTheDocument();
+    expect(screen.getByText("23'")).toBeInTheDocument();
   });
 });

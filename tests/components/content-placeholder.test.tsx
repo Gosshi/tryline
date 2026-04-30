@@ -2,12 +2,16 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { ContentPlaceholder } from "@/components/content-placeholder";
 
 describe("ContentPlaceholder", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it.each([
     ["preview", "pre_window", "プレビューは試合開始 48 時間前に公開予定"],
     ["preview", "preparing", "プレビューを準備中です"],
@@ -19,5 +23,6 @@ describe("ContentPlaceholder", () => {
     render(<ContentPlaceholder state={state} type={type} />);
 
     expect(screen.getByText(expectedText)).toBeInTheDocument();
+    expect(screen.getByRole("img", { hidden: true })).toBeInTheDocument();
   });
 });
