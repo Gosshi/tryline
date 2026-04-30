@@ -17,6 +17,8 @@ export type MatchListItem = {
 
 export type MatchDetail = MatchListItem & {
   competition: { slug: string; name: string; season: string };
+  awayTeamId: string;
+  homeTeamId: string;
 };
 
 export type CompetitionSummary = {
@@ -48,6 +50,8 @@ type BaseMatchRow = {
 };
 
 type MatchDetailRow = BaseMatchRow & {
+  home_team_id: string;
+  away_team_id: string;
   competition: {
     slug: string;
     name: string;
@@ -76,7 +80,11 @@ function isMatchStatus(value: string): value is MatchStatus {
 }
 
 function getRoundFromExternalIds(externalIds: Json): number | null {
-  if (!externalIds || typeof externalIds !== "object" || Array.isArray(externalIds)) {
+  if (
+    !externalIds ||
+    typeof externalIds !== "object" ||
+    Array.isArray(externalIds)
+  ) {
     return null;
   }
 
@@ -98,13 +106,17 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     awayScore: row.away_score,
     awayTeam: {
       name: row.away_team.name,
-      shortCode: row.away_team.short_code ?? row.away_team.name.slice(0, 3).toUpperCase(),
+      shortCode:
+        row.away_team.short_code ??
+        row.away_team.name.slice(0, 3).toUpperCase(),
       slug: row.away_team.slug,
     },
     homeScore: row.home_score,
     homeTeam: {
       name: row.home_team.name,
-      shortCode: row.home_team.short_code ?? row.home_team.name.slice(0, 3).toUpperCase(),
+      shortCode:
+        row.home_team.short_code ??
+        row.home_team.name.slice(0, 3).toUpperCase(),
       slug: row.home_team.slug,
     },
     id: row.id,
@@ -217,7 +229,9 @@ export async function listMatchesForCompetition(
   return (data satisfies BaseMatchRow[]).map(mapMatchRow);
 }
 
-export async function getMatchById(matchId: string): Promise<MatchDetail | null> {
+export async function getMatchById(
+  matchId: string,
+): Promise<MatchDetail | null> {
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("matches")
@@ -226,6 +240,8 @@ export async function getMatchById(matchId: string): Promise<MatchDetail | null>
         id,
         kickoff_at,
         status,
+        home_team_id,
+        away_team_id,
         home_score,
         away_score,
         venue,
@@ -266,6 +282,8 @@ export async function getMatchById(matchId: string): Promise<MatchDetail | null>
 
   return {
     ...match,
+    awayTeamId: data.away_team_id,
     competition: data.competition,
+    homeTeamId: data.home_team_id,
   };
 }

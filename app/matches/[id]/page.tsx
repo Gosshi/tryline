@@ -2,9 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MatchContentSection } from "@/components/match-content-section";
+import { MatchEventsSection } from "@/components/match-events-section";
 import { MatchHeader } from "@/components/match-header";
-import { Button } from "@/components/ui/button";
+import { MatchLineupsSection } from "@/components/match-lineups-section";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
+import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
+import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
 import { getMatchById } from "@/lib/db/queries/matches";
 import { extractDescription } from "@/lib/match-content/description";
 
@@ -49,9 +52,11 @@ export default async function MatchDetailPage({
   params,
 }: MatchDetailPageProps) {
   const { id } = await params;
-  const [match, publishedContent] = await Promise.all([
+  const [match, publishedContent, events, lineups] = await Promise.all([
     getMatchById(id),
     getPublishedContentForMatch(id),
+    getMatchEventsForMatch(id),
+    getMatchLineupsForMatch(id),
   ]);
 
   if (!match) {
@@ -59,15 +64,30 @@ export default async function MatchDetailPage({
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#eef2f7_100%)]">
+    <main className="min-h-screen bg-slate-50">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
-        <div>
-          <Button asChild variant="outline">
-            <Link href="/">一覧に戻る</Link>
-          </Button>
-        </div>
+        <Link
+          className="inline-flex w-fit items-center gap-1 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+          href="/"
+        >
+          ← 一覧に戻る
+        </Link>
 
         <MatchHeader match={match} />
+
+        <MatchEventsSection
+          awayTeamName={match.awayTeam.name}
+          events={events}
+          homeTeamId={match.homeTeamId}
+          homeTeamName={match.homeTeam.name}
+        />
+
+        <MatchLineupsSection
+          awayTeamName={match.awayTeam.name}
+          homeTeamId={match.homeTeamId}
+          homeTeamName={match.homeTeam.name}
+          players={lineups}
+        />
 
         <section className="space-y-4">
           <MatchContentSection
