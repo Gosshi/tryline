@@ -9,6 +9,7 @@ import {
   saveRawData,
   scrapeSquads,
   scrapeMatchLineup,
+  parseLineupFromVeventHtml,
   parseMatchEventsFromVeventHtml,
   scrapeCompetitionStandings,
 } from "@/lib/scrapers";
@@ -23,6 +24,7 @@ describe("scrapers index exports", () => {
     expect(RobotsDisallowedError).toBeTypeOf("function");
     expect(scrapeSquads).toBeTypeOf("function");
     expect(scrapeMatchLineup).toBeTypeOf("function");
+    expect(parseLineupFromVeventHtml).toBeTypeOf("function");
     expect(parseMatchEventsFromVeventHtml).toBeTypeOf("function");
     expect(scrapeCompetitionStandings).toBeTypeOf("function");
   });

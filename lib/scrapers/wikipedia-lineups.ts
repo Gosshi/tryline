@@ -18,6 +18,38 @@ function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
+function parseLineupTable(
+  $: cheerio.CheerioAPI,
+  table: ReturnType<cheerio.CheerioAPI>,
+) {
+  return table
+    .find("tr")
+    .toArray()
+    .flatMap((row) => {
+      const cells = $(row).find("td");
+
+      if (cells.length < 2) {
+        return [];
+      }
+
+      const jersey = Number(normalizeWhitespace(cells.eq(0).text()));
+
+      if (!Number.isInteger(jersey) || jersey < 1 || jersey > 23) {
+        return [];
+      }
+
+      const name = normalizeWhitespace(
+        cells.eq(1).find("a").first().text() || cells.eq(1).text(),
+      );
+
+      if (!name) {
+        return [];
+      }
+
+      return [{ jersey_number: jersey, name }];
+    });
+}
+
 export function parseWikipediaLineupHtml(
   html: string,
   sourceUrl: string,
@@ -50,37 +82,42 @@ export function parseWikipediaLineupHtml(
     return null;
   }
 
-  const parseLineupTable = (table: ReturnType<typeof $>) =>
-    table
-      .find("tr")
-      .slice(1)
-      .toArray()
-      .flatMap((row) => {
-        const cells = $(row).find("td");
+  const homePlayers = parseLineupTable($, tables[0]!);
+  const awayPlayers = parseLineupTable($, tables[1]!);
 
-        if (cells.length < 2) {
-          return [];
-        }
+  if (homePlayers.length === 0 && awayPlayers.length === 0) {
+    return null;
+  }
 
-        const jersey = Number(normalizeWhitespace(cells.eq(0).text()));
+  return {
+    announced_at: new Date().toISOString(),
+    away_players: awayPlayers,
+    home_players: homePlayers,
+    source_url: sourceUrl,
+  };
+}
 
-        if (!Number.isInteger(jersey) || jersey < 1 || jersey > 23) {
-          return [];
-        }
+/**
+ * Extracts home and away lineups from a Six Nations season-page vevent block.
+ *
+ * The vevent wikitables are ordered as:
+ *   0. score table
+ *   1. home lineup table
+ *   2. away lineup table
+ */
+export function parseLineupFromVeventHtml(
+  veventHtml: string,
+  sourceUrl: string,
+): WikipediaMatchLineup | null {
+  const $ = cheerio.load(veventHtml);
+  const tables = $("table.wikitable");
 
-        const name = normalizeWhitespace(
-          cells.eq(1).find("a").first().text() || cells.eq(1).text(),
-        );
+  if (tables.length < 3) {
+    return null;
+  }
 
-        if (!name) {
-          return [];
-        }
-
-        return [{ jersey_number: jersey, name }];
-      });
-
-  const homePlayers = parseLineupTable(tables[0]!);
-  const awayPlayers = parseLineupTable(tables[1]!);
+  const homePlayers = parseLineupTable($, tables.eq(1));
+  const awayPlayers = parseLineupTable($, tables.eq(2));
 
   if (homePlayers.length === 0 && awayPlayers.length === 0) {
     return null;
