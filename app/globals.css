@@ -16,6 +16,13 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 208 90% 45%;
     --radius: 0.75rem;
+
+    /* Tryline design tokens */
+    --color-paper: oklch(98.5% 0.005 95);
+    --color-ink: oklch(18% 0.02 260);
+    --color-ink-muted: oklch(45% 0.02 260);
+    --color-rule: oklch(90% 0.01 260);
+    --color-accent: oklch(58% 0.18 145);
   }
 
   * {
@@ -23,7 +30,8 @@
   }
 
   body {
-    @apply bg-slate-50 text-foreground;
+    background-color: oklch(98.5% 0.005 95);
+    color: oklch(18% 0.02 260);
     font-family:
       "Hiragino Sans",
       "Noto Sans JP",
@@ -31,5 +39,16 @@
       BlinkMacSystemFont,
       "Segoe UI",
       sans-serif;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family:
+      var(--font-noto-serif-jp),
+      var(--font-fraunces),
+      "Hiragino Mincho ProN",
+      Georgia,
+      serif;
   }
 }

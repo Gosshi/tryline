@@ -32,6 +32,15 @@ const config: Config = {
         },
         ring: "hsl(var(--ring))",
       },
+      fontFamily: {
+        display: ["var(--font-fraunces)", "Georgia", "serif"],
+        serif: [
+          "var(--font-noto-serif-jp)",
+          "var(--font-fraunces)",
+          "Georgia",
+          "serif",
+        ],
+      },
     },
   },
   plugins: [],
