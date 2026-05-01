@@ -29,6 +29,11 @@ export function MatchCard({ match }: MatchCardProps) {
           className="absolute inset-y-0 left-0 w-[4px]"
           style={{ background: getTeamStripe(match.homeTeam.slug, "vertical") }}
         />
+        <div
+          aria-hidden
+          className="absolute inset-y-0 right-0 w-[4px]"
+          style={{ background: getTeamStripe(match.awayTeam.slug, "vertical") }}
+        />
         <div className="mb-4 flex items-center justify-between gap-4">
           <time
             className="text-xs font-medium text-slate-500"

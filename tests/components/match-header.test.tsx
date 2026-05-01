@@ -48,4 +48,14 @@ describe("MatchHeader", () => {
       }),
     ).toHaveClass("sr-only");
   });
+
+  it("uses a sharp home-away color bar at the top", () => {
+    const { container } = render(<MatchHeader match={match} />);
+    const colorBar = container.querySelector("[aria-hidden='true']");
+
+    expect(colorBar).toHaveClass("absolute", "inset-x-0", "top-0", "h-[4px]");
+    expect(colorBar).toHaveStyle({
+      background: "linear-gradient(to right, #009A44 50%, #002395 50%)",
+    });
+  });
 });

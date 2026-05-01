@@ -1,11 +1,7 @@
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
-import {
-  getTeamColor,
-  getTeamFlag,
-  getTeamStripe,
-} from "@/lib/format/team-identity";
+import { getTeamColor, getTeamFlag } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
 import { StatusBadge } from "./status-badge";
@@ -33,13 +29,16 @@ export function MatchHeader({ match }: MatchHeaderProps) {
   const localTimezone = getVenueTimezone(match.homeTeam.slug);
   const outcome = getMatchOutcome(match);
   const homeColor = getTeamColor(match.homeTeam.slug);
+  const awayColor = getTeamColor(match.awayTeam.slug);
 
   return (
     <section className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
       <div
         aria-hidden
         className="absolute inset-x-0 top-0 h-[4px]"
-        style={{ background: getTeamStripe(match.homeTeam.slug, "horizontal") }}
+        style={{
+          background: `linear-gradient(to right, ${homeColor} 50%, ${awayColor} 50%)`,
+        }}
       />
       <h1 className="sr-only">
         {match.homeTeam.name} vs {match.awayTeam.name}

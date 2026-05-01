@@ -138,19 +138,31 @@ describe("MatchCard", () => {
     );
   });
 
-  it("uses the home team stripe on the left edge", () => {
+  it("uses home and away team stripes on the card edges", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
+    const stripes = container.querySelectorAll("[aria-hidden='true']");
 
     expect(container.querySelector("article")).not.toHaveClass("border-l-4");
-    expect(container.querySelector("[aria-hidden='true']")).toHaveClass(
+    expect(stripes).toHaveLength(2);
+    expect(stripes[0]).toHaveClass(
       "absolute",
       "inset-y-0",
       "left-0",
       "w-[4px]",
     );
-    expect(container.querySelector("[aria-hidden='true']")).toHaveStyle({
+    expect(stripes[0]).toHaveStyle({
       background:
         "linear-gradient(to bottom, #169B62 0%, #169B62 33%, #FFFFFF 33%, #FFFFFF 67%, #F77F00 67%, #F77F00 100%)",
+    });
+    expect(stripes[1]).toHaveClass(
+      "absolute",
+      "inset-y-0",
+      "right-0",
+      "w-[4px]",
+    );
+    expect(stripes[1]).toHaveStyle({
+      background:
+        "linear-gradient(to bottom, #002395 0%, #002395 33%, #FFFFFF 33%, #FFFFFF 67%, #ED2939 67%, #ED2939 100%)",
     });
   });
 });
