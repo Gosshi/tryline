@@ -167,14 +167,20 @@ function renderBlock(block: MarkdownBlock, index: number) {
   if (block.type === "heading") {
     if (block.level <= 1) {
       return (
-        <h3 className="text-lg font-semibold" key={index}>
+        <h3
+          className="border-l-2 border-[var(--color-accent)] pl-3 font-serif text-lg font-bold text-[var(--color-ink)]"
+          key={index}
+        >
           {renderInline(block.text)}
         </h3>
       );
     }
 
     return (
-      <h4 className="text-base font-semibold" key={index}>
+      <h4
+        className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--color-ink-muted)]"
+        key={index}
+      >
         {renderInline(block.text)}
       </h4>
     );
@@ -228,7 +234,7 @@ function renderBlock(block: MarkdownBlock, index: number) {
   }
 
   return (
-    <p className="leading-7" key={index}>
+    <p className="leading-[1.9] text-[var(--color-ink)]" key={index}>
       {renderInline(block.text)}
     </p>
   );
@@ -239,7 +245,9 @@ export function MatchContent({ content }: MatchContentProps) {
 
   return (
     <>
-      <div className="space-y-4 text-slate-900">{blocks.map(renderBlock)}</div>
+      <div className="space-y-5 text-[var(--color-ink)]">
+        {blocks.map(renderBlock)}
+      </div>
       <p className="mt-6 text-xs text-slate-500">
         <time dateTime={content.generatedAt}>
           {formatGeneratedAtJst(content.generatedAt)}
