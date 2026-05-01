@@ -66,12 +66,37 @@ export default async function MatchDetailPage({
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
-        <Link
-          className="inline-flex w-fit items-center gap-1 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-          href="/"
-        >
-          ← 一覧に戻る
-        </Link>
+        {(() => {
+          const slugMatch = match.competition.slug.match(/^(.+)-(\d{4})$/);
+          const family = slugMatch?.[1] ?? "";
+          const season = slugMatch?.[2] ?? "";
+          const seasonHref = family && season ? `/c/${family}/${season}` : "/";
+
+          return (
+            <nav aria-label="パンくずリスト">
+              <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
+                <li>
+                  <Link
+                    className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                    href={seasonHref}
+                  >
+                    {match.competition.name} {match.competition.season}
+                  </Link>
+                </li>
+                {match.round !== null && (
+                  <>
+                    <li aria-hidden className="select-none">
+                      /
+                    </li>
+                    <li className="text-[var(--color-ink)]">
+                      Round {match.round}
+                    </li>
+                  </>
+                )}
+              </ol>
+            </nav>
+          );
+        })()}
 
         <MatchHeader match={match} />
 

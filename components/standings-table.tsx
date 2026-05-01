@@ -26,10 +26,10 @@ export function StandingsTable({ standings }: { standings: StandingRow[] }) {
               <th className="pb-2 text-left">チーム</th>
               <th className="pb-2 text-right">試</th>
               <th className="pb-2 text-right">勝</th>
-              <th className="pb-2 text-right">分</th>
+              <th className="hidden pb-2 text-right sm:table-cell">分</th>
               <th className="pb-2 text-right">敗</th>
-              <th className="pb-2 text-right">得点</th>
-              <th className="pb-2 text-right">T</th>
+              <th className="hidden pb-2 text-right sm:table-cell">得点</th>
+              <th className="hidden pb-2 text-right sm:table-cell">T</th>
               <th className="pb-2 text-right font-bold text-slate-600">勝点</th>
             </tr>
           </thead>
@@ -58,16 +58,16 @@ export function StandingsTable({ standings }: { standings: StandingRow[] }) {
                 <td className="py-2 text-right tabular-nums text-slate-600">
                   {row.won}
                 </td>
-                <td className="py-2 text-right tabular-nums text-slate-600">
+                <td className="hidden py-2 text-right tabular-nums text-slate-600 sm:table-cell">
                   {row.drawn}
                 </td>
                 <td className="py-2 text-right tabular-nums text-slate-600">
                   {row.lost}
                 </td>
-                <td className="py-2 text-right tabular-nums text-slate-600">
+                <td className="hidden py-2 text-right tabular-nums text-slate-600 sm:table-cell">
                   {row.pointsFor}-{row.pointsAgainst}
                 </td>
-                <td className="py-2 text-right tabular-nums text-slate-600">
+                <td className="hidden py-2 text-right tabular-nums text-slate-600 sm:table-cell">
                   {row.triesFor}
                 </td>
                 <td className="py-2 text-right font-display font-bold tabular-nums text-[var(--color-ink)]">

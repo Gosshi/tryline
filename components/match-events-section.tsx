@@ -67,7 +67,7 @@ export function MatchEventsSection({
         </h2>
       </div>
 
-      <div className="mb-2 grid grid-cols-[1fr_3rem_1fr] gap-2 text-xs font-semibold text-slate-500">
+      <div className="mb-2 grid grid-cols-[1fr_2.5rem_1fr] gap-2 text-xs font-semibold text-slate-500">
         <span className="min-w-0 truncate">{homeTeamName}</span>
         <span />
         <span className="min-w-0 truncate text-right">{awayTeamName}</span>
@@ -83,7 +83,7 @@ export function MatchEventsSection({
 
           return (
             <div
-              className="grid grid-cols-[1fr_3rem_1fr] items-center gap-2 rounded py-1.5 hover:bg-slate-50/80"
+              className="grid grid-cols-[1fr_2.5rem_1fr] items-center gap-2 rounded py-1.5 hover:bg-slate-50/80"
               key={event.id}
               style={
                 isHome
@@ -94,13 +94,19 @@ export function MatchEventsSection({
                     }
               }
             >
-              <span className="min-w-0 truncate text-sm text-[var(--color-ink)]">
+              <span
+                className="min-w-0 truncate text-xs text-[var(--color-ink)] sm:text-sm"
+                title={isHome ? label : ""}
+              >
                 {isHome ? label : ""}
               </span>
               <span className="text-center text-xs font-semibold tabular-nums text-[var(--color-ink-muted)]">
                 {event.minute !== null ? `${event.minute}'` : "—"}
               </span>
-              <span className="min-w-0 truncate text-right text-sm text-[var(--color-ink)]">
+              <span
+                className="min-w-0 truncate text-right text-xs text-[var(--color-ink)] sm:text-sm"
+                title={!isHome ? label : ""}
+              >
                 {!isHome ? label : ""}
               </span>
             </div>

@@ -128,7 +128,7 @@ describe("MatchEventsSection", () => {
       />,
     );
 
-    const rows = container.querySelectorAll(".grid-cols-\\[1fr_3rem_1fr\\]");
+    const rows = container.querySelectorAll(".grid-cols-\\[1fr_2\\.5rem_1fr\\]");
 
     expect(rows[1]).toHaveStyle({
       borderLeft: "3px solid #009A44",
