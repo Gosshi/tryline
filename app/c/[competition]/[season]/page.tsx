@@ -2,8 +2,12 @@ import { notFound } from "next/navigation";
 
 import { MatchCard } from "@/components/match-card";
 import { RoundHeading } from "@/components/round-heading";
+import { SeasonSwitcher } from "@/components/season-switcher";
 import { StandingsTable } from "@/components/standings-table";
-import { getCompetitionBySlug } from "@/lib/db/queries/competitions";
+import {
+  getCompetitionBySlug,
+  listSeasonsByFamily,
+} from "@/lib/db/queries/competitions";
 import { listMatchesForCompetition } from "@/lib/db/queries/matches";
 import { getStandingsForCompetition } from "@/lib/db/queries/standings";
 import { formatCompetitionTitle } from "@/lib/format/competition";
@@ -85,9 +89,10 @@ export default async function SeasonPage({ params }: Props) {
     notFound();
   }
 
-  const [matches, standings] = await Promise.all([
+  const [matches, standings, seasons] = await Promise.all([
     listMatchesForCompetition(comp.slug),
     getStandingsForCompetition(comp.slug),
+    listSeasonsByFamily(comp.family),
   ]);
   const groupedMatches = groupMatchesByRound(matches);
   const dateRange = formatDateRange(comp.startDate, comp.endDate);
@@ -109,6 +114,12 @@ export default async function SeasonPage({ params }: Props) {
             </p>
           </div>
         </section>
+
+        <SeasonSwitcher
+          competition={competition}
+          currentSeason={comp.season}
+          seasons={seasons}
+        />
 
         <header className="space-y-3 border-b border-slate-200 pb-6">
           <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
