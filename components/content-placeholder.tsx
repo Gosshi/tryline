@@ -27,15 +27,20 @@ const ICON: Record<ContentPlaceholderProps["state"], string> = {
 
 export function ContentPlaceholder({ state, type }: ContentPlaceholderProps) {
   return (
-    <div className="flex items-start gap-3 rounded-lg bg-slate-50 px-4 py-4">
-      <span
-        aria-hidden
-        className="mt-0.5 shrink-0 text-lg leading-none"
-        role="img"
-      >
-        {ICON[state]}
-      </span>
-      <p className="text-sm text-slate-500">{COPY[type][state]}</p>
+    <div className="rounded-lg border border-slate-100 bg-slate-50 px-5 py-5">
+      <div className="flex items-center gap-2">
+        <span aria-hidden className="shrink-0 text-base leading-none" role="img">
+          {ICON[state]}
+        </span>
+        <p className="text-sm font-medium text-[var(--color-ink)]">
+          {COPY[type][state]}
+        </p>
+      </div>
+      {state !== "unavailable" && (
+        <p className="mt-2 text-xs text-[var(--color-ink-muted)]">
+          コンテンツは自動生成されます。しばらくお待ちください。
+        </p>
+      )}
     </div>
   );
 }

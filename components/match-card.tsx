@@ -123,7 +123,12 @@ export function MatchCard({ match }: MatchCardProps) {
         </div>
 
         {match.venue && (
-          <p className="mt-4 text-xs text-slate-400">{match.venue}</p>
+          <p
+            className="mt-4 truncate text-xs text-slate-400"
+            title={match.venue}
+          >
+            {match.venue}
+          </p>
         )}
       </article>
     </Link>
