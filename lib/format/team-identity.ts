@@ -20,10 +20,39 @@ const TEAM_IDENTITY: Record<string, TeamIdentity> = {
   wales: { color: "#C8102E", flag: getSubdivisionFlag("gbwls") },
 };
 
+const TEAM_STRIPES: Record<string, string[]> = {
+  england: ["#CC0000", "#FFFFFF"],
+  france: ["#002395", "#FFFFFF", "#ED2939"],
+  ireland: ["#169B62", "#FFFFFF", "#F77F00"],
+  italy: ["#009246", "#FFFFFF", "#CE2B37"],
+  scotland: ["#003F87", "#FFFFFF"],
+  wales: ["#C8102E", "#FFFFFF", "#00712D"],
+};
+
 export function getTeamFlag(slug: string): string {
   return TEAM_IDENTITY[slug]?.flag ?? "🏉";
 }
 
 export function getTeamColor(slug: string): string {
   return TEAM_IDENTITY[slug]?.color ?? "#94a3b8";
+}
+
+export function getTeamStripe(
+  slug: string,
+  direction: "vertical" | "horizontal" = "vertical",
+): string {
+  const colors = TEAM_STRIPES[slug];
+
+  if (!colors) {
+    return "#94a3b8";
+  }
+
+  const dir = direction === "vertical" ? "to bottom" : "to right";
+  const n = colors.length;
+  const stops = colors.flatMap((color, index) => [
+    `${color} ${Math.round((index / n) * 100)}%`,
+    `${color} ${Math.round(((index + 1) / n) * 100)}%`,
+  ]);
+
+  return `linear-gradient(${dir}, ${stops.join(", ")})`;
 }
