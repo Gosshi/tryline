@@ -1,0 +1,15 @@
+name: Cron - Ingest Squads
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call ingest-squads endpoint
+        run: |
+          curl -s -f -X POST "${{ secrets.PRODUCTION_URL }}/api/cron/ingest-squads" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
