@@ -98,26 +98,60 @@ export function parseWikipediaLineupHtml(
 }
 
 /**
- * Extracts home and away lineups from a Six Nations season-page vevent block.
+ * Extracts home and away lineups from the table immediately after a Six Nations
+ * season-page vevent block.
  *
- * The vevent wikitables are ordered as:
- *   0. score table
- *   1. home lineup table
- *   2. away lineup table
+ * Row 0 and empty rows are skipped. Player rows are detected by td[1] being a
+ * jersey number from 1 to 23. The away side starts at the second jersey 15.
  */
-export function parseLineupFromVeventHtml(
-  veventHtml: string,
+export function parseLineupFromTableHtml(
+  tableHtml: string,
   sourceUrl: string,
 ): WikipediaMatchLineup | null {
-  const $ = cheerio.load(veventHtml);
-  const tables = $("table.wikitable");
+  const $ = cheerio.load(tableHtml);
+  const homePlayers: WikipediaLineupPlayer[] = [];
+  const awayPlayers: WikipediaLineupPlayer[] = [];
+  let parsingAway = false;
+  let seenJersey15 = false;
 
-  if (tables.length < 3) {
-    return null;
-  }
+  $("table tr").each((_, row) => {
+    const cells = $(row).find("td");
 
-  const homePlayers = parseLineupTable($, tables.eq(1));
-  const awayPlayers = parseLineupTable($, tables.eq(2));
+    if (cells.length > 10 || cells.length < 3) {
+      return;
+    }
+
+    const jerseyText = normalizeWhitespace(cells.eq(1).text());
+    const jersey = Number(jerseyText);
+
+    if (!Number.isInteger(jersey) || jersey < 1 || jersey > 23) {
+      return;
+    }
+
+    if (jersey === 15) {
+      if (seenJersey15) {
+        parsingAway = true;
+      } else {
+        seenJersey15 = true;
+      }
+    }
+
+    const name = normalizeWhitespace(
+      cells.eq(2).find("a").first().text() || cells.eq(2).text(),
+    );
+
+    if (!name) {
+      return;
+    }
+
+    const player = { jersey_number: jersey, name };
+
+    if (parsingAway) {
+      awayPlayers.push(player);
+    } else {
+      homePlayers.push(player);
+    }
+  });
 
   if (homePlayers.length === 0 && awayPlayers.length === 0) {
     return null;

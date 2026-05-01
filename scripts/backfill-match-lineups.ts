@@ -1,7 +1,10 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { parseWikipediaSixNationsHtml } from "@/lib/ingestion/sources/wikipedia-six-nations";
 import { fetchWithPolicy } from "@/lib/scrapers";
-import { parseLineupFromVeventHtml } from "@/lib/scrapers/wikipedia-lineups";
+import {
+  parseLineupFromTableHtml,
+  type WikipediaMatchLineup,
+} from "@/lib/scrapers/wikipedia-lineups";
 
 type CliOptions = {
   dryRun: boolean;
@@ -197,7 +200,7 @@ function buildLineupRows(params: {
   match: MatchRow;
   homePlayerIds: Map<string, string>;
   awayPlayerIds: Map<string, string>;
-  lineup: NonNullable<ReturnType<typeof parseLineupFromVeventHtml>>;
+  lineup: WikipediaMatchLineup;
 }) {
   const homeRows = params.lineup.home_players.flatMap((player) => {
     const playerId = params.homePlayerIds.get(player.name);
@@ -290,15 +293,15 @@ async function main() {
     const year = competition.slug.replace("six-nations-", "");
     const pageUrl = `https://en.wikipedia.org/wiki/${year}_Six_Nations_Championship`;
 
-    let veventByKey: Map<string, string>;
+    let lineupTableByKey: Map<string, string | null>;
     try {
       const response = await fetchWithPolicy(pageUrl);
       const html = await response.text();
       const parsedMatches = parseWikipediaSixNationsHtml(html);
-      veventByKey = new Map(
+      lineupTableByKey = new Map(
         parsedMatches.map((m) => [
           `${m.homeTeamName}_${m.awayTeamName}`,
-          m.rawHtml,
+          m.lineupTableHtml,
         ]),
       );
     } catch (error) {
@@ -320,9 +323,11 @@ async function main() {
         continue;
       }
 
-      const rawHtml = veventByKey.get(`${homeTeamName}_${awayTeamName}`);
+      const lineupTableHtml = lineupTableByKey.get(
+        `${homeTeamName}_${awayTeamName}`,
+      );
 
-      if (!rawHtml) {
+      if (lineupTableHtml === undefined) {
         console.warn(
           `No vevent found for ${competition.season} ${homeTeamName} v ${awayTeamName}`,
         );
@@ -330,11 +335,19 @@ async function main() {
         continue;
       }
 
-      const lineup = parseLineupFromVeventHtml(rawHtml, pageUrl);
+      if (lineupTableHtml === null) {
+        console.warn(
+          `Lineup not found for ${competition.season} ${homeTeamName} v ${awayTeamName} (skipped)`,
+        );
+        skipped += 1;
+        continue;
+      }
+
+      const lineup = parseLineupFromTableHtml(lineupTableHtml, pageUrl);
 
       if (!lineup) {
         console.warn(
-          `Lineup not found in vevent for ${competition.season} ${homeTeamName} v ${awayTeamName} (skipped)`,
+          `Lineup not found for ${competition.season} ${homeTeamName} v ${awayTeamName} (skipped)`,
         );
         skipped += 1;
         continue;
