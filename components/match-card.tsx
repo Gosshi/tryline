@@ -34,7 +34,7 @@ export function MatchCard({ match }: MatchCardProps) {
           >
             {formatKickoffJst(match.kickoffAt)}
           </time>
-          <StatusBadge status={match.status} />
+          {match.status !== "finished" && <StatusBadge status={match.status} />}
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">

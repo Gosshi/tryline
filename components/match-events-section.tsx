@@ -45,6 +45,8 @@ export function MatchEventsSection({
   }
 
   const sorted = sortEvents(events);
+  const homeEvents = sorted.filter((event) => event.teamId === homeTeamId);
+  const awayEvents = sorted.filter((event) => event.teamId !== homeTeamId);
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
@@ -88,6 +90,13 @@ export function MatchEventsSection({
           );
         })}
       </div>
+      {(homeEvents.length === 0 || awayEvents.length === 0) && (
+        <p className="mt-3 text-center text-xs text-slate-400">
+          {homeEvents.length === 0
+            ? `${homeTeamName}: 得点なし`
+            : `${awayTeamName}: 得点なし`}
+        </p>
+      )}
     </section>
   );
 }
