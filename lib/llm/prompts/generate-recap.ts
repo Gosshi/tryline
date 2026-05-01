@@ -4,7 +4,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@1.3.0";
+export const PROMPT_VERSION = "recap@1.4.0";
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -29,7 +29,8 @@ export function buildGenerateRecapPrompt(
 
   return [
     "あなたは日本語のラグビー専門編集者です。試合レビューをマークダウンで作成してください。",
-    "構成: 1)試合全体像 2)ターニングポイント 3)MOM選出と根拠 4)次戦への示唆。",
+    "構成: 1)試合全体像(400-500字) 2)ターニングポイント(500-600字) 3)MOM選出と根拠(300-400字) 4)次戦への示唆(300-400字)。",
+    "全体で2,000字以上を目標とすること。各セクションが指定範囲の下限を下回った場合は書き足すこと。",
     "事実は入力データと一致させること。直接引用は15語以内。",
     "出力は日本語マークダウン本文のみ。",
     "強調記号（**、*、__、_）・コードブロック（```）・引用（>）は使用禁止。見出し(#)と箇条書き(-)のみ使用すること。",
