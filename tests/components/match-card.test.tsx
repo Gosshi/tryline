@@ -138,11 +138,19 @@ describe("MatchCard", () => {
     );
   });
 
-  it("uses the home team color for the left border", () => {
+  it("uses the home team stripe on the left edge", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
 
-    expect(container.querySelector("article")).toHaveStyle({
-      borderLeftColor: "#009A44",
+    expect(container.querySelector("article")).not.toHaveClass("border-l-4");
+    expect(container.querySelector("[aria-hidden='true']")).toHaveClass(
+      "absolute",
+      "inset-y-0",
+      "left-0",
+      "w-[4px]",
+    );
+    expect(container.querySelector("[aria-hidden='true']")).toHaveStyle({
+      background:
+        "linear-gradient(to bottom, #169B62 0%, #169B62 33%, #FFFFFF 33%, #FFFFFF 67%, #F77F00 67%, #F77F00 100%)",
     });
   });
 });
