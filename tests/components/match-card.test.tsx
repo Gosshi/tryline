@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { MatchCard } from "@/components/match-card";
@@ -64,6 +64,22 @@ describe("MatchCard", () => {
     render(<MatchCard match={baseMatch} />);
 
     expect(screen.getByText("—")).toBeInTheDocument();
+  });
+
+  it("uses mobile-friendly short-code sizing while preserving desktop sizing", () => {
+    const { container } = render(<MatchCard match={baseMatch} />);
+    const card = within(container);
+
+    expect(card.getByText("🇮🇪 IRL")).toHaveClass(
+      "truncate",
+      "text-base",
+      "sm:text-xl",
+    );
+    expect(card.getByText("FRA 🇫🇷")).toHaveClass(
+      "truncate",
+      "text-base",
+      "sm:text-xl",
+    );
   });
 
   it("uses the home team color for the left border", () => {

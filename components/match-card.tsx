@@ -41,7 +41,7 @@ export function MatchCard({ match }: MatchCardProps) {
           <div className="text-right">
             <p
               className={cn(
-                "text-xl font-bold",
+                "truncate text-base font-bold sm:text-xl",
                 awayWon ? "text-slate-400" : "text-slate-900",
               )}
             >
@@ -97,7 +97,7 @@ export function MatchCard({ match }: MatchCardProps) {
           <div className="text-left">
             <p
               className={cn(
-                "text-xl font-bold",
+                "truncate text-base font-bold sm:text-xl",
                 homeWon ? "text-slate-400" : "text-slate-900",
               )}
             >

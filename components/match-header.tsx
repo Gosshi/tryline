@@ -31,6 +31,9 @@ export function MatchHeader({ match }: MatchHeaderProps) {
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
+      <h1 className="sr-only">
+        {match.homeTeam.name} vs {match.awayTeam.name}
+      </h1>
       <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
         <div className="flex items-center justify-between gap-4">
           <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
