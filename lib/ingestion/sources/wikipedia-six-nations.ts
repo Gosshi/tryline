@@ -18,6 +18,7 @@ export type ParsedWikipediaMatch = {
   homeScore: number | null;
   homeTeamName: string;
   kickoffAt: string;
+  lineupTableHtml: string | null;
   round: number | null;
   status: "finished" | "scheduled";
   venue: string | null;
@@ -138,6 +139,33 @@ function parseScore(scoreText: string) {
   };
 }
 
+function findLineupTableHtml(
+  $: ReturnType<typeof load>,
+  block: ReturnType<ReturnType<typeof load>>,
+) {
+  let sibling = block.next();
+
+  while (sibling.length > 0) {
+    if (
+      sibling.is("div.vevent.summary") ||
+      (sibling.is("div.mw-heading") && sibling.find("h2, h3").length > 0)
+    ) {
+      break;
+    }
+
+    if (
+      sibling.is("table") &&
+      normalizeWhitespace(sibling.attr("class") ?? "") === ""
+    ) {
+      return $.html(sibling);
+    }
+
+    sibling = sibling.next();
+  }
+
+  return null;
+}
+
 export function parseWikipediaSixNationsHtml(
   html: string,
 ): ParsedWikipediaMatch[] {
@@ -188,6 +216,7 @@ export function parseWikipediaSixNationsHtml(
         homeScore: score.homeScore,
         homeTeamName,
         kickoffAt: parseKickoffAt(dateTable.text()),
+        lineupTableHtml: findLineupTableHtml($, block),
         rawHtml: $.html(block),
         round: currentRound,
         status: score.status,

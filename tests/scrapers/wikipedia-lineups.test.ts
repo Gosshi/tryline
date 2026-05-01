@@ -47,51 +47,52 @@ describe("wikipedia lineups scraper", () => {
     ).toBeNull();
   });
 
-  it("parses lineup tables from a season-page vevent block", async () => {
+  it("parses lineups from a season-page lineup table", async () => {
     const html = `
-      <div class="vevent summary">
-        <table class="wikitable">
-          <tr><td><a>France</a></td><td>35-16</td><td><a>Scotland</a></td></tr>
-        </table>
-        <table class="wikitable">
-          <tr><th>No.</th><th>Player</th></tr>
-          <tr><td>1</td><td><a>Home Prop</a></td></tr>
-          <tr><td>15</td><td>Home Fullback</td></tr>
-          <tr><td>24</td><td>Ignored Player</td></tr>
-        </table>
-        <table class="wikitable">
-          <tr><th>No.</th><th>Player</th></tr>
-          <tr><td>1</td><td><a>Away Prop</a></td></tr>
-          <tr><td>23</td><td>Away Replacement</td></tr>
-        </table>
-      </div>
+      <table>
+        <tr>
+          <td>summary</td><td>FB</td><td>15</td><td>Home Fullback</td>
+          <td>RW</td><td>14</td><td>Home Wing</td><td>x</td><td>x</td><td>x</td><td>x</td>
+        </tr>
+        <tr></tr>
+        <tr><td>FB</td><td>15</td><td><a>Home Fullback</a></td></tr>
+        <tr><td>RW</td><td>14</td><td>Home Wing</td></tr>
+        <tr><td colspan="3">Replacements:</td></tr>
+        <tr><td>R</td><td>16</td><td>Home Hooker</td></tr>
+        <tr><td>Coach:</td><td>Home Coach</td></tr>
+        <tr><td>FB</td><td>15</td><td>Away Fullback</td></tr>
+        <tr><td>RW</td><td>14</td><td>Away Wing</td></tr>
+        <tr><td>R</td><td>23</td><td>Away Replacement</td></tr>
+      </table>
     `;
 
-    const { parseLineupFromVeventHtml } =
+    const { parseLineupFromTableHtml } =
       await import("@/lib/scrapers/wikipedia-lineups");
-    const result = parseLineupFromVeventHtml(
+    const result = parseLineupFromTableHtml(
       html,
       "https://en.wikipedia.org/wiki/sample",
     );
 
     expect(result).not.toBeNull();
     expect(result?.home_players).toEqual([
-      { jersey_number: 1, name: "Home Prop" },
       { jersey_number: 15, name: "Home Fullback" },
+      { jersey_number: 14, name: "Home Wing" },
+      { jersey_number: 16, name: "Home Hooker" },
     ]);
     expect(result?.away_players).toEqual([
-      { jersey_number: 1, name: "Away Prop" },
+      { jersey_number: 15, name: "Away Fullback" },
+      { jersey_number: 14, name: "Away Wing" },
       { jersey_number: 23, name: "Away Replacement" },
     ]);
   });
 
-  it("returns null when a vevent has no lineup tables", async () => {
-    const { parseLineupFromVeventHtml } =
+  it("returns null when a season-page lineup table has no player rows", async () => {
+    const { parseLineupFromTableHtml } =
       await import("@/lib/scrapers/wikipedia-lineups");
 
     expect(
-      parseLineupFromVeventHtml(
-        '<div class="vevent summary"><table class="wikitable"></table></div>',
+      parseLineupFromTableHtml(
+        "<table><tr><td>Coach:</td><td>Someone</td></tr></table>",
         "https://example.com",
       ),
     ).toBeNull();

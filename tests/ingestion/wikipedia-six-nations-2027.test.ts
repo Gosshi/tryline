@@ -25,6 +25,7 @@ describe("parseWikipediaSixNations2027Html", () => {
       venue: "Aviva Stadium, Dublin",
     });
     expect(matches[0]?.kickoffAt).toBe("2027-02-05T20:10:00.000Z");
+    expect(matches[0]?.lineupTableHtml).toBeNull();
     expect(matches[1]).toMatchObject({
       awayScore: 13,
       awayTeamName: "Wales",
@@ -36,5 +37,6 @@ describe("parseWikipediaSixNations2027Html", () => {
       venue: "Stade de France, Saint-Denis",
     });
     expect(matches[1]?.kickoffAt).toBe("2027-02-06T16:40:00.000Z");
+    expect(matches[1]?.lineupTableHtml).toContain("France Fullback");
   });
 });
