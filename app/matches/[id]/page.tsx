@@ -77,9 +77,11 @@ export default async function MatchDetailPage({
 
         <MatchEventsSection
           awayTeamName={match.awayTeam.name}
+          awayTeamSlug={match.awayTeam.slug}
           events={events}
           homeTeamId={match.homeTeamId}
           homeTeamName={match.homeTeam.name}
+          homeTeamSlug={match.homeTeam.slug}
         />
 
         <MatchLineupsSection

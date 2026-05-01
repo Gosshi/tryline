@@ -1,3 +1,5 @@
+import { getTeamColor } from "@/lib/format/team-identity";
+
 import type { MatchEventRow } from "@/lib/db/queries/match-events";
 
 const EVENT_TYPE_LABEL: Record<string, string> = {
@@ -13,7 +15,9 @@ type MatchEventsSectionProps = {
   events: MatchEventRow[];
   homeTeamId: string;
   homeTeamName: string;
+  homeTeamSlug: string;
   awayTeamName: string;
+  awayTeamSlug: string;
 };
 
 function sortEvents(events: MatchEventRow[]): MatchEventRow[] {
@@ -38,12 +42,16 @@ export function MatchEventsSection({
   events,
   homeTeamId,
   homeTeamName,
+  homeTeamSlug,
   awayTeamName,
+  awayTeamSlug,
 }: MatchEventsSectionProps) {
   if (events.length === 0) {
     return null;
   }
 
+  const homeColor = getTeamColor(homeTeamSlug);
+  const awayColor = getTeamColor(awayTeamSlug);
   const sorted = sortEvents(events);
   const homeEvents = sorted.filter((event) => event.teamId === homeTeamId);
   const awayEvents = sorted.filter((event) => event.teamId !== homeTeamId);
@@ -71,19 +79,28 @@ export function MatchEventsSection({
           const label = event.isPenaltyTry
             ? "ペナルティトライ"
             : `${event.playerName} ${EVENT_TYPE_LABEL[event.type] ?? event.type}`;
+          const teamColor = isHome ? homeColor : awayColor;
 
           return (
             <div
-              className="grid grid-cols-[1fr_3rem_1fr] items-center gap-2 rounded px-2 py-1.5 hover:bg-slate-50"
+              className="grid grid-cols-[1fr_3rem_1fr] items-center gap-2 rounded py-1.5 hover:bg-slate-50/80"
               key={event.id}
+              style={
+                isHome
+                  ? { borderLeft: `3px solid ${teamColor}`, paddingLeft: "8px" }
+                  : {
+                      borderRight: `3px solid ${teamColor}`,
+                      paddingRight: "8px",
+                    }
+              }
             >
-              <span className="min-w-0 truncate text-sm text-slate-700">
+              <span className="min-w-0 truncate text-sm text-[var(--color-ink)]">
                 {isHome ? label : ""}
               </span>
-              <span className="text-center text-xs font-semibold tabular-nums text-slate-400">
+              <span className="text-center text-xs font-semibold tabular-nums text-[var(--color-ink-muted)]">
                 {event.minute !== null ? `${event.minute}'` : "—"}
               </span>
-              <span className="min-w-0 truncate text-right text-sm text-slate-700">
+              <span className="min-w-0 truncate text-right text-sm text-[var(--color-ink)]">
                 {!isHome ? label : ""}
               </span>
             </div>

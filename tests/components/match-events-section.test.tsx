@@ -23,9 +23,11 @@ describe("MatchEventsSection", () => {
     const { container } = render(
       <MatchEventsSection
         awayTeamName="France"
+        awayTeamSlug="france"
         events={[]}
         homeTeamId="home-team"
         homeTeamName="Ireland"
+        homeTeamSlug="ireland"
       />,
     );
 
@@ -36,6 +38,7 @@ describe("MatchEventsSection", () => {
     render(
       <MatchEventsSection
         awayTeamName="France"
+        awayTeamSlug="france"
         events={[
           {
             ...event,
@@ -49,6 +52,7 @@ describe("MatchEventsSection", () => {
         ]}
         homeTeamId="home-team"
         homeTeamName="Ireland"
+        homeTeamSlug="ireland"
       />,
     );
 
@@ -65,9 +69,11 @@ describe("MatchEventsSection", () => {
     render(
       <MatchEventsSection
         awayTeamName="France"
+        awayTeamSlug="france"
         events={[event]}
         homeTeamId="home-team"
         homeTeamName="Ireland"
+        homeTeamSlug="ireland"
       />,
     );
 
@@ -78,6 +84,7 @@ describe("MatchEventsSection", () => {
     const { container } = render(
       <MatchEventsSection
         awayTeamName="France"
+        awayTeamSlug="france"
         events={[
           event,
           {
@@ -91,10 +98,45 @@ describe("MatchEventsSection", () => {
         ]}
         homeTeamId="home-team"
         homeTeamName="Ireland"
+        homeTeamSlug="ireland"
       />,
     );
     const section = within(container);
 
     expect(section.queryByText(/得点なし/)).not.toBeInTheDocument();
+  });
+
+  it("uses team color bars on the scoring side", () => {
+    const { container } = render(
+      <MatchEventsSection
+        awayTeamName="France"
+        awayTeamSlug="france"
+        events={[
+          event,
+          {
+            ...event,
+            id: "00000000-0000-0000-0000-000000000102",
+            minute: 23,
+            playerName: "Away Kicker",
+            teamId: "away-team",
+            type: "penalty_goal",
+          },
+        ]}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        homeTeamSlug="ireland"
+      />,
+    );
+
+    const rows = container.querySelectorAll(".grid-cols-\\[1fr_3rem_1fr\\]");
+
+    expect(rows[1]).toHaveStyle({
+      borderLeft: "3px solid #009A44",
+      paddingLeft: "8px",
+    });
+    expect(rows[2]).toHaveStyle({
+      borderRight: "3px solid #002395",
+      paddingRight: "8px",
+    });
   });
 });
