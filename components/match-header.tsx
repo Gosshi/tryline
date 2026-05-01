@@ -51,7 +51,12 @@ export function MatchHeader({ match }: MatchHeaderProps) {
         </div>
       </div>
 
-      <div className="px-5 py-7 sm:px-6 sm:py-8">
+      <div
+        className="px-5 py-7 sm:px-6 sm:py-8"
+        style={{
+          background: `linear-gradient(135deg, ${homeColor}18 0%, transparent 60%)`,
+        }}
+      >
         <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-5">
           <TeamBlock
             align="right"
