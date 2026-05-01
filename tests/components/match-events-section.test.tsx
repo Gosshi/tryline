@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { MatchEventsSection } from "@/components/match-events-section";
@@ -59,5 +59,42 @@ describe("MatchEventsSection", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("12'")).toBeInTheDocument();
     expect(screen.getByText("23'")).toBeInTheDocument();
+  });
+
+  it("shows a no-score note for a team without events", () => {
+    render(
+      <MatchEventsSection
+        awayTeamName="France"
+        events={[event]}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+      />,
+    );
+
+    expect(screen.getByText("France: 得点なし")).toBeInTheDocument();
+  });
+
+  it("does not show a no-score note when both teams have events", () => {
+    const { container } = render(
+      <MatchEventsSection
+        awayTeamName="France"
+        events={[
+          event,
+          {
+            ...event,
+            id: "00000000-0000-0000-0000-000000000102",
+            minute: 23,
+            playerName: "Away Kicker",
+            teamId: "away-team",
+            type: "penalty_goal",
+          },
+        ]}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+      />,
+    );
+    const section = within(container);
+
+    expect(section.queryByText(/得点なし/)).not.toBeInTheDocument();
   });
 });

@@ -66,6 +66,33 @@ describe("MatchCard", () => {
     expect(screen.getByText("—")).toBeInTheDocument();
   });
 
+  it("hides the status badge for a finished match", () => {
+    render(
+      <MatchCard
+        match={{
+          ...baseMatch,
+          awayScore: 21,
+          homeScore: 24,
+          status: "finished",
+        }}
+      />,
+    );
+
+    expect(screen.queryByText("終了")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["scheduled", "キックオフ予定"],
+    ["in_progress", "試合中"],
+    ["postponed", "延期"],
+    ["cancelled", "中止"],
+  ] as const)("shows the status badge for %s matches", (status, label) => {
+    const { container } = render(<MatchCard match={{ ...baseMatch, status }} />);
+    const card = within(container);
+
+    expect(card.getByText(label)).toBeInTheDocument();
+  });
+
   it("uses mobile-friendly short-code sizing while preserving desktop sizing", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
     const card = within(container);
