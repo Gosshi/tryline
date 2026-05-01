@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
 import type { Metadata } from "next";
@@ -19,6 +20,7 @@ export default function RootLayout({
       <body className="min-h-screen">
         <SiteHeader />
         {children}
+        <SiteFooter />
       </body>
     </html>
   );
