@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
-import { getTeamFlag } from "@/lib/format/team-identity";
+import { getTeamColor, getTeamFlag } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
 import { StatusBadge } from "./status-badge";
@@ -23,7 +23,10 @@ export function MatchCard({ match }: MatchCardProps) {
       className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
       href={`/matches/${match.id}`}
     >
-      <article className="h-full rounded-xl border border-slate-200 bg-white p-5 transition-colors hover:border-slate-400 hover:bg-slate-50">
+      <article
+        className="h-full rounded-xl border border-l-4 border-slate-200 bg-white p-5 transition-colors hover:border-slate-400 hover:bg-slate-50"
+        style={{ borderLeftColor: getTeamColor(match.homeTeam.slug) }}
+      >
         <div className="mb-4 flex items-center justify-between gap-4">
           <time
             className="text-xs font-medium text-slate-500"

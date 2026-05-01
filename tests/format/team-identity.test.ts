@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getTeamFlag } from "@/lib/format/team-identity";
+import { getTeamColor, getTeamFlag } from "@/lib/format/team-identity";
 
 describe("team identity formatter", () => {
   it("returns subdivision flags instead of a bare black flag", () => {
@@ -11,5 +11,10 @@ describe("team identity formatter", () => {
 
   it("returns the rugby fallback for unknown teams", () => {
     expect(getTeamFlag("unknown")).toBe("🏉");
+  });
+
+  it("returns team colors and a slate fallback for unknown teams", () => {
+    expect(getTeamColor("ireland")).toBe("#009A44");
+    expect(getTeamColor("unknown")).toBe("#94a3b8");
   });
 });

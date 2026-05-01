@@ -65,4 +65,12 @@ describe("MatchCard", () => {
 
     expect(screen.getByText("—")).toBeInTheDocument();
   });
+
+  it("uses the home team color for the left border", () => {
+    const { container } = render(<MatchCard match={baseMatch} />);
+
+    expect(container.querySelector("article")).toHaveStyle({
+      borderLeftColor: "#009A44",
+    });
+  });
 });

@@ -97,10 +97,25 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
+        <section className="border-b border-slate-200 bg-white py-12 sm:py-16">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-emerald-600">
+              AI Rugby Analysis in Japanese
+            </p>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
+              海外ラグビーを、日本語で深掘り。
+            </h1>
+            <p className="mt-4 max-w-xl text-base text-slate-600">
+              Six Nations をはじめとする世界のラグビーリーグを、AI
+              が生成した日本語プレビュー・レビューと試合チャットで楽しめます。
+            </p>
+          </div>
+        </section>
+
         <header className="space-y-3 border-b border-slate-200 pb-6">
-          <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
+          <h2 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
             {formatCompetitionTitle(competition.name, competition.season)}
-          </h1>
+          </h2>
           {dateRange && <p className="text-sm text-slate-500">{dateRange}</p>}
         </header>
 
