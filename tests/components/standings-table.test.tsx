@@ -33,11 +33,18 @@ describe("StandingsTable", () => {
   });
 
   it("renders standings rows", () => {
-    render(<StandingsTable standings={[standing]} />);
+    const { container } = render(<StandingsTable standings={[standing]} />);
 
     expect(screen.getByText("順位表")).toBeInTheDocument();
     expect(screen.getByText("IRE")).toBeInTheDocument();
     expect(screen.getByText("82-54")).toBeInTheDocument();
-    expect(screen.getByText("13")).toBeInTheDocument();
+    expect(screen.getByText("13")).toHaveClass(
+      "font-display",
+      "text-[var(--color-ink)]",
+    );
+    expect(container.querySelector("section")).toHaveClass("shadow-sm");
+    expect(container.querySelector("tbody tr")).toHaveClass(
+      "bg-emerald-50/60",
+    );
   });
 });
