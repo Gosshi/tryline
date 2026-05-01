@@ -136,7 +136,9 @@ export default async function HomePage() {
           ))
         )}
 
-        <StandingsTable standings={standings} />
+        <div id="standings">
+          <StandingsTable standings={standings} />
+        </div>
       </div>
     </main>
   );

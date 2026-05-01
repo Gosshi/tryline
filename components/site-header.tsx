@@ -14,7 +14,26 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <div />
+        <nav aria-label="メインナビゲーション">
+          <ul className="flex items-center gap-1">
+            <li>
+              <Link
+                className="rounded px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                href="/"
+              >
+                試合
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="rounded px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                href="/#standings"
+              >
+                順位表
+              </Link>
+            </li>
+          </ul>
+        </nav>
       </div>
     </header>
   );
