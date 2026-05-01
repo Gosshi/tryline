@@ -100,33 +100,25 @@ export default async function SeasonPage({ params }: Props) {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <section className="border-b border-slate-200 bg-white py-12 sm:py-16">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-emerald-600">
-              AI Rugby Analysis in Japanese
+        <header className="space-y-3 border-b border-[var(--color-rule)] pb-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+            {comp.family.replace(/-/g, " ")}
+          </p>
+          <h1 className="font-serif text-4xl font-bold tracking-tight text-[var(--color-ink)] sm:text-5xl">
+            {formatCompetitionTitle(comp.name, comp.season)}
+          </h1>
+          {dateRange && (
+            <p className="text-sm text-[var(--color-ink-muted)]">
+              {dateRange}
             </p>
-            <h1 className="text-5xl font-bold tracking-tight text-slate-950 sm:text-6xl">
-              海外ラグビーを、日本語で深掘り。
-            </h1>
-            <p className="mt-4 max-w-xl text-base text-slate-600">
-              Six Nations をはじめとする世界のラグビーリーグを、AI
-              が生成した日本語プレビュー・レビューと試合チャットで楽しめます。
-            </p>
-          </div>
-        </section>
+          )}
+        </header>
 
         <SeasonSwitcher
           competition={competition}
           currentSeason={comp.season}
           seasons={seasons}
         />
-
-        <header className="space-y-3 border-b border-slate-200 pb-6">
-          <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-            {formatCompetitionTitle(comp.name, comp.season)}
-          </h2>
-          {dateRange && <p className="text-sm text-slate-500">{dateRange}</p>}
-        </header>
 
         {matches.length === 0 ? (
           <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
