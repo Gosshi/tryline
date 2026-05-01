@@ -134,6 +134,7 @@ async function upsertCompetition(year: SupportedYear) {
     .upsert(
       {
         end_date: config.endDate,
+        family: "six-nations",
         name: `Six Nations ${year}`,
         season: String(year),
         slug: `six-nations-${year}`,

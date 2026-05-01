@@ -109,9 +109,10 @@ export async function insertMatchFixture() {
   const { data: competition, error: competitionError } = await service
     .from("competitions")
     .insert({
-      slug: competitionSlug,
+      family: competitionSlug,
       name: `Competition ${fixtureSuffix}`,
       season: "2026",
+      slug: competitionSlug,
     })
     .select("id")
     .single();
