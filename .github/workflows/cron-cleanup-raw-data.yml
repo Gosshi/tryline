@@ -1,0 +1,15 @@
+name: Cron - Cleanup Raw Data
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call cleanup-raw-data endpoint
+        run: |
+          curl -s -f -X POST "${{ secrets.PRODUCTION_URL }}/api/cron/cleanup-raw-data" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
