@@ -20,11 +20,11 @@ export function MatchCard({ match }: MatchCardProps) {
 
   return (
     <Link
-      className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+      className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
       href={`/matches/${match.id}`}
     >
       <article
-        className="h-full rounded-xl border border-l-4 border-slate-200 bg-white p-5 transition-colors hover:border-slate-400 hover:bg-slate-50"
+        className="h-full rounded-xl border border-l-4 border-slate-200 bg-white p-5 shadow-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
         style={{ borderLeftColor: getTeamColor(match.homeTeam.slug) }}
       >
         <div className="mb-4 flex items-center justify-between gap-4">
@@ -42,7 +42,9 @@ export function MatchCard({ match }: MatchCardProps) {
             <p
               className={cn(
                 "truncate text-base font-bold sm:text-xl",
-                awayWon ? "text-slate-400" : "text-slate-900",
+                awayWon
+                  ? "text-[var(--color-ink-muted)]"
+                  : "text-[var(--color-ink)]",
               )}
             >
               {getTeamFlag(match.homeTeam.slug)} {match.homeTeam.shortCode}
@@ -50,7 +52,9 @@ export function MatchCard({ match }: MatchCardProps) {
             <p
               className={cn(
                 "text-xs leading-tight",
-                awayWon ? "text-slate-400" : "text-slate-900",
+                awayWon
+                  ? "text-[var(--color-ink-muted)]"
+                  : "text-[var(--color-ink)]",
               )}
             >
               {match.homeTeam.name}
@@ -59,8 +63,8 @@ export function MatchCard({ match }: MatchCardProps) {
 
           <p
             className={cn(
-              "px-3 text-3xl font-bold tabular-nums",
-              match.status === "finished" ? "" : "text-slate-300",
+              "px-3 font-display text-3xl tabular-nums",
+              match.status === "finished" ? "" : "text-[var(--color-rule)]",
             )}
           >
             {match.status === "finished" ? (
@@ -68,22 +72,22 @@ export function MatchCard({ match }: MatchCardProps) {
                 <span
                   className={
                     homeWon
-                      ? "text-slate-950"
+                      ? "text-[var(--color-ink)]"
                       : awayWon
-                        ? "text-slate-400"
-                        : "text-slate-950"
+                        ? "text-[var(--color-ink-muted)]"
+                        : "text-[var(--color-ink)]"
                   }
                 >
                   {match.homeScore ?? 0}
                 </span>
-                <span className="mx-1 text-slate-300">–</span>
+                <span className="mx-1 text-[var(--color-rule)]">–</span>
                 <span
                   className={
                     awayWon
-                      ? "text-slate-950"
+                      ? "text-[var(--color-ink)]"
                       : homeWon
-                        ? "text-slate-400"
-                        : "text-slate-950"
+                        ? "text-[var(--color-ink-muted)]"
+                        : "text-[var(--color-ink)]"
                   }
                 >
                   {match.awayScore ?? 0}
@@ -98,7 +102,9 @@ export function MatchCard({ match }: MatchCardProps) {
             <p
               className={cn(
                 "truncate text-base font-bold sm:text-xl",
-                homeWon ? "text-slate-400" : "text-slate-900",
+                homeWon
+                  ? "text-[var(--color-ink-muted)]"
+                  : "text-[var(--color-ink)]",
               )}
             >
               {match.awayTeam.shortCode} {getTeamFlag(match.awayTeam.slug)}
@@ -106,7 +112,9 @@ export function MatchCard({ match }: MatchCardProps) {
             <p
               className={cn(
                 "text-xs leading-tight",
-                homeWon ? "text-slate-400" : "text-slate-900",
+                homeWon
+                  ? "text-[var(--color-ink-muted)]"
+                  : "text-[var(--color-ink)]",
               )}
             >
               {match.awayTeam.name}

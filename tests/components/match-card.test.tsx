@@ -54,10 +54,16 @@ describe("MatchCard", () => {
       />,
     );
 
-    expect(screen.getByText("24")).toHaveClass("text-slate-950");
-    expect(screen.getByText("21")).toHaveClass("text-slate-400");
-    expect(screen.getByText("FRA 🇫🇷")).toHaveClass("text-slate-400");
-    expect(screen.getByText("Ireland")).toHaveClass("text-slate-900");
+    expect(screen.getByText("24")).toHaveClass("text-[var(--color-ink)]");
+    expect(screen.getByText("21")).toHaveClass(
+      "text-[var(--color-ink-muted)]",
+    );
+    expect(screen.getByText("FRA 🇫🇷")).toHaveClass(
+      "text-[var(--color-ink-muted)]",
+    );
+    expect(screen.getByText("Ireland")).toHaveClass(
+      "text-[var(--color-ink)]",
+    );
   });
 
   it("renders an em dash for a scheduled match", () => {
@@ -106,6 +112,29 @@ describe("MatchCard", () => {
       "truncate",
       "text-base",
       "sm:text-xl",
+    );
+  });
+
+  it("uses the redesigned lifted card treatment", () => {
+    const { container } = render(<MatchCard match={baseMatch} />);
+
+    expect(container.querySelector("a")).toHaveClass(
+      "focus-visible:ring-[var(--color-accent)]",
+    );
+    expect(container.querySelector("article")).toHaveClass(
+      "shadow-sm",
+      "transition-all",
+      "hover:-translate-y-0.5",
+      "hover:shadow-md",
+    );
+  });
+
+  it("uses the display font for the score column", () => {
+    const { container } = render(<MatchCard match={baseMatch} />);
+
+    expect(within(container).getByText("—")).toHaveClass(
+      "font-display",
+      "text-[var(--color-rule)]",
     );
   });
 

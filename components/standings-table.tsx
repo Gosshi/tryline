@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 import type { StandingRow } from "@/lib/db/queries/standings";
 
 export function StandingsTable({ standings }: { standings: StandingRow[] }) {
@@ -6,7 +8,7 @@ export function StandingsTable({ standings }: { standings: StandingRow[] }) {
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-4 border-b border-slate-100 pb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
           Standings
@@ -34,7 +36,14 @@ export function StandingsTable({ standings }: { standings: StandingRow[] }) {
           <tbody>
             {standings.map((row) => (
               <tr
-                className="border-b border-slate-50 last:border-0"
+                className={cn(
+                  "border-b border-slate-50 last:border-0",
+                  row.position === 1
+                    ? "bg-emerald-50/60"
+                    : row.position <= 3
+                      ? "bg-slate-50/60"
+                      : "",
+                )}
                 key={row.position}
               >
                 <td className="py-2 pr-3 tabular-nums text-slate-400">
@@ -61,7 +70,7 @@ export function StandingsTable({ standings }: { standings: StandingRow[] }) {
                 <td className="py-2 text-right tabular-nums text-slate-600">
                   {row.triesFor}
                 </td>
-                <td className="py-2 text-right font-bold tabular-nums text-slate-950">
+                <td className="py-2 text-right font-display font-bold tabular-nums text-[var(--color-ink)]">
                   {row.totalPoints}
                 </td>
               </tr>
