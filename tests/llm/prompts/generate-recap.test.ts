@@ -30,8 +30,17 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 1.3.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@1.3.0");
+  it("uses recap prompt version 1.4.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@1.4.0");
+  });
+
+  it("includes section ranges and the minimum length instruction", () => {
+    const prompt = buildGenerateRecapPrompt(assembled, [], []);
+
+    expect(prompt).toContain("試合全体像(400-500字)");
+    expect(prompt).toContain("ターニングポイント(500-600字)");
+    expect(prompt).toContain("全体で2,000字以上を目標とすること");
+    expect(prompt).toContain("各セクションが指定範囲の下限を下回った場合は書き足すこと");
   });
 
   it("includes match events only when present", () => {
