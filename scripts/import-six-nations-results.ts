@@ -235,6 +235,26 @@ async function upsertMatches(
   return data.length;
 }
 
+async function upsertCompetitionTeams(
+  competitionId: string,
+  teamLookup: TeamLookup,
+) {
+  const client = getSupabaseServerClient();
+  const rows = Object.values(teamLookup).map((teamId) => ({
+    competition_id: competitionId,
+    team_id: teamId,
+  }));
+  const { error } = await client
+    .from("competition_teams")
+    .upsert(rows, { onConflict: "competition_id,team_id" });
+
+  if (error) {
+    throw error;
+  }
+
+  return rows.length;
+}
+
 async function main() {
   const year = parseYearArg(process.argv[2]);
   const results = await readResults(year);
@@ -248,8 +268,11 @@ async function main() {
     teamLookup,
     year,
   );
+  const teamCount = await upsertCompetitionTeams(competitionId, teamLookup);
 
-  console.log(`Upserted ${upsertedCount} matches for Six Nations ${year}`);
+  console.log(
+    `Upserted ${upsertedCount} matches and ${teamCount} competition_teams for Six Nations ${year}`,
+  );
 }
 
 main().catch((error) => {
