@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { MatchHeader } from "@/components/match-header";
@@ -57,5 +57,18 @@ describe("MatchHeader", () => {
     expect(colorBar).toHaveStyle({
       background: "linear-gradient(to right, #009A44 50%, #002395 50%)",
     });
+  });
+
+  it("renders SVG flags with the team short codes", () => {
+    const { container } = render(<MatchHeader match={match} />);
+    const header = within(container);
+
+    expect(header.getByText("IRL")).toHaveClass(
+      "flex",
+      "items-center",
+      "flex-row-reverse",
+    );
+    expect(header.getByText("FRA")).toHaveClass("flex", "items-center");
+    expect(container.querySelectorAll("svg")).toHaveLength(2);
   });
 });

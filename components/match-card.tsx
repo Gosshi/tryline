@@ -2,9 +2,10 @@ import Link from "next/link";
 
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
-import { getTeamFlag, getTeamStripe } from "@/lib/format/team-identity";
+import { getTeamStripe } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
+import { FlagIcon } from "./flag-icon";
 import { StatusBadge } from "./status-badge";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
@@ -48,13 +49,14 @@ export function MatchCard({ match }: MatchCardProps) {
           <div className="text-right">
             <p
               className={cn(
-                "truncate text-base font-bold sm:text-xl",
+                "flex items-center justify-end gap-1.5 text-base font-bold sm:text-xl",
                 awayWon
                   ? "text-[var(--color-ink-muted)]"
                   : "text-[var(--color-ink)]",
               )}
             >
-              {getTeamFlag(match.homeTeam.slug)} {match.homeTeam.shortCode}
+              <FlagIcon slug={match.homeTeam.slug} size={16} />
+              {match.homeTeam.shortCode}
             </p>
             <p
               className={cn(
@@ -108,13 +110,14 @@ export function MatchCard({ match }: MatchCardProps) {
           <div className="text-left">
             <p
               className={cn(
-                "truncate text-base font-bold sm:text-xl",
+                "flex items-center gap-1.5 text-base font-bold sm:text-xl",
                 homeWon
                   ? "text-[var(--color-ink-muted)]"
                   : "text-[var(--color-ink)]",
               )}
             >
-              {match.awayTeam.shortCode} {getTeamFlag(match.awayTeam.slug)}
+              {match.awayTeam.shortCode}
+              <FlagIcon slug={match.awayTeam.slug} size={16} />
             </p>
             <p
               className={cn(
