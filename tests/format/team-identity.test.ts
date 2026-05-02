@@ -29,6 +29,7 @@ describe("team identity formatter", () => {
     expect(getTeamFlag("saracens")).toBe("🏉");
     expect(getTeamFlag("toulouse")).toBe("🏉");
     expect(getTeamFlag("leinster")).toBe("🏉");
+    expect(getTeamFlag("crusaders")).toBe("🏉");
   });
 
   it("returns inline SVG flags and an empty fallback for unknown teams", () => {
@@ -49,6 +50,8 @@ describe("team identity formatter", () => {
     expect(getTeamColor("bordeaux-begles")).toBe("#5B1A7A");
     expect(getTeamColor("leinster")).toBe("#0032A0");
     expect(getTeamColor("bulls")).toBe("#00A3E0");
+    expect(getTeamColor("crusaders")).toBe("#D71920");
+    expect(getTeamColor("moana-pasifika")).toBe("#2E1A47");
     expect(getTeamColor("unknown")).toBe("#94a3b8");
   });
 
@@ -79,6 +82,9 @@ describe("team identity formatter", () => {
     );
     expect(getTeamStripe("leinster")).toBe(
       "linear-gradient(to bottom, #0032A0 0%, #0032A0 100%)",
+    );
+    expect(getTeamStripe("crusaders")).toBe(
+      "linear-gradient(to bottom, #D71920 0%, #D71920 100%)",
     );
     expect(getTeamStripe("unknown")).toBe("#94a3b8");
   });
