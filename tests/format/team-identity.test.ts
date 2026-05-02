@@ -30,6 +30,7 @@ describe("team identity formatter", () => {
     expect(getTeamFlag("toulouse")).toBe("🏉");
     expect(getTeamFlag("leinster")).toBe("🏉");
     expect(getTeamFlag("crusaders")).toBe("🏉");
+    expect(getTeamFlag("saitama-wild-knights")).toBe("🏉");
   });
 
   it("returns inline SVG flags and an empty fallback for unknown teams", () => {
@@ -52,6 +53,9 @@ describe("team identity formatter", () => {
     expect(getTeamColor("bulls")).toBe("#00A3E0");
     expect(getTeamColor("crusaders")).toBe("#D71920");
     expect(getTeamColor("moana-pasifika")).toBe("#2E1A47");
+    expect(getTeamColor("saitama-wild-knights")).toBe("#153E8A");
+    expect(getTeamColor("kubota-spears")).toBe("#F28C00");
+    expect(getTeamColor("shizuoka-blue-revs")).toBe("#1E88E5");
     expect(getTeamColor("unknown")).toBe("#94a3b8");
   });
 
@@ -85,6 +89,9 @@ describe("team identity formatter", () => {
     );
     expect(getTeamStripe("crusaders")).toBe(
       "linear-gradient(to bottom, #D71920 0%, #D71920 100%)",
+    );
+    expect(getTeamStripe("saitama-wild-knights")).toBe(
+      "linear-gradient(to bottom, #153E8A 0%, #153E8A 100%)",
     );
     expect(getTeamStripe("unknown")).toBe("#94a3b8");
   });
