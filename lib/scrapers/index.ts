@@ -55,6 +55,14 @@ export type {
   HistoricalMatchResult as SuperRugbyPacificHistoricalMatchResult,
 } from "@/lib/scrapers/wikipedia-super-rugby-pacific-results";
 export {
+  parseLeagueOneResultsHtml,
+  wikipediaLeagueOneResultsScraper,
+} from "@/lib/scrapers/wikipedia-league-one-results";
+export type {
+  CompetitionResultScraper as LeagueOneResultScraper,
+  HistoricalMatchResult as LeagueOneHistoricalMatchResult,
+} from "@/lib/scrapers/wikipedia-league-one-results";
+export {
   parseTop14ResultsHtml,
   wikipediaTop14ResultsScraper,
 } from "@/lib/scrapers/wikipedia-top-14-results";
