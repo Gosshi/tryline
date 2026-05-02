@@ -1,17 +1,17 @@
 insert into public.teams (slug, name, short_code, country)
 values
-  ('saitama-wild-knights', 'Saitama Wild Knights', 'SAI', 'JPN'),
-  ('kubota-spears', 'Kubota Spears Funabashi Tokyo Bay', 'KUB', 'JPN'),
-  ('toyota-verblitz', 'Toyota Verblitz', 'TOY', 'JPN'),
-  ('tokyo-suntory-sungoliath', 'Tokyo Suntory Sungoliath', 'SUN', 'JPN'),
-  ('kobelco-kobe-steelers', 'Kobelco Kobe Steelers', 'KOB', 'JPN'),
-  ('toshiba-brave-lupus', 'Toshiba Brave Lupus Tokyo', 'TBL', 'JPN'),
-  ('ntt-black-storms', 'Black Rams Tokyo', 'BRT', 'JPN'),
-  ('canon-eagles', 'Yokohama Canon Eagles', 'YCE', 'JPN'),
-  ('mitsubishi-dynaboars', 'Mitsubishi Sagamihara DynaBoars', 'SDB', 'JPN'),
-  ('ricoh-black-rams', 'Black Rams Tokyo', 'BRT', 'JPN'),
-  ('shizuoka-blue-revs', 'Shizuoka Blue Revs', 'SBR', 'JPN'),
-  ('honda-heat', 'Mie Honda Heat', 'MHH', 'JPN')
+  ('saitama-wild-knights', '埼玉パナソニックワイルドナイツ', 'SAI', 'JPN'),
+  ('kubota-spears', 'クボタスピアーズ船橋・東京ベイ', 'KUB', 'JPN'),
+  ('toyota-verblitz', 'トヨタヴェルブリッツ', 'TOY', 'JPN'),
+  ('tokyo-suntory-sungoliath', '東京サントリーサンゴリアス', 'SUN', 'JPN'),
+  ('kobelco-kobe-steelers', 'コベルコ神戸スティーラーズ', 'KOB', 'JPN'),
+  ('toshiba-brave-lupus', '東芝ブレイブルーパス東京', 'TBL', 'JPN'),
+  ('urayasu-d-rocks', '浦安D-Rocks', 'UDR', 'JPN'),
+  ('canon-eagles', '横浜キヤノンイーグルス', 'YCE', 'JPN'),
+  ('mitsubishi-dynaboars', '三菱重工相模原ダイナボアーズ', 'SDB', 'JPN'),
+  ('ricoh-black-rams', '東京ブラックラムズ', 'BRT', 'JPN'),
+  ('shizuoka-blue-revs', '静岡ブルーレヴズ', 'SBR', 'JPN'),
+  ('honda-heat', '三重ホンダヒート', 'MHH', 'JPN')
 on conflict (slug) do update
 set
   name = excluded.name,

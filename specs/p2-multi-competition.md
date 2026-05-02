@@ -88,7 +88,7 @@ fijian-drua, moana-pasifika
 ```
 saitama-wild-knights, kubota-spears, toyota-verblitz,
 tokyo-suntory-sungoliath, kobelco-kobe-steelers,
-toshiba-brave-lupus, ntt-black-storms, canon-eagles,
+toshiba-brave-lupus, urayasu-d-rocks, canon-eagles,
 mitsubishi-dynaboars, ricoh-black-rams,
 shizuoka-blue-revs, honda-heat
 ```

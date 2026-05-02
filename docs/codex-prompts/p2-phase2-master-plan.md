@@ -155,7 +155,7 @@ node --env-file=.env.production.local tools/run-ts.cjs \
 - **対象: プレーオフ・決勝のみ**（Wikipedia に全試合一覧なし。European 国内リーグと同方針）
 - Wikipedia ページ `2024-25_Japan_Rugby_League_One_–_Division_1` のプレーオフ・決勝セクションをスクレイプ
 - `supabase/seed/teams-league-one.sql` 作成（チーム名は英語表記をメインに）
-- チーム（2024-25 D1 実参加）: `saitama-wild-knights`, `kubota-spears`, `toyota-verblitz`, `tokyo-suntory-sungoliath`, `kobelco-kobe-steelers`, `toshiba-brave-lupus`, `ntt-black-storms`, `canon-eagles`, `mitsubishi-dynaboars`, `ricoh-black-rams`, `shizuoka-blue-revs`, `honda-heat`
+- チーム（2024-25 D1 実参加）: `saitama-wild-knights`, `kubota-spears`, `toyota-verblitz`, `tokyo-suntory-sungoliath`, `kobelco-kobe-steelers`, `toshiba-brave-lupus`, `urayasu-d-rocks`, `canon-eagles`, `mitsubishi-dynaboars`, `ricoh-black-rams`, `shizuoka-blue-revs`, `honda-heat`
 - ※ `red-hurricanes-osaka`, `shimizu-blue-sharks`, `urayasu-d-rocks` は 2024-25 は D2 のため除外
 - `lib/scrapers/wikipedia-league-one-results.ts` 作成
 - `scripts/import-league-one-results.ts` 作成
