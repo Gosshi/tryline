@@ -31,6 +31,14 @@ export type {
   HistoricalMatchResult as AutumnNationsHistoricalMatchResult,
 } from "@/lib/scrapers/wikipedia-autumn-nations-results";
 export {
+  parsePacificNationsCupResultsHtml,
+  wikipediaPacificNationsCupResultsScraper,
+} from "@/lib/scrapers/wikipedia-pacific-nations-cup-results";
+export type {
+  CompetitionResultScraper as PacificNationsCupResultScraper,
+  HistoricalMatchResult as PacificNationsCupHistoricalMatchResult,
+} from "@/lib/scrapers/wikipedia-pacific-nations-cup-results";
+export {
   parseRugbyChampionshipResultsHtml,
   wikipediaRugbyChampionshipResultsScraper,
 } from "@/lib/scrapers/wikipedia-rugby-championship-results";
