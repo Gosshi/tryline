@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
-import { getTeamStripe } from "@/lib/format/team-identity";
+import { getTeamColor, getTeamStripe } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
 import { FlagIcon } from "./flag-icon";
@@ -24,7 +24,12 @@ export function MatchCard({ match }: MatchCardProps) {
       className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
       href={`/matches/${match.id}`}
     >
-      <article className="relative h-full overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
+      <article
+        className="relative h-full overflow-hidden rounded-xl border border-slate-200 p-5 shadow-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+        style={{
+          background: `linear-gradient(to right, ${getTeamColor(match.homeTeam.slug)}0a 0%, #ffffff 35%, #ffffff 65%, ${getTeamColor(match.awayTeam.slug)}0a 100%)`,
+        }}
+      >
         <div
           aria-hidden
           className="absolute inset-y-0 left-0 w-[4px]"
