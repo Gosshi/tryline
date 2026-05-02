@@ -128,8 +128,20 @@ describe("MatchCard", () => {
       "shadow-sm",
       "transition-all",
       "hover:-translate-y-0.5",
+      "hover:border-slate-300",
       "hover:shadow-md",
     );
+  });
+
+  it("uses a subtle home-away team color background", () => {
+    const { container } = render(<MatchCard match={baseMatch} />);
+    const article = container.querySelector("article");
+
+    expect(article).not.toHaveClass("bg-white");
+    expect(article).toHaveStyle({
+      background:
+        "linear-gradient(to right, #009A440a 0%, #ffffff 35%, #ffffff 65%, #0023950a 100%)",
+    });
   });
 
   it("uses the display font for the score column", () => {
