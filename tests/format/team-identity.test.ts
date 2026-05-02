@@ -18,14 +18,23 @@ describe("team identity formatter", () => {
     expect(getTeamFlag("unknown")).toBe("🏉");
   });
 
+  it("returns country-code emoji flags for international teams", () => {
+    expect(getTeamFlag("new-zealand")).toBe("🇳🇿");
+    expect(getTeamFlag("south-africa")).toBe("🇿🇦");
+    expect(getTeamFlag("japan")).toBe("🇯🇵");
+  });
+
   it("returns inline SVG flags and an empty fallback for unknown teams", () => {
     expect(getTeamFlagSvg("england")).toContain("<svg");
     expect(getTeamFlagSvg("wales")).toContain("viewBox");
+    expect(getTeamFlagSvg("new-zealand")).toBe("");
     expect(getTeamFlagSvg("unknown")).toBe("");
   });
 
   it("returns team colors and a slate fallback for unknown teams", () => {
     expect(getTeamColor("ireland")).toBe("#009A44");
+    expect(getTeamColor("new-zealand")).toBe("#111111");
+    expect(getTeamColor("south-africa")).toBe("#007A4D");
     expect(getTeamColor("unknown")).toBe("#94a3b8");
   });
 
@@ -41,6 +50,12 @@ describe("team identity formatter", () => {
     );
     expect(getTeamStripe("wales", "horizontal")).toBe(
       "linear-gradient(to right, #C8102E 0%, #C8102E 33%, #FFFFFF 33%, #FFFFFF 67%, #00712D 67%, #00712D 100%)",
+    );
+    expect(getTeamStripe("japan", "horizontal")).toBe(
+      "linear-gradient(to right, #BC002D 0%, #BC002D 50%, #FFFFFF 50%, #FFFFFF 100%)",
+    );
+    expect(getTeamStripe("south-africa")).toBe(
+      "linear-gradient(to bottom, #007A4D 0%, #007A4D 33%, #FFB612 33%, #FFB612 67%, #000000 67%, #000000 100%)",
     );
     expect(getTeamStripe("unknown")).toBe("#94a3b8");
   });

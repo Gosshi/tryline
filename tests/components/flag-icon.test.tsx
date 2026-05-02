@@ -23,4 +23,10 @@ describe("FlagIcon", () => {
 
     expect(screen.getByText("🏉")).toBeInTheDocument();
   });
+
+  it("renders the emoji flag for a known team without an SVG flag", () => {
+    render(<FlagIcon slug="japan" />);
+
+    expect(screen.getByText("🇯🇵")).toBeInTheDocument();
+  });
 });
