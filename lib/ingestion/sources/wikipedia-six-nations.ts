@@ -4,10 +4,16 @@ import { parse } from "date-fns";
 const ROUND_ID_PATTERN = /^Round_(\d+)$/;
 const SCORE_PATTERN = /(\d+)\s*[–-]\s*(\d+)/;
 const TIMEZONE_OFFSETS: Record<string, number> = {
+  AEDT: 11,
+  AEST: 10,
+  ART: -3,
   BST: 1,
   CEST: 2,
   CET: 1,
   GMT: 0,
+  NZDT: 13,
+  NZST: 12,
+  SAST: 2,
   UTC: 0,
 };
 
