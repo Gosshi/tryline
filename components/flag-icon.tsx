@@ -1,4 +1,4 @@
-import { getTeamFlagSvg } from "@/lib/format/team-identity";
+import { getTeamFlag, getTeamFlagSvg } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
 type FlagIconProps = {
@@ -11,7 +11,23 @@ export function FlagIcon({ slug, size = 20, className }: FlagIconProps) {
   const svg = getTeamFlagSvg(slug);
 
   if (!svg) {
-    return <span aria-hidden>🏉</span>;
+    return (
+      <span
+        aria-hidden
+        className={cn(
+          "inline-flex shrink-0 items-center justify-center leading-none",
+          className,
+        )}
+        style={{
+          fontSize: Math.round(size * 0.9),
+          height: size,
+          verticalAlign: "middle",
+          width: Math.round(size * 1.5),
+        }}
+      >
+        {getTeamFlag(slug)}
+      </span>
+    );
   }
 
   return (
