@@ -22,3 +22,11 @@ export {
   parseCompetitionStandingsHtml,
   scrapeCompetitionStandings,
 } from "@/lib/scrapers/wikipedia-standings";
+export {
+  parseAutumnNationsResultsHtml,
+  wikipediaAutumnNationsResultsScraper,
+} from "@/lib/scrapers/wikipedia-autumn-nations-results";
+export type {
+  CompetitionResultScraper as AutumnNationsResultScraper,
+  HistoricalMatchResult as AutumnNationsHistoricalMatchResult,
+} from "@/lib/scrapers/wikipedia-autumn-nations-results";
