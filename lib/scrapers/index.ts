@@ -39,6 +39,14 @@ export type {
   HistoricalMatchResult as PacificNationsCupHistoricalMatchResult,
 } from "@/lib/scrapers/wikipedia-pacific-nations-cup-results";
 export {
+  parseTop14ResultsHtml,
+  wikipediaTop14ResultsScraper,
+} from "@/lib/scrapers/wikipedia-top-14-results";
+export type {
+  CompetitionResultScraper as Top14ResultScraper,
+  HistoricalMatchResult as Top14HistoricalMatchResult,
+} from "@/lib/scrapers/wikipedia-top-14-results";
+export {
   parsePremiershipResultsHtml,
   wikipediaPremiershipResultsScraper,
 } from "@/lib/scrapers/wikipedia-premiership-results";

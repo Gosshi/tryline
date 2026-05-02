@@ -27,6 +27,7 @@ describe("team identity formatter", () => {
   it("returns rugby icons for club teams without SVG flags", () => {
     expect(getTeamFlag("bath")).toBe("🏉");
     expect(getTeamFlag("saracens")).toBe("🏉");
+    expect(getTeamFlag("toulouse")).toBe("🏉");
   });
 
   it("returns inline SVG flags and an empty fallback for unknown teams", () => {
@@ -43,6 +44,8 @@ describe("team identity formatter", () => {
     expect(getTeamColor("south-africa")).toBe("#007A4D");
     expect(getTeamColor("bath")).toBe("#002F6C");
     expect(getTeamColor("leicester-tigers")).toBe("#006B3F");
+    expect(getTeamColor("toulouse")).toBe("#E30613");
+    expect(getTeamColor("bordeaux-begles")).toBe("#5B1A7A");
     expect(getTeamColor("unknown")).toBe("#94a3b8");
   });
 
@@ -67,6 +70,9 @@ describe("team identity formatter", () => {
     );
     expect(getTeamStripe("saracens")).toBe(
       "linear-gradient(to bottom, #000000 0%, #000000 100%)",
+    );
+    expect(getTeamStripe("toulouse")).toBe(
+      "linear-gradient(to bottom, #E30613 0%, #E30613 100%)",
     );
     expect(getTeamStripe("unknown")).toBe("#94a3b8");
   });
