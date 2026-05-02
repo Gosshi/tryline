@@ -47,6 +47,14 @@ export type {
   HistoricalMatchResult as UrcHistoricalMatchResult,
 } from "@/lib/scrapers/wikipedia-urc-results";
 export {
+  parseSuperRugbyPacificResultsHtml,
+  wikipediaSuperRugbyPacificResultsScraper,
+} from "@/lib/scrapers/wikipedia-super-rugby-pacific-results";
+export type {
+  CompetitionResultScraper as SuperRugbyPacificResultScraper,
+  HistoricalMatchResult as SuperRugbyPacificHistoricalMatchResult,
+} from "@/lib/scrapers/wikipedia-super-rugby-pacific-results";
+export {
   parseTop14ResultsHtml,
   wikipediaTop14ResultsScraper,
 } from "@/lib/scrapers/wikipedia-top-14-results";
