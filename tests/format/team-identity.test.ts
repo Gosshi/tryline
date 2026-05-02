@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   getTeamColor,
   getTeamFlag,
+  getTeamFlagSvg,
   getTeamStripe,
 } from "@/lib/format/team-identity";
 
@@ -15,6 +16,12 @@ describe("team identity formatter", () => {
 
   it("returns the rugby fallback for unknown teams", () => {
     expect(getTeamFlag("unknown")).toBe("🏉");
+  });
+
+  it("returns inline SVG flags and an empty fallback for unknown teams", () => {
+    expect(getTeamFlagSvg("england")).toContain("<svg");
+    expect(getTeamFlagSvg("wales")).toContain("viewBox");
+    expect(getTeamFlagSvg("unknown")).toBe("");
   });
 
   it("returns team colors and a slate fallback for unknown teams", () => {

@@ -1,9 +1,10 @@
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
-import { getTeamColor, getTeamFlag } from "@/lib/format/team-identity";
+import { getTeamColor } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
+import { FlagIcon } from "./flag-icon";
 import { StatusBadge } from "./status-badge";
 
 import type { MatchDetail } from "@/lib/db/queries/matches";
@@ -66,8 +67,8 @@ export function MatchHeader({ match }: MatchHeaderProps) {
           <TeamBlock
             align="right"
             dimmed={outcome === "away_win"}
-            flag={getTeamFlag(match.homeTeam.slug)}
             name={match.homeTeam.name}
+            slug={match.homeTeam.slug}
             shortCode={match.homeTeam.shortCode}
           />
 
@@ -85,8 +86,8 @@ export function MatchHeader({ match }: MatchHeaderProps) {
           <TeamBlock
             align="left"
             dimmed={outcome === "home_win"}
-            flag={getTeamFlag(match.awayTeam.slug)}
             name={match.awayTeam.name}
+            slug={match.awayTeam.slug}
             shortCode={match.awayTeam.shortCode}
           />
         </div>
@@ -110,14 +111,14 @@ export function MatchHeader({ match }: MatchHeaderProps) {
 function TeamBlock({
   align,
   dimmed,
-  flag,
   name,
+  slug,
   shortCode,
 }: {
   align: "left" | "right";
   dimmed: boolean;
-  flag: string;
   name: string;
+  slug: string;
   shortCode: string;
 }) {
   return (
@@ -126,11 +127,13 @@ function TeamBlock({
     >
       <p
         className={cn(
-          "truncate text-2xl font-black tracking-tight sm:text-3xl",
+          "flex items-center gap-2 truncate text-2xl font-black tracking-tight sm:text-3xl",
+          align === "right" ? "flex-row-reverse justify-start" : "flex-row",
           dimmed ? "text-slate-400" : "text-slate-900",
         )}
       >
-        {align === "right" ? `${flag} ${shortCode}` : `${shortCode} ${flag}`}
+        <FlagIcon slug={slug} size={24} />
+        {shortCode}
       </p>
       <p
         className={cn(

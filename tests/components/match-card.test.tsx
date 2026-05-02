@@ -58,9 +58,7 @@ describe("MatchCard", () => {
     expect(screen.getByText("21")).toHaveClass(
       "text-[var(--color-ink-muted)]",
     );
-    expect(screen.getByText("FRA 🇫🇷")).toHaveClass(
-      "text-[var(--color-ink-muted)]",
-    );
+    expect(screen.getByText("FRA")).toHaveClass("text-[var(--color-ink-muted)]");
     expect(screen.getByText("Ireland")).toHaveClass(
       "text-[var(--color-ink)]",
     );
@@ -103,13 +101,18 @@ describe("MatchCard", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
     const card = within(container);
 
-    expect(card.getByText("🇮🇪 IRL")).toHaveClass(
-      "truncate",
+    expect(card.getByText("IRL")).toHaveClass(
+      "flex",
+      "items-center",
+      "justify-end",
+      "gap-1.5",
       "text-base",
       "sm:text-xl",
     );
-    expect(card.getByText("FRA 🇫🇷")).toHaveClass(
-      "truncate",
+    expect(card.getByText("FRA")).toHaveClass(
+      "flex",
+      "items-center",
+      "gap-1.5",
       "text-base",
       "sm:text-xl",
     );
@@ -140,7 +143,7 @@ describe("MatchCard", () => {
 
   it("uses home and away team stripes on the card edges", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
-    const stripes = container.querySelectorAll("[aria-hidden='true']");
+    const stripes = container.querySelectorAll("article > [aria-hidden='true']");
 
     expect(container.querySelector("article")).not.toHaveClass("border-l-4");
     expect(stripes).toHaveLength(2);
