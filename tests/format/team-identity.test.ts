@@ -28,6 +28,7 @@ describe("team identity formatter", () => {
     expect(getTeamFlag("bath")).toBe("🏉");
     expect(getTeamFlag("saracens")).toBe("🏉");
     expect(getTeamFlag("toulouse")).toBe("🏉");
+    expect(getTeamFlag("leinster")).toBe("🏉");
   });
 
   it("returns inline SVG flags and an empty fallback for unknown teams", () => {
@@ -46,6 +47,8 @@ describe("team identity formatter", () => {
     expect(getTeamColor("leicester-tigers")).toBe("#006B3F");
     expect(getTeamColor("toulouse")).toBe("#E30613");
     expect(getTeamColor("bordeaux-begles")).toBe("#5B1A7A");
+    expect(getTeamColor("leinster")).toBe("#0032A0");
+    expect(getTeamColor("bulls")).toBe("#00A3E0");
     expect(getTeamColor("unknown")).toBe("#94a3b8");
   });
 
@@ -73,6 +76,9 @@ describe("team identity formatter", () => {
     );
     expect(getTeamStripe("toulouse")).toBe(
       "linear-gradient(to bottom, #E30613 0%, #E30613 100%)",
+    );
+    expect(getTeamStripe("leinster")).toBe(
+      "linear-gradient(to bottom, #0032A0 0%, #0032A0 100%)",
     );
     expect(getTeamStripe("unknown")).toBe("#94a3b8");
   });
