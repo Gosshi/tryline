@@ -30,3 +30,11 @@ export type {
   CompetitionResultScraper as AutumnNationsResultScraper,
   HistoricalMatchResult as AutumnNationsHistoricalMatchResult,
 } from "@/lib/scrapers/wikipedia-autumn-nations-results";
+export {
+  parseRugbyChampionshipResultsHtml,
+  wikipediaRugbyChampionshipResultsScraper,
+} from "@/lib/scrapers/wikipedia-rugby-championship-results";
+export type {
+  CompetitionResultScraper,
+  HistoricalMatchResult,
+} from "@/lib/scrapers/wikipedia-rugby-championship-results";
