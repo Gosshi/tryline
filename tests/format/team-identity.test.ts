@@ -24,10 +24,16 @@ describe("team identity formatter", () => {
     expect(getTeamFlag("japan")).toBe("🇯🇵");
   });
 
+  it("returns rugby icons for club teams without SVG flags", () => {
+    expect(getTeamFlag("bath")).toBe("🏉");
+    expect(getTeamFlag("saracens")).toBe("🏉");
+  });
+
   it("returns inline SVG flags and an empty fallback for unknown teams", () => {
     expect(getTeamFlagSvg("england")).toContain("<svg");
     expect(getTeamFlagSvg("wales")).toContain("viewBox");
     expect(getTeamFlagSvg("new-zealand")).toBe("");
+    expect(getTeamFlagSvg("bath")).toBe("");
     expect(getTeamFlagSvg("unknown")).toBe("");
   });
 
@@ -35,6 +41,8 @@ describe("team identity formatter", () => {
     expect(getTeamColor("ireland")).toBe("#009A44");
     expect(getTeamColor("new-zealand")).toBe("#111111");
     expect(getTeamColor("south-africa")).toBe("#007A4D");
+    expect(getTeamColor("bath")).toBe("#002F6C");
+    expect(getTeamColor("leicester-tigers")).toBe("#006B3F");
     expect(getTeamColor("unknown")).toBe("#94a3b8");
   });
 
@@ -56,6 +64,9 @@ describe("team identity formatter", () => {
     );
     expect(getTeamStripe("south-africa")).toBe(
       "linear-gradient(to bottom, #007A4D 0%, #007A4D 33%, #FFB612 33%, #FFB612 67%, #000000 67%, #000000 100%)",
+    );
+    expect(getTeamStripe("saracens")).toBe(
+      "linear-gradient(to bottom, #000000 0%, #000000 100%)",
     );
     expect(getTeamStripe("unknown")).toBe("#94a3b8");
   });
