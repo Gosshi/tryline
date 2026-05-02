@@ -30,7 +30,7 @@ const TEAM_IDENTITY: Record<string, TeamIdentity> = {
   england: { color: "#CC0000", flag: getSubdivisionFlag("gbeng") },
   france: { color: "#002395", flag: "🇫🇷" },
   ireland: { color: "#009A44", flag: "🇮🇪" },
-  italy: { color: "#003DA5", flag: "🇮🇹" },
+  italy: { color: "#0070B8", flag: "🇮🇹" },
   scotland: { color: "#003087", flag: getSubdivisionFlag("gbsct") },
   wales: { color: "#C8102E", flag: getSubdivisionFlag("gbwls") },
 };
