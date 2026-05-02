@@ -110,12 +110,18 @@ node --env-file=.env.production.local tools/run-ts.cjs \
 
 #### PR 2-2: Premiership スクレイパー + インポートスクリプト
 - ブランチ: `feat/p2-premiership`
+- **対象: プレーオフのみ**（SF・決勝・入替戦 計 5〜6 試合）
+- 通常シーズン全試合の一覧ページが Wikipedia に存在しないため
+- Wikipedia ページ `2024-25_Premiership_Rugby_season` のプレーオフセクションをスクレイプ
 - `lib/scrapers/wikipedia-premiership-results.ts` 作成
 - `scripts/import-premiership-results.ts` 作成
 - family slug: `premiership`, シーズン形式: `"2024-25"`
 
 #### PR 2-3: Top 14
 - ブランチ: `feat/p2-top-14`
+- **対象: プレーオフのみ**（SF・決勝・入替戦 計 5〜6 試合）
+- 通常シーズン 182 試合の一覧ページが Wikipedia に存在しないため
+- Wikipedia ページ `2024-25_Top_14_season` のプレーオフセクションをスクレイプ
 - `supabase/seed/teams-top-14.sql` 作成
 - チーム: `bordeaux-begles`, `clermont`, `la-rochelle`, `lyon`, `montpellier`, `pau`, `racing-92`, `stade-francais`, `toulouse`, `toulon`, `perpignan`, `castres`, `bayonne`, `vannes`
 - `lib/scrapers/wikipedia-top-14-results.ts` 作成
@@ -124,6 +130,8 @@ node --env-file=.env.production.local tools/run-ts.cjs \
 
 #### PR 2-4: URC（United Rugby Championship）
 - ブランチ: `feat/p2-urc`
+- **対象: プレーオフのみ**（QF・SF・決勝 計 7〜8 試合）
+- Wikipedia ページ `2024-25_United_Rugby_Championship` のプレーオフセクションをスクレイプ
 - `supabase/seed/teams-urc.sql` 作成
 - チーム: `leinster`, `munster`, `connacht`, `ulster`, `glasgow-warriors`, `edinburgh`, `cardiff`, `ospreys`, `scarlets`, `dragons`, `benetton`, `zebre`, `bulls`, `lions`, `sharks`, `stormers`
 - `lib/scrapers/wikipedia-urc-results.ts` 作成
@@ -144,8 +152,11 @@ node --env-file=.env.production.local tools/run-ts.cjs \
 
 #### PR 3-2: Japan League One（Division 1）
 - ブランチ: `feat/p2-league-one`
+- **対象: プレーオフ・決勝のみ**（Wikipedia に全試合一覧なし。European 国内リーグと同方針）
+- Wikipedia ページ `2024-25_Japan_Rugby_League_One_–_Division_1` のプレーオフ・決勝セクションをスクレイプ
 - `supabase/seed/teams-league-one.sql` 作成（チーム名は英語表記をメインに）
-- チーム: `saitama-wild-knights`, `kubota-spears`, `toyota-verblitz`, `tokyo-suntory-sungoliath`, `kobelco-kobe-steelers`, `toshiba-brave-lupus`, `ntt-black-storms`, `canon-eagles`, `mitsubishi-dynaboars`, `red-hurricanes-osaka`, `shimizu-blue-sharks`, `urayasu-d-rocks`
+- チーム（2024-25 D1 実参加）: `saitama-wild-knights`, `kubota-spears`, `toyota-verblitz`, `tokyo-suntory-sungoliath`, `kobelco-kobe-steelers`, `toshiba-brave-lupus`, `ntt-black-storms`, `canon-eagles`, `mitsubishi-dynaboars`, `ricoh-black-rams`, `shizuoka-blue-revs`, `honda-heat`
+- ※ `red-hurricanes-osaka`, `shimizu-blue-sharks`, `urayasu-d-rocks` は 2024-25 は D2 のため除外
 - `lib/scrapers/wikipedia-league-one-results.ts` 作成
 - `scripts/import-league-one-results.ts` 作成
 - family slug: `league-one`, シーズン形式: `"2024-25"`
