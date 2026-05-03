@@ -5,7 +5,10 @@ import {
   listFamilies,
 } from "@/lib/db/queries/competitions";
 import { getLatestCompetitionWithMatches } from "@/lib/db/queries/matches";
-import { formatCompetitionTitle } from "@/lib/format/competition";
+import {
+  formatCompetitionTitle,
+  formatFamilyName,
+} from "@/lib/format/competition";
 
 import type { Metadata } from "next";
 
@@ -118,8 +121,8 @@ export default async function HomePage() {
                     className="group flex h-full items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm"
                     href={`/c/${family}`}
                   >
-                    <span className="font-semibold capitalize text-[var(--color-ink)]">
-                      {family.replace(/-/g, " ")}
+                    <span className="font-semibold text-[var(--color-ink)]">
+                      {formatFamilyName(family)}
                     </span>
                     <span className="text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
                       全シーズン →
