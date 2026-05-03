@@ -20,17 +20,13 @@ export interface CompetitionResultScraper {
   fetchResults(season: string): Promise<HistoricalMatchResult[]>;
 }
 
-type Stage = {
-  id: string;
-  round: number;
+const SCORE_PATTERN = /(\d+)\s*[–-]\s*(\d+)/;
+const SECTION_ROUNDS: Record<string, number> = {
+  "Relegation_play-off": 0,
+  "Semi-final_Qualifiers": 1,
+  "Semi-finals": 2,
+  Final: 3,
 };
-
-const STAGES: Stage[] = [
-  { id: "Relegation_play-off", round: 0 },
-  { id: "Semi-final_Qualifiers", round: 1 },
-  { id: "Semi-finals", round: 2 },
-  { id: "Final", round: 3 },
-];
 
 const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
   Bayonne: "bayonne",
@@ -50,10 +46,6 @@ const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
   Toulouse: "toulouse",
   Vannes: "vannes",
 };
-
-const TEAM_NAMES = Object.keys(TEAM_SLUG_BY_WIKIPEDIA_NAME).sort(
-  (a, b) => b.length - a.length,
-);
 
 function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim();
@@ -143,124 +135,47 @@ function parseKickoffAt(dateText: string, timeText: string) {
   ).toISOString();
 }
 
-function getSectionLines(
-  $: ReturnType<typeof load>,
-  sectionId: string,
-): string[] {
-  const heading = $(`#${sectionId}`).closest("div.mw-heading");
+function parseScore(scoreText: string) {
+  const matched = normalizeWhitespace(scoreText).match(SCORE_PATTERN);
 
-  if (heading.length === 0) {
-    return [];
+  if (!matched) {
+    return null;
   }
 
-  const level = heading.find("h2").length > 0 ? 2 : 3;
-  const parts: string[] = [];
-  let cursor = heading.next();
+  return {
+    awayScore: Number(matched[2]),
+    homeScore: Number(matched[1]),
+  };
+}
+
+function parseKickoffText(value: string) {
+  const normalized = normalizeWhitespace(value);
+  const matched = normalized.match(
+    /(\d{1,2} [A-Za-z]+ \d{4})\s*(\d{1,2}:\d{2})/,
+  );
+
+  if (!matched) {
+    throw new Error(`Unable to locate Top 14 kickoff text: ${normalized}`);
+  }
+
+  return parseKickoffAt(matched[1]!, matched[2]!);
+}
+
+function getSectionId(
+  $: ReturnType<typeof load>,
+  block: ReturnType<ReturnType<typeof load>>,
+) {
+  let cursor = block.prev();
 
   while (cursor.length > 0) {
     if (cursor.is("div.mw-heading")) {
-      const cursorLevel = cursor.find("h2").length > 0 ? 2 : 3;
-
-      if (cursorLevel <= level) {
-        break;
-      }
+      return cursor.find("h2, h3").attr("id") ?? null;
     }
 
-    parts.push(cursor.text());
-    cursor = cursor.next();
-  }
-
-  return normalizeWhitespace(parts.join("\n"))
-    .split(
-      /(?<!\d)(?=\d{1,2} [A-Z][a-z]+ \d{4})|(?=Attendance:)|(?=Referee:)|(?=\* \* \*)/,
-    )
-    .map((line) => normalizeWhitespace(line))
-    .filter(Boolean);
-}
-
-function parseMatchLine(line: string) {
-  const withoutMarkers = normalizeWhitespace(line.replace(/\([^)]*\)/g, " "));
-
-  for (const homeTeamName of TEAM_NAMES) {
-    if (!withoutMarkers.startsWith(homeTeamName)) {
-      continue;
-    }
-
-    const afterHome = withoutMarkers.slice(homeTeamName.length).trim();
-    const scoreMatch = afterHome.match(/^(\d+)\s*[–-]\s*(\d+)\s*(.+)$/);
-
-    if (!scoreMatch) {
-      continue;
-    }
-
-    const awayCandidate = normalizeWhitespace(scoreMatch[3] ?? "");
-    const awayTeamName = TEAM_NAMES.find((name) =>
-      awayCandidate.startsWith(name),
-    );
-
-    if (!awayTeamName) {
-      continue;
-    }
-
-    return {
-      awayScore: Number(scoreMatch[2]),
-      awayTeamName,
-      homeScore: Number(scoreMatch[1]),
-      homeTeamName,
-    };
+    cursor = cursor.prev();
   }
 
   return null;
-}
-
-function parseSection(
-  $: ReturnType<typeof load>,
-  stage: Stage,
-  season: string,
-  sourceUrl: string,
-) {
-  const lines = getSectionLines($, stage.id);
-  const results: HistoricalMatchResult[] = [];
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const dateMatch = lines[index]?.match(
-      /^(\d{1,2} [A-Za-z]+ \d{4})\s+(\d{1,2}:\d{2})\s+(.+)$/,
-    );
-
-    if (!dateMatch) {
-      continue;
-    }
-
-    const match = parseMatchLine(dateMatch[3]!);
-
-    if (!match) {
-      continue;
-    }
-
-    const venue = lines
-      .slice(index + 1)
-      .find(
-        (line) =>
-          !line.startsWith("Attendance:") &&
-          !line.startsWith("Referee:") &&
-          !line.includes("Try:"),
-      );
-
-    results.push({
-      away_score: match.awayScore,
-      away_team_slug: resolveTeamSlug(match.awayTeamName),
-      home_score: match.homeScore,
-      home_team_slug: resolveTeamSlug(match.homeTeamName),
-      kickoff_at: parseKickoffAt(dateMatch[1]!, dateMatch[2]!),
-      round: stage.round,
-      season,
-      source_url: sourceUrl,
-      venue: venue ?? null,
-      wikipedia_event_id: `${stage.id}_${match.homeTeamName.replace(/\s+/g, "_")}_v_${match.awayTeamName.replace(/\s+/g, "_")}`,
-    });
-  }
-
-  return results;
 }
 
 export function parseTop14ResultsHtml(
@@ -270,9 +185,57 @@ export function parseTop14ResultsHtml(
 ): HistoricalMatchResult[] {
   const parsedSeason = parseSeason(season);
   const $ = load(html);
-  const results = STAGES.flatMap((stage) =>
-    parseSection($, stage, parsedSeason, sourceUrl),
-  );
+  const results: HistoricalMatchResult[] = [];
+
+  for (const element of $("div.vevent.summary").toArray()) {
+    const block = $(element);
+    const sectionId = getSectionId($, block);
+    const round =
+      sectionId === null ? undefined : (SECTION_ROUNDS[sectionId] ?? undefined);
+
+    if (round === undefined) {
+      continue;
+    }
+
+    const tables = block.find("table");
+    const dateTable = tables.eq(0);
+    const matchupTable = tables.eq(1);
+    const venueTable = tables.eq(2);
+    const firstRowCells = matchupTable.find("tr").first().find("td");
+    const score = parseScore(firstRowCells.eq(1).text());
+
+    if (!score) {
+      continue;
+    }
+
+    const homeTeamName = normalizeWhitespace(
+      firstRowCells.eq(0).find("a").last().text(),
+    );
+    const awayTeamName = normalizeWhitespace(
+      firstRowCells.eq(2).find("a").last().text(),
+    );
+
+    if (!homeTeamName || !awayTeamName) {
+      throw new Error("Unable to parse Top 14 team names from a vevent block.");
+    }
+
+    results.push({
+      away_score: score.awayScore,
+      away_team_slug: resolveTeamSlug(awayTeamName),
+      home_score: score.homeScore,
+      home_team_slug: resolveTeamSlug(homeTeamName),
+      kickoff_at: parseKickoffText(dateTable.text()),
+      round,
+      season: parsedSeason,
+      source_url: sourceUrl,
+      venue:
+        normalizeWhitespace(venueTable.find(".location").first().text()) ||
+        null,
+      wikipedia_event_id:
+        block.attr("id") ??
+        `${sectionId}_${homeTeamName.replace(/\s+/g, "_")}_v_${awayTeamName.replace(/\s+/g, "_")}`,
+    });
+  }
 
   if (results.length === 0) {
     throw new Error("No finished Top 14 playoff matches were found.");

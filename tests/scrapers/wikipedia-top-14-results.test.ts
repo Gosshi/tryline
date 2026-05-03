@@ -4,16 +4,64 @@ import { parseTop14ResultsHtml } from "@/lib/scrapers/wikipedia-top-14-results";
 
 const HTML = `
 <div class="mw-heading mw-heading2"><h2 id="Relegation_play-off">Relegation play-off</h2></div>
-<p>14 June 2025 18:00 Grenoble11–13Perpignan Try: ignored Stade des Alpes Attendance: 19,695 Referee: Thomas Charabas</p>
+<div class="vevent summary" id="Grenoble_v_Perpignan">
+  <table><tbody><tr><td>14 June 2025<br />18:00</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Grenoble</a></span></td>
+    <td>11–13</td>
+    <td class="vcard"><span class="fn org"><a>Perpignan</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Stade des Alpes</span><br />Attendance: 19,695</td></tr></tbody></table>
+</div>
 <div class="mw-heading mw-heading2"><h2 id="Playoffs">Playoffs</h2></div>
 <div class="mw-heading mw-heading3"><h3 id="Semi-final_Qualifiers">Semi-final Qualifiers</h3></div>
-<p>13 June 2025 21:05 Bayonne (4)20–3(5) Clermont Try: ignored Stade Jean-Dauger Attendance: 13,507 Referee: Tual Trainini</p>
-<p>14 June 2025 21:05 Toulon (3)52–23(6) Castres Try: ignored Stade Mayol Attendance: 15,364 Referee: Benoit Rousselet</p>
+<div class="vevent summary" id="Bayonne_v_Clermont">
+  <table><tbody><tr><td>13 June 2025<br />21:05</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Bayonne</a> (4)</span></td>
+    <td>20–3</td>
+    <td class="vcard"><span class="fn org">(5) <a>Clermont</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Stade Jean-Dauger</span><br />Attendance: 13,507</td></tr></tbody></table>
+</div>
+<div class="vevent summary" id="Toulon_v_Castres">
+  <table><tbody><tr><td>14 June 2025<br />21:05</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Toulon</a> (3)</span></td>
+    <td>52–23</td>
+    <td class="vcard"><span class="fn org">(6) <a>Castres</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Stade Mayol</span><br />Attendance: 15,364</td></tr></tbody></table>
+</div>
 <div class="mw-heading mw-heading3"><h3 id="Semi-finals">Semi-finals</h3></div>
-<p>20 June 2025 21:05 Toulouse (1)32–25(4) Bayonne Try: ignored Parc Olympique Lyonnais, Décines-Charpieu Attendance: 58,741 Referee: Luc Ramos</p>
-<p>21 June 2025 21:05 Bordeaux Bègles (2)39–24(3) Toulon Try: ignored Parc Olympique Lyonnais, Décines-Charpieu Attendance: 58,408 Referee: Ludovic Cayre</p>
+<div class="vevent summary" id="Toulouse_v_Bayonne">
+  <table><tbody><tr><td>20 June 2025<br />21:05</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Toulouse</a> (1)</span></td>
+    <td>32–25</td>
+    <td class="vcard"><span class="fn org">(4) <a>Bayonne</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Parc Olympique Lyonnais, Décines-Charpieu</span><br />Attendance: 58,741</td></tr></tbody></table>
+</div>
+<div class="vevent summary" id="Bordeaux_v_Toulon">
+  <table><tbody><tr><td>21 June 2025<br />21:05</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Bordeaux Bègles</a> (2)</span></td>
+    <td>39–24</td>
+    <td class="vcard"><span class="fn org">(3) <a>Toulon</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Parc Olympique Lyonnais, Décines-Charpieu</span><br />Attendance: 58,408</td></tr></tbody></table>
+</div>
 <div class="mw-heading mw-heading3"><h3 id="Final">Final</h3></div>
-<p>28 June 2025 21:05 Toulouse (1)39–33 (a.e.t.)(2) Bordeaux Bègles Try: ignored Stade de France, Saint-Denis Attendance: 78,000 Referee: Pierre Brousset</p>
+<div class="vevent summary" id="Toulouse_v_Bordeaux">
+  <table><tbody><tr><td>28 June 2025<br />21:05</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Toulouse</a> (1)</span></td>
+    <td>39–33 (a.e.t.)</td>
+    <td class="vcard"><span class="fn org">(2) <a>Bordeaux Bègles</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Stade de France, Saint-Denis</span><br />Attendance: 78,000</td></tr></tbody></table>
+</div>
 `;
 
 describe("parseTop14ResultsHtml", () => {
@@ -32,6 +80,8 @@ describe("parseTop14ResultsHtml", () => {
       home_team_slug: "grenoble",
       round: 0,
       season: "2024-25",
+      venue: "Stade des Alpes",
+      wikipedia_event_id: "Grenoble_v_Perpignan",
     });
     expect(results[0]?.kickoff_at).toBe("2025-06-14T16:00:00.000Z");
     expect(results[3]).toMatchObject({
