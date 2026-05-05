@@ -63,6 +63,9 @@ export default async function MatchDetailPage({
     notFound();
   }
 
+  const shouldShowPreviewSection =
+    match.status !== "finished" || publishedContent.preview !== null;
+
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
@@ -117,11 +120,13 @@ export default async function MatchDetailPage({
         />
 
         <section className="space-y-4">
-          <MatchContentSection
-            content={publishedContent.preview}
-            contentType="preview"
-            match={match}
-          />
+          {shouldShowPreviewSection && (
+            <MatchContentSection
+              content={publishedContent.preview}
+              contentType="preview"
+              match={match}
+            />
+          )}
           <MatchContentSection
             content={publishedContent.recap}
             contentType="recap"

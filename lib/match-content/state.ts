@@ -17,6 +17,10 @@ export function deriveContentState(params: {
   }
 
   if (contentType === "preview") {
+    if (matchStatus === "finished") {
+      return "unavailable";
+    }
+
     const previewWindowStartAt = kickoffAt.getTime() - FORTY_EIGHT_HOURS_MS;
 
     if (matchStatus === "scheduled" && now.getTime() < previewWindowStartAt) {
