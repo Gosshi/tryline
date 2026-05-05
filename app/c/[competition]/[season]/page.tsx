@@ -8,6 +8,7 @@ import {
   getCompetitionBySlug,
   listSeasonsByFamily,
 } from "@/lib/db/queries/competitions";
+import { getContentStatusMap } from "@/lib/db/queries/match-content";
 import { listMatchesForCompetition } from "@/lib/db/queries/matches";
 import { getStandingsForCompetition } from "@/lib/db/queries/standings";
 import { formatCompetitionTitle } from "@/lib/format/competition";
@@ -94,6 +95,9 @@ export default async function SeasonPage({ params }: Props) {
     getStandingsForCompetition(comp.slug),
     listSeasonsByFamily(comp.family),
   ]);
+  const contentStatusMap = await getContentStatusMap(
+    matches.map((match) => match.id),
+  );
   const groupedMatches = groupMatchesByRound(matches);
   const dateRange = formatDateRange(comp.startDate, comp.endDate);
 
@@ -130,7 +134,16 @@ export default async function SeasonPage({ params }: Props) {
               <RoundHeading round={round} />
               <div className="grid gap-4 md:grid-cols-2">
                 {roundMatches.map((match) => (
-                  <MatchCard key={match.id} match={match} />
+                  <MatchCard
+                    contentStatus={
+                      contentStatusMap.get(match.id) ?? {
+                        hasPreview: false,
+                        hasRecap: false,
+                      }
+                    }
+                    key={match.id}
+                    match={match}
+                  />
                 ))}
               </div>
             </section>

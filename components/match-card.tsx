@@ -8,16 +8,22 @@ import { cn } from "@/lib/utils";
 import { FlagIcon } from "./flag-icon";
 import { StatusBadge } from "./status-badge";
 
+import type { MatchContentStatus } from "@/lib/db/queries/match-content";
 import type { MatchListItem } from "@/lib/db/queries/matches";
 
 type MatchCardProps = {
+  contentStatus?: MatchContentStatus;
   match: MatchListItem;
 };
 
-export function MatchCard({ match }: MatchCardProps) {
+export function MatchCard({ contentStatus, match }: MatchCardProps) {
   const outcome = getMatchOutcome(match);
   const homeWon = outcome === "home_win";
   const awayWon = outcome === "away_win";
+  const shouldShowContentStatus =
+    contentStatus &&
+    match.status === "finished" &&
+    (contentStatus.hasPreview || contentStatus.hasRecap);
 
   return (
     <Link
@@ -144,6 +150,21 @@ export function MatchCard({ match }: MatchCardProps) {
           >
             {match.venue}
           </p>
+        )}
+
+        {shouldShowContentStatus && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {contentStatus.hasPreview && (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                プレビュー
+              </span>
+            )}
+            {contentStatus.hasRecap && (
+              <span className="rounded-full bg-[var(--color-accent)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--color-accent)]">
+                レビュー
+              </span>
+            )}
+          </div>
         )}
       </article>
     </Link>
