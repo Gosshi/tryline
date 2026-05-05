@@ -29,6 +29,11 @@ export type CompetitionSummary = {
   endDate: string | null;
 };
 
+export type RecentlyReviewedMatch = MatchListItem & {
+  competition: { slug: string; name: string; season: string };
+  recapGeneratedAt: string;
+};
+
 type BaseMatchRow = {
   id: string;
   kickoff_at: string;
@@ -67,6 +72,19 @@ type LatestCompetitionRow = {
     start_date: string | null;
     end_date: string | null;
   } | null;
+};
+
+type RecentlyReviewedMatchRow = BaseMatchRow & {
+  competition: {
+    slug: string;
+    name: string;
+    season: string;
+  } | null;
+};
+
+type RecentlyReviewedContentRow = {
+  generated_at: string;
+  match: RecentlyReviewedMatchRow | null;
 };
 
 function isMatchStatus(value: string): value is MatchStatus {
@@ -184,6 +202,65 @@ export async function getLatestCompetitionWithMatches(): Promise<CompetitionSumm
     slug: competition.slug,
     startDate: competition.start_date,
   };
+}
+
+export async function getRecentlyReviewedMatches(
+  limit = 3,
+): Promise<RecentlyReviewedMatch[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("match_content")
+    .select(
+      `
+        generated_at,
+        match:matches!match_content_match_id_fkey (
+          id,
+          kickoff_at,
+          status,
+          home_score,
+          away_score,
+          venue,
+          external_ids,
+          home_team:teams!matches_home_team_id_fkey (
+            slug,
+            name,
+            short_code
+          ),
+          away_team:teams!matches_away_team_id_fkey (
+            slug,
+            name,
+            short_code
+          ),
+          competition:competitions!matches_competition_id_fkey (
+            slug,
+            name,
+            season
+          )
+        )
+      `,
+    )
+    .eq("content_type", "recap")
+    .eq("status", "published")
+    .order("generated_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data satisfies RecentlyReviewedContentRow[])
+    .filter((row) => row.match !== null)
+    .map((row) => {
+      if (!row.match?.competition) {
+        throw new Error("Recently reviewed match is missing competition.");
+      }
+
+      return {
+        ...mapMatchRow(row.match),
+        competition: row.match.competition,
+        recapGeneratedAt: row.generated_at,
+      };
+    });
 }
 
 export async function listMatchesForCompetition(
