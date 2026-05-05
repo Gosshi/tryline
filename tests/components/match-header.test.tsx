@@ -71,4 +71,34 @@ describe("MatchHeader", () => {
     expect(header.getByText("FRA")).toHaveClass("flex", "items-center");
     expect(container.querySelectorAll("svg")).toHaveLength(2);
   });
+
+  it("shows a YouTube highlight search link only for finished matches", () => {
+    const { rerender } = render(<MatchHeader match={match} />);
+
+    expect(
+      screen.queryByRole("link", {
+        name: "YouTube でハイライトを検索",
+      }),
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <MatchHeader
+        match={{
+          ...match,
+          awayScore: 28,
+          homeScore: 31,
+          status: "finished",
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("link", {
+        name: "YouTube でハイライトを検索",
+      }),
+    ).toHaveAttribute(
+      "href",
+      "https://www.youtube.com/results?search_query=Ireland%20vs%20France%202027%20highlights",
+    );
+  });
 });
