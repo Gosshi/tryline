@@ -31,7 +31,7 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
       href={`/matches/${match.id}`}
     >
       <article
-        className="relative h-full overflow-hidden rounded-xl border border-slate-200 p-5 shadow-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+        className="relative h-full overflow-hidden rounded-xl border border-slate-200 p-5 shadow-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_10px_18px_rgb(15_23_42/0.10)]"
         style={{
           background: `linear-gradient(to right, ${getTeamColor(match.homeTeam.slug)}0a 0%, #ffffff 35%, #ffffff 65%, ${getTeamColor(match.awayTeam.slug)}0a 100%)`,
         }}

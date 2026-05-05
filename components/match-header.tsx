@@ -103,7 +103,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
           />
         </div>
 
-        <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
+        <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
           <time dateTime={match.kickoffAt}>
             <span className="font-semibold text-slate-700">JST</span>{" "}
             {formatKickoffJst(match.kickoffAt)}

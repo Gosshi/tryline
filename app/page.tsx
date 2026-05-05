@@ -89,7 +89,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl space-y-10 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
+      <div className="mx-auto max-w-6xl space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         {latestCompetition && (
           <section>
             <Link
