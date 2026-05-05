@@ -11,7 +11,10 @@ import {
 import { getContentStatusMap } from "@/lib/db/queries/match-content";
 import { listMatchesForCompetition } from "@/lib/db/queries/matches";
 import { getStandingsForCompetition } from "@/lib/db/queries/standings";
-import { formatCompetitionTitle } from "@/lib/format/competition";
+import {
+  formatCompetitionTitle,
+  formatFamilyName,
+} from "@/lib/format/competition";
 
 import type { Metadata } from "next";
 
@@ -104,9 +107,9 @@ export default async function SeasonPage({ params }: Props) {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <header className="space-y-3 border-b border-[var(--color-rule)] pb-8">
+        <header className="space-y-3 border-b border-[var(--color-rule)] pb-10">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-            {comp.family.replace(/-/g, " ")}
+            {formatFamilyName(comp.family)}
           </p>
           <h1 className="font-serif text-4xl font-bold tracking-tight text-[var(--color-ink)] sm:text-5xl">
             {formatCompetitionTitle(comp.name, comp.season)}

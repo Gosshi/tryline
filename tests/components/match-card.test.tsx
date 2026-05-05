@@ -129,7 +129,7 @@ describe("MatchCard", () => {
       "transition-all",
       "hover:-translate-y-0.5",
       "hover:border-slate-300",
-      "hover:shadow-md",
+      "hover:shadow-[0_10px_18px_rgb(15_23_42/0.10)]",
     );
   });
 
