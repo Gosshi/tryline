@@ -34,6 +34,10 @@ export type RecentlyReviewedMatch = MatchListItem & {
   recapGeneratedAt: string;
 };
 
+export type UpcomingMatch = MatchListItem & {
+  competition: { slug: string; name: string; season: string };
+};
+
 type BaseMatchRow = {
   id: string;
   kickoff_at: string;
@@ -85,6 +89,14 @@ type RecentlyReviewedMatchRow = BaseMatchRow & {
 type RecentlyReviewedContentRow = {
   generated_at: string;
   match: RecentlyReviewedMatchRow | null;
+};
+
+type UpcomingMatchRow = BaseMatchRow & {
+  competition: {
+    slug: string;
+    name: string;
+    season: string;
+  } | null;
 };
 
 function isMatchStatus(value: string): value is MatchStatus {
@@ -259,6 +271,60 @@ export async function getRecentlyReviewedMatches(
         ...mapMatchRow(row.match),
         competition: row.match.competition,
         recapGeneratedAt: row.generated_at,
+      };
+    });
+}
+
+export async function getUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
+  const client = getSupabasePublicServerClient();
+  const now = new Date().toISOString();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        id,
+        kickoff_at,
+        status,
+        home_score,
+        away_score,
+        venue,
+        external_ids,
+        home_team:teams!matches_home_team_id_fkey (
+          slug,
+          name,
+          short_code
+        ),
+        away_team:teams!matches_away_team_id_fkey (
+          slug,
+          name,
+          short_code
+        ),
+        competition:competitions!matches_competition_id_fkey (
+          slug,
+          name,
+          season
+        )
+      `,
+    )
+    .eq("status", "scheduled")
+    .gte("kickoff_at", now)
+    .order("kickoff_at", { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data satisfies UpcomingMatchRow[])
+    .filter((row) => row.competition !== null)
+    .map((row) => {
+      if (!row.competition) {
+        throw new Error("Upcoming match is missing competition.");
+      }
+
+      return {
+        ...mapMatchRow(row),
+        competition: row.competition,
       };
     });
 }
