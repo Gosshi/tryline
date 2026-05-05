@@ -4,7 +4,10 @@ import {
   getCompetitionBySlug,
   listFamilies,
 } from "@/lib/db/queries/competitions";
-import { getLatestCompetitionWithMatches } from "@/lib/db/queries/matches";
+import {
+  getLatestCompetitionWithMatches,
+  getRecentlyReviewedMatches,
+} from "@/lib/db/queries/matches";
 import {
   formatCompetitionTitle,
   formatFamilyName,
@@ -19,9 +22,10 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [families, latest] = await Promise.all([
+  const [families, latest, recentReviews] = await Promise.all([
     listFamilies(),
     getLatestCompetitionWithMatches(),
+    getRecentlyReviewedMatches(3),
   ]);
   const latestCompetition = latest
     ? await getCompetitionBySlug(latest.slug)
@@ -102,6 +106,37 @@ export default async function HomePage() {
                 試合一覧を見る →
               </p>
             </Link>
+          </section>
+        )}
+
+        {recentReviews.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              最近のレビュー
+            </h2>
+            <ul className="space-y-3">
+              {recentReviews.map((match) => (
+                <li key={match.id}>
+                  <Link
+                    className="group flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                    href={`/matches/${match.id}`}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs text-[var(--color-ink-muted)]">
+                        {match.competition.name} {match.competition.season}
+                      </p>
+                      <p className="mt-0.5 truncate font-semibold text-[var(--color-ink)]">
+                        {match.homeTeam.name} {match.homeScore} -{" "}
+                        {match.awayScore} {match.awayTeam.name}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
+                      レビューを読む →
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 
