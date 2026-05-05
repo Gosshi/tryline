@@ -36,6 +36,15 @@ function formatGeneratedAtJst(generatedAt: string): string {
   return `${indexedParts.year}-${indexedParts.month}-${indexedParts.day} ${indexedParts.hour}:${indexedParts.minute} JST 更新`;
 }
 
+function toHeadingId(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w぀-ヿ一-鿿-]/g, "")
+    .slice(0, 60);
+}
+
 function parseInline(text: string): InlineChunk[] {
   const chunks: InlineChunk[] = [];
   const pattern = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -168,7 +177,8 @@ function renderBlock(block: MarkdownBlock, index: number) {
     if (block.level <= 1) {
       return (
         <h3
-          className="border-l-2 border-[var(--color-accent)] pl-3 font-serif text-lg font-bold text-[var(--color-ink)]"
+          className="scroll-mt-6 border-l-2 border-[var(--color-accent)] pl-3 font-serif text-lg font-bold text-[var(--color-ink)]"
+          id={toHeadingId(block.text)}
           key={index}
         >
           {renderInline(block.text)}
@@ -242,9 +252,35 @@ function renderBlock(block: MarkdownBlock, index: number) {
 
 export function MatchContent({ content }: MatchContentProps) {
   const blocks = parseMarkdown(content.contentMdJa);
+  const headings = blocks.filter(
+    (block): block is Extract<MarkdownBlock, { type: "heading" }> =>
+      block.type === "heading" && block.level <= 1,
+  );
 
   return (
     <>
+      {headings.length >= 2 && (
+        <nav
+          aria-label="目次"
+          className="mb-6 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3"
+        >
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+            目次
+          </p>
+          <ol className="space-y-1">
+            {headings.map((heading, index) => (
+              <li key={`${toHeadingId(heading.text)}-${index}`}>
+                <a
+                  className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:underline"
+                  href={`#${toHeadingId(heading.text)}`}
+                >
+                  {heading.text}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
       <div className="space-y-5 text-[var(--color-ink)]">
         {blocks.map(renderBlock)}
       </div>
