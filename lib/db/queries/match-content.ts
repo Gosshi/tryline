@@ -13,12 +13,22 @@ export type PublishedMatchContentBundle = {
   recap: PublishedMatchContent | null;
 };
 
+export type MatchContentStatus = {
+  hasPreview: boolean;
+  hasRecap: boolean;
+};
+
 type PublishedMatchContentRow = {
   content_type: string;
   content_md_ja: string;
   generated_at: string;
   model_version: string;
   prompt_version: string;
+};
+
+type MatchContentStatusRow = {
+  match_id: string;
+  content_type: string;
 };
 
 function mapRow(row: PublishedMatchContentRow): PublishedMatchContent {
@@ -63,4 +73,45 @@ export async function getPublishedContentForMatch(
   }
 
   return bundle;
+}
+
+export async function getContentStatusMap(
+  matchIds: string[],
+): Promise<Map<string, MatchContentStatus>> {
+  if (matchIds.length === 0) {
+    return new Map();
+  }
+
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("match_content")
+    .select("match_id, content_type")
+    .in("match_id", matchIds)
+    .eq("status", "published")
+    .in("content_type", ["preview", "recap"]);
+
+  if (error) {
+    throw error;
+  }
+
+  const map = new Map<string, MatchContentStatus>();
+
+  for (const row of data satisfies MatchContentStatusRow[]) {
+    const current = map.get(row.match_id) ?? {
+      hasPreview: false,
+      hasRecap: false,
+    };
+
+    if (row.content_type === "preview") {
+      current.hasPreview = true;
+    }
+
+    if (row.content_type === "recap") {
+      current.hasRecap = true;
+    }
+
+    map.set(row.match_id, current);
+  }
+
+  return map;
 }
