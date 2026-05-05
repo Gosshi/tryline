@@ -7,11 +7,13 @@ import {
 import {
   getLatestCompetitionWithMatches,
   getRecentlyReviewedMatches,
+  getUpcomingMatches,
 } from "@/lib/db/queries/matches";
 import {
   formatCompetitionTitle,
   formatFamilyName,
 } from "@/lib/format/competition";
+import { formatKickoffJst } from "@/lib/format/kickoff";
 
 import type { Metadata } from "next";
 
@@ -22,10 +24,11 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [families, latest, recentReviews] = await Promise.all([
+  const [families, latest, recentReviews, upcomingMatches] = await Promise.all([
     listFamilies(),
     getLatestCompetitionWithMatches(),
     getRecentlyReviewedMatches(3),
+    getUpcomingMatches(5),
   ]);
   const latestCompetition = latest
     ? await getCompetitionBySlug(latest.slug)
@@ -106,6 +109,49 @@ export default async function HomePage() {
                 試合一覧を見る →
               </p>
             </Link>
+          </section>
+        )}
+
+        {upcomingMatches.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              今後の試合
+            </h2>
+            <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+              {upcomingMatches.map((match) => {
+                const family = match.competition.slug.replace(
+                  /-\d{4}(-\d{2})?$/,
+                  "",
+                );
+
+                return (
+                  <li key={match.id}>
+                    <Link
+                      className="flex flex-col gap-1.5 px-5 py-3.5 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:flex-row sm:items-center sm:gap-3"
+                      href={`/matches/${match.id}`}
+                    >
+                      <div className="shrink-0 sm:w-32">
+                        <time
+                          className="text-xs font-semibold tabular-nums text-[var(--color-accent)]"
+                          dateTime={match.kickoffAt}
+                        >
+                          {formatKickoffJst(match.kickoffAt)}
+                        </time>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-[var(--color-ink)]">
+                          {match.homeTeam.shortCode} vs{" "}
+                          {match.awayTeam.shortCode}
+                        </p>
+                        <p className="truncate text-xs text-[var(--color-ink-muted)]">
+                          {formatFamilyName(family)}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </section>
         )}
 
