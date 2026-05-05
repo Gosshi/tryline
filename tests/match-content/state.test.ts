@@ -24,7 +24,7 @@ describe("deriveContentState", () => {
       { before: string; at: string }
     > = {
       cancelled: { at: "unavailable", before: "unavailable" },
-      finished: { at: "preparing", before: "preparing" },
+      finished: { at: "unavailable", before: "unavailable" },
       in_progress: { at: "preparing", before: "preparing" },
       postponed: { at: "unavailable", before: "unavailable" },
       scheduled: { at: "preparing", before: "pre_window" },
