@@ -8,8 +8,8 @@ export function SiteHeader() {
           className="flex items-center gap-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           href="/"
         >
-          <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
-          <span className="text-lg font-black tracking-tight text-slate-950">
+          <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-accent)]" />
+          <span className="text-xl font-black tracking-tight text-slate-950">
             Tryline
           </span>
         </Link>

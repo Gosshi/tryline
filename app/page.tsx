@@ -78,7 +78,7 @@ export default async function HomePage() {
           <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
             AI Rugby Analysis in Japanese
           </p>
-          <h1 className="font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
+          <h1 className="break-keep font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
             海外ラグビーを、<br className="hidden sm:block" />
             日本語で深掘り。
           </h1>
