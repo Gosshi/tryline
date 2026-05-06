@@ -118,7 +118,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
         {match.status === "finished" && (
           <div className="mt-3 border-t border-slate-100 pt-3">
             <a
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+              className="inline-flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
               href={buildYouTubeSearchUrl(
                 match.homeTeam.name,
                 match.awayTeam.name,
@@ -129,7 +129,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
             >
               <svg
                 aria-hidden
-                className="h-3.5 w-3.5 text-red-500"
+                className="h-4 w-4 text-white"
                 fill="currentColor"
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
