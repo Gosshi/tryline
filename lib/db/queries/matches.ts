@@ -329,6 +329,20 @@ export async function getUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
     });
 }
 
+export async function listAllMatchIds(): Promise<string[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("matches")
+    .select("id")
+    .order("kickoff_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map((row) => row.id);
+}
+
 export async function listMatchesForCompetition(
   competitionSlug: string,
 ): Promise<MatchListItem[]> {

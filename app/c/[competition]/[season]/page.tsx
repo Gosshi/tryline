@@ -80,8 +80,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Tryline" };
   }
 
+  const title = formatCompetitionTitle(comp.name, comp.season);
+  const description = `${title} の試合結果・順位表・AI日本語レビュー一覧。`;
+
   return {
-    title: `${formatCompetitionTitle(comp.name, comp.season)} - Tryline`,
+    description,
+    openGraph: {
+      description,
+      title: `${title} | Tryline`,
+      type: "website",
+      url: `https://tryline-six.vercel.app/c/${competition}/${season}`,
+    },
+    title,
   };
 }
 

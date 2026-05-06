@@ -23,7 +23,16 @@ import type { Metadata } from "next";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Tryline",
+  title: "海外ラグビーを日本語で深掘り",
+  description:
+    "Six Nations・Premiership・URC など海外ラグビーの試合結果・AI日本語レビューを提供。DAZN・J SPORTS 加入者向けの試合コンパニオン。",
+  openGraph: {
+    description:
+      "Six Nations・Premiership・URC など海外ラグビーの試合結果・AI日本語レビューを提供。",
+    title: "Tryline — 海外ラグビーを日本語で深掘り",
+    type: "website",
+    url: "https://tryline-six.vercel.app",
+  },
 };
 
 export default async function HomePage() {
