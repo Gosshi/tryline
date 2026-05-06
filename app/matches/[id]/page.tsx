@@ -9,6 +9,7 @@ import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
 import { getMatchById } from "@/lib/db/queries/matches";
+import { formatCompetitionTitle } from "@/lib/format/competition";
 import { extractDescription } from "@/lib/match-content/description";
 
 import type { Metadata } from "next";
@@ -32,20 +33,28 @@ export async function generateMetadata({
 
   if (!match) {
     return {
-      title: "Match Not Found - Tryline",
+      title: "Match Not Found",
     };
   }
 
-  const title = `${match.homeTeam.name} vs ${match.awayTeam.name} - Tryline`;
+  const title = `${match.homeTeam.name} vs ${match.awayTeam.name} — ${formatCompetitionTitle(
+    match.competition.name,
+    match.competition.season,
+  )}`;
+  const description = content.preview
+    ? extractDescription(content.preview.contentMdJa)
+    : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・AI日本語レビュー。`;
 
-  if (content.preview) {
-    return {
-      description: extractDescription(content.preview.contentMdJa),
-      title,
-    };
-  }
-
-  return { title };
+  return {
+    description,
+    openGraph: {
+      description,
+      title: `${title} | Tryline`,
+      type: "article",
+      url: `https://tryline-six.vercel.app/matches/${id}`,
+    },
+    title,
+  };
 }
 
 export default async function MatchDetailPage({
@@ -65,75 +74,120 @@ export default async function MatchDetailPage({
 
   const shouldShowPreviewSection =
     match.status !== "finished" || publishedContent.preview !== null;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    awayTeam: {
+      "@type": "SportsTeam",
+      name: match.awayTeam.name,
+    },
+    homeTeam: {
+      "@type": "SportsTeam",
+      name: match.homeTeam.name,
+    },
+    name: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+    sport: "Rugby Union",
+    startDate: match.kickoffAt,
+    ...(match.venue
+      ? {
+          location: {
+            "@type": "Place",
+            name: match.venue,
+          },
+        }
+      : {}),
+    ...(match.status === "finished"
+      ? {
+          awayTeam: {
+            "@type": "SportsTeam",
+            name: match.awayTeam.name,
+            score: match.awayScore ?? 0,
+          },
+          eventStatus: "https://schema.org/EventScheduled",
+          homeTeam: {
+            "@type": "SportsTeam",
+            name: match.homeTeam.name,
+            score: match.homeScore ?? 0,
+          },
+        }
+      : {}),
+  };
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
-        {(() => {
-          const slugMatch = match.competition.slug.match(/^(.+)-(\d{4})$/);
-          const family = slugMatch?.[1] ?? "";
-          const season = slugMatch?.[2] ?? "";
-          const seasonHref = family && season ? `/c/${family}/${season}` : "/";
+    <>
+      <script
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        type="application/ld+json"
+      />
+      <main className="min-h-screen bg-slate-50">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
+          {(() => {
+            const slugMatch = match.competition.slug.match(/^(.+)-(\d{4})$/);
+            const family = slugMatch?.[1] ?? "";
+            const season = slugMatch?.[2] ?? "";
+            const seasonHref =
+              family && season ? `/c/${family}/${season}` : "/";
 
-          return (
-            <nav aria-label="パンくずリスト">
-              <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
-                <li>
-                  <Link
-                    className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                    href={seasonHref}
-                  >
-                    {match.competition.name} {match.competition.season}
-                  </Link>
-                </li>
-                {match.round !== null && (
-                  <>
-                    <li aria-hidden className="select-none">
-                      /
-                    </li>
-                    <li className="text-[var(--color-ink)]">
-                      Round {match.round}
-                    </li>
-                  </>
-                )}
-              </ol>
-            </nav>
-          );
-        })()}
+            return (
+              <nav aria-label="パンくずリスト">
+                <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
+                  <li>
+                    <Link
+                      className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                      href={seasonHref}
+                    >
+                      {match.competition.name} {match.competition.season}
+                    </Link>
+                  </li>
+                  {match.round !== null && (
+                    <>
+                      <li aria-hidden className="select-none">
+                        /
+                      </li>
+                      <li className="text-[var(--color-ink)]">
+                        Round {match.round}
+                      </li>
+                    </>
+                  )}
+                </ol>
+              </nav>
+            );
+          })()}
 
-        <MatchHeader match={match} />
+          <MatchHeader match={match} />
 
-        <MatchEventsSection
-          awayTeamName={match.awayTeam.name}
-          awayTeamSlug={match.awayTeam.slug}
-          events={events}
-          homeTeamId={match.homeTeamId}
-          homeTeamName={match.homeTeam.name}
-          homeTeamSlug={match.homeTeam.slug}
-        />
+          <MatchEventsSection
+            awayTeamName={match.awayTeam.name}
+            awayTeamSlug={match.awayTeam.slug}
+            events={events}
+            homeTeamId={match.homeTeamId}
+            homeTeamName={match.homeTeam.name}
+            homeTeamSlug={match.homeTeam.slug}
+          />
 
-        <MatchLineupsSection
-          awayTeamName={match.awayTeam.name}
-          homeTeamId={match.homeTeamId}
-          homeTeamName={match.homeTeam.name}
-          players={lineups}
-        />
+          <MatchLineupsSection
+            awayTeamName={match.awayTeam.name}
+            homeTeamId={match.homeTeamId}
+            homeTeamName={match.homeTeam.name}
+            players={lineups}
+          />
 
-        <section className="space-y-4">
-          {shouldShowPreviewSection && (
+          <section className="space-y-4">
+            {shouldShowPreviewSection && (
+              <MatchContentSection
+                content={publishedContent.preview}
+                contentType="preview"
+                match={match}
+              />
+            )}
             <MatchContentSection
-              content={publishedContent.preview}
-              contentType="preview"
+              content={publishedContent.recap}
+              contentType="recap"
               match={match}
             />
-          )}
-          <MatchContentSection
-            content={publishedContent.recap}
-            contentType="recap"
-            match={match}
-          />
-        </section>
-      </div>
-    </main>
+          </section>
+        </div>
+      </main>
+    </>
   );
 }

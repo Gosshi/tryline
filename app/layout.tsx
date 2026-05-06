@@ -22,8 +22,18 @@ const notoSerifJP = Noto_Serif_JP({
 });
 
 export const metadata: Metadata = {
-  title: "Tryline",
-  description: "海外ラグビー観戦を日本語で支援する AI コンパニオン",
+  metadataBase: new URL("https://tryline-six.vercel.app"),
+  title: {
+    default: "Tryline",
+    template: "%s | Tryline",
+  },
+  description:
+    "Six Nations・Premiership・URC など海外ラグビーの試合結果・順位表・AI日本語レビューを提供するラグビーファン向けサービス。",
+  openGraph: {
+    locale: "ja_JP",
+    siteName: "Tryline",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

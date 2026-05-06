@@ -2,10 +2,30 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { listSeasonsByFamily } from "@/lib/db/queries/competitions";
+import { formatFamilyName } from "@/lib/format/competition";
+
+import type { Metadata } from "next";
 
 type Props = {
   params: Promise<{ competition: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { competition } = await params;
+  const name = formatFamilyName(competition);
+  const description = `${name} の全シーズン試合結果・順位表・AI日本語レビュー一覧。`;
+
+  return {
+    description,
+    openGraph: {
+      description,
+      title: `${name} — 全シーズン一覧 | Tryline`,
+      type: "website",
+      url: `https://tryline-six.vercel.app/c/${competition}`,
+    },
+    title: `${name} — 全シーズン一覧`,
+  };
+}
 
 export default async function CompetitionHubPage({ params }: Props) {
   const { competition } = await params;
