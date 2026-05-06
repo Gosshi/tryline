@@ -85,17 +85,17 @@ export function MatchEventsSection({
             <div
               className="grid grid-cols-[1fr_2.5rem_1fr] items-center gap-2 rounded py-1.5 hover:bg-slate-50/80"
               key={event.id}
-              style={
-                isHome
-                  ? { borderLeft: `3px solid ${teamColor}`, paddingLeft: "8px" }
-                  : {
-                      borderRight: `3px solid ${teamColor}`,
-                      paddingRight: "8px",
-                    }
-              }
             >
               <span
                 className="min-w-0 truncate text-xs text-[var(--color-ink)] sm:text-sm"
+                style={
+                  isHome
+                    ? {
+                        borderLeft: `3px solid ${teamColor}`,
+                        paddingLeft: "8px",
+                      }
+                    : undefined
+                }
                 title={isHome ? label : ""}
               >
                 {isHome ? label : ""}
@@ -105,6 +105,14 @@ export function MatchEventsSection({
               </span>
               <span
                 className="min-w-0 truncate text-right text-xs text-[var(--color-ink)] sm:text-sm"
+                style={
+                  !isHome
+                    ? {
+                        borderRight: `3px solid ${teamColor}`,
+                        paddingRight: "8px",
+                      }
+                    : undefined
+                }
                 title={!isHome ? label : ""}
               >
                 {!isHome ? label : ""}

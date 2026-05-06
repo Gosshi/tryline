@@ -130,11 +130,17 @@ describe("MatchEventsSection", () => {
 
     const rows = container.querySelectorAll(".grid-cols-\\[1fr_2\\.5rem_1fr\\]");
 
-    expect(rows[1]).toHaveStyle({
+    expect(rows[1]).not.toHaveStyle({
+      paddingLeft: "8px",
+    });
+    expect(rows[2]).not.toHaveStyle({
+      paddingRight: "8px",
+    });
+    expect(rows[1]?.children[0]).toHaveStyle({
       borderLeft: "3px solid #009A44",
       paddingLeft: "8px",
     });
-    expect(rows[2]).toHaveStyle({
+    expect(rows[2]?.children[2]).toHaveStyle({
       borderRight: "3px solid #002395",
       paddingRight: "8px",
     });

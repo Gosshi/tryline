@@ -13,7 +13,10 @@ import {
   formatCompetitionTitle,
   formatFamilyName,
 } from "@/lib/format/competition";
-import { formatKickoffJst } from "@/lib/format/kickoff";
+import {
+  formatKickoffJstDate,
+  formatKickoffJstTime,
+} from "@/lib/format/kickoff";
 
 import type { Metadata } from "next";
 
@@ -130,12 +133,14 @@ export default async function HomePage() {
                       className="flex flex-col gap-1.5 px-5 py-3.5 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:flex-row sm:items-center sm:gap-3"
                       href={`/matches/${match.id}`}
                     >
-                      <div className="shrink-0 sm:w-32">
-                        <time
-                          className="text-xs font-semibold tabular-nums text-[var(--color-accent)]"
-                          dateTime={match.kickoffAt}
-                        >
-                          {formatKickoffJst(match.kickoffAt)}
+                      <div className="shrink-0 sm:w-36">
+                        <time dateTime={match.kickoffAt}>
+                          <p className="text-xs font-semibold tabular-nums text-[var(--color-accent)]">
+                            {formatKickoffJstDate(match.kickoffAt)}
+                          </p>
+                          <p className="text-xs tabular-nums text-[var(--color-ink-muted)]">
+                            {formatKickoffJstTime(match.kickoffAt)}
+                          </p>
                         </time>
                       </div>
                       <div className="min-w-0 flex-1">
@@ -169,7 +174,10 @@ export default async function HomePage() {
                   >
                     <div className="min-w-0">
                       <p className="text-xs text-[var(--color-ink-muted)]">
-                        {match.competition.name} {match.competition.season}
+                        {formatCompetitionTitle(
+                          match.competition.name,
+                          match.competition.season,
+                        )}
                       </p>
                       <p className="mt-0.5 truncate font-semibold text-[var(--color-ink)]">
                         {match.homeTeam.name} {match.homeScore} -{" "}

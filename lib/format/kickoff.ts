@@ -35,6 +35,24 @@ export function formatKickoffJst(kickoffAtUtc: string): string {
   );
 }
 
+export function formatKickoffJstDate(kickoffAtUtc: string): string {
+  const parts = getFormatterParts(kickoffAtUtc, {
+    locale: "ja-JP",
+    timeZone: "Asia/Tokyo",
+  });
+
+  return `${parts.year}-${parts.month}-${parts.day} (${parts.weekday})`;
+}
+
+export function formatKickoffJstTime(kickoffAtUtc: string): string {
+  const parts = getFormatterParts(kickoffAtUtc, {
+    locale: "ja-JP",
+    timeZone: "Asia/Tokyo",
+  });
+
+  return `${parts.hour}:${parts.minute} JST`;
+}
+
 export function formatKickoffLocal(
   kickoffAtUtc: string,
   ianaTimezone = "Europe/London",
