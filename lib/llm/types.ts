@@ -34,6 +34,8 @@ export type AssembledContentInput = {
     kickoff_at: string;
     status: string;
     venue: string | null;
+    home_score: number | null;
+    away_score: number | null;
     competition: {
       family: string | null;
       id: string;

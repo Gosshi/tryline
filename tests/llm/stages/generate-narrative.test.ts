@@ -14,6 +14,8 @@ const assembled = {
     kickoff_at: new Date().toISOString(),
     status: "scheduled",
     venue: "Tokyo",
+    home_score: null,
+    away_score: null,
     competition: null,
     home_team: null,
     away_team: null,

@@ -162,6 +162,8 @@ export async function assembleMatchContentInput(
         kickoff_at,
         status,
         venue,
+        home_score,
+        away_score,
         competition:competitions(id, name, season, family),
         home_team:teams!matches_home_team_id_fkey(id, name, short_code, country),
         away_team:teams!matches_away_team_id_fkey(id, name, short_code, country)
@@ -295,13 +297,12 @@ export async function assembleMatchContentInput(
     awayProjectedLineups,
     competitionStandings,
     matchEvents,
-  ] =
-    await Promise.all([
-      loadProjectedLineup(matchId, homeTeamId),
-      loadProjectedLineup(matchId, awayTeamId),
-      loadCompetitionStandings(match.competition_id),
-      loadMatchEvents(matchId, match.status),
-    ]);
+  ] = await Promise.all([
+    loadProjectedLineup(matchId, homeTeamId),
+    loadProjectedLineup(matchId, awayTeamId),
+    loadCompetitionStandings(match.competition_id),
+    loadMatchEvents(matchId, match.status),
+  ]);
 
   return {
     match: {
@@ -309,6 +310,8 @@ export async function assembleMatchContentInput(
       kickoff_at: match.kickoff_at,
       status: match.status,
       venue: match.venue,
+      home_score: match.home_score,
+      away_score: match.away_score,
       competition: match.competition
         ? {
             family: match.competition.family ?? null,
