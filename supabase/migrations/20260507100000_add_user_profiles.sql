@@ -16,7 +16,7 @@ create policy "own profile" on user_profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
 
 create or replace function handle_new_user()
-returns trigger language plpgsql security definer as $$
+returns trigger language plpgsql security definer set search_path = public as $$
 begin
   insert into user_profiles (id) values (new.id);
   return new;
