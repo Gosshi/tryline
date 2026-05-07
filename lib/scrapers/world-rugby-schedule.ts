@@ -99,7 +99,10 @@ function asNumber(value: unknown) {
 function resolveCompetitionFamily(label: unknown): WorldRugbyCompetitionFamily {
   const normalized = normalizeWhitespace(asString(label) ?? "").toLowerCase();
 
-  if (normalized.includes("pacific nations cup")) {
+  if (
+    normalized.includes("nations cup") ||
+    normalized.includes("pacific nations cup")
+  ) {
     return "pnc";
   }
 
