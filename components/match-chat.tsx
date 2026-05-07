@@ -58,6 +58,8 @@ function MatchChatPanel({
         setError(
           data.error === "token_limit_exceeded"
             ? "トークン上限に達しました。ページを更新して新しいセッションを開始してください。"
+            : data.error === "daily_limit_exceeded"
+              ? "1 日のメッセージ上限（30 件）に達しました。明日またご利用ください。"
             : "エラーが発生しました。",
         );
         return;

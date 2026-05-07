@@ -182,12 +182,14 @@ export default async function MatchDetailPage({
               <MatchContentSection
                 content={publishedContent.preview}
                 contentType="preview"
+                isPremium={premium}
                 match={match}
               />
             )}
             <MatchContentSection
               content={publishedContent.recap}
               contentType="recap"
+              isPremium={premium}
               match={match}
             />
           </section>

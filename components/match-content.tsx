@@ -5,7 +5,10 @@ import type { PublishedMatchContent } from "@/lib/db/queries/match-content";
 type MatchContentProps = {
   content: PublishedMatchContent;
   contentType: "preview" | "recap";
+  isPremium: boolean;
 };
+
+const FREE_CONTENT_LIMIT = 300;
 
 type InlineChunk =
   | { type: "text"; value: string }
@@ -250,8 +253,12 @@ function renderBlock(block: MarkdownBlock, index: number) {
   );
 }
 
-export function MatchContent({ content }: MatchContentProps) {
-  const blocks = parseMarkdown(content.contentMdJa);
+export function MatchContent({ content, isPremium }: MatchContentProps) {
+  const isLocked = !isPremium;
+  const contentMdJa = isLocked
+    ? content.contentMdJa.slice(0, FREE_CONTENT_LIMIT)
+    : content.contentMdJa;
+  const blocks = parseMarkdown(contentMdJa);
   const headings = blocks.filter(
     (block): block is Extract<MarkdownBlock, { type: "heading" }> =>
       block.type === "heading" && block.level <= 1,
@@ -259,7 +266,7 @@ export function MatchContent({ content }: MatchContentProps) {
 
   return (
     <>
-      {headings.length >= 2 && (
+      {isPremium && headings.length >= 2 && (
         <nav
           aria-label="目次"
           className="mb-6 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3"
@@ -281,9 +288,25 @@ export function MatchContent({ content }: MatchContentProps) {
           </ol>
         </nav>
       )}
-      <div className="space-y-5 text-[var(--color-ink)]">
+      <div className="relative space-y-5 text-[var(--color-ink)]">
         {blocks.map(renderBlock)}
+        {isLocked && (
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
+        )}
       </div>
+      {isLocked && (
+        <div className="mt-4 flex flex-col items-center gap-3 text-center">
+          <p className="text-sm font-semibold text-slate-800">
+            続きは Premium でご覧いただけます
+          </p>
+          <a
+            className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+            href="/pricing"
+          >
+            Premium を始める - ¥980/月
+          </a>
+        </div>
+      )}
       <p className="mt-6 text-xs text-slate-500">
         <time dateTime={content.generatedAt}>
           {formatGeneratedAtJst(content.generatedAt)}

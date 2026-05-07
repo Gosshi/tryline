@@ -1,4 +1,9 @@
-import { getUser, isPremium } from "@/lib/auth/server";
+import {
+  getSupabaseServerClientWithAuth,
+  getUser,
+  getUserProfile,
+  isPremium,
+} from "@/lib/auth/server";
 import { assembleMatchContext } from "@/lib/chat/context";
 import {
   createChatSession,
@@ -15,6 +20,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const TOKEN_LIMIT = 50_000;
+const DAILY_MESSAGE_LIMIT = 30;
 
 export async function POST(
   request: Request,
@@ -29,6 +35,29 @@ export async function POST(
 
   if (!(await isPremium(user.id))) {
     return Response.json({ error: "premium_required" }, { status: 403 });
+  }
+
+  const profile = await getUserProfile(user.id);
+  const supabase = await getSupabaseServerClientWithAuth();
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const resetNeeded =
+    !profile?.chat_daily_reset_date || profile.chat_daily_reset_date < today;
+  const dailyCount = resetNeeded ? 0 : (profile?.chat_daily_count ?? 0);
+
+  if (resetNeeded) {
+    await supabase
+      .from("user_profiles")
+      .update({
+        chat_daily_count: 0,
+        chat_daily_reset_date: today,
+        updated_at: now.toISOString(),
+      })
+      .eq("id", user.id);
+  }
+
+  if (dailyCount >= DAILY_MESSAGE_LIMIT) {
+    return Response.json({ error: "daily_limit_exceeded" }, { status: 429 });
   }
 
   const body = (await request.json()) as {
@@ -101,6 +130,13 @@ export async function POST(
           input: inputTokens,
           output: outputTokens,
         });
+        await supabase
+          .from("user_profiles")
+          .update({
+            chat_daily_count: dailyCount + 1,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
         controller.enqueue(
           encoder.encode(
             `data: ${JSON.stringify({ done: true, sessionId })}\n\n`,
