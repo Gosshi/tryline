@@ -44,11 +44,36 @@ export async function generateMetadata({
   const description = content.preview
     ? extractDescription(content.preview.contentMdJa)
     : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・AI日本語レビュー。`;
+  const competitionTitle = formatCompetitionTitle(
+    match.competition.name,
+    match.competition.season,
+  );
+  const score =
+    match.status === "finished" &&
+    match.homeScore !== null &&
+    match.awayScore !== null
+      ? `${match.homeScore} - ${match.awayScore}`
+      : "";
+  const ogImageUrl = new URL("/api/og", "https://tryline-six.vercel.app");
+
+  ogImageUrl.searchParams.set("home", match.homeTeam.name);
+  ogImageUrl.searchParams.set("away", match.awayTeam.name);
+  ogImageUrl.searchParams.set("score", score);
+  ogImageUrl.searchParams.set("competition", competitionTitle);
+  ogImageUrl.searchParams.set("status", match.status);
 
   return {
     description,
     openGraph: {
       description,
+      images: [
+        {
+          alt: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+          height: 630,
+          url: ogImageUrl.toString(),
+          width: 1200,
+        },
+      ],
       title: `${title} | Tryline`,
       type: "article",
       url: `https://tryline-six.vercel.app/matches/${id}`,
