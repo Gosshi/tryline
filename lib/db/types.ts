@@ -34,6 +34,73 @@ export type Database = {
   };
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          content: string;
+          cost_usd: number | null;
+          created_at: string;
+          id: string;
+          input_tokens: number | null;
+          output_tokens: number | null;
+          role: string;
+          session_id: string;
+        };
+        Insert: {
+          content: string;
+          cost_usd?: number | null;
+          created_at?: string;
+          id?: string;
+          input_tokens?: number | null;
+          output_tokens?: number | null;
+          role: string;
+          session_id: string;
+        };
+        Update: {
+          content?: string;
+          cost_usd?: number | null;
+          created_at?: string;
+          id?: string;
+          input_tokens?: number | null;
+          output_tokens?: number | null;
+          role?: string;
+          session_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_sessions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      chat_sessions: {
+        Row: {
+          created_at: string;
+          id: string;
+          match_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          match_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          match_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       competition_standings: {
         Row: {
           bonus_points_losing: number;
