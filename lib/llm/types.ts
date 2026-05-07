@@ -35,6 +35,7 @@ export type AssembledContentInput = {
     status: string;
     venue: string | null;
     competition: {
+      family: string | null;
       id: string;
       name: string;
       season: string;

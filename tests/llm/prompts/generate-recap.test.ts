@@ -31,7 +31,7 @@ const assembled: AssembledContentInput = {
 
 describe("buildGenerateRecapPrompt", () => {
   it("uses recap prompt version 1.5.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@1.5.0");
+    expect(PROMPT_VERSION).toBe("recap@1.6.0");
   });
 
   it("omits the MOM selection section when lineup data is unavailable", () => {
@@ -122,5 +122,30 @@ describe("buildGenerateRecapPrompt", () => {
     expect(withoutStandings).not.toContain("現在の大会順位表");
     expect(withStandings).toContain("現在の大会順位表");
     expect(withStandings).toContain("木のスプーン");
+  });
+
+  it("switches player-name style by competition family", () => {
+    const overseasPrompt = buildGenerateRecapPrompt(assembled, [], []);
+    const leagueOnePrompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        match: {
+          ...assembled.match,
+          competition: {
+            family: "league-one",
+            id: "competition-1",
+            name: "Japan Rugby League One 2024-25",
+            season: "2024-25",
+          },
+        },
+      },
+      [],
+      [],
+    );
+
+    expect(overseasPrompt).toContain("選手名はカタカナで記載すること");
+    expect(overseasPrompt).toContain("チーム名は英語表記のまま");
+    expect(leagueOnePrompt).toContain("選手名は日本語表記を使用すること");
+    expect(leagueOnePrompt).toContain("外国人選手はカタカナで記載すること");
   });
 });

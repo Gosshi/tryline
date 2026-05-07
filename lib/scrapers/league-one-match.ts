@@ -80,7 +80,7 @@ function parseLineupPlayers(
 }
 
 function parseTimelineMinute(value: string, half: 1 | 2): number | null {
-  const match = normalizeWhitespace(value).match(/^(\d{1,3})min$/i);
+  const match = normalizeWhitespace(value).match(/^(\d{1,3})(?:min|分)$/i);
 
   if (!match) {
     return null;
@@ -129,7 +129,7 @@ function parseScoringEvents($: ReturnType<typeof load>) {
 
     if (cells.first().is("th")) {
       const halfText = normalizeWhitespace(cells.first().text());
-      currentHalf = /^2nd$/i.test(halfText) ? 2 : 1;
+      currentHalf = /^(?:2nd|後半)$/i.test(halfText) ? 2 : 1;
       return;
     }
 
@@ -188,7 +188,7 @@ export async function fetchLeagueOneMatchDetail(
   matchId: number,
 ): Promise<LeagueOneMatchDetail> {
   const response = await fetchWithPolicy(
-    `${LEAGUE_ONE_BASE_URL}/en/match/${matchId}/print`,
+    `${LEAGUE_ONE_BASE_URL}/match/${matchId}/print`,
   );
   const html = await response.text();
   const detail = parseLeagueOneMatchPrintHtml(html);

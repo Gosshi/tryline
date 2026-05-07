@@ -115,6 +115,7 @@ describe("assembleMatchContentInput", () => {
 
     const result = await assembleMatchContentInput(matchId);
 
+    expect(result.match.competition?.family).toMatch(/^competition-/);
     expect(result.match_events).toEqual([]);
     expect(result.projected_lineups.home).toEqual([]);
     expect(result.projected_lineups.away).toEqual([]);

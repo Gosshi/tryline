@@ -4,7 +4,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@1.5.0";
+export const PROMPT_VERSION = "recap@1.6.0";
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -32,6 +32,10 @@ export function buildGenerateRecapPrompt(
     assembled.match_events.length === 0
       ? ""
       : `スコアリングイベント（tryスコアラー・コンバージョン・ペナルティ・カード等）は以下のデータのみを根拠に記述すること:\n${JSON.stringify(assembled.match_events)}`;
+  const nameStyleInstruction =
+    assembled.match.competition?.family === "league-one"
+      ? "選手名は日本語表記を使用すること。外国人選手はカタカナで記載すること（例: Brodie Retallick → ブロディ・レタリック）。チーム名は日本語または通称表記を使用すること。"
+      : "選手名はカタカナで記載すること（例: Marcus Smith → マーカス・スミス、Owen Farrell → オウェン・ファレル）。チーム名は英語表記のまま。";
 
   return [
     "あなたは日本語のラグビー専門編集者です。試合レビューをマークダウンで作成してください。",
@@ -40,7 +44,7 @@ export function buildGenerateRecapPrompt(
     "事実は入力データと一致させること。直接引用は15語以内。",
     "出力は日本語マークダウン本文のみ。",
     "強調記号（**、*、__、_）・コードブロック（```）・引用（>）は使用禁止。見出し(#)と箇条書き(-)のみ使用すること。",
-    "選手名・チーム名は英語表記のまま使用すること（カタカナ変換しない）。",
+    nameStyleInstruction,
     `試合データ: ${JSON.stringify(assembled)}`,
     matchEventsBlock,
     standingsBlock,
