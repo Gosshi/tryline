@@ -1,1 +1,170 @@
-r+xõ€™©â}ë-¶¦yÊ%¢´ëÊX§xõ€>º ­ë,Š÷–y°)¦#’ü	İ®ˆP„®øœyj+‘êè}ùbãÑ=`zÈ gZ¦Ÿåk*.¶Û1™ëZu«Zuë"‚yr‰h­§z{a{azgœ¢Z+Õªişf§‰÷¬¶Û{c°Ç­iÖ­i.µã'Ş²ßæjxŸzËpy¹š'Ş²Ûazgœ¢Z+uë"‚yr‰h­§z{m²)©¢»mÊ—ŒzÖjÖ‘¢ë^~º&ìm{h®×^}«¥µû§rØ¨f§‰÷¬´Ç­iÖ­i.µã'Ş²ÚŞ¶êç©N¼¥Šw¬†Ší©N¼¥ŠwzÇ+Š›b¢p²Ö«¶êåıØ¬¦V²²Ö§u©hæÚrH+¢éİr‰h­÷ß}÷í…ér‰h¯^šß†¢r‰ì²·?‰Ê'³øœ¢}}Ú™à²,Ş³_vÇ_v·*^Šf {úg‚›«¦‹j|¬­Ïâr‰ìş'(Ÿv¦x,‹7¬ç]±ç]­Ê—¢™¨ş™à¦êé¢ÇšŸ++søœ¢{?‰Ê'™«$i¹^ç]©"Íë9×ly×kr¥è¦j¿¦x)ººh±éš²F›•í©¹¹bsøœ¢{?Ş››–'?‰Ê'³ú+N¼¥Šw¾²«¦'(Ÿ_v¦x5÷m}Ø	İ®ˆ‰Ê'ç]©uÛv=`"r‰æjÉnW¹×jgƒvç]€uªmŠ÷¢r‰ìi÷³¢w¬r¸©¶Ïàzw«j×¢r‰ì¶Ëlÿúg¦ft;!jºş™éšÛ1±Êâ¦Û?éŞ­«^‰Ê'²Û"šš+¶–­…úèš–­†)©¢»l…ªé~º&²«¥Ê'²Û"Íë
+# chore: PWA å¯¾å¿œï¼ˆmanifestãƒ»ã‚¢ã‚¤ã‚³ãƒ³ãƒ»theme-colorï¼‰
+
+## ç›®çš„
+
+Tryline ã‚’ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«å¯èƒ½ãª PWAï¼ˆProgressive Web Appï¼‰ã«ã™ã‚‹ã€‚
+iOS / Android ã®ãƒ›ãƒ¼ãƒ ç”»é¢è¿½åŠ ãƒ»ã‚¹ãƒ—ãƒ©ãƒƒã‚·ãƒ¥è¡¨ç¤ºãƒ»ãƒ–ãƒ©ã‚¦ã‚¶ UI ã®éè¡¨ç¤ºãŒç›®çš„ã€‚
+Service Worker ã«ã‚ˆã‚‹ offline å¯¾å¿œã¯æœ¬ PR ã®å¯¾è±¡å¤–ã¨ã—ã€æœ€å°é™ã® PWA è¨­å®šã®ã¿è¡Œã†ã€‚
+
+**å¿…ãš `design.md` ã‚’æœ€åˆã«èª­ã‚“ã§ã‹ã‚‰å®Ÿè£…ã™ã‚‹ã“ã¨ã€‚**
+
+## å‚ç…§ã™ã¹ããƒ•ã‚¡ã‚¤ãƒ«
+
+- `app/layout.tsx` â€” æ—¢å­˜ metadata ã‚’ç¢ºèª
+- `design.md` â€” `--color-accent` ã®å®Ÿéš›ã® hex å€¤ã‚’ç¢ºèªï¼ˆ`theme_color` ã«ä½¿ç”¨ï¼‰
+
+## å®Ÿè£…
+
+### 1. `app/manifest.ts` ã‚’æ–°è¦ä½œæˆ
+
+Next.js ã® `MetadataRoute.Manifest` ã‚’ä½¿ã„ã€`/manifest.webmanifest` ã‚’è‡ªå‹•ç”Ÿæˆã™ã‚‹ã€‚
+`theme_color` ã¯ `design.md` ã® `--color-accent` å€¤ã«åˆã‚ã›ã‚‹ã“ã¨ã€‚
+
+```ts
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "Tryline",
+    short_name: "Tryline",
+    description:
+      "æµ·å¤–ãƒ©ã‚°ãƒ“ãƒ¼ã®è©¦åˆçµæœãƒ»AIæ—¥æœ¬èªãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’ãƒªã‚¢ãƒ«ã‚¿ã‚¤ãƒ ã§ã€‚",
+    start_url: "/",
+    display: "standalone",
+    background_color: "#ffffff",
+    theme_color: "#16a34a",
+    icons: [
+      {
+        src: "/icons/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/icon-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+    ],
+  };
+}
+```
+
+---
+
+### 2. ã‚¢ã‚¤ã‚³ãƒ³ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ `public/icons/` ã«é…ç½®
+
+ä»¥ä¸‹ã® 3 ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ `public/icons/` ã«ä½œæˆã™ã‚‹ã€‚
+ã‚·ãƒ³ãƒ—ãƒ«ãªãƒ©ã‚°ãƒ“ãƒ¼ãƒœãƒ¼ãƒ« or Tryline ãƒ­ã‚´ï¼ˆç·‘èƒŒæ™¯ + ç™½ãƒ‰ãƒƒãƒˆï¼‰ã®ãƒ‡ã‚¶ã‚¤ãƒ³ã§ã‚ˆã„ã€‚
+`sharp` ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã§ãƒ—ãƒ­ã‚°ãƒ©ãƒ ç”Ÿæˆã™ã‚‹ã€‚
+
+| ãƒ•ã‚¡ã‚¤ãƒ« | ã‚µã‚¤ã‚º | ç”¨é€” |
+|---|---|---|
+| `icon-192.png` | 192Ã—192 | Android ãƒ›ãƒ¼ãƒ ç”»é¢ |
+| `icon-512.png` | 512Ã—512 | PWA ã‚¹ãƒ—ãƒ©ãƒƒã‚·ãƒ¥ |
+| `icon-maskable-512.png` | 512Ã—512 | Adaptive iconï¼ˆsafe zone å†…ã«ãƒ­ã‚´ã‚’åã‚ã‚‹ï¼‰ |
+
+ã‚¢ã‚¤ã‚³ãƒ³ç”Ÿæˆã‚¹ã‚¯ãƒªãƒ—ãƒˆ `scripts/generate-icons.ts`:
+
+```ts
+// pnpm add -D sharp
+// pnpm tsx scripts/generate-icons.ts
+
+import path from "path";
+import sharp from "sharp";
+
+const sizes = [
+  { name: "icon-192.png", size: 192, maskable: false },
+  { name: "icon-512.png", size: 512, maskable: false },
+  { name: "icon-maskable-512.png", size: 512, maskable: true },
+];
+
+async function main() {
+  for (const { name, size, maskable } of sizes) {
+    const padding = maskable ? Math.round(size * 0.1) : 0;
+    const inner = size - padding * 2;
+    const r = Math.round(inner * 0.12);
+
+    await sharp({
+      create: {
+        width: size,
+        height: size,
+        channels: 4,
+        background: { r: 22, g: 163, b: 74, alpha: 1 },
+      },
+    })
+      .composite([
+        {
+          input: Buffer.from(
+            `<svg width="${inner}" height="${inner}" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="${inner / 2}" cy="${inner / 2}" r="${r}" fill="white"/>
+            </svg>`,
+          ),
+          left: padding,
+          top: padding,
+        },
+      ])
+      .png()
+      .toFile(path.join("public/icons", name));
+
+    console.log(`Generated ${name}`);
+  }
+}
+
+main().catch(console.error);
+```
+
+---
+
+### 3. `app/layout.tsx` ã« `themeColor`ãƒ»`appleWebApp` ã‚’è¿½åŠ 
+
+æ—¢å­˜ã® `metadata` ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«è¿½è¨˜ã™ã‚‹ã€‚
+
+```tsx
+export const metadata: Metadata = {
+  // ... æ—¢å­˜ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ï¼ˆmetadataBase, title, description, openGraphï¼‰ ...
+  themeColor: "#16a34a",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Tryline",
+  },
+};
+```
+
+---
+
+## å¤‰æ›´ãƒ»ä½œæˆã™ã‚‹ãƒ•ã‚¡ã‚¤ãƒ«
+
+- `app/manifest.ts`ï¼ˆæ–°è¦ä½œæˆï¼‰
+- `public/icons/icon-192.png`ï¼ˆæ–°è¦ä½œæˆï¼‰
+- `public/icons/icon-512.png`ï¼ˆæ–°è¦ä½œæˆï¼‰
+- `public/icons/icon-maskable-512.png`ï¼ˆæ–°è¦ä½œæˆï¼‰
+- `app/layout.tsx`ï¼ˆ`themeColor`ãƒ»`appleWebApp` ã‚’ metadata ã«è¿½åŠ ï¼‰
+- `scripts/generate-icons.ts`ï¼ˆæ–°è¦ä½œæˆï¼‰
+
+## å¤‰æ›´ã—ãªã„ã“ã¨
+
+- `app/globals.css`
+- `components/` ä»¥ä¸‹ã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ
+- æ—¢å­˜ãƒšãƒ¼ã‚¸ã®ãƒ­ã‚¸ãƒƒã‚¯
+
+## å®Œäº†æ¡ä»¶
+
+- `/manifest.webmanifest` ã«ã‚¢ã‚¯ã‚»ã‚¹ã—ã¦ JSON ãŒè¿”ã‚‹ã“ã¨
+- `icons` é…åˆ—ã« 3 ã‚¨ãƒ³ãƒˆãƒªãŒå«ã¾ã‚Œã‚‹ã“ã¨
+- Chrome DevTools ã® Application ã‚¿ãƒ–ã§ã€ŒInstallableã€ã¨è¡¨ç¤ºã•ã‚Œã‚‹ã“ã¨
+- `pnpm tsc --noEmit` ãƒ‘ã‚¹
+- `pnpm build` æˆåŠŸ
+
+## ãƒ–ãƒ©ãƒ³ãƒãƒ»PR
+
+- ãƒ–ãƒ©ãƒ³ãƒ: `chore/pwa`
+- PR ã‚¿ã‚¤ãƒˆãƒ«: `Chore: add PWA manifest, icons, and theme-color for installability`

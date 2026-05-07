@@ -1,2 +1,33 @@
-Šjh®Ûr¥ãµ§Zµ¤hº×Ÿ®‰§{^Æš+µ×Ÿjém~éÜ¶*'™©â}ë-1ëZu«ZF‹­xÆ§‰÷¬¶·­º¹ÛiÉ ®‹§uÊ%¢·ß}÷ßuë®*mŠ‰À!Ø¬¦V²²Ö§u©hèœ¢{)ººh±æ§ÊÈ³zÍ}Û}ÚÊÜş'(Ïâr‰õ÷jg‚Ü©z)šïé
-n®š,y©ò²,Ş³vÇv²·?‰Ê'³øœ¢~uÚ™à·*^Šf {úg‚›«¦‹™«$i¹^²,Ş³vÇv²·?‰Ê'³øœ¢yš²F›•îuÚ™à·*^Šf {úg‚v¦y:ò–)Ş²+¶v¦y:ò–)Ş²Ö«¶êåşØ^™ç(–Šõé­ø
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    background_color: "#ffffff",
+    description: "æµ·å¤–ãƒ©ã‚°ãƒ“ãƒ¼ã®è©¦åˆçµæœãƒ»AIæ—¥æœ¬èªãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’ãƒªã‚¢ãƒ«ã‚¿ã‚¤ãƒ ã§ã€‚",
+    display: "standalone",
+    icons: [
+      {
+        purpose: "any",
+        sizes: "192x192",
+        src: "/icons/icon-192.png",
+        type: "image/png",
+      },
+      {
+        purpose: "any",
+        sizes: "512x512",
+        src: "/icons/icon-512.png",
+        type: "image/png",
+      },
+      {
+        purpose: "maskable",
+        sizes: "512x512",
+        src: "/icons/icon-maskable-512.png",
+        type: "image/png",
+      },
+    ],
+    name: "Tryline",
+    short_name: "Tryline",
+    start_url: "/",
+    theme_color: "#16a34a",
+  };
+}
