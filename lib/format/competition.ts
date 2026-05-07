@@ -5,7 +5,7 @@ export function formatCompetitionTitle(name: string, season: string): string {
 const FAMILY_DISPLAY_NAMES: Record<string, string> = {
   "autumn-nations": "Autumn Nations",
   "league-one": "League One",
-  "pacific-nations-cup": "Pacific Nations Cup",
+  "pacific-nations-cup": "Nations Cup",
   premiership: "Premiership",
   "rugby-championship": "Rugby Championship",
   rwc: "RWC",

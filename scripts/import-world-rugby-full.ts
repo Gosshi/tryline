@@ -62,7 +62,7 @@ const COMPETITION_ID_BY_FAMILY_AND_SEASON: Record<
 const COMPETITION_NAME_BY_FAMILY: Record<WorldRugbyCompetitionFamily, string> =
   {
     "autumn-nations": "Autumn Nations Series",
-    pnc: "Pacific Nations Cup",
+    pnc: "Nations Cup",
   };
 
 const EVENT_TYPE_TO_DB: Record<WorldRugbyEvent["event_type"], string> = {
