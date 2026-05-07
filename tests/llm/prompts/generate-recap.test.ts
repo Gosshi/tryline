@@ -30,17 +30,44 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 1.4.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@1.4.0");
+  it("uses recap prompt version 1.5.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@1.5.0");
   });
 
-  it("includes section ranges and the minimum length instruction", () => {
+  it("omits the MOM selection section when lineup data is unavailable", () => {
     const prompt = buildGenerateRecapPrompt(assembled, [], []);
 
     expect(prompt).toContain("試合全体像(400-500字)");
     expect(prompt).toContain("ターニングポイント(500-600字)");
-    expect(prompt).toContain("全体で2,000字以上を目標とすること");
+    expect(prompt).toContain("次戦への示唆(300-400字)");
+    expect(prompt).not.toContain("MOM選出と根拠");
+    expect(prompt).toContain("ラインアップデータなし");
+    expect(prompt).toContain("全体で1,500字以上を目標とすること");
     expect(prompt).toContain("各セクションが指定範囲の下限を下回った場合は書き足すこと");
+  });
+
+  it("includes the MOM selection section when lineup data is available", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        projected_lineups: {
+          away: [],
+          home: [
+            {
+              is_starter: true,
+              jersey_number: 10,
+              name: "Marcus Smith",
+              position: "Fly-half",
+            },
+          ],
+        },
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("MOM選出と根拠(300-400字)");
+    expect(prompt).toContain("全体で2,000字以上を目標とすること");
   });
 
   it("includes match events only when present", () => {
