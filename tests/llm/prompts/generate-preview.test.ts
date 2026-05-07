@@ -13,6 +13,8 @@ const assembled: AssembledContentInput = {
     kickoff_at: new Date().toISOString(),
     status: "scheduled",
     venue: "Tokyo",
+    home_score: null,
+    away_score: null,
     competition: null,
     home_team: null,
     away_team: null,
@@ -30,15 +32,26 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 1.4.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@1.5.0");
+  it("uses preview prompt version 1.6.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@1.6.0");
+  });
+
+  it("instructs the model to use final scores as the winner source", () => {
+    const prompt = buildGeneratePreviewPrompt(assembled, [], []);
+
+    expect(prompt).toContain("home_score と away_score が正確な最終スコア");
+    expect(prompt).toContain("スコアが高いチームが勝者");
+    expect(prompt).toContain('"home_score":null');
+    expect(prompt).toContain('"away_score":null');
   });
 
   it("includes the minimum length instruction", () => {
     const prompt = buildGeneratePreviewPrompt(assembled, [], []);
 
     expect(prompt).toContain("全体で1,500字以上を目標とすること");
-    expect(prompt).toContain("各セクションが指定範囲の下限を下回った場合は書き足すこと");
+    expect(prompt).toContain(
+      "各セクションが指定範囲の下限を下回った場合は書き足すこと",
+    );
   });
 
   it("includes competition standings only when present", () => {
