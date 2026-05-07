@@ -1,6 +1,35 @@
+"use client";
+
+import { useState } from "react";
+
+import { AuthModal } from "@/components/auth-modal";
+import { getSupabaseBrowserClient } from "@/lib/auth/client";
+
+import type { FormEvent } from "react";
+
 export default function PricingPage() {
+  const [showAuth, setShowAuth] = useState(false);
+
+  async function handlePremiumSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+
+    const supabase = getSupabaseBrowserClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setShowAuth(true);
+      return;
+    }
+
+    form.submit();
+  }
+
   return (
     <main className="min-h-screen bg-slate-50">
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
         <h1 className="mb-10 text-center font-serif text-3xl font-bold tracking-tight text-slate-950">
           プランを選ぶ
@@ -24,7 +53,11 @@ export default function PricingPage() {
               <li>レビュー・プレビュー全文</li>
               <li>AI チャット</li>
             </ul>
-            <form action="/api/stripe/checkout" method="POST">
+            <form
+              action="/api/stripe/checkout"
+              method="POST"
+              onSubmit={(event) => void handlePremiumSubmit(event)}
+            >
               <button
                 className="mt-6 w-full rounded-xl bg-[var(--color-accent)] py-3 text-sm font-semibold text-white hover:opacity-90"
                 type="submit"
