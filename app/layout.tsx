@@ -1,53 +1,1 @@
-import { Fraunces, Noto_Serif_JP } from "next/font/google";
-
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
-
-import type { Metadata } from "next";
-
-import "./globals.css";
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  axes: ["opsz"],
-  display: "swap",
-});
-
-const notoSerifJP = Noto_Serif_JP({
-  subsets: ["latin"],
-  variable: "--font-noto-serif-jp",
-  weight: ["700"],
-  display: "swap",
-});
-
-export const metadata: Metadata = {
-  metadataBase: new URL("https://tryline-six.vercel.app"),
-  title: {
-    default: "Tryline",
-    template: "%s | Tryline",
-  },
-  description:
-    "Six Nationsãƒ»Premiershipãƒ»URC ãªã©æµ·å¤–ãƒ©ã‚°ãƒ“ãƒ¼ã®è©¦åˆçµæœãƒ»é †ä½è¡¨ãƒ»AIæ—¥æœ¬èªãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’æä¾›ã™ã‚‹ãƒ©ã‚°ãƒ“ãƒ¼ãƒ•ã‚¡ãƒ³å‘ã‘ã‚µãƒ¼ãƒ“ã‚¹ã€‚",
-  openGraph: {
-    locale: "ja_JP",
-    siteName: "Tryline",
-    type: "website",
-  },
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html className={`${fraunces.variable} ${notoSerifJP.variable}`} lang="ja">
-      <body className="min-h-screen">
-        <SiteHeader />
-        {children}
-        <SiteFooter />
-      </body>
-    </html>
-  );
-}
+Šjh®ÑkjéÜzÃh¶„®'É=úèšw±·÷èßà¢ˆ%z)©¢»RŠ×…¢‹^­úè›÷(šš'z{lşÈ­yú(µêâšš+µ(­xwšuêß®‰¿r‰©¢w§¶ÏìŠ×¡y§^®)©¢»mÊ—ŒzÖjÖ•‰ì)¢»_®‰§{bšš+·ø%¡¶¥±Ë,r‰ìµúÚºw°ZÚºw²Ë›±ël•«bö«‰¦åyú'µúÚºw±¬^²ŠlÍØ¬¦V²³©r‰ì¶z-¡'«‰òO6‹hIêâ|“ì¹»¶ÉZ¶)ïj¸šnWŸ¢{g¢Ú,z¸ŸœŠmïMŠÊek+0j—±¦Šír‰ì¶g­iÖ­hÇ­iÖ­jg­iÖ­h¬zw°Qá¶ÚlÿûkÊX§zÈ±½êÜzV©¦Ø­•ç^}«¥µ:ò–)Şµé©•«^±:ò–)Şuë®*mŠ‰Ò‹Z¶*'°úŞš'«²©Q€"Š^œjÚ¦hq©^¢O²+^5©N¼¥Šw­Ê—°y»"µæ©¦W–y°)¥Æ©i¹^¶»²Ö­ºÀZ­+r•ç^}«¥¶Ø­•äëÊX§yìi¢»\¢{-¾'°¦ŠíV'°¦Ší¶¦x*%¢½zk~{h®×^}«¥µû§rØ¨(´¶²¢ë\†)]­éÑy§h\œ†)]­éÑy§-Eæœ´Úz·­º¹á¶i\•«,5©~¶®Ç¬½ªâi¹^‹hIêâ|“ïj¸šnW¥jx
