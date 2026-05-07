@@ -117,6 +117,7 @@ function buildExternalIds(entry: LeagueOneScheduleEntry): Record<string, Json> {
   return {
     league_one_match_id: entry.league_one_match_id,
     match_url: entry.match_url,
+    round: entry.round,
     source: SOURCE,
   };
 }
@@ -375,8 +376,11 @@ async function upsertMatchEvents(params: {
   return rows.length;
 }
 
-async function importMatchDetail(entry: LeagueOneScheduleEntry, match: ImportedMatchRow) {
-  const printUrl = `${entry.match_url}/print`;
+async function importMatchDetail(
+  entry: LeagueOneScheduleEntry,
+  match: ImportedMatchRow,
+) {
+  const printUrl = `https://league-one.jp/match/${entry.league_one_match_id}/print`;
   const detail = await fetchLeagueOneMatchDetail(entry.league_one_match_id);
   const homePlayers = detail.players.filter(
     (player) => player.team_side === "home",

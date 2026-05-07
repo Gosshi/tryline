@@ -162,7 +162,7 @@ export async function assembleMatchContentInput(
         kickoff_at,
         status,
         venue,
-        competition:competitions(id, name, season),
+        competition:competitions(id, name, season, family),
         home_team:teams!matches_home_team_id_fkey(id, name, short_code, country),
         away_team:teams!matches_away_team_id_fkey(id, name, short_code, country)
       `,
@@ -309,7 +309,14 @@ export async function assembleMatchContentInput(
       kickoff_at: match.kickoff_at,
       status: match.status,
       venue: match.venue,
-      competition: match.competition,
+      competition: match.competition
+        ? {
+            family: match.competition.family ?? null,
+            id: match.competition.id,
+            name: match.competition.name,
+            season: match.competition.season,
+          }
+        : null,
       home_team: match.home_team,
       away_team: match.away_team,
     },

@@ -4,7 +4,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@1.4.0";
+export const PROMPT_VERSION = "preview@1.5.0";
 
 export function buildGeneratePreviewPrompt(
   assembled: AssembledContentInput,
@@ -22,6 +22,10 @@ export function buildGeneratePreviewPrompt(
           `現在の大会順位表（この試合前時点）: ${JSON.stringify(assembled.competition_standings)}`,
           "順位争い・Grand Slam・木のスプーン等の大会文脈をプレビューに組み込むこと。",
         ].join("\n");
+  const nameStyleInstruction =
+    assembled.match.competition?.family === "league-one"
+      ? "選手名は日本語表記を使用すること。外国人選手はカタカナで記載すること（例: Brodie Retallick → ブロディ・レタリック）。チーム名は日本語または通称表記を使用すること。"
+      : "選手名はカタカナで記載すること（例: Marcus Smith → マーカス・スミス、Owen Farrell → オウェン・ファレル）。チーム名は英語表記のまま。";
 
   return [
     "あなたは日本語のラグビー専門編集者です。試合プレビューをマークダウンで作成してください。",
@@ -30,7 +34,7 @@ export function buildGeneratePreviewPrompt(
     "事実は入力データと一致させること。直接引用は15語以内。",
     "出力は日本語マークダウン本文のみ。",
     "強調記号（**、*、__、_）・コードブロック（```）・引用（>）は使用禁止。見出し(#)と箇条書き(-)のみ使用すること。",
-    "選手名・チーム名は英語表記のまま使用すること（カタカナ変換しない）。",
+    nameStyleInstruction,
     `試合データ: ${JSON.stringify(assembled)}`,
     standingsBlock,
     `戦術ポイント: ${JSON.stringify(tacticalPoints)}`,
