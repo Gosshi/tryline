@@ -63,6 +63,20 @@ export type {
   HistoricalMatchResult as LeagueOneHistoricalMatchResult,
 } from "@/lib/scrapers/wikipedia-league-one-results";
 export {
+  fetchLeagueOneSchedule,
+  parseLeagueOneScheduleHtml,
+} from "@/lib/scrapers/league-one-schedule";
+export type { LeagueOneScheduleEntry } from "@/lib/scrapers/league-one-schedule";
+export {
+  fetchLeagueOneMatchDetail,
+  parseLeagueOneMatchPrintHtml,
+} from "@/lib/scrapers/league-one-match";
+export type {
+  LeagueOneEvent,
+  LeagueOneMatchDetail,
+  LeagueOnePlayer,
+} from "@/lib/scrapers/league-one-match";
+export {
   parseTop14ResultsHtml,
   wikipediaTop14ResultsScraper,
 } from "@/lib/scrapers/wikipedia-top-14-results";
