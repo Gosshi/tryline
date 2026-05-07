@@ -32,6 +32,20 @@ type CliOptions = {
   season: string;
 };
 
+export type WorldRugbyFullImportOptions = {
+  competitionId?: string | null;
+  family: WorldRugbyCompetitionFamily;
+  season: string;
+};
+
+export type WorldRugbyFullImportResult = {
+  eventsInserted: number;
+  failedMatches: number;
+  lineupsInserted: number;
+  matchesImported: number;
+  teamsImported: number;
+};
+
 const SOURCE = "world-rugby";
 const COMPETITION_ID_BY_FAMILY_AND_SEASON: Record<
   WorldRugbyCompetitionFamily,
@@ -117,7 +131,7 @@ function parseArgs(argv: string[]): CliOptions {
   return { competitionId, family, season };
 }
 
-function resolveCompetitionId(options: CliOptions) {
+function resolveCompetitionId(options: WorldRugbyFullImportOptions) {
   const competitionId =
     options.competitionId ??
     COMPETITION_ID_BY_FAMILY_AND_SEASON[options.family][options.season];
@@ -501,8 +515,9 @@ async function importMatchDetail(
   return { eventsInserted, lineupsInserted };
 }
 
-async function main() {
-  const options = parseArgs(process.argv.slice(2));
+export async function runWorldRugbyFullImport(
+  options: WorldRugbyFullImportOptions,
+): Promise<WorldRugbyFullImportResult> {
   const competitionId = resolveCompetitionId(options);
   const entries = await fetchWorldRugbySchedule(competitionId, options.season);
   const mismatchedEntry = entries.find(
@@ -532,6 +547,7 @@ async function main() {
 
   let lineupsInserted = 0;
   let eventsInserted = 0;
+  let failedMatches = 0;
 
   for (const entry of entries) {
     const match = matchByWorldRugbyId.get(entry.world_rugby_match_id);
@@ -543,18 +559,40 @@ async function main() {
       continue;
     }
 
-    const result = await importMatchDetail(entry, match);
-    lineupsInserted += result.lineupsInserted;
-    eventsInserted += result.eventsInserted;
+    try {
+      const result = await importMatchDetail(entry, match);
+      lineupsInserted += result.lineupsInserted;
+      eventsInserted += result.eventsInserted;
 
-    console.log(
-      `Imported World Rugby match ${entry.world_rugby_match_id}: lineups=${result.lineupsInserted} events=${result.eventsInserted}`,
-    );
+      console.log(
+        `Imported World Rugby match ${entry.world_rugby_match_id}: lineups=${result.lineupsInserted} events=${result.eventsInserted}`,
+      );
+    } catch (error) {
+      failedMatches += 1;
+      console.error(
+        `Failed to import World Rugby match ${entry.world_rugby_match_id}`,
+        error,
+      );
+    }
   }
 
   console.log(
-    `Imported World Rugby ${options.family} ${options.season}: matches=${matchByWorldRugbyId.size} teams=${teamCount} lineups=${lineupsInserted} events=${eventsInserted}`,
+    `Imported World Rugby ${options.family} ${options.season}: matches=${matchByWorldRugbyId.size} teams=${teamCount} lineups=${lineupsInserted} events=${eventsInserted} failed=${failedMatches}`,
   );
+
+  return {
+    eventsInserted,
+    failedMatches,
+    lineupsInserted,
+    matchesImported: matchByWorldRugbyId.size,
+    teamsImported: teamCount,
+  };
+}
+
+async function main() {
+  const options = parseArgs(process.argv.slice(2));
+
+  await runWorldRugbyFullImport(options);
 }
 
 if (process.argv[1]?.endsWith("import-world-rugby-full.ts")) {
