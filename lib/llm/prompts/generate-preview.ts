@@ -4,7 +4,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@1.5.0";
+export const PROMPT_VERSION = "preview@1.6.0";
 
 export function buildGeneratePreviewPrompt(
   assembled: AssembledContentInput,
@@ -35,6 +35,7 @@ export function buildGeneratePreviewPrompt(
     "出力は日本語マークダウン本文のみ。",
     "強調記号（**、*、__、_）・コードブロック（```）・引用（>）は使用禁止。見出し(#)と箇条書き(-)のみ使用すること。",
     nameStyleInstruction,
+    "試合結果はデータ内の home_score と away_score が正確な最終スコアである。スコアが高いチームが勝者。この事実を文章の根拠として使うこと。",
     `試合データ: ${JSON.stringify(assembled)}`,
     standingsBlock,
     `戦術ポイント: ${JSON.stringify(tacticalPoints)}`,
