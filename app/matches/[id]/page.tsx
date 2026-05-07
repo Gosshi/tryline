@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { MatchChat } from "@/components/match-chat";
 import { MatchContentSection } from "@/components/match-content-section";
 import { MatchEventsSection } from "@/components/match-events-section";
 import { MatchHeader } from "@/components/match-header";
@@ -211,6 +212,8 @@ export default async function MatchDetailPage({
               match={match}
             />
           </section>
+
+          <MatchChat matchId={id} />
         </div>
       </main>
     </>

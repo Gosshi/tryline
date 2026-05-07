@@ -38,6 +38,10 @@ export type UpcomingMatch = MatchListItem & {
   competition: { slug: string; name: string; season: string };
 };
 
+export type TeamPageMatch = MatchListItem & {
+  competition: { slug: string; name: string; season: string };
+};
+
 type BaseMatchRow = {
   id: string;
   kickoff_at: string;
@@ -92,6 +96,14 @@ type RecentlyReviewedContentRow = {
 };
 
 type UpcomingMatchRow = BaseMatchRow & {
+  competition: {
+    slug: string;
+    name: string;
+    season: string;
+  } | null;
+};
+
+type TeamPageMatchRow = BaseMatchRow & {
   competition: {
     slug: string;
     name: string;
@@ -341,6 +353,108 @@ export async function listAllMatchIds(): Promise<string[]> {
   }
 
   return data.map((row) => row.id);
+}
+
+export async function getTeamBySlug(
+  teamSlug: string,
+): Promise<{ slug: string; name: string; shortCode: string } | null> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("teams")
+    .select("slug, name, short_code")
+    .eq("slug", teamSlug)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    name: data.name,
+    shortCode: data.short_code ?? data.name.slice(0, 3).toUpperCase(),
+    slug: data.slug,
+  };
+}
+
+export async function getMatchesByTeamSlug(
+  teamSlug: string,
+  limit = 30,
+): Promise<{ past: TeamPageMatch[]; upcoming: TeamPageMatch[] }> {
+  const client = getSupabasePublicServerClient();
+  const { data: teamRow, error: teamError } = await client
+    .from("teams")
+    .select("id")
+    .eq("slug", teamSlug)
+    .maybeSingle();
+
+  if (teamError) {
+    throw teamError;
+  }
+
+  if (!teamRow) {
+    return { past: [], upcoming: [] };
+  }
+
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        id,
+        kickoff_at,
+        status,
+        home_score,
+        away_score,
+        venue,
+        external_ids,
+        home_team:teams!matches_home_team_id_fkey (
+          slug,
+          name,
+          short_code
+        ),
+        away_team:teams!matches_away_team_id_fkey (
+          slug,
+          name,
+          short_code
+        ),
+        competition:competitions!matches_competition_id_fkey (
+          slug,
+          name,
+          season
+        )
+      `,
+    )
+    .or(`home_team_id.eq.${teamRow.id},away_team_id.eq.${teamRow.id}`)
+    .order("kickoff_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  const now = new Date().toISOString();
+  const rows = (data satisfies TeamPageMatchRow[])
+    .filter((row) => row.competition !== null)
+    .map((row) => {
+      if (!row.competition) {
+        throw new Error("Team page match is missing competition.");
+      }
+
+      return {
+        ...mapMatchRow(row),
+        competition: row.competition,
+      };
+    });
+
+  return {
+    past: rows.filter((match) => match.status === "finished"),
+    upcoming: rows
+      .filter((match) => match.kickoffAt >= now)
+      .sort((left, right) => left.kickoffAt.localeCompare(right.kickoffAt)),
+  };
 }
 
 export async function listMatchesForCompetition(
