@@ -55,6 +55,7 @@ describe("MatchContentSection", () => {
       <MatchContentSection
         content={content}
         contentType="preview"
+        isPremium
         match={match}
       />,
     );
@@ -73,6 +74,7 @@ describe("MatchContentSection", () => {
       <MatchContentSection
         content={null}
         contentType="preview"
+        isPremium={false}
         match={match}
       />,
     );

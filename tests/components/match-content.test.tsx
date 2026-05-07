@@ -31,6 +31,7 @@ describe("MatchContent", () => {
             "# 見出し\n\n- 項目1\n\n| 列1 | 列2 |\n| --- | --- |\n| A | B |\n\n[Tryline](https://example.com)",
         }}
         contentType="preview"
+        isPremium
       />,
     );
 
@@ -48,6 +49,7 @@ describe("MatchContent", () => {
           contentMdJa: "本文\n\n<script>alert('x')</script>",
         }}
         contentType="preview"
+        isPremium
       />,
     );
 
@@ -58,8 +60,55 @@ describe("MatchContent", () => {
   });
 
   it("shows generatedAt in JST", () => {
-    render(<MatchContent content={baseContent} contentType="preview" />);
+    render(
+      <MatchContent content={baseContent} contentType="preview" isPremium />,
+    );
 
     expect(screen.getByText("2027-02-04 23:12 JST 更新")).toBeInTheDocument();
+  });
+
+  it("truncates free content and shows the premium CTA without TOC", () => {
+    const visibleText = "あ".repeat(300);
+    const lockedText = "い".repeat(40);
+
+    render(
+      <MatchContent
+        content={{
+          ...baseContent,
+          contentMdJa: `# 見出し1\n\n# 見出し2\n\n${visibleText}${lockedText}`,
+        }}
+        contentType="preview"
+        isPremium={false}
+      />,
+    );
+
+    expect(screen.queryByRole("navigation", { name: "目次" })).toBeNull();
+    expect(screen.getByText(/続きは Premium/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Premium を始める - ¥980/月" }),
+    ).toHaveAttribute("href", "/pricing");
+    expect(
+      screen.getByText(new RegExp(visibleText.slice(0, 40))),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(new RegExp(lockedText))).toBeNull();
+  });
+
+  it("shows full content and TOC for premium users", () => {
+    const lockedText = "プレミアム本文";
+
+    render(
+      <MatchContent
+        content={{
+          ...baseContent,
+          contentMdJa: `# 見出し1\n\n# 見出し2\n\n${lockedText}`,
+        }}
+        contentType="preview"
+        isPremium
+      />,
+    );
+
+    expect(screen.getByRole("navigation", { name: "目次" })).toBeInTheDocument();
+    expect(screen.getByText(lockedText)).toBeInTheDocument();
+    expect(screen.queryByText(/続きは Premium/)).toBeNull();
   });
 });

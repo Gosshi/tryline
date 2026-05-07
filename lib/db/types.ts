@@ -714,6 +714,8 @@ export type Database = {
       };
       user_profiles: {
         Row: {
+          chat_daily_count: number;
+          chat_daily_reset_date: string;
           created_at: string;
           current_period_end: string | null;
           display_name: string | null;
@@ -724,6 +726,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          chat_daily_count?: number;
+          chat_daily_reset_date?: string;
           created_at?: string;
           current_period_end?: string | null;
           display_name?: string | null;
@@ -734,6 +738,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          chat_daily_count?: number;
+          chat_daily_reset_date?: string;
           created_at?: string;
           current_period_end?: string | null;
           display_name?: string | null;

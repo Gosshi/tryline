@@ -8,6 +8,7 @@ import type { MatchDetail } from "@/lib/db/queries/matches";
 type MatchContentSectionProps = {
   contentType: "preview" | "recap";
   content: PublishedMatchContent | null;
+  isPremium: boolean;
   match: MatchDetail;
 };
 
@@ -24,6 +25,7 @@ const SUBTITLES = {
 export function MatchContentSection({
   content,
   contentType,
+  isPremium,
   match,
 }: MatchContentSectionProps) {
   const state = deriveContentState({
@@ -45,7 +47,11 @@ export function MatchContentSection({
       </div>
 
       {content ? (
-        <MatchContent content={content} contentType={contentType} />
+        <MatchContent
+          content={content}
+          contentType={contentType}
+          isPremium={isPremium}
+        />
       ) : (
         <ContentPlaceholder state={state} type={contentType} />
       )}
