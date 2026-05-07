@@ -6,6 +6,7 @@ import { MatchContentSection } from "@/components/match-content-section";
 import { MatchEventsSection } from "@/components/match-events-section";
 import { MatchHeader } from "@/components/match-header";
 import { MatchLineupsSection } from "@/components/match-lineups-section";
+import { getUser, isPremium } from "@/lib/auth/server";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
@@ -22,6 +23,7 @@ type MatchDetailPageProps = {
 };
 
 export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -45,36 +47,11 @@ export async function generateMetadata({
   const description = content.preview
     ? extractDescription(content.preview.contentMdJa)
     : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・AI日本語レビュー。`;
-  const competitionTitle = formatCompetitionTitle(
-    match.competition.name,
-    match.competition.season,
-  );
-  const score =
-    match.status === "finished" &&
-    match.homeScore !== null &&
-    match.awayScore !== null
-      ? `${match.homeScore} - ${match.awayScore}`
-      : "";
-  const ogImageUrl = new URL("/api/og", "https://tryline-six.vercel.app");
-
-  ogImageUrl.searchParams.set("home", match.homeTeam.name);
-  ogImageUrl.searchParams.set("away", match.awayTeam.name);
-  ogImageUrl.searchParams.set("score", score);
-  ogImageUrl.searchParams.set("competition", competitionTitle);
-  ogImageUrl.searchParams.set("status", match.status);
 
   return {
     description,
     openGraph: {
       description,
-      images: [
-        {
-          alt: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
-          height: 630,
-          url: ogImageUrl.toString(),
-          width: 1200,
-        },
-      ],
       title: `${title} | Tryline`,
       type: "article",
       url: `https://tryline-six.vercel.app/matches/${id}`,
@@ -87,11 +64,12 @@ export default async function MatchDetailPage({
   params,
 }: MatchDetailPageProps) {
   const { id } = await params;
-  const [match, publishedContent, events, lineups] = await Promise.all([
+  const [match, publishedContent, events, lineups, user] = await Promise.all([
     getMatchById(id),
     getPublishedContentForMatch(id),
     getMatchEventsForMatch(id),
     getMatchLineupsForMatch(id),
+    getUser(),
   ]);
 
   if (!match) {
@@ -100,6 +78,7 @@ export default async function MatchDetailPage({
 
   const shouldShowPreviewSection =
     match.status !== "finished" || publishedContent.preview !== null;
+  const premium = user ? await isPremium(user.id) : false;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
@@ -213,7 +192,7 @@ export default async function MatchDetailPage({
             />
           </section>
 
-          <MatchChat matchId={id} />
+          <MatchChat isPremium={premium} matchId={id} />
         </div>
       </main>
     </>
