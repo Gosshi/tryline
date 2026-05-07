@@ -162,7 +162,11 @@ function MatchChatPanel({
           disabled={disabled || streaming}
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
+            if (
+              event.key === "Enter" &&
+              !event.shiftKey &&
+              !event.isComposing
+            ) {
               event.preventDefault();
               void send();
             }
