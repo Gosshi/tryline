@@ -1,9 +1,22 @@
 import type { ContentType } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@1.1.0";
+export const PROMPT_VERSION = "qa@1.2.0";
 
-export function buildQaContentPrompt(contentType: ContentType, narrative: string): string {
+export function buildQaContentPrompt(
+  contentType: ContentType,
+  narrative: string,
+): string {
   const minLength = contentType === "recap" ? 2000 : 1500;
+  const winnerCheckBlock =
+    contentType === "recap"
+      ? [
+          "## 勝者整合性チェック",
+          "入力データの home_score と away_score を確認すること。",
+          "スコアが高い方のチームが実際の勝者である。",
+          "本文中で敗者チームが勝利したかのように書かれていれば factual_grounding を 1 にして verdict を reject にすること。",
+          "引き分け（同点）の場合はこのチェックを無視する。",
+        ].join("\n")
+      : "";
 
   return [
     "あなたは編集デスクです。以下の日本語コンテンツを品質評価してください。",
@@ -32,7 +45,8 @@ export function buildQaContentPrompt(contentType: ContentType, narrative: string
       "- 2: 入力データと矛盾する記述がある",
       "- 1: 事実誤認が多数または捏造が疑われる",
     ].join("\n"),
-    "JSONのみで返答。スキーマ: {\"scores\":{\"information_density\":1-5,\"japanese_quality\":1-5,\"factual_grounding\":1-5},\"issues\":string[],\"verdict\":\"publish\"|\"retry\"|\"reject\"}",
+    winnerCheckBlock,
+    'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5},"issues":string[],"verdict":"publish"|"retry"|"reject"}',
     "verdict判定: いずれか2以下なら retry。全て3以上なら publish。重大欠陥で再試行価値がなければ reject。",
     `本文: ${narrative}`,
   ].join("\n\n");
