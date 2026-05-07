@@ -1,0 +1,16 @@
+name: Cron — Fill Event Gaps
+
+on:
+  schedule:
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+
+jobs:
+  fill-event-gaps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger fill-event-gaps
+        run: |
+          curl -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://tryline-six.vercel.app/api/cron/fill-event-gaps
