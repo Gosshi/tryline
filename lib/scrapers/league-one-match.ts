@@ -27,13 +27,14 @@ type ScoreState = {
 
 const LEAGUE_ONE_BASE_URL = "https://league-one.jp";
 
-const EVENT_TYPE_BY_PRINT_LABEL: Record<string, LeagueOneEvent["event_type"]> = {
-  DG: "drop_goal",
-  G: "conversion",
-  PG: "penalty",
-  PT: "try",
-  T: "try",
-};
+const EVENT_TYPE_BY_PRINT_LABEL: Record<string, LeagueOneEvent["event_type"]> =
+  {
+    DG: "drop_goal",
+    G: "conversion",
+    PG: "penalty",
+    PT: "try",
+    T: "try",
+  };
 
 function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim();
@@ -133,7 +134,10 @@ function parseScoringEvents($: ReturnType<typeof load>) {
       return;
     }
 
-    const typeLabel = normalizeWhitespace(cells.eq(3).text()).replace(/x$/i, "");
+    const typeLabel = normalizeWhitespace(cells.eq(3).text()).replace(
+      /x$/i,
+      "",
+    );
     const eventType = EVENT_TYPE_BY_PRINT_LABEL[typeLabel];
 
     if (!eventType) {
@@ -173,7 +177,9 @@ function parseScoringEvents($: ReturnType<typeof load>) {
   return events;
 }
 
-export function parseLeagueOneMatchPrintHtml(html: string): LeagueOneMatchDetail {
+export function parseLeagueOneMatchPrintHtml(
+  html: string,
+): LeagueOneMatchDetail {
   const $ = load(html);
   const players = [
     ...parseLineupPlayers($, ".team.home", "home"),
