@@ -1,3 +1,4 @@
+import { getUser, isPremium } from "@/lib/auth/server";
 import { assembleMatchContext } from "@/lib/chat/context";
 import {
   createChatSession,
@@ -20,6 +21,16 @@ export async function POST(
   { params }: { params: Promise<{ matchId: string }> },
 ) {
   const { matchId } = await params;
+  const user = await getUser();
+
+  if (!user) {
+    return Response.json({ error: "login_required" }, { status: 401 });
+  }
+
+  if (!(await isPremium(user.id))) {
+    return Response.json({ error: "premium_required" }, { status: 403 });
+  }
+
   const body = (await request.json()) as {
     message?: string;
     sessionId?: string;

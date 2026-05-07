@@ -1,6 +1,13 @@
 import Link from "next/link";
 
-export function SiteHeader() {
+import { getUser, isPremium } from "@/lib/auth/server";
+
+import { UserMenu } from "./user-menu";
+
+export async function SiteHeader() {
+  const user = await getUser();
+  const premium = user ? await isPremium(user.id) : false;
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 md:px-8">
@@ -14,7 +21,10 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav aria-label="メインナビゲーション">
+        <nav
+          aria-label="メインナビゲーション"
+          className="flex items-center gap-2"
+        >
           <ul className="flex items-center gap-1">
             <li>
               <Link
@@ -33,6 +43,7 @@ export function SiteHeader() {
               </Link>
             </li>
           </ul>
+          <UserMenu isPremium={premium} user={user} />
         </nav>
       </div>
     </header>

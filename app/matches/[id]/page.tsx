@@ -6,6 +6,7 @@ import { MatchContentSection } from "@/components/match-content-section";
 import { MatchEventsSection } from "@/components/match-events-section";
 import { MatchHeader } from "@/components/match-header";
 import { MatchLineupsSection } from "@/components/match-lineups-section";
+import { getUser, isPremium } from "@/lib/auth/server";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
@@ -22,6 +23,7 @@ type MatchDetailPageProps = {
 };
 
 export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -62,11 +64,12 @@ export default async function MatchDetailPage({
   params,
 }: MatchDetailPageProps) {
   const { id } = await params;
-  const [match, publishedContent, events, lineups] = await Promise.all([
+  const [match, publishedContent, events, lineups, user] = await Promise.all([
     getMatchById(id),
     getPublishedContentForMatch(id),
     getMatchEventsForMatch(id),
     getMatchLineupsForMatch(id),
+    getUser(),
   ]);
 
   if (!match) {
@@ -75,6 +78,7 @@ export default async function MatchDetailPage({
 
   const shouldShowPreviewSection =
     match.status !== "finished" || publishedContent.preview !== null;
+  const premium = user ? await isPremium(user.id) : false;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
@@ -188,7 +192,7 @@ export default async function MatchDetailPage({
             />
           </section>
 
-          <MatchChat matchId={id} />
+          <MatchChat isPremium={premium} matchId={id} />
         </div>
       </main>
     </>

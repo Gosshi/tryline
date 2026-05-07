@@ -2,16 +2,25 @@
 
 import { useRef, useState } from "react";
 
+import { Paywall } from "@/components/paywall";
+
 type Message = {
   content: string;
   role: "user" | "assistant";
 };
 
 type MatchChatProps = {
+  isPremium: boolean;
   matchId: string;
 };
 
-export function MatchChat({ matchId }: MatchChatProps) {
+function MatchChatPanel({
+  disabled = false,
+  matchId,
+}: {
+  disabled?: boolean;
+  matchId: string;
+}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState<string | undefined>();
@@ -150,7 +159,7 @@ export function MatchChat({ matchId }: MatchChatProps) {
       <div className="flex flex-col gap-2 sm:flex-row">
         <textarea
           className="min-h-11 flex-1 resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm placeholder-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-          disabled={streaming}
+          disabled={disabled || streaming}
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
@@ -164,7 +173,7 @@ export function MatchChat({ matchId }: MatchChatProps) {
         />
         <button
           className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent)] px-5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
-          disabled={streaming || !input.trim()}
+          disabled={disabled || streaming || !input.trim()}
           onClick={() => void send()}
           type="button"
         >
@@ -173,4 +182,16 @@ export function MatchChat({ matchId }: MatchChatProps) {
       </div>
     </section>
   );
+}
+
+export function MatchChat({ isPremium, matchId }: MatchChatProps) {
+  if (!isPremium) {
+    return (
+      <Paywall isPremium={false}>
+        <MatchChatPanel disabled matchId={matchId} />
+      </Paywall>
+    );
+  }
+
+  return <MatchChatPanel matchId={matchId} />;
 }
