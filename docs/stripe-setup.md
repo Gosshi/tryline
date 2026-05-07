@@ -3,6 +3,11 @@
 pr18（Auth + Stripe）実装後に Owner が手動で行う設定。
 テストモードで動作確認してから本番に切り替える。
 
+## アカウント構成
+
+- **Organization**: `Gosshi`（屋号。将来の別サービスも同じ傘下に追加）
+- **Account**: `Tryline`（このプロジェクト専用）
+
 ---
 
 ## 1. Stripe Dashboard で商品を作成
