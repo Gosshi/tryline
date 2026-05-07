@@ -165,7 +165,7 @@ function MatchChatPanel({
             if (
               event.key === "Enter" &&
               !event.shiftKey &&
-              !event.isComposing
+              !event.nativeEvent.isComposing
             ) {
               event.preventDefault();
               void send();
