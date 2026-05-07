@@ -1,15 +1,16 @@
-name: Cron - Ingest Fixtures
+name: Cron — Ingest Fixtures
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 2 * * 1'
   workflow_dispatch:
 
 jobs:
-  run:
+  ingest-fixtures:
     runs-on: ubuntu-latest
     steps:
-      - name: Call ingest-fixtures endpoint
+      - name: Trigger ingest-fixtures
         run: |
-          curl -s -f -X POST "${{ secrets.PRODUCTION_URL }}/api/cron/ingest-fixtures" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          curl -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://tryline-six.vercel.app/api/cron/ingest-fixtures
