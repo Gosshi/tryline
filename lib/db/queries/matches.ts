@@ -130,7 +130,7 @@ function getRoundFromExternalIds(externalIds: Json): number | null {
     return null;
   }
 
-  const round = externalIds.wikipedia_round;
+  const round = externalIds.round ?? externalIds.wikipedia_round;
 
   return typeof round === "number" ? round : null;
 }
