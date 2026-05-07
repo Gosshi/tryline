@@ -13,6 +13,8 @@ const assembled: AssembledContentInput = {
     kickoff_at: new Date().toISOString(),
     status: "finished",
     venue: "Tokyo",
+    home_score: 31,
+    away_score: 24,
     competition: null,
     home_team: null,
     away_team: null,
@@ -30,8 +32,17 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 1.5.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@1.6.0");
+  it("uses recap prompt version 1.7.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@1.7.0");
+  });
+
+  it("instructs the model to use final scores as the winner source", () => {
+    const prompt = buildGenerateRecapPrompt(assembled, [], []);
+
+    expect(prompt).toContain("home_score と away_score が正確な最終スコア");
+    expect(prompt).toContain("スコアが高いチームが勝者");
+    expect(prompt).toContain('"home_score":31');
+    expect(prompt).toContain('"away_score":24');
   });
 
   it("omits the MOM selection section when lineup data is unavailable", () => {
@@ -43,7 +54,9 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain("ラインアップデータなし");
     expect(prompt).toContain("全体で1,500字以上を目標とすること");
-    expect(prompt).toContain("各セクションが指定範囲の下限を下回った場合は書き足すこと");
+    expect(prompt).toContain(
+      "各セクションが指定範囲の下限を下回った場合は書き足すこと",
+    );
   });
 
   it("includes the MOM selection section when lineup data is available", () => {
