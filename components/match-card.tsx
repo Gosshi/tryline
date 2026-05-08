@@ -75,7 +75,7 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
               <FlagIcon slug={match.homeTeam.slug} size={16} />
               {match.homeTeam.shortCode}
               {homeWon && match.status === "finished" && (
-                <span className="rounded bg-[var(--color-accent)]/15 px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
+                <span className="rounded bg-[var(--color-accent-dim)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
                   W
                 </span>
               )}
@@ -140,7 +140,7 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
             >
               {match.awayTeam.shortCode}
               {awayWon && match.status === "finished" && (
-                <span className="rounded bg-[var(--color-accent)]/15 px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
+                <span className="rounded bg-[var(--color-accent-dim)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
                   W
                 </span>
               )}
@@ -176,7 +176,7 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
               </span>
             )}
             {contentStatus.hasRecap && (
-              <span className="rounded-full bg-[var(--color-accent)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--color-accent)]">
+              <span className="rounded-full bg-[var(--color-accent-subtle)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-accent)]">
                 レビュー
               </span>
             )}
