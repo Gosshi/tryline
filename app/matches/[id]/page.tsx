@@ -165,6 +165,8 @@ export default async function MatchDetailPage({
             awayTeamName={match.awayTeam.name}
             awayTeamSlug={match.awayTeam.slug}
             events={events}
+            finalAwayScore={match.awayScore ?? 0}
+            finalHomeScore={match.homeScore ?? 0}
             homeTeamId={match.homeTeamId}
             homeTeamName={match.homeTeam.name}
             homeTeamSlug={match.homeTeam.slug}
