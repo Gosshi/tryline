@@ -6,6 +6,7 @@ const FAMILY_DISPLAY_NAMES: Record<string, string> = {
   "autumn-nations": "Autumn Nations",
   "league-one": "League One",
   "pacific-nations-cup": "Nations Cup",
+  pnc: "Nations Cup",
   premiership: "Premiership",
   "rugby-championship": "Rugby Championship",
   rwc: "RWC",
