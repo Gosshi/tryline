@@ -10,13 +10,12 @@ import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
 
-type Stage = { id: string; round: number };
-
-const STAGES: Stage[] = [
-  { id: "Quarter-finals", round: 1 },
-  { id: "Semi-finals", round: 2 },
-  { id: "URC_Grand_Final", round: 3 },
-];
+const ROUND_ID_PATTERN = /^Round_(\d+)$/;
+const PLAYOFF_ROUNDS: Record<string, number> = {
+  "Quarter-finals": 100,
+  "Semi-finals": 101,
+  URC_Grand_Final: 102,
+};
 const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
   Benetton: "benetton",
   Bulls: "bulls",
@@ -77,15 +76,30 @@ function getSectionId(
   return null;
 }
 
+function resolveRound(sectionId: string | null) {
+  if (sectionId === null) {
+    return undefined;
+  }
+
+  const playoffRound = PLAYOFF_ROUNDS[sectionId];
+
+  if (playoffRound !== undefined) {
+    return playoffRound;
+  }
+
+  const matched = sectionId.match(ROUND_ID_PATTERN);
+
+  return matched?.[1] !== undefined ? Number(matched[1]) : undefined;
+}
+
 export function parseUrcLiveHtml(html: string): ParsedLiveMatch[] {
   const $ = load(html);
-  const stageById = new Map(STAGES.map((stage) => [stage.id, stage.round]));
   const results: ParsedLiveMatch[] = [];
 
   for (const element of $("div.vevent.summary").toArray()) {
     const block = $(element);
     const sectionId = getSectionId($, block);
-    const round = stageById.get(sectionId ?? "");
+    const round = resolveRound(sectionId);
 
     if (round === undefined) {
       continue;
