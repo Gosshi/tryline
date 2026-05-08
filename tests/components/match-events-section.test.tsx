@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { MatchEventsSection } from "@/components/match-events-section";
@@ -14,6 +14,7 @@ const event: MatchEventRow = {
   isPenaltyTry: false,
   minute: 12,
   playerName: "Home Scorer",
+  points: null,
   teamId: "home-team",
   type: "try",
 };
@@ -25,6 +26,8 @@ describe("MatchEventsSection", () => {
         awayTeamName="France"
         awayTeamSlug="france"
         events={[]}
+        finalAwayScore={0}
+        finalHomeScore={0}
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
@@ -50,6 +53,8 @@ describe("MatchEventsSection", () => {
           },
           event,
         ]}
+        finalAwayScore={3}
+        finalHomeScore={5}
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
@@ -71,6 +76,8 @@ describe("MatchEventsSection", () => {
         awayTeamName="France"
         awayTeamSlug="france"
         events={[event]}
+        finalAwayScore={0}
+        finalHomeScore={5}
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
@@ -96,6 +103,8 @@ describe("MatchEventsSection", () => {
             type: "penalty_goal",
           },
         ]}
+        finalAwayScore={3}
+        finalHomeScore={5}
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
@@ -122,6 +131,8 @@ describe("MatchEventsSection", () => {
             type: "penalty_goal",
           },
         ]}
+        finalAwayScore={3}
+        finalHomeScore={5}
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
@@ -144,5 +155,65 @@ describe("MatchEventsSection", () => {
       borderRight: "3px solid #002395",
       paddingRight: "8px",
     });
+  });
+
+  it("renders a score graph and tooltip for scoring events", () => {
+    const { container } = render(
+      <MatchEventsSection
+        awayTeamName="France"
+        awayTeamSlug="france"
+        events={[
+          event,
+          {
+            ...event,
+            id: "00000000-0000-0000-0000-000000000102",
+            minute: 23,
+            playerName: "Away Kicker",
+            teamId: "away-team",
+            type: "penalty_goal",
+          },
+        ]}
+        finalAwayScore={3}
+        finalHomeScore={5}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        homeTeamSlug="ireland"
+      />,
+    );
+    const section = within(container);
+
+    expect(
+      section.getByRole("img", { name: "スコア推移グラフ" }),
+    ).toBeInTheDocument();
+
+    const points = container.querySelectorAll("circle");
+    expect(points).toHaveLength(2);
+    fireEvent.mouseEnter(points[0]!);
+    expect(section.getByText("12' Home Scorer（try）")).toBeInTheDocument();
+  });
+
+  it("does not render the score graph for non-scoring events only", () => {
+    const { container } = render(
+      <MatchEventsSection
+        awayTeamName="France"
+        awayTeamSlug="france"
+        events={[
+          {
+            ...event,
+            type: "yellow_card",
+          },
+        ]}
+        finalAwayScore={0}
+        finalHomeScore={0}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        homeTeamSlug="ireland"
+      />,
+    );
+    const section = within(container);
+
+    expect(
+      section.queryByRole("img", { name: "スコア推移グラフ" }),
+    ).not.toBeInTheDocument();
   });
 });
