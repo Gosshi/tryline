@@ -3,6 +3,7 @@ import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 export type MatchEventRow = {
   id: string;
   minute: number | null;
+  points: number | null;
   type: string;
   teamId: string;
   playerName: string;
@@ -34,6 +35,7 @@ export async function getMatchEventsForMatch(
       isPenaltyTry: metadata?.is_penalty_try ?? false,
       minute: row.minute,
       playerName: metadata?.player_name ?? "—",
+      points: null,
       teamId: row.team_id,
       type: row.type,
     };
