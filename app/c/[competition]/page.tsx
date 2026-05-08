@@ -45,7 +45,7 @@ export default async function CompetitionHubPage({ params }: Props) {
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 md:px-8">
         <h1 className="font-heading text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-          {latestSeason.name}
+          {formatFamilyName(competition)}
         </h1>
         <p className="mt-2 text-sm text-slate-500">全シーズン一覧</p>
 
