@@ -1,3 +1,5 @@
+import { ScoreGraph } from "@/components/score-graph";
+import { buildScoreTimeline } from "@/lib/format/match-timeline";
 import { getTeamColor } from "@/lib/format/team-identity";
 
 import type { MatchEventRow } from "@/lib/db/queries/match-events";
@@ -12,12 +14,14 @@ const EVENT_TYPE_LABEL: Record<string, string> = {
 };
 
 type MatchEventsSectionProps = {
+  awayTeamName: string;
+  awayTeamSlug: string;
   events: MatchEventRow[];
+  finalAwayScore: number;
+  finalHomeScore: number;
   homeTeamId: string;
   homeTeamName: string;
   homeTeamSlug: string;
-  awayTeamName: string;
-  awayTeamSlug: string;
 };
 
 function sortEvents(events: MatchEventRow[]): MatchEventRow[] {
@@ -39,12 +43,14 @@ function sortEvents(events: MatchEventRow[]): MatchEventRow[] {
 }
 
 export function MatchEventsSection({
+  awayTeamName,
+  awayTeamSlug,
   events,
+  finalAwayScore,
+  finalHomeScore,
   homeTeamId,
   homeTeamName,
   homeTeamSlug,
-  awayTeamName,
-  awayTeamSlug,
 }: MatchEventsSectionProps) {
   if (events.length === 0) {
     return null;
@@ -53,6 +59,7 @@ export function MatchEventsSection({
   const homeColor = getTeamColor(homeTeamSlug);
   const awayColor = getTeamColor(awayTeamSlug);
   const sorted = sortEvents(events);
+  const timeline = buildScoreTimeline(sorted, homeTeamId);
   const homeEvents = sorted.filter((event) => event.teamId === homeTeamId);
   const awayEvents = sorted.filter((event) => event.teamId !== homeTeamId);
 
@@ -66,6 +73,18 @@ export function MatchEventsSection({
           得点経過
         </h2>
       </div>
+
+      {timeline.length > 1 && (
+        <div className="mb-4">
+          <ScoreGraph
+            awayTeamSlug={awayTeamSlug}
+            finalAwayScore={finalAwayScore}
+            finalHomeScore={finalHomeScore}
+            homeTeamSlug={homeTeamSlug}
+            timeline={timeline}
+          />
+        </div>
+      )}
 
       <div className="mb-2 grid grid-cols-[1fr_2.5rem_1fr] gap-2 text-xs font-semibold text-slate-500">
         <span className="min-w-0 truncate">{homeTeamName}</span>
