@@ -164,13 +164,13 @@ function TeamBlock({
     >
       <p
         className={cn(
-          "flex items-center gap-2 truncate text-2xl font-black tracking-tight sm:text-3xl",
+          "flex min-w-0 items-center gap-2 text-2xl font-black tracking-tight sm:text-3xl",
           align === "right" ? "flex-row-reverse justify-start" : "flex-row",
           dimmed ? "text-slate-400" : "text-slate-900",
         )}
       >
         <FlagIcon slug={slug} size={24} />
-        {shortCode}
+        <span className="min-w-0 truncate">{shortCode}</span>
       </p>
       <p
         className={cn(
