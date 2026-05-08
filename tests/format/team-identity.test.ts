@@ -5,6 +5,7 @@ import {
   getTeamFlag,
   getTeamFlagSvg,
   getTeamStripe,
+  getTeamStripeColors,
 } from "@/lib/format/team-identity";
 
 describe("team identity formatter", () => {
@@ -94,5 +95,15 @@ describe("team identity formatter", () => {
       "linear-gradient(to bottom, #153E8A 0%, #153E8A 100%)",
     );
     expect(getTeamStripe("unknown")).toBe("#94a3b8");
+  });
+
+  it("returns raw team stripe colors for generated badges", () => {
+    expect(getTeamStripeColors("ireland")).toEqual([
+      "#169B62",
+      "#FFFFFF",
+      "#F77F00",
+    ]);
+    expect(getTeamStripeColors("saracens")).toEqual(["#000000"]);
+    expect(getTeamStripeColors("unknown")).toEqual(["#94a3b8"]);
   });
 });
