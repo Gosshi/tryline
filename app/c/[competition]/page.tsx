@@ -11,6 +11,24 @@ type Props = {
   params: Promise<{ competition: string }>;
 };
 
+const COMPETITION_HERO_IMAGES: Record<string, string> = {
+  "six-nations":
+    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80",
+  premiership:
+    "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=1200&q=80",
+  "urc":
+    "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1200&q=80",
+  "top-14":
+    "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1200&q=80",
+  "super-rugby-pacific":
+    "https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=1200&q=80",
+  "rugby-championship":
+    "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=1200&q=80",
+};
+
+const DEFAULT_COMPETITION_HERO =
+  "https://images.unsplash.com/photo-1767190937750-d6aaf8ea99d0?w=1200&q=80";
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { competition } = await params;
   const name = formatFamilyName(competition);
@@ -51,7 +69,7 @@ export default async function CompetitionHubPage({ params }: Props) {
           fill
           priority
           sizes="100vw"
-          src="https://images.unsplash.com/photo-1767190937750-d6aaf8ea99d0?w=1200&q=80"
+          src={COMPETITION_HERO_IMAGES[competition] ?? DEFAULT_COMPETITION_HERO}
         />
         <div className="absolute inset-0 bg-slate-950/60" />
         <div className="absolute inset-0 flex flex-col justify-end px-4 pb-6 sm:px-6 md:px-8">
