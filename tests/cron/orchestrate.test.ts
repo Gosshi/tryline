@@ -26,16 +26,26 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
     state: {} as MatchQueryState,
     select: vi.fn().mockReturnThis(),
     eq: vi.fn((column: string, value: unknown) => {
-      if (column === "status" && (value === "scheduled" || value === "finished")) {
+      if (
+        column === "status" &&
+        (value === "scheduled" || value === "finished")
+      ) {
         matchesBuilder.state.status = value;
       }
       return matchesBuilder;
     }),
     gte: vi.fn().mockReturnThis(),
     lte: vi.fn().mockReturnThis(),
-    then: (resolve: (value: { data: { id: string }[]; error: null }) => unknown) => {
-      const ids = matchesBuilder.state.status === "scheduled" ? fixture.scheduledIds : fixture.finishedIds;
-      return Promise.resolve(resolve({ data: ids.map((id) => ({ id })), error: null }));
+    then: (
+      resolve: (value: { data: { id: string }[]; error: null }) => unknown,
+    ) => {
+      const ids =
+        matchesBuilder.state.status === "scheduled"
+          ? fixture.scheduledIds
+          : fixture.finishedIds;
+      return Promise.resolve(
+        resolve({ data: ids.map((id) => ({ id })), error: null }),
+      );
     },
   };
 
@@ -43,7 +53,10 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
     state: {} as ContentQueryState,
     select: vi.fn().mockReturnThis(),
     eq: vi.fn((column: string, value: unknown) => {
-      if (column === "content_type" && (value === "preview" || value === "recap")) {
+      if (
+        column === "content_type" &&
+        (value === "preview" || value === "recap")
+      ) {
         contentBuilder.state.contentType = value;
       }
       return contentBuilder;
@@ -54,13 +67,22 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
       }
       return contentBuilder;
     }),
-    then: (resolve: (value: { data: { match_id: string }[]; error: null }) => unknown) => {
+    then: (
+      resolve: (value: {
+        data: { match_id: string }[];
+        error: null;
+      }) => unknown,
+    ) => {
       const existingIds =
         contentBuilder.state.contentType === "preview"
-          ? fixture.existingPreviewIds ?? []
-          : fixture.existingRecapIds ?? [];
-      const limitedToMatchIds = (contentBuilder.state.matchIds ?? []).filter((id) => existingIds.includes(id));
-      return Promise.resolve(resolve({ data: limitedToMatchIds.map((match_id) => ({ match_id })), error: null }));
+          ? (fixture.existingPreviewIds ?? [])
+          : (fixture.existingRecapIds ?? []);
+      return Promise.resolve(
+        resolve({
+          data: existingIds.map((match_id) => ({ match_id })),
+          error: null,
+        }),
+      );
     },
   };
 
@@ -94,7 +116,12 @@ describe("runOrchestrate", () => {
     const generateContent = vi.fn().mockResolvedValue(undefined);
     const ingestLineups = vi.fn().mockResolvedValue("triggered");
 
-    const result = await runOrchestrate({ db, generateContent, ingestLineups, now });
+    const result = await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now,
+    });
 
     expect(ingestLineups).toHaveBeenCalledWith("scheduled-1");
     expect(generateContent).toHaveBeenCalledWith("scheduled-1", "preview");
@@ -111,7 +138,12 @@ describe("runOrchestrate", () => {
     const generateContent = vi.fn().mockResolvedValue(undefined);
     const ingestLineups = vi.fn().mockResolvedValue("triggered");
 
-    const result = await runOrchestrate({ db, generateContent, ingestLineups, now });
+    const result = await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now,
+    });
 
     expect(ingestLineups).not.toHaveBeenCalled();
     expect(generateContent).not.toHaveBeenCalledWith("scheduled-1", "preview");
@@ -126,7 +158,12 @@ describe("runOrchestrate", () => {
     const generateContent = vi.fn().mockResolvedValue(undefined);
     const ingestLineups = vi.fn().mockResolvedValue("triggered");
 
-    const result = await runOrchestrate({ db, generateContent, ingestLineups, now });
+    const result = await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now,
+    });
 
     expect(generateContent).toHaveBeenCalledWith("finished-1", "recap");
     expect(result.recaps).toEqual({ triggered: 1, skipped: 0 });
@@ -141,7 +178,12 @@ describe("runOrchestrate", () => {
     const generateContent = vi.fn().mockResolvedValue(undefined);
     const ingestLineups = vi.fn().mockResolvedValue("triggered");
 
-    const result = await runOrchestrate({ db, generateContent, ingestLineups, now });
+    const result = await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now,
+    });
 
     expect(generateContent).not.toHaveBeenCalledWith("finished-1", "recap");
     expect(result.recaps).toEqual({ triggered: 0, skipped: 1 });
@@ -157,9 +199,16 @@ describe("runOrchestrate", () => {
       .mockRejectedValueOnce(new Error("preview fail"))
       .mockResolvedValueOnce(undefined);
     const ingestLineups = vi.fn().mockResolvedValue("triggered");
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
-    const result = await runOrchestrate({ db, generateContent, ingestLineups, now });
+    const result = await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now,
+    });
 
     expect(generateContent).toHaveBeenCalledTimes(2);
     expect(result.previews).toEqual({ triggered: 1, skipped: 0 });

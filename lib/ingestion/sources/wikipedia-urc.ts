@@ -96,7 +96,7 @@ export function parseUrcLiveHtml(html: string): ParsedLiveMatch[] {
   const $ = load(html);
   const results: ParsedLiveMatch[] = [];
 
-  for (const element of $("div.vevent.summary").toArray()) {
+  for (const element of $("table.mw-collapsible.mw-collapsed").toArray()) {
     const block = $(element);
     const sectionId = getSectionId($, block);
     const round = resolveRound(sectionId);
@@ -105,17 +105,26 @@ export function parseUrcLiveHtml(html: string): ParsedLiveMatch[] {
       continue;
     }
 
-    const tables = block.find("table");
-    const dateTable = tables.eq(0);
-    const matchupTable = tables.eq(1);
-    const venueTable = tables.eq(2);
-    const firstRowCells = matchupTable.find("tr").first().find("td");
-    const score = parseScoreText(firstRowCells.eq(1).text());
+    const rows = block.find("tr");
+    const firstRowCells = rows.first().find("td");
+    const secondRowCells = rows.eq(1).find("td");
+
+    const dateText = normalizeWhitespace(firstRowCells.eq(0).text());
+    const timeText = normalizeWhitespace(secondRowCells.eq(0).text());
+    const kickoffText = timeText ? `${dateText} ${timeText}` : dateText;
+
+    let kickoffAt: string;
+    try {
+      kickoffAt = parseKickoffText(kickoffText);
+    } catch {
+      continue;
+    }
+
     const homeTeamName = normalizeWhitespace(
-      firstRowCells.eq(0).find("a").last().text(),
+      firstRowCells.eq(1).find("a").first().text(),
     );
     const awayTeamName = normalizeWhitespace(
-      firstRowCells.eq(2).find("a").last().text(),
+      firstRowCells.eq(3).find("a").last().text(),
     );
     const homeTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[homeTeamName];
     const awayTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[awayTeamName];
@@ -124,24 +133,22 @@ export function parseUrcLiveHtml(html: string): ParsedLiveMatch[] {
       continue;
     }
 
+    const score = parseScoreText(firstRowCells.eq(2).text());
+
     results.push({
       awayScore: score.awayScore,
       awayTeamName,
       awayTeamSlug,
-      eventId:
-        block.attr("id") ??
-        `${sectionId}_${homeTeamName.replace(/\s+/g, "_")}_v_${awayTeamName.replace(/\s+/g, "_")}`,
+      eventId: `${sectionId}_${homeTeamName.replace(/\s+/g, "_")}_v_${awayTeamName.replace(/\s+/g, "_")}`,
       homeScore: score.homeScore,
       homeTeamName,
       homeTeamSlug,
-      kickoffAt: parseKickoffText(dateTable.text()),
+      kickoffAt,
       lineupTableHtml: null,
       rawHtml: $.html(block),
       round,
       status: score.status,
-      venue:
-        normalizeWhitespace(venueTable.find(".location").first().text()) ||
-        null,
+      venue: normalizeWhitespace(firstRowCells.eq(4).text()) || null,
     });
   }
 

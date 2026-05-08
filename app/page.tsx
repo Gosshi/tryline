@@ -53,13 +53,13 @@ export default async function HomePage() {
         <div aria-hidden className="absolute inset-0 z-0">
           <Image
             alt=""
-            className="object-cover object-center opacity-[0.12]"
+            className="object-cover object-center opacity-25"
             fill
             priority
             sizes="100vw"
             src="https://images.unsplash.com/photo-1763854413165-1713bc5a7f4a?w=1600&q=80"
           />
-          <div className="absolute inset-0 bg-[var(--color-ink)]/60" />
+          <div className="bg-[var(--color-ink)]/60 absolute inset-0" />
         </div>
         <div
           aria-hidden
@@ -103,7 +103,8 @@ export default async function HomePage() {
             AI Rugby Analysis in Japanese
           </p>
           <h1 className="break-keep font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
-            海外ラグビーを、<br className="hidden sm:block" />
+            海外ラグビーを、
+            <br className="hidden sm:block" />
             日本語で深掘り。
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">

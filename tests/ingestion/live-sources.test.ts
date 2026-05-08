@@ -90,15 +90,23 @@ const SUPER_RUGBY_PACIFIC_HTML = `
 const URC_HTML = `
 <div class="mw-heading mw-heading2"><h2 id="Regular_season">Regular season</h2></div>
 <div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
-<div class="vevent summary" id="Leinster_v_Munster">
-  <table><tbody><tr><td>26 September 2025<br />19:35</td></tr></tbody></table>
-  <table><tbody><tr>
-    <td class="vcard"><span class="fn org"><a>Leinster</a></span></td>
-    <td>v</td>
-    <td class="vcard"><span class="fn org"><a>Munster</a></span></td>
-  </tr></tbody></table>
-  <table><tbody><tr><td><span class="location">Aviva Stadium</span></td></tr></tbody></table>
-</div>
+<table class="wikitable mw-collapsible mw-collapsed">
+  <tbody>
+    <tr>
+      <td>26 September 2025</td>
+      <td><a href="/wiki/Leinster_Rugby">Leinster</a></td>
+      <td>v</td>
+      <td><a href="/wiki/Munster_Rugby">Munster</a></td>
+      <td>Aviva Stadium, Dublin</td>
+    </tr>
+    <tr>
+      <td>19:35</td>
+      <td></td>
+      <td>Report</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
 `;
 
 const TOP_14_HTML = `
