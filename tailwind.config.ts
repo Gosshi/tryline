@@ -33,13 +33,10 @@ const config: Config = {
         ring: "hsl(var(--ring))",
       },
       fontFamily: {
-        display: ["var(--font-fraunces)", "Georgia", "serif"],
-        serif: [
-          "var(--font-noto-serif-jp)",
-          "var(--font-fraunces)",
-          "Georgia",
-          "serif",
-        ],
+        body: ["var(--font-body)"],
+        display: ["var(--font-heading)"],
+        heading: ["var(--font-heading)"],
+        serif: ["var(--font-heading)"],
       },
     },
   },
