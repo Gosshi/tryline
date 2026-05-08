@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -49,6 +50,17 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <section className="relative overflow-hidden bg-[var(--color-ink)] py-16 sm:py-24">
+        <div aria-hidden className="absolute inset-0 z-0">
+          <Image
+            alt=""
+            className="object-cover object-center opacity-[0.12]"
+            fill
+            priority
+            sizes="100vw"
+            src="https://images.unsplash.com/photo-1763854413165-1713bc5a7f4a?w=1600&q=80"
+          />
+          <div className="absolute inset-0 bg-[var(--color-ink)]/60" />
+        </div>
         <div
           aria-hidden
           className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 sm:block"
