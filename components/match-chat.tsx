@@ -23,7 +23,6 @@ function MatchChatPanel({
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [sessionId, setSessionId] = useState<string | undefined>();
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -37,18 +36,25 @@ function MatchChatPanel({
 
     setInput("");
     setError(null);
-    setMessages((previous) => [
-      ...previous,
+    const nextMessages: Message[] = [
+      ...messages,
       { content: message, role: "user" },
       { content: "", role: "assistant" },
-    ]);
+    ];
+
+    setMessages(nextMessages);
     setStreaming(true);
 
     let assistantContent = "";
 
     try {
       const response = await fetch(`/api/chat/${matchId}`, {
-        body: JSON.stringify({ message, sessionId }),
+        body: JSON.stringify({
+          history: nextMessages
+            .slice(0, -2)
+            .map(({ content, role }) => ({ content, role })),
+          message,
+        }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
@@ -56,10 +62,8 @@ function MatchChatPanel({
       if (!response.ok) {
         const data = (await response.json()) as { error?: string };
         setError(
-          data.error === "token_limit_exceeded"
-            ? "トークン上限に達しました。ページを更新して新しいセッションを開始してください。"
-            : data.error === "daily_limit_exceeded"
-              ? "1 日のメッセージ上限（30 件）に達しました。明日またご利用ください。"
+          data.error === "daily_limit_exceeded"
+            ? "1 日のメッセージ上限（30 件）に達しました。明日またご利用ください。"
             : "エラーが発生しました。",
         );
         return;
@@ -90,7 +94,6 @@ function MatchChatPanel({
             delta?: string;
             done?: boolean;
             error?: string;
-            sessionId?: string;
           };
 
           if (data.error) {
@@ -109,8 +112,8 @@ function MatchChatPanel({
             });
           }
 
-          if (data.done && data.sessionId) {
-            setSessionId(data.sessionId);
+          if (data.done) {
+            // Conversation history is intentionally kept only in React state.
           }
         }
       }
