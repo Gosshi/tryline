@@ -26,6 +26,23 @@ type ImportedMatchRow = {
   id: string;
 };
 
+type MatchLineupRow = {
+  jersey_number: number;
+  match_id: string;
+  player_id: string;
+  source_url: string;
+  team_id: string;
+};
+
+type MatchEventRow = {
+  match_id: string;
+  metadata: Json;
+  minute: number | null;
+  player_id: string | null;
+  team_id: string;
+  type: string;
+};
+
 type CliOptions = {
   competitionId: string | null;
   family: WorldRugbyCompetitionFamily;
@@ -71,6 +88,62 @@ const EVENT_TYPE_TO_DB: Record<WorldRugbyEvent["event_type"], string> = {
   penalty: "penalty_goal",
   try: "try",
 };
+
+export function dedupeWorldRugbyLineupRows<T extends MatchLineupRow>(
+  rows: T[],
+): T[] {
+  const seen = new Set<string>();
+  const deduped: T[] = [];
+
+  for (const row of rows) {
+    const key = `${row.match_id}-${row.team_id}-${row.jersey_number}`;
+
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    deduped.push(row);
+  }
+
+  return deduped;
+}
+
+function getEventPlayerName(metadata: Json) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return "";
+  }
+
+  const value = metadata.player_name;
+
+  return typeof value === "string" ? value : "";
+}
+
+export function dedupeWorldRugbyEventRows<T extends MatchEventRow>(
+  rows: T[],
+): T[] {
+  const seen = new Set<string>();
+  const deduped: T[] = [];
+
+  for (const row of rows) {
+    const key = [
+      row.match_id,
+      row.minute ?? "null",
+      row.type,
+      getEventPlayerName(row.metadata),
+      row.team_id,
+    ].join("-");
+
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    deduped.push(row);
+  }
+
+  return deduped;
+}
 
 function parseArgs(argv: string[]): CliOptions {
   let family: string | null = null;
@@ -390,7 +463,7 @@ async function upsertMatchLineups(params: {
       awayPlayers.map((player) => player.player_name),
     ),
   ]);
-  const rows = params.players.flatMap((player) => {
+  const rows: MatchLineupRow[] = params.players.flatMap((player) => {
     const teamId =
       player.team_side === "home" ? params.homeTeamId : params.awayTeamId;
     const playerId =
@@ -417,15 +490,16 @@ async function upsertMatchLineups(params: {
     return 0;
   }
 
+  const dedupedLineups = dedupeWorldRugbyLineupRows(rows);
   const { error } = await client
     .from("match_lineups")
-    .upsert(rows, { onConflict: "match_id,team_id,jersey_number" });
+    .upsert(dedupedLineups, { onConflict: "match_id,team_id,jersey_number" });
 
   if (error) {
     throw error;
   }
 
-  return rows.length;
+  return dedupedLineups.length;
 }
 
 async function upsertMatchEvents(params: {
@@ -450,7 +524,7 @@ async function upsertMatchEvents(params: {
     return 0;
   }
 
-  const rows = params.events.map((event) => {
+  const rows: MatchEventRow[] = params.events.map((event) => {
     const teamId =
       event.team_side === "home" ? params.homeTeamId : params.awayTeamId;
     const playerIds =
@@ -466,13 +540,14 @@ async function upsertMatchEvents(params: {
     };
   });
 
-  const { error } = await client.from("match_events").insert(rows);
+  const dedupedEvents = dedupeWorldRugbyEventRows(rows);
+  const { error } = await client.from("match_events").insert(dedupedEvents);
 
   if (error) {
     throw error;
   }
 
-  return rows.length;
+  return dedupedEvents.length;
 }
 
 async function importMatchDetail(
