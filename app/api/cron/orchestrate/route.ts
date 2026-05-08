@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { POST as ingestLineupsRoute } from "@/app/api/cron/ingest-lineups/route";
+
+export const maxDuration = 300;
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { runOrchestrate } from "@/lib/cron/orchestrate";
 import { getSupabaseServerClient } from "@/lib/db/server";
@@ -10,12 +12,15 @@ import { generateMatchContent } from "@/lib/llm/pipeline";
 async function ingestLineups(matchId: string): Promise<"triggered" | "no_url"> {
   const { CRON_SECRET } = getServerEnv();
   const response = await ingestLineupsRoute(
-    new Request(`http://localhost/api/cron/ingest-lineups?match_id=${matchId}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${CRON_SECRET}`,
+    new Request(
+      `http://localhost/api/cron/ingest-lineups?match_id=${matchId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${CRON_SECRET}`,
+        },
       },
-    }),
+    ),
   );
 
   if (response.ok) {
