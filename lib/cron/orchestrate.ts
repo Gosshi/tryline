@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const EXISTING_CONTENT_STATUSES = ["draft", "published"] as const;
 const PREVIEW_WINDOW_START_HOURS = 47;
 const PREVIEW_WINDOW_END_HOURS = 49;
+const RECAP_BATCH_SIZE = 20;
 
 type LineupIngestOutcome = "triggered" | "no_url";
 
@@ -155,7 +156,10 @@ export async function runOrchestrate(
     }),
   );
 
-  for (const matchId of recapCandidates.eligibleIds) {
+  for (const matchId of recapCandidates.eligibleIds.slice(
+    0,
+    RECAP_BATCH_SIZE,
+  )) {
     try {
       await deps.generateContent(matchId, "recap");
       result.recaps.triggered += 1;
