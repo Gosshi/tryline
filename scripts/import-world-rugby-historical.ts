@@ -60,7 +60,7 @@ export const COMPETITION_ID_MAP: Record<
   Record<string, string>
 > = {
   "autumn-nations": {
-    "2020": "2009",
+    // 2020: ID 2009 は PNC 大会のため除外
     "2021": "2050",
     "2022": "2091",
     "2024": "c805a102-6cbe-4eed-a158-f5878cf1f162",
