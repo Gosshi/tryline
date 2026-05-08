@@ -39,12 +39,18 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
         <div
           aria-hidden
           className="absolute inset-y-0 left-0 w-[4px]"
-          style={{ background: getTeamStripe(match.homeTeam.slug, "vertical") }}
+          style={{
+            background: getTeamStripe(match.homeTeam.slug, "vertical"),
+            opacity: match.status === "finished" && awayWon ? 0.25 : 1,
+          }}
         />
         <div
           aria-hidden
           className="absolute inset-y-0 right-0 w-[4px]"
-          style={{ background: getTeamStripe(match.awayTeam.slug, "vertical") }}
+          style={{
+            background: getTeamStripe(match.awayTeam.slug, "vertical"),
+            opacity: match.status === "finished" && homeWon ? 0.25 : 1,
+          }}
         />
         <div className="mb-4 flex items-center justify-between gap-4">
           <time
@@ -68,6 +74,11 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
             >
               <FlagIcon slug={match.homeTeam.slug} size={16} />
               {match.homeTeam.shortCode}
+              {homeWon && match.status === "finished" && (
+                <span className="rounded bg-[var(--color-accent)]/15 px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
+                  W
+                </span>
+              )}
             </p>
             <p
               className={cn(
@@ -92,10 +103,10 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
                 <span
                   className={
                     homeWon
-                      ? "text-[var(--color-ink)]"
+                      ? "text-4xl font-black text-[var(--color-accent)]"
                       : awayWon
-                        ? "text-[var(--color-ink-muted)]"
-                        : "text-[var(--color-ink)]"
+                        ? "text-3xl text-[var(--color-ink-muted)]"
+                        : "text-3xl text-[var(--color-ink)]"
                   }
                 >
                   {match.homeScore ?? 0}
@@ -104,10 +115,10 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
                 <span
                   className={
                     awayWon
-                      ? "text-[var(--color-ink)]"
+                      ? "text-4xl font-black text-[var(--color-accent)]"
                       : homeWon
-                        ? "text-[var(--color-ink-muted)]"
-                        : "text-[var(--color-ink)]"
+                        ? "text-3xl text-[var(--color-ink-muted)]"
+                        : "text-3xl text-[var(--color-ink)]"
                   }
                 >
                   {match.awayScore ?? 0}
@@ -128,6 +139,11 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
               )}
             >
               {match.awayTeam.shortCode}
+              {awayWon && match.status === "finished" && (
+                <span className="rounded bg-[var(--color-accent)]/15 px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
+                  W
+                </span>
+              )}
               <FlagIcon slug={match.awayTeam.slug} size={16} />
             </p>
             <p
