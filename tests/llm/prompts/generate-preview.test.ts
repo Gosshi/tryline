@@ -32,8 +32,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 1.6.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@1.6.0");
+  it("uses preview prompt version 1.7.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@1.7.0");
   });
 
   it("instructs the model to use final scores as the winner source", () => {
@@ -104,9 +104,30 @@ describe("buildGeneratePreviewPrompt", () => {
       [],
     );
 
-    expect(overseasPrompt).toContain("選手名はカタカナで記載すること");
-    expect(overseasPrompt).toContain("チーム名は英語表記のまま");
+    expect(overseasPrompt).toContain("選手名は必ずカタカナで記載すること");
+    expect(overseasPrompt).toContain("アルファベット表記は禁止");
+    expect(overseasPrompt).toContain("Marcus Smith → マーカス・スミス");
+    expect(overseasPrompt).toContain("Richie Mo'unga → リッチー・モウンガ");
+    expect(overseasPrompt).toContain("Antoine Dupont → アントワーヌ・デュポン");
+    expect(overseasPrompt).toContain("Siya Kolisi → シヤ・コリシ");
+    expect(overseasPrompt).toContain("Finn Russell → フィン・ラッセル");
+    expect(overseasPrompt).toContain(
+      "Josh van der Flier → ジョシュ・ファン・デル・フリア",
+    );
+    expect(overseasPrompt).toContain(
+      "チーム名は英語表記のまま（例: Reds、Leinster、Springboks）",
+    );
     expect(leagueOnePrompt).toContain("選手名は日本語表記を使用すること");
     expect(leagueOnePrompt).toContain("外国人選手はカタカナで記載すること");
+  });
+
+  it("prevents player-name hallucination from missing lineup and event data", () => {
+    const prompt = buildGeneratePreviewPrompt(assembled, [], []);
+
+    expect(prompt).toContain(
+      "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること",
+    );
+    expect(prompt).toContain("データに存在しない選手名を推測・創作してはならない");
+    expect(prompt).toContain("ラインアップが空の場合は選手名に言及せず");
   });
 });
