@@ -25,7 +25,10 @@ export type OrchestrateResult = {
 
 export type RunOrchestrateDeps = {
   db: SupabaseClient<Database>;
-  generateContent: (matchId: string, contentType: ContentType) => Promise<unknown>;
+  generateContent: (
+    matchId: string,
+    contentType: ContentType,
+  ) => Promise<unknown>;
   ingestLineups: (matchId: string) => Promise<LineupIngestOutcome>;
   now?: Date;
 };
@@ -41,7 +44,10 @@ async function getMatchIdsMissingContent(params: {
   kickoffGte?: string;
   kickoffLte?: string;
 }) {
-  let matchQuery = params.db.from("matches").select("id").eq("status", params.status);
+  let matchQuery = params.db
+    .from("matches")
+    .select("id")
+    .eq("status", params.status);
 
   if (params.kickoffGte) {
     matchQuery = matchQuery.gte("kickoff_at", params.kickoffGte);
@@ -70,15 +76,16 @@ async function getMatchIdsMissingContent(params: {
     .from("match_content")
     .select("match_id")
     .eq("content_type", params.contentType)
-    .in("status", [...EXISTING_CONTENT_STATUSES])
-    .in("match_id", allMatchIds);
+    .in("status", [...EXISTING_CONTENT_STATUSES]);
 
   if (contentError) {
     throw contentError;
   }
 
   const existingIds = new Set(existingContent.map((row) => row.match_id));
-  const eligibleIds = allMatchIds.filter((matchId) => !existingIds.has(matchId));
+  const eligibleIds = allMatchIds.filter(
+    (matchId) => !existingIds.has(matchId),
+  );
 
   return {
     eligibleIds,
@@ -86,7 +93,9 @@ async function getMatchIdsMissingContent(params: {
   };
 }
 
-export async function runOrchestrate(deps: RunOrchestrateDeps): Promise<OrchestrateResult> {
+export async function runOrchestrate(
+  deps: RunOrchestrateDeps,
+): Promise<OrchestrateResult> {
   const now = deps.now ?? new Date();
 
   const previewCandidates = await getMatchIdsMissingContent({
@@ -128,14 +137,20 @@ export async function runOrchestrate(deps: RunOrchestrateDeps): Promise<Orchestr
           result.lineups.triggered += 1;
         }
       } catch (error) {
-        console.error("[orchestrate] lineup ingestion failed", { matchId, error });
+        console.error("[orchestrate] lineup ingestion failed", {
+          matchId,
+          error,
+        });
       }
 
       try {
         await deps.generateContent(matchId, "preview");
         result.previews.triggered += 1;
       } catch (error) {
-        console.error("[orchestrate] preview generation failed", { matchId, error });
+        console.error("[orchestrate] preview generation failed", {
+          matchId,
+          error,
+        });
       }
     }),
   );
@@ -145,7 +160,10 @@ export async function runOrchestrate(deps: RunOrchestrateDeps): Promise<Orchestr
       await deps.generateContent(matchId, "recap");
       result.recaps.triggered += 1;
     } catch (error) {
-      console.error("[orchestrate] recap generation failed", { matchId, error });
+      console.error("[orchestrate] recap generation failed", {
+        matchId,
+        error,
+      });
     }
   }
 
