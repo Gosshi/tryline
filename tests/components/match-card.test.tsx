@@ -153,11 +153,11 @@ describe("MatchCard", () => {
     });
   });
 
-  it("uses the display font for the score column", () => {
+  it("uses the body font for the score column", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
 
     expect(within(container).getByText("—")).toHaveClass(
-      "font-display",
+      "font-body",
       "text-[var(--color-rule)]",
     );
   });
