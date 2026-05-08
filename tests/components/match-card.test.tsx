@@ -54,13 +54,22 @@ describe("MatchCard", () => {
       />,
     );
 
-    expect(screen.getByText("24")).toHaveClass("text-[var(--color-ink)]");
+    expect(screen.getByText("24")).toHaveClass(
+      "text-4xl",
+      "font-black",
+      "text-[var(--color-accent)]",
+    );
     expect(screen.getByText("21")).toHaveClass(
+      "text-3xl",
       "text-[var(--color-ink-muted)]",
     );
     expect(screen.getByText("FRA")).toHaveClass("text-[var(--color-ink-muted)]");
     expect(screen.getByText("Ireland")).toHaveClass(
       "text-[var(--color-ink)]",
+    );
+    expect(screen.getByText("W")).toHaveClass(
+      "bg-[var(--color-accent)]/15",
+      "text-[var(--color-accent)]",
     );
   });
 
@@ -168,6 +177,7 @@ describe("MatchCard", () => {
     expect(stripes[0]).toHaveStyle({
       background:
         "linear-gradient(to bottom, #169B62 0%, #169B62 33%, #FFFFFF 33%, #FFFFFF 67%, #F77F00 67%, #F77F00 100%)",
+      opacity: "1",
     });
     expect(stripes[1]).toHaveClass(
       "absolute",
@@ -178,6 +188,44 @@ describe("MatchCard", () => {
     expect(stripes[1]).toHaveStyle({
       background:
         "linear-gradient(to bottom, #002395 0%, #002395 33%, #FFFFFF 33%, #FFFFFF 67%, #ED2939 67%, #ED2939 100%)",
+      opacity: "1",
     });
+  });
+
+  it("dims the losing side stripe for finished matches", () => {
+    const { container } = render(
+      <MatchCard
+        match={{
+          ...baseMatch,
+          awayScore: 21,
+          homeScore: 24,
+          status: "finished",
+        }}
+      />,
+    );
+    const stripes = container.querySelectorAll("article > [aria-hidden='true']");
+
+    expect(stripes[0]).toHaveStyle({ opacity: "1" });
+    expect(stripes[1]).toHaveStyle({ opacity: "0.25" });
+  });
+
+  it("does not show a winner badge for drawn finished matches", () => {
+    const { container } = render(
+      <MatchCard
+        match={{
+          ...baseMatch,
+          awayScore: 24,
+          homeScore: 24,
+          status: "finished",
+        }}
+      />,
+    );
+    const card = within(container);
+
+    expect(card.queryByText("W")).not.toBeInTheDocument();
+    expect(card.getAllByText("24")[0]).toHaveClass(
+      "text-3xl",
+      "text-[var(--color-ink)]",
+    );
   });
 });
