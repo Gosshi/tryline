@@ -24,10 +24,6 @@
     --color-rule: oklch(90% 0.01 260);
     --color-accent: oklch(58% 0.18 145);
 
-    /* fonts */
-    --font-heading: var(--font-noto-serif-jp), "Noto Serif JP", serif;
-    --font-body: var(--font-inter), Inter, system-ui, sans-serif;
-
     /* type scale */
     --text-xs: 0.75rem;
     --text-sm: 0.875rem;
@@ -44,6 +40,8 @@
   }
 
   body {
+    --font-heading: var(--font-noto-serif-jp), "Noto Serif JP", serif;
+    --font-body: var(--font-inter), Inter, system-ui, sans-serif;
     background-color: oklch(98.5% 0.005 95);
     color: oklch(18% 0.02 260);
     font-family: var(--font-body);
