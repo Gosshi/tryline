@@ -121,7 +121,7 @@ export default async function SeasonPage({ params }: Props) {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
             {formatFamilyName(comp.family)}
           </p>
-          <h1 className="font-serif text-4xl font-bold tracking-tight text-[var(--color-ink)] sm:text-5xl">
+          <h1 className="font-heading text-4xl font-bold tracking-tight text-[var(--color-ink)] sm:text-5xl">
             {formatCompetitionTitle(comp.name, comp.season)}
           </h1>
           {dateRange && (
