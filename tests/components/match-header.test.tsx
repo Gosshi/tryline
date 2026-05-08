@@ -62,13 +62,22 @@ describe("MatchHeader", () => {
   it("renders SVG flags with the team short codes", () => {
     const { container } = render(<MatchHeader match={match} />);
     const header = within(container);
+    const homeCode = header.getByText("IRL");
+    const awayCode = header.getByText("FRA");
 
-    expect(header.getByText("IRL")).toHaveClass(
+    expect(homeCode).toHaveClass("min-w-0", "truncate");
+    expect(homeCode.closest("p")).toHaveClass(
       "flex",
+      "min-w-0",
       "items-center",
       "flex-row-reverse",
     );
-    expect(header.getByText("FRA")).toHaveClass("flex", "items-center");
+    expect(awayCode).toHaveClass("min-w-0", "truncate");
+    expect(awayCode.closest("p")).toHaveClass(
+      "flex",
+      "min-w-0",
+      "items-center",
+    );
     expect(container.querySelectorAll("svg")).toHaveLength(2);
   });
 
