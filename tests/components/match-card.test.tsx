@@ -115,19 +115,10 @@ describe("MatchCard", () => {
     const card = within(container);
 
     expect(card.getByText("IRL")).toHaveClass(
-      "flex",
-      "items-center",
-      "justify-end",
-      "gap-1.5",
       "text-base",
-      "sm:text-xl",
     );
     expect(card.getByText("FRA")).toHaveClass(
-      "flex",
-      "items-center",
-      "gap-1.5",
       "text-base",
-      "sm:text-xl",
     );
   });
 

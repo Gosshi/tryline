@@ -238,6 +238,10 @@ export function getTeamColor(slug: string): string {
   return TEAM_IDENTITY[slug]?.color ?? "#94a3b8";
 }
 
+export function getTeamStripeColors(slug: string): string[] {
+  return TEAM_STRIPES[slug] ?? [TEAM_IDENTITY[slug]?.color ?? "#94a3b8"];
+}
+
 export function getTeamStripe(
   slug: string,
   direction: "vertical" | "horizontal" = "vertical",

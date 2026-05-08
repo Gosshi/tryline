@@ -5,8 +5,8 @@ import { getMatchOutcome } from "@/lib/format/match-outcome";
 import { getTeamColor, getTeamStripe } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
-import { FlagIcon } from "./flag-icon";
 import { StatusBadge } from "./status-badge";
+import { TeamBadge } from "./team-badge";
 
 import type { MatchContentStatus } from "@/lib/db/queries/match-content";
 import type { MatchListItem } from "@/lib/db/queries/matches";
@@ -72,7 +72,11 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
                   : "text-[var(--color-ink)]",
               )}
             >
-              <FlagIcon slug={match.homeTeam.slug} size={16} />
+              <TeamBadge
+                shortCode={match.homeTeam.shortCode}
+                size={20}
+                slug={match.homeTeam.slug}
+              />
               {match.homeTeam.shortCode}
               {homeWon && match.status === "finished" && (
                 <span className="rounded bg-[var(--color-accent-dim)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
@@ -154,7 +158,11 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
                   L
                 </span>
               )}
-              <FlagIcon slug={match.awayTeam.slug} size={16} />
+              <TeamBadge
+                shortCode={match.awayTeam.shortCode}
+                size={20}
+                slug={match.awayTeam.slug}
+              />
             </p>
             <p
               className={cn(

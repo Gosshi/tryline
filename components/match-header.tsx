@@ -4,8 +4,8 @@ import { getMatchOutcome } from "@/lib/format/match-outcome";
 import { getTeamColor } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
-import { FlagIcon } from "./flag-icon";
 import { StatusBadge } from "./status-badge";
+import { TeamBadge } from "./team-badge";
 
 import type { MatchDetail } from "@/lib/db/queries/matches";
 
@@ -165,12 +165,19 @@ function TeamBlock({
       <p
         className={cn(
           "flex min-w-0 items-center gap-2 text-2xl font-black tracking-tight sm:text-3xl",
-          align === "right" ? "flex-row-reverse justify-start" : "flex-row",
+          align === "right" ? "justify-end" : "justify-start",
           dimmed ? "text-slate-400" : "text-slate-900",
         )}
       >
-        <FlagIcon slug={slug} size={24} />
-        <span className="min-w-0 truncate">{shortCode}</span>
+        <span
+          className={cn(
+            "inline-flex min-w-0 items-center gap-1.5",
+            align === "right" ? "flex-row-reverse" : "flex-row",
+          )}
+        >
+          <TeamBadge shortCode={shortCode} size={28} slug={slug} />
+          <span className="min-w-0 truncate">{shortCode}</span>
+        </span>
       </p>
       <p
         className={cn(
