@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { POST as ingestLineupsRoute } from "@/app/api/cron/ingest-lineups/route";
-
-export const maxDuration = 300;
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { runOrchestrate } from "@/lib/cron/orchestrate";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
 import { generateMatchContent } from "@/lib/llm/pipeline";
+
+export const maxDuration = 300;
 
 async function ingestLineups(matchId: string): Promise<"triggered" | "no_url"> {
   const { CRON_SECRET } = getServerEnv();
