@@ -57,7 +57,9 @@ const WORLD_RUGBY_API_HEADERS = {
 
 export const TEAM_SLUG_BY_WORLD_RUGBY_NAME: Record<string, string> = {
   Argentina: "argentina",
+  "Argentina A": "argentina",
   Australia: "australia",
+  "Australia A": "australia",
   Canada: "canada",
   Chile: "chile",
   England: "england",
@@ -69,8 +71,10 @@ export const TEAM_SLUG_BY_WORLD_RUGBY_NAME: Record<string, string> = {
   Ireland: "ireland",
   Italy: "italy",
   Japan: "japan",
+  "Japan A": "japan",
   "Japan XV": "japan",
   "New Zealand": "new-zealand",
+  "New Zealand A": "new-zealand",
   Portugal: "portugal",
   Samoa: "samoa",
   Scotland: "scotland",
