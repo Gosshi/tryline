@@ -1,0 +1,17 @@
+name: Cron — Ingest Live Competitions
+
+on:
+  schedule:
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger ingest-live-competitions
+        run: |
+          curl -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://tryline-six.vercel.app/api/cron/ingest-live-competitions
