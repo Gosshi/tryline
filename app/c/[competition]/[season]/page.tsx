@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MatchCard } from "@/components/match-card";
@@ -138,9 +139,31 @@ export default async function SeasonPage({ params }: Props) {
         />
 
         {matches.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
-            試合が登録されていません
-          </p>
+          <div className="rounded-lg border border-[var(--color-rule)] bg-slate-50 px-6 py-10 text-center">
+            <p className="text-sm font-medium text-[var(--color-ink)]">
+              試合データを準備中です
+            </p>
+            <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
+              このシーズンの試合情報はまもなく公開予定です。
+            </p>
+            <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <Link
+                className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+                href={`/c/${competition}`}
+              >
+                他のシーズンを見る
+              </Link>
+              <span className="hidden text-[var(--color-ink-muted)] sm:inline">
+                ·
+              </span>
+              <Link
+                className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+                href="/"
+              >
+                トップへ戻る
+              </Link>
+            </div>
+          </div>
         ) : (
           groupedMatches.map(([round, roundMatches]) => (
             <section className="space-y-4" key={round ?? "unassigned"}>
