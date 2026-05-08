@@ -52,7 +52,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
           background: `linear-gradient(to right, ${homeColor} 50%, ${awayColor} 50%)`,
         }}
       />
-      <h1 className="sr-only">
+      <h1 className="sr-only font-heading">
         {match.homeTeam.name} vs {match.awayTeam.name}
       </h1>
       <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
