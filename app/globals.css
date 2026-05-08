@@ -23,6 +23,16 @@
     --color-ink-muted: oklch(45% 0.02 260);
     --color-rule: oklch(90% 0.01 260);
     --color-accent: oklch(58% 0.18 145);
+    --color-accent-dim: color-mix(
+      in oklch,
+      var(--color-accent) 15%,
+      transparent
+    );
+    --color-accent-subtle: color-mix(
+      in oklch,
+      var(--color-accent) 10%,
+      transparent
+    );
 
     /* type scale */
     --text-xs: 0.75rem;
