@@ -23,6 +23,20 @@
     --color-ink-muted: oklch(45% 0.02 260);
     --color-rule: oklch(90% 0.01 260);
     --color-accent: oklch(58% 0.18 145);
+
+    /* fonts */
+    --font-heading: var(--font-noto-serif-jp), "Noto Serif JP", serif;
+    --font-body: var(--font-inter), Inter, system-ui, sans-serif;
+
+    /* type scale */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 2rem;
+    --text-4xl: 2.5rem;
   }
 
   * {
@@ -32,23 +46,12 @@
   body {
     background-color: oklch(98.5% 0.005 95);
     color: oklch(18% 0.02 260);
-    font-family:
-      "Hiragino Sans",
-      "Noto Sans JP",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
+    font-family: var(--font-body);
   }
 
   h1,
   h2,
   h3 {
-    font-family:
-      var(--font-noto-serif-jp),
-      var(--font-fraunces),
-      "Hiragino Mincho ProN",
-      Georgia,
-      serif;
+    font-family: var(--font-heading);
   }
 }

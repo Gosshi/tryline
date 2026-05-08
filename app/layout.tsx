@@ -1,4 +1,4 @@
-import { Fraunces, Noto_Serif_JP } from "next/font/google";
+import { Inter, Noto_Serif_JP } from "next/font/google";
 
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -7,17 +7,16 @@ import type { Metadata, Viewport } from "next";
 
 import "./globals.css";
 
-const fraunces = Fraunces({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-fraunces",
-  axes: ["opsz"],
+  variable: "--font-inter",
   display: "swap",
 });
 
 const notoSerifJP = Noto_Serif_JP({
   subsets: ["latin"],
   variable: "--font-noto-serif-jp",
-  weight: ["700"],
+  weight: ["400", "700", "900"],
   display: "swap",
 });
 
@@ -51,8 +50,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className={`${fraunces.variable} ${notoSerifJP.variable}`} lang="ja">
-      <body className="min-h-screen">
+    <html lang="ja">
+      <body className={`${inter.variable} ${notoSerifJP.variable} min-h-screen`}>
         <SiteHeader />
         {children}
         <SiteFooter />
