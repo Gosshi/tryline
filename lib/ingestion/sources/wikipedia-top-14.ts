@@ -11,7 +11,8 @@ import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
 
-const SECTION_ROUNDS: Record<string, number> = {
+const ROUND_ID_PATTERN = /^Round_(\d+)$/;
+const PLAYOFF_ROUNDS: Record<string, number> = {
   "Relegation_play-off": 0,
   "Semi-final_Qualifiers": 1,
   "Semi-finals": 2,
@@ -106,6 +107,22 @@ function getSectionId(
   return null;
 }
 
+function resolveRound(sectionId: string | null) {
+  if (sectionId === null) {
+    return undefined;
+  }
+
+  const playoffRound = PLAYOFF_ROUNDS[sectionId];
+
+  if (playoffRound !== undefined) {
+    return playoffRound;
+  }
+
+  const matched = sectionId.match(ROUND_ID_PATTERN);
+
+  return matched?.[1] !== undefined ? Number(matched[1]) : undefined;
+}
+
 export function parseTop14LiveHtml(html: string): ParsedLiveMatch[] {
   const $ = load(html);
   const results: ParsedLiveMatch[] = [];
@@ -113,8 +130,7 @@ export function parseTop14LiveHtml(html: string): ParsedLiveMatch[] {
   for (const element of $("div.vevent.summary").toArray()) {
     const block = $(element);
     const sectionId = getSectionId($, block);
-    const round =
-      sectionId === null ? undefined : (SECTION_ROUNDS[sectionId] ?? undefined);
+    const round = resolveRound(sectionId);
 
     if (round === undefined) {
       continue;

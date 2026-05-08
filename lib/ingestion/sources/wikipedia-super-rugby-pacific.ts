@@ -44,7 +44,7 @@ function buildRegularMatchesUrl(season: string) {
 function parseKickoffAtFromBlockText(blockText: string) {
   const normalized = normalizeWhitespace(blockText);
   const matched = normalized.match(
-    /(\d{1,2} [A-Za-z]+ \d{4})\s*(\d{1,2}:\d{2})\s+\(UTC([+-]\d{1,2})\)/,
+    /(\d{1,2} [A-Za-z]+ \d{4})\s*(\d{1,2}:\d{2})\s+(?:[A-Z]+\s+)?\(UTC([+-]\d{1,2})\)/,
   );
 
   if (!matched) {

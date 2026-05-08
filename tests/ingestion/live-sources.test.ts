@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import { parseLeagueOneLiveHtml } from "@/lib/ingestion/sources/league-one-live";
 import { parsePncLiveHtml } from "@/lib/ingestion/sources/wikipedia-pnc";
 import { parsePremiershipLiveHtml } from "@/lib/ingestion/sources/wikipedia-premiership";
+import { parseSuperRugbyPacificLiveHtml } from "@/lib/ingestion/sources/wikipedia-super-rugby-pacific";
+import { parseTop14LiveHtml } from "@/lib/ingestion/sources/wikipedia-top-14";
+import { parseUrcLiveHtml } from "@/lib/ingestion/sources/wikipedia-urc";
 
 const PREMIERSHIP_HTML = `
 <div class="mw-heading mw-heading2"><h2 id="Regular_season">Regular season</h2></div>
@@ -71,7 +74,64 @@ const LEAGUE_ONE_HTML = `
 </div>
 `;
 
+const SUPER_RUGBY_PACIFIC_HTML = `
+<div class="mw-heading mw-heading2"><h2 id="Round_1">Round 1</h2></div>
+<div class="vevent summary" id="Crusaders_v_Hurricanes">
+  <table><tbody><tr><td>13 February 202619:05 NZDT (UTC+13)</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Crusaders</a></span></td>
+    <td>v</td>
+    <td class="vcard"><span class="fn org"><a>Hurricanes</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Apollo Projects Stadium</span></td></tr></tbody></table>
+</div>
+`;
+
+const URC_HTML = `
+<div class="mw-heading mw-heading2"><h2 id="Regular_season">Regular season</h2></div>
+<div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
+<div class="vevent summary" id="Leinster_v_Munster">
+  <table><tbody><tr><td>26 September 2025<br />19:35</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Leinster</a></span></td>
+    <td>v</td>
+    <td class="vcard"><span class="fn org"><a>Munster</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Aviva Stadium</span></td></tr></tbody></table>
+</div>
+`;
+
+const TOP_14_HTML = `
+<div class="mw-heading mw-heading2"><h2 id="Regular_season">Regular season</h2></div>
+<div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
+<div class="vevent summary" id="Toulouse_v_Bayonne">
+  <table><tbody><tr><td>6 September 2025<br />21:05</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Toulouse</a></span></td>
+    <td>v</td>
+    <td class="vcard"><span class="fn org"><a>Bayonne</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Stade Ernest-Wallon</span></td></tr></tbody></table>
+</div>
+`;
+
 describe("live competition source adapters", () => {
+  it("parses Super Rugby Pacific kickoff text with timezone abbreviation", () => {
+    const matches = parseSuperRugbyPacificLiveHtml({
+      regularHtml: SUPER_RUGBY_PACIFIC_HTML,
+      seasonHtml: "",
+    });
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      awayTeamSlug: "hurricanes",
+      homeTeamSlug: "crusaders",
+      kickoffAt: "2026-02-13T06:05:00.000Z",
+      round: 1,
+      status: "scheduled",
+    });
+  });
+
   it("keeps Premiership scheduled vevents instead of dropping scoreless matches", () => {
     const matches = parsePremiershipLiveHtml(PREMIERSHIP_HTML);
 
@@ -97,6 +157,30 @@ describe("live competition source adapters", () => {
     expect(matches[0]).toMatchObject({
       awayTeamSlug: "fiji",
       homeTeamSlug: "japan",
+      round: 1,
+      status: "scheduled",
+    });
+  });
+
+  it("keeps URC regular season scheduled vevents", () => {
+    const matches = parseUrcLiveHtml(URC_HTML);
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      awayTeamSlug: "munster",
+      homeTeamSlug: "leinster",
+      round: 1,
+      status: "scheduled",
+    });
+  });
+
+  it("keeps Top 14 regular season scheduled vevents", () => {
+    const matches = parseTop14LiveHtml(TOP_14_HTML);
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      awayTeamSlug: "bayonne",
+      homeTeamSlug: "toulouse",
       round: 1,
       status: "scheduled",
     });
