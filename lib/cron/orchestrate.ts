@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const EXISTING_CONTENT_STATUSES = ["draft", "published"] as const;
 const PREVIEW_WINDOW_START_HOURS = 47;
 const PREVIEW_WINDOW_END_HOURS = 49;
-const RECAP_BATCH_SIZE = 20;
+const RECAP_BATCH_SIZE = 5;
 
 type LineupIngestOutcome = "triggered" | "no_url";
 
