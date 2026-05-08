@@ -12,7 +12,7 @@ describe("import-world-rugby-historical", () => {
       dryRun: true,
       families: ["pnc", "autumn-nations"],
       fromYear: 2020,
-      toYear: 2024,
+      toYear: 2025,
     });
     expect(
       parseArgs(["--family=autumn-nations", "--from", "2022", "--to=2023"]),
@@ -29,7 +29,7 @@ describe("import-world-rugby-historical", () => {
       buildSeasonTasks({
         families: ["pnc"],
         fromYear: 2020,
-        toYear: 2024,
+        toYear: 2025,
       }),
     ).toEqual([
       { competitionId: null, family: "pnc", season: "2020" },
@@ -40,6 +40,32 @@ describe("import-world-rugby-historical", () => {
         competitionId: "735a21a5-9069-4fad-810e-81806f9c47a4",
         family: "pnc",
         season: "2024",
+      },
+      {
+        competitionId: "0c6a4bb9-4cf9-4960-a587-0022dd2985a4",
+        family: "pnc",
+        season: "2025",
+      },
+    ]);
+  });
+
+  it("includes 2025 World Rugby competition IDs for default imports", () => {
+    expect(
+      buildSeasonTasks({
+        families: ["autumn-nations", "pnc"],
+        fromYear: 2025,
+        toYear: 2025,
+      }),
+    ).toEqual([
+      {
+        competitionId: "03cdc8d6-d13d-4e47-962e-3c0663306cb3",
+        family: "autumn-nations",
+        season: "2025",
+      },
+      {
+        competitionId: "0c6a4bb9-4cf9-4960-a587-0022dd2985a4",
+        family: "pnc",
+        season: "2025",
       },
     ]);
   });

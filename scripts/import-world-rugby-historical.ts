@@ -52,7 +52,7 @@ type RunDeps = {
 
 const ALL_FAMILIES: WorldRugbyCompetitionFamily[] = ["pnc", "autumn-nations"];
 const DEFAULT_FROM_YEAR = 2020;
-const DEFAULT_TO_YEAR = 2024;
+const DEFAULT_TO_YEAR = 2025;
 const SEASON_SLEEP_MS = 5_000;
 
 export const COMPETITION_ID_MAP: Record<
@@ -64,10 +64,12 @@ export const COMPETITION_ID_MAP: Record<
     "2021": "2050",
     "2022": "2091",
     "2024": "c805a102-6cbe-4eed-a158-f5878cf1f162",
+    "2025": "03cdc8d6-d13d-4e47-962e-3c0663306cb3",
   },
   pnc: {
     "2022": "2104",
     "2024": "735a21a5-9069-4fad-810e-81806f9c47a4",
+    "2025": "0c6a4bb9-4cf9-4960-a587-0022dd2985a4",
   },
 };
 
