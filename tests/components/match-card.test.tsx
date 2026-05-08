@@ -71,6 +71,10 @@ describe("MatchCard", () => {
       "bg-[var(--color-accent-dim)]",
       "text-[var(--color-accent)]",
     );
+    expect(screen.getByText("L")).toHaveClass(
+      "bg-slate-100",
+      "text-slate-400",
+    );
   });
 
   it("renders an em dash for a scheduled match", () => {
@@ -223,6 +227,7 @@ describe("MatchCard", () => {
     const card = within(container);
 
     expect(card.queryByText("W")).not.toBeInTheDocument();
+    expect(card.queryByText("L")).not.toBeInTheDocument();
     expect(card.getAllByText("24")[0]).toHaveClass(
       "text-3xl",
       "text-[var(--color-ink)]",

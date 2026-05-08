@@ -141,7 +141,10 @@ export default async function MatchDetailPage({
                       className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                       href={seasonHref}
                     >
-                      {match.competition.name} {match.competition.season}
+                      {formatCompetitionTitle(
+                        match.competition.name,
+                        match.competition.season,
+                      )}
                     </Link>
                   </li>
                   {match.round !== null && (

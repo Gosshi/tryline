@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "プライバシーポリシー | Tryline",
+  title: "プライバシーポリシー",
 };
 
 export default function PrivacyPage() {

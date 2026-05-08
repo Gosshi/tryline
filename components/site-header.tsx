@@ -34,14 +34,6 @@ export async function SiteHeader() {
                 試合
               </Link>
             </li>
-            <li>
-              <Link
-                className="rounded px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                href="/#standings"
-              >
-                順位表
-              </Link>
-            </li>
           </ul>
           <UserMenu isPremium={premium} user={user} />
         </nav>

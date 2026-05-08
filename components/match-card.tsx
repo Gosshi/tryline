@@ -79,6 +79,11 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
                   W
                 </span>
               )}
+              {awayWon && match.status === "finished" && (
+                <span className="rounded bg-slate-100 px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-400">
+                  L
+                </span>
+              )}
             </p>
             <p
               className={cn(
@@ -142,6 +147,11 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
               {awayWon && match.status === "finished" && (
                 <span className="rounded bg-[var(--color-accent-dim)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
                   W
+                </span>
+              )}
+              {homeWon && match.status === "finished" && (
+                <span className="rounded bg-slate-100 px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-400">
+                  L
                 </span>
               )}
               <FlagIcon slug={match.awayTeam.slug} size={16} />

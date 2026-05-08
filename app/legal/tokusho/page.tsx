@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "特定商取引法に基づく表示 | Tryline",
+  title: "特定商取引法に基づく表示",
 };
 
 export default function TokushoPage() {
