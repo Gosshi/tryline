@@ -68,7 +68,7 @@ describe("MatchCard", () => {
       "text-[var(--color-ink)]",
     );
     expect(screen.getByText("W")).toHaveClass(
-      "bg-[var(--color-accent)]/15",
+      "bg-[var(--color-accent-dim)]",
       "text-[var(--color-accent)]",
     );
   });
