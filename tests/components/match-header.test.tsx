@@ -46,7 +46,7 @@ describe("MatchHeader", () => {
         level: 1,
         name: "Ireland vs France",
       }),
-    ).toHaveClass("sr-only");
+    ).toHaveClass("sr-only", "font-heading");
   });
 
   it("uses a sharp home-away color bar at the top", () => {
