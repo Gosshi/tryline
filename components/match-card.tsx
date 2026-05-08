@@ -94,7 +94,7 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
 
           <p
             className={cn(
-              "px-3 font-display text-3xl tabular-nums",
+              "px-3 font-body text-3xl tabular-nums",
               match.status === "finished" ? "" : "text-[var(--color-rule)]",
             )}
           >
