@@ -8,12 +8,6 @@ const authMocks = vi.hoisted(() => ({
 
 const updateMock = vi.hoisted(() => vi.fn());
 const eqMock = vi.hoisted(() => vi.fn());
-const chatMocks = vi.hoisted(() => ({
-  createChatSession: vi.fn(),
-  getChatMessages: vi.fn(),
-  getSessionTokenTotal: vi.fn(),
-  saveChatMessage: vi.fn(),
-}));
 const contextMocks = vi.hoisted(() => ({
   assembleMatchContext: vi.fn(),
 }));
@@ -36,13 +30,6 @@ vi.mock("@/lib/chat/context", () => ({
   assembleMatchContext: contextMocks.assembleMatchContext,
 }));
 
-vi.mock("@/lib/db/queries/chat", () => ({
-  createChatSession: chatMocks.createChatSession,
-  getChatMessages: chatMocks.getChatMessages,
-  getSessionTokenTotal: chatMocks.getSessionTokenTotal,
-  saveChatMessage: chatMocks.saveChatMessage,
-}));
-
 vi.mock("@/lib/llm/client", () => ({
   getOpenAIClient: () => ({
     chat: {
@@ -59,10 +46,6 @@ describe("chat daily rate limit", () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-05-07T12:00:00.000Z"));
-    chatMocks.createChatSession.mockResolvedValue("session-1");
-    chatMocks.getChatMessages.mockResolvedValue([]);
-    chatMocks.getSessionTokenTotal.mockResolvedValue(0);
-    chatMocks.saveChatMessage.mockResolvedValue(undefined);
     contextMocks.assembleMatchContext.mockResolvedValue("system prompt");
     llmMocks.create.mockResolvedValue(
       (async function* () {
@@ -132,6 +115,50 @@ describe("chat daily rate limit", () => {
     expect(updateMock).toHaveBeenCalledWith({
       chat_daily_count: 0,
       chat_daily_reset_date: "2026-05-07",
+      updated_at: "2026-05-07T12:00:00.000Z",
+    });
+  });
+
+  it("uses request history for context and does not return a session id", async () => {
+    authMocks.getUserProfile.mockResolvedValue({
+      chat_daily_count: 0,
+      chat_daily_reset_date: "2026-05-07",
+      stripe_customer_id: "cus_123",
+      subscription_status: "premium",
+    });
+
+    const { POST } = await import("@/app/api/chat/[matchId]/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/chat/match-1", {
+        body: JSON.stringify({
+          history: [
+            { content: "前半の流れは？", role: "user" },
+            { content: "接点で差が出ています。", role: "assistant" },
+          ],
+          message: "後半の注目点は？",
+        }),
+        method: "POST",
+      }),
+      { params: Promise.resolve({ matchId: "match-1" }) },
+    );
+
+    const text = await response.text();
+
+    expect(llmMocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          { content: "system prompt", role: "system" },
+          { content: "前半の流れは？", role: "user" },
+          { content: "接点で差が出ています。", role: "assistant" },
+          { content: "後半の注目点は？", role: "user" },
+        ],
+      }),
+    );
+    expect(text).toContain('"done":true');
+    expect(text).not.toContain("sessionId");
+    expect(updateMock).toHaveBeenCalledWith({
+      chat_daily_count: 1,
       updated_at: "2026-05-07T12:00:00.000Z",
     });
   });

@@ -5,12 +5,6 @@ import {
   isPremium,
 } from "@/lib/auth/server";
 import { assembleMatchContext } from "@/lib/chat/context";
-import {
-  createChatSession,
-  getChatMessages,
-  getSessionTokenTotal,
-  saveChatMessage,
-} from "@/lib/db/queries/chat";
 import { getOpenAIClient } from "@/lib/llm/client";
 import { MODELS } from "@/lib/llm/models";
 
@@ -19,7 +13,6 @@ import type OpenAI from "openai";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const TOKEN_LIMIT = 50_000;
 const DAILY_MESSAGE_LIMIT = 30;
 
 export async function POST(
@@ -61,35 +54,21 @@ export async function POST(
   }
 
   const body = (await request.json()) as {
+    history?: Array<{ content: string; role: "user" | "assistant" }>;
     message?: string;
-    sessionId?: string;
   };
   const userMessage = body.message?.trim();
+  const history = body.history ?? [];
 
   if (!userMessage) {
     return Response.json({ error: "message_required" }, { status: 400 });
   }
 
-  const sessionId = body.sessionId ?? (await createChatSession(matchId));
-  const totalTokens = await getSessionTokenTotal(sessionId);
-
-  if (totalTokens >= TOKEN_LIMIT) {
-    return Response.json({ error: "token_limit_exceeded" }, { status: 429 });
-  }
-
-  const [history, systemPrompt] = await Promise.all([
-    getChatMessages(sessionId),
-    assembleMatchContext(matchId),
-  ]);
-
-  await saveChatMessage(sessionId, "user", userMessage);
+  const systemPrompt = await assembleMatchContext(matchId);
 
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
     { content: systemPrompt, role: "system" },
-    ...history.map((message) => ({
-      content: message.content,
-      role: message.role,
-    })),
+    ...history,
     { content: userMessage, role: "user" },
   ];
   const stream = await getOpenAIClient().chat.completions.create({
@@ -101,9 +80,6 @@ export async function POST(
     temperature: 0.5,
   });
   const encoder = new TextEncoder();
-  let assistantContent = "";
-  let inputTokens = 0;
-  let outputTokens = 0;
 
   const readable = new ReadableStream({
     async start(controller) {
@@ -112,24 +88,12 @@ export async function POST(
           const delta = chunk.choices[0]?.delta?.content ?? "";
 
           if (delta) {
-            assistantContent += delta;
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ delta })}\n\n`),
             );
           }
-
-          if (chunk.usage) {
-            inputTokens = chunk.usage.prompt_tokens;
-            outputTokens = chunk.usage.completion_tokens;
-          }
         }
 
-        const costUsd = (inputTokens * 0.00015 + outputTokens * 0.0006) / 1_000;
-        await saveChatMessage(sessionId, "assistant", assistantContent, {
-          costUsd,
-          input: inputTokens,
-          output: outputTokens,
-        });
         await supabase
           .from("user_profiles")
           .update({
@@ -138,9 +102,7 @@ export async function POST(
           })
           .eq("id", user.id);
         controller.enqueue(
-          encoder.encode(
-            `data: ${JSON.stringify({ done: true, sessionId })}\n\n`,
-          ),
+          encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`),
         );
         controller.close();
       } catch (error) {
