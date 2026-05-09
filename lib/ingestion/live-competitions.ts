@@ -3,7 +3,7 @@ import {
   type LiveCompetitionSource,
   type LiveIngestResult,
 } from "@/lib/ingestion/live-ingest";
-import { fetchLeagueOne202425 } from "@/lib/ingestion/sources/league-one-live";
+import { fetchLeagueOne202526 } from "@/lib/ingestion/sources/league-one-live";
 import { fetchAutumnNations2026 } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
 import { fetchPnc2026 } from "@/lib/ingestion/sources/wikipedia-pnc";
 import { fetchPremiership202526 } from "@/lib/ingestion/sources/wikipedia-premiership";
@@ -70,11 +70,11 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
     sourceLabel: "wikipedia",
   },
   {
-    competitionName: "League One 2024-25",
-    competitionSlug: "league-one-2024-25",
+    competitionName: "League One 2025-26",
+    competitionSlug: "league-one-2025-26",
     family: "league-one",
-    fetch: fetchLeagueOne202425,
-    season: "2024-25",
+    fetch: fetchLeagueOne202526,
+    season: "2025-26",
     sourceLabel: "league-one.jp",
   },
 ];

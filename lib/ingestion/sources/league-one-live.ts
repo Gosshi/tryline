@@ -176,3 +176,10 @@ export async function fetchLeagueOne202425(): Promise<ParsedLiveMatch[]> {
 
   return parseLeagueOneLiveHtml(await response.text(), season);
 }
+
+export async function fetchLeagueOne202526(): Promise<ParsedLiveMatch[]> {
+  const season = "2025-26";
+  const response = await fetchWithPolicy(buildScheduleUrl(season));
+
+  return parseLeagueOneLiveHtml(await response.text(), season);
+}
