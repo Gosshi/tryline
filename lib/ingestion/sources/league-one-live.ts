@@ -161,6 +161,7 @@ export function parseLeagueOneLiveHtml(
       lineupTableHtml: null,
       rawHtml: "",
       round,
+      roundName: null,
       status:
         homeScore === null || awayScore === null ? "scheduled" : "finished",
       venue:
