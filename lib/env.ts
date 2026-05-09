@@ -10,6 +10,9 @@ const serverEnvSchema = publicEnvSchema.extend({
   OPENAI_API_KEY: z.string(),
   SCRAPER_USER_AGENT: z.string(),
   SUPABASE_SERVICE_ROLE_KEY: z.string(),
+  VAPID_PRIVATE_KEY: z.string(),
+  VAPID_PUBLIC_KEY: z.string(),
+  VAPID_SUBJECT: z.string(),
   WIKIPEDIA_SQUAD_URL: z.string().url(),
   SLACK_WEBHOOK_URL: z.string().url().optional(),
 });
