@@ -169,6 +169,7 @@ export function parseTop14LiveHtml(html: string): ParsedLiveMatch[] {
       lineupTableHtml: null,
       rawHtml: $.html(block),
       round,
+      roundName: null,
       status: score.status,
       venue:
         normalizeWhitespace(venueTable.find(".location").first().text()) ||
