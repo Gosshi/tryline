@@ -10,9 +10,20 @@ type DbFixture = {
   finishedIds: string[];
   existingPreviewIds?: string[];
   existingRecapIds?: string[];
+  matchDetails?: Record<
+    string,
+    {
+      away_score: number | null;
+      away_team: { name: string; slug: string } | null;
+      home_score: number | null;
+      home_team: { name: string; slug: string } | null;
+      id: string;
+    }
+  >;
 };
 
 type MatchQueryState = {
+  id?: string;
   status?: "scheduled" | "finished";
 };
 
@@ -32,10 +43,21 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
       ) {
         matchesBuilder.state.status = value;
       }
+      if (column === "id" && typeof value === "string") {
+        matchesBuilder.state.id = value;
+      }
       return matchesBuilder;
     }),
     gte: vi.fn().mockReturnThis(),
     lte: vi.fn().mockReturnThis(),
+    single: vi.fn(() =>
+      Promise.resolve({
+        data: matchesBuilder.state.id
+          ? (fixture.matchDetails?.[matchesBuilder.state.id] ?? null)
+          : null,
+        error: null,
+      }),
+    ),
     then: (
       resolve: (value: { data: { id: string }[]; error: null }) => unknown,
     ) => {
@@ -167,6 +189,43 @@ describe("runOrchestrate", () => {
 
     expect(generateContent).toHaveBeenCalledWith("finished-1", "recap");
     expect(result.recaps).toEqual({ triggered: 1, skipped: 0 });
+  });
+
+  it("sends a push notification after successful recap generation", async () => {
+    const db = createMockDb({
+      scheduledIds: [],
+      finishedIds: ["finished-1"],
+      matchDetails: {
+        "finished-1": {
+          away_score: 17,
+          away_team: { name: "Ireland", slug: "ireland" },
+          home_score: 24,
+          home_team: { name: "England", slug: "england" },
+          id: "finished-1",
+        },
+      },
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+    const sendPushNotification = vi.fn().mockResolvedValue(undefined);
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now,
+      sendPushNotification,
+    });
+
+    expect(sendPushNotification).toHaveBeenCalledWith({
+      awayScore: 17,
+      awayTeamName: "Ireland",
+      awayTeamSlug: "ireland",
+      homeScore: 24,
+      homeTeamName: "England",
+      homeTeamSlug: "england",
+      matchId: "finished-1",
+    });
   });
 
   it("skips recap generation when recap content already exists", async () => {
