@@ -5,15 +5,23 @@ import { useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/auth/client";
 
 import { AuthModal } from "./auth-modal";
+import { TeamPicker, type TeamOption } from "./team-picker";
 
 import type { User } from "@supabase/supabase-js";
 
 type UserMenuProps = {
+  allTeams: TeamOption[];
+  favoriteTeamSlugs: string[];
   isPremium: boolean;
   user: User | null;
 };
 
-export function UserMenu({ isPremium, user }: UserMenuProps) {
+export function UserMenu({
+  allTeams,
+  favoriteTeamSlugs,
+  isPremium,
+  user,
+}: UserMenuProps) {
   const [showModal, setShowModal] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -53,7 +61,7 @@ export function UserMenu({ isPremium, user }: UserMenuProps) {
         {user.email?.split("@")[0]}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+        <div className="absolute right-0 mt-2 w-72 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
           {!isPremium && (
             <a
               className="block px-4 py-2.5 text-xs font-semibold text-[var(--color-accent)] hover:bg-slate-50"
@@ -70,6 +78,12 @@ export function UserMenu({ isPremium, user }: UserMenuProps) {
               プランを管理する
             </a>
           )}
+          <div className="border-t border-slate-100 px-4 py-3">
+            <TeamPicker
+              initialSelected={favoriteTeamSlugs}
+              teams={allTeams}
+            />
+          </div>
           <button
             className="block w-full px-4 py-2.5 text-left text-xs text-slate-600 hover:bg-slate-50"
             onClick={() => void signOut()}
