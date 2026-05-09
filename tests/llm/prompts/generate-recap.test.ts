@@ -32,8 +32,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 1.8.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@1.8.0");
+  it("uses recap prompt version 1.9.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@1.9.0");
   });
 
   it("instructs the model to use final scores as the winner source", () => {
@@ -45,8 +45,43 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain('"away_score":24');
   });
 
-  it("omits the MOM selection section when lineup data is unavailable", () => {
+  it("uses data-sparse structure when lineup and event data are unavailable", () => {
     const prompt = buildGenerateRecapPrompt(assembled, [], []);
+
+    expect(prompt).toContain("試合全体像とスコア分析(500-600字)");
+    expect(prompt).toContain("大会文脈・順位への影響(400-500字)");
+    expect(prompt).toContain("両チームの近況と戦術傾向(500-600字)");
+    expect(prompt).toContain("次戦への示唆(300-400字)");
+    expect(prompt).not.toContain("MOM選出と根拠");
+    expect(prompt).toContain("MOM セクションは省略すること");
+    expect(prompt).toContain("全体で2,000字以上を目標とすること");
+    expect(prompt).toContain("【データスパースモード】");
+    expect(prompt).toContain("recent_form の直近5試合");
+    expect(prompt).toContain("competition_standings の順位変動");
+    expect(prompt).toContain("h2h_last_5 の直近対戦スコア");
+    expect(prompt).toContain("key_stats の直近平均得点・失点");
+    expect(prompt).toContain("逃げ表現は一切禁止");
+    expect(prompt).toContain(
+      "各セクションが指定範囲の下限を下回った場合は書き足すこと",
+    );
+  });
+
+  it("omits the MOM selection section when events exist but lineup data is unavailable", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        match_events: [
+          {
+            type: "try",
+            minute: 23,
+            team_name: "England",
+            player_name: "Marcus Smith",
+          },
+        ],
+      },
+      [],
+      [],
+    );
 
     expect(prompt).toContain("試合全体像(400-500字)");
     expect(prompt).toContain("ターニングポイント(500-600字)");
@@ -54,9 +89,7 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain("ラインアップデータなし");
     expect(prompt).toContain("全体で1,500字以上を目標とすること");
-    expect(prompt).toContain(
-      "各セクションが指定範囲の下限を下回った場合は書き足すこと",
-    );
+    expect(prompt).not.toContain("【データスパースモード】");
   });
 
   it("includes the MOM selection section when lineup data is available", () => {
