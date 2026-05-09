@@ -147,6 +147,7 @@ export function parseUrcLiveHtml(html: string): ParsedLiveMatch[] {
       lineupTableHtml: null,
       rawHtml: $.html(block),
       round,
+      roundName: null,
       status: score.status,
       venue: normalizeWhitespace(firstRowCells.eq(4).text()) || null,
     });

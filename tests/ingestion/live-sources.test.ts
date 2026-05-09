@@ -28,6 +28,17 @@ const PREMIERSHIP_HTML = `
   </tr></tbody></table>
   <table><tbody><tr><td><span class="location">StoneX Stadium</span></td></tr></tbody></table>
 </div>
+<div class="mw-heading mw-heading2"><h2 id="Play-offs">Play-offs</h2></div>
+<div class="mw-heading mw-heading3"><h3 id="Final">Final</h3></div>
+<div class="vevent summary" id="Bath_v_Saracens">
+  <table><tbody><tr><td>20 June 2026<br />15:00</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Bath</a></span></td>
+    <td>28–17</td>
+    <td class="vcard"><span class="fn org"><a>Saracens</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Twickenham Stadium</span></td></tr></tbody></table>
+</div>
 `;
 
 const PNC_HTML = `
@@ -143,7 +154,7 @@ describe("live competition source adapters", () => {
   it("keeps Premiership scheduled vevents instead of dropping scoreless matches", () => {
     const matches = parsePremiershipLiveHtml(PREMIERSHIP_HTML);
 
-    expect(matches).toHaveLength(2);
+    expect(matches).toHaveLength(3);
     expect(matches[0]).toMatchObject({
       awayScore: null,
       awayTeamSlug: "bristol-bears",
@@ -154,6 +165,13 @@ describe("live competition source adapters", () => {
     expect(matches[1]).toMatchObject({
       awayScore: 17,
       homeScore: 28,
+      status: "finished",
+    });
+    expect(matches[2]).toMatchObject({
+      awayTeamSlug: "saracens",
+      homeTeamSlug: "bath",
+      round: null,
+      roundName: "Final",
       status: "finished",
     });
   });

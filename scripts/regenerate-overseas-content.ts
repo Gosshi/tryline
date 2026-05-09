@@ -13,6 +13,7 @@ type CliOptions = {
   contentType: ContentType;
   dryRun: boolean;
   family: string | null;
+  fromVersion: string | null;
 };
 
 type ContentRow = {
@@ -39,6 +40,7 @@ export type RegenerateOverseasContentResult = {
   regenerated: number;
   skippedCurrentVersion: number;
   skippedFamily: number;
+  skippedFromVersion: number;
   skippedLeagueOne: number;
   targets: number;
   totalRows: number;
@@ -52,6 +54,7 @@ type RunDeps = {
   db: SupabaseClient<Database>;
   dryRun: boolean;
   family: string | null;
+  fromVersion: string | null;
   generateContent: (
     matchId: string,
     contentType: ContentType,
@@ -65,6 +68,7 @@ export function parseArgs(argv: string[]): CliOptions {
   let contentType: ContentType = "recap";
   let dryRun = false;
   let family: string | null = null;
+  let fromVersion: string | null = null;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -105,12 +109,23 @@ export function parseArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === "--from-version") {
+      fromVersion = argv[index + 1] ?? null;
+      index += 1;
+      continue;
+    }
+
+    if (arg?.startsWith("--from-version=")) {
+      fromVersion = arg.slice("--from-version=".length) || null;
+      continue;
+    }
+
     if (arg === "--dry-run") {
       dryRun = true;
     }
   }
 
-  return { contentType, dryRun, family };
+  return { contentType, dryRun, family, fromVersion };
 }
 
 export function getCurrentPromptVersion(contentType: ContentType) {
@@ -125,10 +140,12 @@ function buildTargetRows(params: {
   contentRows: ContentRow[];
   currentVersion: string;
   family: string | null;
+  fromVersion: string | null;
 }) {
   const counters = {
     skippedCurrentVersion: 0,
     skippedFamily: 0,
+    skippedFromVersion: 0,
     skippedLeagueOne: 0,
   };
   const targets: TargetRow[] = [];
@@ -148,6 +165,14 @@ function buildTargetRows(params: {
 
     if (row.prompt_version === params.currentVersion) {
       counters.skippedCurrentVersion += 1;
+      continue;
+    }
+
+    if (
+      params.fromVersion !== null &&
+      row.prompt_version !== params.fromVersion
+    ) {
+      counters.skippedFromVersion += 1;
       continue;
     }
 
@@ -202,20 +227,27 @@ export async function runRegenerateOverseasContent({
   db,
   dryRun,
   family,
+  fromVersion,
   generateContent,
   logger = console,
 }: RunDeps): Promise<RegenerateOverseasContentResult> {
   const contentRows = await getRegenerationCandidates(db, contentType);
-  const { skippedCurrentVersion, skippedFamily, skippedLeagueOne, targets } =
-    buildTargetRows({
-      contentRows,
-      currentVersion,
-      family,
-    });
+  const {
+    skippedCurrentVersion,
+    skippedFamily,
+    skippedFromVersion,
+    skippedLeagueOne,
+    targets,
+  } = buildTargetRows({
+    contentRows,
+    currentVersion,
+    family,
+    fromVersion,
+  });
   const byFamily = countByFamily(targets);
 
   logger.log(
-    `Overseas ${contentType} regeneration targets: total=${contentRows.length} target=${targets.length} currentVersion=${currentVersion}`,
+    `Overseas ${contentType} regeneration targets: total=${contentRows.length} target=${targets.length} currentVersion=${currentVersion} fromVersion=${fromVersion ?? "any"}`,
   );
   logger.log(`By family: ${JSON.stringify(byFamily)}`);
 
@@ -227,6 +259,7 @@ export async function runRegenerateOverseasContent({
     regenerated: 0,
     skippedCurrentVersion,
     skippedFamily,
+    skippedFromVersion,
     skippedLeagueOne,
     targets: targets.length,
     totalRows: contentRows.length,
@@ -270,6 +303,7 @@ async function main() {
     db: getSupabaseServerClient(),
     dryRun: options.dryRun,
     family: options.family,
+    fromVersion: options.fromVersion,
     generateContent: (matchId, contentType) =>
       generateMatchContent(matchId, contentType),
   });

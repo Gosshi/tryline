@@ -1,6 +1,8 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { upsertMatchEvents } from "@/lib/ingestion/events";
 import { upsertMatches } from "@/lib/ingestion/upsert";
 import { saveRawData } from "@/lib/scrapers";
+import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 
 import type { Json } from "@/lib/db/types";
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
@@ -17,6 +19,7 @@ export type LiveCompetitionSource = {
 export type LiveIngestResult = {
   competition: string;
   counts: {
+    events_inserted: number;
     matches_inserted: number;
     matches_updated: number;
   };
@@ -131,6 +134,10 @@ function toExternalIds(
     externalIds.wikipedia_round = match.round;
   }
 
+  if (match.roundName) {
+    externalIds.round_name = match.roundName;
+  }
+
   return externalIds;
 }
 
@@ -145,7 +152,7 @@ export async function ingestLiveCompetition(
 
     return {
       competition: source.competitionSlug,
-      counts: { matches_inserted: 0, matches_updated: 0 },
+      counts: { events_inserted: 0, matches_inserted: 0, matches_updated: 0 },
     };
   }
 
@@ -196,13 +203,46 @@ export async function ingestLiveCompetition(
     ),
   );
 
+  let eventsInserted = 0;
+  const newlyFinishedMatches = result.records.filter(
+    (record) => record.statusChangedToFinished,
+  );
+
+  for (const record of newlyFinishedMatches) {
+    const match = resolvedMatches[record.candidateIndex];
+
+    if (!match?.rawHtml) {
+      continue;
+    }
+
+    try {
+      const events = parseMatchEventsFromVeventHtml(match.rawHtml);
+
+      if (events.length > 0) {
+        const upserted = await upsertMatchEvents({
+          awayTeamId: match.awayTeamId,
+          events,
+          homeTeamId: match.homeTeamId,
+          matchId: record.id,
+        });
+        eventsInserted += upserted.inserted;
+      }
+    } catch (error) {
+      console.warn(
+        `[${source.competitionSlug}] event parse failed for match ${record.id}:`,
+        error,
+      );
+    }
+  }
+
   console.info(
-    `[${source.competitionSlug}] inserted=${result.matchesInserted} updated=${result.matchesUpdated}`,
+    `[${source.competitionSlug}] inserted=${result.matchesInserted} updated=${result.matchesUpdated} events_inserted=${eventsInserted}`,
   );
 
   return {
     competition: source.competitionSlug,
     counts: {
+      events_inserted: eventsInserted,
       matches_inserted: result.matchesInserted,
       matches_updated: result.matchesUpdated,
     },

@@ -4,7 +4,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@1.8.0";
+export const PROMPT_VERSION = "preview@1.9.0";
 
 export function buildGeneratePreviewPrompt(
   assembled: AssembledContentInput,
@@ -41,6 +41,29 @@ export function buildGeneratePreviewPrompt(
         "- 「情報が少ない」「選手不明」等の逃げ表現は一切禁止。手元のデータで書き切ること",
       ].join("\n")
     : "";
+  const matchPhaseBlock = (() => {
+    const phase = assembled.match_phase;
+    const competitionLabel = [
+      assembled.match.competition?.name,
+      assembled.match.competition?.season,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    if (phase === "playoff_final") {
+      return `この試合は${competitionLabel}の決勝戦です。勝者がチャンピオンとなります。プレビュー冒頭でこの一戦の重みを強調し、タイトル争いの文脈を示すこと。`;
+    }
+
+    if (phase === "playoff_semifinal") {
+      return "この試合はプレーオフ準決勝です。決勝進出をかけた一戦としての緊張感と文脈をプレビューに反映すること。";
+    }
+
+    if (phase === "playoff_other") {
+      return "この試合はプレーオフ戦です。その意義と文脈をプレビューに含めること。";
+    }
+
+    return "";
+  })();
   const nameStyleInstruction =
     assembled.match.competition?.family === "league-one"
       ? "選手名は日本語表記を使用すること。外国人選手はカタカナで記載すること（例: Brodie Retallick → ブロディ・レタリック）。チーム名は日本語または通称表記を使用すること。"
@@ -55,6 +78,7 @@ export function buildGeneratePreviewPrompt(
   return [
     "あなたは日本語のラグビー専門編集者です。試合プレビューをマークダウンで作成してください。",
     structureInstruction,
+    matchPhaseBlock,
     "各セクションが指定範囲の下限を下回った場合は書き足すこと。",
     "事実は入力データと一致させること。直接引用は15語以内。",
     "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。",

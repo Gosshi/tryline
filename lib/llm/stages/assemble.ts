@@ -1,7 +1,7 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
 
 import type { Json } from "@/lib/db/types";
-import type { AssembledContentInput } from "@/lib/llm/types";
+import type { AssembledContentInput, MatchPhase } from "@/lib/llm/types";
 
 function average(values: number[]) {
   if (values.length === 0) {
@@ -19,6 +19,40 @@ function asJsonObject(value: Json): Record<string, Json> {
   }
 
   return value as Record<string, Json>;
+}
+
+function deriveMatchPhase(externalIds: unknown): MatchPhase | null {
+  if (!externalIds || typeof externalIds !== "object" || Array.isArray(externalIds)) {
+    return null;
+  }
+
+  const ids = externalIds as Record<string, unknown>;
+  const roundName =
+    typeof ids.round_name === "string" ? ids.round_name.toLowerCase() : null;
+  const round =
+    typeof ids.wikipedia_round === "number" ? ids.wikipedia_round : null;
+
+  if (round !== null) {
+    return "league";
+  }
+
+  if (!roundName) {
+    return null;
+  }
+
+  if (
+    roundName.includes("final") &&
+    !roundName.includes("semi") &&
+    !roundName.includes("quarter")
+  ) {
+    return "playoff_final";
+  }
+
+  if (roundName.includes("semi")) {
+    return "playoff_semifinal";
+  }
+
+  return "playoff_other";
 }
 
 async function loadProjectedLineup(
@@ -164,6 +198,7 @@ export async function assembleMatchContentInput(
         venue,
         home_score,
         away_score,
+        external_ids,
         competition:competitions(id, name, season, family),
         home_team:teams!matches_home_team_id_fkey(id, name, short_code, country),
         away_team:teams!matches_away_team_id_fkey(id, name, short_code, country)
@@ -323,6 +358,7 @@ export async function assembleMatchContentInput(
       home_team: match.home_team,
       away_team: match.away_team,
     },
+    match_phase: deriveMatchPhase(match.external_ids),
     recent_form: {
       home: homeRecent,
       away: awayRecent,

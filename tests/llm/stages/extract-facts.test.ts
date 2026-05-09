@@ -20,6 +20,7 @@ const assembled = {
     home_team: null,
     away_team: null,
   },
+  match_phase: null,
   recent_form: { home: [], away: [] },
   h2h_last_5: [],
   match_events: [],

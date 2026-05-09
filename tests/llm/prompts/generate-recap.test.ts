@@ -19,6 +19,7 @@ const assembled: AssembledContentInput = {
     home_team: null,
     away_team: null,
   },
+  match_phase: null,
   recent_form: { home: [], away: [] },
   h2h_last_5: [],
   match_events: [],
@@ -32,8 +33,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 1.9.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@1.9.0");
+  it("uses recap prompt version 2.0.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@2.0.0");
   });
 
   it("instructs the model to use final scores as the winner source", () => {
@@ -114,6 +115,44 @@ describe("buildGenerateRecapPrompt", () => {
 
     expect(prompt).toContain("MOM選出と根拠(300-400字)");
     expect(prompt).toContain("全体で2,000字以上を目標とすること");
+  });
+
+  it("includes playoff final context with the champion team", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        match: {
+          ...assembled.match,
+          away_score: 17,
+          away_team: {
+            country: "ENG",
+            id: "away-team",
+            name: "Sale Sharks",
+            short_code: "SAL",
+          },
+          competition: {
+            family: "premiership",
+            id: "competition-1",
+            name: "Premiership Rugby",
+            season: "2025-26",
+          },
+          home_score: 28,
+          home_team: {
+            country: "ENG",
+            id: "home-team",
+            name: "Bath",
+            short_code: "BAT",
+          },
+        },
+        match_phase: "playoff_final",
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("Premiership Rugby 2025-26の決勝戦");
+    expect(prompt).toContain("Bathが優勝チームとなりました");
+    expect(prompt).toContain("レビュー冒頭でこの事実を明記");
   });
 
   it("includes match events only when present", () => {

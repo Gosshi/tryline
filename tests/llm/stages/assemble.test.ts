@@ -116,10 +116,29 @@ describe("assembleMatchContentInput", () => {
     const result = await assembleMatchContentInput(matchId);
 
     expect(result.match.competition?.family).toMatch(/^competition-/);
+    expect(result.match_phase).toBeNull();
     expect(result.match_events).toEqual([]);
     expect(result.projected_lineups.home).toEqual([]);
     expect(result.projected_lineups.away).toEqual([]);
     expect(result.competition_standings).toEqual([]);
+  });
+
+  it("derives playoff final phase from match external ids", async () => {
+    const { matchId, service } = await insertMatchFixture();
+
+    await service
+      .from("matches")
+      .update({
+        away_score: 17,
+        external_ids: { round_name: "Final", source: "wikipedia" },
+        home_score: 28,
+        status: "finished",
+      })
+      .eq("id", matchId);
+
+    const result = await assembleMatchContentInput(matchId);
+
+    expect(result.match_phase).toBe("playoff_final");
   });
 
   it("loads match_events for finished matches only", async () => {

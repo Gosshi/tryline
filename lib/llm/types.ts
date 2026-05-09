@@ -12,6 +12,12 @@ export type TacticalPoint = {
   evidence: string[];
 };
 
+export type MatchPhase =
+  | "league"
+  | "playoff_final"
+  | "playoff_other"
+  | "playoff_semifinal";
+
 export type FactExtractionResult = {
   tactical_points: TacticalPoint[];
 };
@@ -55,6 +61,7 @@ export type AssembledContentInput = {
       country: string;
     } | null;
   };
+  match_phase: MatchPhase | null;
   recent_form: {
     home: Array<{
       match_id: string;
