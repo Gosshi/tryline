@@ -19,9 +19,9 @@ const COMPETITION_HERO_IMAGES: Record<string, string> = {
   "urc":
     "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1200&q=80",
   "top-14":
-    "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=1200&q=80",
+    "https://images.unsplash.com/photo-1529663297269-6d349ec39b57?w=1200&q=80",
   "super-rugby-pacific":
-    "https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=1200&q=80",
+    "https://images.unsplash.com/photo-1759760300494-7378d88180f9?w=1200&q=80",
   "rugby-championship":
     "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=1200&q=80",
 };
