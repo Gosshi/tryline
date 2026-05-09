@@ -8,8 +8,12 @@ import { describe, expect, it, vi } from "vitest";
 import { SiteHeader } from "@/components/site-header";
 
 vi.mock("@/lib/auth/server", () => ({
+  getUserProfile: vi.fn(() => null),
   getUser: vi.fn(() => null),
-  isPremium: vi.fn(() => false),
+}));
+
+vi.mock("@/lib/db/queries/teams", () => ({
+  listAllTeams: vi.fn(() => []),
 }));
 
 vi.mock("@/components/user-menu", () => ({
