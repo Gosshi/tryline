@@ -13,6 +13,9 @@ describe("getServerEnv", () => {
         SUPABASE_SERVICE_ROLE_KEY: "",
         OPENAI_API_KEY: "",
         SCRAPER_USER_AGENT: "",
+        VAPID_PRIVATE_KEY: "",
+        VAPID_PUBLIC_KEY: "",
+        VAPID_SUBJECT: "",
         WIKIPEDIA_SQUAD_URL: "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads",
       }),
     ).toEqual({
@@ -22,6 +25,9 @@ describe("getServerEnv", () => {
       SUPABASE_SERVICE_ROLE_KEY: "",
       OPENAI_API_KEY: "",
       SCRAPER_USER_AGENT: "",
+      VAPID_PRIVATE_KEY: "",
+      VAPID_PUBLIC_KEY: "",
+      VAPID_SUBJECT: "",
       WIKIPEDIA_SQUAD_URL: "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads",
     });
   });

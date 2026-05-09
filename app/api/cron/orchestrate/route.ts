@@ -7,6 +7,8 @@ import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
 import { generateMatchContent } from "@/lib/llm/pipeline";
 
+import type { PushMatchInfo } from "@/lib/cron/orchestrate";
+
 export const maxDuration = 300;
 
 async function ingestLineups(matchId: string): Promise<"triggered" | "no_url"> {
@@ -38,6 +40,25 @@ async function ingestLineups(matchId: string): Promise<"triggered" | "no_url"> {
   throw new Error(`ingest-lineups failed with status ${response.status}`);
 }
 
+async function sendPushNotification(info: PushMatchInfo): Promise<void> {
+  const { CRON_SECRET } = getServerEnv();
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
+  const response = await fetch(`${baseUrl}/api/push/send`, {
+    body: JSON.stringify(info),
+    headers: {
+      Authorization: `Bearer ${CRON_SECRET}`,
+      "Content-Type": "application/json",
+    },
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(`push/send failed: ${response.status}`);
+  }
+}
+
 export async function POST(request: Request) {
   try {
     assertCronAuthorized(request);
@@ -46,6 +67,7 @@ export async function POST(request: Request) {
       db: getSupabaseServerClient(),
       generateContent: generateMatchContent,
       ingestLineups,
+      sendPushNotification,
     });
 
     return NextResponse.json(result);

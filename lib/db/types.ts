@@ -643,6 +643,42 @@ export type Database = {
           },
         ];
       };
+      push_subscriptions: {
+        Row: {
+          auth_key: string;
+          created_at: string;
+          endpoint: string;
+          id: string;
+          last_used_at: string | null;
+          p256dh: string;
+          spoiler_guard: boolean;
+          team_slugs: string[];
+          user_id: string | null;
+        };
+        Insert: {
+          auth_key: string;
+          created_at?: string;
+          endpoint: string;
+          id?: string;
+          last_used_at?: string | null;
+          p256dh: string;
+          spoiler_guard?: boolean;
+          team_slugs?: string[];
+          user_id?: string | null;
+        };
+        Update: {
+          auth_key?: string;
+          created_at?: string;
+          endpoint?: string;
+          id?: string;
+          last_used_at?: string | null;
+          p256dh?: string;
+          spoiler_guard?: boolean;
+          team_slugs?: string[];
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
       teams: {
         Row: {
           country: string;

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/auth/client";
 
 import { AuthModal } from "./auth-modal";
+import { NotificationSettings } from "./notification-settings";
 import { TeamPicker, type TeamOption } from "./team-picker";
 
 import type { User } from "@supabase/supabase-js";
@@ -83,6 +84,9 @@ export function UserMenu({
               initialSelected={favoriteTeamSlugs}
               teams={allTeams}
             />
+          </div>
+          <div className="border-t border-slate-100 px-4 py-2">
+            <NotificationSettings initialTeamSlugs={favoriteTeamSlugs} />
           </div>
           <button
             className="block w-full px-4 py-2.5 text-left text-xs text-slate-600 hover:bg-slate-50"
