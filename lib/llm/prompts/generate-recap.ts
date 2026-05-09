@@ -4,7 +4,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@1.9.0";
+export const PROMPT_VERSION = "recap@2.0.0";
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -47,6 +47,41 @@ export function buildGenerateRecapPrompt(
         "- 「詳細不明」「データがない」等の逃げ表現は一切禁止。手元のデータで書き切ること",
       ].join("\n")
     : "";
+  const matchPhaseBlock = (() => {
+    const phase = assembled.match_phase;
+    const homeScore = assembled.match.home_score;
+    const awayScore = assembled.match.away_score;
+    const winner =
+      homeScore !== null && awayScore !== null && homeScore !== awayScore
+        ? homeScore > awayScore
+          ? assembled.match.home_team?.name
+          : assembled.match.away_team?.name
+        : null;
+    const competitionLabel = [
+      assembled.match.competition?.name,
+      assembled.match.competition?.season,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    if (phase === "playoff_final" && winner) {
+      return `この試合は${competitionLabel}の決勝戦です。${winner}が優勝チームとなりました。レビュー冒頭でこの事実を明記し、優勝の意義・歴史的文脈にも触れること。`;
+    }
+
+    if (phase === "playoff_final") {
+      return `この試合は${competitionLabel}の決勝戦です。レビュー冒頭で決勝戦としての意義を明記すること。`;
+    }
+
+    if (phase === "playoff_semifinal") {
+      return "この試合はプレーオフ準決勝です。決勝進出の意義と敗退チームへの示唆をレビューに含めること。";
+    }
+
+    if (phase === "playoff_other") {
+      return "この試合はプレーオフ戦です。その意義と文脈をレビューに含めること。";
+    }
+
+    return "";
+  })();
   const nameStyleInstruction =
     assembled.match.competition?.family === "league-one"
       ? "選手名は日本語表記を使用すること。外国人選手はカタカナで記載すること（例: Brodie Retallick → ブロディ・レタリック）。チーム名は日本語または通称表記を使用すること。"
@@ -61,6 +96,7 @@ export function buildGenerateRecapPrompt(
   return [
     "あなたは日本語のラグビー専門編集者です。試合レビューをマークダウンで作成してください。",
     structureInstruction,
+    matchPhaseBlock,
     "各セクションが指定範囲の下限を下回った場合は書き足すこと。",
     "事実は入力データと一致させること。直接引用は15語以内。",
     "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。",
