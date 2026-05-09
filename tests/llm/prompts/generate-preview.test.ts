@@ -19,6 +19,7 @@ const assembled: AssembledContentInput = {
     home_team: null,
     away_team: null,
   },
+  match_phase: null,
   recent_form: { home: [], away: [] },
   h2h_last_5: [],
   match_events: [],
@@ -32,8 +33,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 1.8.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@1.8.0");
+  it("uses preview prompt version 1.9.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@1.9.0");
   });
 
   it("instructs the model to use final scores as the winner source", () => {
@@ -98,6 +99,30 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(withoutStandings).not.toContain("現在の大会順位表");
     expect(withStandings).toContain("現在の大会順位表");
     expect(withStandings).toContain("Grand Slam");
+  });
+
+  it("includes playoff final preview context", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        match: {
+          ...assembled.match,
+          competition: {
+            family: "premiership",
+            id: "competition-1",
+            name: "Premiership Rugby",
+            season: "2025-26",
+          },
+        },
+        match_phase: "playoff_final",
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("Premiership Rugby 2025-26の決勝戦");
+    expect(prompt).toContain("勝者がチャンピオンとなります");
+    expect(prompt).toContain("タイトル争いの文脈");
   });
 
   it("switches player-name style by competition family", () => {
