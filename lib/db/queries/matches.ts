@@ -38,6 +38,8 @@ export type UpcomingMatch = MatchListItem & {
   competition: { slug: string; name: string; season: string };
 };
 
+export type FavoriteTeamMatch = UpcomingMatch;
+
 export type TeamPageMatch = MatchListItem & {
   competition: { slug: string; name: string; season: string };
 };
@@ -339,6 +341,76 @@ export async function getUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
         competition: row.competition,
       };
     });
+}
+
+export async function getFavoriteTeamMatches(
+  teamSlugs: string[],
+  limit = 5,
+): Promise<FavoriteTeamMatch[]> {
+  if (teamSlugs.length === 0) {
+    return [];
+  }
+
+  const client = getSupabasePublicServerClient();
+  const now = new Date().toISOString();
+  const sevenDaysAgo = new Date(
+    Date.now() - 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        id,
+        kickoff_at,
+        status,
+        home_score,
+        away_score,
+        venue,
+        external_ids,
+        home_team:teams!matches_home_team_id_fkey (
+          slug,
+          name,
+          short_code
+        ),
+        away_team:teams!matches_away_team_id_fkey (
+          slug,
+          name,
+          short_code
+        ),
+        competition:competitions!matches_competition_id_fkey (
+          slug,
+          name,
+          season
+        )
+      `,
+    )
+    .or(
+      `and(status.eq.scheduled,kickoff_at.gte.${now}),and(status.eq.finished,kickoff_at.gte.${sevenDaysAgo})`,
+    )
+    .order("kickoff_at", { ascending: true })
+    .limit(50);
+
+  if (error) {
+    throw error;
+  }
+
+  const filtered = (data satisfies UpcomingMatchRow[]).filter(
+    (row) =>
+      row.competition !== null &&
+      (teamSlugs.includes(row.home_team?.slug ?? "") ||
+        teamSlugs.includes(row.away_team?.slug ?? "")),
+  );
+
+  return filtered.slice(0, limit).map((row) => {
+    if (!row.competition) {
+      throw new Error("Favorite team match is missing competition.");
+    }
+
+    return {
+      ...mapMatchRow(row),
+      competition: row.competition,
+    };
+  });
 }
 
 export async function listAllMatchIds(): Promise<string[]> {
