@@ -118,7 +118,9 @@ export function parseLeagueOneLiveHtml(
       return;
     }
 
-    const detailLink = card.find('a.btn-match-detail[href*="/en/match/"]').first();
+    const detailLink = card
+      .find('a.btn-match-detail[href*="/en/match/"]')
+      .first();
     const href = detailLink.attr("href") ?? "";
     const idMatch = href.match(/\/en\/match\/(\d+)/);
     const home = card.find(".game .home").first();
