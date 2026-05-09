@@ -112,6 +112,7 @@ function parseVeventSectionsHtml(
       lineupTableHtml: null,
       rawHtml: $.html(block),
       round: currentRound,
+      roundName: null,
       status: score.status,
       venue:
         normalizeWhitespace(block.find(".location").first().text()) || null,
