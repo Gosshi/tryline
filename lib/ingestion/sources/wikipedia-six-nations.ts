@@ -30,6 +30,7 @@ export type ParsedWikipediaMatch = {
   kickoffAt: string;
   lineupTableHtml: string | null;
   round: number | null;
+  roundName: string | null;
   status: "finished" | "scheduled";
   venue: string | null;
   rawHtml: string;
@@ -229,6 +230,7 @@ export function parseWikipediaSixNationsHtml(
         lineupTableHtml: findLineupTableHtml($, block),
         rawHtml: $.html(block),
         round: currentRound,
+        roundName: null,
         status: score.status,
         venue:
           normalizeWhitespace(block.find(".location").first().text()) || null,
