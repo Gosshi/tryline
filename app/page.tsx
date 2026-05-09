@@ -1,11 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { FavoriteTeamsBanner } from "@/components/favorite-teams-banner";
+import { MatchCard } from "@/components/match-card";
+import { getUser, getUserProfile } from "@/lib/auth/server";
 import {
   getCompetitionBySlug,
   listFamilies,
 } from "@/lib/db/queries/competitions";
 import {
+  getFavoriteTeamMatches,
   getLatestCompetitionWithMatches,
   getRecentlyReviewedMatches,
   getUpcomingMatches,
@@ -37,12 +41,17 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [families, latest, recentReviews, upcomingMatches] = await Promise.all([
-    listFamilies(),
-    getLatestCompetitionWithMatches(),
-    getRecentlyReviewedMatches(3),
-    getUpcomingMatches(5),
-  ]);
+  const user = await getUser();
+  const profile = user ? await getUserProfile(user.id) : null;
+  const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
+  const [families, latest, recentReviews, upcomingMatches, favoriteMatches] =
+    await Promise.all([
+      listFamilies(),
+      getLatestCompetitionWithMatches(),
+      getRecentlyReviewedMatches(3),
+      getUpcomingMatches(5),
+      getFavoriteTeamMatches(favoriteTeamSlugs),
+    ]);
   const latestCompetition = latest
     ? await getCompetitionBySlug(latest.slug)
     : null;
@@ -113,6 +122,29 @@ export default async function HomePage() {
           </p>
         </div>
       </section>
+
+      {user && favoriteTeamSlugs.length === 0 && <FavoriteTeamsBanner />}
+
+      {favoriteMatches.length > 0 && (
+        <section
+          aria-labelledby="favorite-heading"
+          className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-8"
+        >
+          <h2
+            className="mb-4 text-sm font-semibold uppercase tracking-widest text-[var(--color-accent)]"
+            id="favorite-heading"
+          >
+            応援チームの試合
+          </h2>
+          <ul className="space-y-3">
+            {favoriteMatches.map((match) => (
+              <li key={match.id}>
+                <MatchCard match={match} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         {latestCompetition && (
