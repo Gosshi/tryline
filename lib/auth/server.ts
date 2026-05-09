@@ -51,7 +51,7 @@ export async function getUserProfile(userId: string) {
   const { data } = await supabase
     .from("user_profiles")
     .select(
-      "subscription_status, stripe_customer_id, chat_daily_count, chat_daily_reset_date",
+      "subscription_status, stripe_customer_id, chat_daily_count, chat_daily_reset_date, favorite_team_slugs",
     )
     .eq("id", userId)
     .maybeSingle();
