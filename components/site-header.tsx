@@ -1,12 +1,14 @@
 import Link from "next/link";
 
-import { getUser, isPremium } from "@/lib/auth/server";
+import { getUser, getUserProfile } from "@/lib/auth/server";
+import { listAllTeams } from "@/lib/db/queries/teams";
 
 import { UserMenu } from "./user-menu";
 
 export async function SiteHeader() {
-  const user = await getUser();
-  const premium = user ? await isPremium(user.id) : false;
+  const [user, allTeams] = await Promise.all([getUser(), listAllTeams()]);
+  const profile = user ? await getUserProfile(user.id) : null;
+  const premium = profile?.subscription_status === "premium";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur-sm">
@@ -35,7 +37,12 @@ export async function SiteHeader() {
               </Link>
             </li>
           </ul>
-          <UserMenu isPremium={premium} user={user} />
+          <UserMenu
+            allTeams={allTeams}
+            favoriteTeamSlugs={profile?.favorite_team_slugs ?? []}
+            isPremium={premium}
+            user={user}
+          />
         </nav>
       </div>
     </header>
