@@ -32,8 +32,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 1.7.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@1.7.0");
+  it("uses preview prompt version 1.8.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@1.8.0");
   });
 
   it("instructs the model to use final scores as the winner source", () => {
@@ -52,6 +52,21 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain(
       "各セクションが指定範囲の下限を下回った場合は書き足すこと",
     );
+  });
+
+  it("uses data-sparse structure when lineup and event data are unavailable", () => {
+    const prompt = buildGeneratePreviewPrompt(assembled, [], []);
+
+    expect(prompt).toContain("両チーム現状と近況(500-600字)");
+    expect(prompt).toContain("大会文脈・この試合の意味(400-500字)");
+    expect(prompt).toContain("戦術傾向と注目ポイント(400-500字)");
+    expect(prompt).toContain("キープレイヤーセクションは省略すること");
+    expect(prompt).toContain("【データスパースモード】");
+    expect(prompt).toContain("recent_form の直近5試合スコア");
+    expect(prompt).toContain("competition_standings の現在順位・勝ち点差");
+    expect(prompt).toContain("h2h_last_5 の直近対戦傾向");
+    expect(prompt).toContain("key_stats の直近平均得点・失点");
+    expect(prompt).toContain("逃げ表現は一切禁止");
   });
 
   it("includes competition standings only when present", () => {
