@@ -86,10 +86,10 @@ function parseKickoffAt(value: string) {
   });
 }
 
-function parseRoundFromHeading(
+function getHeadingInfo(
   $: ReturnType<typeof load>,
   block: ReturnType<ReturnType<typeof load>>,
-) {
+): { round: number | null; roundName: string | null } {
   let cursor = block.prev();
 
   while (cursor.length > 0) {
@@ -99,35 +99,20 @@ function parseRoundFromHeading(
       const matched = h3.attr("id")?.match(ROUND_ID_PATTERN);
 
       if (matched) {
-        return Number(matched[1]);
+        return { round: Number(matched[1]), roundName: null };
       }
 
-      if (h2.length > 0) {
-        return null;
+      const headingText = normalizeWhitespace(h3.text() || h2.text());
+
+      if (headingText) {
+        return { round: null, roundName: headingText };
       }
     }
 
     cursor = cursor.prev();
   }
 
-  return null;
-}
-
-function isWithinRegularSeason(
-  $: ReturnType<typeof load>,
-  block: ReturnType<ReturnType<typeof load>>,
-) {
-  let cursor = block.prev();
-
-  while (cursor.length > 0) {
-    if (cursor.is("div.mw-heading") && cursor.find("h2").length > 0) {
-      return cursor.find("h2").attr("id") === "Regular_season";
-    }
-
-    cursor = cursor.prev();
-  }
-
-  return false;
+  return { round: null, roundName: null };
 }
 
 export function parsePremiershipLiveHtml(html: string): ParsedLiveMatch[] {
@@ -136,10 +121,7 @@ export function parsePremiershipLiveHtml(html: string): ParsedLiveMatch[] {
 
   for (const element of $("div.vevent.summary").toArray()) {
     const block = $(element);
-
-    if (!isWithinRegularSeason($, block)) {
-      continue;
-    }
+    const { round, roundName } = getHeadingInfo($, block);
 
     const tables = block.find("table");
     const dateTable = tables.eq(0);
@@ -171,7 +153,8 @@ export function parsePremiershipLiveHtml(html: string): ParsedLiveMatch[] {
       kickoffAt: parseKickoffAt(dateTable.text()),
       lineupTableHtml: null,
       rawHtml: $.html(block),
-      round: parseRoundFromHeading($, block),
+      round,
+      roundName,
       status: score.status,
       venue:
         normalizeWhitespace(venueTable.find(".location").first().text()) ||
@@ -179,7 +162,7 @@ export function parsePremiershipLiveHtml(html: string): ParsedLiveMatch[] {
     });
   }
 
-  return results;
+  return results.sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
 }
 
 export async function fetchPremiership202526(): Promise<ParsedLiveMatch[]> {
