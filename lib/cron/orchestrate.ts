@@ -24,6 +24,16 @@ export type OrchestrateResult = {
   };
 };
 
+export type PushMatchInfo = {
+  awayScore: number;
+  awayTeamName: string;
+  awayTeamSlug: string;
+  homeScore: number;
+  homeTeamName: string;
+  homeTeamSlug: string;
+  matchId: string;
+};
+
 export type RunOrchestrateDeps = {
   db: SupabaseClient<Database>;
   generateContent: (
@@ -32,6 +42,7 @@ export type RunOrchestrateDeps = {
   ) => Promise<unknown>;
   ingestLineups: (matchId: string) => Promise<LineupIngestOutcome>;
   now?: Date;
+  sendPushNotification?: (info: PushMatchInfo) => Promise<void>;
 };
 
 function toIsoDate(base: Date, addHours: number) {
@@ -92,6 +103,53 @@ async function getMatchIdsMissingContent(params: {
     eligibleIds,
     skippedCount: allMatchIds.length - eligibleIds.length,
   };
+}
+
+async function notifyRecapReady(
+  deps: RunOrchestrateDeps,
+  matchId: string,
+): Promise<void> {
+  if (!deps.sendPushNotification) {
+    return;
+  }
+
+  try {
+    const { data: match } = await deps.db
+      .from("matches")
+      .select(
+        `
+          id,
+          home_score,
+          away_score,
+          home_team:teams!matches_home_team_id_fkey (slug, name),
+          away_team:teams!matches_away_team_id_fkey (slug, name)
+        `,
+      )
+      .eq("id", matchId)
+      .single();
+
+    if (
+      match?.home_score !== null &&
+      match?.away_score !== null &&
+      match?.home_team &&
+      match?.away_team
+    ) {
+      await deps.sendPushNotification({
+        awayScore: match.away_score,
+        awayTeamName: match.away_team.name,
+        awayTeamSlug: match.away_team.slug,
+        homeScore: match.home_score,
+        homeTeamName: match.home_team.name,
+        homeTeamSlug: match.home_team.slug,
+        matchId,
+      });
+    }
+  } catch (pushError) {
+    console.warn("[orchestrate] push notification failed", {
+      matchId,
+      pushError,
+    });
+  }
 }
 
 export async function runOrchestrate(
@@ -162,6 +220,7 @@ export async function runOrchestrate(
   )) {
     try {
       await deps.generateContent(matchId, "recap");
+      await notifyRecapReady(deps, matchId);
       result.recaps.triggered += 1;
     } catch (error) {
       console.error("[orchestrate] recap generation failed", {
