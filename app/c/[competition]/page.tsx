@@ -30,6 +30,7 @@ const COMPETITION_HERO_IMAGES: Record<string, string> = {
     "https://images.unsplash.com/photo-1595432973730-d07ba6b406c2?w=1200&q=80",
   "rugby-championship":
     "https://images.unsplash.com/photo-1570878786170-0723365bdf35?w=1200&q=80",
+  rwc: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80",
 };
 
 const DEFAULT_COMPETITION_HERO =
