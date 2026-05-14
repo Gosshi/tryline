@@ -2,10 +2,16 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import PricingPage from "@/app/pricing/page";
+import { PricingForm } from "@/app/pricing/pricing-form";
 
 const authMocks = vi.hoisted(() => ({
   getUser: vi.fn(),
@@ -21,7 +27,7 @@ vi.mock("@/lib/auth/client", () => ({
   }),
 }));
 
-describe("PricingPage", () => {
+describe("PricingForm", () => {
   beforeEach(() => {
     authMocks.getUser.mockReset();
     authMocks.signInWithOtp.mockReset();
@@ -35,11 +41,15 @@ describe("PricingPage", () => {
   it("shows the auth modal instead of posting checkout when user is not signed in", async () => {
     authMocks.getUser.mockResolvedValue({ data: { user: null } });
 
-    render(<PricingPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Premium を始める" }));
+    render(<PricingForm buttonLabel="Premium を始める — ¥980/月" />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Premium を始める — ¥980/月" }),
+    );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "ログイン" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "ログイン" }),
+      ).toBeInTheDocument();
     });
     expect(screen.getByPlaceholderText("メールアドレス")).toBeInTheDocument();
 
@@ -63,12 +73,16 @@ describe("PricingPage", () => {
       data: { user: { id: "user-1", email: "fan@example.com" } },
     });
 
-    render(<PricingPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Premium を始める" }));
+    render(<PricingForm buttonLabel="Premium を始める — ¥980/月" />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Premium を始める — ¥980/月" }),
+    );
 
     await waitFor(() => {
       expect(submit).toHaveBeenCalledTimes(1);
     });
-    expect(screen.queryByRole("heading", { name: "ログイン" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "ログイン" }),
+    ).not.toBeInTheDocument();
   });
 });
