@@ -2,6 +2,18 @@ export function formatCompetitionTitle(name: string, season: string): string {
   return name.includes(season) ? name : `${name} ${season}`;
 }
 
+export const COMPETITION_FAMILY_COLORS: Record<string, string> = {
+  "autumn-nations": "#2D2D2D",
+  "league-one": "#FF6B00",
+  pnc: "#00539B",
+  premiership: "#1C2C6B",
+  "rugby-championship": "#C8102E",
+  "six-nations": "#001489",
+  "super-rugby-pacific": "#0057B8",
+  "top-14": "#D62B31",
+  urc: "#00823E",
+};
+
 const FAMILY_DISPLAY_NAMES: Record<string, string> = {
   "autumn-nations": "Autumn Nations",
   "league-one": "League One",
@@ -21,4 +33,8 @@ export function formatFamilyName(family: string): string {
     FAMILY_DISPLAY_NAMES[family] ??
     family.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
   );
+}
+
+export function getCompetitionFamilyColor(family: string): string {
+  return COMPETITION_FAMILY_COLORS[family] ?? "#1e293b";
 }

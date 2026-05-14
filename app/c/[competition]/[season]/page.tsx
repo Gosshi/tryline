@@ -15,6 +15,7 @@ import { getStandingsForCompetition } from "@/lib/db/queries/standings";
 import {
   formatCompetitionTitle,
   formatFamilyName,
+  getCompetitionFamilyColor,
 } from "@/lib/format/competition";
 import { createOgImage } from "@/lib/seo/og-image";
 
@@ -121,19 +122,27 @@ export default async function SeasonPage({ params }: Props) {
   );
   const groupedMatches = groupMatchesByRound(matches);
   const dateRange = formatDateRange(comp.startDate, comp.endDate);
+  const family = comp.slug.replace(/-\d{4}(-\d{2})?$/, "");
+  const accentColor = getCompetitionFamilyColor(family);
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <header className="space-y-3 border-b border-[var(--color-rule)] pb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-            {formatFamilyName(comp.family)}
+        <header
+          className="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-slate-200"
+          style={{ borderLeft: `4px solid ${accentColor}` }}
+        >
+          <p
+            className="text-xs font-semibold uppercase tracking-[0.18em]"
+            style={{ color: accentColor }}
+          >
+            {formatFamilyName(family)}
           </p>
-          <h1 className="font-heading text-4xl font-bold tracking-tight text-[var(--color-ink)] sm:text-5xl">
+          <h1 className="mt-1 font-heading text-4xl font-bold tracking-tight text-[var(--color-ink)] sm:text-5xl">
             {formatCompetitionTitle(comp.name, comp.season)}
           </h1>
           {dateRange && (
-            <p className="text-sm text-[var(--color-ink-muted)]">
+            <p className="mt-3 text-sm text-[var(--color-ink-muted)]">
               {dateRange}
             </p>
           )}
