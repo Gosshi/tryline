@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PricingForm } from "@/app/pricing/pricing-form";
 import { getRecentlyReviewedMatches } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
+import { createOgImage } from "@/lib/seo/og-image";
 
 import type { Metadata } from "next";
 
@@ -10,6 +11,19 @@ export const metadata: Metadata = {
   title: "プランを選ぶ",
   description:
     "¥980/月で海外ラグビーの AI 日本語レビュー全文・AI チャットが読み放題。",
+  openGraph: {
+    description:
+      "¥980/月で海外ラグビーの AI 日本語レビュー全文・AI チャットが読み放題。",
+    images: [
+      createOgImage({
+        competition: "Tryline Premium",
+        home: "プランを選ぶ",
+      }),
+    ],
+    title: "プランを選ぶ | Tryline",
+    type: "website",
+    url: "https://tryline-six.vercel.app/pricing",
+  },
 };
 
 const features = [
