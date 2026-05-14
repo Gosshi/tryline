@@ -120,6 +120,20 @@ export default async function HomePage() {
             Six Nations をはじめとする世界のラグビーリーグを、AI
             が生成した日本語プレビュー・レビューと試合チャットで楽しめます。
           </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              href="/pricing"
+            >
+              Premium を始める — ¥980/月
+            </Link>
+            <Link
+              className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              href="/c/six-nations/2025"
+            >
+              試合を見る
+            </Link>
+          </div>
         </div>
       </section>
 
