@@ -16,6 +16,7 @@ import {
   formatCompetitionTitle,
   formatFamilyName,
 } from "@/lib/format/competition";
+import { createOgImage } from "@/lib/seo/og-image";
 
 import type { Metadata } from "next";
 
@@ -88,6 +89,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     openGraph: {
       description,
+      images: [
+        createOgImage({
+          competition: formatFamilyName(comp.family),
+          home: title,
+        }),
+      ],
       title: `${title} | Tryline`,
       type: "website",
       url: `https://tryline-six.vercel.app/c/${competition}/${season}`,
