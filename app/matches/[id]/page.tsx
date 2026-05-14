@@ -13,6 +13,7 @@ import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
 import { getMatchById } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { extractDescription } from "@/lib/match-content/description";
+import { createOgImage } from "@/lib/seo/og-image";
 
 import type { Metadata } from "next";
 
@@ -47,11 +48,27 @@ export async function generateMetadata({
   const description = content.preview
     ? extractDescription(content.preview.contentMdJa)
     : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・AI日本語レビュー。`;
+  const score =
+    match.homeScore !== null && match.awayScore !== null
+      ? `${match.homeScore}–${match.awayScore}`
+      : undefined;
 
   return {
     description,
     openGraph: {
       description,
+      images: [
+        createOgImage({
+          away: match.awayTeam.name,
+          competition: formatCompetitionTitle(
+            match.competition.name,
+            match.competition.season,
+          ),
+          home: match.homeTeam.name,
+          score,
+          status: match.status === "in_progress" ? "live" : match.status,
+        }),
+      ],
       title: `${title} | Tryline`,
       type: "article",
       url: `https://tryline-six.vercel.app/matches/${id}`,
