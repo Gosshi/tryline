@@ -62,6 +62,8 @@ export default async function HomePage() {
   const latestCompetition = latest
     ? await getCompetitionBySlug(latest.slug)
     : null;
+  const favoriteTeamPageSlug =
+    favoriteTeamSlugs.length === 1 ? (favoriteTeamSlugs[0] ?? null) : null;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -137,12 +139,22 @@ export default async function HomePage() {
           aria-labelledby="favorite-heading"
           className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-8"
         >
-          <h2
-            className="mb-4 text-sm font-semibold uppercase tracking-widest text-[var(--color-accent)]"
+          <div
+            className="mb-4 flex items-center justify-between gap-4"
             id="favorite-heading"
           >
-            応援チームの試合
-          </h2>
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-[var(--color-accent)]">
+              応援チームの試合
+            </h2>
+            {favoriteTeamPageSlug && (
+              <Link
+                className="text-xs text-[var(--color-ink-muted)] transition-colors hover:text-[var(--color-ink)]"
+                href={`/t/${favoriteTeamPageSlug}`}
+              >
+                チームページ →
+              </Link>
+            )}
+          </div>
           <ul className="space-y-3">
             {favoriteMatches.map((match) => (
               <li key={match.id}>
