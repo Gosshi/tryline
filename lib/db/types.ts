@@ -200,6 +200,45 @@ export type Database = {
           },
         ];
       };
+      competition_pools: {
+        Row: {
+          competition_id: string;
+          created_at: string;
+          id: string;
+          pool_name: string;
+          team_id: string;
+        };
+        Insert: {
+          competition_id: string;
+          created_at?: string;
+          id?: string;
+          pool_name: string;
+          team_id: string;
+        };
+        Update: {
+          competition_id?: string;
+          created_at?: string;
+          id?: string;
+          pool_name?: string;
+          team_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "competition_pools_competition_id_fkey";
+            columns: ["competition_id"];
+            isOneToOne: false;
+            referencedRelation: "competitions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "competition_pools_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       competitions: {
         Row: {
           country: string | null;
