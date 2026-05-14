@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { getSupabaseBrowserClient } from "@/lib/auth/client";
 
@@ -11,6 +12,12 @@ type AuthModalProps = {
 export function AuthModal({ onClose }: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sent" | "error">("idle");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   async function submit() {
     const supabase = getSupabaseBrowserClient();
@@ -22,7 +29,9 @@ export function AuthModal({ onClose }: AuthModalProps) {
     setState(error ? "error" : "sent");
   }
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50">
       <div className="flex min-h-[100dvh] items-end justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:min-h-full sm:items-center sm:p-0">
         <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
@@ -63,6 +72,7 @@ export function AuthModal({ onClose }: AuthModalProps) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
