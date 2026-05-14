@@ -36,6 +36,16 @@ export async function SiteHeader() {
                 試合
               </Link>
             </li>
+            {!user && (
+              <li>
+                <Link
+                  className="rounded px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                  href="/pricing"
+                >
+                  料金
+                </Link>
+              </li>
+            )}
           </ul>
           <UserMenu
             allTeams={allTeams}
