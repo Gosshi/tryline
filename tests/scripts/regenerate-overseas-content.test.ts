@@ -24,15 +24,18 @@ function pipelineResult(
   return {
     contentType,
     matchId,
-    qa: {
-      issues: [],
-      scores: {
-        factual_grounding: 5,
-        information_density: 5,
-        japanese_quality: 5,
-      },
-      verdict: status === "published" ? "publish" : "retry",
-    },
+    qa:
+      status === "skipped"
+        ? null
+        : {
+            issues: [],
+            scores: {
+              factual_grounding: 5,
+              information_density: 5,
+              japanese_quality: 5,
+            },
+            verdict: status === "published" ? "publish" : "retry",
+          },
     status,
   };
 }

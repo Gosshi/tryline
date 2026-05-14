@@ -38,6 +38,7 @@ export type RegenerateOverseasContentResult = {
   failed: number;
   published: number;
   regenerated: number;
+  skipped: number;
   skippedCurrentVersion: number;
   skippedFamily: number;
   skippedFromVersion: number;
@@ -257,6 +258,7 @@ export async function runRegenerateOverseasContent({
     failed: 0,
     published: 0,
     regenerated: 0,
+    skipped: 0,
     skippedCurrentVersion,
     skippedFamily,
     skippedFromVersion,
@@ -289,7 +291,7 @@ export async function runRegenerateOverseasContent({
   }
 
   logger.log(
-    `Overseas ${contentType} regeneration complete: regenerated=${result.regenerated} published=${result.published} draft=${result.draft} failed=${result.failed}`,
+    `Overseas ${contentType} regeneration complete: regenerated=${result.regenerated} published=${result.published} draft=${result.draft} skipped=${result.skipped} failed=${result.failed}`,
   );
 
   return result;

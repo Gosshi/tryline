@@ -16,8 +16,8 @@ const COST_ALERT_THRESHOLD_USD = 0.20;
 export type PipelineResult = {
   matchId: string;
   contentType: ContentType;
-  status: "published" | "draft";
-  qa: QaResult;
+  status: "published" | "draft" | "skipped";
+  qa: QaResult | null;
 };
 
 function hashInput(input: unknown) {
@@ -69,6 +69,15 @@ export async function generateMatchContent(matchId: string, contentType: Content
     durationMs: Date.now() - stage1StartedAt,
     status: "success",
   });
+
+  if (contentType === "recap" && assembled.match_events.length === 0) {
+    return {
+      matchId,
+      contentType,
+      status: "skipped",
+      qa: null,
+    };
+  }
 
   let totalCostUsd = 0;
 

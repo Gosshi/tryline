@@ -61,7 +61,12 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("competition_standings の順位変動");
     expect(prompt).toContain("h2h_last_5 の直近対戦スコア");
     expect(prompt).toContain("key_stats の直近平均得点・失点");
-    expect(prompt).toContain("逃げ表現は一切禁止");
+    expect(prompt).toContain(
+      "スコアと順位変動のみを記述し、試合展開の描写は行わないこと",
+    );
+    expect(prompt).not.toContain("ペナルティ累積");
+    expect(prompt).not.toContain("接戦の終盤");
+    expect(prompt).not.toContain("逃げ表現");
     expect(prompt).toContain(
       "各セクションが指定範囲の下限を下回った場合は書き足すこと",
     );

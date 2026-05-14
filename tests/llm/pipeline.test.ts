@@ -194,4 +194,39 @@ describe("generateMatchContent", () => {
     expect(notifyMock.notifyCostAlert).toHaveBeenCalledWith(matchId, "preview", expect.any(Number), 0.2);
     expect((notifyMock.notifyCostAlert.mock.calls[0] ?? [])[2]).toBeGreaterThan(0.2);
   });
+
+  it("skips recap generation without calling LLMs when match events are unavailable", async () => {
+    const { matchId, service } = await insertMatchFixture();
+
+    const update = await service
+      .from("matches")
+      .update({
+        away_score: 17,
+        home_score: 24,
+        status: "finished",
+      })
+      .eq("id", matchId);
+
+    expect(update.error).toBeNull();
+
+    const result = await generateMatchContent(matchId, "recap");
+
+    expect(result).toEqual({
+      matchId,
+      contentType: "recap",
+      status: "skipped",
+      qa: null,
+    });
+    expect(openAIMock.createTextResponse).not.toHaveBeenCalled();
+
+    const row = await service
+      .from("match_content")
+      .select("status")
+      .eq("match_id", matchId)
+      .eq("content_type", "recap")
+      .maybeSingle();
+
+    expect(row.error).toBeNull();
+    expect(row.data).toBeNull();
+  });
 });

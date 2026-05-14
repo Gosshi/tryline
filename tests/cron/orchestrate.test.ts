@@ -191,6 +191,37 @@ describe("runOrchestrate", () => {
     expect(result.recaps).toEqual({ triggered: 1, skipped: 0 });
   });
 
+  it("counts skipped recap generation results without triggering push notifications", async () => {
+    const db = createMockDb({
+      scheduledIds: [],
+      finishedIds: ["finished-1"],
+    });
+    const generateContent = vi.fn().mockResolvedValue({ status: "skipped" });
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+    const sendPushNotification = vi.fn().mockResolvedValue(undefined);
+    const consoleInfoSpy = vi
+      .spyOn(console, "info")
+      .mockImplementation(() => {});
+
+    const result = await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now,
+      sendPushNotification,
+    });
+
+    expect(generateContent).toHaveBeenCalledWith("finished-1", "recap");
+    expect(sendPushNotification).not.toHaveBeenCalled();
+    expect(result.recaps).toEqual({ triggered: 0, skipped: 1 });
+    expect(consoleInfoSpy).toHaveBeenCalledWith(
+      "[orchestrate] recap generation skipped",
+      { matchId: "finished-1" },
+    );
+
+    consoleInfoSpy.mockRestore();
+  });
+
   it("sends a push notification after successful recap generation", async () => {
     const db = createMockDb({
       scheduledIds: [],

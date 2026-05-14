@@ -59,8 +59,9 @@ describe("PricingForm", () => {
 
     expect(overlay).toHaveClass("fixed", "inset-0", "overflow-y-auto");
     expect(wrapper).toHaveClass(
-      "min-h-full",
+      "min-h-[100dvh]",
       "items-end",
+      "sm:min-h-full",
       "sm:items-center",
     );
   });
