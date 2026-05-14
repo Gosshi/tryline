@@ -59,18 +59,16 @@ export async function POST(request: Request) {
       current_period_end?: number;
     }).current_period_end;
 
-    await supabase
-      .from("user_profiles")
-      .update({
-        current_period_end: periodEnd
-          ? new Date(periodEnd * 1_000).toISOString()
-          : null,
-        stripe_customer_id: subscription.customer as string,
-        stripe_subscription_id: subscription.id,
-        subscription_status: getSubscriptionStatus(subscription.status),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", userId);
+    await supabase.from("user_profiles").upsert({
+      id: userId,
+      current_period_end: periodEnd
+        ? new Date(periodEnd * 1_000).toISOString()
+        : null,
+      stripe_customer_id: subscription.customer as string,
+      stripe_subscription_id: subscription.id,
+      subscription_status: getSubscriptionStatus(subscription.status),
+      updated_at: new Date().toISOString(),
+    });
   }
 
   if (event.type === "customer.subscription.deleted") {
