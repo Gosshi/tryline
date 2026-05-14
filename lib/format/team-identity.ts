@@ -43,8 +43,8 @@ function getSubdivisionFlag(tag: string): string {
 }
 
 const TEAM_IDENTITY: Record<string, TeamIdentity> = {
-  argentina: { color: "#75AADB", flag: "🇦🇷" },
-  australia: { color: "#FFCD00", flag: "🇦🇺" },
+  argentina: { color: "#74ACDF", flag: "🇦🇷" },
+  australia: { color: "#FFD700", flag: "🇦🇺" },
   bath: { color: "#002F6C", flag: "🏉" },
   bayonne: { color: "#5BA7D1", flag: "🏉" },
   "bordeaux-begles": { color: "#5B1A7A", flag: "🏉" },
@@ -92,7 +92,7 @@ const TEAM_IDENTITY: Record<string, TeamIdentity> = {
   "moana-pasifika": { color: "#2E1A47", flag: "🏉" },
   namibia: { color: "#003580", flag: "🇳🇦" },
   "newcastle-falcons": { color: "#111111", flag: "🏉" },
-  "new-zealand": { color: "#111111", flag: "🇳🇿" },
+  "new-zealand": { color: "#000000", flag: "🇳🇿" },
   "northampton-saints": { color: "#006747", flag: "🏉" },
   "urayasu-d-rocks": { color: "#003087", flag: "🏉" },
   ospreys: { color: "#111111", flag: "🏉" },
@@ -122,7 +122,7 @@ const TEAM_IDENTITY: Record<string, TeamIdentity> = {
   "tokyo-suntory-sungoliath": { color: "#FDB913", flag: "🏉" },
   "toshiba-brave-lupus": { color: "#D71920", flag: "🏉" },
   "toyota-verblitz": { color: "#00843D", flag: "🏉" },
-  uruguay: { color: "#0038A8", flag: "🇺🇾" },
+  uruguay: { color: "#75AADB", flag: "🇺🇾" },
   usa: { color: "#3C3B6E", flag: "🇺🇸" },
   ulster: { color: "#D71920", flag: "🏉" },
   vannes: { color: "#003A70", flag: "🏉" },
@@ -132,8 +132,8 @@ const TEAM_IDENTITY: Record<string, TeamIdentity> = {
 };
 
 const TEAM_STRIPES: Record<string, string[]> = {
-  argentina: ["#75AADB", "#FFFFFF", "#FCBF49"],
-  australia: ["#FFCD00", "#00843D"],
+  argentina: ["#74ACDF", "#FFFFFF", "#FCBF49"],
+  australia: ["#FFD700", "#00843D"],
   bath: ["#002F6C"],
   bayonne: ["#5BA7D1"],
   benetton: ["#00843D"],
@@ -181,7 +181,7 @@ const TEAM_STRIPES: Record<string, string[]> = {
   munster: ["#C8102E"],
   namibia: ["#003580", "#C8102E", "#009A44"],
   "newcastle-falcons": ["#111111"],
-  "new-zealand": ["#111111", "#FFFFFF"],
+  "new-zealand": ["#000000", "#FFFFFF"],
   "northampton-saints": ["#006747"],
   "urayasu-d-rocks": ["#003087", "#FFFFFF"],
   ospreys: ["#111111"],
@@ -211,7 +211,7 @@ const TEAM_STRIPES: Record<string, string[]> = {
   "tokyo-suntory-sungoliath": ["#FDB913"],
   "toshiba-brave-lupus": ["#D71920"],
   "toyota-verblitz": ["#00843D"],
-  uruguay: ["#0038A8", "#FFFFFF", "#FCD116"],
+  uruguay: ["#75AADB", "#FFFFFF", "#FCD116"],
   usa: ["#3C3B6E", "#FFFFFF", "#B22234"],
   ulster: ["#D71920"],
   vannes: ["#003A70"],
