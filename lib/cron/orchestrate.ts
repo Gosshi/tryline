@@ -39,7 +39,7 @@ export type RunOrchestrateDeps = {
   generateContent: (
     matchId: string,
     contentType: ContentType,
-  ) => Promise<unknown>;
+  ) => Promise<{ status?: string } | void>;
   ingestLineups: (matchId: string) => Promise<LineupIngestOutcome>;
   now?: Date;
   sendPushNotification?: (info: PushMatchInfo) => Promise<void>;
@@ -219,7 +219,15 @@ export async function runOrchestrate(
     RECAP_BATCH_SIZE,
   )) {
     try {
-      await deps.generateContent(matchId, "recap");
+      const generated = await deps.generateContent(matchId, "recap");
+      if (generated?.status === "skipped") {
+        result.recaps.skipped += 1;
+        console.info("[orchestrate] recap generation skipped", {
+          matchId,
+        });
+        continue;
+      }
+
       await notifyRecapReady(deps, matchId);
       result.recaps.triggered += 1;
     } catch (error) {
