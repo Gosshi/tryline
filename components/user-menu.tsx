@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { getSupabaseBrowserClient } from "@/lib/auth/client";
@@ -25,6 +26,9 @@ export function UserMenu({
 }: UserMenuProps) {
   const [showModal, setShowModal] = useState(false);
   const [open, setOpen] = useState(false);
+  const favoriteTeams = favoriteTeamSlugs
+    .map((slug) => allTeams.find((team) => team.slug === slug))
+    .filter((team): team is TeamOption => team !== undefined);
 
   async function signOut() {
     const supabase = getSupabaseBrowserClient();
@@ -78,6 +82,20 @@ export function UserMenu({
             >
               プランを管理する
             </a>
+          )}
+          {favoriteTeams.length > 0 && (
+            <div className="space-y-0.5 border-t border-slate-100 px-4 py-2">
+              {favoriteTeams.map((team) => (
+                <Link
+                  className="block py-1 text-xs font-medium text-[var(--color-accent)] hover:underline"
+                  href={`/t/${team.slug}`}
+                  key={team.slug}
+                  onClick={() => setOpen(false)}
+                >
+                  {team.name} のページ →
+                </Link>
+              ))}
+            </div>
           )}
           <div className="border-t border-slate-100 px-4 py-3">
             <TeamPicker
