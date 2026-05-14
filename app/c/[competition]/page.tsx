@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { listSeasonsByFamily } from "@/lib/db/queries/competitions";
 import { formatFamilyName } from "@/lib/format/competition";
+import { createOgImage } from "@/lib/seo/og-image";
 
 import type { Metadata } from "next";
 
@@ -38,6 +39,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     openGraph: {
       description,
+      images: [
+        createOgImage({
+          competition: "Tryline",
+          home: name,
+        }),
+      ],
       title: `${name} — 全シーズン一覧 | Tryline`,
       type: "website",
       url: `https://tryline-six.vercel.app/c/${competition}`,
