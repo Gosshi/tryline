@@ -259,6 +259,14 @@ export function MatchContent({ content, isPremium }: MatchContentProps) {
     ? content.contentMdJa.slice(0, FREE_CONTENT_LIMIT)
     : content.contentMdJa;
   const blocks = parseMarkdown(contentMdJa);
+  const nextHeading = isLocked
+    ? parseMarkdown(content.contentMdJa.slice(FREE_CONTENT_LIMIT)).find(
+        (
+          block,
+        ): block is Extract<MarkdownBlock, { type: "heading" }> =>
+          block.type === "heading",
+      )
+    : undefined;
   const headings = blocks.filter(
     (block): block is Extract<MarkdownBlock, { type: "heading" }> =>
       block.type === "heading" && block.level <= 1,
@@ -290,8 +298,16 @@ export function MatchContent({ content, isPremium }: MatchContentProps) {
       )}
       <div className="relative space-y-5 text-[var(--color-ink)]">
         {blocks.map(renderBlock)}
+        {nextHeading && (
+          <p className="relative z-10 text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+            次のセクション
+            <span className="ml-2 normal-case text-[var(--color-ink-muted)]">
+              {nextHeading.text} →
+            </span>
+          </p>
+        )}
         {isLocked && (
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
         )}
       </div>
       {isLocked && (
