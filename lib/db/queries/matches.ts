@@ -32,6 +32,7 @@ export type CompetitionSummary = {
 export type RecentlyReviewedMatch = MatchListItem & {
   competition: { slug: string; name: string; season: string };
   recapGeneratedAt: string;
+  recapExcerpt: string;
 };
 
 export type UpcomingMatch = MatchListItem & {
@@ -93,6 +94,7 @@ type RecentlyReviewedMatchRow = BaseMatchRow & {
 };
 
 type RecentlyReviewedContentRow = {
+  content_md_ja: string;
   generated_at: string;
   match: RecentlyReviewedMatchRow | null;
 };
@@ -239,6 +241,7 @@ export async function getRecentlyReviewedMatches(
     .select(
       `
         generated_at,
+        content_md_ja,
         match:matches!match_content_match_id_fkey (
           id,
           kickoff_at,
@@ -285,6 +288,7 @@ export async function getRecentlyReviewedMatches(
         ...mapMatchRow(row.match),
         competition: row.match.competition,
         recapGeneratedAt: row.generated_at,
+        recapExcerpt: row.content_md_ja.slice(0, 220),
       };
     });
 }
