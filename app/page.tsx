@@ -51,17 +51,25 @@ export default async function HomePage() {
   const user = await getUser();
   const profile = user ? await getUserProfile(user.id) : null;
   const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
-  const [families, latest, recentReviews, upcomingMatches, favoriteMatches] =
-    await Promise.all([
+  const [
+    families,
+    latest,
+    recentReviews,
+    sampleReviews,
+    upcomingMatches,
+    favoriteMatches,
+  ] = await Promise.all([
       listFamilies(),
       getLatestCompetitionWithMatches(),
       getRecentlyReviewedMatches(3),
+      getRecentlyReviewedMatches(1),
       getUpcomingMatches(5),
       getFavoriteTeamMatches(favoriteTeamSlugs),
     ]);
   const latestCompetition = latest
     ? await getCompetitionBySlug(latest.slug)
     : null;
+  const sampleMatch = sampleReviews[0] ?? null;
   const favoriteTeamPageSlug =
     favoriteTeamSlugs.length === 1 ? (favoriteTeamSlugs[0] ?? null) : null;
 
@@ -149,6 +157,48 @@ export default async function HomePage() {
       </section>
 
       {user && favoriteTeamSlugs.length === 0 && <FavoriteTeamsBanner />}
+
+      {profile?.subscription_status !== "premium" &&
+        sampleMatch?.recapExcerpt && (
+          <section
+            aria-labelledby="sample-heading"
+            className="border-b border-slate-100 bg-white px-4 py-8 sm:px-6 md:px-8"
+          >
+            <div className="mx-auto max-w-6xl">
+              <p
+                className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]"
+                id="sample-heading"
+              >
+                AI レビューのサンプル
+              </p>
+              <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+                {formatCompetitionTitle(
+                  sampleMatch.competition.name,
+                  sampleMatch.competition.season,
+                )}
+                {" / "}
+                {sampleMatch.homeTeam.name} vs {sampleMatch.awayTeam.name}
+              </p>
+              <p className="mt-3 line-clamp-3 text-base leading-relaxed text-[var(--color-ink)]">
+                {sampleMatch.recapExcerpt}
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-4">
+                <Link
+                  className="text-sm font-semibold text-[var(--color-accent)] hover:underline"
+                  href={`/matches/${sampleMatch.id}`}
+                >
+                  続きを読む →
+                </Link>
+                <Link
+                  className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                  href="/pricing"
+                >
+                  Premium を始める — ¥980/月
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
 
       {favoriteMatches.length > 0 && (
         <section
