@@ -33,11 +33,19 @@ describe("TeamBadge", () => {
     const badge = screen.getByRole("img", { name: "HIG" });
 
     expect(badge).toHaveAttribute("viewBox", "0 0 32 32");
-    expect(badge.querySelector("circle")).toHaveAttribute(
+    expect(badge).toHaveAttribute("width", "32");
+    expect(badge).toHaveAttribute("height", "32");
+    expect(badge.querySelector("circle")).not.toBeInTheDocument();
+    expect(badge.querySelector("path")).toHaveAttribute(
+      "d",
+      "M16 2 L29 7 L29 18.5 Q29 27 16 31 Q3 27 3 18.5 L3 7 Z",
+    );
+    expect(badge.querySelector("path")).toHaveAttribute(
       "fill",
       "url(#badge-highlanders)",
     );
     expect(badge.querySelector("text")).toHaveAttribute("fill", "#111111");
+    expect(badge.querySelector("text")).toHaveAttribute("y", "17");
   });
 
   it("renders a generated club badge with white text on dark colors", () => {
