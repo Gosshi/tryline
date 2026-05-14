@@ -24,7 +24,7 @@ export function AuthModal({ onClose }: AuthModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50">
-      <div className="flex min-h-full items-end justify-center p-4 sm:items-center sm:p-0">
+      <div className="flex min-h-[100dvh] items-end justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:min-h-full sm:items-center sm:p-0">
         <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
           <h2 className="mb-4 text-lg font-black text-slate-950">ログイン</h2>
           {state === "sent" ? (
