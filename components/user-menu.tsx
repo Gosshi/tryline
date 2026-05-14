@@ -40,7 +40,7 @@ export function UserMenu({
     return (
       <>
         <button
-          className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          className="min-h-[44px] rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:min-h-0 sm:py-1.5"
           onClick={() => setShowModal(true)}
           type="button"
         >
@@ -54,7 +54,7 @@ export function UserMenu({
   return (
     <div className="relative">
       <button
-        className="flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+        className="flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:min-h-0 sm:py-1.5"
         onClick={() => setOpen((value) => !value)}
         type="button"
       >

@@ -24,10 +24,10 @@ describe("SiteHeader", () => {
   it("does not render the dead standings anchor link", async () => {
     render(await SiteHeader());
 
-    expect(screen.getByRole("link", { name: "試合" })).toHaveAttribute(
-      "href",
-      "/",
-    );
+    const matchesLink = screen.getByRole("link", { name: "試合" });
+
+    expect(matchesLink).toHaveAttribute("href", "/");
+    expect(matchesLink).toHaveClass("-my-1.5", "py-3", "sm:py-1.5");
     expect(screen.queryByRole("link", { name: "順位表" })).not.toBeInTheDocument();
   });
 });
