@@ -87,6 +87,7 @@ type LatestCompetitionRow = {
 
 type RecentlyReviewedMatchRow = BaseMatchRow & {
   competition: {
+    family?: string;
     slug: string;
     name: string;
     season: string;
@@ -290,6 +291,63 @@ export async function getRecentlyReviewedMatches(
         recapGeneratedAt: row.generated_at,
         recapExcerpt: row.content_md_ja.slice(0, 220),
       };
+    });
+}
+
+export async function getRecentlyReviewedMatchesForFamily(
+  family: string,
+  limit = 3,
+): Promise<MatchListItem[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("match_content")
+    .select(
+      `
+        match:matches!match_content_match_id_fkey (
+          id,
+          kickoff_at,
+          status,
+          home_score,
+          away_score,
+          venue,
+          external_ids,
+          home_team:teams!matches_home_team_id_fkey (
+            slug,
+            name,
+            short_code
+          ),
+          away_team:teams!matches_away_team_id_fkey (
+            slug,
+            name,
+            short_code
+          ),
+          competition:competitions!matches_competition_id_fkey (
+            family,
+            slug,
+            name,
+            season
+          )
+        )
+      `,
+    )
+    .eq("content_type", "recap")
+    .eq("status", "published")
+    .order("generated_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data satisfies Array<{ match: RecentlyReviewedMatchRow | null }>)
+    .filter((row) => row.match?.competition?.family === family)
+    .slice(0, limit)
+    .map((row) => {
+      if (!row.match) {
+        throw new Error("Recently reviewed family match is missing match.");
+      }
+
+      return mapMatchRow(row.match);
     });
 }
 
