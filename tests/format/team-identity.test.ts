@@ -44,8 +44,10 @@ describe("team identity formatter", () => {
 
   it("returns team colors and a slate fallback for unknown teams", () => {
     expect(getTeamColor("ireland")).toBe("#009A44");
-    expect(getTeamColor("new-zealand")).toBe("#111111");
+    expect(getTeamColor("new-zealand")).toBe("#000000");
     expect(getTeamColor("south-africa")).toBe("#007A4D");
+    expect(getTeamColor("australia")).toBe("#FFD700");
+    expect(getTeamColor("argentina")).toBe("#74ACDF");
     expect(getTeamColor("bath")).toBe("#002F6C");
     expect(getTeamColor("leicester-tigers")).toBe("#006B3F");
     expect(getTeamColor("toulouse")).toBe("#E30613");
