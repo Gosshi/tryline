@@ -2,8 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { MatchCard } from "@/components/match-card";
 import { listSeasonsByFamily } from "@/lib/db/queries/competitions";
-import { formatFamilyName } from "@/lib/format/competition";
+import { getRecentlyReviewedMatchesForFamily } from "@/lib/db/queries/matches";
+import {
+  formatCompetitionTitle,
+  formatFamilyName,
+} from "@/lib/format/competition";
 import { createOgImage } from "@/lib/seo/og-image";
 
 import type { Metadata } from "next";
@@ -55,7 +60,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CompetitionHubPage({ params }: Props) {
   const { competition } = await params;
-  const seasons = await listSeasonsByFamily(competition);
+  const [seasons, recentReviews] = await Promise.all([
+    listSeasonsByFamily(competition),
+    getRecentlyReviewedMatchesForFamily(competition, 3),
+  ]);
 
   if (seasons.length === 0) {
     notFound();
@@ -88,27 +96,60 @@ export default async function CompetitionHubPage({ params }: Props) {
           </div>
         </div>
       </div>
-      <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 md:px-8">
-        <ul className="mt-8 space-y-3">
-          {seasons.map((season) => (
-            <li key={season.slug}>
-              <Link
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-slate-400 hover:bg-slate-50"
-                href={`/c/${competition}/${season.season}`}
-              >
-                <span className="text-lg font-semibold text-slate-900">
-                  {season.season}
-                </span>
-                {season.startDate && season.endDate && (
-                  <span className="text-sm text-slate-500">
-                    {season.startDate.slice(0, 7)} 〜{" "}
-                    {season.endDate.slice(0, 7)}
+      <div className="mx-auto flex max-w-4xl flex-col gap-10 px-4 py-12 sm:px-6 md:px-8">
+        <Link
+          className="group block rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-slate-300"
+          href={`/c/${competition}/${latestSeason.season}`}
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+            最新シーズン
+          </p>
+          <p className="mt-2 font-serif text-3xl font-bold text-[var(--color-ink)]">
+            {formatCompetitionTitle(latestSeason.name, latestSeason.season)}
+          </p>
+          <p className="mt-4 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
+            試合一覧を見る →
+          </p>
+        </Link>
+
+        {recentReviews.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              最近のレビュー
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              {recentReviews.map((match) => (
+                <MatchCard key={match.id} match={match} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+            全シーズン
+          </h2>
+          <ul className="space-y-3">
+            {seasons.map((season) => (
+              <li key={season.slug}>
+                <Link
+                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-slate-400 hover:bg-slate-50"
+                  href={`/c/${competition}/${season.season}`}
+                >
+                  <span className="text-lg font-semibold text-slate-900">
+                    {season.season}
                   </span>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
+                  {season.startDate && season.endDate && (
+                    <span className="text-sm text-slate-500">
+                      {season.startDate.slice(0, 7)} 〜{" "}
+                      {season.endDate.slice(0, 7)}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
     </main>
   );
