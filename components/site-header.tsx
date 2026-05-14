@@ -30,7 +30,7 @@ export async function SiteHeader() {
           <ul className="flex items-center gap-1">
             <li>
               <Link
-                className="rounded px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                className="-my-1.5 rounded px-3 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0 sm:py-1.5"
                 href="/"
               >
                 試合
@@ -39,7 +39,7 @@ export async function SiteHeader() {
             {!user && (
               <li>
                 <Link
-                  className="rounded px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                  className="-my-1.5 rounded px-3 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0 sm:py-1.5"
                   href="/pricing"
                 >
                   料金
