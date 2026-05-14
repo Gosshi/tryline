@@ -74,7 +74,10 @@ export function TeamBadge({ shortCode, size = 32, slug }: TeamBadgeProps) {
           })}
         </linearGradient>
       </defs>
-      <circle cx="16" cy="16" fill={`url(#${gradientId})`} r="15" />
+      <path
+        d="M16 2 L29 7 L29 18.5 Q29 27 16 31 Q3 27 3 18.5 L3 7 Z"
+        fill={`url(#${gradientId})`}
+      />
       <text
         dominantBaseline="central"
         fill={isLightColor(primaryColor) ? "#111111" : "#FFFFFF"}
@@ -84,7 +87,7 @@ export function TeamBadge({ shortCode, size = 32, slug }: TeamBadgeProps) {
         letterSpacing="0"
         textAnchor="middle"
         x="16"
-        y="16"
+        y="17"
       >
         {shortCode}
       </text>
