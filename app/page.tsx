@@ -22,6 +22,7 @@ import {
   formatKickoffJstDate,
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
+import { createOgImage } from "@/lib/seo/og-image";
 
 import type { Metadata } from "next";
 
@@ -34,6 +35,12 @@ export const metadata: Metadata = {
   openGraph: {
     description:
       "Six Nations・Premiership・URC など海外ラグビーの試合結果・AI日本語レビューを提供。",
+    images: [
+      createOgImage({
+        competition: "Tryline",
+        home: "海外ラグビーを日本語で深掘り",
+      }),
+    ],
     title: "Tryline — 海外ラグビーを日本語で深掘り",
     type: "website",
     url: "https://tryline-six.vercel.app",
