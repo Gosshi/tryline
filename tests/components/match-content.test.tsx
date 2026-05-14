@@ -93,6 +93,56 @@ describe("MatchContent", () => {
     expect(screen.queryByText(new RegExp(lockedText))).toBeNull();
   });
 
+  it("teases the next locked heading for free users", () => {
+    const visibleText = "あ".repeat(300);
+
+    render(
+      <MatchContent
+        content={{
+          ...baseContent,
+          contentMdJa: `${visibleText}\n\n# ターニングポイント\n\nロック本文`,
+        }}
+        contentType="recap"
+        isPremium={false}
+      />,
+    );
+
+    expect(screen.getByText("次のセクション")).toBeInTheDocument();
+    expect(screen.getByText("ターニングポイント →")).toBeInTheDocument();
+    expect(screen.queryByText("ロック本文")).toBeNull();
+  });
+
+  it("does not show a heading teaser without a locked heading", () => {
+    render(
+      <MatchContent
+        content={{
+          ...baseContent,
+          contentMdJa: `${"あ".repeat(300)}ロック本文のみ`,
+        }}
+        contentType="recap"
+        isPremium={false}
+      />,
+    );
+
+    expect(screen.queryByText("次のセクション")).toBeNull();
+  });
+
+  it("does not show a heading teaser for premium users", () => {
+    render(
+      <MatchContent
+        content={{
+          ...baseContent,
+          contentMdJa: `${"あ".repeat(300)}\n\n# ターニングポイント\n\n本文`,
+        }}
+        contentType="recap"
+        isPremium
+      />,
+    );
+
+    expect(screen.queryByText("次のセクション")).toBeNull();
+    expect(screen.getByText("ターニングポイント")).toBeInTheDocument();
+  });
+
   it("shows full content and TOC for premium users", () => {
     const lockedText = "プレミアム本文";
 
