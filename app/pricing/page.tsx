@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PricingForm } from "@/app/pricing/pricing-form";
 import { getRecentlyReviewedMatches } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
+import { createOgImage } from "@/lib/seo/og-image";
 
 import type { Metadata } from "next";
 
