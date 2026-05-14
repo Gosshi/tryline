@@ -10,6 +10,7 @@ type DbFixture = {
   finishedIds: string[];
   existingPreviewIds?: string[];
   existingRecapIds?: string[];
+  scheduledKickoffAt?: Record<string, string>;
   matchDetails?: Record<
     string,
     {
@@ -24,6 +25,8 @@ type DbFixture = {
 
 type MatchQueryState = {
   id?: string;
+  kickoffGte?: string;
+  kickoffLte?: string;
   status?: "scheduled" | "finished";
 };
 
@@ -48,8 +51,18 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
       }
       return matchesBuilder;
     }),
-    gte: vi.fn().mockReturnThis(),
-    lte: vi.fn().mockReturnThis(),
+    gte: vi.fn((column: string, value: unknown) => {
+      if (column === "kickoff_at" && typeof value === "string") {
+        matchesBuilder.state.kickoffGte = value;
+      }
+      return matchesBuilder;
+    }),
+    lte: vi.fn((column: string, value: unknown) => {
+      if (column === "kickoff_at" && typeof value === "string") {
+        matchesBuilder.state.kickoffLte = value;
+      }
+      return matchesBuilder;
+    }),
     single: vi.fn(() =>
       Promise.resolve({
         data: matchesBuilder.state.id
@@ -61,10 +74,33 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
     then: (
       resolve: (value: { data: { id: string }[]; error: null }) => unknown,
     ) => {
-      const ids =
+      let ids =
         matchesBuilder.state.status === "scheduled"
           ? fixture.scheduledIds
           : fixture.finishedIds;
+
+      if (matchesBuilder.state.status === "scheduled") {
+        ids = ids.filter((id) => {
+          const kickoffAt = fixture.scheduledKickoffAt?.[id];
+          if (!kickoffAt) {
+            return true;
+          }
+          if (
+            matchesBuilder.state.kickoffGte &&
+            kickoffAt < matchesBuilder.state.kickoffGte
+          ) {
+            return false;
+          }
+          if (
+            matchesBuilder.state.kickoffLte &&
+            kickoffAt > matchesBuilder.state.kickoffLte
+          ) {
+            return false;
+          }
+          return true;
+        });
+      }
+
       return Promise.resolve(
         resolve({ data: ids.map((id) => ({ id })), error: null }),
       );
@@ -149,6 +185,32 @@ describe("runOrchestrate", () => {
     expect(generateContent).toHaveBeenCalledWith("scheduled-1", "preview");
     expect(result.previews).toEqual({ triggered: 1, skipped: 0 });
     expect(result.lineups).toEqual({ triggered: 1, no_url: 0 });
+  });
+
+  it("includes next-day early UTC kickoffs in the 12-72h preview window", async () => {
+    const db = createMockDb({
+      scheduledIds: ["too-soon", "srp-next-day", "too-late"],
+      scheduledKickoffAt: {
+        "srp-next-day": "2026-05-16T04:35:00.000Z",
+        "too-late": "2026-05-18T12:01:00.000Z",
+        "too-soon": "2026-05-15T23:59:00.000Z",
+      },
+      finishedIds: [],
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+
+    const result = await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now: new Date("2026-05-15T12:00:00.000Z"),
+    });
+
+    expect(generateContent).toHaveBeenCalledTimes(1);
+    expect(generateContent).toHaveBeenCalledWith("srp-next-day", "preview");
+    expect(ingestLineups).toHaveBeenCalledWith("srp-next-day");
+    expect(result.previews).toEqual({ triggered: 1, skipped: 0 });
   });
 
   it("skips preview generation when preview content already exists", async () => {

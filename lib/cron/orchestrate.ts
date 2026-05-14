@@ -3,8 +3,8 @@ import type { ContentType } from "@/lib/llm/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const EXISTING_CONTENT_STATUSES = ["draft", "published"] as const;
-const PREVIEW_WINDOW_START_HOURS = 47;
-const PREVIEW_WINDOW_END_HOURS = 49;
+const PREVIEW_WINDOW_START_HOURS = 12;
+const PREVIEW_WINDOW_END_HOURS = 72;
 const RECAP_BATCH_SIZE = 10;
 
 type LineupIngestOutcome = "triggered" | "no_url";
