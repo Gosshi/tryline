@@ -18,6 +18,7 @@ const match: MatchDetail = {
   },
   awayTeamId: "00000000-0000-0000-0000-000000000003",
   competition: {
+    family: "six-nations",
     name: "Six Nations 2027",
     season: "2027",
     slug: "six-nations-2027",

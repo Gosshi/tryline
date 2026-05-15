@@ -16,7 +16,7 @@ export type MatchListItem = {
 };
 
 export type MatchDetail = MatchListItem & {
-  competition: { slug: string; name: string; season: string };
+  competition: { family: string; slug: string; name: string; season: string };
   awayTeamId: string;
   homeTeamId: string;
 };
@@ -69,6 +69,7 @@ type MatchDetailRow = BaseMatchRow & {
   home_team_id: string;
   away_team_id: string;
   competition: {
+    family?: string;
     slug: string;
     name: string;
     season: string;
@@ -376,6 +377,7 @@ export async function getUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
           short_code
         ),
         competition:competitions!matches_competition_id_fkey (
+          family,
           slug,
           name,
           season
@@ -685,10 +687,19 @@ export async function getMatchById(
     throw new Error(`Match ${matchId} is missing competition relation.`);
   }
 
+  const competition = data.competition as MatchDetailRow["competition"];
+
   return {
     ...match,
     awayTeamId: data.away_team_id,
-    competition: data.competition,
+    competition: {
+      family:
+        competition?.family ??
+        competition!.slug.replace(/-\d{4}(-\d{2})?$/, ""),
+      name: competition!.name,
+      season: competition!.season,
+      slug: competition!.slug,
+    },
     homeTeamId: data.home_team_id,
   };
 }
