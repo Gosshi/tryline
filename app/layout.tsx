@@ -28,6 +28,10 @@ export const metadata: Metadata = {
   },
   description:
     "Six Nations・Premiership・URC など海外ラグビーの試合結果・順位表・AI日本語レビューを提供するラグビーファン向けサービス。",
+  icons: {
+    apple: [{ sizes: "192x192", url: "/icons/icon-192.png" }],
+    icon: [{ sizes: "192x192", type: "image/png", url: "/icons/icon-192.png" }],
+  },
   openGraph: {
     locale: "ja_JP",
     siteName: "Tryline",
