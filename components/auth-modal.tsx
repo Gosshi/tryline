@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -29,6 +30,20 @@ export function AuthModal({ onClose }: AuthModalProps) {
     setState(error ? "error" : "sent");
   }
 
+  async function handleGoogleLogin() {
+    const supabase = getSupabaseBrowserClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setState("error");
+    }
+  }
+
   if (!mounted) return null;
 
   return createPortal(
@@ -47,6 +62,25 @@ export function AuthModal({ onClose }: AuthModalProps) {
                   エラーが発生しました。
                 </p>
               )}
+              <button
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                onClick={() => void handleGoogleLogin()}
+                type="button"
+              >
+                <Image
+                  alt=""
+                  aria-hidden="true"
+                  height={16}
+                  src="/google-logo.svg"
+                  width={16}
+                />
+                Google でログイン
+              </button>
+              <div className="relative my-4 flex items-center">
+                <div className="flex-1 border-t border-slate-200" />
+                <span className="mx-3 text-xs text-slate-400">または</span>
+                <div className="flex-1 border-t border-slate-200" />
+              </div>
               <input
                 className="mb-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                 onChange={(event) => setEmail(event.target.value)}
