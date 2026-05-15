@@ -129,12 +129,17 @@ describe("PricingForm", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: "ログイン" }),
+        screen.getByRole("heading", { name: "Premium を始める" }),
       ).toBeInTheDocument();
     });
+    expect(
+      screen.getByText("ログイン後、自動的に決済ページに移動します。"),
+    ).toBeInTheDocument();
     expect(screen.getByPlaceholderText("メールアドレス")).toBeInTheDocument();
 
-    const panel = screen.getByRole("heading", { name: "ログイン" }).parentElement;
+    const panel = screen.getByRole("heading", {
+      name: "Premium を始める",
+    }).parentElement;
     const wrapper = panel?.parentElement;
     const overlay = wrapper?.parentElement;
 
@@ -164,7 +169,7 @@ describe("PricingForm", () => {
       expect(submit).toHaveBeenCalledTimes(1);
     });
     expect(
-      screen.queryByRole("heading", { name: "ログイン" }),
+      screen.queryByRole("heading", { name: "Premium を始める" }),
     ).not.toBeInTheDocument();
   });
 });
