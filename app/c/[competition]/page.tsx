@@ -39,6 +39,11 @@ const COMPETITION_HERO_IMAGES: Record<string, string> = {
 const DEFAULT_COMPETITION_HERO =
   "https://images.unsplash.com/photo-1767190937750-d6aaf8ea99d0?w=1200&q=80";
 
+const COMPETITION_DESCRIPTIONS: Record<string, string> = {
+  "league-one":
+    "ジャパンラグビー リーグワンは、日本の最高峰クラブが争う国内プロラグビーリーグです。シーズンを通じて上位進出と優勝を争います。",
+};
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { competition } = await params;
   const name = formatFamilyName(competition);
@@ -97,6 +102,11 @@ export default async function CompetitionHubPage({ params }: Props) {
               {formatFamilyName(competition)}
             </h1>
             <p className="mt-1 text-sm text-white/70">全シーズン一覧</p>
+            {COMPETITION_DESCRIPTIONS[competition] && (
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">
+                {COMPETITION_DESCRIPTIONS[competition]}
+              </p>
+            )}
           </div>
         </div>
       </div>
