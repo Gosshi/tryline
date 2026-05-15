@@ -159,8 +159,9 @@ export default async function HomePage() {
             日本語で深掘り。
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
-            Six Nations をはじめとする世界のラグビーリーグを、AI
-            が生成した日本語プレビュー・レビューと試合チャットで楽しめます。
+            Six Nations、Premiership、URC、Top 14、Rugby Championship、
+            ジャパンラグビー リーグワンまで、世界のラグビーを AI
+            日本語レビューと試合チャットで深く追えます。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             {profile?.subscription_status !== "premium" && (
