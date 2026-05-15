@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { MatchCard } from "@/components/match-card";
-import { RoundHeading } from "@/components/round-heading";
+import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
 import { StandingsTable } from "@/components/standings-table";
 import {
@@ -158,32 +157,10 @@ export default async function SeasonPage({ params }: Props) {
             </div>
           </div>
         ) : (
-          groupedMatches.map(([groupKey, roundMatches]) => (
-            <section
-              className="space-y-4"
-              key={
-                groupKey.type === "round"
-                  ? (groupKey.round ?? "unassigned")
-                  : `week-${groupKey.weekIndex}`
-              }
-            >
-              <RoundHeading groupKey={groupKey} />
-              <div className="grid gap-4 md:grid-cols-2">
-                {roundMatches.map((match) => (
-                  <MatchCard
-                    contentStatus={
-                      contentStatusMap.get(match.id) ?? {
-                        hasPreview: false,
-                        hasRecap: false,
-                      }
-                    }
-                    key={match.id}
-                    match={match}
-                  />
-                ))}
-              </div>
-            </section>
-          ))
+          <SeasonMatchGroups
+            contentStatusMap={Object.fromEntries(contentStatusMap)}
+            groupedMatches={groupedMatches}
+          />
         )}
 
         <div id="standings">
