@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getUser, getUserProfile } from "@/lib/auth/server";
 import { listAllTeams } from "@/lib/db/queries/teams";
 
+import { CompetitionNavDropdown } from "./competition-nav-dropdown";
 import { UserMenu } from "./user-menu";
 
 export async function SiteHeader() {
@@ -35,6 +36,9 @@ export async function SiteHeader() {
               >
                 試合
               </Link>
+            </li>
+            <li>
+              <CompetitionNavDropdown />
             </li>
             {!user && (
               <li>
