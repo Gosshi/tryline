@@ -17,8 +17,12 @@ describe("seed-wikipedia-external-ids", () => {
       dryRun: false,
       family: "rugby-championship",
     });
-    expect(() => parseOptions(["--family=top-14"])).toThrow(
-      "Unsupported --family value",
+    expect(parseOptions(["--family=top-14"])).toEqual({
+      dryRun: false,
+      family: "top-14",
+    });
+    expect(() => parseOptions(["--family=top-14x"])).toThrow(
+      "Unsupported --family value: top-14x",
     );
   });
 
@@ -82,5 +86,29 @@ describe("seed-wikipedia-external-ids", () => {
     ];
 
     expect(matchWikipediaEntryToMatch(source, rows, "https://example.com")).toBeNull();
+  });
+
+  it("matches Top 14 team aliases against seeded DB names", () => {
+    const update = matchWikipediaEntryToMatch(
+      {
+        awayTeamName: "Clermont",
+        dateKey: "2025-09-13",
+        dateText: "2025-09-13",
+        homeTeamName: "Bayonne",
+        sectionId: "Bayonne_v_Clermont",
+      },
+      [
+        {
+          away_team: { name: "ASM Clermont Auvergne" },
+          external_ids: {} as Json,
+          home_team: { name: "Aviron Bayonnais" },
+          id: "match-top14-1",
+          kickoff_at: "2025-09-13T14:00:00.000Z",
+        },
+      ],
+      "https://en.wikipedia.org/wiki/top14",
+    );
+
+    expect(update?.id).toBe("match-top14-1");
   });
 });
