@@ -143,41 +143,29 @@ export default async function MatchDetailPage({
       />
       <main className="min-h-screen bg-slate-50">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
-          {(() => {
-            const slugMatch = match.competition.slug.match(/^(.+)-(\d{4})$/);
-            const family = slugMatch?.[1] ?? "";
-            const season = slugMatch?.[2] ?? "";
-            const seasonHref =
-              family && season ? `/c/${family}/${season}` : "/";
-
-            return (
-              <nav aria-label="パンくずリスト">
-                <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
-                  <li>
-                    <Link
-                      className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                      href={seasonHref}
-                    >
-                      {formatCompetitionTitle(
-                        match.competition.name,
-                        match.competition.season,
-                      )}
-                    </Link>
-                  </li>
-                  {match.round !== null && (
-                    <>
-                      <li aria-hidden className="select-none">
-                        /
-                      </li>
-                      <li className="text-[var(--color-ink)]">
-                        Round {match.round}
-                      </li>
-                    </>
+          <nav aria-label="パンくずリスト">
+            <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
+              <li>
+                <Link
+                  className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                  href={`/c/${match.competition.family}/${match.competition.season}`}
+                >
+                  {formatCompetitionTitle(
+                    match.competition.name,
+                    match.competition.season,
                   )}
-                </ol>
-              </nav>
-            );
-          })()}
+                </Link>
+              </li>
+              {match.round !== null && (
+                <>
+                  <li aria-hidden className="select-none">
+                    /
+                  </li>
+                  <li className="text-[var(--color-ink)]">Round {match.round}</li>
+                </>
+              )}
+            </ol>
+          </nav>
 
           <MatchHeader match={match} />
 
