@@ -324,7 +324,7 @@ export function MatchContent({
             className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
             href="/pricing"
           >
-            Premium を始める - ¥980/月
+            Premium で全文を読む
           </a>
         </div>
       )}

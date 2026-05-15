@@ -140,7 +140,7 @@ export default async function PricingPage() {
             )}
             <div className="relative mt-8">
               <PricingForm
-                buttonLabel="続きを読む → Premium を始める"
+                buttonLabel="Premium で全文を読む"
                 variant="inline"
               />
             </div>

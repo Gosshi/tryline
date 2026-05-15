@@ -97,7 +97,7 @@ describe("PricingPage", () => {
     expect(screen.getByText("Ireland vs France")).toBeInTheDocument();
     expect(screen.getByText(/前半の接点でIrelandが優位/)).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "続きを読む → Premium を始める" }),
+      screen.getByRole("button", { name: "Premium で全文を読む" }),
     ).toBeInTheDocument();
 
     expect(screen.getByText("いつでもキャンセルできますか？")).toBeInTheDocument();
