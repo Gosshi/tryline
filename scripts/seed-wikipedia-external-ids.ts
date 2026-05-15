@@ -18,6 +18,7 @@ import { parseWikipediaUrcSeasonMatches } from "@/lib/scrapers/wikipedia-urc-sea
 import type { Json } from "@/lib/db/types";
 
 type WikipediaSeasonFamily =
+  | "autumn-nations"
   | "premiership"
   | "rugby-championship"
   | "top-14"
@@ -26,11 +27,13 @@ type WikipediaSeasonFamily =
 type CliOptions = {
   dryRun: boolean;
   family: WikipediaSeasonFamily | null;
+  season: string | null;
 };
 
 type WikipediaSeasonTarget = {
   competitionSlug: string;
   family: WikipediaSeasonFamily;
+  season: string;
   url: string;
 };
 
@@ -53,31 +56,42 @@ const WIKIPEDIA_SEASON_URLS: Record<string, WikipediaSeasonTarget> = {
   "premiership-2025-26": {
     competitionSlug: "premiership-2025-26",
     family: "premiership",
+    season: "2025-26",
     url: "https://en.wikipedia.org/wiki/2025%E2%80%9326_Premiership_Rugby",
+  },
+  "autumn-nations-2025": {
+    competitionSlug: "autumn-nations-2025",
+    family: "autumn-nations",
+    season: "2025",
+    url: "https://en.wikipedia.org/wiki/2025_Autumn_Nations_Series",
   },
   "rugby-championship-2025": {
     competitionSlug: "rugby-championship-2025",
     family: "rugby-championship",
+    season: "2025",
     url: "https://en.wikipedia.org/wiki/2025_Rugby_Championship",
   },
   "top-14-2025-26": {
     competitionSlug: "top-14-2025-26",
     family: "top-14",
+    season: "2025-26",
     url: "https://en.wikipedia.org/wiki/2025%E2%80%9326_Top_14",
   },
   "urc-2025-26": {
     competitionSlug: "urc-2025-26",
     family: "urc",
+    season: "2025-26",
     url: "https://en.wikipedia.org/wiki/2025%E2%80%9326_United_Rugby_Championship",
   },
 };
 
 const USAGE =
-  "Usage: pnpm tsx scripts/seed-wikipedia-external-ids.ts [--family=premiership] [--dry-run]";
+  "Usage: pnpm tsx scripts/seed-wikipedia-external-ids.ts [--family=premiership] [--season=2025-26] [--dry-run]";
 
 export function parseOptions(argv: string[]): CliOptions {
   let dryRun = false;
   let family: CliOptions["family"] = null;
+  let season: string | null = null;
 
   for (const arg of argv) {
     if (arg === "--dry-run") {
@@ -89,6 +103,7 @@ export function parseOptions(argv: string[]): CliOptions {
       const value = arg.slice("--family=".length);
 
       if (
+        value !== "autumn-nations" &&
         value !== "premiership" &&
         value !== "rugby-championship" &&
         value !== "top-14" &&
@@ -101,10 +116,15 @@ export function parseOptions(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg.startsWith("--season=")) {
+      season = arg.slice("--season=".length);
+      continue;
+    }
+
     throw new Error(USAGE);
   }
 
-  return { dryRun, family };
+  return { dryRun, family, season };
 }
 
 function asJsonObject(value: Json): Record<string, unknown> {
@@ -177,12 +197,20 @@ export function matchWikipediaEntryToMatch(
   };
 }
 
-function getTargets(options: CliOptions): WikipediaSeasonTarget[] {
+export function getTargets(options: CliOptions): WikipediaSeasonTarget[] {
   const targets = Object.values(WIKIPEDIA_SEASON_URLS);
 
-  return options.family
-    ? targets.filter((target) => target.family === options.family)
-    : targets;
+  return targets.filter((target) => {
+    if (options.family && target.family !== options.family) {
+      return false;
+    }
+
+    if (options.season && target.season !== options.season) {
+      return false;
+    }
+
+    return true;
+  });
 }
 
 async function loadFinishedMatches(competitionSlug: string): Promise<MatchRow[]> {

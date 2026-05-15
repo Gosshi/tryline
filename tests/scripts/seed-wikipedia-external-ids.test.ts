@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getTargets,
   matchWikipediaEntryToMatch,
   parseOptions,
 } from "@/scripts/seed-wikipedia-external-ids";
@@ -12,22 +13,49 @@ describe("seed-wikipedia-external-ids", () => {
     expect(parseOptions(["--family=premiership", "--dry-run"])).toEqual({
       dryRun: true,
       family: "premiership",
+      season: null,
+    });
+    expect(
+      parseOptions(["--family=autumn-nations", "--season=2025", "--dry-run"]),
+    ).toEqual({
+      dryRun: true,
+      family: "autumn-nations",
+      season: "2025",
     });
     expect(parseOptions(["--family=rugby-championship"])).toEqual({
       dryRun: false,
       family: "rugby-championship",
+      season: null,
     });
     expect(parseOptions(["--family=top-14"])).toEqual({
       dryRun: false,
       family: "top-14",
+      season: null,
     });
     expect(parseOptions(["--family=urc"])).toEqual({
       dryRun: false,
       family: "urc",
+      season: null,
     });
     expect(() => parseOptions(["--family=top-14x"])).toThrow(
       "Unsupported --family value: top-14x",
     );
+  });
+
+  it("filters targets by family and season", () => {
+    expect(
+      getTargets({
+        dryRun: true,
+        family: "autumn-nations",
+        season: "2025",
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        competitionSlug: "autumn-nations-2025",
+        family: "autumn-nations",
+        season: "2025",
+      }),
+    ]);
   });
 
   it("matches Wikipedia entries to DB rows and merges external ids", () => {
