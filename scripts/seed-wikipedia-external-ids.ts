@@ -7,6 +7,7 @@
 
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
+import { parseWikipediaRcSeasonMatches } from "@/lib/scrapers/wikipedia-rc-season-parser";
 import {
   parseWikipediaSeasonMatches,
   type WikipediaSeasonMatch,
@@ -15,7 +16,7 @@ import { mapWikipediaTeamName } from "@/lib/scrapers/wikipedia-team-name-map";
 
 import type { Json } from "@/lib/db/types";
 
-type WikipediaSeasonFamily = "premiership" | "urc";
+type WikipediaSeasonFamily = "premiership" | "rugby-championship" | "urc";
 
 type CliOptions = {
   dryRun: boolean;
@@ -49,6 +50,11 @@ const WIKIPEDIA_SEASON_URLS: Record<string, WikipediaSeasonTarget> = {
     family: "premiership",
     url: "https://en.wikipedia.org/wiki/2025%E2%80%9326_Premiership_Rugby",
   },
+  "rugby-championship-2025": {
+    competitionSlug: "rugby-championship-2025",
+    family: "rugby-championship",
+    url: "https://en.wikipedia.org/wiki/2025_Rugby_Championship",
+  },
   "urc-2025-26": {
     competitionSlug: "urc-2025-26",
     family: "urc",
@@ -72,7 +78,11 @@ export function parseOptions(argv: string[]): CliOptions {
     if (arg.startsWith("--family=")) {
       const value = arg.slice("--family=".length);
 
-      if (value !== "premiership" && value !== "urc") {
+      if (
+        value !== "premiership" &&
+        value !== "rugby-championship" &&
+        value !== "urc"
+      ) {
         throw new Error(`Unsupported --family value: ${value}`);
       }
 
@@ -192,7 +202,10 @@ async function loadFinishedMatches(competitionSlug: string): Promise<MatchRow[]>
 async function seedTarget(target: WikipediaSeasonTarget, dryRun: boolean) {
   const response = await fetchWithPolicy(target.url);
   const html = await response.text();
-  const sourceMatches = parseWikipediaSeasonMatches(html);
+  const sourceMatches =
+    target.family === "rugby-championship"
+      ? parseWikipediaRcSeasonMatches(html)
+      : parseWikipediaSeasonMatches(html);
   const rows = await loadFinishedMatches(target.competitionSlug);
   const matched: MatchUpdate[] = [];
   let skipped = 0;

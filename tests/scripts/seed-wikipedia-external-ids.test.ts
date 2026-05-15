@@ -13,6 +13,10 @@ describe("seed-wikipedia-external-ids", () => {
       dryRun: true,
       family: "premiership",
     });
+    expect(parseOptions(["--family=rugby-championship"])).toEqual({
+      dryRun: false,
+      family: "rugby-championship",
+    });
     expect(() => parseOptions(["--family=top-14"])).toThrow(
       "Unsupported --family value",
     );

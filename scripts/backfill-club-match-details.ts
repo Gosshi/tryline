@@ -11,8 +11,10 @@ import {
   scrapeWikipediaClubMatchDetails,
   type WikipediaClubMatchDetails,
 } from "@/lib/scrapers/wikipedia-club-match-details";
+import { scrapeWikipediaRcMatchDetails } from "@/lib/scrapers/wikipedia-rc-match-details";
 
 import type { Json } from "@/lib/db/types";
+import type { WikipediaMatchLineup } from "@/lib/scrapers/wikipedia-lineups";
 
 type CliOptions = {
   dryRun: boolean;
@@ -29,6 +31,21 @@ type MatchRow = {
   home_team: { name: string } | null;
   id: string;
   match_events: Array<{ id: string }>;
+  match_lineups: Array<{ id: string }>;
+};
+
+type PlayerRow = {
+  id: string;
+  name: string;
+};
+
+type LineupRow = {
+  announced_at: string;
+  jersey_number: number;
+  match_id: string;
+  player_id: string;
+  source_url: string;
+  team_id: string;
 };
 
 type WikipediaExternalIds = {
@@ -39,6 +56,7 @@ type WikipediaExternalIds = {
 
 const CLUB_FAMILIES = [
   "premiership",
+  "rugby-championship",
   "urc",
   "top-14",
   "super-rugby-pacific",
@@ -76,7 +94,10 @@ function parseOptions(argv: string[]): CliOptions {
     );
   }
 
-  if (family && !CLUB_FAMILIES.includes(family as (typeof CLUB_FAMILIES)[number])) {
+  if (
+    family &&
+    !CLUB_FAMILIES.includes(family as (typeof CLUB_FAMILIES)[number])
+  ) {
     throw new Error(`Unsupported --family value: ${family}`);
   }
 
@@ -126,10 +147,12 @@ async function loadTargetMatches(options: CliOptions): Promise<MatchRow[]> {
         home_team:teams!matches_home_team_id_fkey(name),
         away_team:teams!matches_away_team_id_fkey(name),
         competition:competitions!matches_competition_id_fkey(family, season, slug),
-        match_events(id)
+        match_events(id),
+        match_lineups(id)
       `,
     )
     .eq("status", "finished")
+    .not("external_ids->>wikipedia_url", "is", null)
     .limit(options.limit);
 
   if (options.family) {
@@ -149,12 +172,136 @@ async function loadTargetMatches(options: CliOptions): Promise<MatchRow[]> {
       return false;
     }
 
+    if (match.competition.family === "rugby-championship") {
+      return match.match_events.length === 0 || match.match_lineups.length === 0;
+    }
+
     return match.match_events.length === 0;
   });
 }
 
-async function persistDetails(match: MatchRow, details: WikipediaClubMatchDetails) {
+async function ensurePlayerIds(
+  teamId: string,
+  names: string[],
+): Promise<Map<string, string>> {
+  const db = getSupabaseServerClient();
+  const uniqueNames = [...new Set(names)];
+
+  if (uniqueNames.length === 0) {
+    return new Map();
+  }
+
+  const { data: existing, error: existingError } = await db
+    .from("players")
+    .select("id, name")
+    .eq("team_id", teamId)
+    .in("name", uniqueNames);
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  const existingByName = new Map(
+    ((existing ?? []) as PlayerRow[]).map((player) => [player.name, player.id]),
+  );
+  const missingNames = uniqueNames.filter((name) => !existingByName.has(name));
+
+  if (missingNames.length > 0) {
+    const { error: insertError } = await db.from("players").insert(
+      missingNames.map((name) => ({
+        external_ids: { wikipedia_title: name },
+        name,
+        team_id: teamId,
+      })),
+    );
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    const { data: inserted, error: insertedError } = await db
+      .from("players")
+      .select("id, name")
+      .eq("team_id", teamId)
+      .in("name", missingNames);
+
+    if (insertedError) {
+      throw insertedError;
+    }
+
+    ((inserted ?? []) as PlayerRow[]).forEach((player) => {
+      existingByName.set(player.name, player.id);
+    });
+  }
+
+  return existingByName;
+}
+
+function buildLineupRows(params: {
+  awayPlayerIds: Map<string, string>;
+  homePlayerIds: Map<string, string>;
+  lineup: WikipediaMatchLineup;
+  match: MatchRow;
+}): LineupRow[] {
+  const homeRows = params.lineup.home_players.flatMap((player) => {
+    const playerId = params.homePlayerIds.get(player.name);
+
+    return playerId
+      ? [
+          {
+            announced_at: params.lineup.announced_at,
+            jersey_number: player.jersey_number,
+            match_id: params.match.id,
+            player_id: playerId,
+            source_url: params.lineup.source_url,
+            team_id: params.match.home_team_id,
+          },
+        ]
+      : [];
+  });
+  const awayRows = params.lineup.away_players.flatMap((player) => {
+    const playerId = params.awayPlayerIds.get(player.name);
+
+    return playerId
+      ? [
+          {
+            announced_at: params.lineup.announced_at,
+            jersey_number: player.jersey_number,
+            match_id: params.match.id,
+            player_id: playerId,
+            source_url: params.lineup.source_url,
+            team_id: params.match.away_team_id,
+          },
+        ]
+      : [];
+  });
+
+  return [...homeRows, ...awayRows];
+}
+
+async function upsertLineupRows(rows: LineupRow[]) {
+  if (rows.length === 0) {
+    return 0;
+  }
+
+  const db = getSupabaseServerClient();
+  const { error } = await db
+    .from("match_lineups")
+    .upsert(rows, { onConflict: "match_id,team_id,jersey_number" });
+
+  if (error) {
+    throw error;
+  }
+
+  return rows.length;
+}
+
+async function persistDetails(
+  match: MatchRow,
+  details: WikipediaClubMatchDetails,
+) {
   let eventsInserted = 0;
+  let lineupsInserted = 0;
 
   if (match.match_events.length === 0 && details.events.length > 0) {
     const upserted = await upsertMatchEvents({
@@ -166,13 +313,47 @@ async function persistDetails(match: MatchRow, details: WikipediaClubMatchDetail
     eventsInserted = upserted.inserted;
   }
 
-  return { eventsInserted };
+  if (
+    match.competition?.family === "rugby-championship" &&
+    match.match_lineups.length === 0 &&
+    details.lineup
+  ) {
+    const homePlayerIds = await ensurePlayerIds(
+      match.home_team_id,
+      details.lineup.home_players.map((player) => player.name),
+    );
+    const awayPlayerIds = await ensurePlayerIds(
+      match.away_team_id,
+      details.lineup.away_players.map((player) => player.name),
+    );
+
+    lineupsInserted = await upsertLineupRows(
+      buildLineupRows({
+        awayPlayerIds,
+        homePlayerIds,
+        lineup: details.lineup,
+        match,
+      }),
+    );
+  }
+
+  return { eventsInserted, lineupsInserted };
+}
+
+async function scrapeDetailsForMatch(
+  match: MatchRow,
+  source: NonNullable<ReturnType<typeof getWikipediaSource>>,
+) {
+  return match.competition?.family === "rugby-championship"
+    ? scrapeWikipediaRcMatchDetails(source)
+    : scrapeWikipediaClubMatchDetails(source);
 }
 
 async function main() {
   const options = parseOptions(process.argv.slice(2));
   const matches = await loadTargetMatches(options);
   let eventsInserted = 0;
+  let lineupsInserted = 0;
   let skipped = 0;
 
   console.log(`Found ${matches.length} club matches with missing details`);
@@ -187,27 +368,30 @@ async function main() {
       continue;
     }
 
-    const details = await scrapeWikipediaClubMatchDetails(source);
+    const details = await scrapeDetailsForMatch(match, source);
 
     if (options.dryRun) {
       console.log(
-        `[dry-run] ${label}: events=${details.events.length}`,
+        `[dry-run] ${label}: events=${details.events.length} home_lineup=${details.lineup?.home_players.length ?? 0} away_lineup=${details.lineup?.away_players.length ?? 0}`,
       );
       continue;
     }
 
     const result = await persistDetails(match, details);
 
-    if (result.eventsInserted === 0) {
+    if (result.eventsInserted === 0 && result.lineupsInserted === 0) {
       skipped += 1;
     }
 
     eventsInserted += result.eventsInserted;
-    console.log(`[ok] ${label}: events=${result.eventsInserted}`);
+    lineupsInserted += result.lineupsInserted;
+    console.log(
+      `[ok] ${label}: events=${result.eventsInserted} lineups=${result.lineupsInserted}`,
+    );
   }
 
   console.log(
-    `Backfill complete: matches=${matches.length} events=${eventsInserted} lineups=skipped skipped=${skipped} dry_run=${options.dryRun}`,
+    `Backfill complete: matches=${matches.length} events=${eventsInserted} lineups=${lineupsInserted} skipped=${skipped} dry_run=${options.dryRun}`,
   );
 }
 
