@@ -66,6 +66,26 @@ describe("MatchContentSection", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("passes showCta to published MatchContent", () => {
+    render(
+      <MatchContentSection
+        content={{
+          ...content,
+          contentMdJa: `${"あ".repeat(300)}ロック本文`,
+        }}
+        contentType="preview"
+        isPremium={false}
+        match={match}
+        showCta={false}
+      />,
+    );
+
+    expect(screen.queryByText(/続きは Premium/)).toBeNull();
+    expect(
+      screen.queryByRole("link", { name: "Premium を始める - ¥980/月" }),
+    ).toBeNull();
+  });
+
   it("renders ContentPlaceholder when content is null", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2027-02-03T00:00:00.000Z"));

@@ -6,6 +6,7 @@ type MatchContentProps = {
   content: PublishedMatchContent;
   contentType: "preview" | "recap";
   isPremium: boolean;
+  showCta?: boolean;
 };
 
 const FREE_CONTENT_LIMIT = 300;
@@ -253,7 +254,11 @@ function renderBlock(block: MarkdownBlock, index: number) {
   );
 }
 
-export function MatchContent({ content, isPremium }: MatchContentProps) {
+export function MatchContent({
+  content,
+  isPremium,
+  showCta = true,
+}: MatchContentProps) {
   const isLocked = !isPremium;
   const contentMdJa = isLocked
     ? content.contentMdJa.slice(0, FREE_CONTENT_LIMIT)
@@ -310,7 +315,7 @@ export function MatchContent({ content, isPremium }: MatchContentProps) {
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
         )}
       </div>
-      {isLocked && (
+      {isLocked && showCta && (
         <div className="mt-4 flex flex-col items-center gap-3 text-center">
           <p className="text-sm font-semibold text-slate-800">
             続きは Premium でご覧いただけます

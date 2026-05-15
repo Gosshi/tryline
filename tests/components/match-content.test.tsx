@@ -93,6 +93,31 @@ describe("MatchContent", () => {
     expect(screen.queryByText(new RegExp(lockedText))).toBeNull();
   });
 
+  it("keeps the free teaser and gradient while hiding the premium CTA", () => {
+    const visibleText = "あ".repeat(300);
+
+    const { container } = render(
+      <MatchContent
+        content={{
+          ...baseContent,
+          contentMdJa: `${visibleText}\n\n# 続きの見出し\n\nロック本文`,
+        }}
+        contentType="preview"
+        isPremium={false}
+        showCta={false}
+      />,
+    );
+
+    expect(screen.queryByText(/続きは Premium/)).toBeNull();
+    expect(
+      screen.queryByRole("link", { name: "Premium を始める - ¥980/月" }),
+    ).toBeNull();
+    expect(screen.getByText("次のセクション")).toBeInTheDocument();
+    expect(
+      container.querySelector(".bg-gradient-to-t"),
+    ).toBeInTheDocument();
+  });
+
   it("teases the next locked heading for free users", () => {
     const visibleText = "あ".repeat(300);
 
