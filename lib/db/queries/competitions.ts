@@ -4,6 +4,7 @@ export type CompetitionRow = {
   id: string;
   slug: string;
   family: string;
+  matchCount: number;
   name: string;
   season: string;
   startDate: string | null;
@@ -14,6 +15,7 @@ type CompetitionDbRow = {
   id: string;
   slug: string;
   family: string;
+  matches: Array<{ count: number | null }> | null;
   name: string;
   season: string;
   start_date: string | null;
@@ -25,11 +27,20 @@ function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
     endDate: row.end_date,
     family: row.family,
     id: row.id,
+    matchCount: row.matches?.[0]?.count ?? 0,
     name: row.name,
     season: row.season,
     slug: row.slug,
     startDate: row.start_date,
   };
+}
+
+export function selectLatestSeasonWithMatches(
+  seasons: CompetitionRow[],
+): CompetitionRow | null {
+  const withMatches = seasons.filter((season) => season.matchCount > 0);
+
+  return withMatches[0] ?? seasons[0] ?? null;
 }
 
 export async function listSeasonsByFamily(
@@ -38,7 +49,9 @@ export async function listSeasonsByFamily(
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("competitions")
-    .select("id, slug, family, name, season, start_date, end_date")
+    .select(
+      "id, slug, family, name, season, start_date, end_date, matches(count)",
+    )
     .eq("family", family)
     .order("season", { ascending: false });
 
@@ -55,7 +68,9 @@ export async function getCompetitionBySlug(
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("competitions")
-    .select("id, slug, family, name, season, start_date, end_date")
+    .select(
+      "id, slug, family, name, season, start_date, end_date, matches(count)",
+    )
     .eq("slug", slug)
     .maybeSingle();
 
