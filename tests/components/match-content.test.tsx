@@ -85,7 +85,7 @@ describe("MatchContent", () => {
     expect(screen.queryByRole("navigation", { name: "目次" })).toBeNull();
     expect(screen.getByText(/続きは Premium/)).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Premium を始める - ¥980/月" }),
+      screen.getByRole("link", { name: "Premium で全文を読む" }),
     ).toHaveAttribute("href", "/pricing");
     expect(
       screen.getByText(new RegExp(visibleText.slice(0, 40))),
@@ -110,7 +110,7 @@ describe("MatchContent", () => {
 
     expect(screen.queryByText(/続きは Premium/)).toBeNull();
     expect(
-      screen.queryByRole("link", { name: "Premium を始める - ¥980/月" }),
+      screen.queryByRole("link", { name: "Premium で全文を読む" }),
     ).toBeNull();
     expect(screen.getByText("次のセクション")).toBeInTheDocument();
     expect(
