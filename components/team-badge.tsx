@@ -62,7 +62,7 @@ export function TeamBadge({ shortCode, size = 32, slug }: TeamBadgeProps) {
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+        <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="0">
           {colors.flatMap((color, index) => {
             const start = Math.round((index / colors.length) * 100);
             const end = Math.round(((index + 1) / colors.length) * 100);
