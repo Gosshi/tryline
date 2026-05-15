@@ -56,6 +56,20 @@ describe("seed-wikipedia-external-ids", () => {
         season: "2025",
       }),
     ]);
+
+    expect(
+      getTargets({
+        dryRun: true,
+        family: "top-14",
+        season: "2024-25",
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        competitionSlug: "top-14-2024-25",
+        family: "top-14",
+        season: "2024-25",
+      }),
+    ]);
   });
 
   it("matches Wikipedia entries to DB rows and merges external ids", () => {

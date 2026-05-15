@@ -23,6 +23,8 @@ export function RoundHeading({ groupKey }: RoundHeadingProps) {
         }`
       : groupKey.round === null
         ? "節未定"
+        : groupKey.round === 0
+          ? "プレーオフ予選"
         : `Round ${groupKey.round}`;
 
   return (
