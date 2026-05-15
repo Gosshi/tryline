@@ -46,6 +46,10 @@ export type TeamPageMatch = MatchListItem & {
   competition: { slug: string; name: string; season: string };
 };
 
+export type LatestCompletedMatch = {
+  id: string;
+};
+
 type BaseMatchRow = {
   id: string;
   kickoff_at: string;
@@ -294,6 +298,24 @@ export async function getRecentlyReviewedMatches(
         recapExcerpt: truncateAtSentenceBoundary(row.content_md_ja, 120),
       };
     });
+}
+
+export async function getLatestCompletedMatch(): Promise<LatestCompletedMatch | null> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("matches")
+    .select("id")
+    .eq("status", "finished")
+    .lt("kickoff_at", new Date().toISOString())
+    .order("kickoff_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? { id: data.id } : null;
 }
 
 export async function getRecentlyReviewedMatchesForFamily(

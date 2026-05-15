@@ -20,6 +20,7 @@ const authMocks = vi.hoisted(() => ({
 }));
 
 const matchMocks = vi.hoisted(() => ({
+  getLatestCompletedMatch: vi.fn(),
   getRecentlyReviewedMatches: vi.fn(),
 }));
 
@@ -33,12 +34,14 @@ vi.mock("@/lib/auth/client", () => ({
 }));
 
 vi.mock("@/lib/db/queries/matches", () => ({
+  getLatestCompletedMatch: matchMocks.getLatestCompletedMatch,
   getRecentlyReviewedMatches: matchMocks.getRecentlyReviewedMatches,
 }));
 
 describe("PricingPage", () => {
   beforeEach(() => {
     matchMocks.getRecentlyReviewedMatches.mockReset();
+    matchMocks.getLatestCompletedMatch.mockReset();
     matchMocks.getRecentlyReviewedMatches.mockResolvedValue([
       {
         awayTeam: { name: "France" },
@@ -48,6 +51,7 @@ describe("PricingPage", () => {
           "前半の接点でIrelandが優位を作り、Franceの外側防御を何度も揺さぶったレビュー本文です。",
       },
     ]);
+    matchMocks.getLatestCompletedMatch.mockResolvedValue({ id: "match-1" });
   });
 
   afterEach(() => {
@@ -72,9 +76,9 @@ describe("PricingPage", () => {
     expect(
       screen.getByRole("button", { name: "Premium を始める — ¥980/月" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "無料で試す" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "無料で記事を読む" })).toHaveAttribute(
       "href",
-      "/",
+      "/matches/match-1",
     );
 
     for (const feature of [
@@ -105,6 +109,17 @@ describe("PricingPage", () => {
       screen.getByText("どの大会のコンテンツが読めますか？"),
     ).toBeInTheDocument();
     expect(screen.getByText("支払い方法は？")).toBeInTheDocument();
+  });
+
+  it("falls back to the homepage when there is no completed match yet", async () => {
+    matchMocks.getLatestCompletedMatch.mockResolvedValueOnce(null);
+
+    render(await PricingPage());
+
+    expect(screen.getByRole("link", { name: "無料で記事を読む" })).toHaveAttribute(
+      "href",
+      "/",
+    );
   });
 });
 

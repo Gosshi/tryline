@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 import { PricingForm } from "@/app/pricing/pricing-form";
-import { getRecentlyReviewedMatches } from "@/lib/db/queries/matches";
+import {
+  getLatestCompletedMatch,
+  getRecentlyReviewedMatches,
+} from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 
 import type { Metadata } from "next";
@@ -51,7 +54,13 @@ function FeatureMark({ enabled }: { enabled: boolean }) {
 }
 
 export default async function PricingPage() {
-  const [sample] = await getRecentlyReviewedMatches(1);
+  const [sample, latestCompletedMatch] = await Promise.all([
+    getRecentlyReviewedMatches(1).then(([match]) => match),
+    getLatestCompletedMatch(),
+  ]);
+  const trialUrl = latestCompletedMatch
+    ? `/matches/${latestCompletedMatch.id}`
+    : "/";
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -70,9 +79,9 @@ export default async function PricingPage() {
             <PricingForm buttonLabel="Premium を始める — ¥980/月" />
             <Link
               className="rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              href="/"
+              href={trialUrl}
             >
-              無料で試す
+              無料で記事を読む
             </Link>
           </div>
         </div>
