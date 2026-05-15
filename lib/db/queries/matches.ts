@@ -1,5 +1,6 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { type MatchStatus } from "@/lib/format/status";
+import { truncateAtSentenceBoundary } from "@/lib/text";
 
 import type { Json } from "@/lib/db/types";
 
@@ -290,7 +291,7 @@ export async function getRecentlyReviewedMatches(
         ...mapMatchRow(row.match),
         competition: row.match.competition,
         recapGeneratedAt: row.generated_at,
-        recapExcerpt: row.content_md_ja.slice(0, 220),
+        recapExcerpt: truncateAtSentenceBoundary(row.content_md_ja, 120),
       };
     });
 }
