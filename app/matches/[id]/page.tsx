@@ -206,6 +206,7 @@ export default async function MatchDetailPage({
                 contentType="preview"
                 isPremium={premium}
                 match={match}
+                showCta={publishedContent.recap === null}
               />
             )}
             <MatchContentSection

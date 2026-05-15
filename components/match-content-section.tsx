@@ -10,6 +10,7 @@ type MatchContentSectionProps = {
   content: PublishedMatchContent | null;
   isPremium: boolean;
   match: MatchDetail;
+  showCta?: boolean;
 };
 
 const TITLES = {
@@ -27,6 +28,7 @@ export function MatchContentSection({
   contentType,
   isPremium,
   match,
+  showCta,
 }: MatchContentSectionProps) {
   const state = deriveContentState({
     contentType,
@@ -51,6 +53,7 @@ export function MatchContentSection({
           content={content}
           contentType={contentType}
           isPremium={isPremium}
+          showCta={showCta}
         />
       ) : (
         <ContentPlaceholder state={state} type={contentType} />
