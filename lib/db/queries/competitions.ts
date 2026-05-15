@@ -11,6 +11,13 @@ export type CompetitionRow = {
   endDate: string | null;
 };
 
+export type HomepageCompetitionLink = {
+  endDate: string | null;
+  family: string;
+  name: string;
+  season: string;
+};
+
 type CompetitionDbRow = {
   id: string;
   slug: string;
@@ -41,6 +48,33 @@ export function selectLatestSeasonWithMatches(
   const withMatches = seasons.filter((season) => season.matchCount > 0);
 
   return withMatches[0] ?? seasons[0] ?? null;
+}
+
+function isRecentlyActive(endDate: string | null, now = new Date()): boolean {
+  if (!endDate) {
+    return false;
+  }
+
+  const diffMs =
+    now.getTime() - new Date(`${endDate}T23:59:59.999Z`).getTime();
+
+  return diffMs <= 14 * 24 * 60 * 60 * 1000;
+}
+
+export function sortHomepageCompetitionLinks(
+  links: HomepageCompetitionLink[],
+  now = new Date(),
+): HomepageCompetitionLink[] {
+  return [...links].sort((left, right) => {
+    const leftActive = isRecentlyActive(left.endDate, now);
+    const rightActive = isRecentlyActive(right.endDate, now);
+
+    if (leftActive !== rightActive) {
+      return leftActive ? -1 : 1;
+    }
+
+    return right.season.localeCompare(left.season);
+  });
 }
 
 export async function listSeasonsByFamily(

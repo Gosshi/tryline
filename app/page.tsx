@@ -7,6 +7,9 @@ import { getUser, getUserProfile } from "@/lib/auth/server";
 import {
   getCompetitionBySlug,
   listFamilies,
+  listSeasonsByFamily,
+  selectLatestSeasonWithMatches,
+  sortHomepageCompetitionLinks,
 } from "@/lib/db/queries/competitions";
 import {
   getFavoriteTeamMatches,
@@ -69,6 +72,28 @@ export default async function HomePage() {
   const latestCompetition = latest
     ? await getCompetitionBySlug(latest.slug)
     : null;
+  const homepageCompetitionLinks = sortHomepageCompetitionLinks(
+    (
+      await Promise.all(
+        families.map(async (family) => {
+          const latestSeason = selectLatestSeasonWithMatches(
+            await listSeasonsByFamily(family),
+          );
+
+          if (!latestSeason || latestSeason.matchCount === 0) {
+            return null;
+          }
+
+          return {
+            endDate: latestSeason.endDate,
+            family,
+            name: latestSeason.name,
+            season: latestSeason.season,
+          };
+        }),
+      )
+    ).filter((link) => link !== null),
+  );
   const sampleMatch = sampleReviews[0] ?? null;
   const favoriteTeamPageSlug =
     favoriteTeamSlugs.length === 1 ? (favoriteTeamSlugs[0] ?? null) : null;
@@ -146,12 +171,16 @@ export default async function HomePage() {
                 Premium を始める — ¥980/月
               </Link>
             )}
-            <Link
-              className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              href="/c/six-nations/2025"
-            >
-              試合を見る
-            </Link>
+              <Link
+                className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                href={
+                  latestCompetition
+                    ? `/c/${latestCompetition.family}/${latestCompetition.season}`
+                    : "/"
+                }
+              >
+                試合を見る
+              </Link>
           </div>
         </div>
       </section>
@@ -337,23 +366,28 @@ export default async function HomePage() {
           <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
             大会アーカイブ
           </h2>
-          {families.length === 0 ? (
+          {homepageCompetitionLinks.length === 0 ? (
             <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-sm text-[var(--color-ink-muted)]">
               表示できる大会はありません
             </p>
           ) : (
             <ul className="grid gap-3 sm:grid-cols-2">
-              {families.map((family) => (
-                <li key={family}>
+              {homepageCompetitionLinks.map((competition) => (
+                <li key={`${competition.family}-${competition.season}`}>
                   <Link
                     className="group flex h-full items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm"
-                    href={`/c/${family}`}
+                    href={`/c/${competition.family}/${competition.season}`}
                   >
-                    <span className="font-semibold text-[var(--color-ink)]">
-                      {formatFamilyName(family)}
-                    </span>
+                    <div>
+                      <span className="block font-semibold text-[var(--color-ink)]">
+                        {formatFamilyName(competition.family)}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-[var(--color-ink-muted)]">
+                        {competition.season}
+                      </span>
+                    </div>
                     <span className="text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
-                      全シーズン →
+                      最新シーズン →
                     </span>
                   </Link>
                 </li>
