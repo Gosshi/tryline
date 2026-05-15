@@ -28,6 +28,10 @@ describe("SiteHeader", () => {
 
     expect(matchesLink).toHaveAttribute("href", "/");
     expect(matchesLink).toHaveClass("-my-1.5", "py-3", "sm:py-1.5");
+    expect(screen.getByRole("button", { name: "大会" })).toHaveAttribute(
+      "aria-haspopup",
+      "listbox",
+    );
     expect(screen.queryByRole("link", { name: "順位表" })).not.toBeInTheDocument();
   });
 });
