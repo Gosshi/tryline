@@ -9,11 +9,13 @@ import type { FormEvent } from "react";
 
 type PricingFormProps = {
   buttonLabel: string;
+  intent?: "login" | "subscribe";
   variant?: "hero" | "inline";
 };
 
 export function PricingForm({
   buttonLabel,
+  intent = "subscribe",
   variant = "hero",
 }: PricingFormProps) {
   const [showAuth, setShowAuth] = useState(false);
@@ -36,7 +38,9 @@ export function PricingForm({
 
   return (
     <>
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      {showAuth && (
+        <AuthModal intent={intent} onClose={() => setShowAuth(false)} />
+      )}
       <form
         action="/api/stripe/checkout"
         method="POST"

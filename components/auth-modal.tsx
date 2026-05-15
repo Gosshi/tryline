@@ -7,10 +7,14 @@ import { createPortal } from "react-dom";
 import { getSupabaseBrowserClient } from "@/lib/auth/client";
 
 type AuthModalProps = {
+  intent?: "login" | "subscribe";
   onClose: () => void;
 };
 
-export function AuthModal({ onClose }: AuthModalProps) {
+export function AuthModal({
+  intent = "login",
+  onClose,
+}: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sent" | "error">("idle");
   const [mounted, setMounted] = useState(false);
@@ -46,24 +50,33 @@ export function AuthModal({ onClose }: AuthModalProps) {
 
   if (!mounted) return null;
 
+  const title = intent === "subscribe" ? "Premium を始める" : "ログイン";
+  const description =
+    intent === "subscribe"
+      ? "ログイン後、自動的に決済ページに移動します。"
+      : null;
+
   return createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50">
       <div className="flex min-h-[100dvh] items-end justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:min-h-full sm:items-center sm:p-0">
         <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-          <h2 className="mb-4 text-lg font-black text-slate-950">ログイン</h2>
+          <h2 className="text-lg font-black text-slate-950">{title}</h2>
+          {description && (
+            <p className="mt-1 text-sm text-slate-500">{description}</p>
+          )}
           {state === "sent" ? (
-            <p className="text-sm leading-6 text-slate-600">
+            <p className="mt-4 text-sm leading-6 text-slate-600">
               メールを送りました。リンクをクリックしてログインしてください。
             </p>
           ) : (
             <>
               {state === "error" && (
-                <p className="mb-3 text-sm text-red-600">
+                <p className="mb-3 mt-4 text-sm text-red-600">
                   エラーが発生しました。
                 </p>
               )}
               <button
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                 onClick={() => void handleGoogleLogin()}
                 type="button"
               >
