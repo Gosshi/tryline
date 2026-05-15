@@ -152,3 +152,23 @@ export function parseMatchEventsFromVeventHtml(rawHtml: string): ParsedMatchEven
     ...parseScoringCell(awayHtml, "away"),
   ];
 }
+
+// URC season tables use the detail row's td[1] for home scoring and td[3] for away scoring.
+export function parseMatchEventsFromUrcDetailRowHtml(
+  rowHtml: string,
+): ParsedMatchEvent[] {
+  const $ = load(`<table><tbody>${rowHtml}</tbody></table>`);
+  const cells = $("tr").first().children("td");
+
+  if (cells.length < 4) {
+    return [];
+  }
+
+  const homeHtml = $.html(cells.eq(1)) ?? "";
+  const awayHtml = $.html(cells.eq(3)) ?? "";
+
+  return [
+    ...parseScoringCell(homeHtml, "home"),
+    ...parseScoringCell(awayHtml, "away"),
+  ];
+}
