@@ -29,7 +29,7 @@ const urcSeasonHtml = `
       <td>26 September 2025</td>
       <td style="text-align:right"><b>(1 BP) <a>Stormers</a></b></td>
       <td style="text-align:center"><b>35 – 0</b></td>
-      <td style="text-align:left"><b><a>Leinster</a></b></td>
+      <td style="text-align:left"><b><a href="/flag"><img alt="Ireland"></a><a>Leinster</a></b></td>
       <td>Cape Town Stadium</td>
     </tr>
     <tr style="font-size:85%">
@@ -39,11 +39,15 @@ const urcSeasonHtml = `
       <td></td>
       <td>Attendance</td>
     </tr>
+  </tbody>
+</table>
+<table class="mw-collapsible mw-collapsed">
+  <tbody>
     <tr>
       <td>27 September 2025</td>
-      <td style="text-align:right"><b><a>Zebre</a></b></td>
+      <td style="text-align:right"><b><a href="/flag"><img alt="Italy"></a><a>Zebre</a></b></td>
       <td style="text-align:center"><b>12-18</b></td>
-      <td style="text-align:left"><b><a>Cardiff</a></b></td>
+      <td style="text-align:left"><b><a href="/flag"><img alt="Wales"></a><a>Cardiff</a></b></td>
       <td>Parma</td>
     </tr>
     <tr style="font-size:85%">

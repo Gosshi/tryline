@@ -30,15 +30,28 @@ function roundNumberFromId(roundId: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
-function findRoundTable($: ReturnType<typeof load>, roundId: string) {
+function firstNonEmptyLinkText(
+  $: ReturnType<typeof load>,
+  cell: ReturnType<ReturnType<typeof load>>,
+): string {
+  return cell
+    .find("a")
+    .filter((_, element) => $(element).text().trim() !== "")
+    .first()
+    .text()
+    .trim();
+}
+
+function findRoundTables($: ReturnType<typeof load>, roundId: string) {
   const heading = $(`h3#${roundId}`).first();
 
   if (!heading.length) {
-    return null;
+    return [];
   }
 
   const headingWrapper = heading.closest(".mw-heading");
   let cursor = (headingWrapper.length ? headingWrapper : heading).next();
+  const tables: unknown[] = [];
 
   while (cursor.length) {
     if (cursor.is("div.mw-heading")) {
@@ -46,19 +59,25 @@ function findRoundTable($: ReturnType<typeof load>, roundId: string) {
     }
 
     if (cursor.is("table.mw-collapsible")) {
-      return cursor;
+      const element = cursor.get(0);
+
+      if (element) {
+        tables.push(element);
+      }
+
+      cursor = cursor.next();
+      continue;
     }
 
-    const nestedTable = cursor.find("table.mw-collapsible").first();
-
-    if (nestedTable.length) {
-      return nestedTable;
-    }
-
+    cursor
+      .find("table.mw-collapsible")
+      .each((_, element) => {
+        tables.push(element);
+      });
     cursor = cursor.next();
   }
 
-  return null;
+  return tables;
 }
 
 export function parseWikipediaUrcSeasonMatches(
@@ -82,44 +101,47 @@ export function parseWikipediaUrcSeasonMatches(
       continue;
     }
 
-    const table = findRoundTable($, roundId);
+    const tables = findRoundTables($, roundId);
 
-    if (!table) {
+    if (tables.length === 0) {
       continue;
     }
 
-    const rows = table.find("tbody > tr").toArray();
     let matchIndex = 0;
 
-    for (let index = 0; index < rows.length - 1; index += 2) {
-      const infoRow = $(rows[index]!);
+    for (const table of tables) {
+      const rows = $(table as any).find("tbody > tr").toArray();
 
-      if (!SCORE_PATTERN.test(infoRow.text())) {
-        continue;
-      }
+      for (let index = 0; index < rows.length - 1; index += 2) {
+        const infoRow = $(rows[index]!);
 
-      const cells = infoRow.children("td");
-      const dateText = cells.eq(0).text().trim();
-      const homeTeamName = normalizeWikipediaTeamName(
-        cells.eq(1).find("a").first().text().trim(),
-      );
-      const awayTeamName = normalizeWikipediaTeamName(
-        cells.eq(3).find("a").first().text().trim(),
-      );
+        if (!SCORE_PATTERN.test(infoRow.text())) {
+          continue;
+        }
 
-      if (!homeTeamName || !awayTeamName) {
+        const cells = infoRow.children("td");
+        const dateText = cells.eq(0).text().trim();
+        const homeTeamName = normalizeWikipediaTeamName(
+          firstNonEmptyLinkText($, cells.eq(1)),
+        );
+        const awayTeamName = normalizeWikipediaTeamName(
+          firstNonEmptyLinkText($, cells.eq(3)),
+        );
+
+        if (!homeTeamName || !awayTeamName) {
+          matchIndex += 1;
+          continue;
+        }
+
+        matches.push({
+          awayTeamName,
+          dateKey: dateKeyFromText(dateText),
+          dateText,
+          homeTeamName,
+          sectionId: `${roundId}_${matchIndex}`,
+        });
         matchIndex += 1;
-        continue;
       }
-
-      matches.push({
-        awayTeamName,
-        dateKey: dateKeyFromText(dateText),
-        dateText,
-        homeTeamName,
-        sectionId: `${roundId}_${matchIndex}`,
-      });
-      matchIndex += 1;
     }
   }
 
