@@ -122,6 +122,43 @@ describe("MatchCard", () => {
     );
   });
 
+  it("renders club team badges at 28px in match cards", () => {
+    render(
+      <MatchCard
+        match={{
+          ...baseMatch,
+          awayTeam: {
+            name: "Bristol Bears",
+            shortCode: "BRI",
+            slug: "bristol",
+          },
+          homeTeam: {
+            name: "Bath",
+            shortCode: "BAT",
+            slug: "bath",
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("img", { name: "BAT" })).toHaveAttribute(
+      "width",
+      "28",
+    );
+    expect(screen.getByRole("img", { name: "BAT" })).toHaveAttribute(
+      "height",
+      "28",
+    );
+    expect(screen.getByRole("img", { name: "BRI" })).toHaveAttribute(
+      "width",
+      "28",
+    );
+    expect(screen.getByRole("img", { name: "BRI" })).toHaveAttribute(
+      "height",
+      "28",
+    );
+  });
+
   it("uses the redesigned lifted card treatment", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
 
