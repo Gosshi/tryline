@@ -74,7 +74,7 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
             >
               <TeamBadge
                 shortCode={match.homeTeam.shortCode}
-                size={20}
+                size={28}
                 slug={match.homeTeam.slug}
               />
               {match.homeTeam.shortCode}
@@ -160,7 +160,7 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
               )}
               <TeamBadge
                 shortCode={match.awayTeam.shortCode}
-                size={20}
+                size={28}
                 slug={match.awayTeam.slug}
               />
             </p>
