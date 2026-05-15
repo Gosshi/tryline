@@ -32,6 +32,10 @@ describe("SiteHeader", () => {
       "aria-haspopup",
       "listbox",
     );
+    expect(screen.getByRole("button", { name: "メニューを開く" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
     expect(screen.queryByRole("link", { name: "順位表" })).not.toBeInTheDocument();
   });
 });

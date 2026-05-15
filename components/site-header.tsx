@@ -4,6 +4,7 @@ import { getUser, getUserProfile } from "@/lib/auth/server";
 import { listAllTeams } from "@/lib/db/queries/teams";
 
 import { CompetitionNavDropdown } from "./competition-nav-dropdown";
+import { MobileHeaderMenu } from "./mobile-header-menu";
 import { UserMenu } from "./user-menu";
 
 export async function SiteHeader() {
@@ -24,9 +25,16 @@ export async function SiteHeader() {
           </span>
         </Link>
 
+        <MobileHeaderMenu
+          allTeams={allTeams}
+          favoriteTeamSlugs={profile?.favorite_team_slugs ?? []}
+          isPremium={premium}
+          user={user}
+        />
+
         <nav
           aria-label="メインナビゲーション"
-          className="flex items-center gap-2"
+          className="hidden items-center gap-2 md:flex"
         >
           <ul className="flex items-center gap-1">
             <li>
