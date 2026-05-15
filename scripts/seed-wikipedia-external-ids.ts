@@ -16,7 +16,11 @@ import { mapWikipediaTeamName } from "@/lib/scrapers/wikipedia-team-name-map";
 
 import type { Json } from "@/lib/db/types";
 
-type WikipediaSeasonFamily = "premiership" | "rugby-championship" | "urc";
+type WikipediaSeasonFamily =
+  | "premiership"
+  | "rugby-championship"
+  | "top-14"
+  | "urc";
 
 type CliOptions = {
   dryRun: boolean;
@@ -55,6 +59,11 @@ const WIKIPEDIA_SEASON_URLS: Record<string, WikipediaSeasonTarget> = {
     family: "rugby-championship",
     url: "https://en.wikipedia.org/wiki/2025_Rugby_Championship",
   },
+  "top-14-2025-26": {
+    competitionSlug: "top-14-2025-26",
+    family: "top-14",
+    url: "https://en.wikipedia.org/wiki/2025%E2%80%9326_Top_14",
+  },
   "urc-2025-26": {
     competitionSlug: "urc-2025-26",
     family: "urc",
@@ -81,6 +90,7 @@ export function parseOptions(argv: string[]): CliOptions {
       if (
         value !== "premiership" &&
         value !== "rugby-championship" &&
+        value !== "top-14" &&
         value !== "urc"
       ) {
         throw new Error(`Unsupported --family value: ${value}`);
