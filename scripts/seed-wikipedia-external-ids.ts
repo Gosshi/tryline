@@ -77,6 +77,12 @@ const WIKIPEDIA_SEASON_URLS: Record<string, WikipediaSeasonTarget> = {
     season: "2025-26",
     url: "https://en.wikipedia.org/wiki/2025%E2%80%9326_Top_14",
   },
+  "top-14-2024-25": {
+    competitionSlug: "top-14-2024-25",
+    family: "top-14",
+    season: "2024-25",
+    url: "https://en.wikipedia.org/wiki/2024%E2%80%9325_Top_14",
+  },
   "urc-2025-26": {
     competitionSlug: "urc-2025-26",
     family: "urc",

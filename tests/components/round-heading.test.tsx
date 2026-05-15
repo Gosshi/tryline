@@ -47,4 +47,11 @@ describe("RoundHeading", () => {
 
     expect(screen.getByText("第1節 - 11/2〜11/3")).toBeInTheDocument();
   });
+
+  it("maps round zero to a playoff qualifier label", () => {
+    render(<RoundHeading groupKey={{ round: 0, type: "round" }} />);
+
+    expect(screen.getByText("プレーオフ予選")).toBeInTheDocument();
+    expect(screen.queryByText("Round 0")).not.toBeInTheDocument();
+  });
 });
