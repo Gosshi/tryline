@@ -123,4 +123,27 @@ describe("MatchHeader", () => {
       "https://www.youtube.com/results?search_query=Ireland%20vs%20France%202027%20highlights",
     );
   });
+
+  it("allows long team names to wrap on mobile", () => {
+    render(
+      <MatchHeader
+        match={{
+          ...match,
+          awayTeam: {
+            ...match.awayTeam,
+            name: "Northampton Saints RFC Extended Name",
+          },
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText("Northampton Saints RFC Extended Name"),
+    ).toHaveClass(
+      "max-w-[9rem]",
+      "whitespace-normal",
+      "break-words",
+      "sm:truncate",
+    );
+  });
 });

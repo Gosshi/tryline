@@ -181,7 +181,7 @@ function TeamBlock({
       </p>
       <p
         className={cn(
-          "mt-1 truncate text-xs font-medium leading-tight sm:text-sm",
+          "mt-1 max-w-[9rem] whitespace-normal break-words text-xs font-medium leading-tight sm:max-w-none sm:truncate sm:whitespace-nowrap sm:text-sm",
           dimmed ? "text-slate-300" : "text-slate-400",
         )}
       >
