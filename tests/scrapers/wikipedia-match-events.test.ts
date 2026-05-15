@@ -77,4 +77,44 @@ describe("wikipedia match events scraper", () => {
       isPenaltyTry: false,
     });
   });
+
+  it("parses URC detail rows from td[1] and td[3]", async () => {
+    const { parseMatchEventsFromUrcDetailRowHtml } = await import(
+      "@/lib/scrapers/wikipedia-match-events"
+    );
+
+    const result = parseMatchEventsFromUrcDetailRowHtml(`
+      <tr style="font-size:85%">
+        <td>18:00</td>
+        <td><b>Try:</b> <a>Home Player</a> 23'<br><b>Pen:</b> <a>Home Kicker</a> 40'</td>
+        <td>Report</td>
+        <td><b>Con:</b> <a>Away Kicker</a> 24'</td>
+        <td>Attendance</td>
+      </tr>
+    `);
+
+    expect(result).toEqual([
+      {
+        isPenaltyTry: false,
+        minute: 23,
+        playerName: "Home Player",
+        teamSide: "home",
+        type: "try",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 40,
+        playerName: "Home Kicker",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 24,
+        playerName: "Away Kicker",
+        teamSide: "away",
+        type: "conversion",
+      },
+    ]);
+  });
 });

@@ -12,6 +12,7 @@ import {
   type WikipediaClubMatchDetails,
 } from "@/lib/scrapers/wikipedia-club-match-details";
 import { scrapeWikipediaRcMatchDetails } from "@/lib/scrapers/wikipedia-rc-match-details";
+import { scrapeWikipediaUrcMatchDetails } from "@/lib/scrapers/wikipedia-urc-match-details";
 
 import type { Json } from "@/lib/db/types";
 import type { WikipediaMatchLineup } from "@/lib/scrapers/wikipedia-lineups";
@@ -134,9 +135,34 @@ function getWikipediaSource(externalIds: Json) {
   };
 }
 
+async function loadCompetitionIds(family: string | null): Promise<string[]> {
+  const db = getSupabaseServerClient();
+  let query = db.from("competitions").select("id");
+
+  if (family) {
+    query = query.eq("family", family);
+  } else {
+    query = query.in("family", [...CLUB_FAMILIES]);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as { id: string }[]).map((c) => c.id);
+}
+
 async function loadTargetMatches(options: CliOptions): Promise<MatchRow[]> {
   const db = getSupabaseServerClient();
-  let query = db
+  const competitionIds = await loadCompetitionIds(options.family);
+
+  if (competitionIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await db
     .from("matches")
     .select(
       `
@@ -152,32 +178,28 @@ async function loadTargetMatches(options: CliOptions): Promise<MatchRow[]> {
       `,
     )
     .eq("status", "finished")
-    .not("external_ids->>wikipedia_url", "is", null)
-    .limit(options.limit);
-
-  if (options.family) {
-    query = query.eq("competition.family", options.family);
-  } else {
-    query = query.in("competition.family", [...CLUB_FAMILIES]);
-  }
-
-  const { data, error } = await query.order("kickoff_at", { ascending: false });
+    .in("competition_id", competitionIds)
+    .order("kickoff_at", { ascending: false });
 
   if (error) {
     throw error;
   }
 
-  return ((data ?? []) as unknown as MatchRow[]).filter((match) => {
-    if (!match.competition || !getWikipediaSource(match.external_ids)) {
-      return false;
-    }
+  return ((data ?? []) as unknown as MatchRow[])
+    .filter((match) => {
+      if (!match.competition || !getWikipediaSource(match.external_ids)) {
+        return false;
+      }
 
-    if (match.competition.family === "rugby-championship") {
-      return match.match_events.length === 0 || match.match_lineups.length === 0;
-    }
+      if (match.competition.family === "rugby-championship") {
+        return (
+          match.match_events.length === 0 || match.match_lineups.length === 0
+        );
+      }
 
-    return match.match_events.length === 0;
-  });
+      return match.match_events.length === 0;
+    })
+    .slice(0, options.limit);
 }
 
 async function ensurePlayerIds(
@@ -344,9 +366,15 @@ async function scrapeDetailsForMatch(
   match: MatchRow,
   source: NonNullable<ReturnType<typeof getWikipediaSource>>,
 ) {
-  return match.competition?.family === "rugby-championship"
-    ? scrapeWikipediaRcMatchDetails(source)
-    : scrapeWikipediaClubMatchDetails(source);
+  if (match.competition?.family === "rugby-championship") {
+    return scrapeWikipediaRcMatchDetails(source);
+  }
+
+  if (match.competition?.family === "urc") {
+    return scrapeWikipediaUrcMatchDetails(source);
+  }
+
+  return scrapeWikipediaClubMatchDetails(source);
 }
 
 async function main() {

@@ -21,6 +21,10 @@ describe("seed-wikipedia-external-ids", () => {
       dryRun: false,
       family: "top-14",
     });
+    expect(parseOptions(["--family=urc"])).toEqual({
+      dryRun: false,
+      family: "urc",
+    });
     expect(() => parseOptions(["--family=top-14x"])).toThrow(
       "Unsupported --family value: top-14x",
     );
@@ -110,5 +114,29 @@ describe("seed-wikipedia-external-ids", () => {
     );
 
     expect(update?.id).toBe("match-top14-1");
+  });
+
+  it("matches URC team aliases against seeded DB names", () => {
+    const update = matchWikipediaEntryToMatch(
+      {
+        awayTeamName: "Leinster",
+        dateKey: "2025-09-26",
+        dateText: "2025-09-26",
+        homeTeamName: "Stormers",
+        sectionId: "Round_1_0",
+      },
+      [
+        {
+          away_team: { name: "Leinster" },
+          external_ids: {} as Json,
+          home_team: { name: "Stormers" },
+          id: "match-urc-1",
+          kickoff_at: "2025-09-26T17:00:00.000Z",
+        },
+      ],
+      "https://en.wikipedia.org/wiki/urc",
+    );
+
+    expect(update?.id).toBe("match-urc-1");
   });
 });

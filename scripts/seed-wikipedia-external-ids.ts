@@ -13,6 +13,7 @@ import {
   type WikipediaSeasonMatch,
 } from "@/lib/scrapers/wikipedia-season-parser";
 import { mapWikipediaTeamName } from "@/lib/scrapers/wikipedia-team-name-map";
+import { parseWikipediaUrcSeasonMatches } from "@/lib/scrapers/wikipedia-urc-season-parser";
 
 import type { Json } from "@/lib/db/types";
 
@@ -215,7 +216,9 @@ async function seedTarget(target: WikipediaSeasonTarget, dryRun: boolean) {
   const sourceMatches =
     target.family === "rugby-championship"
       ? parseWikipediaRcSeasonMatches(html)
-      : parseWikipediaSeasonMatches(html);
+      : target.family === "urc"
+        ? parseWikipediaUrcSeasonMatches(html)
+        : parseWikipediaSeasonMatches(html);
   const rows = await loadFinishedMatches(target.competitionSlug);
   const matched: MatchUpdate[] = [];
   let skipped = 0;
