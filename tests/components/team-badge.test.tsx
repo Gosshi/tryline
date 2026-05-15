@@ -35,6 +35,10 @@ describe("TeamBadge", () => {
     expect(badge).toHaveAttribute("viewBox", "0 0 32 32");
     expect(badge).toHaveAttribute("width", "32");
     expect(badge).toHaveAttribute("height", "32");
+    expect(badge.querySelector("linearGradient")).toHaveAttribute("x1", "0");
+    expect(badge.querySelector("linearGradient")).toHaveAttribute("x2", "1");
+    expect(badge.querySelector("linearGradient")).toHaveAttribute("y1", "0");
+    expect(badge.querySelector("linearGradient")).toHaveAttribute("y2", "0");
     expect(badge.querySelector("circle")).not.toBeInTheDocument();
     expect(badge.querySelector("path")).toHaveAttribute(
       "d",
@@ -53,5 +57,26 @@ describe("TeamBadge", () => {
     const badge = screen.getByRole("img", { name: "SAR" });
 
     expect(badge.querySelector("text")).toHaveAttribute("fill", "#FFFFFF");
+  });
+
+  it("renders Harlequins as four vertical stripe stops", () => {
+    render(<TeamBadge shortCode="HAR" size={48} slug="harlequins" />);
+    const badge = screen.getByRole("img", { name: "HAR" });
+    const stops = [...badge.querySelectorAll("stop")].map((stop) =>
+      stop.getAttribute("stop-color"),
+    );
+
+    expect(badge).toHaveAttribute("width", "48");
+    expect(badge).toHaveAttribute("height", "48");
+    expect(stops).toEqual([
+      "#1E7F3B",
+      "#1E7F3B",
+      "#003087",
+      "#003087",
+      "#FFD100",
+      "#FFD100",
+      "#E91E8F",
+      "#E91E8F",
+    ]);
   });
 });

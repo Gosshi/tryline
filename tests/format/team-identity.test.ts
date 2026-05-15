@@ -82,13 +82,13 @@ describe("team identity formatter", () => {
       "linear-gradient(to bottom, #007A4D 0%, #007A4D 33%, #FFB612 33%, #FFB612 67%, #000000 67%, #000000 100%)",
     );
     expect(getTeamStripe("saracens")).toBe(
-      "linear-gradient(to bottom, #000000 0%, #000000 100%)",
+      "linear-gradient(to bottom, #000000 0%, #000000 50%, #EF3340 50%, #EF3340 100%)",
     );
     expect(getTeamStripe("toulouse")).toBe(
       "linear-gradient(to bottom, #E30613 0%, #E30613 100%)",
     );
     expect(getTeamStripe("leinster")).toBe(
-      "linear-gradient(to bottom, #0032A0 0%, #0032A0 100%)",
+      "linear-gradient(to bottom, #0032A0 0%, #0032A0 50%, #009A44 50%, #009A44 100%)",
     );
     expect(getTeamStripe("crusaders")).toBe(
       "linear-gradient(to bottom, #D71920 0%, #D71920 100%)",
@@ -105,7 +105,14 @@ describe("team identity formatter", () => {
       "#FFFFFF",
       "#F77F00",
     ]);
-    expect(getTeamStripeColors("saracens")).toEqual(["#000000"]);
+    expect(getTeamStripeColors("bath")).toEqual(["#002F6C", "#F7C600"]);
+    expect(getTeamStripeColors("harlequins")).toEqual([
+      "#1E7F3B",
+      "#003087",
+      "#FFD100",
+      "#E91E8F",
+    ]);
+    expect(getTeamStripeColors("saracens")).toEqual(["#000000", "#EF3340"]);
     expect(getTeamStripeColors("unknown")).toEqual(["#94a3b8"]);
   });
 });
