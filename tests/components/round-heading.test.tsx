@@ -9,7 +9,7 @@ import { RoundHeading } from "@/components/round-heading";
 
 describe("RoundHeading", () => {
   it("renders the round label with editorial display styles", () => {
-    render(<RoundHeading round={1} />);
+    render(<RoundHeading groupKey={{ round: 1, type: "round" }} />);
 
     expect(screen.getByText("Round 1")).toHaveClass(
       "font-display",
@@ -20,7 +20,9 @@ describe("RoundHeading", () => {
   });
 
   it("renders dividers on both sides", () => {
-    const { container } = render(<RoundHeading round={null} />);
+    const { container } = render(
+      <RoundHeading groupKey={{ round: null, type: "round" }} />,
+    );
 
     expect(screen.getByText("節未定")).toBeInTheDocument();
     const dividers = container.querySelectorAll(".h-px");
@@ -29,5 +31,20 @@ describe("RoundHeading", () => {
     dividers.forEach((divider) => {
       expect(divider).toHaveClass("flex-1", "bg-[var(--color-rule)]");
     });
+  });
+
+  it("renders weekly group labels for roundless competitions", () => {
+    render(
+      <RoundHeading
+        groupKey={{
+          endDate: "2025-11-03",
+          startDate: "2025-11-02",
+          type: "week",
+          weekIndex: 1,
+        }}
+      />,
+    );
+
+    expect(screen.getByText("第1節 - 11/2〜11/3")).toBeInTheDocument();
   });
 });

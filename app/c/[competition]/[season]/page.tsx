@@ -17,6 +17,7 @@ import {
   formatFamilyName,
   getCompetitionFamilyColor,
 } from "@/lib/format/competition";
+import { groupMatchesByRound } from "@/lib/format/match-groups";
 import { createOgImage } from "@/lib/seo/og-image";
 
 import type { Metadata } from "next";
@@ -26,30 +27,6 @@ type Props = {
 };
 
 export const revalidate = 60;
-
-function groupMatchesByRound(
-  matches: Awaited<ReturnType<typeof listMatchesForCompetition>>,
-) {
-  const grouped = new Map<number | null, typeof matches>();
-
-  for (const match of matches) {
-    const current = grouped.get(match.round) ?? [];
-    current.push(match);
-    grouped.set(match.round, current);
-  }
-
-  return [...grouped.entries()].sort(([leftRound], [rightRound]) => {
-    if (leftRound === null) {
-      return 1;
-    }
-
-    if (rightRound === null) {
-      return -1;
-    }
-
-    return leftRound - rightRound;
-  });
-}
 
 function formatDateJa(dateStr: string): string {
   const date = new Date(`${dateStr}T00:00:00`);
@@ -181,9 +158,16 @@ export default async function SeasonPage({ params }: Props) {
             </div>
           </div>
         ) : (
-          groupedMatches.map(([round, roundMatches]) => (
-            <section className="space-y-4" key={round ?? "unassigned"}>
-              <RoundHeading round={round} />
+          groupedMatches.map(([groupKey, roundMatches]) => (
+            <section
+              className="space-y-4"
+              key={
+                groupKey.type === "round"
+                  ? (groupKey.round ?? "unassigned")
+                  : `week-${groupKey.weekIndex}`
+              }
+            >
+              <RoundHeading groupKey={groupKey} />
               <div className="grid gap-4 md:grid-cols-2">
                 {roundMatches.map((match) => (
                   <MatchCard
