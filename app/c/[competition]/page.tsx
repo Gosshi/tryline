@@ -3,7 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MatchCard } from "@/components/match-card";
-import { listSeasonsByFamily } from "@/lib/db/queries/competitions";
+import {
+  listSeasonsByFamily,
+  selectLatestSeasonWithMatches,
+} from "@/lib/db/queries/competitions";
 import { getRecentlyReviewedMatchesForFamily } from "@/lib/db/queries/matches";
 import {
   formatCompetitionTitle,
@@ -70,7 +73,7 @@ export default async function CompetitionHubPage({ params }: Props) {
     notFound();
   }
 
-  const latestSeason = seasons[0];
+  const latestSeason = selectLatestSeasonWithMatches(seasons);
 
   if (!latestSeason) {
     notFound();
