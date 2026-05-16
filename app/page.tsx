@@ -272,9 +272,17 @@ export default async function HomePage() {
                 最新シーズン
               </p>
               <p className="mt-2 font-serif text-3xl font-bold text-[var(--color-ink)] sm:text-4xl">
-                {formatCompetitionTitle(
-                  latestCompetition.name,
-                  latestCompetition.season,
+                {latestCompetition.name.includes(latestCompetition.season) ? (
+                  <span className="whitespace-nowrap">
+                    {latestCompetition.name}
+                  </span>
+                ) : (
+                  <>
+                    {latestCompetition.name}{" "}
+                    <span className="whitespace-nowrap">
+                      {latestCompetition.season}
+                    </span>
+                  </>
                 )}
               </p>
               <p className="mt-4 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
