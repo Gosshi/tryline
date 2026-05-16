@@ -7,6 +7,7 @@ const TEAM_FLAGS: Record<string, string> = {
   argentina: "🇦🇷",
   australia: "🇦🇺",
   canada: "🇨🇦",
+  chile: "🇨🇱",
   england:
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 513 342"><path fill="#FFF" d="M0 0h513v342H0z"/><path fill="#D80027" d="M0 136h513v70H0z"/><path fill="#D80027" d="M221.5 0h70v342h-70z"/></svg>',
   fiji: "🇫🇯",
@@ -55,6 +56,7 @@ const TEAM_IDENTITY: Record<string, TeamIdentity> = {
   bulls: { color: "#00A3E0", flag: "🏉" },
   cardiff: { color: "#72B7E8", flag: "🏉" },
   canada: { color: "#D80621", flag: "🇨🇦" },
+  chile: { color: "#D52B1E", flag: "🇨🇱" },
   "canon-eagles": { color: "#C8102E", flag: "🏉" },
   castres: { color: "#1F75FE", flag: "🏉" },
   chiefs: { color: "#D50032", flag: "🏉" },
@@ -144,6 +146,7 @@ const TEAM_STRIPES: Record<string, string[]> = {
   bulls: ["#00A3E0"],
   cardiff: ["#72B7E8", "#000000"],
   canada: ["#D80621", "#FFFFFF"],
+  chile: ["#D52B1E", "#FFFFFF"],
   "canon-eagles": ["#C8102E"],
   castres: ["#1F75FE"],
   chiefs: ["#D50032"],
