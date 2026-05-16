@@ -12,6 +12,7 @@ import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
 import { getMatchById } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
+import { formatRoundLabel } from "@/lib/format/round-label";
 import { extractDescription } from "@/lib/match-content/description";
 import { createOgImage } from "@/lib/seo/og-image";
 
@@ -161,7 +162,9 @@ export default async function MatchDetailPage({
                   <li aria-hidden className="select-none">
                     /
                   </li>
-                  <li className="text-[var(--color-ink)]">Round {match.round}</li>
+                  <li className="text-[var(--color-ink)]">
+                    {formatRoundLabel(match.round)}
+                  </li>
                 </>
               )}
             </ol>
