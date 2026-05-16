@@ -33,8 +33,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 2.0.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@2.0.0");
+  it("uses recap prompt version 2.1.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@2.1.0");
   });
 
   it("instructs the model to use final scores as the winner source", () => {
