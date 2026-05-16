@@ -124,6 +124,22 @@ describe("MatchHeader", () => {
     );
   });
 
+  it("formats round zero as a playoff qualifier in the subtitle", () => {
+    render(
+      <MatchHeader
+        match={{
+          ...match,
+          round: 0,
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText(/Six Nations 2027 · プレーオフ予選/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Round 0/)).not.toBeInTheDocument();
+  });
+
   it("allows long team names to wrap on mobile", () => {
     render(
       <MatchHeader

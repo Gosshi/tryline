@@ -1,6 +1,7 @@
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
+import { formatRoundLabel } from "@/lib/format/round-label";
 import { getTeamColor } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
@@ -62,7 +63,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
               match.competition.name,
               match.competition.season,
             )}
-            {match.round !== null ? ` · Round ${match.round}` : ""}
+            {match.round !== null ? ` · ${formatRoundLabel(match.round)}` : ""}
           </p>
           <StatusBadge status={match.status} />
         </div>
