@@ -1,3 +1,5 @@
+import { formatRoundLabel } from "@/lib/format/round-label";
+
 import type { GroupKey } from "@/lib/format/match-groups";
 
 type RoundHeadingProps = {
@@ -23,9 +25,7 @@ export function RoundHeading({ groupKey }: RoundHeadingProps) {
         }`
       : groupKey.round === null
         ? "節未定"
-        : groupKey.round === 0
-          ? "プレーオフ予選"
-        : `Round ${groupKey.round}`;
+        : formatRoundLabel(groupKey.round);
 
   return (
     <div className="flex items-center gap-3">
