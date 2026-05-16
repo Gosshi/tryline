@@ -4,7 +4,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@2.0.0";
+export const PROMPT_VERSION = "recap@2.1.0";
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
