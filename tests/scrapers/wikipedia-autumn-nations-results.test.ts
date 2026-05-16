@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { parseAutumnNationsResultsHtml } from "@/lib/scrapers/wikipedia-autumn-nations-results";
+import {
+  buildWikipediaUrl,
+  parseAutumnNationsResultsHtml,
+} from "@/lib/scrapers/wikipedia-autumn-nations-results";
 
 const HTML = `
 <div class="mw-heading mw-heading2">
@@ -62,11 +65,20 @@ const HTML = `
 `;
 
 describe("parseAutumnNationsResultsHtml", () => {
+  it("uses the end-of-year internationals URL from 2025 onward", () => {
+    expect(buildWikipediaUrl("2024")).toBe(
+      "https://en.wikipedia.org/wiki/2024_Autumn_Nations_Series",
+    );
+    expect(buildWikipediaUrl("2025")).toBe(
+      "https://en.wikipedia.org/wiki/2025_end-of-year_rugby_union_internationals",
+    );
+  });
+
   it("parses finished Autumn Nations vevent blocks into import rows", () => {
     const results = parseAutumnNationsResultsHtml(
       HTML,
       "2025",
-      "https://example.test/2025_Autumn_Nations_Series",
+      "https://example.test/2025_end-of-year_rugby_union_internationals",
     );
 
     expect(results).toHaveLength(2);
