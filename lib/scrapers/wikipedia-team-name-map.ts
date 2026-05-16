@@ -40,7 +40,7 @@ export const WIKIPEDIA_TEAM_NAME_MAP: Record<string, string> = {
   Lions: "Lions",
   Munster: "Munster",
   Toulon: "RC Toulon",
-  Toulouse: "Toulouse",
+  Toulouse: "Stade Toulousain",
   Ulster: "Ulster",
   Vannes: "RC Vannes",
   Zebre: "Zebre Parma",
