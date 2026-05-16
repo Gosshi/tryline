@@ -325,9 +325,9 @@ export default async function HomePage() {
                           {match.homeTeam.shortCode} vs{" "}
                           {match.awayTeam.shortCode}
                         </p>
-                        <p className="truncate text-xs text-[var(--color-ink-muted)]">
+                        <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
                           {formatFamilyName(family)}
-                        </p>
+                        </span>
                       </div>
                     </Link>
                   </li>
