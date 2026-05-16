@@ -172,12 +172,12 @@ function TeamBlock({
       >
         <span
           className={cn(
-            "inline-flex min-w-0 items-center gap-1.5",
+            "inline-flex shrink-0 items-center gap-1.5",
             align === "right" ? "flex-row-reverse" : "flex-row",
           )}
         >
           <TeamBadge shortCode={shortCode} size={28} slug={slug} />
-          <span className="min-w-0 truncate">{shortCode}</span>
+          <span className="shrink-0">{shortCode}</span>
         </span>
       </p>
       <p
