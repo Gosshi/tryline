@@ -117,4 +117,54 @@ describe("wikipedia match events scraper", () => {
       },
     ]);
   });
+
+  it("parses Top 14 season vevent scoring rows", async () => {
+    const { parseMatchEventsFromVeventHtml } = await import(
+      "@/lib/scrapers/wikipedia-match-events"
+    );
+
+    const result = parseMatchEventsFromVeventHtml(`
+      <div class="vevent summary">
+        <table><tbody><tr><td>14 June 2025<br>18:00</td></tr></tbody></table>
+        <table>
+          <tbody>
+            <tr style="vertical-align:top;font-weight:bold">
+              <td class="vcard" style="text-align:right">Bayonne</td>
+              <td>20–3</td>
+              <td class="vcard" style="text-align:left">Clermont</td>
+            </tr>
+            <tr style="font-size:85%;vertical-align:top">
+              <td style="text-align:right"><b>Try:</b> <a>Tuilagi</a> 23'<br><b>Pen:</b> <a>Segonds</a> 40'</td>
+              <td>Report</td>
+              <td style="text-align:left"><b>Pen:</b> <a>Urdapilleta</a> 8'</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `);
+
+    expect(result).toEqual([
+      {
+        isPenaltyTry: false,
+        minute: 23,
+        playerName: "Tuilagi",
+        teamSide: "home",
+        type: "try",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 40,
+        playerName: "Segonds",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 8,
+        playerName: "Urdapilleta",
+        teamSide: "away",
+        type: "penalty_goal",
+      },
+    ]);
+  });
 });
