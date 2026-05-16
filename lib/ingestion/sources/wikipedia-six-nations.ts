@@ -182,62 +182,71 @@ export function parseWikipediaSixNationsHtml(
 ): ParsedWikipediaMatch[] {
   const $ = load(html);
   const fixturesSection = $("#Fixtures").closest("div");
-
-  if (fixturesSection.length === 0) {
-    throw new Error("Unable to locate the Wikipedia fixtures section.");
-  }
-
   let currentRound: number | null = null;
   const parsedMatches: ParsedWikipediaMatch[] = [];
-  let cursor = fixturesSection.next();
 
-  while (cursor.length > 0) {
-    if (cursor.is("div.mw-heading") && cursor.find("h2").length > 0) {
-      break;
+  function parseVeventBlock(
+    block: ReturnType<ReturnType<typeof load>>,
+    round: number | null,
+  ) {
+    const tables = block.find("table");
+    const dateTable = tables.eq(0);
+    const matchupTable = tables.eq(1);
+    const firstRowCells = matchupTable.find("tr").first().find("td");
+    const score = parseScore(firstRowCells.eq(1).text());
+    const homeTeamName = normalizeWhitespace(
+      firstRowCells.eq(0).find("a").last().text() ||
+        firstRowCells.eq(0).find(".fn").text(),
+    );
+    const awayTeamName = normalizeWhitespace(
+      firstRowCells.eq(2).find("a").last().text() ||
+        firstRowCells.eq(2).find(".fn").text(),
+    );
+
+    if (!homeTeamName || !awayTeamName) {
+      throw new Error("Unable to parse team names from a vevent block.");
     }
 
-    if (cursor.is("div.mw-heading") && cursor.find("h3").length > 0) {
-      currentRound = parseRoundFromId(cursor.find("h3").attr("id"));
-      cursor = cursor.next();
-      continue;
+    parsedMatches.push({
+      awayScore: score.awayScore,
+      awayTeamName,
+      eventId: block.attr("id") ?? null,
+      homeScore: score.homeScore,
+      homeTeamName,
+      kickoffAt: parseKickoffAt(dateTable.text()),
+      lineupTableHtml: findLineupTableHtml($, block),
+      rawHtml: $.html(block),
+      round,
+      roundName: null,
+      status: score.status,
+      venue: normalizeWhitespace(block.find(".location").first().text()) || null,
+    });
+  }
+
+  if (fixturesSection.length === 0) {
+    for (const element of $("div.vevent.summary").toArray()) {
+      parseVeventBlock($(element), null);
     }
+  } else {
+    let cursor = fixturesSection.next();
 
-    if (cursor.is("div.vevent.summary")) {
-      const block = cursor;
-      const tables = block.find("table");
-      const dateTable = tables.eq(0);
-      const matchupTable = tables.eq(1);
-      const firstRowCells = matchupTable.find("tr").first().find("td");
-      const score = parseScore(firstRowCells.eq(1).text());
-      const homeTeamName = normalizeWhitespace(
-        firstRowCells.eq(0).find("a").last().text(),
-      );
-      const awayTeamName = normalizeWhitespace(
-        firstRowCells.eq(2).find("a").last().text(),
-      );
-
-      if (!homeTeamName || !awayTeamName) {
-        throw new Error("Unable to parse team names from a vevent block.");
+    while (cursor.length > 0) {
+      if (cursor.is("div.mw-heading") && cursor.find("h2").length > 0) {
+        break;
       }
 
-      parsedMatches.push({
-        awayScore: score.awayScore,
-        awayTeamName,
-        eventId: block.attr("id") ?? null,
-        homeScore: score.homeScore,
-        homeTeamName,
-        kickoffAt: parseKickoffAt(dateTable.text()),
-        lineupTableHtml: findLineupTableHtml($, block),
-        rawHtml: $.html(block),
-        round: currentRound,
-        roundName: null,
-        status: score.status,
-        venue:
-          normalizeWhitespace(block.find(".location").first().text()) || null,
-      });
-    }
+      if (cursor.is("div.mw-heading") && cursor.find("h3").length > 0) {
+        currentRound = parseRoundFromId(cursor.find("h3").attr("id"));
+        cursor = cursor.next();
+        continue;
+      }
 
-    cursor = cursor.next();
+      if (cursor.is("div.vevent.summary")) {
+        parseVeventBlock(cursor, currentRound);
+      }
+
+      cursor = cursor.next();
+    }
   }
 
   if (parsedMatches.length === 0) {

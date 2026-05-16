@@ -63,7 +63,7 @@ const WIKIPEDIA_SEASON_URLS: Record<string, WikipediaSeasonTarget> = {
     competitionSlug: "autumn-nations-2025",
     family: "autumn-nations",
     season: "2025",
-    url: "https://en.wikipedia.org/wiki/2025_Autumn_Nations_Series",
+    url: "https://en.wikipedia.org/wiki/2025_end-of-year_rugby_union_internationals",
   },
   "rugby-championship-2025": {
     competitionSlug: "rugby-championship-2025",

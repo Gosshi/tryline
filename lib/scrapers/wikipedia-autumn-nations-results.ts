@@ -60,16 +60,6 @@ export function buildWikipediaUrl(season: string) {
   return `https://en.wikipedia.org/wiki/${season}_Autumn_Nations_Series`;
 }
 
-function resolveTeamSlug(teamName: string) {
-  const slug = TEAM_SLUG_BY_WIKIPEDIA_NAME[teamName];
-
-  if (!slug) {
-    throw new Error(`Unknown Autumn Nations team name: ${teamName}`);
-  }
-
-  return slug;
-}
-
 export function parseAutumnNationsResultsHtml(
   html: string,
   season: string,
@@ -80,25 +70,34 @@ export function parseAutumnNationsResultsHtml(
 
   return parsedMatches
     .filter((match) => match.status === "finished")
-    .map((match) => {
+    .flatMap((match) => {
+      const homeSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[match.homeTeamName];
+      const awaySlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[match.awayTeamName];
+
+      if (!homeSlug || !awaySlug) {
+        return [];
+      }
+
       if (match.homeScore === null || match.awayScore === null) {
         throw new Error(
           `Missing score for Autumn Nations ${season}: ${match.homeTeamName} vs ${match.awayTeamName}`,
         );
       }
 
-      return {
-        away_score: match.awayScore,
-        away_team_slug: resolveTeamSlug(match.awayTeamName),
-        home_score: match.homeScore,
-        home_team_slug: resolveTeamSlug(match.homeTeamName),
-        kickoff_at: match.kickoffAt,
-        round: match.round,
-        season: seasonNumber,
-        source_url: sourceUrl,
-        venue: match.venue,
-        wikipedia_event_id: match.eventId,
-      };
+      return [
+        {
+          away_score: match.awayScore,
+          away_team_slug: awaySlug,
+          home_score: match.homeScore,
+          home_team_slug: homeSlug,
+          kickoff_at: match.kickoffAt,
+          round: match.round,
+          season: seasonNumber,
+          source_url: sourceUrl,
+          venue: match.venue,
+          wikipedia_event_id: match.eventId,
+        },
+      ];
     });
 }
 
