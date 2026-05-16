@@ -180,6 +180,15 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
   };
 }
 
+export function stripMarkdown(text: string): string {
+  return text
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 async function getCompetitionBySlug(competitionSlug: string) {
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
@@ -295,7 +304,7 @@ export async function getRecentlyReviewedMatches(
         ...mapMatchRow(row.match),
         competition: row.match.competition,
         recapGeneratedAt: row.generated_at,
-        recapExcerpt: truncateAtSentenceBoundary(row.content_md_ja, 120),
+        recapExcerpt: truncateAtSentenceBoundary(stripMarkdown(row.content_md_ja), 120),
       };
     });
 }
