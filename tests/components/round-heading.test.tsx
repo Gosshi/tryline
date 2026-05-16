@@ -11,7 +11,7 @@ describe("RoundHeading", () => {
   it("renders the round label with editorial display styles", () => {
     render(<RoundHeading groupKey={{ round: 1, type: "round" }} />);
 
-    expect(screen.getByText("Round 1")).toHaveClass(
+    expect(screen.getByText("第1節")).toHaveClass(
       "font-display",
       "text-xs",
       "tracking-[0.2em]",

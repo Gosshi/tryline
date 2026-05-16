@@ -8,6 +8,6 @@ describe("formatRoundLabel", () => {
   });
 
   it("keeps regular rounds in Round N format", () => {
-    expect(formatRoundLabel(3)).toBe("Round 3");
+    expect(formatRoundLabel(3)).toBe("第3節");
   });
 });

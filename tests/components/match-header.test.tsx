@@ -140,6 +140,13 @@ describe("MatchHeader", () => {
     expect(screen.queryByText(/Round 0/)).not.toBeInTheDocument();
   });
 
+  it("formats standard rounds as Japanese round labels in the subtitle", () => {
+    render(<MatchHeader match={match} />);
+
+    expect(screen.getAllByText(/Six Nations 2027 · 第1節/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Round 1/)).not.toBeInTheDocument();
+  });
+
   it("allows long team names to wrap on mobile", () => {
     render(
       <MatchHeader
