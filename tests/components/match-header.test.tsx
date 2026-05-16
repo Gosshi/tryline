@@ -2,8 +2,8 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { MatchHeader } from "@/components/match-header";
 
@@ -36,6 +36,10 @@ const match: MatchDetail = {
   status: "scheduled",
   venue: "Aviva Stadium",
 };
+
+afterEach(() => {
+  cleanup();
+});
 
 describe("MatchHeader", () => {
   it("renders one screen-reader-only h1 for the match name", () => {
@@ -167,6 +171,19 @@ describe("MatchHeader", () => {
       "whitespace-normal",
       "break-words",
       "sm:truncate",
+    );
+  });
+
+  it("links both team names to the new team pages", () => {
+    render(<MatchHeader match={match} />);
+
+    expect(screen.getAllByRole("link", { name: "Ireland" })[0]).toHaveAttribute(
+      "href",
+      "/teams/ireland",
+    );
+    expect(screen.getAllByRole("link", { name: "France" })[0]).toHaveAttribute(
+      "href",
+      "/teams/france",
     );
   });
 });

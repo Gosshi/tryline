@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
@@ -180,14 +182,15 @@ function TeamBlock({
           <span className="shrink-0">{shortCode}</span>
         </span>
       </p>
-      <p
+      <Link
         className={cn(
-          "mt-1 max-w-[9rem] whitespace-normal break-words text-xs font-medium leading-tight sm:max-w-none sm:truncate sm:whitespace-nowrap sm:text-sm",
+          "mt-1 block max-w-[9rem] whitespace-normal break-words text-xs font-medium leading-tight hover:underline sm:max-w-none sm:truncate sm:whitespace-nowrap sm:text-sm",
           dimmed ? "text-slate-300" : "text-slate-400",
         )}
+        href={`/teams/${slug}`}
       >
         {name}
-      </p>
+      </Link>
     </div>
   );
 }
