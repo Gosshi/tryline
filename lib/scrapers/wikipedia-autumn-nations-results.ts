@@ -52,7 +52,11 @@ function parseSeason(season: string) {
   return Number(season);
 }
 
-function buildWikipediaUrl(season: string) {
+export function buildWikipediaUrl(season: string) {
+  if (parseInt(season, 10) >= 2025) {
+    return `https://en.wikipedia.org/wiki/${season}_end-of-year_rugby_union_internationals`;
+  }
+
   return `https://en.wikipedia.org/wiki/${season}_Autumn_Nations_Series`;
 }
 
