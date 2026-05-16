@@ -42,6 +42,7 @@ describe("MatchLineupsSection", () => {
     );
 
     expect(screen.getByText("出場選手")).toBeInTheDocument();
+    expect(screen.queryByText("Team Sheets")).not.toBeInTheDocument();
     expect(screen.getByText("10")).toBeInTheDocument();
     expect(screen.getByText("Starting Fly-half")).toBeInTheDocument();
     expect(screen.getByText("Fly-half")).toBeInTheDocument();

@@ -62,6 +62,7 @@ describe("MatchEventsSection", () => {
     );
 
     expect(screen.getByText("得点経過")).toBeInTheDocument();
+    expect(screen.queryByText("Scoring Timeline")).not.toBeInTheDocument();
     expect(screen.getByText("Home Scorer トライ")).toBeInTheDocument();
     expect(
       screen.getByText("Away Kicker ペナルティゴール"),

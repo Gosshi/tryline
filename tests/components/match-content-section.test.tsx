@@ -62,6 +62,8 @@ describe("MatchContentSection", () => {
     );
 
     expect(screen.getByText("本文コンテンツ")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "プレビュー" })).toBeInTheDocument();
+    expect(screen.queryByText("Match Preview")).not.toBeInTheDocument();
     expect(
       screen.queryByText("プレビューは試合開始 48 時間前に公開予定"),
     ).not.toBeInTheDocument();
