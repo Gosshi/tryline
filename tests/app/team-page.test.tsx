@@ -107,7 +107,7 @@ describe("TeamPage", () => {
       generateMetadata({ params: Promise.resolve({ slug: "bath" }) }),
     ).resolves.toMatchObject({
       description: "Bathの最近の試合と次戦の日程",
-      title: "Bath | Tryline",
+      title: "Bath",
     });
   });
 
