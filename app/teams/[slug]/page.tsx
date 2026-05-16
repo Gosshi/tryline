@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     description: `${data.team.name}の最近の試合と次戦の日程`,
-    title: `${data.team.name} | Tryline`,
+    title: data.team.name,
   };
 }
 
