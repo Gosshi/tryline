@@ -64,6 +64,27 @@ const HTML = `
 </div>
 `;
 
+const HTML_WITH_UNKNOWN_TEAM = `
+<div class="vevent summary" id="Japan_v_Colombia">
+  <table>
+    <tbody>
+      <tr>
+        <td>15 November 2025<br />18:00 GMT</td>
+      </tr>
+    </tbody>
+  </table>
+  <table>
+    <tbody>
+      <tr>
+        <td class="vcard"><span class="fn org"><a>Japan</a></span></td>
+        <td>38–12</td>
+        <td class="vcard"><span class="fn org"><a>Colombia</a></span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+`;
+
 describe("parseAutumnNationsResultsHtml", () => {
   it("uses the end-of-year internationals URL from 2025 onward", () => {
     expect(buildWikipediaUrl("2024")).toBe(
@@ -98,5 +119,15 @@ describe("parseAutumnNationsResultsHtml", () => {
       home_team_slug: "france",
     });
     expect(results[1]?.kickoff_at).toBe("2025-11-08T20:10:00.000Z");
+  });
+
+  it("skips finished matches with unknown teams on end-of-year pages", () => {
+    expect(
+      parseAutumnNationsResultsHtml(
+        HTML_WITH_UNKNOWN_TEAM,
+        "2025",
+        "https://example.test/2025_end-of-year_rugby_union_internationals",
+      ),
+    ).toEqual([]);
   });
 });
