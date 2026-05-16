@@ -78,7 +78,11 @@ function extractTeamsFromVcards(
 ): [string, string] | null {
   const teamNames = event
     .find(".vcard, .fn")
-    .map((_, element) => cleanText($(element).text()))
+    .map((_, element) => {
+      const raw = cleanText($(element).text());
+
+      return raw.replace(/\(\d+\)/g, "").trim();
+    })
     .get()
     .filter(Boolean);
 
@@ -137,6 +141,13 @@ export function parseWikipediaSeasonMatches(
 ): WikipediaSeasonMatch[] {
   const $ = load(html);
   const matches: WikipediaSeasonMatch[] = [];
+  const GENERIC_CONTAINER_IDS = new Set([
+    "mw-content-text",
+    "bodyContent",
+    "content",
+    "mw-body",
+    "mw-body-content",
+  ]);
 
   $("div.vevent").each((_, element) => {
     const event = $(element);
@@ -155,7 +166,16 @@ export function parseWikipediaSeasonMatches(
       dateKey: toDateKey(dateText),
       dateText,
       homeTeamName,
-      sectionId: event.attr("id") ?? event.parents("[id]").first().attr("id") ?? null,
+      sectionId:
+        event.attr("id") ??
+        event
+          .parents("[id]")
+          .filter(
+            (_, parent) => !GENERIC_CONTAINER_IDS.has($(parent).attr("id") ?? ""),
+          )
+          .first()
+          .attr("id") ??
+        null,
     });
   });
 

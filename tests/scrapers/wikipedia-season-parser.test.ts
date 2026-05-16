@@ -33,6 +33,33 @@ const seasonHtml = `
 </div>
 `;
 
+const playoffHtml = `
+<div id="mw-content-text">
+  <div class="vevent summary">
+    <table><tbody><tr><td><time datetime="2024-06-14">14 June 2024</time></td></tr></tbody></table>
+    <div class="vcard"><span class="fn">Bayonne (4)</span></div>
+    <div class="vcard"><span class="fn">(5) Clermont</span></div>
+  </div>
+</div>
+`;
+
+const genericContainerHtml = `
+<div id="mw-content-text">
+  <div class="vevent summary">
+    <table><tbody><tr><td><time datetime="2024-10-04">4 October 2024</time></td></tr></tbody></table>
+    <table>
+      <tbody>
+        <tr>
+          <td><a href="/wiki/Bath_Rugby">Bath</a></td>
+          <td>20-15</td>
+          <td><a href="/wiki/Saracens_F.C.">Saracens</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+`;
+
 describe("Wikipedia season parser", () => {
   it("extracts vevent team names, dates, and section ids", () => {
     expect(parseWikipediaSeasonMatches(seasonHtml)).toEqual([
@@ -58,5 +85,29 @@ describe("Wikipedia season parser", () => {
     expect(mapWikipediaTeamName("Gloucester")).toBe("Gloucester Rugby");
     expect(mapWikipediaTeamName("Sale")).toBe("Sale Sharks");
     expect(mapWikipediaTeamName("Bath")).toBe("Bath");
+  });
+
+  it("strips playoff seed numbers from .fn team names", () => {
+    expect(parseWikipediaSeasonMatches(playoffHtml)).toEqual([
+      {
+        awayTeamName: "Clermont",
+        dateKey: "2024-06-14",
+        dateText: "2024-06-14",
+        homeTeamName: "Bayonne",
+        sectionId: null,
+      },
+    ]);
+  });
+
+  it("ignores generic wikipedia container ids when resolving section id", () => {
+    expect(parseWikipediaSeasonMatches(genericContainerHtml)).toEqual([
+      {
+        awayTeamName: "Saracens",
+        dateKey: "2024-10-04",
+        dateText: "2024-10-04",
+        homeTeamName: "Bath",
+        sectionId: null,
+      },
+    ]);
   });
 });
