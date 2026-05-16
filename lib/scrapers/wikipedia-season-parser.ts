@@ -175,6 +175,7 @@ export function parseWikipediaSeasonMatches(
           )
           .first()
           .attr("id") ??
+        event.prevAll(".mw-heading").first().find("[id]").first().attr("id") ??
         null,
     });
   });
