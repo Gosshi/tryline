@@ -66,10 +66,10 @@ describe("MatchHeader", () => {
     const homeCode = header.getByText("IRL");
     const awayCode = header.getByText("FRA");
 
-    expect(homeCode).toHaveClass("min-w-0", "truncate");
+    expect(homeCode).toHaveClass("shrink-0");
     expect(homeCode.parentElement).toHaveClass(
       "inline-flex",
-      "min-w-0",
+      "shrink-0",
       "items-center",
       "flex-row-reverse",
     );
@@ -79,10 +79,10 @@ describe("MatchHeader", () => {
       "items-center",
       "justify-end",
     );
-    expect(awayCode).toHaveClass("min-w-0", "truncate");
+    expect(awayCode).toHaveClass("shrink-0");
     expect(awayCode.parentElement).toHaveClass(
       "inline-flex",
-      "min-w-0",
+      "shrink-0",
       "items-center",
       "flex-row",
     );
