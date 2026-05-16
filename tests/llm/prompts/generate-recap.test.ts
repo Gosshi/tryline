@@ -49,7 +49,8 @@ describe("buildGenerateRecapPrompt", () => {
   it("uses data-sparse structure when lineup and event data are unavailable", () => {
     const prompt = buildGenerateRecapPrompt(assembled, [], []);
 
-    expect(prompt).toContain("試合全体像とスコア分析(500-600字)");
+    expect(prompt).toContain("試合全体像(500-600字)");
+    expect(prompt).not.toContain("試合全体像とスコア分析");
     expect(prompt).toContain("大会文脈・順位への影響(400-500字)");
     expect(prompt).toContain("両チームの近況と戦術傾向(500-600字)");
     expect(prompt).toContain("次戦への示唆(300-400字)");
