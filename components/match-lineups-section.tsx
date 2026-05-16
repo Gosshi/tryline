@@ -23,10 +23,7 @@ export function MatchLineupsSection({
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/40 sm:p-6">
       <div className="mb-5 border-b border-slate-100 pb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Team Sheets
-        </p>
-        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
+        <h2 className="text-lg font-bold tracking-tight text-slate-950">
           出場選手
         </h2>
       </div>
