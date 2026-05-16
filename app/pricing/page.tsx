@@ -69,7 +69,7 @@ export default async function PricingPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
             Tryline Premium
           </p>
-          <h1 className="mt-4 max-w-3xl font-serif text-4xl font-bold tracking-tight sm:text-6xl">
+          <h1 className="mt-4 max-w-3xl text-balance font-serif text-4xl font-bold tracking-tight sm:text-6xl">
             海外ラグビーを、もっと深く。
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65">
