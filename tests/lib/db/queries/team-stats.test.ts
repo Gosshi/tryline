@@ -112,7 +112,7 @@ describe("team stats aggregators", () => {
     expect(record.form).toEqual(["W", "W", "L", "D", "W"]);
   });
 
-  it("aggregates top scorers by player name", () => {
+  it("calculates scorer points and sorts by points descending", () => {
     const topScorers = buildTopScorers([
       {
         match_id: "match-1",
@@ -132,20 +132,27 @@ describe("team stats aggregators", () => {
       {
         match_id: "match-2",
         metadata: { player_name: "Ben Spencer" },
-        type: "drop_goal",
+        type: "penalty_goal",
+      },
+      {
+        match_id: "match-3",
+        metadata: { player_name: "Ben Spencer" },
+        type: "penalty_goal",
       },
     ]);
 
-    expect(topScorers[0]).toEqual({
+    expect(topScorers[0]).toMatchObject({
       conversions: 1,
       penalties: 1,
       playerName: "Finn Russell",
+      points: 10,
       tries: 1,
     });
-    expect(topScorers[1]).toEqual({
+    expect(topScorers[1]).toMatchObject({
       conversions: 0,
-      penalties: 1,
+      penalties: 2,
       playerName: "Ben Spencer",
+      points: 6,
       tries: 0,
     });
   });
@@ -171,6 +178,7 @@ describe("team stats aggregators", () => {
         conversions: 0,
         penalties: 0,
         playerName: "Ben Spencer",
+        points: 5,
         tries: 1,
       },
     ]);

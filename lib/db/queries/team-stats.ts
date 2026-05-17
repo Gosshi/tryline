@@ -24,6 +24,7 @@ export type TopScorer = {
   tries: number;
   conversions: number;
   penalties: number;
+  points: number;
 };
 
 export type TeamStatsData = {
@@ -218,6 +219,7 @@ export function buildTopScorers(
       conversions: 0,
       penalties: 0,
       playerName,
+      points: 0,
       tries: 0,
     };
 
@@ -229,15 +231,14 @@ export function buildTopScorers(
       scorer.penalties += 1;
     }
 
+    scorer.points =
+      scorer.tries * 5 + scorer.conversions * 2 + scorer.penalties * 3;
     scorers.set(playerName, scorer);
   }
 
   return [...scorers.values()]
     .sort((left, right) => {
-      const leftTotal = left.tries + left.conversions + left.penalties;
-      const rightTotal = right.tries + right.conversions + right.penalties;
-
-      if (leftTotal !== rightTotal) return rightTotal - leftTotal;
+      if (left.points !== right.points) return right.points - left.points;
       if (left.tries !== right.tries) return right.tries - left.tries;
       if (left.penalties !== right.penalties)
         return right.penalties - left.penalties;
