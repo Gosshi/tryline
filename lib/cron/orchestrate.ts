@@ -55,6 +55,7 @@ async function getMatchIdsMissingContent(params: {
   contentType: ContentType;
   kickoffGte?: string;
   kickoffLte?: string;
+  orderByKickoff?: "asc" | "desc";
 }) {
   let matchQuery = params.db
     .from("matches")
@@ -67,6 +68,12 @@ async function getMatchIdsMissingContent(params: {
 
   if (params.kickoffLte) {
     matchQuery = matchQuery.lte("kickoff_at", params.kickoffLte);
+  }
+
+  if (params.orderByKickoff) {
+    matchQuery = matchQuery.order("kickoff_at", {
+      ascending: params.orderByKickoff === "asc",
+    });
   }
 
   const { data: matches, error: matchError } = await matchQuery;
@@ -169,6 +176,7 @@ export async function runOrchestrate(
     db: deps.db,
     status: "finished",
     contentType: "recap",
+    orderByKickoff: "desc",
   });
 
   const result: OrchestrateResult = {
