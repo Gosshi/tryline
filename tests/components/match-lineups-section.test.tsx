@@ -13,6 +13,7 @@ const player: MatchLineupPlayer = {
   isStarter: true,
   jerseyNumber: 10,
   playerName: "Starting Fly-half",
+  playerSlug: null,
   position: "Fly-half",
   teamId: "home-team",
 };
@@ -46,6 +47,20 @@ describe("MatchLineupsSection", () => {
     expect(screen.getByText("10")).toBeInTheDocument();
     expect(screen.getByText("Starting Fly-half")).toBeInTheDocument();
     expect(screen.getByText("Fly-half")).toBeInTheDocument();
+  });
+
+  it("links lineup players when a player slug is available", () => {
+    render(
+      <MatchLineupsSection
+        awayTeamName="France"
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        players={[{ ...player, playerSlug: "starting-fly-half" }]}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Starting Fly-half" }))
+      .toHaveAttribute("href", "/players/starting-fly-half");
   });
 
   it("renders a bench divider when replacements are available", () => {

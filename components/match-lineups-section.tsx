@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import type { MatchLineupPlayer } from "@/lib/db/queries/match-lineups";
 
 type MatchLineupsSectionProps = {
@@ -107,7 +109,16 @@ function PlayerRow({
             : "min-w-0 text-sm text-slate-700"
         }
       >
-        <span className="truncate">{player.playerName}</span>
+        {player.playerSlug ? (
+          <Link
+            className="inline-block max-w-full truncate align-bottom font-medium underline-offset-4 transition-colors hover:text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            href={`/players/${player.playerSlug}`}
+          >
+            {player.playerName}
+          </Link>
+        ) : (
+          <span className="truncate">{player.playerName}</span>
+        )}
         {player.position && (
           <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
             {player.position}
