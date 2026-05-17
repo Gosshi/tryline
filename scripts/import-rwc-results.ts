@@ -9,12 +9,12 @@ import {
   RWC_TEAM_SLUG_BY_WIKIPEDIA_NAME,
   RWC_2023_WIKIPEDIA_URL,
 } from "@/lib/ingestion/sources/wikipedia-rwc";
+import { parseWikipediaSixNationsHtml } from "@/lib/ingestion/sources/wikipedia-six-nations";
 import { upsertCompetitionStandings } from "@/lib/ingestion/standings";
 import { upsertMatches } from "@/lib/ingestion/upsert";
-import { parseWikipediaSixNationsHtml } from "@/lib/ingestion/sources/wikipedia-six-nations";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
-import { parseRwcHtml } from "@/lib/scrapers/wikipedia-rwc-results";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
+import { parseRwcHtml } from "@/lib/scrapers/wikipedia-rwc-results";
 
 import type { Json } from "@/lib/db/types";
 import type { ParsedStandingsRow } from "@/lib/scrapers/wikipedia-standings";

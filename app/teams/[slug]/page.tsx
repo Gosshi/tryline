@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 
 import { MatchCard } from "@/components/match-card";
 import { TeamBadge } from "@/components/team-badge";
+import { TeamStatsPanel } from "@/components/team-stats-panel";
 import { getContentStatusMap } from "@/lib/db/queries/match-content";
+import { getTeamStatsDataBySlug } from "@/lib/db/queries/team-stats";
 import { getTeamPageDataBySlug } from "@/lib/db/queries/teams";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
@@ -22,12 +24,14 @@ function toMatchCardItem(match: TeamMatchItem): MatchListItem {
     awayTeam: {
       ...match.awayTeam,
       shortCode:
-        match.awayTeam.shortCode ?? match.awayTeam.name.slice(0, 3).toUpperCase(),
+        match.awayTeam.shortCode ??
+        match.awayTeam.name.slice(0, 3).toUpperCase(),
     },
     homeTeam: {
       ...match.homeTeam,
       shortCode:
-        match.homeTeam.shortCode ?? match.homeTeam.name.slice(0, 3).toUpperCase(),
+        match.homeTeam.shortCode ??
+        match.homeTeam.name.slice(0, 3).toUpperCase(),
     },
   };
 }
@@ -48,14 +52,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TeamPage({ params }: Props) {
   const { slug } = await params;
-  const data = await getTeamPageDataBySlug(slug);
+  const [data, stats] = await Promise.all([
+    getTeamPageDataBySlug(slug),
+    getTeamStatsDataBySlug(slug).catch(() => null),
+  ]);
 
   if (!data) {
     notFound();
   }
 
   const allMatches = [...data.recentMatches, ...data.upcomingMatches];
-  const contentStatusMap = await getContentStatusMap(allMatches.map((match) => match.id));
+  const contentStatusMap = await getContentStatusMap(
+    allMatches.map((match) => match.id),
+  );
   const emptyStatus = { hasPreview: false, hasRecap: false };
 
   return (
@@ -97,6 +106,14 @@ export default async function TeamPage({ params }: Props) {
             </div>
           </div>
         </section>
+
+        {stats && (
+          <TeamStatsPanel
+            record={stats.record}
+            scoring={stats.scoring}
+            topScorers={stats.topScorers}
+          />
+        )}
 
         <section className="space-y-4">
           <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
