@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        destination: "/c/rwc/:season",
+        permanent: true,
+        source: "/c/rwc/rwc-:season",
+      },
+      {
         destination: "/c/premiership/:slug",
         permanent: true,
         source: "/c/premiership/premiership-:slug",

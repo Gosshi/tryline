@@ -126,16 +126,7 @@ function MatchChatPanel({
   }
 
   return (
-    <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
-      <div className="border-b border-slate-100 pb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-          AI Chat
-        </p>
-        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
-          AI チャット
-        </h2>
-      </div>
-
+    <div className="space-y-4">
       {messages.length > 0 && (
         <div className="max-h-[420px] space-y-3 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-4">
           {messages.map((message, index) => (
@@ -189,18 +180,29 @@ function MatchChatPanel({
           送信
         </button>
       </div>
-    </section>
+    </div>
   );
 }
 
 export function MatchChat({ isPremium, matchId }: MatchChatProps) {
-  if (!isPremium) {
-    return (
-      <Paywall isPremium={false}>
-        <MatchChatPanel disabled matchId={matchId} />
-      </Paywall>
-    );
-  }
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+      <div className="mb-4 border-b border-slate-100 pb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+          AI CHAT
+        </p>
+        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
+          AI チャット
+        </h2>
+      </div>
 
-  return <MatchChatPanel matchId={matchId} />;
+      {isPremium ? (
+        <MatchChatPanel matchId={matchId} />
+      ) : (
+        <Paywall isPremium={false}>
+          <MatchChatPanel disabled matchId={matchId} />
+        </Paywall>
+      )}
+    </section>
+  );
 }
