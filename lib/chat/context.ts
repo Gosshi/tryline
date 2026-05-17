@@ -64,6 +64,10 @@ export async function assembleMatchContext(matchId: string): Promise<string> {
     "- ラグビー用語は英語のままでよい（例: lineout, scrum）",
     "- 推測・不確かな情報は「〜と思われます」と明示する",
     "- 試合データに基づかない回答は避ける",
+    "\n## 応答フォーマットの制約",
+    "- Markdown 記法（**太字**、*斜体*、## 見出し、--- 区切り線）は一切使用しない。",
+    "- 番号付きリスト（1. 2. 3.）と箇条書き（- ）は使用してよい。",
+    "- テキストのみで回答する。装飾記号を含めない。",
   );
 
   return lines.join("\n");
