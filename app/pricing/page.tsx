@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 const features = [
-  { free: true, name: "試合スコア・順位表", premium: true },
+  { free: true, name: "試合スコア・順位表・得点推移グラフ", premium: true },
   { free: true, name: "大会アーカイブ閲覧", premium: true },
   { free: true, name: "AI 日本語レビュー（冒頭 300 文字）", premium: true },
   { free: false, name: "AI 日本語レビュー全文", premium: true },
@@ -26,6 +26,16 @@ const features = [
 ];
 
 const faqs = [
+  {
+    answer:
+      "試合スコア・順位表・ラインナップ・Web プッシュ通知は無料でご利用いただけます。AI 日本語プレビュー・レビューは冒頭 300 文字まで無料で読めます。全文・AI チャットは Premium 限定です。",
+    question: "無料でどこまで利用できますか？",
+  },
+  {
+    answer:
+      "デジタルコンテンツの性質上、原則として返金は承っておりません。ご不明な点は support@trylinerugby.com までお問い合わせください。",
+    question: "返金ポリシーを教えてください。",
+  },
   {
     answer:
       "はい。Stripe カスタマーポータルからいつでも解約できます。次回更新日まで引き続きご利用いただけます。",
@@ -72,6 +82,11 @@ export default async function PricingPage() {
           <h1 className="mt-4 max-w-3xl text-balance font-serif text-4xl font-bold tracking-tight sm:text-6xl">
             海外ラグビーを、もっと深く。
           </h1>
+          <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/60">
+            <span>8大会対応</span>
+            <span>500試合以上</span>
+            <span>AI日本語解説</span>
+          </div>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65">
             AI が生成した日本語プレビュー・レビューと試合チャットで観戦体験を格上げする。
           </p>

@@ -80,9 +80,12 @@ describe("PricingPage", () => {
       "href",
       "/matches/match-1",
     );
+    expect(screen.getByText("8大会対応")).toBeInTheDocument();
+    expect(screen.getByText("500試合以上")).toBeInTheDocument();
+    expect(screen.getByText("AI日本語解説")).toBeInTheDocument();
 
     for (const feature of [
-      "試合スコア・順位表",
+      "試合スコア・順位表・得点推移グラフ",
       "大会アーカイブ閲覧",
       "AI 日本語レビュー（冒頭 300 文字）",
       "AI 日本語レビュー全文",
@@ -104,6 +107,8 @@ describe("PricingPage", () => {
       screen.getByRole("button", { name: "Premium で全文を読む" }),
     ).toBeInTheDocument();
 
+    expect(screen.getByText("無料でどこまで利用できますか？")).toBeInTheDocument();
+    expect(screen.getByText("返金ポリシーを教えてください。")).toBeInTheDocument();
     expect(screen.getByText("いつでもキャンセルできますか？")).toBeInTheDocument();
     expect(
       screen.getByText("どの大会のコンテンツが読めますか？"),

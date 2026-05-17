@@ -83,10 +83,26 @@ describe("MatchContentSection", () => {
       />,
     );
 
-    expect(screen.queryByText(/続きは Premium/)).toBeNull();
+    expect(screen.queryByText("Ireland vs France の続きを読む")).toBeNull();
     expect(
       screen.queryByRole("link", { name: "Premium を始める - ¥980/月" }),
     ).toBeNull();
+  });
+
+  it("passes a match title to the locked MatchContent CTA", () => {
+    render(
+      <MatchContentSection
+        content={{
+          ...content,
+          contentMdJa: `${"あ".repeat(300)}ロック本文`,
+        }}
+        contentType="preview"
+        isPremium={false}
+        match={match}
+      />,
+    );
+
+    expect(screen.getByText("Ireland vs France の続きを読む")).toBeInTheDocument();
   });
 
   it("renders ContentPlaceholder when content is null", () => {

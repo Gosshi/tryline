@@ -45,6 +45,7 @@ export function MatchContentSection({
           content={content}
           contentType={contentType}
           isPremium={isPremium}
+          matchTitle={`${match.homeTeam.name} vs ${match.awayTeam.name}`}
           showCta={showCta}
         />
       ) : (
