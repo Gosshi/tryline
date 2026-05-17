@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 
+import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { FavoriteTeamsBanner } from "@/components/favorite-teams-banner";
 import { MatchCard } from "@/components/match-card";
 import { getUser, getUserProfile } from "@/lib/auth/server";
@@ -101,6 +103,9 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
+      <Suspense>
+        <CheckoutSuccessTracker />
+      </Suspense>
       <section className="relative overflow-hidden bg-[var(--color-ink)] py-16 sm:py-24">
         <div aria-hidden className="absolute inset-0 z-0">
           <Image
