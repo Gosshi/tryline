@@ -65,7 +65,9 @@ export function MatchHeader({ match }: MatchHeaderProps) {
               match.competition.name,
               match.competition.season,
             )}
-            {match.round !== null ? ` · ${formatRoundLabel(match.round)}` : ""}
+            {match.round !== null
+              ? ` · ${formatRoundLabel(match.round, match.competition.family)}`
+              : ""}
           </p>
           <StatusBadge status={match.status} />
         </div>

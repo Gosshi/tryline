@@ -159,6 +159,7 @@ export default async function SeasonPage({ params }: Props) {
         ) : (
           <SeasonMatchGroups
             contentStatusMap={Object.fromEntries(contentStatusMap)}
+            family={family}
             groupedMatches={groupedMatches}
           />
         )}

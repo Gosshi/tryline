@@ -10,4 +10,15 @@ describe("formatRoundLabel", () => {
   it("keeps regular rounds in Round N format", () => {
     expect(formatRoundLabel(3)).toBe("第3節");
   });
+
+  it("maps RWC knockout rounds to stage labels", () => {
+    expect(formatRoundLabel(5, "rwc")).toBe("準々決勝");
+    expect(formatRoundLabel(6, "rwc")).toBe("準決勝");
+    expect(formatRoundLabel(7, "rwc")).toBe("3位決定戦");
+    expect(formatRoundLabel(8, "rwc")).toBe("決勝");
+  });
+
+  it("keeps non-RWC knockout round numbers unchanged", () => {
+    expect(formatRoundLabel(8, "six-nations")).toBe("第8節");
+  });
 });
