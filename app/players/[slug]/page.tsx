@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Fragment } from "react";
 
 import {
   getMatchesForPlayer,
@@ -108,6 +109,17 @@ export default async function PlayerPage({ params }: Props) {
             ) : (
               <span>{player.teamName}</span>
             )}
+            {player.aliasTeams.map((team) => (
+              <Fragment key={team.slug}>
+                <span aria-hidden>·</span>
+                <Link
+                  className="font-medium text-[var(--color-ink)] underline decoration-slate-300 underline-offset-4 transition-colors hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                  href={`/teams/${team.slug}`}
+                >
+                  {team.name}
+                </Link>
+              </Fragment>
+            ))}
           </div>
         </header>
 
