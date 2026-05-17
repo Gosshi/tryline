@@ -93,6 +93,27 @@ describe("MatchContent", () => {
     expect(screen.queryByText(new RegExp(lockedText))).toBeNull();
   });
 
+  it("uses match-specific copy for the locked premium CTA", () => {
+    render(
+      <MatchContent
+        content={{
+          ...baseContent,
+          contentMdJa: `${"あ".repeat(300)}ロック本文`,
+        }}
+        contentType="preview"
+        isPremium={false}
+        matchTitle="Ireland vs France"
+      />,
+    );
+
+    expect(screen.getByText("Ireland vs France の続きを読む")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: "Premium で全文を読む — ¥980/月",
+      }),
+    ).toHaveAttribute("href", "/pricing");
+  });
+
   it("keeps the free teaser and gradient while hiding the premium CTA", () => {
     const visibleText = "あ".repeat(300);
 

@@ -6,6 +6,7 @@ type MatchContentProps = {
   content: PublishedMatchContent;
   contentType: "preview" | "recap";
   isPremium: boolean;
+  matchTitle?: string;
   showCta?: boolean;
 };
 
@@ -257,6 +258,7 @@ function renderBlock(block: MarkdownBlock, index: number) {
 export function MatchContent({
   content,
   isPremium,
+  matchTitle,
   showCta = true,
 }: MatchContentProps) {
   const isLocked = !isPremium;
@@ -318,13 +320,15 @@ export function MatchContent({
       {isLocked && showCta && (
         <div className="mt-4 flex flex-col items-center gap-3 text-center">
           <p className="text-sm font-semibold text-slate-800">
-            続きは Premium でご覧いただけます
+            {matchTitle
+              ? `${matchTitle} の続きを読む`
+              : "続きは Premium でご覧いただけます"}
           </p>
           <a
             className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
             href="/pricing"
           >
-            Premium で全文を読む
+            {matchTitle ? "Premium で全文を読む — ¥980/月" : "Premium で全文を読む"}
           </a>
         </div>
       )}
