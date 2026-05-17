@@ -70,7 +70,7 @@ describe("season match groups", () => {
       />,
     );
 
-    const roundOneButton = screen.getByRole("button", { name: "Round 1" });
+    const roundOneButton = screen.getByRole("button", { name: "第1節" });
 
     expect(roundOneButton).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(roundOneButton);

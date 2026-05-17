@@ -85,4 +85,38 @@ describe("buildScoreTimeline", () => {
       ),
     ).toHaveLength(1);
   });
+
+  it("counts penalty tries as seven points", () => {
+    expect(
+      buildScoreTimeline(
+        [
+          {
+            isPenaltyTry: true,
+            minute: 64,
+            playerName: "Penalty try",
+            teamId: "home-team",
+            type: "try",
+          },
+        ],
+        "home-team",
+      ),
+    ).toEqual([
+      {
+        awayScore: 0,
+        homeScore: 0,
+        minute: 0,
+        playerName: null,
+        team: "home",
+        type: "kickoff",
+      },
+      {
+        awayScore: 0,
+        homeScore: 7,
+        minute: 64,
+        playerName: "Penalty try",
+        team: "home",
+        type: "try",
+      },
+    ]);
+  });
 });
