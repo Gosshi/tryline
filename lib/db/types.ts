@@ -641,6 +641,7 @@ export type Database = {
       players: {
         Row: {
           caps: number | null;
+          canonical_player_id: string | null;
           created_at: string;
           date_of_birth: string | null;
           external_ids: Json;
@@ -653,6 +654,7 @@ export type Database = {
         };
         Insert: {
           caps?: number | null;
+          canonical_player_id?: string | null;
           created_at?: string;
           date_of_birth?: string | null;
           external_ids?: Json;
@@ -665,6 +667,7 @@ export type Database = {
         };
         Update: {
           caps?: number | null;
+          canonical_player_id?: string | null;
           created_at?: string;
           date_of_birth?: string | null;
           external_ids?: Json;
@@ -676,6 +679,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "players_canonical_player_id_fkey";
+            columns: ["canonical_player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "players_team_id_fkey";
             columns: ["team_id"];

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import {
   getMatchesForPlayer,
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const player = await getPlayerBySlug(slug);
 
-  if (!player) {
+  if (!player || player.canonicalSlug) {
     return { title: "Tryline" };
   }
 
@@ -60,6 +60,10 @@ export default async function PlayerPage({ params }: Props) {
 
   if (!player) {
     notFound();
+  }
+
+  if (player.canonicalSlug) {
+    redirect(`/players/${player.canonicalSlug}`);
   }
 
   const matches = await getMatchesForPlayer(player.id);

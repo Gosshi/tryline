@@ -1,6 +1,7 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 
 export type PlayerDetail = {
+  canonicalSlug: string | null;
   id: string;
   name: string;
   position: string | null;
@@ -25,6 +26,7 @@ export type PlayerMatchRow = {
 };
 
 type PlayerDetailRow = {
+  canonical: { slug: string } | { slug: string }[] | null;
   id: string;
   name: string;
   position: string | null;
@@ -47,6 +49,14 @@ type PlayerLineupRow = {
   } | null;
 };
 
+function firstRelation<T>(relation: T | T[] | null | undefined): T | null {
+  if (Array.isArray(relation)) {
+    return relation[0] ?? null;
+  }
+
+  return relation ?? null;
+}
+
 export async function getPlayerBySlug(
   slug: string,
 ): Promise<PlayerDetail | null> {
@@ -54,7 +64,14 @@ export async function getPlayerBySlug(
   const { data, error } = await client
     .from("players")
     .select(
-      "id, name, slug, position, team:teams!players_team_id_fkey(name, slug)",
+      `
+        id,
+        name,
+        slug,
+        position,
+        team:teams!players_team_id_fkey ( name, slug ),
+        canonical:players!players_canonical_player_id_fkey ( slug )
+      `,
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -63,9 +80,11 @@ export async function getPlayerBySlug(
     return null;
   }
 
-  const row = data as PlayerDetailRow;
+  const row = data as unknown as PlayerDetailRow;
+  const canonical = firstRelation(row.canonical);
 
   return {
+    canonicalSlug: canonical?.slug ?? null,
     id: row.id,
     name: row.name,
     position: row.position ?? null,
@@ -79,6 +98,12 @@ export async function getMatchesForPlayer(
   playerId: string,
 ): Promise<PlayerMatchRow[]> {
   const client = getSupabasePublicServerClient();
+  const { data: aliases } = await client
+    .from("players")
+    .select("id")
+    .or(`id.eq.${playerId},canonical_player_id.eq.${playerId}`);
+  const playerIds = (aliases ?? []).map((alias) => alias.id);
+
   const { data, error } = await client
     .from("match_lineups")
     .select(
@@ -101,7 +126,7 @@ export async function getMatchesForPlayer(
         )
       `,
     )
-    .eq("player_id", playerId)
+    .in("player_id", playerIds.length > 0 ? playerIds : [playerId])
     .order("kickoff_at", {
       ascending: false,
       foreignTable: "matches",
@@ -141,6 +166,7 @@ export async function listAllPlayerSlugs(): Promise<string[]> {
   const { data, error } = await client
     .from("players")
     .select("slug")
+    .is("canonical_player_id", null)
     .not("slug", "is", null);
 
   if (error || !data) {
