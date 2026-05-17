@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 import { getUserProfile, requireUser } from "@/lib/auth/server";
+import { SITE_URL } from "@/lib/site";
 
 function getStripe() {
   const apiKey = process.env.STRIPE_SECRET_KEY;
@@ -24,7 +25,7 @@ async function createPortalResponse() {
 
   const session = await stripe.billingPortal.sessions.create({
     customer: profile.stripe_customer_id,
-    return_url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://tryline-six.vercel.app",
+    return_url: SITE_URL,
   });
 
   return NextResponse.redirect(session.url, { status: 303 });

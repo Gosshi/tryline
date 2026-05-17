@@ -26,6 +26,7 @@ import {
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
 import { createOgImage } from "@/lib/seo/og-image";
+import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
 
@@ -46,7 +47,7 @@ export const metadata: Metadata = {
     ],
     title: "Tryline — 海外ラグビーを日本語で深掘り",
     type: "website",
-    url: "https://tryline-six.vercel.app",
+    url: SITE_URL,
   },
 };
 

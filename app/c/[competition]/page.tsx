@@ -13,6 +13,7 @@ import {
   formatFamilyName,
 } from "@/lib/format/competition";
 import { createOgImage } from "@/lib/seo/og-image";
+import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
 
@@ -61,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ],
       title: `${name} — 全シーズン一覧 | Tryline`,
       type: "website",
-      url: `https://tryline-six.vercel.app/c/${competition}`,
+      url: `${SITE_URL}/c/${competition}`,
     },
     title: `${name} — 全シーズン一覧`,
   };

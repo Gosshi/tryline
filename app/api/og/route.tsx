@@ -100,7 +100,7 @@ export async function GET(request: Request) {
         </div>
 
         <div style={{ color: "#475569", fontSize: "16px" }}>
-          tryline-six.vercel.app
+          trylinerugby.com
         </div>
       </div>
     ),

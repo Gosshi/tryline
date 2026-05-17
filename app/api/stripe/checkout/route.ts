@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 import { requireUser } from "@/lib/auth/server";
+import { SITE_URL } from "@/lib/site";
 
 function getStripe() {
   const apiKey = process.env.STRIPE_SECRET_KEY;
@@ -16,8 +17,7 @@ function getStripe() {
 export async function POST() {
   const user = await requireUser();
   const stripe = getStripe();
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://tryline-six.vercel.app";
+  const siteUrl = SITE_URL;
   const session = await stripe.checkout.sessions.create({
     cancel_url: `${siteUrl}/pricing`,
     customer_email: user.email ?? undefined,
