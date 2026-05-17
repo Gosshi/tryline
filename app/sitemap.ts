@@ -3,6 +3,7 @@ import {
   listSeasonsByFamily,
 } from "@/lib/db/queries/competitions";
 import { listAllMatchIds } from "@/lib/db/queries/matches";
+import { listAllPlayerSlugs } from "@/lib/db/queries/players";
 import { listAllTeams } from "@/lib/db/queries/teams";
 import { SITE_URL } from "@/lib/site";
 
@@ -12,9 +13,10 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE_URL;
-  const [families, matchIds, teams] = await Promise.all([
+  const [families, matchIds, playerSlugs, teams] = await Promise.all([
     listFamilies(),
     listAllMatchIds(),
+    listAllPlayerSlugs(),
     listAllTeams(),
   ]);
   const seasonPages = (
@@ -49,6 +51,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
     url: `${base}/t/${team.slug}`,
   }));
+  const playerPages = playerSlugs.map((slug) => ({
+    changeFrequency: "weekly" as const,
+    lastModified: new Date(),
+    priority: 0.6,
+    url: `${base}/players/${slug}`,
+  }));
   const staticPages = [
     {
       changeFrequency: "monthly" as const,
@@ -69,6 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...seasonPages,
     ...matchPages,
     ...teamPages,
+    ...playerPages,
     ...staticPages,
   ];
 }
