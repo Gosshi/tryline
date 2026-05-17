@@ -16,12 +16,12 @@ import { load } from "cheerio";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { upsertMatchEvents } from "@/lib/ingestion/events";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
+import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 import {
   parseWikipediaSeasonMatches,
   type WikipediaSeasonMatch,
 } from "@/lib/scrapers/wikipedia-season-parser";
 import { mapWikipediaTeamName } from "@/lib/scrapers/wikipedia-team-name-map";
-import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 
 import type { Json } from "@/lib/db/types";
 
