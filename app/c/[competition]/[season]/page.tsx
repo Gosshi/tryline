@@ -18,6 +18,7 @@ import {
 } from "@/lib/format/competition";
 import { groupMatchesByRound } from "@/lib/format/match-groups";
 import { createOgImage } from "@/lib/seo/og-image";
+import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
 
@@ -74,7 +75,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ],
       title: `${title} | Tryline`,
       type: "website",
-      url: `https://tryline-six.vercel.app/c/${competition}/${season}`,
+      url: `${SITE_URL}/c/${competition}/${season}`,
     },
     title,
   };

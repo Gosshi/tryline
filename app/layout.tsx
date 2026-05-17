@@ -2,6 +2,7 @@ import { Inter, Noto_Serif_JP } from "next/font/google";
 
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SITE_URL } from "@/lib/site";
 
 import type { Metadata, Viewport } from "next";
 
@@ -21,7 +22,7 @@ const notoSerifJP = Noto_Serif_JP({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tryline-six.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Tryline",
     template: "%s | Tryline",

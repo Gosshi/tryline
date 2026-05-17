@@ -15,6 +15,7 @@ import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { extractDescription } from "@/lib/match-content/description";
 import { createOgImage } from "@/lib/seo/og-image";
+import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
 
@@ -72,7 +73,7 @@ export async function generateMetadata({
       ],
       title: `${title} | Tryline`,
       type: "article",
-      url: `https://tryline-six.vercel.app/matches/${id}`,
+      url: `${SITE_URL}/matches/${id}`,
     },
     title,
   };
