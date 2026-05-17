@@ -647,6 +647,7 @@ export type Database = {
           id: string;
           name: string;
           position: string | null;
+          slug: string;
           team_id: string;
           updated_at: string;
         };
@@ -658,6 +659,7 @@ export type Database = {
           id?: string;
           name: string;
           position?: string | null;
+          slug?: string;
           team_id: string;
           updated_at?: string;
         };
@@ -669,6 +671,7 @@ export type Database = {
           id?: string;
           name?: string;
           position?: string | null;
+          slug?: string;
           team_id?: string;
           updated_at?: string;
         };
