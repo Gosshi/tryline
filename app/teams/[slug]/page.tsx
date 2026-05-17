@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 
 import { MatchCard } from "@/components/match-card";
 import { TeamBadge } from "@/components/team-badge";
+import { TeamPlayersSection } from "@/components/team-players-section";
 import { TeamStatsPanel } from "@/components/team-stats-panel";
 import { getContentStatusMap } from "@/lib/db/queries/match-content";
+import { getPlayersByTeamSlug } from "@/lib/db/queries/players";
 import { getTeamStatsDataBySlug } from "@/lib/db/queries/team-stats";
 import { getTeamPageDataBySlug } from "@/lib/db/queries/teams";
 
@@ -52,9 +54,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TeamPage({ params }: Props) {
   const { slug } = await params;
-  const [data, stats] = await Promise.all([
+  const [data, stats, players] = await Promise.all([
     getTeamPageDataBySlug(slug),
     getTeamStatsDataBySlug(slug).catch(() => null),
+    getPlayersByTeamSlug(slug),
   ]);
 
   if (!data) {
@@ -152,6 +155,13 @@ export default async function TeamPage({ params }: Props) {
             </div>
           </section>
         )}
+
+        <section className="space-y-4">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+            選手
+          </h2>
+          <TeamPlayersSection players={players} />
+        </section>
       </div>
     </main>
   );

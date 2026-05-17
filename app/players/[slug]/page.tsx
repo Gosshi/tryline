@@ -101,7 +101,7 @@ export default async function PlayerPage({ params }: Props) {
             {player.teamSlug ? (
               <Link
                 className="font-medium text-[var(--color-ink)] underline decoration-slate-300 underline-offset-4 transition-colors hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                href={`/t/${player.teamSlug}`}
+                href={`/teams/${player.teamSlug}`}
               >
                 {player.teamName}
               </Link>

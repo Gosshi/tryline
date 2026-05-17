@@ -25,6 +25,12 @@ export type PlayerMatchRow = {
   status: string;
 };
 
+export type TeamPlayerItem = {
+  name: string;
+  position: string | null;
+  slug: string;
+};
+
 type PlayerDetailRow = {
   canonical_player_id: string | null;
   id: string;
@@ -169,4 +175,36 @@ export async function listAllPlayerSlugs(): Promise<string[]> {
   }
 
   return data.map((player) => player.slug);
+}
+
+export async function getPlayersByTeamSlug(
+  teamSlug: string,
+): Promise<TeamPlayerItem[]> {
+  const client = getSupabasePublicServerClient();
+  const { data: teamData } = await client
+    .from("teams")
+    .select("id")
+    .eq("slug", teamSlug)
+    .maybeSingle();
+
+  if (!teamData) {
+    return [];
+  }
+
+  const { data, error } = await client
+    .from("players")
+    .select("name, position, slug")
+    .eq("team_id", teamData.id)
+    .is("canonical_player_id", null)
+    .order("name");
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => ({
+    name: row.name,
+    position: row.position ?? null,
+    slug: row.slug,
+  }));
 }
