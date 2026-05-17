@@ -1,3 +1,4 @@
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { Inter, Noto_Serif_JP } from "next/font/google";
 
 import { SiteFooter } from "@/components/site-footer";
@@ -63,6 +64,9 @@ export default function RootLayout({
         <SiteHeader />
         {children}
         <SiteFooter />
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        )}
       </body>
     </html>
   );
