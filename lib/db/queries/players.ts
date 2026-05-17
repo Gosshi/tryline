@@ -1,6 +1,7 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 
 export type PlayerDetail = {
+  aliasTeams: { name: string; slug: string }[];
   canonicalSlug: string | null;
   id: string;
   name: string;
@@ -55,6 +56,18 @@ type PlayerLineupRow = {
   } | null;
 };
 
+type PlayerAliasTeamRow = {
+  team: { name: string; slug: string } | { name: string; slug: string }[] | null;
+};
+
+function firstRelation<T>(relation: T | T[] | null | undefined): T | null {
+  if (Array.isArray(relation)) {
+    return relation[0] ?? null;
+  }
+
+  return relation ?? null;
+}
+
 export async function getPlayerBySlug(
   slug: string,
 ): Promise<PlayerDetail | null> {
@@ -72,7 +85,9 @@ export async function getPlayerBySlug(
   }
 
   const row = data as unknown as PlayerDetailRow;
+  const primaryTeamSlug = row.team?.slug ?? "";
   let canonicalSlug: string | null = null;
+  const aliasTeams: { name: string; slug: string }[] = [];
 
   if (row.canonical_player_id) {
     const { data: canonicalData } = await client
@@ -82,9 +97,28 @@ export async function getPlayerBySlug(
       .single();
 
     canonicalSlug = (canonicalData as { slug: string } | null)?.slug ?? null;
+  } else {
+    const { data: aliasData } = await client
+      .from("players")
+      .select("team:teams!players_team_id_fkey ( name, slug )")
+      .eq("canonical_player_id", row.id);
+
+    const seen = new Set<string>();
+
+    for (const alias of (aliasData ?? []) as unknown as PlayerAliasTeamRow[]) {
+      const team = firstRelation(alias.team);
+
+      if (!team || team.slug === primaryTeamSlug || seen.has(team.slug)) {
+        continue;
+      }
+
+      seen.add(team.slug);
+      aliasTeams.push({ name: team.name, slug: team.slug });
+    }
   }
 
   return {
+    aliasTeams,
     canonicalSlug,
     id: row.id,
     name: row.name,
