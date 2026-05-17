@@ -38,6 +38,26 @@ export const HEADER_COMPETITIONS = [
     href: "/c/rugby-championship/2025",
     label: "Rugby Championship 2025",
   },
+  {
+    family: "rwc",
+    href: "/c/rwc/2023",
+    label: "RWC 2023",
+  },
+  {
+    family: "rwc",
+    href: "/c/rwc/2027",
+    label: "RWC 2027",
+  },
+  {
+    family: "league-one",
+    href: "/c/league-one",
+    label: "ジャパンラグビー リーグワン",
+  },
+  {
+    family: "autumn-nations",
+    href: "/c/autumn-nations",
+    label: "Autumn Nations",
+  },
 ] as const;
 
 export function CompetitionNavDropdown() {

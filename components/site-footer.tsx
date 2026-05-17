@@ -8,6 +8,9 @@ export function SiteFooter() {
     { href: "/c/top-14", label: "Top 14" },
     { href: "/c/super-rugby-pacific", label: "Super Rugby Pacific" },
     { href: "/c/rugby-championship", label: "Rugby Championship" },
+    { href: "/c/rwc", label: "RWC" },
+    { href: "/c/league-one", label: "ジャパンラグビー リーグワン" },
+    { href: "/c/autumn-nations", label: "Autumn Nations" },
   ];
   const serviceLinks = [
     { href: "/pricing", label: "料金プラン" },
