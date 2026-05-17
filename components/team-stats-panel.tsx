@@ -179,34 +179,29 @@ export function TeamStatsPanel({
                     <th className="px-3 py-2 text-right" title="ペナルティ/DG">
                       PG
                     </th>
-                    <th className="py-2 pl-3 text-right">計</th>
+                    <th className="py-2 pl-3 text-right">計 (pts)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {topScorers.map((scorer) => {
-                    const total =
-                      scorer.tries + scorer.conversions + scorer.penalties;
-
-                    return (
-                      <tr key={scorer.playerName}>
-                        <td className="max-w-[12rem] truncate py-2 pr-3 font-medium text-[var(--color-ink)]">
-                          {scorer.playerName}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-[var(--color-ink)]">
-                          {scorer.tries}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-[var(--color-ink)]">
-                          {scorer.conversions}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-[var(--color-ink)]">
-                          {scorer.penalties}
-                        </td>
-                        <td className="py-2 pl-3 text-right font-semibold tabular-nums text-[var(--color-ink)]">
-                          {total}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {topScorers.map((scorer) => (
+                    <tr key={scorer.playerName}>
+                      <td className="max-w-[12rem] truncate py-2 pr-3 font-medium text-[var(--color-ink)]">
+                        {scorer.playerName}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums text-[var(--color-ink)]">
+                        {scorer.tries}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums text-[var(--color-ink)]">
+                        {scorer.conversions}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums text-[var(--color-ink)]">
+                        {scorer.penalties}
+                      </td>
+                      <td className="py-2 pl-3 text-right font-semibold tabular-nums text-[var(--color-ink)]">
+                        {scorer.points}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

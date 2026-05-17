@@ -70,6 +70,7 @@ describe("TeamPage", () => {
           conversions: 8,
           penalties: 2,
           playerName: "Finn Russell",
+          points: 42,
           tries: 4,
         },
       ],
