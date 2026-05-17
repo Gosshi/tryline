@@ -10,6 +10,8 @@ import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
 type TeamSide = ParsedMatchEvent["teamSide"];
 type MatchEventType = ParsedMatchEvent["type"];
 
+const SCORE_PATTERN = /\b\d+\s*[–-]\s*\d+\b/;
+
 const LABEL_TO_TYPE: Record<string, MatchEventType> = {
   con: "conversion",
   cons: "conversion",
@@ -71,15 +73,17 @@ function parseScoringText(text: string, teamSide: TeamSide): ParsedMatchEvent[] 
       }
 
       const playerName = cleanText(matched[1] ?? "");
-      const minutes = [...(matched[2] ?? "").matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g)].map(
+      const parsedMinutes = [...(matched[2] ?? "").matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g)].map(
         (minuteMatch) => Number(minuteMatch[1]),
       );
+      const resolvedMinutes: Array<number | null> =
+        parsedMinutes.length > 0 ? parsedMinutes : [null];
 
-      if (!playerName || minutes.length === 0) {
+      if (!playerName) {
         continue;
       }
 
-      for (const minute of minutes) {
+      for (const minute of resolvedMinutes) {
         events.push({
           isPenaltyTry: false,
           minute,
@@ -96,20 +100,47 @@ function parseScoringText(text: string, teamSide: TeamSide): ParsedMatchEvent[] 
 
 function parseRcMatchEvents(fragmentHtml: string): ParsedMatchEvent[] {
   const $ = load(fragmentHtml);
-  const scoringCells = $("td, th, p, li, div")
-    .toArray()
-    .map((element) => cleanText($(element).text()))
-    .filter((text) => /\b(?:Try|Tries|Con|Cons|Pen|Pens|DG|Drop):/i.test(text));
-  const uniqueScoringCells = [...new Set(scoringCells)];
+  let homeColIndex = -1;
+  let awayColIndex = -1;
 
-  if (uniqueScoringCells.length >= 2) {
-    return [
-      ...parseScoringText(uniqueScoringCells[0]!, "home"),
-      ...parseScoringText(uniqueScoringCells[uniqueScoringCells.length - 1]!, "away"),
-    ];
+  for (const row of $("tr").toArray()) {
+    const cells = $(row).children("td, th");
+    const scoreIndex = cells
+      .toArray()
+      .findIndex((cell) => SCORE_PATTERN.test(cleanText($(cell).text())));
+
+    if (scoreIndex > 0 && scoreIndex < cells.length - 1) {
+      homeColIndex = scoreIndex - 1;
+      awayColIndex = scoreIndex + 1;
+      break;
+    }
   }
 
-  return parseScoringText(cleanText($.text()), "home");
+  if (homeColIndex < 0) {
+    return parseScoringText(cleanText($.text()), "home");
+  }
+
+  let homeText = "";
+  let awayText = "";
+
+  for (const row of $("tr").toArray()) {
+    const cells = $(row).children("td, th").toArray();
+    const homeCellText = cleanText($(cells[homeColIndex] ?? "").text());
+    const awayCellText = cleanText($(cells[awayColIndex] ?? "").text());
+
+    if (/\b(?:Try|Tries|Con|Cons|Pen|Pens|DG|Drop):/i.test(homeCellText)) {
+      homeText = homeCellText;
+    }
+
+    if (/\b(?:Try|Tries|Con|Cons|Pen|Pens|DG|Drop):/i.test(awayCellText)) {
+      awayText = awayCellText;
+    }
+  }
+
+  return [
+    ...parseScoringText(homeText, "home"),
+    ...parseScoringText(awayText, "away"),
+  ];
 }
 
 function playerNameFromCell(

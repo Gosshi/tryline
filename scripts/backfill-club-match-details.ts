@@ -20,6 +20,7 @@ import type { WikipediaMatchLineup } from "@/lib/scrapers/wikipedia-lineups";
 type CliOptions = {
   dryRun: boolean;
   family: string | null;
+  force: boolean;
   limit: number;
 };
 
@@ -66,11 +67,17 @@ const CLUB_FAMILIES = [
 function parseOptions(argv: string[]): CliOptions {
   let dryRun = false;
   let family: string | null = null;
+  let force = false;
   let limit = 50;
 
   for (const arg of argv) {
     if (arg === "--dry-run") {
       dryRun = true;
+      continue;
+    }
+
+    if (arg === "--force") {
+      force = true;
       continue;
     }
 
@@ -91,7 +98,7 @@ function parseOptions(argv: string[]): CliOptions {
     }
 
     throw new Error(
-      "Usage: pnpm tsx scripts/backfill-club-match-details.ts [--family=premiership] [--dry-run] [--limit=50]",
+      "Usage: pnpm tsx scripts/backfill-club-match-details.ts [--family=premiership] [--dry-run] [--force] [--limit=50]",
     );
   }
 
@@ -102,7 +109,7 @@ function parseOptions(argv: string[]): CliOptions {
     throw new Error(`Unsupported --family value: ${family}`);
   }
 
-  return { dryRun, family, limit };
+  return { dryRun, family, force, limit };
 }
 
 function getWikipediaSource(externalIds: Json) {
@@ -192,6 +199,10 @@ async function loadTargetMatches(options: CliOptions): Promise<MatchRow[]> {
       }
 
       if (match.competition.family === "rugby-championship") {
+        if (options.force) {
+          return true;
+        }
+
         return (
           match.match_events.length === 0 || match.match_lineups.length === 0
         );
@@ -419,7 +430,7 @@ async function main() {
   }
 
   console.log(
-    `Backfill complete: matches=${matches.length} events=${eventsInserted} lineups=${lineupsInserted} skipped=${skipped} dry_run=${options.dryRun}`,
+    `Backfill complete: matches=${matches.length} events=${eventsInserted} lineups=${lineupsInserted} skipped=${skipped} dry_run=${options.dryRun} force=${options.force}`,
   );
 }
 
