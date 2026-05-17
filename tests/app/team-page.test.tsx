@@ -15,6 +15,10 @@ const contentMocks = vi.hoisted(() => ({
   getContentStatusMap: vi.fn(),
 }));
 
+const statsMocks = vi.hoisted(() => ({
+  getTeamStatsDataBySlug: vi.fn(),
+}));
+
 const navigationMocks = vi.hoisted(() => ({
   notFound: vi.fn(),
 }));
@@ -31,6 +35,10 @@ vi.mock("@/lib/db/queries/match-content", () => ({
   getContentStatusMap: contentMocks.getContentStatusMap,
 }));
 
+vi.mock("@/lib/db/queries/team-stats", () => ({
+  getTeamStatsDataBySlug: statsMocks.getTeamStatsDataBySlug,
+}));
+
 describe("TeamPage", () => {
   beforeEach(() => {
     navigationMocks.notFound.mockReset();
@@ -38,8 +46,34 @@ describe("TeamPage", () => {
       throw new Error("NEXT_NOT_FOUND");
     });
     teamMocks.getTeamPageDataBySlug.mockReset();
+    statsMocks.getTeamStatsDataBySlug.mockReset();
     contentMocks.getContentStatusMap.mockReset();
     contentMocks.getContentStatusMap.mockResolvedValue(new Map());
+    statsMocks.getTeamStatsDataBySlug.mockResolvedValue({
+      record: {
+        draws: 1,
+        form: ["W", "L", "D"],
+        losses: 2,
+        matchCount: 8,
+        pointsAgainst: 160,
+        pointsFor: 210,
+        wins: 5,
+      },
+      scoring: {
+        matchCount: 4,
+        penaltyGoalsPerMatch: 1.5,
+        pointsForPerMatch: 26.3,
+        triesPerMatch: 3.2,
+      },
+      topScorers: [
+        {
+          conversions: 8,
+          penalties: 2,
+          playerName: "Finn Russell",
+          tries: 4,
+        },
+      ],
+    });
     teamMocks.getTeamPageDataBySlug.mockResolvedValue({
       recentMatches: [
         {
@@ -68,7 +102,11 @@ describe("TeamPage", () => {
       upcomingMatches: [
         {
           awayScore: null,
-          awayTeam: { name: "Sale Sharks", shortCode: "SAL", slug: "sale-sharks" },
+          awayTeam: {
+            name: "Sale Sharks",
+            shortCode: "SAL",
+            slug: "sale-sharks",
+          },
           competition: {
             name: "Premiership Rugby",
             season: "2026-27",
@@ -99,7 +137,11 @@ describe("TeamPage", () => {
     expect(screen.getByText("ENG")).toBeInTheDocument();
     expect(screen.getByText("直近の試合")).toBeInTheDocument();
     expect(screen.getByText("次戦")).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: /Bath/ }).length).toBeGreaterThan(0);
+    expect(screen.getByText("チームスタッツ")).toBeInTheDocument();
+    expect(screen.getByText("Finn Russell")).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("link", { name: /Bath/ }).length,
+    ).toBeGreaterThan(0);
   });
 
   it("returns team metadata", async () => {
