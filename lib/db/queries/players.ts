@@ -26,7 +26,7 @@ export type PlayerMatchRow = {
 };
 
 type PlayerDetailRow = {
-  canonical: { slug: string } | { slug: string }[] | null;
+  canonical_player_id: string | null;
   id: string;
   name: string;
   position: string | null;
@@ -49,14 +49,6 @@ type PlayerLineupRow = {
   } | null;
 };
 
-function firstRelation<T>(relation: T | T[] | null | undefined): T | null {
-  if (Array.isArray(relation)) {
-    return relation[0] ?? null;
-  }
-
-  return relation ?? null;
-}
-
 export async function getPlayerBySlug(
   slug: string,
 ): Promise<PlayerDetail | null> {
@@ -64,14 +56,7 @@ export async function getPlayerBySlug(
   const { data, error } = await client
     .from("players")
     .select(
-      `
-        id,
-        name,
-        slug,
-        position,
-        team:teams!players_team_id_fkey ( name, slug ),
-        canonical:players!players_canonical_player_id_fkey ( slug )
-      `,
+      "id, name, slug, position, canonical_player_id, team:teams!players_team_id_fkey ( name, slug )",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -81,10 +66,20 @@ export async function getPlayerBySlug(
   }
 
   const row = data as unknown as PlayerDetailRow;
-  const canonical = firstRelation(row.canonical);
+  let canonicalSlug: string | null = null;
+
+  if (row.canonical_player_id) {
+    const { data: canonicalData } = await client
+      .from("players")
+      .select("slug")
+      .eq("id", row.canonical_player_id)
+      .single();
+
+    canonicalSlug = (canonicalData as { slug: string } | null)?.slug ?? null;
+  }
 
   return {
-    canonicalSlug: canonical?.slug ?? null,
+    canonicalSlug,
     id: row.id,
     name: row.name,
     position: row.position ?? null,
