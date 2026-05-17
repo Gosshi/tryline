@@ -8,6 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 type DbFixture = {
   scheduledIds: string[];
   finishedIds: string[];
+  finishedKickoffAt?: Record<string, string>;
   existingPreviewIds?: string[];
   existingRecapIds?: string[];
   scheduledKickoffAt?: Record<string, string>;
@@ -27,6 +28,7 @@ type MatchQueryState = {
   id?: string;
   kickoffGte?: string;
   kickoffLte?: string;
+  orderByKickoff?: "asc" | "desc";
   status?: "scheduled" | "finished";
 };
 
@@ -63,6 +65,16 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
       }
       return matchesBuilder;
     }),
+    order: vi.fn(
+      (column: string, options?: { ascending?: boolean }) => {
+        if (column === "kickoff_at") {
+          matchesBuilder.state.orderByKickoff = options?.ascending
+            ? "asc"
+            : "desc";
+        }
+        return matchesBuilder;
+      },
+    ),
     single: vi.fn(() =>
       Promise.resolve({
         data: matchesBuilder.state.id
@@ -98,6 +110,19 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
             return false;
           }
           return true;
+        });
+      }
+
+      if (
+        matchesBuilder.state.status === "finished" &&
+        matchesBuilder.state.orderByKickoff
+      ) {
+        ids = [...ids].sort((left, right) => {
+          const leftKickoff = fixture.finishedKickoffAt?.[left] ?? "";
+          const rightKickoff = fixture.finishedKickoffAt?.[right] ?? "";
+          return matchesBuilder.state.orderByKickoff === "asc"
+            ? leftKickoff.localeCompare(rightKickoff)
+            : rightKickoff.localeCompare(leftKickoff);
         });
       }
 
@@ -251,6 +276,37 @@ describe("runOrchestrate", () => {
 
     expect(generateContent).toHaveBeenCalledWith("finished-1", "recap");
     expect(result.recaps).toEqual({ triggered: 1, skipped: 0 });
+  });
+
+  it("processes missing recaps from newest finished matches first", async () => {
+    const db = createMockDb({
+      scheduledIds: [],
+      finishedIds: ["old-finished", "new-finished"],
+      finishedKickoffAt: {
+        "new-finished": "2026-01-02T00:00:00.000Z",
+        "old-finished": "2026-01-01T00:00:00.000Z",
+      },
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now,
+    });
+
+    expect(generateContent).toHaveBeenNthCalledWith(
+      1,
+      "new-finished",
+      "recap",
+    );
+    expect(generateContent).toHaveBeenNthCalledWith(
+      2,
+      "old-finished",
+      "recap",
+    );
   });
 
   it("counts skipped recap generation results without triggering push notifications", async () => {

@@ -1,5 +1,6 @@
 import { load } from "cheerio";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
@@ -19,6 +20,10 @@ type MatchGapRow = {
   id: string;
   match_events: Array<{ id: string }>;
 };
+
+const bodySchema = z.object({
+  matchIds: z.array(z.string().uuid()).min(1).max(20).optional(),
+});
 
 type WikipediaExternalIds = {
   wikipedia?: unknown;
@@ -75,6 +80,16 @@ function extractEventHtml(html: string, eventId: string | null): string {
   return eventBlock.length ? $.html(eventBlock) : html;
 }
 
+async function parseOptionalBody(request: Request) {
+  const text = await request.text();
+
+  if (!text.trim()) {
+    return {};
+  }
+
+  return bodySchema.parse(JSON.parse(text));
+}
+
 export async function POST(request: Request) {
   try {
     assertCronAuthorized(request);
@@ -86,8 +101,23 @@ export async function POST(request: Request) {
     throw error;
   }
 
+  let body: z.infer<typeof bodySchema>;
+
+  try {
+    body = await parseOptionalBody(request);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "invalid_body", issues: error.issues },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
   const client = getSupabaseServerClient();
-  const { data, error } = await client
+  let query = client
     .from("matches")
     .select(
       `
@@ -98,8 +128,13 @@ export async function POST(request: Request) {
         match_events(id)
       `,
     )
-    .eq("status", "finished")
-    .limit(20);
+    .eq("status", "finished");
+
+  if (body.matchIds) {
+    query = query.in("id", body.matchIds);
+  }
+
+  const { data, error } = await query.limit(20);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
