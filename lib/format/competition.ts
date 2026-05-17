@@ -1,5 +1,16 @@
 export function formatCompetitionTitle(name: string, season: string): string {
-  return name.includes(season) ? name : `${name} ${season}`;
+  const displayName = formatCompetitionName(name);
+
+  return displayName.includes(season) ? displayName : `${displayName} ${season}`;
+}
+
+function formatCompetitionName(name: string): string {
+  return name
+    .replace(
+      /^Japan Rugby League One(?=\s|$)/,
+      "ジャパンラグビー リーグワン",
+    )
+    .replace(/^League One(?=\s|$)/, "ジャパンラグビー リーグワン");
 }
 
 export const COMPETITION_FAMILY_COLORS: Record<string, string> = {
@@ -16,7 +27,7 @@ export const COMPETITION_FAMILY_COLORS: Record<string, string> = {
 
 const FAMILY_DISPLAY_NAMES: Record<string, string> = {
   "autumn-nations": "Autumn Nations",
-  "league-one": "League One",
+  "league-one": "ジャパンラグビー リーグワン",
   "pacific-nations-cup": "Nations Cup",
   pnc: "Nations Cup",
   premiership: "Premiership",

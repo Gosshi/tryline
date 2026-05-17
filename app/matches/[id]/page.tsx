@@ -163,7 +163,7 @@ export default async function MatchDetailPage({
                     /
                   </li>
                   <li className="text-[var(--color-ink)]">
-                    {formatRoundLabel(match.round)}
+                    {formatRoundLabel(match.round, match.competition.family)}
                   </li>
                 </>
               )}

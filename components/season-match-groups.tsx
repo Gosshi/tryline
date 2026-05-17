@@ -11,6 +11,7 @@ import type { GroupKey } from "@/lib/format/match-groups";
 
 type SeasonMatchGroupsProps = {
   contentStatusMap: Record<string, MatchContentStatus>;
+  family?: string;
   groupedMatches: Array<[GroupKey, MatchListItem[]]>;
 };
 
@@ -69,6 +70,7 @@ export function getDefaultOpenGroupIndex(
 
 export function SeasonMatchGroups({
   contentStatusMap,
+  family,
   groupedMatches,
 }: SeasonMatchGroupsProps) {
   const collapsible = shouldCollapseRoundGroups(groupedMatches);
@@ -115,7 +117,7 @@ export function SeasonMatchGroups({
                   type="button"
                 >
                   <div className="min-w-0 flex-1">
-                    <RoundHeading groupKey={groupKey} />
+                    <RoundHeading family={family} groupKey={groupKey} />
                   </div>
                   <ChevronIcon open={isOpen} />
                 </button>
@@ -138,7 +140,7 @@ export function SeasonMatchGroups({
               </>
             ) : (
               <>
-                <RoundHeading groupKey={groupKey} />
+                <RoundHeading family={family} groupKey={groupKey} />
                 <div className="grid gap-4 md:grid-cols-2">
                   {roundMatches.map((match) => (
                     <MatchCard

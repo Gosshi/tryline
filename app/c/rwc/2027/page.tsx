@@ -106,6 +106,7 @@ export default async function RWC2027Page() {
         ) : (
           <SeasonMatchGroups
             contentStatusMap={Object.fromEntries(contentStatusMap)}
+            family="rwc"
             groupedMatches={groupedMatches}
           />
         )}

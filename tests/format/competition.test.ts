@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatCompetitionTitle,
   formatFamilyName,
   getCompetitionFamilyColor,
 } from "@/lib/format/competition";
@@ -9,6 +10,20 @@ describe("formatFamilyName", () => {
   it("formats PNC family aliases as Nations Cup", () => {
     expect(formatFamilyName("pnc")).toBe("Nations Cup");
     expect(formatFamilyName("pacific-nations-cup")).toBe("Nations Cup");
+  });
+
+  it("formats League One family name in Japanese", () => {
+    expect(formatFamilyName("league-one")).toBe(
+      "ジャパンラグビー リーグワン",
+    );
+  });
+
+  it("formats League One competition titles in Japanese without changing slugs", () => {
+    expect(formatCompetitionTitle("League One", "2025-26")).toBe(
+      "ジャパンラグビー リーグワン 2025-26",
+    );
+    expect(formatCompetitionTitle("Japan Rugby League One 2024-25", "2024-25"))
+      .toBe("ジャパンラグビー リーグワン 2024-25");
   });
 
   it("returns competition family colors with a fallback", () => {

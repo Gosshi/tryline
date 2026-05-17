@@ -3,6 +3,7 @@ import { formatRoundLabel } from "@/lib/format/round-label";
 import type { GroupKey } from "@/lib/format/match-groups";
 
 type RoundHeadingProps = {
+  family?: string;
   groupKey: GroupKey;
 };
 
@@ -15,7 +16,7 @@ function formatDateShort(dateStr: string): string {
   }).format(date);
 }
 
-export function RoundHeading({ groupKey }: RoundHeadingProps) {
+export function RoundHeading({ family, groupKey }: RoundHeadingProps) {
   const label =
     groupKey.type === "week"
       ? `第${groupKey.weekIndex}節 - ${
@@ -25,7 +26,7 @@ export function RoundHeading({ groupKey }: RoundHeadingProps) {
         }`
       : groupKey.round === null
         ? "節未定"
-        : formatRoundLabel(groupKey.round);
+        : formatRoundLabel(groupKey.round, family);
 
   return (
     <div className="flex items-center gap-3">
