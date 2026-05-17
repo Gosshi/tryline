@@ -13,16 +13,17 @@ import type { Json } from "@/lib/db/types";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+const CRON_BATCH_SIZE = 25;
+
 type MatchGapRow = {
   away_team_id: string;
   external_ids: Json;
   home_team_id: string;
   id: string;
-  match_events: Array<{ id: string }>;
 };
 
 const bodySchema = z.object({
-  matchIds: z.array(z.string().uuid()).min(1).max(20).optional(),
+  matchIds: z.array(z.string().uuid()).min(1).max(40).optional(),
 });
 
 type WikipediaExternalIds = {
@@ -117,24 +118,32 @@ export async function POST(request: Request) {
   }
 
   const client = getSupabaseServerClient();
+
+  const { data: eventedRows, error: eventedError } = await client
+    .from("match_events")
+    .select("match_id");
+
+  if (eventedError) {
+    return NextResponse.json({ error: eventedError.message }, { status: 500 });
+  }
+
+  const matchIdsWithEvents = new Set(
+    (eventedRows ?? []).map((row) => row.match_id),
+  );
+
   let query = client
     .from("matches")
-    .select(
-      `
-        id,
-        home_team_id,
-        away_team_id,
-        external_ids,
-        match_events(id)
-      `,
-    )
-    .eq("status", "finished");
+    .select("id, home_team_id, away_team_id, external_ids")
+    .eq("status", "finished")
+    .order("kickoff_at", { ascending: false });
 
   if (body.matchIds) {
     query = query.in("id", body.matchIds);
+  } else {
+    query = query.limit(CRON_BATCH_SIZE);
   }
 
-  const { data, error } = await query.limit(20);
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -142,7 +151,7 @@ export async function POST(request: Request) {
 
   const gaps = ((data ?? []) as MatchGapRow[]).filter(
     (match) =>
-      match.match_events.length === 0 &&
+      !matchIdsWithEvents.has(match.id) &&
       getWikipediaSource(match.external_ids) !== null,
   );
   let filled = 0;
