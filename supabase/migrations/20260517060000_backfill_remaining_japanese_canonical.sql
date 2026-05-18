@@ -27,7 +27,9 @@ WHERE id = (SELECT id FROM players WHERE slug = 'player-a2b74ef4');
 
 -- 具智元（Gu Chimon）
 INSERT INTO players (name, slug, team_id)
-VALUES ('Gu Chimon', 'gu-chimon', 'b2445801-dbe9-4914-b345-564b553a39b2')
+SELECT 'Gu Chimon', 'gu-chimon', id
+FROM teams
+WHERE slug = 'japan'
 ON CONFLICT (slug) DO NOTHING;
 
 UPDATE players
@@ -36,7 +38,9 @@ WHERE id = (SELECT id FROM players WHERE slug = 'player-138adfc9');
 
 -- 山沢拓也（Takuya Yamazawa）
 INSERT INTO players (name, slug, team_id)
-VALUES ('Takuya Yamazawa', 'takuya-yamazawa', 'b2445801-dbe9-4914-b345-564b553a39b2')
+SELECT 'Takuya Yamazawa', 'takuya-yamazawa', id
+FROM teams
+WHERE slug = 'japan'
 ON CONFLICT (slug) DO NOTHING;
 
 UPDATE players
@@ -45,7 +49,9 @@ WHERE id = (SELECT id FROM players WHERE slug = 'player-a11bb3d6');
 
 -- 立川理道（Harumichi Tatekawa）
 INSERT INTO players (name, slug, team_id)
-VALUES ('Harumichi Tatekawa', 'harumichi-tatekawa', 'b2445801-dbe9-4914-b345-564b553a39b2')
+SELECT 'Harumichi Tatekawa', 'harumichi-tatekawa', id
+FROM teams
+WHERE slug = 'japan'
 ON CONFLICT (slug) DO NOTHING;
 
 UPDATE players
