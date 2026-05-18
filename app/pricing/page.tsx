@@ -102,6 +102,9 @@ export default async function PricingPage() {
               無料で記事を読む
             </Link>
           </div>
+          <p className="mt-3 text-xs text-white/45">
+            いつでもキャンセル可能 · Stripe 決済
+          </p>
         </div>
       </section>
 
