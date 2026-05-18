@@ -21,6 +21,23 @@ export async function GET(request: Request) {
         )
       : interFont;
   const fontName = fontSignature === "wOF2" ? "Geist" : "Inter";
+  let bgDataUri: string | null = null;
+
+  try {
+    const bgResponse = await fetch(new URL("/og-bg.png", request.url));
+
+    if (!bgResponse.ok) {
+      throw new Error("OG background image is unavailable.");
+    }
+
+    const bgBuffer = await bgResponse.arrayBuffer();
+    bgDataUri = `data:image/png;base64,${Buffer.from(bgBuffer).toString(
+      "base64",
+    )}`;
+  } catch {
+    bgDataUri = null;
+  }
+
   const home = truncate(searchParams.get("home") ?? "Home", 20);
   const away = truncate(searchParams.get("away") ?? "Away", 20);
   const score = searchParams.get("score") ?? "";
@@ -36,11 +53,35 @@ export async function GET(request: Request) {
           display: "flex",
           fontFamily: "Inter, Geist, sans-serif",
           height: "630px",
+          overflow: "hidden",
           padding: "56px 64px 48px 70px",
           position: "relative",
           width: "1200px",
         }}
       >
+        {bgDataUri && (
+          // eslint-disable-next-line @next/next/no-img-element -- @vercel/og renders plain img elements in ImageResponse.
+          <img
+            alt=""
+            src={bgDataUri}
+            style={{
+              display: "flex",
+              height: "100%",
+              inset: 0,
+              objectFit: "cover",
+              position: "absolute",
+              width: "100%",
+            }}
+          />
+        )}
+        <div
+          style={{
+            background: "rgba(11, 22, 40, 0.72)",
+            display: "flex",
+            inset: 0,
+            position: "absolute",
+          }}
+        />
         <div
           style={{
             background: "#22c55e",
@@ -50,6 +91,7 @@ export async function GET(request: Request) {
             position: "absolute",
             top: 0,
             width: "6px",
+            zIndex: 2,
           }}
         />
 
@@ -62,6 +104,7 @@ export async function GET(request: Request) {
             position: "absolute",
             right: 64,
             top: 54,
+            zIndex: 2,
           }}
         >
           <div
@@ -91,7 +134,9 @@ export async function GET(request: Request) {
             gap: "30px",
             height: "100%",
             justifyContent: "center",
+            position: "relative",
             width: "100%",
+            zIndex: 2,
           }}
         >
           <div
@@ -179,6 +224,7 @@ export async function GET(request: Request) {
             fontWeight: 700,
             position: "absolute",
             right: 64,
+            zIndex: 2,
           }}
         >
           trylinerugby.com
