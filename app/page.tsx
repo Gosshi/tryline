@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { FavoriteTeamsBanner } from "@/components/favorite-teams-banner";
+import { HeroTexture } from "@/components/hero-texture";
 import { MatchCard } from "@/components/match-card";
 import { TeamBadge } from "@/components/team-badge";
 import { getUser, getUserProfile } from "@/lib/auth/server";
@@ -108,6 +109,7 @@ export default async function HomePage() {
         <CheckoutSuccessTracker />
       </Suspense>
       <section className="relative overflow-hidden bg-[var(--color-ink)] py-16 sm:py-24">
+        <HeroTexture />
         <div aria-hidden className="absolute inset-0 z-0">
           <Image
             alt=""
@@ -156,7 +158,7 @@ export default async function HomePage() {
           <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-[var(--color-ink)] to-transparent" />
         </div>
 
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
+        <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
           <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
             AI Rugby Analysis in Japanese
           </p>

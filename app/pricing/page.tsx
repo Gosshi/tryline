@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { PricingForm } from "@/app/pricing/pricing-form";
+import { HeroTexture } from "@/components/hero-texture";
 import {
   getLatestCompletedMatch,
   getRecentlyReviewedMatches,
@@ -74,8 +75,9 @@ export default async function PricingPage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <section className="bg-[var(--color-ink)] px-4 py-16 text-white sm:px-6 sm:py-20 md:px-8">
-        <div className="mx-auto max-w-5xl">
+      <section className="relative overflow-hidden bg-[var(--color-ink)] px-4 py-16 text-white sm:px-6 sm:py-20 md:px-8">
+        <HeroTexture />
+        <div className="relative z-10 mx-auto max-w-5xl">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
             Tryline Premium
           </p>
