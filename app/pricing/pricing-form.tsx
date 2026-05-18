@@ -48,10 +48,10 @@ export function PricingForm({
       >
         <button
           className={[
-            "rounded-full bg-[var(--color-accent)] text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2",
+            "rounded-full bg-[var(--color-accent)] font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2",
             variant === "hero"
-              ? "px-5 py-2.5 focus-visible:ring-white"
-              : "px-4 py-2 focus-visible:ring-[var(--color-accent)]",
+              ? "px-7 py-3 text-base focus-visible:ring-white"
+              : "px-4 py-2 text-sm focus-visible:ring-[var(--color-accent)]",
           ].join(" ")}
           type="submit"
         >
