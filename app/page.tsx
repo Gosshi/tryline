@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -111,14 +110,16 @@ export default async function HomePage() {
       <section className="relative overflow-hidden bg-[var(--color-ink)] py-16 sm:py-24">
         <HeroTexture />
         <div aria-hidden className="absolute inset-0 z-0">
-          <Image
-            alt=""
-            className="object-cover object-center opacity-25"
-            fill
-            priority
-            sizes="100vw"
-            src="https://images.unsplash.com/photo-1763854413165-1713bc5a7f4a?w=1600&q=80"
-          />
+          <video
+            autoPlay
+            className="absolute inset-0 h-full w-full object-cover object-center opacity-25"
+            loop
+            muted
+            playsInline
+            preload="none"
+          >
+            <source src="/hero-bg.mp4" type="video/mp4" />
+          </video>
           <div className="bg-[var(--color-ink)]/60 absolute inset-0" />
         </div>
         <div
