@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { PricingForm } from "@/app/pricing/pricing-form";
@@ -169,6 +170,47 @@ export default async function PricingPage() {
                 buttonLabel="Premium で全文を読む"
                 variant="inline"
               />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-2xl font-black tracking-tight text-[var(--color-ink)] sm:text-3xl">
+            Premium ではこんな画面が読めます
+          </h2>
+          <p className="mb-10 text-sm text-[var(--color-ink-muted)]">
+            AI が生成した詳細な日本語レビューと、試合について何でも聞ける AI チャット。
+          </p>
+
+          <div className="space-y-12">
+            <div>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                AI 日本語レビュー全文
+              </p>
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <Image
+                  alt="Premium 試合レビューの画面例"
+                  className="h-auto w-full"
+                  height={2209}
+                  src="/pricing/review-full.png"
+                  width={1703}
+                />
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                試合 AI チャット
+              </p>
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <Image
+                  alt="AI チャットの画面例"
+                  className="h-auto w-full"
+                  height={1120}
+                  src="/pricing/ai-chat.png"
+                  width={1726}
+                />
+              </div>
             </div>
           </div>
         </section>
