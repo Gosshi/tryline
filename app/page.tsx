@@ -27,7 +27,6 @@ import {
   formatKickoffJstDate,
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
-import { createOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -42,10 +41,11 @@ export const metadata: Metadata = {
     description:
       "Six Nations・Premiership・URC など海外ラグビーの試合結果・AI日本語レビューを提供。",
     images: [
-      createOgImage({
-        competition: "Tryline",
-        home: "海外ラグビーを日本語で深掘り",
-      }),
+      {
+        height: 630,
+        url: `${SITE_URL}/og-image.png`,
+        width: 1200,
+      },
     ],
     title: "Tryline — 海外ラグビーを日本語で深掘り",
     type: "website",

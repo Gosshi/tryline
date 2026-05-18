@@ -8,7 +8,6 @@ import {
   getTeamBySlug,
 } from "@/lib/db/queries/matches";
 import { getTeamColor } from "@/lib/format/team-identity";
-import { createOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -35,10 +34,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       description: `${teamData.name} の試合一覧。`,
       images: [
-        createOgImage({
-          competition: "Team",
-          home: teamData.name,
-        }),
+        {
+          height: 630,
+          url: `${SITE_URL}/og-image.png`,
+          width: 1200,
+        },
       ],
       title: `${teamData.name} | Tryline`,
       type: "website",

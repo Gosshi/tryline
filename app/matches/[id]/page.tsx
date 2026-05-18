@@ -14,7 +14,7 @@ import { getMatchById } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { extractDescription } from "@/lib/match-content/description";
-import { createOgImage } from "@/lib/seo/og-image";
+import { createMatchOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -60,7 +60,7 @@ export async function generateMetadata({
     openGraph: {
       description,
       images: [
-        createOgImage({
+        createMatchOgImage({
           away: match.awayTeam.name,
           competition: formatCompetitionTitle(
             match.competition.name,

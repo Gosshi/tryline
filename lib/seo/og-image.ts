@@ -1,15 +1,15 @@
 type OgImageParams = {
-  away?: string;
-  competition?: string;
+  away: string;
+  competition: string;
   home: string;
   score?: string;
   status?: string;
 };
 
-export function createOgImage(params: OgImageParams) {
+export function createMatchOgImage(params: OgImageParams) {
   const searchParams = new URLSearchParams({
-    away: params.away ?? "Tryline",
-    competition: params.competition ?? "Tryline",
+    away: params.away,
+    competition: params.competition,
     home: params.home,
   });
 

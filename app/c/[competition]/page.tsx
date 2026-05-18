@@ -12,7 +12,6 @@ import {
   formatCompetitionTitle,
   formatFamilyName,
 } from "@/lib/format/competition";
-import { createOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -55,10 +54,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       description,
       images: [
-        createOgImage({
-          competition: "Tryline",
-          home: name,
-        }),
+        {
+          height: 630,
+          url: `${SITE_URL}/og-image.png`,
+          width: 1200,
+        },
       ],
       title: `${name} — 全シーズン一覧 | Tryline`,
       type: "website",
