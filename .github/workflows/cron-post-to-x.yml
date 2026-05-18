@@ -1,0 +1,17 @@
+name: Cron — Post to X
+
+on:
+  schedule:
+    - cron: '0 13 * * *'
+    - cron: '0 16 * * 6,0'
+  workflow_dispatch:
+
+jobs:
+  post-to-x:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger post-to-x
+        run: |
+          curl -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://www.trylinerugby.com/api/cron/post-to-x
