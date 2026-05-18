@@ -106,6 +106,26 @@ export default async function PricingPage() {
       </section>
 
       <div className="mx-auto max-w-5xl space-y-14 px-4 py-12 sm:px-6 md:px-8">
+        <section>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+            プロダクトデモ
+          </p>
+          <h2 className="mb-6 text-2xl font-black tracking-tight text-[var(--color-ink)] sm:text-3xl">
+            実際の画面を見てみる
+          </h2>
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="relative w-full" style={{ paddingTop: "56.25%" }}>
+              <iframe
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 h-full w-full"
+                src="https://www.youtube.com/embed/2kFHgiaI-NA?rel=0&modestbranding=1"
+                title="Tryline プロダクトデモ"
+              />
+            </div>
+          </div>
+        </section>
+
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="grid grid-cols-[1.4fr_0.8fr_0.8fr] border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
             <span>機能</span>
