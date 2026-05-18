@@ -17,6 +17,9 @@ type XCredentials = {
   appSecret: string;
 };
 
+const X_POST_WEIGHTED_LENGTH_LIMIT = 280;
+const X_URL_WEIGHT = 23;
+
 function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
@@ -34,6 +37,45 @@ function getXCredentials(): XCredentials {
   };
 }
 
+function getPostWeightedLength(text: string): number {
+  const urlPattern = /https?:\/\/\S+/g;
+  let length = 0;
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(urlPattern)) {
+    const index = match.index ?? 0;
+    length += getPlainTextWeightedLength(text.slice(lastIndex, index));
+    length += X_URL_WEIGHT;
+    lastIndex = index + match[0].length;
+  }
+
+  length += getPlainTextWeightedLength(text.slice(lastIndex));
+  return length;
+}
+
+function getPlainTextWeightedLength(text: string): number {
+  return [...text].reduce(
+    (length, char) => length + (char.charCodeAt(0) <= 0x7f ? 1 : 2),
+    0,
+  );
+}
+
+function trimToWeightedLength(text: string, maxLength: number): string {
+  let length = 0;
+  let result = "";
+
+  for (const char of text) {
+    const weight = char.charCodeAt(0) <= 0x7f ? 1 : 2;
+    if (length + weight > maxLength) {
+      break;
+    }
+    result += char;
+    length += weight;
+  }
+
+  return result.trim();
+}
+
 export async function postMatchRecapToX(params: XPostParams): Promise<string> {
   const client = new TwitterApi(getXCredentials());
 
@@ -43,18 +85,45 @@ export async function postMatchRecapToX(params: XPostParams): Promise<string> {
       : "vs";
 
   const matchUrl = `https://www.trylinerugby.com/matches/${params.matchId}`;
-  const excerpt = params.recapExcerpt.slice(0, 100);
-
-  const text = [
+  const hashtagLine = "#ラグビー #Rugby #観戦";
+  const fixedText = [
     `🏉 ${params.competitionLabel}`,
     `${params.homeTeamName} ${score} ${params.awayTeamName}`,
     "",
-    `${excerpt}…`,
+    "",
     "",
     `▶️ ${matchUrl}`,
     "",
-    "#ラグビー #Rugby #観戦",
+    hashtagLine,
   ].join("\n");
+  const fixedLength = getPostWeightedLength(fixedText);
+  const excerptSuffix = "...";
+  const maxExcerptLength = Math.max(
+    0,
+    X_POST_WEIGHTED_LENGTH_LIMIT - fixedLength - excerptSuffix.length,
+  );
+  const excerpt = trimToWeightedLength(params.recapExcerpt, maxExcerptLength);
+
+  let text = [
+    `🏉 ${params.competitionLabel}`,
+    `${params.homeTeamName} ${score} ${params.awayTeamName}`,
+    "",
+    excerpt ? `${excerpt}${excerptSuffix}` : "",
+    "",
+    `▶️ ${matchUrl}`,
+    "",
+    hashtagLine,
+  ].join("\n");
+
+  if (getPostWeightedLength(text) > X_POST_WEIGHTED_LENGTH_LIMIT) {
+    text = [
+      `🏉 ${params.competitionLabel}`,
+      `${params.homeTeamName} ${score} ${params.awayTeamName}`,
+      "",
+      "",
+      `▶️ ${matchUrl}`,
+    ].join("\n");
+  }
 
   const { data } = await client.v2.tweet(text);
   return data.id;

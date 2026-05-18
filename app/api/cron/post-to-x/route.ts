@@ -121,7 +121,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    console.error("[post-to-x] failed", error);
+    const err =
+      error instanceof Error
+        ? {
+            message: error.message,
+            code: (error as unknown as Record<string, unknown>).code,
+            data: (error as unknown as Record<string, unknown>).data,
+            rateLimit: (error as unknown as Record<string, unknown>).rateLimit,
+          }
+        : error;
+    console.error("[post-to-x] failed", JSON.stringify(err));
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
