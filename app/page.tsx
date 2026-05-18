@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { FavoriteTeamsBanner } from "@/components/favorite-teams-banner";
 import { MatchCard } from "@/components/match-card";
+import { TeamBadge } from "@/components/team-badge";
 import { getUser, getUserProfile } from "@/lib/auth/server";
 import {
   getCompetitionBySlug,
@@ -327,9 +328,26 @@ export default async function HomePage() {
                         </time>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[var(--color-ink)]">
-                          {match.homeTeam.shortCode} vs{" "}
-                          {match.awayTeam.shortCode}
+                        <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-[var(--color-ink)]">
+                          <TeamBadge
+                            shortCode={match.homeTeam.shortCode}
+                            size={18}
+                            slug={match.homeTeam.slug}
+                          />
+                          <span className="truncate">
+                            {match.homeTeam.shortCode}
+                          </span>
+                          <span className="shrink-0 font-normal text-slate-400">
+                            vs
+                          </span>
+                          <TeamBadge
+                            shortCode={match.awayTeam.shortCode}
+                            size={18}
+                            slug={match.awayTeam.slug}
+                          />
+                          <span className="truncate">
+                            {match.awayTeam.shortCode}
+                          </span>
                         </p>
                         <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
                           {formatFamilyName(family)}
@@ -362,9 +380,30 @@ export default async function HomePage() {
                           match.competition.season,
                         )}
                       </p>
-                      <p className="mt-0.5 truncate font-semibold text-[var(--color-ink)]">
-                        {match.homeTeam.name} {match.homeScore} -{" "}
-                        {match.awayScore} {match.awayTeam.name}
+                      <p className="mt-0.5 flex min-w-0 items-center gap-2 overflow-hidden text-sm font-semibold text-[var(--color-ink)]">
+                        <span className="inline-flex min-w-0 items-center gap-1.5">
+                          <TeamBadge
+                            shortCode={match.homeTeam.shortCode}
+                            size={20}
+                            slug={match.homeTeam.slug}
+                          />
+                          <span className="truncate">
+                            {match.homeTeam.name}
+                          </span>
+                        </span>
+                        <span className="shrink-0 font-normal tabular-nums text-slate-400">
+                          {match.homeScore} - {match.awayScore}
+                        </span>
+                        <span className="inline-flex min-w-0 items-center gap-1.5">
+                          <TeamBadge
+                            shortCode={match.awayTeam.shortCode}
+                            size={20}
+                            slug={match.awayTeam.slug}
+                          />
+                          <span className="truncate">
+                            {match.awayTeam.name}
+                          </span>
+                        </span>
                       </p>
                     </div>
                     <span className="shrink-0 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
