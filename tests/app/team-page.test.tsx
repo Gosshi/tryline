@@ -15,6 +15,10 @@ const contentMocks = vi.hoisted(() => ({
   getContentStatusMap: vi.fn(),
 }));
 
+const playerMocks = vi.hoisted(() => ({
+  getPlayersByTeamSlug: vi.fn(),
+}));
+
 const statsMocks = vi.hoisted(() => ({
   getTeamStatsDataBySlug: vi.fn(),
 }));
@@ -35,6 +39,10 @@ vi.mock("@/lib/db/queries/match-content", () => ({
   getContentStatusMap: contentMocks.getContentStatusMap,
 }));
 
+vi.mock("@/lib/db/queries/players", () => ({
+  getPlayersByTeamSlug: playerMocks.getPlayersByTeamSlug,
+}));
+
 vi.mock("@/lib/db/queries/team-stats", () => ({
   getTeamStatsDataBySlug: statsMocks.getTeamStatsDataBySlug,
 }));
@@ -46,9 +54,17 @@ describe("TeamPage", () => {
       throw new Error("NEXT_NOT_FOUND");
     });
     teamMocks.getTeamPageDataBySlug.mockReset();
+    playerMocks.getPlayersByTeamSlug.mockReset();
     statsMocks.getTeamStatsDataBySlug.mockReset();
     contentMocks.getContentStatusMap.mockReset();
     contentMocks.getContentStatusMap.mockResolvedValue(new Map());
+    playerMocks.getPlayersByTeamSlug.mockResolvedValue([
+      {
+        name: "Ben Spencer",
+        position: "Scrum-half",
+        slug: "ben-spencer",
+      },
+    ]);
     statsMocks.getTeamStatsDataBySlug.mockResolvedValue({
       record: {
         draws: 1,
@@ -140,6 +156,7 @@ describe("TeamPage", () => {
     expect(screen.getByText("次戦")).toBeInTheDocument();
     expect(screen.getByText("チームスタッツ")).toBeInTheDocument();
     expect(screen.getByText("Finn Russell")).toBeInTheDocument();
+    expect(screen.getByText("Ben Spencer")).toBeInTheDocument();
     expect(
       screen.getAllByRole("link", { name: /Bath/ }).length,
     ).toBeGreaterThan(0);
