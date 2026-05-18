@@ -17,7 +17,6 @@ import {
   getCompetitionFamilyColor,
 } from "@/lib/format/competition";
 import { groupMatchesByRound } from "@/lib/format/match-groups";
-import { createOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -68,10 +67,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       description,
       images: [
-        createOgImage({
-          competition: formatFamilyName(comp.family),
-          home: title,
-        }),
+        {
+          height: 630,
+          url: `${SITE_URL}/og-image.png`,
+          width: 1200,
+        },
       ],
       title: `${title} | Tryline`,
       type: "website",

@@ -8,8 +8,21 @@ function truncate(value: string, maxLength: number): string {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const home = truncate(searchParams.get("home") ?? "Home", 22);
-  const away = truncate(searchParams.get("away") ?? "Away", 22);
+  const interFont = await fetch(
+    "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2",
+  ).then((res) => res.arrayBuffer());
+  const fontSignature = new TextDecoder("ascii").decode(
+    new Uint8Array(interFont).slice(0, 4),
+  );
+  const fontData =
+    fontSignature === "wOF2"
+      ? await fetch(new URL("/og-font.ttf", request.url)).then((res) =>
+          res.arrayBuffer(),
+        )
+      : interFont;
+  const fontName = fontSignature === "wOF2" ? "Geist" : "Inter";
+  const home = truncate(searchParams.get("home") ?? "Home", 20);
+  const away = truncate(searchParams.get("away") ?? "Away", 20);
   const score = searchParams.get("score") ?? "";
   const competition = truncate(searchParams.get("competition") ?? "Rugby", 42);
   const status = searchParams.get("status") ?? "upcoming";
@@ -18,33 +31,56 @@ export async function GET(request: Request) {
     (
       <div
         style={{
-          background: "#0f172a",
+          background: "linear-gradient(180deg, #0B1628 0%, #0f172a 100%)",
           color: "white",
           display: "flex",
-          flexDirection: "column",
-          fontFamily: "sans-serif",
+          fontFamily: "Inter, Geist, sans-serif",
           height: "630px",
-          justifyContent: "space-between",
-          padding: "64px",
+          padding: "56px 64px 48px 70px",
+          position: "relative",
           width: "1200px",
         }}
       >
-        <div style={{ alignItems: "center", display: "flex", gap: "12px" }}>
+        <div
+          style={{
+            background: "#22c55e",
+            bottom: 0,
+            display: "flex",
+            left: 0,
+            position: "absolute",
+            top: 0,
+            width: "6px",
+          }}
+        />
+
+        <div
+          style={{
+            alignItems: "center",
+            display: "flex",
+            justifyContent: "space-between",
+            left: 70,
+            position: "absolute",
+            right: 64,
+            top: 54,
+          }}
+        >
           <div
             style={{
-              background: "#22c55e",
-              borderRadius: "50%",
-              height: "12px",
-              width: "12px",
+              background: "rgba(148, 163, 184, 0.14)",
+              border: "1px solid rgba(148, 163, 184, 0.22)",
+              borderRadius: "9999px",
+              color: "#cbd5e1",
+              display: "flex",
+              fontSize: "22px",
+              fontWeight: 700,
+              padding: "10px 18px",
             }}
-          />
-          <span style={{ color: "#94a3b8", fontSize: "20px", fontWeight: 700 }}>
-            Tryline
-          </span>
-          <span style={{ color: "#475569", fontSize: "18px" }}>—</span>
-          <span style={{ color: "#94a3b8", fontSize: "18px" }}>
+          >
             {competition}
-          </span>
+          </div>
+          <div style={{ color: "#e2e8f0", fontSize: "24px", fontWeight: 700 }}>
+            Tryline
+          </div>
         </div>
 
         <div
@@ -52,35 +88,70 @@ export async function GET(request: Request) {
             alignItems: "center",
             display: "flex",
             flexDirection: "column",
-            gap: "24px",
+            gap: "30px",
+            height: "100%",
+            justifyContent: "center",
+            width: "100%",
           }}
         >
           <div
             style={{
               alignItems: "center",
               display: "flex",
-              fontSize: "56px",
-              fontWeight: 900,
-              gap: "32px",
+              fontSize: "64px",
+              fontWeight: 700,
+              gap: "36px",
+              justifyContent: "center",
+              lineHeight: 1.05,
+              maxWidth: "1060px",
             }}
           >
-            <span>{home}</span>
+            <span
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                minWidth: "360px",
+                textAlign: "right",
+              }}
+            >
+              {home}
+            </span>
             {score ? (
               <span
                 style={{
                   color: "#22c55e",
-                  fontSize: "48px",
+                  display: "flex",
+                  fontSize: "58px",
                   fontWeight: 700,
-                  minWidth: "160px",
+                  justifyContent: "center",
+                  minWidth: "190px",
                   textAlign: "center",
                 }}
               >
                 {score}
               </span>
             ) : (
-              <span style={{ color: "#475569", fontSize: "36px" }}>vs</span>
+              <span
+                style={{
+                  color: "#64748b",
+                  display: "flex",
+                  fontSize: "40px",
+                  justifyContent: "center",
+                  minWidth: "120px",
+                }}
+              >
+                vs
+              </span>
             )}
-            <span>{away}</span>
+            <span
+              style={{
+                display: "flex",
+                justifyContent: "flex-start",
+                minWidth: "360px",
+              }}
+            >
+              {away}
+            </span>
           </div>
 
           {status === "live" && (
@@ -99,11 +170,32 @@ export async function GET(request: Request) {
           )}
         </div>
 
-        <div style={{ color: "#475569", fontSize: "16px" }}>
+        <div
+          style={{
+            bottom: 44,
+            color: "#64748b",
+            display: "flex",
+            fontSize: "20px",
+            fontWeight: 700,
+            position: "absolute",
+            right: 64,
+          }}
+        >
           trylinerugby.com
         </div>
       </div>
     ),
-    { height: 630, width: 1200 },
+    {
+      fonts: [
+        {
+          data: fontData,
+          name: fontName,
+          style: "normal",
+          weight: 700,
+        },
+      ],
+      height: 630,
+      width: 1200,
+    },
   );
 }
