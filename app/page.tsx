@@ -199,40 +199,48 @@ export default async function HomePage() {
         sampleMatch?.recapExcerpt && (
           <section
             aria-labelledby="sample-heading"
-            className="border-b border-slate-100 bg-white px-4 py-8 sm:px-6 md:px-8"
+            className="mx-4 my-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:mx-6 md:mx-8 lg:mx-auto lg:max-w-6xl"
           >
-            <div className="mx-auto max-w-6xl">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3">
               <p
                 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]"
                 id="sample-heading"
               >
                 AI レビューのサンプル
               </p>
-              <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+              <span className="rounded-full bg-[var(--color-accent)]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
+                Premium
+              </span>
+            </div>
+            <div className="border-b border-slate-100 px-5 py-3">
+              <p className="text-xs text-[var(--color-ink-muted)]">
                 {formatCompetitionTitle(
                   sampleMatch.competition.name,
                   sampleMatch.competition.season,
                 )}
-                {" / "}
+              </p>
+              <p className="mt-0.5 text-sm font-bold text-[var(--color-ink)]">
                 {sampleMatch.homeTeam.name} vs {sampleMatch.awayTeam.name}
               </p>
-              <p className="mt-3 line-clamp-3 text-base leading-relaxed text-[var(--color-ink)]">
+            </div>
+            <div className="mx-5 my-4 border-l-4 border-[var(--color-accent)] pl-4">
+              <p className="line-clamp-5 text-sm leading-relaxed text-[var(--color-ink)]">
                 {sampleMatch.recapExcerpt}
               </p>
-              <div className="mt-4 flex flex-wrap items-center gap-4">
-                <Link
-                  className="text-sm font-semibold text-[var(--color-accent)] hover:underline"
-                  href={`/matches/${sampleMatch.id}`}
-                >
-                  続きを読む →
-                </Link>
-                <Link
-                  className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-                  href="/pricing"
-                >
-                  Premium を始める — ¥980/月
-                </Link>
-              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-4">
+              <Link
+                className="text-xs font-semibold text-[var(--color-accent)] hover:underline"
+                href={`/matches/${sampleMatch.id}`}
+              >
+                この試合を見る →
+              </Link>
+              <Link
+                className="rounded-full bg-[var(--color-accent)] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90"
+                href="/pricing"
+              >
+                Premium を登録 — ¥980/月
+              </Link>
             </div>
           </section>
         )}
