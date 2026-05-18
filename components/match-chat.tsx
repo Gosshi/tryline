@@ -25,7 +25,26 @@ function MatchChatPanel({
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isAtBottomRef = useRef(true);
+
+  function scrollToBottom() {
+    const element = containerRef.current;
+
+    if (!element || !isAtBottomRef.current) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      const currentElement = containerRef.current;
+
+      if (!currentElement || !isAtBottomRef.current) {
+        return;
+      }
+
+      currentElement.scrollTop = currentElement.scrollHeight;
+    });
+  }
 
   async function send() {
     const message = input.trim();
@@ -43,6 +62,7 @@ function MatchChatPanel({
     ];
 
     setMessages(nextMessages);
+    scrollToBottom();
     setStreaming(true);
 
     let assistantContent = "";
@@ -110,6 +130,7 @@ function MatchChatPanel({
               };
               return next;
             });
+            scrollToBottom();
           }
 
           if (data.done) {
@@ -121,14 +142,28 @@ function MatchChatPanel({
       setError("通信エラーが発生しました。");
     } finally {
       setStreaming(false);
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      scrollToBottom();
     }
   }
 
   return (
     <div className="space-y-4">
       {messages.length > 0 && (
-        <div className="max-h-[420px] space-y-3 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-4">
+        <div
+          className="max-h-[420px] space-y-3 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-4"
+          onScroll={() => {
+            const element = containerRef.current;
+
+            if (!element) {
+              return;
+            }
+
+            isAtBottomRef.current =
+              element.scrollHeight - element.scrollTop - element.clientHeight <
+              40;
+          }}
+          ref={containerRef}
+        >
           {messages.map((message, index) => (
             <div
               className={
@@ -146,7 +181,6 @@ function MatchChatPanel({
                 )}
             </div>
           ))}
-          <div ref={bottomRef} />
         </div>
       )}
 
