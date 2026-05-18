@@ -331,6 +331,7 @@ export type Database = {
           prompt_version: string;
           qa_scores: Json;
           status: string;
+          x_posted_at: string | null;
         };
         Insert: {
           content_md_ja: string;
@@ -342,6 +343,7 @@ export type Database = {
           prompt_version: string;
           qa_scores: Json;
           status?: string;
+          x_posted_at?: string | null;
         };
         Update: {
           content_md_ja?: string;
@@ -353,6 +355,7 @@ export type Database = {
           prompt_version?: string;
           qa_scores?: Json;
           status?: string;
+          x_posted_at?: string | null;
         };
         Relationships: [
           {
