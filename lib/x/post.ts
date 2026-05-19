@@ -87,6 +87,10 @@ function trimToWeightedLength(text: string, maxLength: number): string {
   return result.trim();
 }
 
+function toHashtag(name: string): string {
+  return `#${name.replace(/\s+/g, "")}`;
+}
+
 export async function postMatchRecapToX(params: XPostParams): Promise<string> {
   const client = new TwitterApi(getXCredentials(params.language));
 
@@ -108,11 +112,14 @@ export async function postMatchRecapToX(params: XPostParams): Promise<string> {
   }`;
   const hashtagLine =
     params.language === "en"
-      ? "#LeagueOne #Rugby #JapanRugby #ラグビー #リーグワン"
-      : "#ラグビー #Rugby #観戦";
+      ? "#LeagueOne #Rugby #JapanRugby"
+      : "#ラグビー #Rugby";
+  const matchLine = `${toHashtag(params.homeTeamName)} ${score} ${toHashtag(
+    params.awayTeamName,
+  )}`;
   const fixedText = [
     header,
-    `${params.homeTeamName} ${score} ${params.awayTeamName}`,
+    matchLine,
     "",
     "",
     "",
@@ -130,7 +137,7 @@ export async function postMatchRecapToX(params: XPostParams): Promise<string> {
 
   let text = [
     header,
-    `${params.homeTeamName} ${score} ${params.awayTeamName}`,
+    matchLine,
     "",
     excerpt ? `${excerpt}${excerptSuffix}` : "",
     "",
@@ -140,13 +147,7 @@ export async function postMatchRecapToX(params: XPostParams): Promise<string> {
   ].join("\n");
 
   if (getPostWeightedLength(text) > X_POST_WEIGHTED_LENGTH_LIMIT) {
-    text = [
-      header,
-      `${params.homeTeamName} ${score} ${params.awayTeamName}`,
-      "",
-      "",
-      `▶️ ${matchUrl}`,
-    ].join("\n");
+    text = [header, matchLine, "", "", `▶️ ${matchUrl}`].join("\n");
   }
 
   const { data } = await client.v2.tweet(text);
