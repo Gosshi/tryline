@@ -20,7 +20,8 @@ describe("/api/cron/generate-content", () => {
     process.env.VAPID_PUBLIC_KEY = "";
     process.env.VAPID_SUBJECT = "";
     process.env.CRON_SECRET = "test-cron-secret";
-    process.env.WIKIPEDIA_SQUAD_URL = "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
+    process.env.WIKIPEDIA_SQUAD_URL =
+      "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
 
     pipelineMock.generateMatchContent.mockResolvedValue({
       matchId: "5f9cbe48-fef1-41e0-8bb2-a9ecdf570d85",
@@ -76,6 +77,32 @@ describe("/api/cron/generate-content", () => {
     expect(pipelineMock.generateMatchContent).toHaveBeenCalledWith(
       "5f9cbe48-fef1-41e0-8bb2-a9ecdf570d85",
       "preview",
+      "ja",
+    );
+  });
+
+  it("passes the requested content language to the pipeline", async () => {
+    const { POST } = await import("@/app/api/cron/generate-content/route");
+    const response = await POST(
+      new Request("http://localhost/api/cron/generate-content", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer test-cron-secret",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          matchIds: ["5f9cbe48-fef1-41e0-8bb2-a9ecdf570d85"],
+          contentType: "recap",
+          language: "en",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(pipelineMock.generateMatchContent).toHaveBeenCalledWith(
+      "5f9cbe48-fef1-41e0-8bb2-a9ecdf570d85",
+      "recap",
+      "en",
     );
   });
 });

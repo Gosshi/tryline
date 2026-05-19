@@ -7,6 +7,7 @@ import { generateMatchContent } from "@/lib/llm/pipeline";
 const bodySchema = z.object({
   matchIds: z.array(z.string().uuid()).min(1),
   contentType: z.enum(["preview", "recap"]),
+  language: z.enum(["ja", "en"]).default("ja"),
 });
 
 export async function POST(request: Request) {
@@ -18,7 +19,11 @@ export async function POST(request: Request) {
     const results = [];
 
     for (const matchId of parsedBody.matchIds) {
-      const result = await generateMatchContent(matchId, parsedBody.contentType);
+      const result = await generateMatchContent(
+        matchId,
+        parsedBody.contentType,
+        parsedBody.language,
+      );
       results.push(result);
     }
 
@@ -32,7 +37,10 @@ export async function POST(request: Request) {
     }
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "invalid_body", issues: error.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: "invalid_body", issues: error.issues },
+        { status: 400 },
+      );
     }
 
     console.error("[generate-content] failed", error);
