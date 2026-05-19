@@ -131,6 +131,13 @@ export default async function SeasonPage({ params }: Props) {
           seasons={seasons}
         />
 
+        {family === "league-one" && (
+          <p className="text-xs text-[var(--color-ink-muted)]">
+            🌐 English match reviews available — select a match to read in
+            English
+          </p>
+        )}
+
         {matches.length === 0 ? (
           <div className="rounded-lg border border-[var(--color-rule)] bg-slate-50 px-6 py-10 text-center">
             <p className="text-sm font-medium text-[var(--color-ink)]">

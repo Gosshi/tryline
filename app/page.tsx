@@ -67,13 +67,13 @@ export default async function HomePage() {
     upcomingMatches,
     favoriteMatches,
   ] = await Promise.all([
-      listFamilies(),
-      getLatestCompetitionWithMatches(),
-      getRecentlyReviewedMatches(3),
-      getRecentlyReviewedMatches(1),
-      getUpcomingMatches(5),
-      getFavoriteTeamMatches(favoriteTeamSlugs),
-    ]);
+    listFamilies(),
+    getLatestCompetitionWithMatches(),
+    getRecentlyReviewedMatches(3),
+    getRecentlyReviewedMatches(1),
+    getUpcomingMatches(5),
+    getFavoriteTeamMatches(favoriteTeamSlugs),
+  ]);
   const latestCompetition = latest
     ? await getCompetitionBySlug(latest.slug)
     : null;
@@ -147,16 +147,16 @@ export default async function HomePage() {
                 Premium を始める — ¥980/月
               </Link>
             )}
-              <Link
-                className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                href={
-                  latestCompetition
-                    ? `/c/${latestCompetition.family}/${latestCompetition.season}`
-                    : "/"
-                }
-              >
-                試合を見る
-              </Link>
+            <Link
+              className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              href={
+                latestCompetition
+                  ? `/c/${latestCompetition.family}/${latestCompetition.season}`
+                  : "/"
+              }
+            >
+              試合を見る
+            </Link>
           </div>
         </div>
       </section>
@@ -176,7 +176,7 @@ export default async function HomePage() {
               >
                 AI レビューのサンプル
               </p>
-              <span className="rounded-full bg-[var(--color-accent)]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
+              <span className="bg-[var(--color-accent)]/10 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
                 Premium
               </span>
             </div>
@@ -415,9 +415,16 @@ export default async function HomePage() {
                     }}
                   >
                     <div>
-                      <span className="block font-semibold text-[var(--color-ink)]">
-                        {formatFamilyName(competition.family)}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="block font-semibold text-[var(--color-ink)]">
+                          {formatFamilyName(competition.family)}
+                        </span>
+                        {competition.family === "league-one" && (
+                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                            EN
+                          </span>
+                        )}
+                      </div>
                       <span className="mt-0.5 block text-xs text-[var(--color-ink-muted)]">
                         {competition.season}
                       </span>
