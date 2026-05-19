@@ -38,7 +38,7 @@ export type RecentlyReviewedMatch = MatchListItem & {
 };
 
 export type UpcomingMatch = MatchListItem & {
-  competition: { slug: string; name: string; season: string };
+  competition: { family: string; slug: string; name: string; season: string };
 };
 
 export type FavoriteTeamMatch = UpcomingMatch;
@@ -127,7 +127,7 @@ type RecentlyReviewedContentRow = {
 
 type UpcomingMatchRow = BaseMatchRow & {
   competition: {
-    family?: string;
+    family: string;
     slug: string;
     name: string;
     season: string;
@@ -456,6 +456,63 @@ export async function getRecentlyReviewedMatchesForFamily(
     });
 }
 
+export async function getRecentLeagueOneEnglishRecaps(
+  limit = 5,
+): Promise<MatchListItem[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("match_content")
+    .select(
+      `
+        match:matches!match_content_match_id_fkey (
+          id,
+          kickoff_at,
+          status,
+          home_score,
+          away_score,
+          venue,
+          external_ids,
+          home_team:teams!matches_home_team_id_fkey (
+            slug,
+            name,
+            short_code
+          ),
+          away_team:teams!matches_away_team_id_fkey (
+            slug,
+            name,
+            short_code
+          ),
+          competition:competitions!matches_competition_id_fkey (
+            family,
+            slug,
+            name,
+            season
+          )
+        )
+      `,
+    )
+    .eq("content_type", "recap")
+    .eq("language", "en")
+    .eq("status", "published")
+    .order("generated_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data satisfies Array<{ match: RecentlyReviewedMatchRow | null }>)
+    .filter((row) => row.match?.competition?.family === "league-one")
+    .slice(0, limit)
+    .map((row) => {
+      if (!row.match) {
+        throw new Error("Recent League One English recap is missing match.");
+      }
+
+      return mapMatchRow(row.match);
+    });
+}
+
 export async function getUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
   const client = getSupabasePublicServerClient();
   const now = new Date().toISOString();
@@ -546,6 +603,7 @@ export async function getFavoriteTeamMatches(
           short_code
         ),
         competition:competitions!matches_competition_id_fkey (
+          family,
           slug,
           name,
           season

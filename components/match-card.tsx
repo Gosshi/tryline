@@ -13,10 +13,11 @@ import type { MatchListItem } from "@/lib/db/queries/matches";
 
 type MatchCardProps = {
   contentStatus?: MatchContentStatus;
+  href?: string;
   match: MatchListItem;
 };
 
-export function MatchCard({ contentStatus, match }: MatchCardProps) {
+export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
   const outcome = getMatchOutcome(match);
   const homeWon = outcome === "home_win";
   const awayWon = outcome === "away_win";
@@ -28,7 +29,7 @@ export function MatchCard({ contentStatus, match }: MatchCardProps) {
   return (
     <Link
       className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-      href={`/matches/${match.id}`}
+      href={href ?? `/matches/${match.id}`}
     >
       <article
         className="relative h-full overflow-hidden rounded-xl border border-slate-200 p-5 shadow-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_10px_18px_rgb(15_23_42/0.10)]"
