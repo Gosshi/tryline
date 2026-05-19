@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { LangToggle } from "@/components/lang-toggle";
 import { MatchChat } from "@/components/match-chat";
 import { MatchContentSection } from "@/components/match-content-section";
 import { MatchEventsSection } from "@/components/match-events-section";
@@ -10,7 +11,7 @@ import { getUser, isPremium } from "@/lib/auth/server";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
-import { getMatchById } from "@/lib/db/queries/matches";
+import { getMatchById, getMatchContentEn } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { extractDescription } from "@/lib/match-content/description";
@@ -97,6 +98,9 @@ export default async function MatchDetailPage({
 
   const shouldShowPreviewSection =
     match.status !== "finished" || publishedContent.preview !== null;
+  const englishContent = await getMatchContentEn(id);
+  const hasEnglishContent =
+    englishContent.preview !== null || englishContent.recap !== null;
   const premium = user ? await isPremium(user.id) : false;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -172,6 +176,12 @@ export default async function MatchDetailPage({
           </nav>
 
           <MatchHeader match={match} />
+
+          {hasEnglishContent && (
+            <div className="flex items-center justify-end">
+              <LangToggle currentLang="ja" matchId={match.id} />
+            </div>
+          )}
 
           <MatchEventsSection
             awayTeamName={match.awayTeam.name}

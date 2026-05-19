@@ -9,19 +9,27 @@ type MatchContentSectionProps = {
   contentType: "preview" | "recap";
   content: PublishedMatchContent | null;
   isPremium: boolean;
+  language?: "ja" | "en";
   match: MatchDetail;
   showCta?: boolean;
 };
 
 const TITLES = {
-  preview: "プレビュー",
-  recap: "レビュー",
+  en: {
+    preview: "Preview",
+    recap: "Review",
+  },
+  ja: {
+    preview: "プレビュー",
+    recap: "レビュー",
+  },
 } as const;
 
 export function MatchContentSection({
   content,
   contentType,
   isPremium,
+  language = "ja",
   match,
   showCta,
 }: MatchContentSectionProps) {
@@ -36,7 +44,7 @@ export function MatchContentSection({
     <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
       <div className="mb-4 border-b border-slate-100 pb-4">
         <h2 className="text-lg font-bold tracking-tight text-slate-950">
-          {TITLES[contentType]}
+          {TITLES[language][contentType]}
         </h2>
       </div>
 
@@ -45,6 +53,7 @@ export function MatchContentSection({
           content={content}
           contentType={contentType}
           isPremium={isPremium}
+          language={language}
           matchTitle={`${match.homeTeam.name} vs ${match.awayTeam.name}`}
           showCta={showCta}
         />
