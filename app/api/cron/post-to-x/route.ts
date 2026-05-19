@@ -9,6 +9,7 @@ export const maxDuration = 60;
 type Relation<T> = T | T[] | null;
 
 type TeamRow = {
+  english_name: string | null;
   name: string | null;
 };
 
@@ -67,8 +68,8 @@ export async function POST(request: Request) {
         matches (
           home_score,
           away_score,
-          home_team:teams!matches_home_team_id_fkey ( name ),
-          away_team:teams!matches_away_team_id_fkey ( name ),
+          home_team:teams!matches_home_team_id_fkey ( name, english_name ),
+          away_team:teams!matches_away_team_id_fkey ( name, english_name ),
           competition:competitions!matches_competition_id_fkey ( name, season )
         )
       `;
@@ -119,14 +120,22 @@ export async function POST(request: Request) {
       const competitionLabel = [competition?.name, competition?.season]
         .filter(Boolean)
         .join(" ");
+      const homeDisplayName =
+        content.language === "en"
+          ? (homeTeam?.english_name ?? homeTeam?.name ?? "Home")
+          : (homeTeam?.name ?? "Home");
+      const awayDisplayName =
+        content.language === "en"
+          ? (awayTeam?.english_name ?? awayTeam?.name ?? "Away")
+          : (awayTeam?.name ?? "Away");
 
       const tweetId = await postMatchRecapToX({
         awayScore: match.away_score,
-        awayTeamName: awayTeam?.name ?? "Away",
+        awayTeamName: awayDisplayName,
         competitionLabel,
         contentType: content.content_type,
         homeScore: match.home_score,
-        homeTeamName: homeTeam?.name ?? "Home",
+        homeTeamName: homeDisplayName,
         language: content.language,
         matchId: content.match_id,
         recapExcerpt: createRecapExcerpt(content.content_md_ja),
