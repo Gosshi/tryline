@@ -1,12 +1,32 @@
-import type { ContentType } from "@/lib/llm/types";
+import type { ContentLanguage, ContentType } from "@/lib/llm/types";
 
 export const PROMPT_VERSION = "qa@1.2.0";
 
 export function buildQaContentPrompt(
   contentType: ContentType,
   narrative: string,
+  language: ContentLanguage = "ja",
 ): string {
   const minLength = contentType === "recap" ? 2000 : 1500;
+  const languageLabel = language === "en" ? "English" : "日本語";
+  const qualityRubric =
+    language === "en"
+      ? [
+          "### japanese_quality (1-5)",
+          "- 5: Natural English. Rugby terminology is accurate. Clear, readable style",
+          "- 4: Mostly natural English with minor awkward phrasing",
+          "- 3: Understandable but with some unnatural or translated phrasing",
+          "- 2: Frequent grammar problems or hard-to-read phrasing",
+          "- 1: Not coherent English",
+        ].join("\n")
+      : [
+          "### japanese_quality (1-5)",
+          "- 5: 自然な日本語。ラグビー用語が正確。読みやすい文体",
+          "- 4: ほぼ自然。軽微な不自然さあり",
+          "- 3: 理解可能だが不自然な表現・直訳調が散見される",
+          "- 2: 文法的に誤り、または英語混じりで読みにくい",
+          "- 1: 日本語として成立していない",
+        ].join("\n");
   const winnerCheckBlock =
     contentType === "recap"
       ? [
@@ -19,7 +39,7 @@ export function buildQaContentPrompt(
       : "";
 
   return [
-    "あなたは編集デスクです。以下の日本語コンテンツを品質評価してください。",
+    `あなたは編集デスクです。以下の${languageLabel}コンテンツを品質評価してください。`,
     `content_type: ${contentType}`,
     [
       "## 採点ルーブリック",
@@ -31,12 +51,7 @@ export function buildQaContentPrompt(
       `- 2: ${Math.round(minLength * 0.5)}字未満、または内容が薄く抽象的な記述が多い`,
       "- 1: 極めて短い、または内容がほぼない",
       "",
-      "### japanese_quality (1-5)",
-      "- 5: 自然な日本語。ラグビー用語が正確。読みやすい文体",
-      "- 4: ほぼ自然。軽微な不自然さあり",
-      "- 3: 理解可能だが不自然な表現・直訳調が散見される",
-      "- 2: 文法的に誤り、または英語混じりで読みにくい",
-      "- 1: 日本語として成立していない",
+      qualityRubric,
       "",
       "### factual_grounding (1-5)",
       "- 5: スコア・選手名・戦術がすべて入力データと一致",

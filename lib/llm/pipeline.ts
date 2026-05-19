@@ -9,7 +9,7 @@ import { generateNarrative, NARRATIVE_TEMPERATURE_SEQUENCE } from "@/lib/llm/sta
 import { evaluateNarrativeQuality } from "@/lib/llm/stages/qa";
 
 import type { Json } from "@/lib/db/types";
-import type { ContentType, QaResult } from "@/lib/llm/types";
+import type { ContentLanguage, ContentType, QaResult } from "@/lib/llm/types";
 
 const COST_ALERT_THRESHOLD_USD = 0.20;
 
@@ -54,7 +54,11 @@ async function logPipelineRun(entry: {
   }
 }
 
-export async function generateMatchContent(matchId: string, contentType: ContentType): Promise<PipelineResult> {
+export async function generateMatchContent(
+  matchId: string,
+  contentType: ContentType,
+  language: ContentLanguage = "ja",
+): Promise<PipelineResult> {
   const db = getSupabaseServerClient();
 
   const stage1StartedAt = Date.now();
@@ -129,6 +133,7 @@ export async function generateMatchContent(matchId: string, contentType: Content
       contentType,
       additionalSignals: [],
       attempt,
+      language,
     });
 
     finalNarrative = narrative.content;
@@ -161,9 +166,10 @@ export async function generateMatchContent(matchId: string, contentType: Content
 
     try {
       qaResponse = await evaluateNarrativeQuality({
-        contentType,
-        narrative: narrative.content,
-        retryCount: attempt,
+      contentType,
+      language,
+      narrative: narrative.content,
+      retryCount: attempt,
       });
     } catch (error) {
       await logPipelineRun({
@@ -232,7 +238,7 @@ export async function generateMatchContent(matchId: string, contentType: Content
       match_id: matchId,
       content_type: contentType,
       content_md_ja: finalNarrative,
-      language: "ja",
+      language,
       model_version: modelVersion,
       prompt_version: promptVersion,
       status: persistedStatus,
