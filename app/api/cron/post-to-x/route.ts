@@ -29,6 +29,7 @@ type ContentRow = {
   content_md_ja: string;
   content_type: "preview" | "recap";
   id: string;
+  language: "ja" | "en";
   match_id: string;
   matches: Relation<MatchRow>;
 };
@@ -56,13 +57,12 @@ export async function POST(request: Request) {
     const sevenDaysAgo = new Date(
       Date.now() - 7 * 24 * 60 * 60 * 1000,
     ).toISOString();
-    const { data, error } = await db
-      .from("match_content")
-      .select(
-        `
+
+    const selectClause = `
         id,
         match_id,
         content_type,
+        language,
         content_md_ja,
         matches (
           home_score,
@@ -71,23 +71,43 @@ export async function POST(request: Request) {
           away_team:teams!matches_away_team_id_fkey ( name ),
           competition:competitions!matches_competition_id_fkey ( name, season )
         )
-      `,
-      )
-      .eq("status", "published")
-      .eq("language", "ja")
-      .in("content_type", ["recap", "preview"])
-      .is("x_posted_at", null)
-      .gte("generated_at", sevenDaysAgo)
-      .order("generated_at", { ascending: true })
-      .limit(5);
+      `;
 
-    if (error) {
-      throw error;
+    const [jaResult, enResult] = await Promise.all([
+      db
+        .from("match_content")
+        .select(selectClause)
+        .eq("status", "published")
+        .eq("language", "ja")
+        .in("content_type", ["recap", "preview"])
+        .is("x_posted_at", null)
+        .gte("generated_at", sevenDaysAgo)
+        .order("generated_at", { ascending: true })
+        .limit(5),
+      db
+        .from("match_content")
+        .select(selectClause)
+        .eq("status", "published")
+        .eq("language", "en")
+        .in("content_type", ["recap", "preview"])
+        .is("x_posted_at", null)
+        .gte("generated_at", sevenDaysAgo)
+        .order("generated_at", { ascending: true })
+        .limit(5),
+    ]);
+
+    if (jaResult.error) {
+      throw jaResult.error;
     }
 
+    if (enResult.error) {
+      throw enResult.error;
+    }
+
+    const data = [...(jaResult.data ?? []), ...(enResult.data ?? [])];
     const results: Array<{ matchId: string; tweetId: string }> = [];
 
-    for (const content of (data ?? []) as unknown as ContentRow[]) {
+    for (const content of data as unknown as ContentRow[]) {
       const match = firstRelation(content.matches);
       if (!match) {
         continue;
@@ -107,6 +127,7 @@ export async function POST(request: Request) {
         contentType: content.content_type,
         homeScore: match.home_score,
         homeTeamName: homeTeam?.name ?? "Home",
+        language: content.language,
         matchId: content.match_id,
         recapExcerpt: createRecapExcerpt(content.content_md_ja),
       });

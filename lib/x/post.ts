@@ -7,6 +7,7 @@ export type XPostParams = {
   contentType: "preview" | "recap";
   homeScore: number | null;
   homeTeamName: string;
+  language: "ja" | "en";
   matchId: string;
   recapExcerpt: string;
 };
@@ -29,7 +30,16 @@ function requireEnv(name: string): string {
   return value;
 }
 
-function getXCredentials(): XCredentials {
+function getXCredentials(language: "ja" | "en"): XCredentials {
+  if (language === "en") {
+    return {
+      accessSecret: requireEnv("X_EN_ACCESS_TOKEN_SECRET"),
+      accessToken: requireEnv("X_EN_ACCESS_TOKEN"),
+      appKey: requireEnv("X_EN_API_KEY"),
+      appSecret: requireEnv("X_EN_API_KEY_SECRET"),
+    };
+  }
+
   return {
     accessSecret: requireEnv("X_ACCESS_TOKEN_SECRET"),
     accessToken: requireEnv("X_ACCESS_TOKEN"),
@@ -78,7 +88,7 @@ function trimToWeightedLength(text: string, maxLength: number): string {
 }
 
 export async function postMatchRecapToX(params: XPostParams): Promise<string> {
-  const client = new TwitterApi(getXCredentials());
+  const client = new TwitterApi(getXCredentials(params.language));
 
   const score =
     params.homeScore !== null && params.awayScore !== null
@@ -86,11 +96,20 @@ export async function postMatchRecapToX(params: XPostParams): Promise<string> {
       : "vs";
 
   const header =
-    params.contentType === "preview"
-      ? `📋 ${params.competitionLabel} プレビュー`
-      : `🏉 ${params.competitionLabel}`;
-  const matchUrl = `https://www.trylinerugby.com/matches/${params.matchId}`;
-  const hashtagLine = "#ラグビー #Rugby #観戦";
+    params.language === "en"
+      ? params.contentType === "preview"
+        ? `📋 ${params.competitionLabel} Preview`
+        : `🏉 ${params.competitionLabel} Review`
+      : params.contentType === "preview"
+        ? `📋 ${params.competitionLabel} プレビュー`
+        : `🏉 ${params.competitionLabel}`;
+  const matchUrl = `https://www.trylinerugby.com/matches/${params.matchId}${
+    params.language === "en" ? "/en" : ""
+  }`;
+  const hashtagLine =
+    params.language === "en"
+      ? "#LeagueOne #Rugby #JapanRugby #ラグビー #リーグワン"
+      : "#ラグビー #Rugby #観戦";
   const fixedText = [
     header,
     `${params.homeTeamName} ${score} ${params.awayTeamName}`,
