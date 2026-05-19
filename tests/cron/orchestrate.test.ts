@@ -6,6 +6,7 @@ import type { Database } from "@/lib/db/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type DbFixture = {
+  competitionFamilies?: Record<string, string>;
   scheduledIds: string[];
   finishedIds: string[];
   finishedKickoffAt?: Record<string, string>;
@@ -127,7 +128,15 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
       }
 
       return Promise.resolve(
-        resolve({ data: ids.map((id) => ({ id })), error: null }),
+        resolve({
+          data: ids.map((id) => ({
+            competition: fixture.competitionFamilies?.[id]
+              ? { family: fixture.competitionFamilies[id] }
+              : null,
+            id,
+          })),
+          error: null,
+        }),
       );
     },
   };
@@ -259,6 +268,45 @@ describe("runOrchestrate", () => {
     expect(result.previews).toEqual({ triggered: 0, skipped: 1 });
   });
 
+  it("generates English preview after Japanese preview for League One only", async () => {
+    const db = createMockDb({
+      competitionFamilies: {
+        "league-one-preview": "league-one",
+        "six-nations-preview": "six-nations",
+      },
+      scheduledIds: ["league-one-preview", "six-nations-preview"],
+      finishedIds: [],
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now,
+    });
+
+    expect(generateContent).toHaveBeenCalledWith(
+      "league-one-preview",
+      "preview",
+    );
+    expect(generateContent).toHaveBeenCalledWith(
+      "league-one-preview",
+      "preview",
+      "en",
+    );
+    expect(generateContent).toHaveBeenCalledWith(
+      "six-nations-preview",
+      "preview",
+    );
+    expect(generateContent).not.toHaveBeenCalledWith(
+      "six-nations-preview",
+      "preview",
+      "en",
+    );
+  });
+
   it("calls recap generation for finished matches without recap content", async () => {
     const db = createMockDb({
       scheduledIds: [],
@@ -276,6 +324,35 @@ describe("runOrchestrate", () => {
 
     expect(generateContent).toHaveBeenCalledWith("finished-1", "recap");
     expect(result.recaps).toEqual({ triggered: 1, skipped: 0 });
+  });
+
+  it("generates English recap after Japanese recap for League One finished matches", async () => {
+    const db = createMockDb({
+      competitionFamilies: {
+        "league-one-finished": "league-one",
+      },
+      scheduledIds: [],
+      finishedIds: ["league-one-finished"],
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now,
+    });
+
+    expect(generateContent).toHaveBeenCalledWith(
+      "league-one-finished",
+      "recap",
+    );
+    expect(generateContent).toHaveBeenCalledWith(
+      "league-one-finished",
+      "recap",
+      "en",
+    );
   });
 
   it("processes missing recaps from newest finished matches first", async () => {

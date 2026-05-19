@@ -1,4 +1,5 @@
 export type ContentType = "preview" | "recap";
+export type ContentLanguage = "ja" | "en";
 
 export type AdditionalSignal = {
   source: "reddit" | "official_press" | "editorial";

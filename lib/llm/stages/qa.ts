@@ -2,7 +2,12 @@ import { MODELS } from "@/lib/llm/models";
 import { createTextResponse } from "@/lib/llm/openai";
 import { buildQaContentPrompt, PROMPT_VERSION } from "@/lib/llm/prompts/qa-content";
 
-import type { ContentType, QaResult, QaVerdict } from "@/lib/llm/types";
+import type {
+  ContentLanguage,
+  ContentType,
+  QaResult,
+  QaVerdict,
+} from "@/lib/llm/types";
 
 export type QaStageResponse = {
   result: QaResult;
@@ -45,10 +50,15 @@ function parseQaResponse(jsonText: string, retryCount: number): QaResult {
 
 export async function evaluateNarrativeQuality(options: {
   contentType: ContentType;
+  language?: ContentLanguage;
   narrative: string;
   retryCount: number;
 }): Promise<QaStageResponse> {
-  const prompt = buildQaContentPrompt(options.contentType, options.narrative);
+  const prompt = buildQaContentPrompt(
+    options.contentType,
+    options.narrative,
+    options.language ?? "ja",
+  );
   let attempts = 0;
 
   while (attempts < 2) {
