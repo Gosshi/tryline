@@ -95,6 +95,7 @@ async function getMatchIdsMissingContent(params: {
     .from("match_content")
     .select("match_id")
     .eq("content_type", params.contentType)
+    .eq("language", "ja")
     .in("status", [...EXISTING_CONTENT_STATUSES]);
 
   if (contentError) {
