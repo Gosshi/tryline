@@ -14,6 +14,7 @@ export type MatchListItem = {
   awayScore: number | null;
   venue: string | null;
   round: number | null;
+  roundName: string | null;
 };
 
 export type MatchDetail = MatchListItem & {
@@ -181,6 +182,20 @@ function getRoundFromExternalIds(externalIds: Json): number | null {
   return typeof round === "number" ? round : null;
 }
 
+function getRoundNameFromExternalIds(externalIds: Json): string | null {
+  if (
+    !externalIds ||
+    typeof externalIds !== "object" ||
+    Array.isArray(externalIds)
+  ) {
+    return null;
+  }
+
+  const roundName = externalIds.round_name;
+
+  return typeof roundName === "string" ? roundName : null;
+}
+
 function mapMatchRow(row: BaseMatchRow): MatchListItem {
   if (!row.home_team || !row.away_team) {
     throw new Error(`Match ${row.id} is missing team relations.`);
@@ -210,6 +225,7 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     id: row.id,
     kickoffAt: row.kickoff_at,
     round: getRoundFromExternalIds(row.external_ids),
+    roundName: getRoundNameFromExternalIds(row.external_ids),
     status: row.status,
     venue: row.venue,
   };

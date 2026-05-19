@@ -34,6 +34,7 @@ const match: MatchDetail = {
   id: "00000000-0000-0000-0000-000000000001",
   kickoffAt: "2027-02-06T15:00:00.000Z",
   round: 1,
+  roundName: null,
   status: "scheduled",
   venue: "Aviva Stadium",
 };
@@ -62,7 +63,9 @@ describe("MatchContentSection", () => {
     );
 
     expect(screen.getByText("本文コンテンツ")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "プレビュー" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "プレビュー" }),
+    ).toBeInTheDocument();
     expect(screen.queryByText("Match Preview")).not.toBeInTheDocument();
     expect(
       screen.queryByText("プレビューは試合開始 48 時間前に公開予定"),
@@ -102,7 +105,9 @@ describe("MatchContentSection", () => {
       />,
     );
 
-    expect(screen.getByText("Ireland vs France の続きを読む")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ireland vs France の続きを読む"),
+    ).toBeInTheDocument();
   });
 
   it("renders ContentPlaceholder when content is null", () => {

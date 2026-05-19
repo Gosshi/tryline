@@ -49,13 +49,16 @@ export function getDefaultOpenGroupIndex(
     return -1;
   }
 
-  const completedIndex = groupedMatches.reduce((latestIndex, [, matches], index) => {
-    const allStarted = matches.every(
-      (match) => new Date(match.kickoffAt).getTime() <= now.getTime(),
-    );
+  const completedIndex = groupedMatches.reduce(
+    (latestIndex, [, matches], index) => {
+      const allStarted = matches.every(
+        (match) => new Date(match.kickoffAt).getTime() <= now.getTime(),
+      );
 
-    return allStarted ? index : latestIndex;
-  }, -1);
+      return allStarted ? index : latestIndex;
+    },
+    -1,
+  );
 
   if (completedIndex === -1) {
     return 0;
@@ -78,11 +81,10 @@ export function SeasonMatchGroups({
     () => getDefaultOpenGroupIndex(groupedMatches),
     [groupedMatches],
   );
-  const [openIndexes, setOpenIndexes] = useState<Set<number>>(
-    () =>
-      collapsible && defaultOpenIndex >= 0
-        ? new Set([defaultOpenIndex])
-        : new Set(groupedMatches.map((_, index) => index)),
+  const [openIndexes, setOpenIndexes] = useState<Set<number>>(() =>
+    collapsible && defaultOpenIndex >= 0
+      ? new Set([defaultOpenIndex])
+      : new Set(groupedMatches.map((_, index) => index)),
   );
 
   return (
@@ -90,7 +92,7 @@ export function SeasonMatchGroups({
       {groupedMatches.map(([groupKey, roundMatches], index) => {
         const key =
           groupKey.type === "round"
-            ? (groupKey.round ?? "unassigned")
+            ? (groupKey.round ?? groupKey.roundName ?? "unassigned")
             : `week-${groupKey.weekIndex}`;
         const isOpen = openIndexes.has(index);
 

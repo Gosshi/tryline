@@ -14,7 +14,11 @@ import {
 import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { GroupKey } from "@/lib/format/match-groups";
 
-function buildMatch(id: string, kickoffAt: string, round: number): MatchListItem {
+function buildMatch(
+  id: string,
+  kickoffAt: string,
+  round: number,
+): MatchListItem {
   return {
     awayScore: null,
     awayTeam: { name: `Away ${id}`, shortCode: `A${id}`, slug: `away-${id}` },
@@ -23,26 +27,37 @@ function buildMatch(id: string, kickoffAt: string, round: number): MatchListItem
     id,
     kickoffAt,
     round,
+    roundName: null,
     status: "scheduled",
     venue: null,
   };
 }
 
-function buildGroup(round: number, kickoffAt: string): [GroupKey, MatchListItem[]] {
-  return [{ round, type: "round" }, [buildMatch(String(round), kickoffAt, round)]];
+function buildGroup(
+  round: number,
+  kickoffAt: string,
+): [GroupKey, MatchListItem[]] {
+  return [
+    { round, roundName: null, type: "round" },
+    [buildMatch(String(round), kickoffAt, round)],
+  ];
 }
 
 describe("season match groups", () => {
   it("collapses only round-based competitions with at least ten groups", () => {
     expect(
-      shouldCollapseRoundGroups(Array.from({ length: 10 }, (_, index) =>
-        buildGroup(index + 1, "2026-01-01T00:00:00.000Z"),
-      )),
+      shouldCollapseRoundGroups(
+        Array.from({ length: 10 }, (_, index) =>
+          buildGroup(index + 1, "2026-01-01T00:00:00.000Z"),
+        ),
+      ),
     ).toBe(true);
     expect(
-      shouldCollapseRoundGroups(Array.from({ length: 5 }, (_, index) =>
-        buildGroup(index + 1, "2026-01-01T00:00:00.000Z"),
-      )),
+      shouldCollapseRoundGroups(
+        Array.from({ length: 5 }, (_, index) =>
+          buildGroup(index + 1, "2026-01-01T00:00:00.000Z"),
+        ),
+      ),
     ).toBe(false);
   });
 
@@ -54,13 +69,19 @@ describe("season match groups", () => {
     ];
 
     expect(
-      getDefaultOpenGroupIndex(groupedMatches, new Date("2026-01-10T00:00:00.000Z")),
+      getDefaultOpenGroupIndex(
+        groupedMatches,
+        new Date("2026-01-10T00:00:00.000Z"),
+      ),
     ).toBe(2);
   });
 
   it("toggles a collapsible round section", () => {
     const groupedMatches = Array.from({ length: 10 }, (_, index) =>
-      buildGroup(index + 1, `2026-01-${String(index + 1).padStart(2, "0")}T00:00:00.000Z`),
+      buildGroup(
+        index + 1,
+        `2026-01-${String(index + 1).padStart(2, "0")}T00:00:00.000Z`,
+      ),
     );
 
     render(
