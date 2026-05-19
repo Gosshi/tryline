@@ -132,6 +132,7 @@ describe("buildGenerateRecapPrompt", () => {
           away_score: 17,
           away_team: {
             country: "ENG",
+            english_name: null,
             id: "away-team",
             name: "Sale Sharks",
             short_code: "SAL",
@@ -145,6 +146,7 @@ describe("buildGenerateRecapPrompt", () => {
           home_score: 28,
           home_team: {
             country: "ENG",
+            english_name: null,
             id: "home-team",
             name: "Bath",
             short_code: "BAT",
@@ -257,7 +259,9 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain(
       "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること",
     );
-    expect(prompt).toContain("データに存在しない選手名を推測・創作してはならない");
+    expect(prompt).toContain(
+      "データに存在しない選手名を推測・創作してはならない",
+    );
     expect(prompt).toContain("ラインアップが空の場合は選手名に言及せず");
   });
 });
