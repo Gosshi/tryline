@@ -27,6 +27,7 @@ type MatchRow = {
 
 type ContentRow = {
   content_md_ja: string;
+  content_type: "preview" | "recap";
   id: string;
   match_id: string;
   matches: Relation<MatchRow>;
@@ -52,12 +53,16 @@ export async function POST(request: Request) {
     assertCronAuthorized(request);
 
     const db = getSupabaseServerClient();
+    const sevenDaysAgo = new Date(
+      Date.now() - 7 * 24 * 60 * 60 * 1000,
+    ).toISOString();
     const { data, error } = await db
       .from("match_content")
       .select(
         `
         id,
         match_id,
+        content_type,
         content_md_ja,
         matches (
           home_score,
@@ -69,8 +74,9 @@ export async function POST(request: Request) {
       `,
       )
       .eq("status", "published")
-      .eq("content_type", "recap")
+      .in("content_type", ["recap", "preview"])
       .is("x_posted_at", null)
+      .gte("generated_at", sevenDaysAgo)
       .order("generated_at", { ascending: true })
       .limit(5);
 
@@ -97,6 +103,7 @@ export async function POST(request: Request) {
         awayScore: match.away_score,
         awayTeamName: awayTeam?.name ?? "Away",
         competitionLabel,
+        contentType: content.content_type,
         homeScore: match.home_score,
         homeTeamName: homeTeam?.name ?? "Home",
         matchId: content.match_id,

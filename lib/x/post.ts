@@ -4,6 +4,7 @@ export type XPostParams = {
   awayScore: number | null;
   awayTeamName: string;
   competitionLabel: string;
+  contentType: "preview" | "recap";
   homeScore: number | null;
   homeTeamName: string;
   matchId: string;
@@ -84,10 +85,14 @@ export async function postMatchRecapToX(params: XPostParams): Promise<string> {
       ? `${params.homeScore} - ${params.awayScore}`
       : "vs";
 
+  const header =
+    params.contentType === "preview"
+      ? `📋 ${params.competitionLabel} プレビュー`
+      : `🏉 ${params.competitionLabel}`;
   const matchUrl = `https://www.trylinerugby.com/matches/${params.matchId}`;
   const hashtagLine = "#ラグビー #Rugby #観戦";
   const fixedText = [
-    `🏉 ${params.competitionLabel}`,
+    header,
     `${params.homeTeamName} ${score} ${params.awayTeamName}`,
     "",
     "",
@@ -105,7 +110,7 @@ export async function postMatchRecapToX(params: XPostParams): Promise<string> {
   const excerpt = trimToWeightedLength(params.recapExcerpt, maxExcerptLength);
 
   let text = [
-    `🏉 ${params.competitionLabel}`,
+    header,
     `${params.homeTeamName} ${score} ${params.awayTeamName}`,
     "",
     excerpt ? `${excerpt}${excerptSuffix}` : "",
@@ -117,7 +122,7 @@ export async function postMatchRecapToX(params: XPostParams): Promise<string> {
 
   if (getPostWeightedLength(text) > X_POST_WEIGHTED_LENGTH_LIMIT) {
     text = [
-      `🏉 ${params.competitionLabel}`,
+      header,
       `${params.homeTeamName} ${score} ${params.awayTeamName}`,
       "",
       "",
