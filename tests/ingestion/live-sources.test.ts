@@ -85,6 +85,29 @@ const LEAGUE_ONE_HTML = `
 </div>
 `;
 
+const LEAGUE_ONE_PLAYOFF_HTML = `
+<div class="c-schedule">
+  <div class="ttl-wrap">
+    <h3 class="ttl">NTT JAPAN RUGBY LEAGUE ONE 2025-26 PLAY-OFFS<br> SEMI-FINAL (D1-M109)</h3>
+    <p class="place"><a>Hanazono Rugby Stadium (Osaka)</a></p>
+  </div>
+  <div class="con">
+    <div class="datetime"><p class="date">17.05 <span>Sun</span></p><p class="time">12:05</p></div>
+    <ul class="game">
+      <li class="home"><a><p class="name only-pc">SHIZUOKA BlueRevs</p></a><p class="score"></p></li>
+      <li class="away"><a><p class="name only-pc">KOBELCO KOBE STEELERS</p></a><p class="score"></p></li>
+    </ul>
+  </div>
+  <div class="info"><a class="btn-match-detail">Match Info</a></div>
+</div>
+<div class="c-schedule">
+  <div class="ttl-wrap">
+    <h3 class="ttl">NTT JAPAN RUGBY LEAGUE ONE 2025-26 DIVISION2<br> R1 (D2-M1)</h3>
+  </div>
+  <div class="info"><a href="/en/match/99999" class="btn-match-detail">Match Info</a></div>
+</div>
+`;
+
 const SUPER_RUGBY_PACIFIC_HTML = `
 <div class="mw-heading mw-heading2"><h2 id="Round_1">Round 1</h2></div>
 <div class="vevent summary" id="Crusaders_v_Hurricanes">
@@ -229,6 +252,26 @@ describe("live competition source adapters", () => {
       eventId: "2_saitama_wild_knights_v_shizuoka_bluerevs",
       homeScore: null,
       homeTeamSlug: "saitama-wild-knights",
+      status: "scheduled",
+    });
+  });
+
+  it("keeps League One playoff cards and stores the stage name", () => {
+    const matches = parseLeagueOneLiveHtml(
+      LEAGUE_ONE_PLAYOFF_HTML,
+      "2025-26",
+    );
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      awayScore: null,
+      awayTeamSlug: "kobelco-kobe-steelers",
+      eventId: "playoff_shizuoka_bluerevs_v_kobelco_kobe_steelers",
+      homeScore: null,
+      homeTeamSlug: "shizuoka-blue-revs",
+      kickoffAt: "2026-05-17T03:05:00.000Z",
+      round: null,
+      roundName: "SEMI-FINAL",
       status: "scheduled",
     });
   });

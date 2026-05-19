@@ -44,6 +44,12 @@ function buildScheduleUrl(season: string) {
   return `${LEAGUE_ONE_BASE_URL}/en/schedule/?t1=3&year=${startYear}`;
 }
 
+function buildPlayoffsUrl(season: string) {
+  const { startYear } = parseSeason(season);
+
+  return `${LEAGUE_ONE_BASE_URL}/en/schedule/?t1=0&year=${startYear}`;
+}
+
 function resolveTeamSlug(teamName: string) {
   return TEAM_SLUG_BY_NORMALIZED_NAME[normalizeTeamName(teamName)] ?? null;
 }
@@ -84,6 +90,15 @@ function parseRound(title: string) {
   return match?.[1] ? Number(match[1]) : null;
 }
 
+function parsePlayoffStageName(title: string): string | null {
+  const match = title.match(/PLAY[-\s]?OFFS?\s*(.+)/i);
+  const stageName = match?.[1]
+    ? normalizeWhitespace(match[1]).replace(/\s*\([^)]*\)\s*$/g, "")
+    : "PLAY-OFFS";
+
+  return stageName || "PLAY-OFFS";
+}
+
 function parseScore(value: string) {
   const normalized = normalizeWhitespace(value);
 
@@ -113,8 +128,10 @@ export function parseLeagueOneLiveHtml(
   $(".c-schedule").each((_, element) => {
     const card = $(element);
     const title = normalizeWhitespace(card.find(".ttl-wrap .ttl").text());
+    const isDivision1 = /\bDIVISION\s*1\b/i.test(title);
+    const isPlayoff = /\bPLAY[-\s]?OFFS?\b/i.test(title);
 
-    if (!/\bDIVISION\s*1\b/i.test(title)) {
+    if (!isDivision1 && !isPlayoff) {
       return;
     }
 
@@ -141,9 +158,13 @@ export function parseLeagueOneLiveHtml(
     const homeScore = parseScore(home.find(".score").first().text());
     const awayScore = parseScore(away.find(".score").first().text());
     const round = parseRound(title);
+    const roundName =
+      round === null && isPlayoff ? parsePlayoffStageName(title) : null;
     const eventId = idMatch
       ? `match_${idMatch[1]}`
-      : `${round ?? "round"}_${slugEventPart(homeTeamName)}_v_${slugEventPart(awayTeamName)}`;
+      : isPlayoff
+        ? `playoff_${slugEventPart(homeTeamName)}_v_${slugEventPart(awayTeamName)}`
+        : `${round ?? "round"}_${slugEventPart(homeTeamName)}_v_${slugEventPart(awayTeamName)}`;
 
     entries.push({
       awayScore,
@@ -161,7 +182,7 @@ export function parseLeagueOneLiveHtml(
       lineupTableHtml: null,
       rawHtml: "",
       round,
-      roundName: null,
+      roundName,
       status:
         homeScore === null || awayScore === null ? "scheduled" : "finished",
       venue:
@@ -182,7 +203,18 @@ export async function fetchLeagueOne202425(): Promise<ParsedLiveMatch[]> {
 
 export async function fetchLeagueOne202526(): Promise<ParsedLiveMatch[]> {
   const season = "2025-26";
-  const response = await fetchWithPolicy(buildScheduleUrl(season));
+  const [regularResponse, playoffResponse] = await Promise.all([
+    fetchWithPolicy(buildScheduleUrl(season)),
+    fetchWithPolicy(buildPlayoffsUrl(season)),
+  ]);
+  const [regularHtml, playoffHtml] = await Promise.all([
+    regularResponse.text(),
+    playoffResponse.text(),
+  ]);
+  const regularMatches = parseLeagueOneLiveHtml(regularHtml, season);
+  const playoffMatches = parseLeagueOneLiveHtml(playoffHtml, season);
 
-  return parseLeagueOneLiveHtml(await response.text(), season);
+  return [...regularMatches, ...playoffMatches].sort((a, b) =>
+    a.kickoffAt.localeCompare(b.kickoffAt),
+  );
 }
