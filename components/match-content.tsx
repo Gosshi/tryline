@@ -6,6 +6,7 @@ type MatchContentProps = {
   content: PublishedMatchContent;
   contentType: "preview" | "recap";
   isPremium: boolean;
+  language?: "ja" | "en";
   matchTitle?: string;
   showCta?: boolean;
 };
@@ -22,23 +23,28 @@ type MarkdownBlock =
   | { type: "table"; rows: string[][] }
   | { type: "paragraph"; text: string };
 
-function formatGeneratedAtJst(generatedAt: string): string {
-  const formatter = new Intl.DateTimeFormat("ja-JP", {
-    day: "2-digit",
-    hour: "2-digit",
-    hour12: false,
-    minute: "2-digit",
-    month: "2-digit",
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-  });
+function formatGeneratedAt(generatedAt: string, language: "ja" | "en"): string {
+  const formatter = new Intl.DateTimeFormat(
+    language === "en" ? "en-US" : "ja-JP",
+    {
+      day: "2-digit",
+      hour: "2-digit",
+      hour12: false,
+      minute: "2-digit",
+      month: "2-digit",
+      timeZone: "Asia/Tokyo",
+      year: "numeric",
+    },
+  );
 
   const parts = formatter.formatToParts(new Date(generatedAt));
   const indexedParts = Object.fromEntries(
     parts.map((part) => [part.type, part.value]),
   );
 
-  return `${indexedParts.year}-${indexedParts.month}-${indexedParts.day} ${indexedParts.hour}:${indexedParts.minute} JST 更新`;
+  const timestamp = `${indexedParts.year}-${indexedParts.month}-${indexedParts.day} ${indexedParts.hour}:${indexedParts.minute} JST`;
+
+  return language === "en" ? `Updated ${timestamp}` : `${timestamp} 更新`;
 }
 
 function toHeadingId(text: string): string {
@@ -258,6 +264,7 @@ function renderBlock(block: MarkdownBlock, index: number) {
 export function MatchContent({
   content,
   isPremium,
+  language = "ja",
   matchTitle,
   showCta = true,
 }: MatchContentProps) {
@@ -268,9 +275,7 @@ export function MatchContent({
   const blocks = parseMarkdown(contentMdJa);
   const nextHeading = isLocked
     ? parseMarkdown(content.contentMdJa.slice(FREE_CONTENT_LIMIT)).find(
-        (
-          block,
-        ): block is Extract<MarkdownBlock, { type: "heading" }> =>
+        (block): block is Extract<MarkdownBlock, { type: "heading" }> =>
           block.type === "heading",
       )
     : undefined;
@@ -287,7 +292,7 @@ export function MatchContent({
           className="mb-6 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3"
         >
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-            目次
+            {language === "en" ? "Contents" : "目次"}
           </p>
           <ol className="space-y-1">
             {headings.map((heading, index) => (
@@ -307,7 +312,7 @@ export function MatchContent({
         {blocks.map(renderBlock)}
         {nextHeading && (
           <p className="relative z-10 text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-            次のセクション
+            {language === "en" ? "Next section" : "次のセクション"}
             <span className="ml-2 normal-case text-[var(--color-ink-muted)]">
               {nextHeading.text} →
             </span>
@@ -320,21 +325,29 @@ export function MatchContent({
       {isLocked && showCta && (
         <div className="mt-4 flex flex-col items-center gap-3 text-center">
           <p className="text-sm font-semibold text-slate-800">
-            {matchTitle
-              ? `${matchTitle} の続きを読む`
-              : "続きは Premium でご覧いただけます"}
+            {language === "en"
+              ? matchTitle
+                ? `Read the full ${matchTitle} analysis with Premium`
+                : "The full article is available with Premium"
+              : matchTitle
+                ? `${matchTitle} の続きを読む`
+                : "続きは Premium でご覧いただけます"}
           </p>
           <a
             className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
             href="/pricing"
           >
-            {matchTitle ? "Premium で全文を読む — ¥980/月" : "Premium で全文を読む"}
+            {language === "en"
+              ? "Read with Premium"
+              : matchTitle
+                ? "Premium で全文を読む — ¥980/月"
+                : "Premium で全文を読む"}
           </a>
         </div>
       )}
       <p className="mt-6 text-xs text-slate-500">
         <time dateTime={content.generatedAt}>
-          {formatGeneratedAtJst(content.generatedAt)}
+          {formatGeneratedAt(content.generatedAt, language)}
         </time>
       </p>
     </>

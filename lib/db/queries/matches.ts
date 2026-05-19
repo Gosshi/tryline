@@ -50,6 +50,24 @@ export type LatestCompletedMatch = {
   id: string;
 };
 
+export type SitemapMatch = {
+  competitionFamily: string | null;
+  id: string;
+};
+
+export type EnglishMatchContent = {
+  contentMdJa: string;
+  contentType: "preview" | "recap";
+  generatedAt: string;
+  modelVersion: string;
+  promptVersion: string;
+};
+
+export type EnglishMatchContentBundle = {
+  preview: EnglishMatchContent | null;
+  recap: EnglishMatchContent | null;
+};
+
 type BaseMatchRow = {
   id: string;
   kickoff_at: string;
@@ -108,6 +126,7 @@ type RecentlyReviewedContentRow = {
 
 type UpcomingMatchRow = BaseMatchRow & {
   competition: {
+    family?: string;
     slug: string;
     name: string;
     season: string;
@@ -119,6 +138,22 @@ type TeamPageMatchRow = BaseMatchRow & {
     slug: string;
     name: string;
     season: string;
+  } | null;
+};
+
+type EnglishMatchContentRow = {
+  content_type: string;
+  content_md_ja: string;
+  generated_at: string;
+  model_version: string;
+  prompt_version: string;
+};
+
+type SitemapMatchRow = {
+  id: string;
+  competition: {
+    family: string | null;
+    slug: string;
   } | null;
 };
 
@@ -177,6 +212,22 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     round: getRoundFromExternalIds(row.external_ids),
     status: row.status,
     venue: row.venue,
+  };
+}
+
+function mapEnglishContentRow(
+  row: EnglishMatchContentRow,
+): EnglishMatchContent {
+  if (row.content_type !== "preview" && row.content_type !== "recap") {
+    throw new Error(`Unsupported content_type: ${row.content_type}`);
+  }
+
+  return {
+    contentMdJa: row.content_md_ja,
+    contentType: row.content_type,
+    generatedAt: row.generated_at,
+    modelVersion: row.model_version,
+    promptVersion: row.prompt_version,
   };
 }
 
@@ -305,7 +356,10 @@ export async function getRecentlyReviewedMatches(
         ...mapMatchRow(row.match),
         competition: row.match.competition,
         recapGeneratedAt: row.generated_at,
-        recapExcerpt: truncateAtSentenceBoundary(stripMarkdown(row.content_md_ja), 120),
+        recapExcerpt: truncateAtSentenceBoundary(
+          stripMarkdown(row.content_md_ja),
+          120,
+        ),
       };
     });
 }
@@ -511,18 +565,63 @@ export async function getFavoriteTeamMatches(
   });
 }
 
-export async function listAllMatchIds(): Promise<string[]> {
+export async function listAllMatchIds(): Promise<SitemapMatch[]> {
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("matches")
-    .select("id")
+    .select(
+      `
+        id,
+        competition:competitions!matches_competition_id_fkey (
+          family,
+          slug
+        )
+      `,
+    )
     .order("kickoff_at", { ascending: false });
 
   if (error) {
     throw error;
   }
 
-  return data.map((row) => row.id);
+  return (data satisfies SitemapMatchRow[]).map((row) => ({
+    competitionFamily:
+      row.competition?.family ??
+      row.competition?.slug.replace(/-\d{4}(-\d{2})?$/, "") ??
+      null,
+    id: row.id,
+  }));
+}
+
+export async function getMatchContentEn(
+  matchId: string,
+): Promise<EnglishMatchContentBundle> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("match_content")
+    .select(
+      "content_type, content_md_ja, generated_at, model_version, prompt_version",
+    )
+    .eq("match_id", matchId)
+    .eq("language", "en")
+    .eq("status", "published")
+    .in("content_type", ["preview", "recap"]);
+
+  if (error) {
+    throw error;
+  }
+
+  const bundle: EnglishMatchContentBundle = {
+    preview: null,
+    recap: null,
+  };
+
+  for (const row of data satisfies EnglishMatchContentRow[]) {
+    const mapped = mapEnglishContentRow(row);
+    bundle[mapped.contentType] = mapped;
+  }
+
+  return bundle;
 }
 
 export async function getTeamBySlug(
