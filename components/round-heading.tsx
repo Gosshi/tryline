@@ -1,4 +1,7 @@
-import { formatRoundLabel } from "@/lib/format/round-label";
+import {
+  formatPlayoffStageLabel,
+  formatRoundLabel,
+} from "@/lib/format/round-label";
 
 import type { GroupKey } from "@/lib/format/match-groups";
 
@@ -24,9 +27,11 @@ export function RoundHeading({ family, groupKey }: RoundHeadingProps) {
             ? formatDateShort(groupKey.startDate)
             : `${formatDateShort(groupKey.startDate)}〜${formatDateShort(groupKey.endDate)}`
         }`
-      : groupKey.round === null
-        ? "節未定"
-        : formatRoundLabel(groupKey.round, family);
+      : groupKey.round !== null
+        ? formatRoundLabel(groupKey.round, family)
+        : groupKey.roundName
+          ? formatPlayoffStageLabel(groupKey.roundName)
+          : "節未定";
 
   return (
     <div className="flex items-center gap-3">

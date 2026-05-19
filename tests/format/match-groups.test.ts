@@ -12,6 +12,7 @@ const baseMatch: MatchListItem = {
   id: "match-1",
   kickoffAt: "2025-11-02T12:00:00.000Z",
   round: null,
+  roundName: null,
   status: "scheduled",
   venue: null,
 };
@@ -37,7 +38,9 @@ describe("match groups", () => {
       },
     ]);
 
-    expect(grouped.map(([key, matches]) => [key, matches.map((match) => match.id)])).toEqual([
+    expect(
+      grouped.map(([key, matches]) => [key, matches.map((match) => match.id)]),
+    ).toEqual([
       [
         {
           endDate: "2025-11-02",
@@ -67,9 +70,31 @@ describe("match groups", () => {
     ]);
 
     expect(grouped.map(([key]) => key)).toEqual([
-      { round: 1, type: "round" },
-      { round: 2, type: "round" },
-      { round: null, type: "round" },
+      { round: 1, roundName: null, type: "round" },
+      { round: 2, roundName: null, type: "round" },
+      { round: null, roundName: null, type: "round" },
+    ]);
+  });
+
+  it("groups null-round playoff matches by roundName", () => {
+    const grouped = groupMatchesByRound([
+      { ...baseMatch, id: "match-1", round: 18 },
+      { ...baseMatch, id: "match-2", roundName: "quarterfinals" },
+      { ...baseMatch, id: "match-3", roundName: "quarterfinals" },
+      { ...baseMatch, id: "match-4", roundName: "semifinals" },
+      { ...baseMatch, id: "match-5" },
+    ]);
+
+    expect(
+      grouped.map(([key, matches]) => [key, matches.map((match) => match.id)]),
+    ).toEqual([
+      [{ round: 18, roundName: null, type: "round" }, ["match-1"]],
+      [
+        { round: null, roundName: "quarterfinals", type: "round" },
+        ["match-2", "match-3"],
+      ],
+      [{ round: null, roundName: "semifinals", type: "round" }, ["match-4"]],
+      [{ round: null, roundName: null, type: "round" }, ["match-5"]],
     ]);
   });
 });

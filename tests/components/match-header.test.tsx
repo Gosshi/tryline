@@ -33,6 +33,7 @@ const match: MatchDetail = {
   id: "00000000-0000-0000-0000-000000000001",
   kickoffAt: "2027-02-06T15:00:00.000Z",
   round: 1,
+  roundName: null,
   status: "scheduled",
   venue: "Aviva Stadium",
 };
@@ -147,7 +148,9 @@ describe("MatchHeader", () => {
   it("formats standard rounds as Japanese round labels in the subtitle", () => {
     render(<MatchHeader match={match} />);
 
-    expect(screen.getAllByText(/Six Nations 2027 · 第1節/).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(/Six Nations 2027 · 第1節/).length,
+    ).toBeGreaterThan(0);
     expect(screen.queryByText(/Round 1/)).not.toBeInTheDocument();
   });
 

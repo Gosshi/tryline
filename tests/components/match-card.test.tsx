@@ -37,6 +37,7 @@ const baseMatch: MatchListItem = {
   id: "00000000-0000-0000-0000-000000000001",
   kickoffAt: "2027-02-05T20:15:00.000Z",
   round: 1,
+  roundName: null,
   status: "scheduled",
   venue: "Aviva Stadium",
 };
@@ -63,18 +64,15 @@ describe("MatchCard", () => {
       "text-3xl",
       "text-[var(--color-ink-muted)]",
     );
-    expect(screen.getByText("FRA")).toHaveClass("text-[var(--color-ink-muted)]");
-    expect(screen.getByText("Ireland")).toHaveClass(
-      "text-[var(--color-ink)]",
+    expect(screen.getByText("FRA")).toHaveClass(
+      "text-[var(--color-ink-muted)]",
     );
+    expect(screen.getByText("Ireland")).toHaveClass("text-[var(--color-ink)]");
     expect(screen.getByText("W")).toHaveClass(
       "bg-[var(--color-accent-dim)]",
       "text-[var(--color-accent)]",
     );
-    expect(screen.getByText("L")).toHaveClass(
-      "bg-slate-100",
-      "text-slate-400",
-    );
+    expect(screen.getByText("L")).toHaveClass("bg-slate-100", "text-slate-400");
   });
 
   it("renders an em dash for a scheduled match", () => {
@@ -104,7 +102,9 @@ describe("MatchCard", () => {
     ["postponed", "延期"],
     ["cancelled", "中止"],
   ] as const)("shows the status badge for %s matches", (status, label) => {
-    const { container } = render(<MatchCard match={{ ...baseMatch, status }} />);
+    const { container } = render(
+      <MatchCard match={{ ...baseMatch, status }} />,
+    );
     const card = within(container);
 
     expect(card.getByText(label)).toBeInTheDocument();
@@ -114,12 +114,8 @@ describe("MatchCard", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
     const card = within(container);
 
-    expect(card.getByText("IRL")).toHaveClass(
-      "text-base",
-    );
-    expect(card.getByText("FRA")).toHaveClass(
-      "text-base",
-    );
+    expect(card.getByText("IRL")).toHaveClass("text-base");
+    expect(card.getByText("FRA")).toHaveClass("text-base");
   });
 
   it("renders club team badges at 28px in match cards", () => {
@@ -196,7 +192,9 @@ describe("MatchCard", () => {
 
   it("uses home and away team stripes on the card edges", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
-    const stripes = container.querySelectorAll("article > [aria-hidden='true']");
+    const stripes = container.querySelectorAll(
+      "article > [aria-hidden='true']",
+    );
 
     expect(container.querySelector("article")).not.toHaveClass("border-l-4");
     expect(stripes).toHaveLength(2);
@@ -235,7 +233,9 @@ describe("MatchCard", () => {
         }}
       />,
     );
-    const stripes = container.querySelectorAll("article > [aria-hidden='true']");
+    const stripes = container.querySelectorAll(
+      "article > [aria-hidden='true']",
+    );
 
     expect(stripes[0]).toHaveStyle({ opacity: "1" });
     expect(stripes[1]).toHaveStyle({ opacity: "0.25" });

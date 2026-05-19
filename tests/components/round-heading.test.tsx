@@ -9,7 +9,9 @@ import { RoundHeading } from "@/components/round-heading";
 
 describe("RoundHeading", () => {
   it("renders the round label with editorial display styles", () => {
-    render(<RoundHeading groupKey={{ round: 1, type: "round" }} />);
+    render(
+      <RoundHeading groupKey={{ round: 1, roundName: null, type: "round" }} />,
+    );
 
     expect(screen.getByText("第1節")).toHaveClass(
       "font-display",
@@ -21,7 +23,9 @@ describe("RoundHeading", () => {
 
   it("renders dividers on both sides", () => {
     const { container } = render(
-      <RoundHeading groupKey={{ round: null, type: "round" }} />,
+      <RoundHeading
+        groupKey={{ round: null, roundName: null, type: "round" }}
+      />,
     );
 
     expect(screen.getByText("節未定")).toBeInTheDocument();
@@ -49,9 +53,21 @@ describe("RoundHeading", () => {
   });
 
   it("maps round zero to a playoff qualifier label", () => {
-    render(<RoundHeading groupKey={{ round: 0, type: "round" }} />);
+    render(
+      <RoundHeading groupKey={{ round: 0, roundName: null, type: "round" }} />,
+    );
 
     expect(screen.getByText("プレーオフ予選")).toBeInTheDocument();
     expect(screen.queryByText("Round 0")).not.toBeInTheDocument();
+  });
+
+  it("maps playoff round names to Japanese labels", () => {
+    render(
+      <RoundHeading
+        groupKey={{ round: null, roundName: "quarterfinals", type: "round" }}
+      />,
+    );
+
+    expect(screen.getByText("準々決勝")).toBeInTheDocument();
   });
 });
