@@ -24,6 +24,7 @@ type MatchRow = {
   competition: Relation<CompetitionRow>;
   home_score: number | null;
   home_team: Relation<TeamRow>;
+  kickoff_at: string;
 };
 
 type ContentRow = {
@@ -65,7 +66,8 @@ export async function POST(request: Request) {
         content_type,
         language,
         content_md_ja,
-        matches (
+        matches!inner (
+          kickoff_at,
           home_score,
           away_score,
           home_team:teams!matches_home_team_id_fkey ( name, english_name ),
@@ -82,7 +84,7 @@ export async function POST(request: Request) {
         .eq("language", "ja")
         .in("content_type", ["recap", "preview"])
         .is("x_posted_at", null)
-        .gte("generated_at", sevenDaysAgo)
+        .gte("matches.kickoff_at", sevenDaysAgo)
         .order("generated_at", { ascending: true })
         .limit(5),
       db
@@ -92,7 +94,7 @@ export async function POST(request: Request) {
         .eq("language", "en")
         .in("content_type", ["recap", "preview"])
         .is("x_posted_at", null)
-        .gte("generated_at", sevenDaysAgo)
+        .gte("matches.kickoff_at", sevenDaysAgo)
         .order("generated_at", { ascending: true })
         .limit(5),
     ]);
