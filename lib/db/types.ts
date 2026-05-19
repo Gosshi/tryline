@@ -326,6 +326,7 @@ export type Database = {
           content_type: string;
           generated_at: string;
           id: string;
+          language: string;
           match_id: string;
           model_version: string;
           prompt_version: string;
@@ -338,6 +339,7 @@ export type Database = {
           content_type: string;
           generated_at?: string;
           id?: string;
+          language?: string;
           match_id: string;
           model_version: string;
           prompt_version: string;
@@ -350,6 +352,7 @@ export type Database = {
           content_type?: string;
           generated_at?: string;
           id?: string;
+          language?: string;
           match_id?: string;
           model_version?: string;
           prompt_version?: string;

@@ -232,6 +232,7 @@ export async function generateMatchContent(matchId: string, contentType: Content
       match_id: matchId,
       content_type: contentType,
       content_md_ja: finalNarrative,
+      language: "ja",
       model_version: modelVersion,
       prompt_version: promptVersion,
       status: persistedStatus,
@@ -239,7 +240,7 @@ export async function generateMatchContent(matchId: string, contentType: Content
       generated_at: new Date().toISOString(),
     },
     {
-      onConflict: "match_id,content_type",
+      onConflict: "match_id,content_type,language",
     },
   );
 

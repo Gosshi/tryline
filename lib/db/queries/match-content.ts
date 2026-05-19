@@ -56,6 +56,7 @@ export async function getPublishedContentForMatch(
     )
     .eq("match_id", matchId)
     .eq("status", "published")
+    .eq("language", "ja")
     .in("content_type", ["preview", "recap"]);
 
   if (error) {
@@ -88,6 +89,7 @@ export async function getContentStatusMap(
     .select("match_id, content_type")
     .in("match_id", matchIds)
     .eq("status", "published")
+    .eq("language", "ja")
     .in("content_type", ["preview", "recap"]);
 
   if (error) {

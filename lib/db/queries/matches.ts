@@ -285,6 +285,7 @@ export async function getRecentlyReviewedMatches(
       `,
     )
     .eq("content_type", "recap")
+    .eq("language", "ja")
     .eq("status", "published")
     .order("generated_at", { ascending: false })
     .limit(limit);
@@ -364,6 +365,7 @@ export async function getRecentlyReviewedMatchesForFamily(
       `,
     )
     .eq("content_type", "recap")
+    .eq("language", "ja")
     .eq("status", "published")
     .order("generated_at", { ascending: false })
     .limit(50);

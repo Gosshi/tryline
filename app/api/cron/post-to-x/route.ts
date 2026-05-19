@@ -74,6 +74,7 @@ export async function POST(request: Request) {
       `,
       )
       .eq("status", "published")
+      .eq("language", "ja")
       .in("content_type", ["recap", "preview"])
       .is("x_posted_at", null)
       .gte("generated_at", sevenDaysAgo)
