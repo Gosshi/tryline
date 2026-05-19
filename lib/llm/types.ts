@@ -52,12 +52,14 @@ export type AssembledContentInput = {
     home_team: {
       id: string;
       name: string;
+      english_name: string | null;
       short_code: string | null;
       country: string;
     } | null;
     away_team: {
       id: string;
       name: string;
+      english_name: string | null;
       short_code: string | null;
       country: string;
     } | null;

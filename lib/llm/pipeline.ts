@@ -5,13 +5,16 @@ import { notifyContentRejected, notifyCostAlert } from "@/lib/llm/notify";
 import { calculateCostUsd } from "@/lib/llm/pricing";
 import { assembleMatchContentInput } from "@/lib/llm/stages/assemble";
 import { extractTacticalPoints } from "@/lib/llm/stages/extract-facts";
-import { generateNarrative, NARRATIVE_TEMPERATURE_SEQUENCE } from "@/lib/llm/stages/generate-narrative";
+import {
+  generateNarrative,
+  NARRATIVE_TEMPERATURE_SEQUENCE,
+} from "@/lib/llm/stages/generate-narrative";
 import { evaluateNarrativeQuality } from "@/lib/llm/stages/qa";
 
 import type { Json } from "@/lib/db/types";
 import type { ContentLanguage, ContentType, QaResult } from "@/lib/llm/types";
 
-const COST_ALERT_THRESHOLD_USD = 0.20;
+const COST_ALERT_THRESHOLD_USD = 0.2;
 
 export type PipelineResult = {
   matchId: string;
@@ -62,7 +65,7 @@ export async function generateMatchContent(
   const db = getSupabaseServerClient();
 
   const stage1StartedAt = Date.now();
-  const assembled = await assembleMatchContentInput(matchId);
+  const assembled = await assembleMatchContentInput(matchId, language);
   await logPipelineRun({
     matchId,
     contentType,
@@ -125,7 +128,11 @@ export async function generateMatchContent(
   let modelVersion = "";
   let promptVersion = "";
 
-  for (let attempt = 0; attempt < NARRATIVE_TEMPERATURE_SEQUENCE.length; attempt += 1) {
+  for (
+    let attempt = 0;
+    attempt < NARRATIVE_TEMPERATURE_SEQUENCE.length;
+    attempt += 1
+  ) {
     const stage3StartedAt = Date.now();
     const narrative = await generateNarrative({
       assembled,
@@ -151,7 +158,11 @@ export async function generateMatchContent(
       matchId,
       contentType,
       stage: 3,
-      inputHash: hashInput({ assembled, tactical: tactical.result, additionalSignals: [] }),
+      inputHash: hashInput({
+        assembled,
+        tactical: tactical.result,
+        additionalSignals: [],
+      }),
       output: {
         temperature: narrative.temperature,
         content: narrative.content,
@@ -166,10 +177,10 @@ export async function generateMatchContent(
 
     try {
       qaResponse = await evaluateNarrativeQuality({
-      contentType,
-      language,
-      narrative: narrative.content,
-      retryCount: attempt,
+        contentType,
+        language,
+        narrative: narrative.content,
+        retryCount: attempt,
       });
     } catch (error) {
       await logPipelineRun({
@@ -259,7 +270,12 @@ export async function generateMatchContent(
   }
 
   if (totalCostUsd > COST_ALERT_THRESHOLD_USD) {
-    await notifyCostAlert(matchId, contentType, totalCostUsd, COST_ALERT_THRESHOLD_USD);
+    await notifyCostAlert(
+      matchId,
+      contentType,
+      totalCostUsd,
+      COST_ALERT_THRESHOLD_USD,
+    );
   }
 
   return {

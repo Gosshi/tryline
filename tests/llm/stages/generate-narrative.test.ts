@@ -98,4 +98,64 @@ describe("generateNarrative", () => {
       expect.objectContaining({ temperature: 0.4 }),
     );
   });
+
+  it("uses the strengthened English preview prompt and version", async () => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: "# preview",
+      model: "gpt-4o-2024-11-20",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    const result = await generateNarrative({
+      additionalSignals: [],
+      assembled,
+      attempt: 0,
+      contentType: "preview",
+      language: "en",
+      tacticalPoints: [],
+    });
+
+    expect(result.promptVersion).toBe("preview@2.0.0-en");
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining("HARD RULES - follow without exception"),
+      }),
+    );
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining("Target: 1,000+ words total."),
+      }),
+    );
+  });
+
+  it("uses the strengthened English recap prompt and version", async () => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: "# recap",
+      model: "gpt-4o-2024-11-20",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    const result = await generateNarrative({
+      additionalSignals: [],
+      assembled,
+      attempt: 0,
+      contentType: "recap",
+      language: "en",
+      tacticalPoints: [],
+    });
+
+    expect(result.promptVersion).toBe("recap@2.2.0-en");
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining(
+          "Never use Japanese characters (hiragana, katakana, kanji).",
+        ),
+      }),
+    );
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining("Target: 1,200+ words total."),
+      }),
+    );
+  });
 });

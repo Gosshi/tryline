@@ -1,7 +1,11 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
 
 import type { Json } from "@/lib/db/types";
-import type { AssembledContentInput, MatchPhase } from "@/lib/llm/types";
+import type {
+  AssembledContentInput,
+  ContentLanguage,
+  MatchPhase,
+} from "@/lib/llm/types";
 
 function average(values: number[]) {
   if (values.length === 0) {
@@ -21,8 +25,20 @@ function asJsonObject(value: Json): Record<string, Json> {
   return value as Record<string, Json>;
 }
 
+function resolveTeamName(
+  name: string,
+  englishName: string | null,
+  language: ContentLanguage,
+): string {
+  return language === "en" && englishName ? englishName : name;
+}
+
 function deriveMatchPhase(externalIds: unknown): MatchPhase | null {
-  if (!externalIds || typeof externalIds !== "object" || Array.isArray(externalIds)) {
+  if (
+    !externalIds ||
+    typeof externalIds !== "object" ||
+    Array.isArray(externalIds)
+  ) {
     return null;
   }
 
@@ -101,6 +117,7 @@ async function loadProjectedLineup(
 
 async function loadCompetitionStandings(
   competitionId: string | undefined,
+  language: ContentLanguage,
 ): Promise<AssembledContentInput["competition_standings"]> {
   if (!competitionId) {
     return [];
@@ -122,7 +139,7 @@ async function loadCompetitionStandings(
         bonus_points_try,
         bonus_points_losing,
         total_points,
-        team:teams(name)
+        team:teams(name, english_name)
       `,
     )
     .eq("competition_id", competitionId)
@@ -141,7 +158,9 @@ async function loadCompetitionStandings(
     points_against: row.points_against,
     points_for: row.points_for,
     position: row.position,
-    team_name: row.team?.name ?? "",
+    team_name: row.team
+      ? resolveTeamName(row.team.name, row.team.english_name, language)
+      : "",
     total_points: row.total_points,
     tries_for: row.tries_for,
     won: row.won,
@@ -151,6 +170,7 @@ async function loadCompetitionStandings(
 async function loadMatchEvents(
   matchId: string,
   status: string,
+  language: ContentLanguage,
 ): Promise<AssembledContentInput["match_events"]> {
   if (status !== "finished") {
     return [];
@@ -159,7 +179,7 @@ async function loadMatchEvents(
   const db = getSupabaseServerClient();
   const { data, error } = await db
     .from("match_events")
-    .select("type, minute, metadata, team:teams(name)")
+    .select("type, minute, metadata, team:teams(name, english_name)")
     .eq("match_id", matchId)
     .order("minute", { ascending: true, nullsFirst: false });
 
@@ -176,7 +196,9 @@ async function loadMatchEvents(
       ...(isPenaltyTry === true ? { is_penalty_try: true } : {}),
       minute: event.minute,
       player_name: typeof playerName === "string" ? playerName : "",
-      team_name: event.team?.name ?? "",
+      team_name: event.team
+        ? resolveTeamName(event.team.name, event.team.english_name, language)
+        : "",
       type: event.type,
     };
   });
@@ -184,6 +206,7 @@ async function loadMatchEvents(
 
 export async function assembleMatchContentInput(
   matchId: string,
+  language: ContentLanguage = "ja",
 ): Promise<AssembledContentInput> {
   const db = getSupabaseServerClient();
 
@@ -200,8 +223,8 @@ export async function assembleMatchContentInput(
         away_score,
         external_ids,
         competition:competitions(id, name, season, family),
-        home_team:teams!matches_home_team_id_fkey(id, name, short_code, country),
-        away_team:teams!matches_away_team_id_fkey(id, name, short_code, country)
+        home_team:teams!matches_home_team_id_fkey(id, name, english_name, short_code, country),
+        away_team:teams!matches_away_team_id_fkey(id, name, english_name, short_code, country)
       `,
     )
     .eq("id", matchId)
@@ -218,6 +241,21 @@ export async function assembleMatchContentInput(
     throw new Error("match is missing team references");
   }
 
+  const homeTeamName = match.home_team
+    ? resolveTeamName(
+        match.home_team.name,
+        match.home_team.english_name,
+        language,
+      )
+    : "";
+  const awayTeamName = match.away_team
+    ? resolveTeamName(
+        match.away_team.name,
+        match.away_team.english_name,
+        language,
+      )
+    : "";
+
   const { data: recentMatches, error: recentError } = await db
     .from("matches")
     .select(
@@ -227,8 +265,8 @@ export async function assembleMatchContentInput(
         status,
         home_score,
         away_score,
-        home_team:teams!matches_home_team_id_fkey(name),
-        away_team:teams!matches_away_team_id_fkey(name),
+        home_team:teams!matches_home_team_id_fkey(name, english_name),
+        away_team:teams!matches_away_team_id_fkey(name, english_name),
         home_team_id,
         away_team_id
       `,
@@ -254,8 +292,20 @@ export async function assembleMatchContentInput(
     .map((item) => ({
       match_id: item.id,
       kickoff_at: item.kickoff_at,
-      home_team_name: item.home_team?.name ?? "",
-      away_team_name: item.away_team?.name ?? "",
+      home_team_name: item.home_team
+        ? resolveTeamName(
+            item.home_team.name,
+            item.home_team.english_name,
+            language,
+          )
+        : "",
+      away_team_name: item.away_team
+        ? resolveTeamName(
+            item.away_team.name,
+            item.away_team.english_name,
+            language,
+          )
+        : "",
       home_score: item.home_score,
       away_score: item.away_score,
       status: item.status,
@@ -270,8 +320,20 @@ export async function assembleMatchContentInput(
     .map((item) => ({
       match_id: item.id,
       kickoff_at: item.kickoff_at,
-      home_team_name: item.home_team?.name ?? "",
-      away_team_name: item.away_team?.name ?? "",
+      home_team_name: item.home_team
+        ? resolveTeamName(
+            item.home_team.name,
+            item.home_team.english_name,
+            language,
+          )
+        : "",
+      away_team_name: item.away_team
+        ? resolveTeamName(
+            item.away_team.name,
+            item.away_team.english_name,
+            language,
+          )
+        : "",
       home_score: item.home_score,
       away_score: item.away_score,
       status: item.status,
@@ -288,8 +350,20 @@ export async function assembleMatchContentInput(
     .map((item) => ({
       match_id: item.id,
       kickoff_at: item.kickoff_at,
-      home_team_name: item.home_team?.name ?? "",
-      away_team_name: item.away_team?.name ?? "",
+      home_team_name: item.home_team
+        ? resolveTeamName(
+            item.home_team.name,
+            item.home_team.english_name,
+            language,
+          )
+        : "",
+      away_team_name: item.away_team
+        ? resolveTeamName(
+            item.away_team.name,
+            item.away_team.english_name,
+            language,
+          )
+        : "",
       home_score: item.home_score,
       away_score: item.away_score,
       status: item.status,
@@ -297,32 +371,32 @@ export async function assembleMatchContentInput(
 
   const homeFor = homeRecent
     .map((item) => {
-      if (item.home_team_name === match.home_team?.name) return item.home_score;
-      if (item.away_team_name === match.home_team?.name) return item.away_score;
+      if (item.home_team_name === homeTeamName) return item.home_score;
+      if (item.away_team_name === homeTeamName) return item.away_score;
       return null;
     })
     .filter((value): value is number => typeof value === "number");
 
   const homeAgainst = homeRecent
     .map((item) => {
-      if (item.home_team_name === match.home_team?.name) return item.away_score;
-      if (item.away_team_name === match.home_team?.name) return item.home_score;
+      if (item.home_team_name === homeTeamName) return item.away_score;
+      if (item.away_team_name === homeTeamName) return item.home_score;
       return null;
     })
     .filter((value): value is number => typeof value === "number");
 
   const awayFor = awayRecent
     .map((item) => {
-      if (item.home_team_name === match.away_team?.name) return item.home_score;
-      if (item.away_team_name === match.away_team?.name) return item.away_score;
+      if (item.home_team_name === awayTeamName) return item.home_score;
+      if (item.away_team_name === awayTeamName) return item.away_score;
       return null;
     })
     .filter((value): value is number => typeof value === "number");
 
   const awayAgainst = awayRecent
     .map((item) => {
-      if (item.home_team_name === match.away_team?.name) return item.away_score;
-      if (item.away_team_name === match.away_team?.name) return item.home_score;
+      if (item.home_team_name === awayTeamName) return item.away_score;
+      if (item.away_team_name === awayTeamName) return item.home_score;
       return null;
     })
     .filter((value): value is number => typeof value === "number");
@@ -335,8 +409,8 @@ export async function assembleMatchContentInput(
   ] = await Promise.all([
     loadProjectedLineup(matchId, homeTeamId),
     loadProjectedLineup(matchId, awayTeamId),
-    loadCompetitionStandings(match.competition_id),
-    loadMatchEvents(matchId, match.status),
+    loadCompetitionStandings(match.competition_id, language),
+    loadMatchEvents(matchId, match.status, language),
   ]);
 
   return {
@@ -355,8 +429,18 @@ export async function assembleMatchContentInput(
             season: match.competition.season,
           }
         : null,
-      home_team: match.home_team,
-      away_team: match.away_team,
+      home_team: match.home_team
+        ? {
+            ...match.home_team,
+            name: homeTeamName,
+          }
+        : null,
+      away_team: match.away_team
+        ? {
+            ...match.away_team,
+            name: awayTeamName,
+          }
+        : null,
     },
     match_phase: deriveMatchPhase(match.external_ids),
     recent_form: {

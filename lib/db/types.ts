@@ -741,6 +741,7 @@ export type Database = {
         Row: {
           country: string;
           created_at: string;
+          english_name: string | null;
           external_ids: Json;
           id: string;
           logo_url: string | null;
@@ -752,6 +753,7 @@ export type Database = {
         Insert: {
           country: string;
           created_at?: string;
+          english_name?: string | null;
           external_ids?: Json;
           id?: string;
           logo_url?: string | null;
@@ -763,6 +765,7 @@ export type Database = {
         Update: {
           country?: string;
           created_at?: string;
+          english_name?: string | null;
           external_ids?: Json;
           id?: string;
           logo_url?: string | null;
