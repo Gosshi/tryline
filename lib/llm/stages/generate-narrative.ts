@@ -51,17 +51,7 @@ export async function generateNarrative(options: {
   const prompt =
     language === "en"
       ? buildEnglishNarrativePrompt(options)
-      : isPreview
-        ? buildGeneratePreviewPrompt(
-            options.assembled,
-            options.tacticalPoints,
-            options.additionalSignals,
-          )
-        : buildGenerateRecapPrompt(
-            options.assembled,
-            options.tacticalPoints,
-            options.additionalSignals,
-          );
+      : buildJapaneseNarrativePrompt(options);
 
   const response = await createTextResponse({
     model: MODELS.NARRATIVE,
@@ -81,6 +71,40 @@ export async function generateNarrative(options: {
     usage: response.usage,
     temperature,
   };
+}
+
+function buildJapaneseNarrativePrompt(options: {
+  assembled: AssembledContentInput;
+  tacticalPoints: TacticalPoint[];
+  contentType: ContentType;
+  additionalSignals: AdditionalSignal[];
+}) {
+  const basePrompt =
+    options.contentType === "preview"
+      ? buildGeneratePreviewPrompt(
+          options.assembled,
+          options.tacticalPoints,
+          options.additionalSignals,
+        )
+      : buildGenerateRecapPrompt(
+          options.assembled,
+          options.tacticalPoints,
+          options.additionalSignals,
+        );
+  const firstSectionInstruction =
+    options.contentType === "preview"
+      ? [
+          "【重要】第1セクション（見どころ要約）は 250〜350 字で完結させること。",
+          "このセクションは無料公開エリアになる。",
+          "試合の見どころ、両チームの状態、最大の注目点を簡潔にまとめる。",
+        ].join("\n")
+      : [
+          "【重要】第1セクション（試合概要）は 250〜350 字で完結させること。",
+          "このセクションは無料公開エリアになる。",
+          "試合の結論（勝敗・スコア・最大のポイント）を簡潔にまとめる。",
+        ].join("\n");
+
+  return [firstSectionInstruction, basePrompt].join("\n\n");
 }
 
 function buildEnglishNarrativePrompt(options: {

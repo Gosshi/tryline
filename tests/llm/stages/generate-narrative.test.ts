@@ -99,6 +99,31 @@ describe("generateNarrative", () => {
     );
   });
 
+  it("adds the Japanese free first-section instruction", async () => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: "# preview",
+      model: "gpt-4o-2024-11-20",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    await generateNarrative({
+      additionalSignals: [],
+      assembled,
+      attempt: 0,
+      contentType: "preview",
+      language: "ja",
+      tacticalPoints: [],
+    });
+
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining(
+          "第1セクション（見どころ要約）は 250〜350 字で完結",
+        ),
+      }),
+    );
+  });
+
   it("uses the strengthened English preview prompt and version", async () => {
     openAIMock.createTextResponse.mockResolvedValue({
       text: "# preview",
