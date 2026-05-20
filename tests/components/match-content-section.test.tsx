@@ -77,7 +77,7 @@ describe("MatchContentSection", () => {
       <MatchContentSection
         content={{
           ...content,
-          contentMdJa: `${"あ".repeat(300)}ロック本文`,
+          contentMdJa: "# 概要\n\n無料本文\n\n# 続き\n\nロック本文",
         }}
         contentType="preview"
         isPremium={false}
@@ -97,7 +97,7 @@ describe("MatchContentSection", () => {
       <MatchContentSection
         content={{
           ...content,
-          contentMdJa: `${"あ".repeat(300)}ロック本文`,
+          contentMdJa: "# 概要\n\n無料本文\n\n# 続き\n\nロック本文",
         }}
         contentType="preview"
         isPremium={false}

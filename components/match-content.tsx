@@ -11,8 +11,6 @@ type MatchContentProps = {
   showCta?: boolean;
 };
 
-const FREE_CONTENT_LIMIT = 300;
-
 type InlineChunk =
   | { type: "text"; value: string }
   | { type: "link"; href: string; text: string };
@@ -163,6 +161,27 @@ function parseMarkdown(markdown: string): MarkdownBlock[] {
   return blocks;
 }
 
+function splitAtSecondHeading(blocks: MarkdownBlock[]): {
+  free: MarkdownBlock[];
+  locked: MarkdownBlock[];
+} {
+  let headingCount = 0;
+
+  for (let i = 0; i < blocks.length; i += 1) {
+    const block = blocks[i];
+
+    if (block?.type === "heading" && block.level <= 1) {
+      headingCount += 1;
+
+      if (headingCount === 2) {
+        return { free: blocks.slice(0, i), locked: blocks.slice(i) };
+      }
+    }
+  }
+
+  return { free: blocks, locked: [] };
+}
+
 function renderInline(text: string) {
   return parseInline(text).map((chunk, index) => {
     if (chunk.type === "text") {
@@ -269,16 +288,18 @@ export function MatchContent({
   showCta = true,
 }: MatchContentProps) {
   const isLocked = !isPremium;
-  const contentMdJa = isLocked
-    ? content.contentMdJa.slice(0, FREE_CONTENT_LIMIT)
-    : content.contentMdJa;
-  const blocks = parseMarkdown(contentMdJa);
+  const allBlocks = parseMarkdown(content.contentMdJa);
+  const { free: freeBlocks, locked: lockedBlocks } = isLocked
+    ? splitAtSecondHeading(allBlocks)
+    : { free: allBlocks, locked: [] };
+  const blocks = isLocked ? freeBlocks : allBlocks;
   const nextHeading = isLocked
-    ? parseMarkdown(content.contentMdJa.slice(FREE_CONTENT_LIMIT)).find(
+    ? (lockedBlocks.find(
         (block): block is Extract<MarkdownBlock, { type: "heading" }> =>
           block.type === "heading",
-      )
+      ) ?? undefined)
     : undefined;
+  const hasLockedBlocks = isLocked && lockedBlocks.length > 0;
   const headings = blocks.filter(
     (block): block is Extract<MarkdownBlock, { type: "heading" }> =>
       block.type === "heading" && block.level <= 1,
@@ -318,11 +339,11 @@ export function MatchContent({
             </span>
           </p>
         )}
-        {isLocked && (
+        {hasLockedBlocks && (
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
         )}
       </div>
-      {isLocked && showCta && (
+      {hasLockedBlocks && showCta && (
         <div className="mt-4 flex flex-col items-center gap-3 text-center">
           <p className="text-sm font-semibold text-slate-800">
             {language === "en"

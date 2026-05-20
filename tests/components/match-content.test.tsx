@@ -67,15 +67,15 @@ describe("MatchContent", () => {
     expect(screen.getByText("2027-02-04 23:12 JST 更新")).toBeInTheDocument();
   });
 
-  it("truncates free content and shows the premium CTA without TOC", () => {
-    const visibleText = "あ".repeat(300);
-    const lockedText = "い".repeat(40);
+  it("shows the first section and locks content from the second top-level heading", () => {
+    const visibleText = "無料で読める第1セクション本文";
+    const lockedText = "プレミアム本文";
 
     render(
       <MatchContent
         content={{
           ...baseContent,
-          contentMdJa: `# 見出し1\n\n# 見出し2\n\n${visibleText}${lockedText}`,
+          contentMdJa: `# 見出し1\n\n${visibleText}\n\n# 見出し2\n\n${lockedText}`,
         }}
         contentType="preview"
         isPremium={false}
@@ -87,10 +87,11 @@ describe("MatchContent", () => {
     expect(
       screen.getByRole("link", { name: "Premium で全文を読む" }),
     ).toHaveAttribute("href", "/pricing");
+    expect(screen.getByText(visibleText)).toBeInTheDocument();
     expect(
-      screen.getByText(new RegExp(visibleText.slice(0, 40))),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(new RegExp(lockedText))).toBeNull();
+      screen.queryByRole("heading", { name: "見出し2" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(lockedText)).toBeNull();
   });
 
   it("uses match-specific copy for the locked premium CTA", () => {
@@ -98,7 +99,7 @@ describe("MatchContent", () => {
       <MatchContent
         content={{
           ...baseContent,
-          contentMdJa: `${"あ".repeat(300)}ロック本文`,
+          contentMdJa: "# 見出し1\n\n無料本文\n\n# 見出し2\n\nロック本文",
         }}
         contentType="preview"
         isPremium={false}
@@ -106,7 +107,9 @@ describe("MatchContent", () => {
       />,
     );
 
-    expect(screen.getByText("Ireland vs France の続きを読む")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ireland vs France の続きを読む"),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("link", {
         name: "Premium で全文を読む — ¥980/月",
@@ -115,13 +118,13 @@ describe("MatchContent", () => {
   });
 
   it("keeps the free teaser and gradient while hiding the premium CTA", () => {
-    const visibleText = "あ".repeat(300);
+    const visibleText = "無料で読める本文";
 
     const { container } = render(
       <MatchContent
         content={{
           ...baseContent,
-          contentMdJa: `${visibleText}\n\n# 続きの見出し\n\nロック本文`,
+          contentMdJa: `# 概要\n\n${visibleText}\n\n# 続きの見出し\n\nロック本文`,
         }}
         contentType="preview"
         isPremium={false}
@@ -134,19 +137,17 @@ describe("MatchContent", () => {
       screen.queryByRole("link", { name: "Premium で全文を読む" }),
     ).toBeNull();
     expect(screen.getByText("次のセクション")).toBeInTheDocument();
-    expect(
-      container.querySelector(".bg-gradient-to-t"),
-    ).toBeInTheDocument();
+    expect(container.querySelector(".bg-gradient-to-t")).toBeInTheDocument();
   });
 
   it("teases the next locked heading for free users", () => {
-    const visibleText = "あ".repeat(300);
+    const visibleText = "試合の流れをまとめた無料本文";
 
     render(
       <MatchContent
         content={{
           ...baseContent,
-          contentMdJa: `${visibleText}\n\n# ターニングポイント\n\nロック本文`,
+          contentMdJa: `# 試合概要\n\n${visibleText}\n\n# ターニングポイント\n\nロック本文`,
         }}
         contentType="recap"
         isPremium={false}
@@ -158,12 +159,12 @@ describe("MatchContent", () => {
     expect(screen.queryByText("ロック本文")).toBeNull();
   });
 
-  it("does not show a heading teaser without a locked heading", () => {
+  it("does not lock content when there is no second top-level heading", () => {
     render(
       <MatchContent
         content={{
           ...baseContent,
-          contentMdJa: `${"あ".repeat(300)}ロック本文のみ`,
+          contentMdJa: "# 試合概要\n\n本文のみ",
         }}
         contentType="recap"
         isPremium={false}
@@ -171,6 +172,8 @@ describe("MatchContent", () => {
     );
 
     expect(screen.queryByText("次のセクション")).toBeNull();
+    expect(screen.getByText("本文のみ")).toBeInTheDocument();
+    expect(screen.queryByText(/続きは Premium/)).toBeNull();
   });
 
   it("does not show a heading teaser for premium users", () => {
@@ -203,7 +206,9 @@ describe("MatchContent", () => {
       />,
     );
 
-    expect(screen.getByRole("navigation", { name: "目次" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: "目次" }),
+    ).toBeInTheDocument();
     expect(screen.getByText(lockedText)).toBeInTheDocument();
     expect(screen.queryByText(/続きは Premium/)).toBeNull();
   });
