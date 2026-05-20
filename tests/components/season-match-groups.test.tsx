@@ -93,6 +93,36 @@ describe("season match groups", () => {
     ]).toEqual([1, 2, 3]);
   });
 
+  it("opens the first two rounds when all matches are in the future", () => {
+    const groupedMatches = [
+      buildGroup(1, "2026-01-08T00:00:00.000Z"),
+      buildGroup(2, "2026-01-15T00:00:00.000Z"),
+      buildGroup(3, "2026-01-22T00:00:00.000Z"),
+    ];
+
+    expect([
+      ...getDefaultOpenGroupIndexes(
+        groupedMatches,
+        new Date("2026-01-01T00:00:00.000Z"),
+      ),
+    ]).toEqual([0, 1]);
+  });
+
+  it("opens the final two rounds when the season has fully started", () => {
+    const groupedMatches = [
+      buildGroup(1, "2026-01-01T00:00:00.000Z"),
+      buildGroup(2, "2026-01-08T00:00:00.000Z"),
+      buildGroup(3, "2026-01-15T00:00:00.000Z"),
+    ];
+
+    expect([
+      ...getDefaultOpenGroupIndexes(
+        groupedMatches,
+        new Date("2026-01-22T00:00:00.000Z"),
+      ),
+    ]).toEqual([1, 2]);
+  });
+
   it("toggles a collapsible round section", () => {
     const groupedMatches = Array.from({ length: 10 }, (_, index) =>
       buildGroup(
