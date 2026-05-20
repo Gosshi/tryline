@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
 import { StandingsTable } from "@/components/standings-table";
+import { getUser, getUserProfile } from "@/lib/auth/server";
 import {
   getCompetitionBySlug,
   listSeasonsByFamily,
@@ -83,6 +84,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SeasonPage({ params }: Props) {
   const { competition, season } = await params;
+  const user = await getUser();
+  const profile = user ? await getUserProfile(user.id) : null;
+  const isPremium = profile?.subscription_status === "premium";
   const comp = await getCompetitionBySlug(`${competition}-${season}`);
 
   if (!comp) {
@@ -103,6 +107,9 @@ export default async function SeasonPage({ params }: Props) {
   ]);
   const contentStatusMap = await getContentStatusMap(
     matches.map((match) => match.id),
+  );
+  const hasAnyContent = [...contentStatusMap.values()].some(
+    (status) => status.hasPreview || status.hasRecap,
   );
   const groupedMatches = groupMatchesByRound(matches);
   const dateRange = formatDateRange(comp.startDate, comp.endDate);
@@ -172,11 +179,30 @@ export default async function SeasonPage({ params }: Props) {
             </div>
           </div>
         ) : (
-          <SeasonMatchGroups
-            contentStatusMap={Object.fromEntries(contentStatusMap)}
-            family={family}
-            groupedMatches={groupedMatches}
-          />
+          <>
+            {hasAnyContent && !isPremium && (
+              <div className="rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 px-5 py-4">
+                <p className="text-sm font-semibold text-[var(--color-ink)]">
+                  AI 日本語レビューを全文読むには Premium が必要です
+                </p>
+                <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
+                  各試合の詳細分析・プレビュー・AI チャットが月額 ¥980
+                  で読み放題。
+                </p>
+                <Link
+                  className="mt-3 inline-block rounded-full bg-[var(--color-accent)] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90"
+                  href="/pricing"
+                >
+                  Premium を始める — ¥980/月
+                </Link>
+              </div>
+            )}
+            <SeasonMatchGroups
+              contentStatusMap={Object.fromEntries(contentStatusMap)}
+              family={family}
+              groupedMatches={groupedMatches}
+            />
+          </>
         )}
 
         <div id="standings">
