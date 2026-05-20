@@ -42,6 +42,40 @@ function PendingState() {
   );
 }
 
+function ComingSoonState({ matchCount }: { matchCount: number }) {
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-24 text-center">
+      <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-accent)]">
+        Coming Soon
+      </p>
+      <h1 className="mt-4 font-serif text-4xl font-bold text-[var(--color-ink)]">
+        Rugby World Cup 2027
+      </h1>
+      <p className="mt-6 text-base leading-relaxed text-[var(--color-ink-muted)]">
+        2027年10〜11月、オーストラリア開催。
+        <br />
+        全{matchCount}試合のスケジュールが確定しています。
+        <br />
+        開幕後、試合結果・AI日本語レビューを随時公開予定。
+      </p>
+      <div className="mt-8 flex flex-col items-center gap-3">
+        <Link
+          className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+          href="/c/rwc/2027/bracket"
+        >
+          ノックアウトブラケットを見る →
+        </Link>
+        <Link
+          className="text-sm text-[var(--color-ink-muted)] underline underline-offset-4"
+          href="/"
+        >
+          トップへ戻る
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default async function RWC2027Page() {
   const competition = await getCompetitionBySlug("rwc-2027");
 
@@ -57,6 +91,18 @@ export default async function RWC2027Page() {
     getPoolStandingsForCompetition("rwc-2027"),
     listMatchesForCompetition("rwc-2027"),
   ]);
+
+  const allScheduled =
+    matches.length > 0 && matches.every((match) => match.status !== "finished");
+
+  if (allScheduled) {
+    return (
+      <main className="min-h-screen bg-slate-50">
+        <ComingSoonState matchCount={matches.length} />
+      </main>
+    );
+  }
+
   const contentStatusMap = await getContentStatusMap(
     matches.map((match) => match.id),
   );
