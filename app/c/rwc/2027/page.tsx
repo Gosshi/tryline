@@ -12,7 +12,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Rugby World Cup 2027",
-  description: "RWC 2027 プール順位表・ノックアウトブラケット・AI日本語レビュー。",
+  description:
+    "RWC 2027 プール順位表・ノックアウトブラケット・AI日本語レビュー。",
 };
 
 function PendingState() {
@@ -66,7 +67,7 @@ export default async function RWC2027Page() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 md:px-8">
         <header className="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-slate-200">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-            RWC
+            Rugby World Cup
           </p>
           <h1 className="mt-1 font-heading text-4xl font-bold tracking-tight text-[var(--color-ink)] sm:text-5xl">
             Rugby World Cup 2027
