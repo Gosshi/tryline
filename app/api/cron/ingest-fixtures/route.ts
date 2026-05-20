@@ -1,7 +1,27 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
-import { ingestSixNations2027Fixtures } from "@/lib/ingestion/fixtures";
+import {
+  ingestRwc2027Fixtures,
+  ingestSixNations2027Fixtures,
+} from "@/lib/ingestion/fixtures";
+
+const bodySchema = z.object({
+  competition: z
+    .enum(["six-nations-2027", "rwc-2027"])
+    .default("six-nations-2027"),
+});
+
+async function parseOptionalBody(request: Request) {
+  const text = await request.text();
+
+  if (!text.trim()) {
+    return bodySchema.parse({});
+  }
+
+  return bodySchema.parse(JSON.parse(text));
+}
 
 export async function POST(request: Request) {
   const startedAt = Date.now();
@@ -9,7 +29,11 @@ export async function POST(request: Request) {
   try {
     assertCronAuthorized(request);
 
-    const result = await ingestSixNations2027Fixtures();
+    const body = await parseOptionalBody(request);
+    const result =
+      body.competition === "rwc-2027"
+        ? await ingestRwc2027Fixtures()
+        : await ingestSixNations2027Fixtures();
 
     return NextResponse.json({
       status: "ok",
@@ -22,7 +46,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.error("Failed to ingest Six Nations 2027 fixtures.", error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "invalid_body", issues: error.issues },
+        { status: 400 },
+      );
+    }
+
+    console.error("Failed to ingest fixtures.", error);
 
     return NextResponse.json(
       { error: "Failed to ingest fixtures" },
