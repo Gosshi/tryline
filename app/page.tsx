@@ -8,7 +8,6 @@ import { MatchCard } from "@/components/match-card";
 import { TeamBadge } from "@/components/team-badge";
 import { getUser, getUserProfile } from "@/lib/auth/server";
 import {
-  getCompetitionBySlug,
   listFamilies,
   listSeasonsByFamily,
   selectLatestSeasonWithMatches,
@@ -16,7 +15,7 @@ import {
 } from "@/lib/db/queries/competitions";
 import {
   getFavoriteTeamMatches,
-  getLatestCompetitionWithMatches,
+  getRecentlyReviewedFamilies,
   getRecentlyReviewedMatches,
   getUpcomingMatches,
 } from "@/lib/db/queries/matches";
@@ -61,22 +60,19 @@ export default async function HomePage() {
   const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
   const [
     families,
-    latest,
+    reviewedFamilies,
     recentReviews,
     sampleReviews,
     upcomingMatches,
     favoriteMatches,
   ] = await Promise.all([
     listFamilies(),
-    getLatestCompetitionWithMatches(),
+    getRecentlyReviewedFamilies(4),
     getRecentlyReviewedMatches(3),
     getRecentlyReviewedMatches(1),
     getUpcomingMatches(5),
     getFavoriteTeamMatches(favoriteTeamSlugs),
   ]);
-  const latestCompetition = latest
-    ? await getCompetitionBySlug(latest.slug)
-    : null;
   const homepageCompetitionLinks = sortHomepageCompetitionLinks(
     (
       await Promise.all(
@@ -150,8 +146,8 @@ export default async function HomePage() {
             <Link
               className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               href={
-                latestCompetition
-                  ? `/c/${latestCompetition.family}/${latestCompetition.season}`
+                reviewedFamilies[0]
+                  ? `/c/${reviewedFamilies[0].family}/${reviewedFamilies[0].competitionSeason}`
                   : "/"
               }
             >
@@ -245,36 +241,6 @@ export default async function HomePage() {
       )}
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        {latestCompetition && (
-          <section>
-            <Link
-              className="group block rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-slate-300"
-              href={`/c/${latestCompetition.family}/${latestCompetition.season}`}
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                最新シーズン
-              </p>
-              <p className="mt-2 font-serif text-3xl font-bold text-[var(--color-ink)] sm:text-4xl">
-                {latestCompetition.name.includes(latestCompetition.season) ? (
-                  <span className="whitespace-nowrap">
-                    {latestCompetition.name}
-                  </span>
-                ) : (
-                  <>
-                    {latestCompetition.name}{" "}
-                    <span className="whitespace-nowrap">
-                      {latestCompetition.season}
-                    </span>
-                  </>
-                )}
-              </p>
-              <p className="mt-4 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
-                試合一覧を見る →
-              </p>
-            </Link>
-          </section>
-        )}
-
         {upcomingMatches.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
@@ -384,6 +350,40 @@ export default async function HomePage() {
                     </div>
                     <span className="shrink-0 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
                       レビューを読む →
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {reviewedFamilies.length > 0 && (
+          <section>
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              最近レビューのある大会
+            </h2>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {reviewedFamilies.map((item) => (
+                <li key={item.family}>
+                  <Link
+                    className="group flex h-full items-center justify-between rounded-xl border border-slate-200 bg-white py-4 pl-4 pr-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm"
+                    href={`/c/${item.family}/${item.competitionSeason}`}
+                    style={{
+                      borderLeftColor: getCompetitionFamilyColor(item.family),
+                      borderLeftWidth: "4px",
+                    }}
+                  >
+                    <div>
+                      <span className="block font-semibold text-[var(--color-ink)]">
+                        {formatFamilyName(item.family)}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-[var(--color-ink-muted)]">
+                        {item.competitionSeason}
+                      </span>
+                    </div>
+                    <span className="text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
+                      →
                     </span>
                   </Link>
                 </li>

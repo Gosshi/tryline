@@ -31,6 +31,14 @@ export type CompetitionSummary = {
   endDate: string | null;
 };
 
+export type ReviewedFamily = {
+  family: string;
+  competitionName: string;
+  competitionSeason: string;
+  competitionSlug: string;
+  latestReviewAt: string;
+};
+
 export type RecentlyReviewedMatch = MatchListItem & {
   competition: { slug: string; name: string; season: string };
   recapGeneratedAt: string;
@@ -123,6 +131,18 @@ type RecentlyReviewedContentRow = {
   content_md_ja: string;
   generated_at: string;
   match: RecentlyReviewedMatchRow | null;
+};
+
+type RecentlyReviewedFamilyContentRow = {
+  generated_at: string;
+  match: {
+    competition: {
+      family: string;
+      slug: string;
+      name: string;
+      season: string;
+    } | null;
+  } | null;
 };
 
 type UpcomingMatchRow = BaseMatchRow & {
@@ -378,6 +398,62 @@ export async function getRecentlyReviewedMatches(
         ),
       };
     });
+}
+
+export async function getRecentlyReviewedFamilies(
+  limit = 4,
+): Promise<ReviewedFamily[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("match_content")
+    .select(
+      `
+        generated_at,
+        match:matches!match_content_match_id_fkey (
+          competition:competitions!matches_competition_id_fkey (
+            slug,
+            name,
+            season,
+            family
+          )
+        )
+      `,
+    )
+    .eq("content_type", "recap")
+    .eq("language", "ja")
+    .eq("status", "published")
+    .order("generated_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    throw error;
+  }
+
+  const seen = new Set<string>();
+  const result: ReviewedFamily[] = [];
+
+  for (const row of data satisfies RecentlyReviewedFamilyContentRow[]) {
+    const comp = row.match?.competition;
+
+    if (!comp || seen.has(comp.family)) {
+      continue;
+    }
+
+    seen.add(comp.family);
+    result.push({
+      competitionName: comp.name,
+      competitionSeason: comp.season,
+      competitionSlug: comp.slug,
+      family: comp.family,
+      latestReviewAt: row.generated_at,
+    });
+
+    if (result.length >= limit) {
+      break;
+    }
+  }
+
+  return result;
 }
 
 export async function getLatestCompletedMatch(): Promise<LatestCompletedMatch | null> {
