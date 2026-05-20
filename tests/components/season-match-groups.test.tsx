@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import {
   SeasonMatchGroups,
   getDefaultOpenGroupIndex,
+  getDefaultOpenGroupIndexes,
   shouldCollapseRoundGroups,
 } from "@/components/season-match-groups";
 
@@ -76,6 +77,22 @@ describe("season match groups", () => {
     ).toBe(2);
   });
 
+  it("opens the default round and neighboring rounds by default", () => {
+    const groupedMatches = [
+      buildGroup(1, "2026-01-01T00:00:00.000Z"),
+      buildGroup(2, "2026-01-08T00:00:00.000Z"),
+      buildGroup(3, "2026-01-15T00:00:00.000Z"),
+      buildGroup(4, "2026-01-22T00:00:00.000Z"),
+    ];
+
+    expect([
+      ...getDefaultOpenGroupIndexes(
+        groupedMatches,
+        new Date("2026-01-10T00:00:00.000Z"),
+      ),
+    ]).toEqual([1, 2, 3]);
+  });
+
   it("toggles a collapsible round section", () => {
     const groupedMatches = Array.from({ length: 10 }, (_, index) =>
       buildGroup(
@@ -91,10 +108,10 @@ describe("season match groups", () => {
       />,
     );
 
-    const roundOneButton = screen.getByRole("button", { name: "第1節" });
+    const roundNineButton = screen.getByRole("button", { name: "第9節" });
 
-    expect(roundOneButton).toHaveAttribute("aria-expanded", "false");
-    fireEvent.click(roundOneButton);
-    expect(roundOneButton).toHaveAttribute("aria-expanded", "true");
+    expect(roundNineButton).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(roundNineButton);
+    expect(roundNineButton).toHaveAttribute("aria-expanded", "false");
   });
 });

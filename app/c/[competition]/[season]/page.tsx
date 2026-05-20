@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
@@ -86,6 +86,13 @@ export default async function SeasonPage({ params }: Props) {
   const comp = await getCompetitionBySlug(`${competition}-${season}`);
 
   if (!comp) {
+    const available = await listSeasonsByFamily(competition);
+    const latest = available[0];
+
+    if (latest) {
+      redirect(`/c/${competition}/${latest.season}`);
+    }
+
     notFound();
   }
 
