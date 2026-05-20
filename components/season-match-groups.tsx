@@ -71,19 +71,40 @@ export function getDefaultOpenGroupIndex(
   return completedIndex + 1;
 }
 
+export function getDefaultOpenGroupIndexes(
+  groupedMatches: Array<[GroupKey, MatchListItem[]]>,
+  now = new Date(),
+): Set<number> {
+  if (groupedMatches.length === 0) {
+    return new Set();
+  }
+
+  const center = getDefaultOpenGroupIndex(groupedMatches, now);
+
+  if (center < 0) {
+    return new Set([0]);
+  }
+
+  return new Set(
+    [center - 1, center, center + 1].filter(
+      (index) => index >= 0 && index < groupedMatches.length,
+    ),
+  );
+}
+
 export function SeasonMatchGroups({
   contentStatusMap,
   family,
   groupedMatches,
 }: SeasonMatchGroupsProps) {
   const collapsible = shouldCollapseRoundGroups(groupedMatches);
-  const defaultOpenIndex = useMemo(
-    () => getDefaultOpenGroupIndex(groupedMatches),
+  const defaultOpenIndexes = useMemo(
+    () => getDefaultOpenGroupIndexes(groupedMatches),
     [groupedMatches],
   );
   const [openIndexes, setOpenIndexes] = useState<Set<number>>(() =>
-    collapsible && defaultOpenIndex >= 0
-      ? new Set([defaultOpenIndex])
+    collapsible
+      ? defaultOpenIndexes
       : new Set(groupedMatches.map((_, index) => index)),
   );
 

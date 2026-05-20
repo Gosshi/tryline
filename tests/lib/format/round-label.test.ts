@@ -21,4 +21,11 @@ describe("formatRoundLabel", () => {
   it("keeps non-RWC knockout round numbers unchanged", () => {
     expect(formatRoundLabel(8, "six-nations")).toBe("第8節");
   });
+
+  it("maps Wikipedia large playoff round numbers to stage labels", () => {
+    expect(formatRoundLabel(100, "urc")).toBe("準々決勝");
+    expect(formatRoundLabel(101, "premiership")).toBe("準決勝");
+    expect(formatRoundLabel(102)).toBe("決勝");
+    expect(formatRoundLabel(103)).toBe("3位決定戦");
+  });
 });
