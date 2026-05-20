@@ -7,23 +7,29 @@ import {
 } from "@/lib/format/competition";
 
 describe("formatFamilyName", () => {
-  it("formats PNC family aliases as Nations Cup", () => {
-    expect(formatFamilyName("pnc")).toBe("Nations Cup");
-    expect(formatFamilyName("pacific-nations-cup")).toBe("Nations Cup");
+  it("formats PNC family aliases as Pacific Nations Cup", () => {
+    expect(formatFamilyName("pnc")).toBe("Pacific Nations Cup");
+    expect(formatFamilyName("pacific-nations-cup")).toBe("Pacific Nations Cup");
+  });
+
+  it("formats formal competition family names", () => {
+    expect(formatFamilyName("rugby-championship")).toBe(
+      "The Rugby Championship",
+    );
+    expect(formatFamilyName("rwc")).toBe("Rugby World Cup");
   });
 
   it("formats League One family name in Japanese", () => {
-    expect(formatFamilyName("league-one")).toBe(
-      "ジャパンラグビー リーグワン",
-    );
+    expect(formatFamilyName("league-one")).toBe("ジャパンラグビー リーグワン");
   });
 
   it("formats League One competition titles in Japanese without changing slugs", () => {
     expect(formatCompetitionTitle("League One", "2025-26")).toBe(
       "ジャパンラグビー リーグワン 2025-26",
     );
-    expect(formatCompetitionTitle("Japan Rugby League One 2024-25", "2024-25"))
-      .toBe("ジャパンラグビー リーグワン 2024-25");
+    expect(
+      formatCompetitionTitle("Japan Rugby League One 2024-25", "2024-25"),
+    ).toBe("ジャパンラグビー リーグワン 2024-25");
   });
 
   it("returns competition family colors with a fallback", () => {
