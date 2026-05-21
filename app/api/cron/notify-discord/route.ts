@@ -128,8 +128,7 @@ export async function POST(request: Request) {
         .in("content_type", ["recap", "preview"])
         .is("discord_notified_at", null)
         .gte("matches.kickoff_at", sevenDaysAgo)
-        .order("generated_at", { ascending: true })
-        .limit(5),
+        .order("generated_at", { ascending: true }),
       db
         .from("match_content")
         .select(selectClause)
@@ -138,8 +137,7 @@ export async function POST(request: Request) {
         .in("content_type", ["recap", "preview"])
         .is("discord_notified_at", null)
         .gte("matches.kickoff_at", sevenDaysAgo)
-        .order("generated_at", { ascending: true })
-        .limit(5),
+        .order("generated_at", { ascending: true }),
     ]);
 
     if (jaResult.error) {
