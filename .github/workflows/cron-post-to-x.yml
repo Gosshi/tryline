@@ -1,4 +1,4 @@
-name: Cron — Post to X
+name: Cron — Notify Discord
 
 on:
   schedule:
@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  post-to-x:
+  notify-discord:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger post-to-x
+      - name: Trigger notify-discord
         run: |
           curl -f -X POST \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            https://www.trylinerugby.com/api/cron/post-to-x
+            https://www.trylinerugby.com/api/cron/notify-discord
