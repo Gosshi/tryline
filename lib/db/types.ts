@@ -324,6 +324,7 @@ export type Database = {
         Row: {
           content_md_ja: string;
           content_type: string;
+          discord_notified_at: string | null;
           generated_at: string;
           id: string;
           language: string;
@@ -337,6 +338,7 @@ export type Database = {
         Insert: {
           content_md_ja: string;
           content_type: string;
+          discord_notified_at?: string | null;
           generated_at?: string;
           id?: string;
           language?: string;
@@ -350,6 +352,7 @@ export type Database = {
         Update: {
           content_md_ja?: string;
           content_type?: string;
+          discord_notified_at?: string | null;
           generated_at?: string;
           id?: string;
           language?: string;

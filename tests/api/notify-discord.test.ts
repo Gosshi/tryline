@@ -17,6 +17,7 @@ type ContentFixture = {
 };
 
 const dbMock = vi.hoisted(() => ({
+  filters: [] as Array<{ column: string; value: unknown }>,
   rowsByLanguage: {
     en: [] as ContentFixture[],
     ja: [] as ContentFixture[],
@@ -25,7 +26,7 @@ const dbMock = vi.hoisted(() => ({
 }));
 
 const xMock = vi.hoisted(() => ({
-  postMatchRecapToX: vi.fn(),
+  buildTweetText: vi.fn(),
 }));
 
 vi.mock("@/lib/db/server", () => ({
@@ -55,7 +56,8 @@ vi.mock("@/lib/db/server", () => ({
         in() {
           return this;
         },
-        is() {
+        is(column: string, value: unknown) {
+          dbMock.filters.push({ column, value });
           return this;
         },
         limit() {
@@ -125,7 +127,7 @@ function buildContent(
   };
 }
 
-describe("/api/cron/post-to-x", () => {
+describe("/api/cron/notify-discord", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
@@ -133,6 +135,8 @@ describe("/api/cron/post-to-x", () => {
     vi.setSystemTime(new Date("2026-05-21T12:00:00.000Z"));
 
     process.env.CRON_SECRET = "test-cron-secret";
+    process.env.DISCORD_WEBHOOK_EN = "https://discord.com/api/webhooks/en";
+    process.env.DISCORD_WEBHOOK_JA = "https://discord.com/api/webhooks/ja";
     process.env.NEXT_PUBLIC_SUPABASE_URL = "";
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "";
     process.env.OPENAI_API_KEY = "";
@@ -143,17 +147,23 @@ describe("/api/cron/post-to-x", () => {
     process.env.VAPID_SUBJECT = "";
     process.env.WIKIPEDIA_SQUAD_URL =
       "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
+    dbMock.filters = [];
     dbMock.rowsByLanguage.en = [];
     dbMock.rowsByLanguage.ja = [];
     dbMock.updates = [];
-    xMock.postMatchRecapToX.mockResolvedValue("tweet-1");
+    xMock.buildTweetText.mockReturnValue("draft tweet");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve({ ok: true, status: 204 })),
+    );
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
-  it("marks stale previews as posted without sending them to X", async () => {
+  it("marks stale previews as notified without posting to Discord", async () => {
     dbMock.rowsByLanguage.ja = [
       buildContent({
         content_type: "preview",
@@ -163,9 +173,9 @@ describe("/api/cron/post-to-x", () => {
       }),
     ];
 
-    const { POST } = await import("@/app/api/cron/post-to-x/route");
+    const { POST } = await import("@/app/api/cron/notify-discord/route");
     const response = await POST(
-      new Request("http://localhost/api/cron/post-to-x", {
+      new Request("http://localhost/api/cron/notify-discord", {
         headers: { Authorization: "Bearer test-cron-secret" },
         method: "POST",
       }),
@@ -173,17 +183,18 @@ describe("/api/cron/post-to-x", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body.posted).toBe(0);
-    expect(xMock.postMatchRecapToX).not.toHaveBeenCalled();
+    expect(body.notified).toBe(0);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(xMock.buildTweetText).not.toHaveBeenCalled();
     expect(dbMock.updates).toEqual([
       {
         id: "stale-preview",
-        payload: { x_posted_at: "2026-05-21T12:00:00.000Z" },
+        payload: { discord_notified_at: "2026-05-21T12:00:00.000Z" },
       },
     ]);
   });
 
-  it("continues to post future previews and finished recaps", async () => {
+  it("sends Japanese and English draft notifications to separate webhooks", async () => {
     dbMock.rowsByLanguage.ja = [
       buildContent({
         content_type: "preview",
@@ -191,17 +202,20 @@ describe("/api/cron/post-to-x", () => {
         kickoff_at: "2026-05-21T12:01:00.000Z",
         match_id: "match-2",
       }),
+    ];
+    dbMock.rowsByLanguage.en = [
       buildContent({
         content_type: "recap",
-        id: "finished-recap",
+        id: "finished-recap-en",
         kickoff_at: "2026-05-21T11:00:00.000Z",
+        language: "en",
         match_id: "match-3",
       }),
     ];
 
-    const { POST } = await import("@/app/api/cron/post-to-x/route");
+    const { POST } = await import("@/app/api/cron/notify-discord/route");
     const response = await POST(
-      new Request("http://localhost/api/cron/post-to-x", {
+      new Request("http://localhost/api/cron/notify-discord", {
         headers: { Authorization: "Bearer test-cron-secret" },
         method: "POST",
       }),
@@ -209,11 +223,33 @@ describe("/api/cron/post-to-x", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body.posted).toBe(2);
-    expect(xMock.postMatchRecapToX).toHaveBeenCalledTimes(2);
+    expect(body.notified).toBe(2);
+    expect(dbMock.filters).toContainEqual({
+      column: "discord_notified_at",
+      value: null,
+    });
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      "https://discord.com/api/webhooks/ja",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      "https://discord.com/api/webhooks/en",
+      expect.objectContaining({ method: "POST" }),
+    );
+    const firstPayload = JSON.parse(
+      (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
+    ) as { embeds: Array<{ fields: Array<{ value: string }> }> };
+    expect(firstPayload.embeds[0]?.fields[0]?.value).toContain(
+      "```\ndraft tweet\n```",
+    );
+    expect(firstPayload.embeds[0]?.fields[1]?.value).toBe(
+      "https://www.trylinerugby.com/matches/match-2",
+    );
     expect(dbMock.updates.map((update) => update.id)).toEqual([
       "future-preview",
-      "finished-recap",
+      "finished-recap-en",
     ]);
   });
 });
