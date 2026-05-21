@@ -8,6 +8,7 @@ import {
 function buildSeason(
   season: string,
   matchCount: number,
+  publishedContentCount = 0,
 ): CompetitionRow {
   return {
     endDate: null,
@@ -15,6 +16,7 @@ function buildSeason(
     id: season,
     matchCount,
     name: `Autumn Nations Series ${season}`,
+    publishedContentCount,
     season,
     slug: `autumn-nations-${season}`,
     startDate: null,
@@ -22,6 +24,16 @@ function buildSeason(
 }
 
 describe("selectLatestSeasonWithMatches", () => {
+  it("prefers the latest season that has published content", () => {
+    const result = selectLatestSeasonWithMatches([
+      buildSeason("2026", 12, 0),
+      buildSeason("2025", 21, 3),
+      buildSeason("2024", 20, 8),
+    ]);
+
+    expect(result?.season).toBe("2025");
+  });
+
   it("prefers the latest season that has matches", () => {
     const result = selectLatestSeasonWithMatches([
       buildSeason("2026", 0),
