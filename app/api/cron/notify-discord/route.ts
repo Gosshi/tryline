@@ -175,9 +175,7 @@ export async function POST(request: Request) {
       const homeTeam = firstRelation(match.home_team);
       const awayTeam = firstRelation(match.away_team);
       const competition = firstRelation(match.competition);
-      const competitionLabel = [competition?.name, competition?.season]
-        .filter(Boolean)
-        .join(" ");
+      const competitionLabel = competition?.name ?? "";
       const homeDisplayName =
         content.language === "en"
           ? (homeTeam?.english_name ?? homeTeam?.name ?? "Home")
