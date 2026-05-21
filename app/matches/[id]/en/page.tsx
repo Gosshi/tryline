@@ -46,7 +46,7 @@ export async function generateMetadata({
     match.competition.name,
     match.competition.season,
   );
-  const title = `${match.homeTeam.name} vs ${match.awayTeam.name} — ${competition} | Tryline`;
+  const title = `${match.homeTeam.name} vs ${match.awayTeam.name} — ${competition}`;
   const sourceContent = content.recap ?? content.preview;
   const description = sourceContent
     ? extractDescription(sourceContent.contentMdJa)
@@ -160,10 +160,10 @@ export default async function MatchEnglishPage({
             <MatchContentSection
               content={englishContent.preview}
               contentType="preview"
-              isPremium={premium}
+              isPremium={true}
               language="en"
               match={match}
-              showCta={englishContent.recap === null}
+              showCta={false}
             />
           )}
           {englishContent.recap && (
