@@ -13,6 +13,8 @@ import { TeamBadge } from "./team-badge";
 import type { MatchDetail } from "@/lib/db/queries/matches";
 
 type MatchHeaderProps = {
+  awayDisplayName?: string;
+  homeDisplayName?: string;
   match: MatchDetail;
 };
 
@@ -40,11 +42,17 @@ function buildYouTubeSearchUrl(
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
 }
 
-export function MatchHeader({ match }: MatchHeaderProps) {
+export function MatchHeader({
+  awayDisplayName,
+  homeDisplayName,
+  match,
+}: MatchHeaderProps) {
   const localTimezone = getVenueTimezone(match.homeTeam.slug);
   const outcome = getMatchOutcome(match);
   const homeColor = getTeamColor(match.homeTeam.slug);
   const awayColor = getTeamColor(match.awayTeam.slug);
+  const homeName = homeDisplayName ?? match.homeTeam.name;
+  const awayName = awayDisplayName ?? match.awayTeam.name;
 
   return (
     <section className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
@@ -56,7 +64,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
         }}
       />
       <h1 className="sr-only font-heading">
-        {match.homeTeam.name} vs {match.awayTeam.name}
+        {homeName} vs {awayName}
       </h1>
       <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
         <div className="flex items-center justify-between gap-4">
@@ -83,7 +91,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
           <TeamBlock
             align="right"
             dimmed={outcome === "away_win"}
-            name={match.homeTeam.name}
+            name={homeName}
             slug={match.homeTeam.slug}
             shortCode={match.homeTeam.shortCode}
           />
@@ -102,7 +110,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
           <TeamBlock
             align="left"
             dimmed={outcome === "home_win"}
-            name={match.awayTeam.name}
+            name={awayName}
             slug={match.awayTeam.slug}
             shortCode={match.awayTeam.shortCode}
           />
@@ -125,8 +133,8 @@ export function MatchHeader({ match }: MatchHeaderProps) {
             <a
               className="inline-flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
               href={buildYouTubeSearchUrl(
-                match.homeTeam.name,
-                match.awayTeam.name,
+                homeName,
+                awayName,
                 match.kickoffAt,
               )}
               rel="noreferrer noopener"

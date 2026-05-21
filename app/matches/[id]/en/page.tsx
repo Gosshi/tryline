@@ -46,11 +46,13 @@ export async function generateMetadata({
     match.competition.name,
     match.competition.season,
   );
-  const title = `${match.homeTeam.name} vs ${match.awayTeam.name} — ${competition}`;
+  const homeDisplayName = match.homeTeam.englishName ?? match.homeTeam.name;
+  const awayDisplayName = match.awayTeam.englishName ?? match.awayTeam.name;
+  const title = `${homeDisplayName} vs ${awayDisplayName} — ${competition}`;
   const sourceContent = content.recap ?? content.preview;
   const description = sourceContent
     ? extractDescription(sourceContent.contentMdJa)
-    : `${match.homeTeam.name} vs ${match.awayTeam.name} rugby match analysis.`;
+    : `${homeDisplayName} vs ${awayDisplayName} rugby match analysis.`;
   const score =
     match.homeScore !== null && match.awayScore !== null
       ? `${match.homeScore}–${match.awayScore}`
@@ -69,9 +71,9 @@ export async function generateMetadata({
       description,
       images: [
         createMatchOgImage({
-          away: match.awayTeam.name,
+          away: awayDisplayName,
           competition,
-          home: match.homeTeam.name,
+          home: homeDisplayName,
           score,
           status: match.status === "in_progress" ? "live" : match.status,
         }),
@@ -101,6 +103,8 @@ export default async function MatchEnglishPage({
   }
 
   const premium = user ? await isPremium(user.id) : false;
+  const homeDisplayName = match.homeTeam.englishName ?? match.homeTeam.name;
+  const awayDisplayName = match.awayTeam.englishName ?? match.awayTeam.name;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -131,27 +135,31 @@ export default async function MatchEnglishPage({
           </ol>
         </nav>
 
-        <MatchHeader match={match} />
+        <MatchHeader
+          awayDisplayName={awayDisplayName}
+          homeDisplayName={homeDisplayName}
+          match={match}
+        />
 
         <div className="flex items-center justify-end">
           <LangToggle currentLang="en" matchId={match.id} />
         </div>
 
         <MatchEventsSection
-          awayTeamName={match.awayTeam.name}
+          awayTeamName={awayDisplayName}
           awayTeamSlug={match.awayTeam.slug}
           events={events}
           finalAwayScore={match.awayScore ?? 0}
           finalHomeScore={match.homeScore ?? 0}
           homeTeamId={match.homeTeamId}
-          homeTeamName={match.homeTeam.name}
+          homeTeamName={homeDisplayName}
           homeTeamSlug={match.homeTeam.slug}
         />
 
         <MatchLineupsSection
-          awayTeamName={match.awayTeam.name}
+          awayTeamName={awayDisplayName}
           homeTeamId={match.homeTeamId}
-          homeTeamName={match.homeTeam.name}
+          homeTeamName={homeDisplayName}
           players={lineups}
         />
 
