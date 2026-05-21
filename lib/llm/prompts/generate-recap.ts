@@ -4,7 +4,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@2.1.0";
+export const PROMPT_VERSION = "recap@2.2.0";
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -16,11 +16,13 @@ export function buildGenerateRecapPrompt(
     assembled.projected_lineups.home.length > 0 ||
     assembled.projected_lineups.away.length > 0;
   const isDataSparse = !hasEvents && !hasLineups;
+  const sectionHeadingInstruction =
+    "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。";
   const structureInstruction = hasLineups
-    ? "構成: 1)試合全体像(400-500字) 2)ターニングポイント(500-600字) 3)MOM選出と根拠(300-400字) 4)次戦への示唆(300-400字)。全体で2,000字以上を目標とすること。"
+    ? `構成: 1)試合全体像(400-500字) 2)ターニングポイント(500-600字) 3)MOM選出と根拠(300-400字) 4)次戦への示唆(300-400字)。全体で2,000字以上を目標とすること。${sectionHeadingInstruction}`
     : isDataSparse
-      ? "構成: 1)試合全体像(500-600字) 2)大会文脈・順位への影響(400-500字) 3)両チームの近況と戦術傾向(500-600字) 4)次戦への示唆(300-400字)。全体で2,000字以上を目標とすること。MOM セクションは省略すること。"
-      : "構成: 1)試合全体像(400-500字) 2)ターニングポイント(500-600字) 3)次戦への示唆(300-400字)。MOM セクションは省略すること（ラインアップデータなし）。全体で1,500字以上を目標とすること。";
+      ? `構成: 1)試合全体像(500-600字) 2)大会文脈・順位への影響(400-500字) 3)両チームの近況と戦術傾向(500-600字) 4)次戦への示唆(300-400字)。全体で2,000字以上を目標とすること。MOM セクションは省略すること。${sectionHeadingInstruction}`
+      : `構成: 1)試合全体像(400-500字) 2)ターニングポイント(500-600字) 3)次戦への示唆(300-400字)。MOM セクションは省略すること（ラインアップデータなし）。全体で1,500字以上を目標とすること。${sectionHeadingInstruction}`;
   const signalsBlock =
     additionalSignals.length === 0
       ? ""
