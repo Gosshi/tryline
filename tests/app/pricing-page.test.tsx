@@ -87,14 +87,21 @@ describe("PricingPage", () => {
     for (const feature of [
       "試合スコア・順位表・得点推移グラフ",
       "大会アーカイブ閲覧",
-      "AI 日本語レビュー（冒頭 300 文字）",
-      "AI 日本語レビュー全文",
       "AI 日本語プレビュー全文",
+      "AI 日本語レビュー全文",
       "試合 AI チャット",
       "Web プッシュ通知",
     ]) {
-      expect(screen.getByText(feature)).toBeInTheDocument();
+      expect(screen.getAllByText(feature).length).toBeGreaterThan(0);
     }
+    expect(
+      screen.queryByText("AI 日本語レビュー（冒頭 300 文字）"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "試合スコア・順位表・ラインナップ・AI 日本語プレビュー全文・Web プッシュ通知は無料でご利用いただけます。AI 日本語レビュー全文・AI チャットは Premium 限定です。",
+      ),
+    ).toBeInTheDocument();
 
     expect(
       screen.getByRole("heading", {

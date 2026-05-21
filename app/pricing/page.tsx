@@ -20,9 +20,8 @@ export const metadata: Metadata = {
 const features = [
   { free: true, name: "試合スコア・順位表・得点推移グラフ", premium: true },
   { free: true, name: "大会アーカイブ閲覧", premium: true },
-  { free: true, name: "AI 日本語レビュー（冒頭 300 文字）", premium: true },
+  { free: true, name: "AI 日本語プレビュー全文", premium: true },
   { free: false, name: "AI 日本語レビュー全文", premium: true },
-  { free: false, name: "AI 日本語プレビュー全文", premium: true },
   { free: false, name: "試合 AI チャット", premium: true },
   { free: true, name: "Web プッシュ通知", premium: true },
 ];
@@ -30,7 +29,7 @@ const features = [
 const faqs = [
   {
     answer:
-      "試合スコア・順位表・ラインナップ・Web プッシュ通知は無料でご利用いただけます。AI 日本語プレビュー・レビューは冒頭 300 文字まで無料で読めます。全文・AI チャットは Premium 限定です。",
+      "試合スコア・順位表・ラインナップ・AI 日本語プレビュー全文・Web プッシュ通知は無料でご利用いただけます。AI 日本語レビュー全文・AI チャットは Premium 限定です。",
     question: "無料でどこまで利用できますか？",
   },
   {
