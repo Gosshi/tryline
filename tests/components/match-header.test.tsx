@@ -12,6 +12,7 @@ import type { MatchDetail } from "@/lib/db/queries/matches";
 const match: MatchDetail = {
   awayScore: null,
   awayTeam: {
+    englishName: null,
     name: "France",
     shortCode: "FRA",
     slug: "france",
@@ -25,6 +26,7 @@ const match: MatchDetail = {
   },
   homeScore: null,
   homeTeam: {
+    englishName: null,
     name: "Ireland",
     shortCode: "IRL",
     slug: "ireland",
@@ -126,6 +128,40 @@ describe("MatchHeader", () => {
     ).toHaveAttribute(
       "href",
       "https://www.youtube.com/results?search_query=Ireland%20vs%20France%202027%20highlights",
+    );
+  });
+
+  it("uses display name overrides for EN pages", () => {
+    render(
+      <MatchHeader
+        awayDisplayName="Les Bleus"
+        homeDisplayName="Irish Rugby"
+        match={{
+          ...match,
+          awayScore: 28,
+          homeScore: 31,
+          status: "finished",
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Irish Rugby vs Les Bleus",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Irish Rugby" })).toHaveAttribute(
+      "href",
+      "/teams/ireland",
+    );
+    expect(
+      screen.getByRole("link", {
+        name: "YouTube でハイライトを検索",
+      }),
+    ).toHaveAttribute(
+      "href",
+      "https://www.youtube.com/results?search_query=Irish%20Rugby%20vs%20Les%20Bleus%202027%20highlights",
     );
   });
 

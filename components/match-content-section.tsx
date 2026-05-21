@@ -39,6 +39,10 @@ export function MatchContentSection({
     matchStatus: match.status,
     now: new Date(),
   });
+  const matchTitle =
+    language === "en"
+      ? `${match.homeTeam.englishName ?? match.homeTeam.name} vs ${match.awayTeam.englishName ?? match.awayTeam.name}`
+      : `${match.homeTeam.name} vs ${match.awayTeam.name}`;
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
@@ -54,7 +58,7 @@ export function MatchContentSection({
           contentType={contentType}
           isPremium={isPremium}
           language={language}
-          matchTitle={`${match.homeTeam.name} vs ${match.awayTeam.name}`}
+          matchTitle={matchTitle}
           showCta={showCta}
         />
       ) : (

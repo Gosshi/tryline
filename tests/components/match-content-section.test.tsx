@@ -13,6 +13,7 @@ import type { MatchDetail } from "@/lib/db/queries/matches";
 const match: MatchDetail = {
   awayScore: null,
   awayTeam: {
+    englishName: "France",
     name: "France",
     shortCode: "FRA",
     slug: "france",
@@ -26,6 +27,7 @@ const match: MatchDetail = {
   },
   homeScore: null,
   homeTeam: {
+    englishName: "Ireland",
     name: "Ireland",
     shortCode: "IRL",
     slug: "ireland",
@@ -107,6 +109,37 @@ describe("MatchContentSection", () => {
 
     expect(
       screen.getByText("Ireland vs France の続きを読む"),
+    ).toBeInTheDocument();
+  });
+
+  it("uses English team names for English locked content CTA", () => {
+    render(
+      <MatchContentSection
+        content={{
+          ...content,
+          contentMdJa: "# Overview\n\nFree body\n\n# Analysis\n\nLocked body",
+        }}
+        contentType="preview"
+        isPremium={false}
+        language="en"
+        match={{
+          ...match,
+          awayTeam: {
+            ...match.awayTeam,
+            englishName: "Les Bleus",
+          },
+          homeTeam: {
+            ...match.homeTeam,
+            englishName: "Irish Rugby",
+          },
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "Read the full Irish Rugby vs Les Bleus analysis with Premium",
+      ),
     ).toBeInTheDocument();
   });
 

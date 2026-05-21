@@ -17,9 +17,11 @@ export type MatchListItem = {
   roundName: string | null;
 };
 
-export type MatchDetail = MatchListItem & {
+export type MatchDetail = Omit<MatchListItem, "awayTeam" | "homeTeam"> & {
   competition: { family: string; slug: string; name: string; season: string };
+  awayTeam: MatchListItem["awayTeam"] & { englishName: string | null };
   awayTeamId: string;
+  homeTeam: MatchListItem["homeTeam"] & { englishName: string | null };
   homeTeamId: string;
 };
 
@@ -86,11 +88,13 @@ type BaseMatchRow = {
   venue: string | null;
   external_ids: Json;
   home_team: {
+    english_name?: string | null;
     slug: string;
     name: string;
     short_code: string | null;
   } | null;
   away_team: {
+    english_name?: string | null;
     slug: string;
     name: string;
     short_code: string | null;
@@ -939,11 +943,13 @@ export async function getMatchById(
         home_team:teams!matches_home_team_id_fkey (
           slug,
           name,
+          english_name,
           short_code
         ),
         away_team:teams!matches_away_team_id_fkey (
           slug,
           name,
+          english_name,
           short_code
         ),
         competition:competitions!matches_competition_id_fkey (
@@ -964,17 +970,22 @@ export async function getMatchById(
     return null;
   }
 
-  const match = mapMatchRow(data satisfies MatchDetailRow);
+  const row = data as MatchDetailRow;
+  const match = mapMatchRow(row);
 
-  if (!data.competition) {
+  if (!row.competition) {
     throw new Error(`Match ${matchId} is missing competition relation.`);
   }
 
-  const competition = data.competition as MatchDetailRow["competition"];
+  const competition = row.competition;
 
   return {
     ...match,
-    awayTeamId: data.away_team_id,
+    awayTeam: {
+      ...match.awayTeam,
+      englishName: row.away_team?.english_name ?? null,
+    },
+    awayTeamId: row.away_team_id,
     competition: {
       family:
         competition?.family ??
@@ -983,6 +994,10 @@ export async function getMatchById(
       season: competition!.season,
       slug: competition!.slug,
     },
-    homeTeamId: data.home_team_id,
+    homeTeam: {
+      ...match.homeTeam,
+      englishName: row.home_team?.english_name ?? null,
+    },
+    homeTeamId: row.home_team_id,
   };
 }
