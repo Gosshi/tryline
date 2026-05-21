@@ -18,6 +18,7 @@ import { extractDescription } from "@/lib/match-content/description";
 import { createMatchOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
+import type { MatchStatus } from "@/lib/format/status";
 import type { Metadata } from "next";
 
 type MatchDetailPageProps = {
@@ -28,6 +29,19 @@ type MatchDetailPageProps = {
 
 export const revalidate = 60;
 export const dynamic = "force-dynamic";
+
+function toEventStatus(status: MatchStatus): string {
+  switch (status) {
+    case "finished":
+      return "https://schema.org/EventCompleted";
+    case "postponed":
+      return "https://schema.org/EventPostponed";
+    case "cancelled":
+      return "https://schema.org/EventCancelled";
+    default:
+      return "https://schema.org/EventScheduled";
+  }
+}
 
 export async function generateMetadata({
   params,
@@ -113,6 +127,7 @@ export default async function MatchDetailPage({
       "@type": "SportsTeam",
       name: match.homeTeam.name,
     },
+    eventStatus: toEventStatus(match.status),
     name: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
     sport: "Rugby Union",
     startDate: match.kickoffAt,
@@ -131,7 +146,6 @@ export default async function MatchDetailPage({
             name: match.awayTeam.name,
             score: match.awayScore ?? 0,
           },
-          eventStatus: "https://schema.org/EventScheduled",
           homeTeam: {
             "@type": "SportsTeam",
             name: match.homeTeam.name,
