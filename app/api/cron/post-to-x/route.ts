@@ -116,6 +116,21 @@ export async function POST(request: Request) {
         continue;
       }
 
+      const now = new Date().toISOString();
+
+      if (content.content_type === "preview" && match.kickoff_at < now) {
+        const { error: updateError } = await db
+          .from("match_content")
+          .update({ x_posted_at: now })
+          .eq("id", content.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        continue;
+      }
+
       const homeTeam = firstRelation(match.home_team);
       const awayTeam = firstRelation(match.away_team);
       const competition = firstRelation(match.competition);
