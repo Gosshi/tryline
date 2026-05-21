@@ -2,6 +2,7 @@ name: Cron — Notify Discord
 
 on:
   schedule:
+    - cron: '0 3 * * *'
     - cron: '0 13 * * *'
     - cron: '0 16 * * 6,0'
   workflow_dispatch:
