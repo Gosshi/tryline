@@ -145,24 +145,39 @@ export default async function CompetitionHubPage({ params }: Props) {
             全シーズン
           </h2>
           <ul className="space-y-3">
-            {seasons.map((season) => (
-              <li key={season.slug}>
-                <Link
-                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-slate-400 hover:bg-slate-50"
-                  href={`/c/${competition}/${season.season}`}
-                >
-                  <span className="text-lg font-semibold text-slate-900">
-                    {season.season}
-                  </span>
-                  {season.startDate && season.endDate && (
-                    <span className="text-sm text-slate-500">
-                      {season.startDate.slice(0, 7)} 〜{" "}
-                      {season.endDate.slice(0, 7)}
-                    </span>
+            {seasons.map((season) => {
+              const hasContent = season.publishedContentCount > 0;
+
+              return (
+                <li key={season.slug}>
+                  {hasContent ? (
+                    <Link
+                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-slate-400 hover:bg-slate-50"
+                      href={`/c/${competition}/${season.season}`}
+                    >
+                      <span className="text-lg font-semibold text-slate-900">
+                        {season.season}
+                      </span>
+                      {season.startDate && season.endDate && (
+                        <span className="text-sm text-slate-500">
+                          {season.startDate.slice(0, 7)} 〜{" "}
+                          {season.endDate.slice(0, 7)}
+                        </span>
+                      )}
+                    </Link>
+                  ) : (
+                    <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 opacity-60">
+                      <span className="text-lg font-semibold text-slate-500">
+                        {season.season}
+                      </span>
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        準備中
+                      </span>
+                    </div>
                   )}
-                </Link>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </section>
       </div>

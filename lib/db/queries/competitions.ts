@@ -5,6 +5,7 @@ export type CompetitionRow = {
   slug: string;
   family: string;
   matchCount: number;
+  publishedContentCount: number;
   name: string;
   season: string;
   startDate: string | null;
@@ -29,6 +30,10 @@ type CompetitionDbRow = {
   end_date: string | null;
 };
 
+type MatchContentCompetitionRow = {
+  matches: { competition_id: string } | Array<{ competition_id: string }> | null;
+};
+
 function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
   return {
     endDate: row.end_date,
@@ -36,6 +41,7 @@ function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
     id: row.id,
     matchCount: row.matches?.[0]?.count ?? 0,
     name: row.name,
+    publishedContentCount: 0,
     season: row.season,
     slug: row.slug,
     startDate: row.start_date,
@@ -45,6 +51,14 @@ function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
 export function selectLatestSeasonWithMatches(
   seasons: CompetitionRow[],
 ): CompetitionRow | null {
+  const withContent = seasons.filter(
+    (season) => season.publishedContentCount > 0,
+  );
+
+  if (withContent.length > 0) {
+    return withContent[0] ?? null;
+  }
+
   const withMatches = seasons.filter((season) => season.matchCount > 0);
 
   return withMatches[0] ?? seasons[0] ?? null;
@@ -81,19 +95,51 @@ export async function listSeasonsByFamily(
   family: string,
 ): Promise<CompetitionRow[]> {
   const client = getSupabasePublicServerClient();
-  const { data, error } = await client
-    .from("competitions")
-    .select(
-      "id, slug, family, name, season, start_date, end_date, matches(count)",
-    )
-    .eq("family", family)
-    .order("season", { ascending: false });
+  const [seasonsResult, contentCountsResult] = await Promise.all([
+    client
+      .from("competitions")
+      .select(
+        "id, slug, family, name, season, start_date, end_date, matches(count)",
+      )
+      .eq("family", family)
+      .order("season", { ascending: false }),
+    client
+      .from("match_content")
+      .select("matches!inner(competition_id)")
+      .eq("status", "published"),
+  ]);
 
-  if (error) {
-    throw error;
+  if (seasonsResult.error) {
+    throw seasonsResult.error;
   }
 
-  return ((data ?? []) as CompetitionDbRow[]).map(mapCompetitionRow);
+  if (contentCountsResult.error) {
+    throw contentCountsResult.error;
+  }
+
+  const countByCompetitionId = new Map<string, number>();
+
+  for (const row of
+    (contentCountsResult.data ?? []) as MatchContentCompetitionRow[]) {
+    const relation = row.matches;
+    const matches = Array.isArray(relation)
+      ? relation
+      : relation
+        ? [relation]
+        : [];
+
+    for (const match of matches) {
+      countByCompetitionId.set(
+        match.competition_id,
+        (countByCompetitionId.get(match.competition_id) ?? 0) + 1,
+      );
+    }
+  }
+
+  return ((seasonsResult.data ?? []) as CompetitionDbRow[]).map((row) => ({
+    ...mapCompetitionRow(row),
+    publishedContentCount: countByCompetitionId.get(row.id) ?? 0,
+  }));
 }
 
 export async function getCompetitionBySlug(
