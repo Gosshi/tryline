@@ -165,15 +165,29 @@ function splitAtSecondHeading(blocks: MarkdownBlock[]): {
   free: MarkdownBlock[];
   locked: MarkdownBlock[];
 } {
-  let headingCount = 0;
+  let h1Count = 0;
 
   for (let i = 0; i < blocks.length; i += 1) {
     const block = blocks[i];
 
-    if (block?.type === "heading" && block.level <= 1) {
-      headingCount += 1;
+    if (block?.type === "heading" && block.level === 1) {
+      h1Count += 1;
 
-      if (headingCount === 2) {
+      if (h1Count === 2) {
+        return { free: blocks.slice(0, i), locked: blocks.slice(i) };
+      }
+    }
+  }
+
+  let h2Count = 0;
+
+  for (let i = 0; i < blocks.length; i += 1) {
+    const block = blocks[i];
+
+    if (block?.type === "heading" && block.level === 2) {
+      h2Count += 1;
+
+      if (h2Count === 2) {
         return { free: blocks.slice(0, i), locked: blocks.slice(i) };
       }
     }

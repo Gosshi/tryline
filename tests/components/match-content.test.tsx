@@ -159,6 +159,47 @@ describe("MatchContent", () => {
     expect(screen.queryByText("ロック本文")).toBeNull();
   });
 
+  it("falls back to the second h2 heading when h1 headings are absent", () => {
+    const visibleText = "H2構造の無料本文";
+    const lockedText = "H2構造のロック本文";
+
+    render(
+      <MatchContent
+        content={{
+          ...baseContent,
+          contentMdJa: `## 試合全体像\n\n${visibleText}\n\n## ターニングポイント\n\n${lockedText}`,
+        }}
+        contentType="recap"
+        isPremium={false}
+      />,
+    );
+
+    expect(screen.getByText(visibleText)).toBeInTheDocument();
+    expect(screen.getByText("次のセクション")).toBeInTheDocument();
+    expect(screen.getByText("ターニングポイント →")).toBeInTheDocument();
+    expect(screen.queryByText(lockedText)).toBeNull();
+    expect(screen.getByText(/続きは Premium/)).toBeInTheDocument();
+  });
+
+  it("prefers the second h1 heading when both h1 and h2 headings exist", () => {
+    render(
+      <MatchContent
+        content={{
+          ...baseContent,
+          contentMdJa:
+            "# 試合概要\n\n無料本文\n\n## 無料内の小見出し\n\n小見出し本文\n\n# 有料セクション\n\nロック本文",
+        }}
+        contentType="recap"
+        isPremium={false}
+      />,
+    );
+
+    expect(screen.getByText("無料内の小見出し")).toBeInTheDocument();
+    expect(screen.getByText("小見出し本文")).toBeInTheDocument();
+    expect(screen.getByText("有料セクション →")).toBeInTheDocument();
+    expect(screen.queryByText("ロック本文")).toBeNull();
+  });
+
   it("does not lock content when there is no second top-level heading", () => {
     render(
       <MatchContent
