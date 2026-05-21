@@ -33,8 +33,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 2.1.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@2.1.0");
+  it("uses recap prompt version 2.2.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@2.2.0");
   });
 
   it("instructs the model to use final scores as the winner source", () => {
@@ -57,6 +57,9 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain("MOM セクションは省略すること");
     expect(prompt).toContain("全体で2,000字以上を目標とすること");
+    expect(prompt).toContain(
+      "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。",
+    );
     expect(prompt).toContain("【データスパースモード】");
     expect(prompt).toContain("recent_form の直近5試合");
     expect(prompt).toContain("competition_standings の順位変動");
@@ -96,6 +99,9 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain("ラインアップデータなし");
     expect(prompt).toContain("全体で1,500字以上を目標とすること");
+    expect(prompt).toContain(
+      "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。",
+    );
     expect(prompt).not.toContain("【データスパースモード】");
   });
 
@@ -121,6 +127,9 @@ describe("buildGenerateRecapPrompt", () => {
 
     expect(prompt).toContain("MOM選出と根拠(300-400字)");
     expect(prompt).toContain("全体で2,000字以上を目標とすること");
+    expect(prompt).toContain(
+      "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。",
+    );
   });
 
   it("includes playoff final context with the champion team", () => {
