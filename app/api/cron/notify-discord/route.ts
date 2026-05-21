@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { postMatchRecapToX } from "@/lib/x/post";
+import { getServerEnv } from "@/lib/env";
+import { buildTweetText } from "@/lib/x/post";
 
 export const maxDuration = 60;
 
@@ -36,6 +37,21 @@ type ContentRow = {
   matches: Relation<MatchRow>;
 };
 
+type DiscordEmbed = {
+  title: string;
+  description: string;
+  color: number;
+  fields: Array<{
+    name: string;
+    value: string;
+    inline: false;
+  }>;
+};
+
+type DiscordPayload = {
+  embeds: DiscordEmbed[];
+};
+
 function firstRelation<T>(relation: Relation<T>): T | null {
   if (Array.isArray(relation)) {
     return relation[0] ?? null;
@@ -51,10 +67,37 @@ function createRecapExcerpt(markdown: string): string {
     .slice(0, 120);
 }
 
+function requireDiscordWebhook(
+  value: string | undefined,
+  name: "DISCORD_WEBHOOK_EN" | "DISCORD_WEBHOOK_JA",
+): string {
+  if (!value) {
+    throw new Error(`Missing required Discord webhook environment variable: ${name}`);
+  }
+
+  return value;
+}
+
+async function postToDiscord(
+  webhookUrl: string,
+  payload: DiscordPayload,
+): Promise<void> {
+  const response = await fetch(webhookUrl, {
+    body: JSON.stringify(payload),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Discord webhook failed: ${response.status}`);
+  }
+}
+
 export async function POST(request: Request) {
   try {
     assertCronAuthorized(request);
 
+    const { DISCORD_WEBHOOK_EN, DISCORD_WEBHOOK_JA } = getServerEnv();
     const db = getSupabaseServerClient();
     const sevenDaysAgo = new Date(
       Date.now() - 7 * 24 * 60 * 60 * 1000,
@@ -83,7 +126,7 @@ export async function POST(request: Request) {
         .eq("status", "published")
         .eq("language", "ja")
         .in("content_type", ["recap", "preview"])
-        .is("x_posted_at", null)
+        .is("discord_notified_at", null)
         .gte("matches.kickoff_at", sevenDaysAgo)
         .order("generated_at", { ascending: true })
         .limit(5),
@@ -93,7 +136,7 @@ export async function POST(request: Request) {
         .eq("status", "published")
         .eq("language", "en")
         .in("content_type", ["recap", "preview"])
-        .is("x_posted_at", null)
+        .is("discord_notified_at", null)
         .gte("matches.kickoff_at", sevenDaysAgo)
         .order("generated_at", { ascending: true })
         .limit(5),
@@ -108,7 +151,7 @@ export async function POST(request: Request) {
     }
 
     const data = [...(jaResult.data ?? []), ...(enResult.data ?? [])];
-    const results: Array<{ matchId: string; tweetId: string }> = [];
+    const results: Array<{ language: "ja" | "en"; matchId: string }> = [];
 
     for (const content of data as unknown as ContentRow[]) {
       const match = firstRelation(content.matches);
@@ -121,7 +164,7 @@ export async function POST(request: Request) {
       if (content.content_type === "preview" && match.kickoff_at < now) {
         const { error: updateError } = await db
           .from("match_content")
-          .update({ x_posted_at: now })
+          .update({ discord_notified_at: now })
           .eq("id", content.id);
 
         if (updateError) {
@@ -145,8 +188,19 @@ export async function POST(request: Request) {
         content.language === "en"
           ? (awayTeam?.english_name ?? awayTeam?.name ?? "Away")
           : (awayTeam?.name ?? "Away");
-
-      const tweetId = await postMatchRecapToX({
+      const score =
+        match.home_score !== null && match.away_score !== null
+          ? `${match.home_score} - ${match.away_score}`
+          : "vs";
+      const typeLabel =
+        content.content_type === "preview"
+          ? content.language === "en"
+            ? "📋 Preview"
+            : "📋 プレビュー"
+          : content.language === "en"
+            ? "🏉 Review"
+            : "🏉 レビュー";
+      const draftTweet = buildTweetText({
         awayScore: match.away_score,
         awayTeamName: awayDisplayName,
         competitionLabel,
@@ -157,20 +211,54 @@ export async function POST(request: Request) {
         matchId: content.match_id,
         recapExcerpt: createRecapExcerpt(content.content_md_ja),
       });
+      const matchUrl = `https://www.trylinerugby.com/matches/${content.match_id}${
+        content.language === "en" ? "/en" : ""
+      }`;
+      const payload: DiscordPayload = {
+        embeds: [
+          {
+            color: content.content_type === "preview" ? 0x3b82f6 : 0x22c55e,
+            description: `**${homeDisplayName} ${score} ${awayDisplayName}**`,
+            fields: [
+              {
+                inline: false,
+                name: "X 投稿ドラフト（コピペ用）",
+                value: `\`\`\`\n${draftTweet}\n\`\`\``,
+              },
+              {
+                inline: false,
+                name: "記事",
+                value: matchUrl,
+              },
+            ],
+            title: `${typeLabel} | ${competitionLabel}`,
+          },
+        ],
+      };
+      const webhookUrl =
+        content.language === "en"
+          ? requireDiscordWebhook(DISCORD_WEBHOOK_EN, "DISCORD_WEBHOOK_EN")
+          : requireDiscordWebhook(DISCORD_WEBHOOK_JA, "DISCORD_WEBHOOK_JA");
+
+      await postToDiscord(webhookUrl, payload);
 
       const { error: updateError } = await db
         .from("match_content")
-        .update({ x_posted_at: new Date().toISOString() })
+        .update({ discord_notified_at: new Date().toISOString() })
         .eq("id", content.id);
 
       if (updateError) {
         throw updateError;
       }
 
-      results.push({ matchId: content.match_id, tweetId });
+      results.push({ language: content.language, matchId: content.match_id });
     }
 
-    return NextResponse.json({ posted: results.length, results, status: "ok" });
+    return NextResponse.json({
+      notified: results.length,
+      results,
+      status: "ok",
+    });
   } catch (error) {
     if (error instanceof CronUnauthorizedError) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -179,13 +267,13 @@ export async function POST(request: Request) {
     const err =
       error instanceof Error
         ? {
-            message: error.message,
             code: (error as unknown as Record<string, unknown>).code,
             data: (error as unknown as Record<string, unknown>).data,
+            message: error.message,
             rateLimit: (error as unknown as Record<string, unknown>).rateLimit,
           }
         : error;
-    console.error("[post-to-x] failed", JSON.stringify(err));
+    console.error("[notify-discord] failed", JSON.stringify(err));
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

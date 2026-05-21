@@ -93,7 +93,13 @@ function toHashtag(name: string): string {
 
 export async function postMatchRecapToX(params: XPostParams): Promise<string> {
   const client = new TwitterApi(getXCredentials(params.language));
+  const text = buildTweetText(params);
 
+  const { data } = await client.v2.tweet(text);
+  return data.id;
+}
+
+export function buildTweetText(params: XPostParams): string {
   const score =
     params.homeScore !== null && params.awayScore !== null
       ? `${params.homeScore} - ${params.awayScore}`
@@ -150,6 +156,5 @@ export async function postMatchRecapToX(params: XPostParams): Promise<string> {
     text = [header, matchLine, "", "", `▶️ ${matchUrl}`].join("\n");
   }
 
-  const { data } = await client.v2.tweet(text);
-  return data.id;
+  return text;
 }

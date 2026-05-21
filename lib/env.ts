@@ -7,6 +7,8 @@ const publicEnvSchema = z.object({
 
 const serverEnvSchema = publicEnvSchema.extend({
   CRON_SECRET: z.string(),
+  DISCORD_WEBHOOK_EN: z.string().url().optional(),
+  DISCORD_WEBHOOK_JA: z.string().url().optional(),
   OPENAI_API_KEY: z.string(),
   SCRAPER_USER_AGENT: z.string(),
   SUPABASE_SERVICE_ROLE_KEY: z.string(),
