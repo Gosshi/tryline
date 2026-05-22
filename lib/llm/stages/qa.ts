@@ -20,8 +20,24 @@ export type QaStageResponse = {
   attempts: number;
 };
 
-function resolveVerdict(scores: QaResult["scores"], retryCount: number): QaVerdict {
-  const scoreValues = [scores.information_density, scores.japanese_quality, scores.factual_grounding];
+function resolveVerdict(
+  scores: QaResult["scores"],
+  retryCount: number,
+): QaVerdict {
+  if (scores.tactical_depth <= 2) {
+    if (retryCount >= 2) {
+      return "reject";
+    }
+
+    return "retry";
+  }
+
+  const scoreValues = [
+    scores.information_density,
+    scores.japanese_quality,
+    scores.factual_grounding,
+    scores.tactical_depth,
+  ];
 
   if (scoreValues.every((score) => score >= 3)) {
     return "publish";

@@ -1,15 +1,48 @@
 import type { AssembledContentInput } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "extract@1.2.0";
+export const PROMPT_VERSION = "extract@2.0.0";
 
-export function buildExtractTacticalPointsPrompt(input: AssembledContentInput): string {
+export function buildExtractTacticalPointsPrompt(
+  input: AssembledContentInput,
+): string {
   return [
-    "あなたはラグビー戦術アナリストです。入力データだけを根拠に、具体的な戦術ポイントを3つ抽出してください。",
-    "出力はJSONのみ。スキーマ: {\"tactical_points\":[{\"point\":string,\"detail\":string,\"evidence\":string[]}]}。",
-    "detail は日本語120字程度。一般論は禁止。各ポイントは数値または試合実績に言及すること。",
-    "detail に強調記号（**、*）を使わないこと。",
-    "選手名・チーム名は英語表記のまま使用すること（カタカナ変換しない）。",
-    "直接引用は15語以内。原文を長く転記せず言い換えること。",
+    "あなたはラグビー戦術アナリストです。入力データだけを根拠に、試合の勝敗を左右する戦術的次元を3つ特定してください。",
+    [
+      "出力はJSONのみ。スキーマ:",
+      JSON.stringify({
+        tactical_points: [
+          {
+            tactical_dimension:
+              "string — 戦術次元の名称 (例: スクラム優位性)",
+            home_situation:
+              "string — ホームチームのこの次元における直近の数値・実績（60字以内）",
+            away_situation:
+              "string — アウェイチームのこの次元における直近の数値・実績（60字以内）",
+            matchup_implication:
+              "string — この対比が今試合に何をもたらすか（80字以内、具体的に）",
+            match_impact: "high | medium | low",
+          },
+        ],
+      }),
+    ].join("\n"),
+    [
+      "【禁止事項】",
+      "- 「好調」「重要な局面」「鍵となります」等の一般論は一切禁止",
+      "- 数値根拠のない状態描写（「最近調子が良い」等）は禁止",
+      "- home_situation / away_situation は具体的な数値または試合実績のみ",
+      "- 強調記号（**、*）は使用禁止",
+      "- 選手名・チーム名は英語表記のまま（カタカナ変換しない）",
+      "- 直接引用は15語以内",
+    ].join("\n"),
+    [
+      "【戦術次元の例 — これ以外でも構わない】",
+      "- スクラム優位性（被ペナルティ数・ドライビングモール成功率）",
+      "- キックゲーム制御（exitキック精度・カウンターアタック成功率）",
+      "- ラインアウト精度（自チームボール獲得率・スティール率）",
+      "- ブレイクダウン速度（ターンオーバー数・ペナルティ起因）",
+      "- オフロードアタック（ランメートル・ラインブレイク数）",
+      "- フィールドポジション支配（テリトリー%・22m進入回数）",
+    ].join("\n"),
     `入力JSON: ${JSON.stringify(input)}`,
   ].join("\n\n");
 }

@@ -201,6 +201,7 @@ export async function generateMatchContent(
           information_density: 1,
           japanese_quality: 1,
           factual_grounding: 1,
+          tactical_depth: 1,
         },
         issues: ["qa_json_parse_failed"],
         verdict: "reject",

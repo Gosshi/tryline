@@ -6,8 +6,8 @@ import {
 } from "@/lib/llm/prompts/qa-content";
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 1.2.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@1.2.0");
+  it("uses qa prompt version 2.0.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.0.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -18,7 +18,9 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).toContain("- 4: 1500字以上");
     expect(prompt).toContain("- 3: 1125字以上");
     expect(prompt).toContain("- 2: 750字未満");
-    expect(prompt).toContain("verdict判定: いずれか2以下なら retry");
+    expect(prompt).toContain("### tactical_depth (1-5)");
+    expect(prompt).toContain("一般論が皆無");
+    expect(prompt).toContain("tactical_depth が 2 以下なら無条件で retry");
   });
 
   it("uses recap length thresholds in the information density rubric", () => {

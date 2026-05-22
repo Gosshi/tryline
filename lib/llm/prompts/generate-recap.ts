@@ -4,7 +4,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@2.3.0";
+export const PROMPT_VERSION = "recap@3.0.0";
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -23,6 +23,28 @@ export function buildGenerateRecapPrompt(
     : isDataSparse
       ? `構成: 1)試合全体像(500-600字) 2)大会文脈・順位への影響(400-500字) 3)両チームの近況と戦術傾向(500-600字) 4)次戦への示唆(300-400字)。全体で2,000字以上を目標とすること。MOM セクションは省略すること。${sectionHeadingInstruction}`
       : `構成: 1)試合全体像(400-500字) 2)ターニングポイント(500-600字) 3)次戦への示唆(300-400字)。MOM セクションは省略すること（ラインアップデータなし）。全体で1,500字以上を目標とすること。${sectionHeadingInstruction}`;
+  const persona = [
+    "あなたは国際ラグビーを20年取材してきたジャーナリストです。",
+    "Number やRugby World誌に寄稿し、ファンが試合を深く理解できる",
+    "具体的・分析的な日本語文章を書くことを使命としています。",
+    "試合レビューをマークダウンで作成してください。",
+  ].join("");
+  const coreQuestionBlock = [
+    "## セクション0（必須、200字以内）: # この試合の核心",
+    "試合前の「何 対 何の争い」という問いに対し、実際の結果がどう答えたかを1〜2文で述べること。",
+    "例: 「Leinsterの平均31得点アタックは今日も機能し、Saracensの堅守を41-12で打ち破った」",
+    "このセクションを最初に必ず出力すること。",
+  ].join("\n");
+  const prohibitionsBlock = [
+    "【絶対禁止表現 — 1つでも使った場合は書き直すこと】",
+    "- 「好調」「好調な」「絶好調」（代わりに「直近5試合で4勝」「平均得点32点」等の数値を使うこと）",
+    "- 「重要な一戦」「重要な試合」「重要な局面」",
+    "- 「鍵となります」「鍵を握ります」「鍵となるのは」",
+    "- 「注目のカード」「注目の一戦」",
+    "- 「接戦が予想されます」（代わりに双方の数値差で接戦度を判断すること）",
+    "- 「勝利を目指します」「勝利を狙います」（両チームは常に勝とうとしている）",
+    "- 「〜でしょうか」で文を終える（読者は答えを期待している）",
+  ].join("\n");
   const signalsBlock =
     additionalSignals.length === 0
       ? ""
@@ -97,7 +119,9 @@ export function buildGenerateRecapPrompt(
         ].join("");
 
   return [
-    "あなたは日本語のラグビー専門編集者です。試合レビューをマークダウンで作成してください。",
+    persona,
+    coreQuestionBlock,
+    prohibitionsBlock,
     structureInstruction,
     matchPhaseBlock,
     "各セクションが指定範囲の下限を下回った場合は書き足すこと。",
@@ -111,7 +135,10 @@ export function buildGenerateRecapPrompt(
     matchEventsBlock,
     dataSparseBlock,
     standingsBlock,
-    `戦術ポイント: ${JSON.stringify(tacticalPoints)}`,
+    [
+      "戦術ポイント（tactical_dimension / home_situation / away_situation / matchup_implication を本文の根拠として使うこと）:",
+      JSON.stringify(tacticalPoints),
+    ].join("\n"),
     signalsBlock,
   ]
     .filter(Boolean)

@@ -19,6 +19,7 @@ const qaResult: QaResult = {
     information_density: 2,
     japanese_quality: 3,
     factual_grounding: 4,
+    tactical_depth: 2,
   },
   issues: ["tone_mismatch", "insufficient_evidence"],
   verdict: "reject",

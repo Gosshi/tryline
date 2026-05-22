@@ -12,7 +12,12 @@ describe("evaluateNarrativeQuality", () => {
   it("returns publish when all scores are >= 3", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       text: JSON.stringify({
-        scores: { information_density: 3, japanese_quality: 3, factual_grounding: 3 },
+        scores: {
+          factual_grounding: 3,
+          information_density: 3,
+          japanese_quality: 3,
+          tactical_depth: 3,
+        },
         issues: [],
         verdict: "publish",
       }),
@@ -37,7 +42,12 @@ describe("evaluateNarrativeQuality", () => {
   it("returns retry when any score <= 2 and retry count < 2", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       text: JSON.stringify({
-        scores: { information_density: 2, japanese_quality: 3, factual_grounding: 3 },
+        scores: {
+          factual_grounding: 3,
+          information_density: 2,
+          japanese_quality: 3,
+          tactical_depth: 3,
+        },
         issues: ["x"],
         verdict: "retry",
       }),
@@ -54,10 +64,40 @@ describe("evaluateNarrativeQuality", () => {
     );
   });
 
+  it("returns retry when tactical depth is <= 2 even if other scores pass", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 4,
+          information_density: 4,
+          japanese_quality: 4,
+          tactical_depth: 2,
+        },
+        issues: ["generic"],
+        verdict: "publish",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      narrative: "body",
+      retryCount: 0,
+    });
+
+    expect(result.result.verdict).toBe("retry");
+  });
+
   it("returns reject when retry count is already 2", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       text: JSON.stringify({
-        scores: { information_density: 2, japanese_quality: 3, factual_grounding: 3 },
+        scores: {
+          factual_grounding: 3,
+          information_density: 2,
+          japanese_quality: 3,
+          tactical_depth: 3,
+        },
         issues: ["x"],
         verdict: "retry",
       }),

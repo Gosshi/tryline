@@ -8,9 +8,11 @@ export type AdditionalSignal = {
 };
 
 export type TacticalPoint = {
-  point: string;
-  detail: string;
-  evidence: string[];
+  tactical_dimension: string;
+  home_situation: string;
+  away_situation: string;
+  matchup_implication: string;
+  match_impact: "high" | "medium" | "low";
 };
 
 export type MatchPhase =
@@ -30,6 +32,7 @@ export type QaResult = {
     information_density: number;
     japanese_quality: number;
     factual_grounding: number;
+    tactical_depth: number;
   };
   issues: string[];
   verdict: QaVerdict;
