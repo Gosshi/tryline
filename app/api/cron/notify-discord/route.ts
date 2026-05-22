@@ -15,6 +15,7 @@ type TeamRow = {
 };
 
 type CompetitionRow = {
+  family: string | null;
   name: string | null;
   season: string | null;
 };
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
           away_score,
           home_team:teams!matches_home_team_id_fkey ( name, english_name ),
           away_team:teams!matches_away_team_id_fkey ( name, english_name ),
-          competition:competitions!matches_competition_id_fkey ( name, season )
+          competition:competitions!matches_competition_id_fkey ( name, season, family )
         )
       `;
 
@@ -199,6 +200,7 @@ export async function POST(request: Request) {
       const draftTweet = buildTweetText({
         awayScore: match.away_score,
         awayTeamName: awayDisplayName,
+        competitionFamily: competition?.family ?? null,
         competitionLabel,
         contentType: content.content_type,
         homeScore: match.home_score,

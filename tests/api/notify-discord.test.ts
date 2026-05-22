@@ -9,7 +9,7 @@ type ContentFixture = {
   matches: {
     away_score: number | null;
     away_team: { english_name: string | null; name: string };
-    competition: { name: string; season: string };
+    competition: { family: string | null; name: string; season: string };
     home_score: number | null;
     home_team: { english_name: string | null; name: string };
     kickoff_at: string;
@@ -119,7 +119,11 @@ function buildContent(
     matches: {
       away_score: 17,
       away_team: { english_name: "Away", name: "アウェイ" },
-      competition: { name: "Test League", season: "2026" },
+      competition: {
+        family: "six-nations",
+        name: "Test League",
+        season: "2026",
+      },
       home_score: 24,
       home_team: { english_name: "Home", name: "ホーム" },
       kickoff_at: overrides.kickoff_at,
@@ -246,6 +250,20 @@ describe("/api/cron/notify-discord", () => {
     );
     expect(firstPayload.embeds[0]?.fields[1]?.value).toBe(
       "https://www.trylinerugby.com/matches/match-2",
+    );
+    expect(xMock.buildTweetText).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        competitionFamily: "six-nations",
+        language: "ja",
+      }),
+    );
+    expect(xMock.buildTweetText).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        competitionFamily: "six-nations",
+        language: "en",
+      }),
     );
     expect(dbMock.updates.map((update) => update.id)).toEqual([
       "future-preview",
