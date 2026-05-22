@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
-import { buildTweetText } from "@/lib/x/post";
+import { buildReplyText, buildTweetText } from "@/lib/x/post";
 
 export const maxDuration = 60;
 
@@ -209,6 +209,7 @@ export async function POST(request: Request) {
         matchId: content.match_id,
         recapExcerpt: createRecapExcerpt(content.content_md_ja),
       });
+      const replyText = buildReplyText(content.match_id, content.language);
       const matchUrl = `https://www.trylinerugby.com/matches/${content.match_id}${
         content.language === "en" ? "/en" : ""
       }`;
@@ -222,6 +223,11 @@ export async function POST(request: Request) {
                 inline: false,
                 name: "X 投稿ドラフト（コピペ用）",
                 value: `\`\`\`\n${draftTweet}\n\`\`\``,
+              },
+              {
+                inline: false,
+                name: "X リプライ用（URL）",
+                value: `\`\`\`\n${replyText}\n\`\`\``,
               },
               {
                 inline: false,

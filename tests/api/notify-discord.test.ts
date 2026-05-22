@@ -26,6 +26,7 @@ const dbMock = vi.hoisted(() => ({
 }));
 
 const xMock = vi.hoisted(() => ({
+  buildReplyText: vi.fn(),
   buildTweetText: vi.fn(),
 }));
 
@@ -155,6 +156,12 @@ describe("/api/cron/notify-discord", () => {
     dbMock.rowsByLanguage.en = [];
     dbMock.rowsByLanguage.ja = [];
     dbMock.updates = [];
+    xMock.buildReplyText.mockImplementation(
+      (matchId: string, language: "ja" | "en") =>
+        language === "en"
+          ? `Full AI analysis 👇\nhttps://www.trylinerugby.com/matches/${matchId}/en`
+          : `AI 戦術分析の全文はこちら 👇\nhttps://www.trylinerugby.com/matches/${matchId}`,
+    );
     xMock.buildTweetText.mockReturnValue("draft tweet");
     vi.stubGlobal(
       "fetch",
@@ -248,9 +255,14 @@ describe("/api/cron/notify-discord", () => {
     expect(firstPayload.embeds[0]?.fields[0]?.value).toContain(
       "```\ndraft tweet\n```",
     );
-    expect(firstPayload.embeds[0]?.fields[1]?.value).toBe(
+    expect(firstPayload.embeds[0]?.fields[1]?.value).toContain(
+      "```\nAI 戦術分析の全文はこちら 👇\nhttps://www.trylinerugby.com/matches/match-2\n```",
+    );
+    expect(firstPayload.embeds[0]?.fields[2]?.value).toBe(
       "https://www.trylinerugby.com/matches/match-2",
     );
+    expect(xMock.buildReplyText).toHaveBeenNthCalledWith(1, "match-2", "ja");
+    expect(xMock.buildReplyText).toHaveBeenNthCalledWith(2, "match-3", "en");
     expect(xMock.buildTweetText).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
