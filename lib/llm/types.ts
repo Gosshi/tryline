@@ -137,10 +137,21 @@ export type AssembledContentInput = {
     home: {
       avg_points_for_last_5: number | null;
       avg_points_against_last_5: number | null;
+      win_rate_last_5: number | null;
+      avg_score_diff_last_5: number | null;
+      result_streak: "winning" | "losing" | "mixed" | null;
     };
     away: {
       avg_points_for_last_5: number | null;
       avg_points_against_last_5: number | null;
+      win_rate_last_5: number | null;
+      avg_score_diff_last_5: number | null;
+      result_streak: "winning" | "losing" | "mixed" | null;
+    };
+    match: {
+      penalty_count: { home: number; away: number };
+      try_count: { home: number; away: number };
+      late_scoring: boolean;
     };
   };
 };

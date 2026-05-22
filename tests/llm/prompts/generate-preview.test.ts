@@ -27,14 +27,31 @@ const assembled: AssembledContentInput = {
   projected_lineups: { home: [], away: [] },
   injuries: { home: [], away: [] },
   key_stats: {
-    home: { avg_points_for_last_5: null, avg_points_against_last_5: null },
-    away: { avg_points_for_last_5: null, avg_points_against_last_5: null },
+    home: {
+      avg_points_for_last_5: null,
+      avg_points_against_last_5: null,
+      avg_score_diff_last_5: null,
+      result_streak: null,
+      win_rate_last_5: null,
+    },
+    away: {
+      avg_points_for_last_5: null,
+      avg_points_against_last_5: null,
+      avg_score_diff_last_5: null,
+      result_streak: null,
+      win_rate_last_5: null,
+    },
+    match: {
+      late_scoring: false,
+      penalty_count: { away: 0, home: 0 },
+      try_count: { away: 0, home: 0 },
+    },
   },
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 1.9.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@1.9.0");
+  it("uses preview prompt version 2.0.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@2.0.0");
   });
 
   it("instructs the model to use final scores as the winner source", () => {
@@ -67,6 +84,9 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("competition_standings の現在順位・勝ち点差");
     expect(prompt).toContain("h2h_last_5 の直近対戦傾向");
     expect(prompt).toContain("key_stats の直近平均得点・失点");
+    expect(prompt).toContain("key_stats.home/away の win_rate_last_5");
+    expect(prompt).toContain("key_stats.home/away の avg_score_diff_last_5");
+    expect(prompt).toContain("key_stats.home/away の result_streak");
     expect(prompt).toContain("逃げ表現は一切禁止");
   });
 

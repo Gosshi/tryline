@@ -4,7 +4,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@1.9.0";
+export const PROMPT_VERSION = "preview@2.0.0";
 
 export function buildGeneratePreviewPrompt(
   assembled: AssembledContentInput,
@@ -38,6 +38,9 @@ export function buildGeneratePreviewPrompt(
         "- competition_standings の現在順位・勝ち点差から、この試合の大会的意味を具体的に述べること",
         "- h2h_last_5 の直近対戦傾向を引用し、今回の試合との比較・見どころを示すこと",
         "- key_stats の直近平均得点・失点を使い、この試合の予想スコアレンジや拮抗度を推論すること",
+        "- key_stats.home/away の win_rate_last_5 を使い「好調（0.8〜）」「低調（0.2以下）」等の表現で状態を描写すること",
+        "- key_stats.home/away の avg_score_diff_last_5 が正なら攻撃優位、負なら守備に課題があると読み取ること",
+        "- key_stats.home/away の result_streak が winning/losing の場合は連勝・連敗ストリーク（何連勝/連敗かは recent_form から数える）を明示すること",
         "- 「情報が少ない」「選手不明」等の逃げ表現は一切禁止。手元のデータで書き切ること",
       ].join("\n")
     : "";

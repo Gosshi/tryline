@@ -27,14 +27,31 @@ const assembled: AssembledContentInput = {
   projected_lineups: { home: [], away: [] },
   injuries: { home: [], away: [] },
   key_stats: {
-    home: { avg_points_for_last_5: null, avg_points_against_last_5: null },
-    away: { avg_points_for_last_5: null, avg_points_against_last_5: null },
+    home: {
+      avg_points_for_last_5: null,
+      avg_points_against_last_5: null,
+      avg_score_diff_last_5: null,
+      result_streak: null,
+      win_rate_last_5: null,
+    },
+    away: {
+      avg_points_for_last_5: null,
+      avg_points_against_last_5: null,
+      avg_score_diff_last_5: null,
+      result_streak: null,
+      win_rate_last_5: null,
+    },
+    match: {
+      late_scoring: false,
+      penalty_count: { away: 0, home: 0 },
+      try_count: { away: 0, home: 0 },
+    },
   },
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 2.2.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@2.2.0");
+  it("uses recap prompt version 2.3.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@2.3.0");
   });
 
   it("instructs the model to use final scores as the winner source", () => {
@@ -65,6 +82,9 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("competition_standings の順位変動");
     expect(prompt).toContain("h2h_last_5 の直近対戦スコア");
     expect(prompt).toContain("key_stats の直近平均得点・失点");
+    expect(prompt).toContain("key_stats.match.penalty_count");
+    expect(prompt).toContain("key_stats.match.try_count");
+    expect(prompt).toContain("key_stats.match.late_scoring");
     expect(prompt).toContain(
       "スコアと順位変動のみを記述し、試合展開の描写は行わないこと",
     );

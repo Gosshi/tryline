@@ -4,7 +4,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@2.2.0";
+export const PROMPT_VERSION = "recap@2.3.0";
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -45,6 +45,9 @@ export function buildGenerateRecapPrompt(
         "- competition_standings の順位変動（この試合結果による上昇/下降）を必ず計算して記述すること",
         "- h2h_last_5 の直近対戦スコアを引用し、今回の結果との比較を行うこと",
         "- key_stats の直近平均得点・失点と今回のスコアを対比して試合の特徴を示すこと",
+        "- key_stats.match.penalty_count の合計が 8 以上の場合、テリトリー・プレッシャー型の試合と評価すること",
+        "- key_stats.match.try_count からオープンなラグビー（ハイトライ）かキック主体（ロートライ）かを評価すること",
+        "- key_stats.match.late_scoring が true の場合、終盤まで試合が動いた展開であることを明記すること",
       ].join("\n")
     : "";
   const matchPhaseBlock = (() => {
