@@ -53,6 +53,17 @@ const faqs = [
   },
 ];
 
+const pricingVideoJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  description:
+    "海外ラグビーの試合を AI が日本語で解説。プレビュー・レビュー・AI チャットが使える Tryline の紹介動画です。",
+  embedUrl: "https://www.youtube.com/embed/2kFHgiaI-NA",
+  name: "Tryline — AI ラグビー解説サービス紹介",
+  thumbnailUrl: "https://img.youtube.com/vi/2kFHgiaI-NA/maxresdefault.jpg",
+  uploadDate: "2025-01-01",
+};
+
 function FeatureMark({ enabled }: { enabled: boolean }) {
   return (
     <span
@@ -75,6 +86,12 @@ export default async function PricingPage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
+      <script
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(pricingVideoJsonLd),
+        }}
+        type="application/ld+json"
+      />
       <section className="relative overflow-hidden bg-[var(--color-ink)] px-4 py-16 text-white sm:px-6 sm:py-20 md:px-8">
         <HeroTexture />
         <div className="relative z-10 mx-auto max-w-5xl">
