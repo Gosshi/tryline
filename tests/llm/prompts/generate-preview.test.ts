@@ -50,8 +50,20 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 2.0.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@2.0.0");
+  it("uses preview prompt version 3.0.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.0.0");
+  });
+
+  it("includes the strengthened persona, core question, and prohibitions", () => {
+    const prompt = buildGeneratePreviewPrompt(assembled, [], []);
+
+    expect(prompt).toContain("国際ラグビーを20年取材");
+    expect(prompt).toContain("Number やRugby World誌");
+    expect(prompt).toContain("# この試合の核心");
+    expect(prompt).toContain("何 対 何の争い");
+    expect(prompt).toContain("【絶対禁止表現");
+    expect(prompt).toContain("「好調」");
+    expect(prompt).toContain("「鍵となります」");
   });
 
   it("instructs the model to use final scores as the winner source", () => {

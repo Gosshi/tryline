@@ -197,6 +197,7 @@ describe("diagnose-winner-mismatch", () => {
           factual_grounding: 5,
           information_density: 5,
           japanese_quality: 5,
+          tactical_depth: 5,
         },
         verdict: "publish",
       },

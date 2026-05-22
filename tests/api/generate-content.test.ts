@@ -32,6 +32,7 @@ describe("/api/cron/generate-content", () => {
           information_density: 3,
           japanese_quality: 3,
           factual_grounding: 3,
+          tactical_depth: 3,
         },
         issues: [],
         verdict: "publish",

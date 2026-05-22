@@ -50,6 +50,30 @@ const assembled = {
   },
 };
 
+const tacticalPoints = [
+  {
+    away_situation: "直近5試合で平均17失点",
+    home_situation: "直近5試合で平均31得点",
+    match_impact: "high",
+    matchup_implication: "ホームの速い球出しが相手防御を広げる",
+    tactical_dimension: "アタック効率",
+  },
+  {
+    away_situation: "直近3試合でラインアウト成功率80%",
+    home_situation: "直近3試合でラインアウト成功率92%",
+    match_impact: "medium",
+    matchup_implication: "セットピース起点の地域獲得に差が出る",
+    tactical_dimension: "ラインアウト精度",
+  },
+  {
+    away_situation: "前節は後半70分以降に2失点",
+    home_situation: "前節は終盤10分で10得点",
+    match_impact: "low",
+    matchup_implication: "終盤の得点機会でホームが圧力をかける",
+    tactical_dimension: "終盤得点力",
+  },
+] as const;
+
 describe("extractTacticalPoints", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,11 +82,7 @@ describe("extractTacticalPoints", () => {
   it("returns 3 tactical points from valid JSON", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       text: JSON.stringify({
-        tactical_points: [
-          { point: "A", detail: "a", evidence: ["x"] },
-          { point: "B", detail: "b", evidence: ["y"] },
-          { point: "C", detail: "c", evidence: ["z"] },
-        ],
+        tactical_points: tacticalPoints,
       }),
       model: "gpt-4o-mini-2024-07-18",
       usage: { inputTokens: 3000, outputTokens: 500 },
@@ -74,6 +94,7 @@ describe("extractTacticalPoints", () => {
     expect(result.attempts).toBe(1);
     expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
       expect.objectContaining({
+        input: expect.stringContaining("tactical_dimension"),
         jsonMode: true,
       }),
     );
@@ -88,11 +109,7 @@ describe("extractTacticalPoints", () => {
       })
       .mockResolvedValueOnce({
         text: JSON.stringify({
-          tactical_points: [
-            { point: "A", detail: "a", evidence: ["x"] },
-            { point: "B", detail: "b", evidence: ["y"] },
-            { point: "C", detail: "c", evidence: ["z"] },
-          ],
+          tactical_points: tacticalPoints,
         }),
         model: "gpt-4o-mini-2024-07-18",
         usage: { inputTokens: 100, outputTokens: 100 },

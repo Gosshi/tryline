@@ -1,6 +1,6 @@
 import type { ContentLanguage, ContentType } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@1.2.0";
+export const PROMPT_VERSION = "qa@2.0.0";
 
 export function buildQaContentPrompt(
   contentType: ContentType,
@@ -59,10 +59,17 @@ export function buildQaContentPrompt(
       "- 3: 一部入力にない記述があるが大筋は正確",
       "- 2: 入力データと矛盾する記述がある",
       "- 1: 事実誤認が多数または捏造が疑われる",
+      "",
+      "### tactical_depth (1-5)",
+      "- 5: すべての戦術ポイントに具体的な数値・選手名・プレー描写が含まれ、一般論が皆無",
+      "- 4: 大部分が具体的。軽微な一般論が1〜2箇所",
+      "- 3: 数値や具体描写はあるが「好調」「重要」等の一般論も目立つ",
+      "- 2: 「好調」「鍵となる」等の表層的な記述が支配的",
+      "- 1: ほぼすべてが一般論または機械的な要約",
     ].join("\n"),
     winnerCheckBlock,
-    'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5},"issues":string[],"verdict":"publish"|"retry"|"reject"}',
-    "verdict判定: いずれか2以下なら retry。全て3以上なら publish。重大欠陥で再試行価値がなければ reject。",
+    'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[],"verdict":"publish"|"retry"|"reject"}',
+    "verdict判定: tactical_depth が 2 以下なら無条件で retry（一般論を書き直させる）。それ以外は: いずれか2以下なら retry、全て3以上なら publish、重大欠陥で再試行価値がなければ reject。",
     `本文: ${narrative}`,
   ].join("\n\n");
 }

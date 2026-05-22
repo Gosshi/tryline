@@ -33,6 +33,7 @@ function pipelineResult(
               factual_grounding: 5,
               information_density: 5,
               japanese_quality: 5,
+              tactical_depth: 5,
             },
             verdict: status === "published" ? "publish" : "retry",
           },
@@ -102,8 +103,8 @@ describe("regenerate-overseas-content", () => {
   });
 
   it("exposes current prompt versions", () => {
-    expect(getCurrentPromptVersion("preview")).toBe("preview@2.0.0");
-    expect(getCurrentPromptVersion("recap")).toBe("recap@2.3.0");
+    expect(getCurrentPromptVersion("preview")).toBe("preview@3.0.0");
+    expect(getCurrentPromptVersion("recap")).toBe("recap@3.0.0");
   });
 
   it("reports dry-run targets by family and excludes League One", async () => {
