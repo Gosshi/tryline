@@ -139,8 +139,14 @@ export async function postMatchRecapToX(params: XPostParams): Promise<string> {
   const client = new TwitterApi(getXCredentials(params.language));
   const text = buildTweetText(params);
 
-  const { data } = await client.v2.tweet(text);
-  return data.id;
+  const { data: mainTweet } = await client.v2.tweet(text);
+  const replyText = buildReplyText(params.matchId, params.language);
+
+  await client.v2.tweet(replyText, {
+    reply: { in_reply_to_tweet_id: mainTweet.id },
+  });
+
+  return mainTweet.id;
 }
 
 export function buildTweetText(params: XPostParams): string {
@@ -157,23 +163,11 @@ export function buildTweetText(params: XPostParams): string {
       : params.contentType === "preview"
         ? `📋 ${params.competitionLabel} プレビュー`
         : `🏉 ${params.competitionLabel}`;
-  const matchUrl = `https://www.trylinerugby.com/matches/${params.matchId}${
-    params.language === "en" ? "/en" : ""
-  }`;
   const hashtagLine = getHashtags(params.competitionFamily, params.language);
   const matchLine = `${toHashtag(params.homeTeamName)} ${score} ${toHashtag(
     params.awayTeamName,
   )}`;
-  const fixedText = [
-    header,
-    matchLine,
-    "",
-    "",
-    "",
-    `▶️ ${matchUrl}`,
-    "",
-    hashtagLine,
-  ].join("\n");
+  const fixedText = [header, matchLine, "", "", hashtagLine].join("\n");
   const fixedLength = getPostWeightedLength(fixedText);
   const excerptSuffix = "...";
   const maxExcerptLength = Math.max(
@@ -188,14 +182,22 @@ export function buildTweetText(params: XPostParams): string {
     "",
     excerpt ? `${excerpt}${excerptSuffix}` : "",
     "",
-    `▶️ ${matchUrl}`,
-    "",
     hashtagLine,
   ].join("\n");
 
   if (getPostWeightedLength(text) > X_POST_WEIGHTED_LENGTH_LIMIT) {
-    text = [header, matchLine, "", "", `▶️ ${matchUrl}`].join("\n");
+    text = [header, matchLine, "", hashtagLine].join("\n");
   }
 
   return text;
+}
+
+export function buildReplyText(matchId: string, language: "ja" | "en"): string {
+  const matchUrl = `https://www.trylinerugby.com/matches/${matchId}${
+    language === "en" ? "/en" : ""
+  }`;
+  const cta =
+    language === "en" ? "Full AI analysis 👇" : "AI 戦術分析の全文はこちら 👇";
+
+  return `${cta}\n${matchUrl}`;
 }
