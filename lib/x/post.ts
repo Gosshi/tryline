@@ -3,6 +3,7 @@ import { TwitterApi } from "twitter-api-v2";
 export type XPostParams = {
   awayScore: number | null;
   awayTeamName: string;
+  competitionFamily: string | null;
   competitionLabel: string;
   contentType: "preview" | "recap";
   homeScore: number | null;
@@ -21,6 +22,41 @@ type XCredentials = {
 
 const X_POST_WEIGHTED_LENGTH_LIMIT = 280;
 const X_URL_WEIGHT = 23;
+const HASHTAGS_BY_FAMILY: Record<string, { ja: string; en: string }> = {
+  "league-one": {
+    en: "#LeagueOne #Rugby #JapanRugby",
+    ja: "#リーグワン #ラグビー",
+  },
+  "premiership": {
+    en: "#GallagherPremiership #Rugby",
+    ja: "#プレミアシップ #ラグビー",
+  },
+  "rugby-championship": {
+    en: "#RugbyChampionship #Rugby",
+    ja: "#ラグビーチャンピオンシップ #ラグビー",
+  },
+  rwc: {
+    en: "#RWC2027 #RugbyWorldCup #Rugby",
+    ja: "#RWC2027 #ラグビー",
+  },
+  "six-nations": {
+    en: "#SixNations #Rugby",
+    ja: "#シックスネーションズ #ラグビー",
+  },
+  "super-rugby": {
+    en: "#SuperRugby #Rugby",
+    ja: "#スーパーラグビー #ラグビー",
+  },
+  "top-14": {
+    en: "#Top14 #Rugby",
+    ja: "#トップ14 #ラグビー",
+  },
+  urc: {
+    en: "#URC #UnitedRugbyChampionship #Rugby",
+    ja: "#URC #ラグビー",
+  },
+};
+const DEFAULT_HASHTAGS = { en: "#Rugby", ja: "#ラグビー #Rugby" };
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -91,6 +127,14 @@ function toHashtag(name: string): string {
   return `#${name.replace(/\s+/g, "")}`;
 }
 
+function getHashtags(family: string | null, language: "ja" | "en"): string {
+  const entry = family
+    ? (HASHTAGS_BY_FAMILY[family] ?? DEFAULT_HASHTAGS)
+    : DEFAULT_HASHTAGS;
+
+  return entry[language];
+}
+
 export async function postMatchRecapToX(params: XPostParams): Promise<string> {
   const client = new TwitterApi(getXCredentials(params.language));
   const text = buildTweetText(params);
@@ -116,10 +160,7 @@ export function buildTweetText(params: XPostParams): string {
   const matchUrl = `https://www.trylinerugby.com/matches/${params.matchId}${
     params.language === "en" ? "/en" : ""
   }`;
-  const hashtagLine =
-    params.language === "en"
-      ? "#LeagueOne #Rugby #JapanRugby"
-      : "#ラグビー #Rugby";
+  const hashtagLine = getHashtags(params.competitionFamily, params.language);
   const matchLine = `${toHashtag(params.homeTeamName)} ${score} ${toHashtag(
     params.awayTeamName,
   )}`;
