@@ -50,10 +50,21 @@ const assembledWithoutEvents: AssembledContentInput = {
     away: {
       avg_points_against_last_5: null,
       avg_points_for_last_5: null,
+      avg_score_diff_last_5: null,
+      result_streak: null,
+      win_rate_last_5: null,
     },
     home: {
       avg_points_against_last_5: null,
       avg_points_for_last_5: null,
+      avg_score_diff_last_5: null,
+      result_streak: null,
+      win_rate_last_5: null,
+    },
+    match: {
+      late_scoring: false,
+      penalty_count: { away: 0, home: 0 },
+      try_count: { away: 0, home: 0 },
     },
   },
   match: {

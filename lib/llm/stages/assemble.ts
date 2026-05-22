@@ -17,6 +17,124 @@ function average(values: number[]) {
   );
 }
 
+function computeTeamFormStats(
+  recent: Array<{
+    home_team_name: string;
+    away_team_name: string;
+    home_score: number | null;
+    away_score: number | null;
+  }>,
+  teamName: string,
+): {
+  win_rate_last_5: number | null;
+  avg_score_diff_last_5: number | null;
+  result_streak: "winning" | "losing" | "mixed" | null;
+} {
+  if (recent.length === 0) {
+    return {
+      avg_score_diff_last_5: null,
+      result_streak: null,
+      win_rate_last_5: null,
+    };
+  }
+
+  type Result = "win" | "loss" | "draw";
+  const results: Result[] = [];
+  const diffs: number[] = [];
+
+  for (const match of recent) {
+    const isHome = match.home_team_name === teamName;
+    const isAway = match.away_team_name === teamName;
+    if (!isHome && !isAway) {
+      continue;
+    }
+
+    const scored = isHome ? match.home_score : match.away_score;
+    const conceded = isHome ? match.away_score : match.home_score;
+
+    if (scored === null || conceded === null) {
+      continue;
+    }
+
+    diffs.push(scored - conceded);
+    if (scored > conceded) {
+      results.push("win");
+    } else if (scored < conceded) {
+      results.push("loss");
+    } else {
+      results.push("draw");
+    }
+  }
+
+  if (results.length === 0) {
+    return {
+      avg_score_diff_last_5: null,
+      result_streak: null,
+      win_rate_last_5: null,
+    };
+  }
+
+  const wins = results.filter((result) => result === "win").length;
+  const winRateLast5 = Number((wins / results.length).toFixed(2));
+  const avgScoreDiffLast5 = average(diffs);
+  const allWins = results.every((result) => result === "win");
+  const allLosses = results.every((result) => result === "loss");
+  const resultStreak: "winning" | "losing" | "mixed" = allWins
+    ? "winning"
+    : allLosses
+      ? "losing"
+      : "mixed";
+
+  return {
+    avg_score_diff_last_5: avgScoreDiffLast5,
+    result_streak: resultStreak,
+    win_rate_last_5: winRateLast5,
+  };
+}
+
+function computeMatchStats(
+  events: AssembledContentInput["match_events"],
+  homeTeamName: string,
+  awayTeamName: string,
+): AssembledContentInput["key_stats"]["match"] {
+  let homePenalties = 0;
+  let awayPenalties = 0;
+  let homeTries = 0;
+  let awayTries = 0;
+  let lateScoring = false;
+
+  for (const event of events) {
+    const isHome = event.team_name === homeTeamName;
+    const isAway = event.team_name === awayTeamName;
+
+    if (event.type === "penalty") {
+      if (isHome) {
+        homePenalties += 1;
+      } else if (isAway) {
+        awayPenalties += 1;
+      }
+    }
+
+    if (event.type === "try") {
+      if (isHome) {
+        homeTries += 1;
+      } else if (isAway) {
+        awayTries += 1;
+      }
+    }
+
+    if (event.minute !== null && event.minute >= 70) {
+      lateScoring = true;
+    }
+  }
+
+  return {
+    late_scoring: lateScoring,
+    penalty_count: { away: awayPenalties, home: homePenalties },
+    try_count: { away: awayTries, home: homeTries },
+  };
+}
+
 function asJsonObject(value: Json): Record<string, Json> {
   if (!value || Array.isArray(value) || typeof value !== "object") {
     return {};
@@ -413,6 +531,14 @@ export async function assembleMatchContentInput(
     loadMatchEvents(matchId, match.status, language),
   ]);
 
+  const homeFormStats = computeTeamFormStats(homeRecent, homeTeamName);
+  const awayFormStats = computeTeamFormStats(awayRecent, awayTeamName);
+  const matchStats = computeMatchStats(
+    matchEvents,
+    homeTeamName,
+    awayTeamName,
+  );
+
   return {
     match: {
       id: match.id,
@@ -462,11 +588,14 @@ export async function assembleMatchContentInput(
       home: {
         avg_points_for_last_5: average(homeFor),
         avg_points_against_last_5: average(homeAgainst),
+        ...homeFormStats,
       },
       away: {
         avg_points_for_last_5: average(awayFor),
         avg_points_against_last_5: average(awayAgainst),
+        ...awayFormStats,
       },
+      match: matchStats,
     },
   };
 }
