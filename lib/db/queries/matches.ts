@@ -132,7 +132,7 @@ type RecentlyReviewedMatchRow = BaseMatchRow & {
 };
 
 type RecentlyReviewedContentRow = {
-  content_md_ja: string;
+  content_md: string;
   generated_at: string;
   match: RecentlyReviewedMatchRow | null;
 };
@@ -168,7 +168,7 @@ type TeamPageMatchRow = BaseMatchRow & {
 
 type EnglishMatchContentRow = {
   content_type: string;
-  content_md_ja: string;
+  content_md: string;
   generated_at: string;
   model_version: string;
   prompt_version: string;
@@ -263,7 +263,7 @@ function mapEnglishContentRow(
   }
 
   return {
-    contentMdJa: row.content_md_ja,
+    contentMdJa: row.content_md,
     contentType: row.content_type,
     generatedAt: row.generated_at,
     modelVersion: row.model_version,
@@ -348,7 +348,7 @@ export async function getRecentlyReviewedMatches(
     .select(
       `
         generated_at,
-        content_md_ja,
+        content_md,
         match:matches!match_content_match_id_fkey (
           id,
           kickoff_at,
@@ -397,7 +397,7 @@ export async function getRecentlyReviewedMatches(
         competition: row.match.competition,
         recapGeneratedAt: row.generated_at,
         recapExcerpt: truncateAtSentenceBoundary(
-          stripMarkdown(row.content_md_ja),
+          stripMarkdown(row.content_md),
           120,
         ),
       };
@@ -770,7 +770,7 @@ export async function getMatchContentEn(
   const { data, error } = await client
     .from("match_content")
     .select(
-      "content_type, content_md_ja, generated_at, model_version, prompt_version",
+      "content_type, content_md, generated_at, model_version, prompt_version",
     )
     .eq("match_id", matchId)
     .eq("language", "en")

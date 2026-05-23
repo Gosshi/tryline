@@ -322,7 +322,7 @@ export type Database = {
       };
       match_content: {
         Row: {
-          content_md_ja: string;
+          content_md: string;
           content_type: string;
           discord_notified_at: string | null;
           generated_at: string;
@@ -336,7 +336,7 @@ export type Database = {
           x_posted_at: string | null;
         };
         Insert: {
-          content_md_ja: string;
+          content_md: string;
           content_type: string;
           discord_notified_at?: string | null;
           generated_at?: string;
@@ -350,7 +350,7 @@ export type Database = {
           x_posted_at?: string | null;
         };
         Update: {
-          content_md_ja?: string;
+          content_md?: string;
           content_type?: string;
           discord_notified_at?: string | null;
           generated_at?: string;

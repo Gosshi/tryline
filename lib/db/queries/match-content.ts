@@ -20,7 +20,7 @@ export type MatchContentStatus = {
 
 type PublishedMatchContentRow = {
   content_type: string;
-  content_md_ja: string;
+  content_md: string;
   generated_at: string;
   model_version: string;
   prompt_version: string;
@@ -37,7 +37,7 @@ function mapRow(row: PublishedMatchContentRow): PublishedMatchContent {
   }
 
   return {
-    contentMdJa: row.content_md_ja,
+    contentMdJa: row.content_md,
     contentType: row.content_type,
     generatedAt: row.generated_at,
     modelVersion: row.model_version,
@@ -52,7 +52,7 @@ export async function getPublishedContentForMatch(
   const { data, error } = await client
     .from("match_content")
     .select(
-      "content_type, content_md_ja, generated_at, model_version, prompt_version",
+      "content_type, content_md, generated_at, model_version, prompt_version",
     )
     .eq("match_id", matchId)
     .eq("status", "published")

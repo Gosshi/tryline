@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type ContentFixture = {
-  content_md_ja: string;
+  content_md: string;
   content_type: "preview" | "recap";
   id: string;
   language: "ja" | "en";
@@ -112,7 +112,7 @@ function buildContent(
   },
 ): ContentFixture {
   return {
-    content_md_ja: "## 見出し\n投稿本文の抜粋です。",
+    content_md: "## 見出し\n投稿本文の抜粋です。",
     content_type: overrides.content_type,
     id: overrides.id,
     language: overrides.language ?? "ja",
