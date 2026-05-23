@@ -162,4 +162,63 @@ describe("evaluateNarrativeQuality", () => {
       }),
     );
   });
+
+  it("caps information density when event recap lacks the turning point heading", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      hasEvents: true,
+      matchContext,
+      narrative: "# 試合全体像\n本文",
+      retryCount: 0,
+    });
+
+    expect(result.result.scores.information_density).toBe(3);
+    expect(result.result.issues).toContain(
+      "ターニングポイントセクションが欠落しています",
+    );
+  });
+
+  it("passes hasEvents into the QA prompt", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 3,
+          information_density: 3,
+          japanese_quality: 3,
+          tactical_depth: 3,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    await evaluateNarrativeQuality({
+      contentType: "recap",
+      hasEvents: true,
+      matchContext,
+      narrative: "# ターニングポイント\nbody",
+      retryCount: 0,
+    });
+
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining("## セクション構成チェック"),
+      }),
+    );
+  });
 });

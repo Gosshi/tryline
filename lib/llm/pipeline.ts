@@ -86,6 +86,7 @@ export async function generateMatchContent(
     };
   }
 
+  const hasEvents = assembled.match_events.length > 0;
   let totalCostUsd = 0;
 
   const stage2StartedAt = Date.now();
@@ -187,6 +188,7 @@ export async function generateMatchContent(
           homeScore: assembled.match.home_score,
           homeTeam: assembled.match.home_team?.name ?? "Home",
         },
+        hasEvents,
         narrative: narrative.content,
         retryCount: attempt,
       });

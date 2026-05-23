@@ -47,11 +47,12 @@ const assembled: AssembledContentInput = {
       try_count: { away: 0, home: 0 },
     },
   },
+  score_timeline: null,
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 3.0.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@3.0.0");
+  it("uses recap prompt version 4.0.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.0.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -78,11 +79,11 @@ describe("buildGenerateRecapPrompt", () => {
   it("uses data-sparse structure when lineup and event data are unavailable", () => {
     const prompt = buildGenerateRecapPrompt(assembled, [], []);
 
-    expect(prompt).toContain("試合全体像(500-600字)");
+    expect(prompt).toContain("# 試合全体像（500-600字）");
     expect(prompt).not.toContain("試合全体像とスコア分析");
-    expect(prompt).toContain("大会文脈・順位への影響(400-500字)");
-    expect(prompt).toContain("両チームの近況と戦術傾向(500-600字)");
-    expect(prompt).toContain("次戦への示唆(300-400字)");
+    expect(prompt).toContain("# 大会文脈と順位への影響（400-500字）");
+    expect(prompt).toContain("# 両チームの近況と戦術傾向（500-600字）");
+    expect(prompt).toContain("# 次戦への示唆（300-400字）");
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain("MOM セクションは省略すること");
     expect(prompt).toContain("全体で2,000字以上を目標とすること");
@@ -125,12 +126,12 @@ describe("buildGenerateRecapPrompt", () => {
       [],
     );
 
-    expect(prompt).toContain("試合全体像(400-500字)");
-    expect(prompt).toContain("ターニングポイント(500-600字)");
-    expect(prompt).toContain("次戦への示唆(300-400字)");
+    expect(prompt).toContain("# 試合全体像（400-500字）");
+    expect(prompt).toContain("# ターニングポイント（600-700字）");
+    expect(prompt).toContain("# 次戦への示唆（300-400字）");
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain("ラインアップデータなし");
-    expect(prompt).toContain("全体で1,500字以上を目標とすること");
+    expect(prompt).toContain("全体で2,000字以上を目標とすること");
     expect(prompt).toContain(
       "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。",
     );
@@ -157,7 +158,7 @@ describe("buildGenerateRecapPrompt", () => {
       [],
     );
 
-    expect(prompt).toContain("MOM選出と根拠(300-400字)");
+    expect(prompt).toContain("# MOM（300-400字）");
     expect(prompt).toContain("全体で2,000字以上を目標とすること");
     expect(prompt).toContain(
       "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。",
@@ -225,6 +226,62 @@ describe("buildGenerateRecapPrompt", () => {
     expect(withoutEvents).not.toContain("スコアリングイベント");
     expect(withEvents).toContain("スコアリングイベント");
     expect(withEvents).toContain("Marcus Smith");
+  });
+
+  it("includes score timeline guidance when events and score timeline are present", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        match: {
+          ...assembled.match,
+          away_team: {
+            country: "JPN",
+            english_name: null,
+            id: "away-team",
+            name: "リコー",
+            short_code: "RIC",
+          },
+          home_team: {
+            country: "JPN",
+            english_name: null,
+            id: "home-team",
+            name: "サントリー",
+            short_code: "SUN",
+          },
+        },
+        match_events: [
+          {
+            type: "try",
+            minute: 84,
+            team_name: "サントリー",
+            player_name: "森川由起乙",
+          },
+        ],
+        score_timeline: {
+          ht_away: 10,
+          ht_home: 27,
+          lead_changes: [
+            { away: 35, home: 33, minute: 78, new_leader: "away" },
+            { away: 35, home: 38, minute: 84, new_leader: "home" },
+          ],
+          winning_score: {
+            minute: 84,
+            player: "森川由起乙",
+            team: "home",
+            type: "try",
+          },
+        },
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("スコア推移サマリー");
+    expect(prompt).toContain("前半終了時スコア: サントリー 27 — リコー 10");
+    expect(prompt).toContain("78分: リコー 33—35");
+    expect(prompt).toContain("84分: サントリー 38—35");
+    expect(prompt).toContain("勝利を決めた得点: 84分 サントリー 森川由起乙（try）");
+    expect(prompt).toContain("# ターニングポイントでは");
   });
 
   it("includes competition standings only when present", () => {
