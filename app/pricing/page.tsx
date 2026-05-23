@@ -106,7 +106,7 @@ export default async function PricingPage() {
             Tryline Premium
           </p>
           <h1 className="mt-4 max-w-3xl text-balance font-serif text-4xl font-bold tracking-tight sm:text-6xl">
-            海外ラグビーを、もっと深く。
+            週10試合以上のAI戦術分析を、日本語で読み放題。
           </h1>
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/60">
             <span>8大会対応</span>
@@ -114,7 +114,8 @@ export default async function PricingPage() {
             <span>AI日本語解説</span>
           </div>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65">
-            AI が生成した日本語プレビュー・レビューと試合チャットで観戦体験を格上げする。
+            Six Nations・Premiership・URC ほか 8 大会対応。レビュー全文と試合 AI
+            チャットが ¥980/月で使い放題。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <PricingForm buttonLabel="Premium を始める — ¥980/月" />
@@ -232,7 +233,8 @@ export default async function PricingPage() {
             Premium ではこんな画面が読めます
           </h2>
           <p className="mb-10 text-sm text-[var(--color-ink-muted)]">
-            AI が生成した詳細な日本語レビューと、試合について何でも聞ける AI チャット。
+            AI が生成した詳細な日本語レビューと、試合について何でも聞ける AI
+            チャット。
           </p>
 
           <div className="space-y-12">
