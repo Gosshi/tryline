@@ -21,6 +21,9 @@ type MarkdownBlock =
   | { type: "table"; rows: string[][] }
   | { type: "paragraph"; text: string };
 
+const FREE_RECAP_CHAR_LIMIT = 450;
+const SENTENCE_ENDINGS = ["。", "！", "？", ".", "!", "?"] as const;
+
 function formatGeneratedAt(generatedAt: string, language: "ja" | "en"): string {
   const formatter = new Intl.DateTimeFormat(
     language === "en" ? "en-US" : "ja-JP",
@@ -196,6 +199,90 @@ function splitAtSecondHeading(blocks: MarkdownBlock[]): {
   return { free: blocks, locked: [] };
 }
 
+function getBlockText(block: MarkdownBlock): string {
+  if (block.type === "heading" || block.type === "paragraph") {
+    return block.text;
+  }
+
+  if (block.type === "list") {
+    return block.items.join("");
+  }
+
+  return block.rows.flat().join("");
+}
+
+function truncateParagraphAtSentenceEnd(text: string, limit: number): string {
+  if (text.length <= limit) {
+    return text;
+  }
+
+  const forwardWindow = text.slice(0, Math.min(text.length, limit + 150));
+  const nextSentenceEnd = Math.min(
+    ...SENTENCE_ENDINGS.map((ending) => {
+      const index = forwardWindow.indexOf(ending, limit);
+      return index === -1 ? Number.POSITIVE_INFINITY : index;
+    }),
+  );
+
+  if (Number.isFinite(nextSentenceEnd)) {
+    return text.slice(0, nextSentenceEnd + 1);
+  }
+
+  const candidate = text.slice(0, limit);
+  const previousSentenceEnd = Math.max(
+    ...SENTENCE_ENDINGS.map((ending) => candidate.lastIndexOf(ending)),
+  );
+
+  if (previousSentenceEnd > limit * 0.5) {
+    return text.slice(0, previousSentenceEnd + 1);
+  }
+
+  return `${candidate.trimEnd()}…`;
+}
+
+function splitAtFreeRecapLimit(blocks: MarkdownBlock[]): {
+  free: MarkdownBlock[];
+  locked: MarkdownBlock[];
+} {
+  const free: MarkdownBlock[] = [];
+  let charCount = 0;
+
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index];
+
+    if (!block) {
+      continue;
+    }
+
+    if (block.type === "heading") {
+      free.push(block);
+      continue;
+    }
+
+    const blockTextLength = getBlockText(block).length;
+
+    if (charCount + blockTextLength <= FREE_RECAP_CHAR_LIMIT) {
+      free.push(block);
+      charCount += blockTextLength;
+      continue;
+    }
+
+    if (block.type === "paragraph") {
+      free.push({
+        ...block,
+        text: truncateParagraphAtSentenceEnd(
+          block.text,
+          Math.max(1, FREE_RECAP_CHAR_LIMIT - charCount),
+        ),
+      });
+    }
+
+    return { free, locked: blocks.slice(index + 1) };
+  }
+
+  return { free: blocks, locked: [] };
+}
+
 function renderInline(text: string) {
   return parseInline(text).map((chunk, index) => {
     if (chunk.type === "text") {
@@ -296,6 +383,7 @@ function renderBlock(block: MarkdownBlock, index: number) {
 
 export function MatchContent({
   content,
+  contentType,
   isPremium,
   language = "ja",
   matchTitle,
@@ -304,7 +392,9 @@ export function MatchContent({
   const isLocked = !isPremium;
   const allBlocks = parseMarkdown(content.contentMdJa);
   const { free: freeBlocks, locked: lockedBlocks } = isLocked
-    ? splitAtSecondHeading(allBlocks)
+    ? contentType === "recap"
+      ? splitAtFreeRecapLimit(allBlocks)
+      : splitAtSecondHeading(allBlocks)
     : { free: allBlocks, locked: [] };
   const blocks = isLocked ? freeBlocks : allBlocks;
   const nextHeading = isLocked
