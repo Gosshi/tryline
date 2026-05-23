@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -33,6 +34,25 @@ import { SITE_URL } from "@/lib/site";
 import type { Metadata } from "next";
 
 export const revalidate = 60;
+
+const COMPETITION_LOGO_FAMILIES = new Set([
+  "autumn-nations",
+  "league-one",
+  "pnc",
+  "premiership",
+  "rugby-championship",
+  "rwc",
+  "six-nations",
+  "super-rugby-pacific",
+  "top-14",
+  "urc",
+]);
+
+function getCompetitionLogoSrc(family: string): string {
+  return COMPETITION_LOGO_FAMILIES.has(family)
+    ? `/logos/${family}.svg`
+    : "/logos/default-competition.svg";
+}
 
 export const metadata: Metadata = {
   title: "海外ラグビーを日本語で深掘り",
@@ -433,7 +453,7 @@ export default async function HomePage() {
               {homepageCompetitionLinks.map((competition) => (
                 <li key={`${competition.family}-${competition.season}`}>
                   <Link
-                    className="group flex h-full items-center justify-between rounded-xl border border-slate-200 bg-white py-4 pl-4 pr-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm"
+                    className="group flex h-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white py-4 pl-4 pr-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm"
                     href={`/c/${competition.family}/${competition.season}`}
                     style={{
                       borderLeftColor: getCompetitionFamilyColor(
@@ -442,7 +462,17 @@ export default async function HomePage() {
                       borderLeftWidth: "4px",
                     }}
                   >
-                    <div>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-50 ring-1 ring-slate-100">
+                        <Image
+                          alt=""
+                          className="h-9 w-9 object-contain"
+                          height={36}
+                          src={getCompetitionLogoSrc(competition.family)}
+                          width={36}
+                        />
+                      </span>
+                      <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="block font-semibold text-[var(--color-ink)]">
                           {formatFamilyName(competition.family)}
@@ -456,6 +486,7 @@ export default async function HomePage() {
                       <span className="mt-0.5 block text-xs text-[var(--color-ink-muted)]">
                         {competition.season}
                       </span>
+                      </div>
                     </div>
                     <span className="text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
                       最新シーズン →
