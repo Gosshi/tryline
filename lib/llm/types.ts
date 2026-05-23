@@ -38,6 +38,23 @@ export type QaResult = {
   verdict: QaVerdict;
 };
 
+export type ScoreTimeline = {
+  ht_home: number;
+  ht_away: number;
+  lead_changes: Array<{
+    minute: number;
+    home: number;
+    away: number;
+    new_leader: "home" | "away" | "draw";
+  }>;
+  winning_score: {
+    minute: number;
+    player: string;
+    team: "home" | "away";
+    type: string;
+  } | null;
+};
+
 export type AssembledContentInput = {
   match: {
     id: string;
@@ -157,4 +174,5 @@ export type AssembledContentInput = {
       late_scoring: boolean;
     };
   };
+  score_timeline: ScoreTimeline | null;
 };

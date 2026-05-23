@@ -47,6 +47,7 @@ const assembled: AssembledContentInput = {
   match_phase: null,
   projected_lineups: { away: [], home: [] },
   recent_form: { away: [], home: [] },
+  score_timeline: null,
 };
 
 describe("buildExtractTacticalPointsPrompt", () => {

@@ -65,4 +65,30 @@ describe("buildQaContentPrompt", () => {
 
     expect(prompt).not.toContain("## 勝者整合性チェック");
   });
+
+  it("adds turning point section checks for recaps with events", () => {
+    const prompt = buildQaContentPrompt(
+      "recap",
+      "本文",
+      "ja",
+      matchContext,
+      true,
+    );
+
+    expect(prompt).toContain("## セクション構成チェック");
+    expect(prompt).toContain("# ターニングポイント");
+    expect(prompt).toContain("information_density のスコアを最大 3");
+  });
+
+  it("omits turning point section checks when events are absent", () => {
+    const prompt = buildQaContentPrompt(
+      "recap",
+      "本文",
+      "ja",
+      matchContext,
+      false,
+    );
+
+    expect(prompt).not.toContain("## セクション構成チェック");
+  });
 });

@@ -47,6 +47,7 @@ const assembled: AssembledContentInput = {
       try_count: { away: 0, home: 0 },
     },
   },
+  score_timeline: null,
 };
 
 describe("buildGeneratePreviewPrompt", () => {

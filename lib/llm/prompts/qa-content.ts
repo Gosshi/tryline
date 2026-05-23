@@ -14,6 +14,7 @@ export function buildQaContentPrompt(
   narrative: string,
   language: ContentLanguage,
   matchContext: QaMatchContext,
+  hasEvents = false,
 ): string {
   const minLength = contentType === "recap" ? 2000 : 1500;
   const languageLabel = language === "en" ? "English" : "日本語";
@@ -47,6 +48,15 @@ export function buildQaContentPrompt(
           "引き分け（同点）の場合はこのチェックを無視する。",
         ].join("\n")
       : "";
+  const turningPointCheckBlock =
+    contentType === "recap" && hasEvents
+      ? [
+          "## セクション構成チェック（events がある recap のみ適用）",
+          "本文に「# ターニングポイント」という見出しが含まれているかチェックすること。",
+          "含まれていない場合は issues に「ターニングポイントセクションが欠落しています」を追加し、",
+          "information_density のスコアを最大 3 に制限すること。",
+        ].join("\n")
+      : "";
 
   return [
     `あなたは編集デスクです。以下の${languageLabel}コンテンツを品質評価してください。`,
@@ -78,6 +88,7 @@ export function buildQaContentPrompt(
       "- 1: ほぼすべてが一般論または機械的な要約",
     ].join("\n"),
     winnerCheckBlock,
+    turningPointCheckBlock,
     'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[]}',
     `本文: ${narrative}`,
   ].join("\n\n");

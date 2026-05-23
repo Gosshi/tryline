@@ -48,6 +48,7 @@ const assembled = {
       try_count: { away: 0, home: 0 },
     },
   },
+  score_timeline: null,
 };
 
 const tacticalPoints = [

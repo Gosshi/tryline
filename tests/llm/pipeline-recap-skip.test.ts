@@ -88,6 +88,7 @@ const assembledWithoutEvents: AssembledContentInput = {
     away: [],
     home: [],
   },
+  score_timeline: null,
 };
 
 describe("generateMatchContent recap event guard", () => {

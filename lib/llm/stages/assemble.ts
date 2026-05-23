@@ -5,6 +5,7 @@ import type {
   AssembledContentInput,
   ContentLanguage,
   MatchPhase,
+  ScoreTimeline,
 } from "@/lib/llm/types";
 
 function average(values: number[]) {
@@ -132,6 +133,122 @@ function computeMatchStats(
     late_scoring: lateScoring,
     penalty_count: { away: awayPenalties, home: homePenalties },
     try_count: { away: awayTries, home: homeTries },
+  };
+}
+
+function pointsForEventType(type: string): number {
+  if (type === "try") return 5;
+  if (type === "conversion") return 2;
+  if (type === "penalty" || type === "penalty_goal" || type === "drop_goal") {
+    return 3;
+  }
+  return 0;
+}
+
+export function computeScoreTimeline(
+  events: AssembledContentInput["match_events"],
+  homeTeamName: string,
+  awayTeamName: string,
+): ScoreTimeline | null {
+  if (events.length === 0) {
+    return null;
+  }
+
+  let homeScore = 0;
+  let awayScore = 0;
+  let htHome = 0;
+  let htAway = 0;
+  let htSet = false;
+  let prevLeader: "home" | "away" | "draw" = "draw";
+  const leadChanges: ScoreTimeline["lead_changes"] = [];
+  const scoringSnapshots: Array<{
+    event: AssembledContentInput["match_events"][number];
+    home: number;
+    away: number;
+    leaderBefore: "home" | "away" | "draw";
+    leaderAfter: "home" | "away" | "draw";
+  }> = [];
+
+  for (const event of events) {
+    const minute = event.minute ?? 0;
+    const points = pointsForEventType(event.type);
+
+    if (points === 0) {
+      continue;
+    }
+
+    if (!htSet && minute > 40) {
+      htHome = homeScore;
+      htAway = awayScore;
+      htSet = true;
+    }
+
+    const isHome = event.team_name === homeTeamName;
+    const isAway = event.team_name === awayTeamName;
+
+    if (isHome) {
+      homeScore += points;
+    } else if (isAway) {
+      awayScore += points;
+    } else {
+      continue;
+    }
+
+    const currentLeader: "home" | "away" | "draw" =
+      homeScore > awayScore ? "home" : homeScore < awayScore ? "away" : "draw";
+
+    scoringSnapshots.push({
+      away: awayScore,
+      event,
+      home: homeScore,
+      leaderAfter: currentLeader,
+      leaderBefore: prevLeader,
+    });
+
+    if (currentLeader !== prevLeader) {
+      leadChanges.push({
+        away: awayScore,
+        home: homeScore,
+        minute,
+        new_leader: currentLeader,
+      });
+      prevLeader = currentLeader;
+    }
+  }
+
+  if (!htSet) {
+    htHome = homeScore;
+    htAway = awayScore;
+  }
+
+  const winner =
+    homeScore > awayScore ? "home" : homeScore < awayScore ? "away" : null;
+  let winningScore: ScoreTimeline["winning_score"] = null;
+
+  if (winner) {
+    for (let index = scoringSnapshots.length - 1; index >= 0; index -= 1) {
+      const snapshot = scoringSnapshots[index]!;
+
+      if (
+        snapshot.leaderAfter === winner &&
+        snapshot.leaderBefore !== winner
+      ) {
+        winningScore = {
+          minute: snapshot.event.minute ?? 0,
+          player: snapshot.event.player_name,
+          team: winner,
+          type: snapshot.event.type,
+        };
+        break;
+      }
+    }
+  }
+
+  return {
+    ht_away: htAway,
+    ht_home: htHome,
+    lead_changes: leadChanges,
+    winning_score: winningScore,
   };
 }
 
@@ -538,6 +655,11 @@ export async function assembleMatchContentInput(
     homeTeamName,
     awayTeamName,
   );
+  const scoreTimeline = computeScoreTimeline(
+    matchEvents,
+    homeTeamName,
+    awayTeamName,
+  );
 
   return {
     match: {
@@ -597,5 +719,6 @@ export async function assembleMatchContentInput(
       },
       match: matchStats,
     },
+    score_timeline: scoreTimeline,
   };
 }

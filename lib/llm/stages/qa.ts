@@ -61,32 +61,80 @@ function resolveVerdict(
   return "retry";
 }
 
-function parseQaResponse(jsonText: string, retryCount: number): QaResult {
+function applyDeterministicQaGuards(
+  result: QaResult,
+  options: {
+    contentType: ContentType;
+    hasEvents: boolean;
+    narrative: string;
+  },
+): QaResult {
+  if (
+    options.contentType !== "recap" ||
+    !options.hasEvents ||
+    options.narrative.includes("# ターニングポイント")
+  ) {
+    return result;
+  }
+
+  const issue = "ターニングポイントセクションが欠落しています";
+  return {
+    ...result,
+    issues: result.issues.includes(issue)
+      ? result.issues
+      : [...result.issues, issue],
+    scores: {
+      ...result.scores,
+      information_density: Math.min(result.scores.information_density, 3),
+    },
+  };
+}
+
+function parseQaResponse(
+  jsonText: string,
+  retryCount: number,
+  options: {
+    contentType: ContentType;
+    hasEvents: boolean;
+    narrative: string;
+  },
+): QaResult {
   const parsed = JSON.parse(jsonText) as ParsedQaResponse;
 
   if (!parsed.scores) {
     throw new Error("qa response missing scores");
   }
 
+  const guarded = applyDeterministicQaGuards(
+    {
+      scores: parsed.scores,
+      issues: Array.isArray(parsed.issues) ? parsed.issues : [],
+      verdict: "retry",
+    },
+    options,
+  );
+
   return {
-    scores: parsed.scores,
-    issues: Array.isArray(parsed.issues) ? parsed.issues : [],
-    verdict: resolveVerdict(parsed.scores, retryCount),
+    ...guarded,
+    verdict: resolveVerdict(guarded.scores, retryCount),
   };
 }
 
 export async function evaluateNarrativeQuality(options: {
   contentType: ContentType;
+  hasEvents?: boolean;
   language?: ContentLanguage;
   matchContext: QaMatchContext;
   narrative: string;
   retryCount: number;
 }): Promise<QaStageResponse> {
+  const hasEvents = options.hasEvents ?? false;
   const prompt = buildQaContentPrompt(
     options.contentType,
     options.narrative,
     options.language ?? "ja",
     options.matchContext,
+    hasEvents,
   );
   let attempts = 0;
 
@@ -101,7 +149,11 @@ export async function evaluateNarrativeQuality(options: {
     });
 
     try {
-      const result = parseQaResponse(response.text, options.retryCount);
+      const result = parseQaResponse(response.text, options.retryCount, {
+        contentType: options.contentType,
+        hasEvents,
+        narrative: options.narrative,
+      });
 
       return {
         result,
