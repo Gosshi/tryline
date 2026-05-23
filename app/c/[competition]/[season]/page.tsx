@@ -11,7 +11,7 @@ import {
   listFamilies,
   listSeasonsByFamily,
 } from "@/lib/db/queries/competitions";
-import { getContentStatusMap } from "@/lib/db/queries/match-content";
+import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import { listMatchesForCompetition } from "@/lib/db/queries/matches";
 import { getStandingsForCompetition } from "@/lib/db/queries/standings";
 import {
@@ -122,10 +122,10 @@ export default async function SeasonPage({ params }: Props) {
     getStandingsForCompetition(comp.slug),
     listSeasonsByFamily(comp.family),
   ]);
-  const contentStatusMap = await getContentStatusMap(
+  const contentStatusMap = await getContentStatusForMatches(
     matches.map((match) => match.id),
   );
-  const hasAnyContent = [...contentStatusMap.values()].some(
+  const hasAnyContent = Object.values(contentStatusMap).some(
     (status) => status.hasPreview || status.hasRecap,
   );
   const groupedMatches = groupMatchesByRound(matches);
@@ -200,7 +200,7 @@ export default async function SeasonPage({ params }: Props) {
             {hasAnyContent && <PremiumUpsellBanner />}
             <Suspense>
               <SeasonMatchGroups
-                contentStatusMap={Object.fromEntries(contentStatusMap)}
+                contentStatusMap={contentStatusMap}
                 family={family}
                 groupedMatches={groupedMatches}
               />

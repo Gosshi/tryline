@@ -23,7 +23,6 @@ export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
   const awayWon = outcome === "away_win";
   const shouldShowContentStatus =
     contentStatus &&
-    match.status === "finished" &&
     (contentStatus.hasPreview || contentStatus.hasRecap);
 
   return (
@@ -190,13 +189,13 @@ export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
         {shouldShowContentStatus && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {contentStatus.hasPreview && (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                プレビュー
+              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-600">
+                プレビューあり
               </span>
             )}
             {contentStatus.hasRecap && (
-              <span className="rounded-full bg-[var(--color-accent-subtle)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-accent)]">
-                レビュー
+              <span className="rounded-full bg-[var(--color-accent)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)]">
+                レビューあり
               </span>
             )}
           </div>
