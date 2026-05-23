@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { PremiumUpsellBanner } from "@/components/premium-upsell-banner";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
@@ -197,11 +198,13 @@ export default async function SeasonPage({ params }: Props) {
         ) : (
           <>
             {hasAnyContent && <PremiumUpsellBanner />}
-            <SeasonMatchGroups
-              contentStatusMap={Object.fromEntries(contentStatusMap)}
-              family={family}
-              groupedMatches={groupedMatches}
-            />
+            <Suspense>
+              <SeasonMatchGroups
+                contentStatusMap={Object.fromEntries(contentStatusMap)}
+                family={family}
+                groupedMatches={groupedMatches}
+              />
+            </Suspense>
           </>
         )}
 
