@@ -76,8 +76,15 @@ function FeatureMark({ enabled }: { enabled: boolean }) {
 }
 
 export default async function PricingPage() {
+  const jaSamplePromise = getRecentlyReviewedMatches(1, "ja").then(
+    ([match]) => match ?? null,
+  );
   const [sample, latestCompletedMatch] = await Promise.all([
-    getRecentlyReviewedMatches(1).then(([match]) => match),
+    jaSamplePromise.then(
+      (jaMatch) =>
+        jaMatch ??
+        getRecentlyReviewedMatches(1).then(([match]) => match ?? null),
+    ),
     getLatestCompletedMatch(),
   ]);
   const trialUrl = latestCompletedMatch
@@ -200,9 +207,16 @@ export default async function PricingPage() {
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-white/0" />
               </>
             ) : (
-              <p className="text-sm text-[var(--color-ink-muted)]">
-                公開済みレビューを準備中です。
-              </p>
+              <div className="space-y-3 text-sm text-[var(--color-ink-muted)]">
+                <p className="font-semibold text-[var(--color-ink)]">
+                  試合直後に更新
+                </p>
+                <p className="leading-7">
+                  ノックアウト式の試合では、キックオフ後 30〜60 分で AI
+                  日本語レビューが生成されます。プレビューは無料で読めます。レビュー全文と
+                  AI チャットは Premium 限定です。
+                </p>
+              </div>
             )}
             <div className="relative mt-8">
               <PricingForm

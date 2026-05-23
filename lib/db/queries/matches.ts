@@ -341,9 +341,10 @@ export async function getLatestCompetitionWithMatches(): Promise<CompetitionSumm
 
 export async function getRecentlyReviewedMatches(
   limit = 3,
+  language?: "ja" | "en",
 ): Promise<RecentlyReviewedMatch[]> {
   const client = getSupabasePublicServerClient();
-  const { data, error } = await client
+  let query = client
     .from("match_content")
     .select(
       `
@@ -376,10 +377,14 @@ export async function getRecentlyReviewedMatches(
       `,
     )
     .eq("content_type", "recap")
-    .eq("language", "ja")
     .eq("status", "published")
-    .order("generated_at", { ascending: false })
-    .limit(limit);
+    .order("generated_at", { ascending: false });
+
+  if (language) {
+    query = query.eq("language", language);
+  }
+
+  const { data, error } = await query.limit(limit);
 
   if (error) {
     throw error;

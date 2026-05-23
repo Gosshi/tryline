@@ -69,7 +69,7 @@ describe("PricingPage", () => {
   it("renders the redesigned pricing landing page sections", async () => {
     render(await PricingPage());
 
-    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenCalledWith(1);
+    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenCalledWith(1, "ja");
     expect(
       screen.getByRole("heading", { name: "海外ラグビーを、もっと深く。" }),
     ).toBeInTheDocument();
@@ -121,6 +121,48 @@ describe("PricingPage", () => {
       screen.getByText("どの大会のコンテンツが読めますか？"),
     ).toBeInTheDocument();
     expect(screen.getByText("支払い方法は？")).toBeInTheDocument();
+  });
+
+  it("falls back to any published recap when Japanese sample content is empty", async () => {
+    matchMocks.getRecentlyReviewedMatches
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          awayTeam: { name: "England" },
+          competition: { name: "Rugby World Cup", season: "2027" },
+          homeTeam: { name: "Japan" },
+          recapExcerpt: "A published English recap excerpt is available.",
+        },
+      ]);
+
+    render(await PricingPage());
+
+    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenNthCalledWith(
+      1,
+      1,
+      "ja",
+    );
+    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenNthCalledWith(2, 1);
+    expect(screen.getByText("Japan vs England")).toBeInTheDocument();
+    expect(
+      screen.getByText("A published English recap excerpt is available."),
+    ).toBeInTheDocument();
+  });
+
+  it("renders a meaningful fallback when no sample recap exists", async () => {
+    matchMocks.getRecentlyReviewedMatches
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    render(await PricingPage());
+
+    expect(screen.getByText("試合直後に更新")).toBeInTheDocument();
+    expect(
+      screen.getByText(/レビュー全文と AI チャットは Premium 限定です。/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("公開済みレビューを準備中です。"),
+    ).not.toBeInTheDocument();
   });
 
   it("falls back to the homepage when there is no completed match yet", async () => {
