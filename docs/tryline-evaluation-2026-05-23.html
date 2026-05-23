@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tryline 総合評価レポート — 2026-05-23</title>
+  <style>
+    :root {
+      --green: #16a34a;
+      --green-light: #dcfce7;
+      --red: #dc2626;
+      --red-light: #fee2e2;
+      --orange: #ea580c;
+      --orange-light: #ffedd5;
+      --yellow: #ca8a04;
+      --yellow-light: #fef9c3;
+      --gray-light: #f9fafb;
+      --gray: #f3f4f6;
+      --gray-border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); color: var(--text); line-height: 1.7; background: #fff; }
+
+    /* ヘッダー */
+    .site-header { background: #111827; color: #fff; padding: 2.5rem 2rem; }
+    .site-header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+    .site-header .meta { margin-top: 0.5rem; color: #9ca3af; font-size: 0.875rem; }
+    .site-header .meta span { margin-right: 1.5rem; }
+
+    /* 目次 */
+    .toc { background: var(--gray); border-bottom: 1px solid var(--gray-border); padding: 1rem 2rem; }
+    .toc-inner { max-width: 960px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; }
+    .toc a { color: var(--green); text-decoration: none; font-size: 0.875rem; font-weight: 500; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* レイアウト */
+    .container { max-width: 960px; margin: 0 auto; padding: 2rem; }
+    .section { margin-bottom: 3rem; }
+    .section-title { font-size: 1.375rem; font-weight: 700; border-left: 4px solid var(--green); padding-left: 0.75rem; margin-bottom: 1.25rem; }
+    .section-subtitle { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: #374151; }
+    hr { border: none; border-top: 1px solid var(--gray-border); margin: 2rem 0; }
+
+    /* バッジ */
+    .badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; margin-right: 0.5rem; }
+    .badge-red    { background: var(--red-light);    color: var(--red); }
+    .badge-orange { background: var(--orange-light); color: var(--orange); }
+    .badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+    .badge-green  { background: var(--green-light);  color: var(--green); }
+
+    /* 評価ブロック */
+    .eval-block { border: 1px solid var(--gray-border); border-radius: 8px; overflow: hidden; margin-bottom: 1rem; }
+    .eval-block-header { background: var(--gray); padding: 0.6rem 1rem; font-weight: 600; font-size: 0.875rem; border-bottom: 1px solid var(--gray-border); }
+    .eval-block-body { padding: 0.75rem 1rem; }
+    .good   { border-left: 3px solid var(--green); }
+    .bad    { border-left: 3px solid var(--red); }
+    .medium { border-left: 3px solid var(--orange); }
+    ul { padding-left: 1.25rem; }
+    ul li { margin-bottom: 0.35rem; font-size: 0.875rem; }
+
+    /* テーブル */
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-bottom: 1rem; }
+    th { background: var(--gray); padding: 0.5rem 0.75rem; text-align: left; font-weight: 600; border-bottom: 2px solid var(--gray-border); }
+    td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--gray-border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9fafb; }
+
+    .row-red    td { background: #fff5f5; }
+    .row-red    td:first-child { border-left: 4px solid var(--red); }
+    .row-orange td { background: #fff8f5; }
+    .row-orange td:first-child { border-left: 4px solid var(--orange); }
+    .row-yellow td { background: #fefdf0; }
+    .row-yellow td:first-child { border-left: 4px solid var(--yellow); }
+    .row-green  td { background: #f0fdf4; }
+    .row-green  td:first-child { border-left: 4px solid var(--green); }
+
+    /* カウンター */
+    .count-row { display: flex; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .count-card { padding: 0.6rem 1.25rem; border-radius: 6px; font-size: 0.875rem; font-weight: 600; }
+    .count-card span { font-size: 1.5rem; font-weight: 800; margin-right: 0.25rem; }
+
+    /* 重大欠陥 */
+    .critical-box { background: var(--red-light); border: 1px solid #fca5a5; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+    .critical-box h4 { color: var(--red); font-size: 0.875rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .critical-box p, .critical-box li { font-size: 0.875rem; color: #7f1d1d; }
+
+    code { background: #f1f5f9; padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.82em; font-family: 'SF Mono', 'Fira Code', monospace; }
+
+    /* 大会グリッド */
+    .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+    .comp-card { border: 1px solid var(--gray-border); border-radius: 8px; overflow: hidden; }
+    .comp-card-header { background: var(--gray); padding: 0.5rem 0.75rem; font-weight: 700; font-size: 0.875rem; border-bottom: 1px solid var(--gray-border); }
+    .comp-card-body { padding: 0.75rem; font-size: 0.85rem; }
+    .comp-card-body p { margin-bottom: 0.35rem; }
+    .good-item::before { content: "✓ "; color: var(--green); font-weight: 700; }
+    .bad-item::before  { content: "✗ "; color: var(--red);   font-weight: 700; }
+
+    /* フロー */
+    .flow-box { background: var(--gray); border: 1px solid var(--gray-border); border-radius: 8px; padding: 1rem; font-size: 0.875rem; margin-bottom: 1rem; font-family: 'SF Mono','Fira Code',monospace; line-height: 1.9; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1>Tryline 総合評価レポート</h1>
+  <div class="meta">
+    <span>評価日: 2026-05-23</span>
+    <span>評価対象: https://www.trylinerugby.com</span>
+    <span>評価ツール: Playwright + コードリーディング</span>
+    <span>課題総数: 36件</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#issues">▸ 課題一覧（優先度順）</a>
+    <a href="#task1-home">▸ ホームページ</a>
+    <a href="#task1-comp">▸ 大会ページ（個別）</a>
+    <a href="#task1-season">▸ シーズンページ</a>
+    <a href="#task1-match">▸ 試合ページ</a>
+    <a href="#task1-pricing">▸ Pricing</a>
+    <a href="#task1-all-comps">▸ 全大会評価</a>
+    <a href="#task2">▸ LLMプロンプト評価</a>
+    <a href="#task3">▸ SNS運用評価</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ========== 課題一覧 ========== -->
+  <section class="section" id="issues">
+    <h2 class="section-title">課題一覧（優先度順）全36件</h2>
+
+    <div class="count-row">
+      <div class="count-card" style="background:var(--red-light);color:var(--red)"><span>4</span>🔴 最高</div>
+      <div class="count-card" style="background:var(--orange-light);color:var(--orange)"><span>8</span>🟠 高</div>
+      <div class="count-card" style="background:var(--yellow-light);color:var(--yellow)"><span>15</span>🟡 中</div>
+      <div class="count-card" style="background:var(--green-light);color:var(--green)"><span>9</span>🟢 低</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36px">#</th>
+          <th style="width:76px">優先度</th>
+          <th style="width:130px">場所</th>
+          <th>課題</th>
+          <th style="width:220px">理由</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-red">
+          <td>1</td><td><span class="badge badge-red">🔴 最高</span></td>
+          <td>パイプライン / QA</td>
+          <td><code>buildQaContentPrompt</code> に試合スコア・チーム情報が渡されておらず <code>factual_grounding</code> と勝者整合性チェックが機能していない</td>
+          <td>ハルシネーションを素通りさせる構造上の欠陥</td>
+        </tr>
+        <tr class="row-red">
+          <td>2</td><td><span class="badge badge-red">🔴 最高</span></td>
+          <td>パイプライン</td>
+          <td><code>content_md_ja</code> カラムに英語コンテンツを保存している（language = "en" のときも同カラム）</td>
+          <td>言語別クエリの混乱・将来の多言語展開を阻害する設計ミス</td>
+        </tr>
+        <tr class="row-red">
+          <td>3</td><td><span class="badge badge-red">🔴 最高</span></td>
+          <td>大会ページ</td>
+          <td>PNC と Autumn Nations のヘッダー画像が完全に同一（別大会なのに同じスタジアム写真）</td>
+          <td>品質への信頼を損ねる最も分かりやすいバグ。即時修正必須</td>
+        </tr>
+        <tr class="row-red">
+          <td>4</td><td><span class="badge badge-red">🔴 最高</span></td>
+          <td>Pricing</td>
+          <td>サンプルコンテンツエリアと AI チャットエリアが空白表示</td>
+          <td>購入判断の根拠となるコンテンツが見えず、コンバージョンがゼロになる</td>
+        </tr>
+
+        <tr class="row-orange">
+          <td>5</td><td><span class="badge badge-orange">🟠 高</span></td>
+          <td>試合ページ</td>
+          <td>AI チャットがページ最下部に配置されており機能の存在に気づかれない</td>
+          <td>Premium の最大差別化機能が死に場所にある。スコア直下への移動が必要</td>
+        </tr>
+        <tr class="row-orange">
+          <td>6</td><td><span class="badge badge-orange">🟠 高</span></td>
+          <td>大会ページ</td>
+          <td>Top 14・Rugby Championship・PNC で「最近のレビュー」セクションが表示されていない</td>
+          <td>コンテンツがあっても入口が見えず、ユーザーの回遊が生まれない</td>
+        </tr>
+        <tr class="row-orange">
+          <td>7</td><td><span class="badge badge-orange">🟠 高</span></td>
+          <td>ホームページ</td>
+          <td>ファーストビューに無料で読めるプレビューのフルカードがなく、コンテンツ品質を体感できない</td>
+          <td>初訪問者が何を得られるか分からず離脱する主因</td>
+        </tr>
+        <tr class="row-orange">
+          <td>8</td><td><span class="badge badge-orange">🟠 高</span></td>
+          <td>Pricing</td>
+          <td>ヒーローコピーが「もっと深く」と抽象的で、具体的な便益が伝わらない</td>
+          <td>「週12試合のAI分析」等の数値訴求に変えるだけでコンバージョン率が上がる</td>
+        </tr>
+        <tr class="row-orange">
+          <td>9</td><td><span class="badge badge-orange">🟠 高</span></td>
+          <td>SNS</td>
+          <td>試合結果グラフィック画像のツイートへの添付がなくテキストのみ</td>
+          <td>画像付きはテキストのみより30〜50%インプレッションが高い。認知獲得フェーズで最も即効性のある改善</td>
+        </tr>
+        <tr class="row-orange">
+          <td>10</td><td><span class="badge badge-orange">🟠 高</span></td>
+          <td>試合ページ（モバイル）</td>
+          <td>出場選手リストが縦一列で40名超が並びスクロール量が膨大</td>
+          <td>モバイルで最も使いにくいセクション。タブ切り替えで半減できる</td>
+        </tr>
+        <tr class="row-orange">
+          <td>11</td><td><span class="badge badge-orange">🟠 高</span></td>
+          <td>RWC 2023</td>
+          <td>シーズンページに約54試合が全展開されており、フィルターもページネーションもない</td>
+          <td>スクロール量が全ページ中最大でUXが破綻。プール別・ラウンド別フィルターが必須</td>
+        </tr>
+        <tr class="row-orange">
+          <td>12</td><td><span class="badge badge-orange">🟠 高</span></td>
+          <td>PNC</td>
+          <td>フッターナビゲーション（全大会リスト）に PNC のリンクがない</td>
+          <td>日本代表が必ず出場する大会への導線が完全に欠如している</td>
+        </tr>
+
+        <tr class="row-yellow">
+          <td>13</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>試合カード全般</td>
+          <td>試合カードに「プレビューあり」「レビューあり」のステータスバッジがない</td>
+          <td>どの試合にコンテンツがあるかユーザーが分からず回遊が発生しない</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>14</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>全大会ページ</td>
+          <td>大会説明文（200字程度）が全くない</td>
+          <td>SEO テキストコンテンツ不足・新規ユーザーが大会の文脈を理解できない</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>15</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>試合ページ</td>
+          <td>フリー公開分が短く、ターニングポイントの冒頭まで見せることで購買意欲を上げられる（あと100〜200字）</td>
+          <td>ペイウォールの刺し方が早すぎる。もう少し見せてから訴求する方がコンバージョン率が高い</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>16</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>ホームページ</td>
+          <td>AI プレビューサンプルのテキストが43字程度しか表示されず「深掘り」の深さが伝わらない</td>
+          <td>バリュープロポジション「深掘り」が体感できない状態で Premium を訴求している</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>17</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>QA（<code>qa.ts</code>）</td>
+          <td><code>resolveVerdict()</code> とプロンプト内の verdict 判定基準が二重管理されており乖離リスクがある</td>
+          <td>片方を変更したときにサイレントバグが生まれる構造</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>18</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>プロンプト</td>
+          <td>preview と recap でペルソナ・禁止事項・名前スタイル指示が完全重複（DRY 違反）</td>
+          <td>片方だけ更新した場合に不整合が発生する。共通関数に抽出すべき</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>19</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>プロンプト</td>
+          <td><code>JSON.stringify(assembled)</code> をそのままプロンプトに埋め込んでおりイベント数が多い試合でトークン数が肥大化するリスク</td>
+          <td>コスト増大・入力制限超過のリスク。イベント数上限（例: 30件）を設けるべき</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>20</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>モデル選択</td>
+          <td>gpt-4o のまま gpt-4.1 との比較実験が未実施</td>
+          <td>2026年5月時点でより良いモデルを使えている可能性がある</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>21</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>SNS 運用</td>
+          <td>Discord 通知からワンクリックでコピーできる仕組みがなく手動コピペが週20〜30回発生</td>
+          <td>オーナーの運用負担が持続不可能なレベル</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>22</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>RWC</td>
+          <td>RWC 2027 のティーザーページがなく今から SEO プレースホルダーとして機能させるチャンスを逃している</td>
+          <td>本プロダクトの主要マイルストーン。今から URL を確保するだけで SEO 的に有利</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>23</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>試合ページ</td>
+          <td>スコアグラフの軸ラベルがモバイルで推定8〜9px と小さすぎて読めない</td>
+          <td>差別化コンテンツであるスコアグラフの基本品質が担保されていない</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>24</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>extract プロンプト</td>
+          <td><code>match_impact: high/medium/low</code> の判断基準が未定義で LLM が恣意的に付与する</td>
+          <td>戦術ポイントの重み付けが無根拠になる</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>25</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>Pricing</td>
+          <td>月額¥980のみで年払いプランがなく購入ハードルの多様化ができていない</td>
+          <td>¥9,800/年（2ヶ月分割引）等でコンバージョン機会を増やせる</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>26</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>大会ページ全般</td>
+          <td>シーズン一覧に優勝チーム・総試合数等の文脈情報がなくシーズンを選ぶ理由が弱い</td>
+          <td>SEO テキスト不足とユーザー体験悪化の両方に影響する</td>
+        </tr>
+        <tr class="row-yellow">
+          <td>27</td><td><span class="badge badge-yellow">🟡 中</span></td>
+          <td>SNS 運用</td>
+          <td>試合終了からオーナー起床・手動投稿まで数時間の遅延があり試合直後のエンゲージメントピークを逃している</td>
+          <td>ラグビーファンの X 閲覧ピークは試合終了直後の1〜2時間</td>
+        </tr>
+
+        <tr class="row-green">
+          <td>28</td><td><span class="badge badge-green">🟢 低</span></td>
+          <td>全体デザイン</td>
+          <td>Web フォントがなくシステムフォントのままでスポーツメディアとしての個性がない</td>
+          <td>ブランド構築の問題だが機能には影響しない</td>
+        </tr>
+        <tr class="row-green">
+          <td>29</td><td><span class="badge badge-green">🟢 低</span></td>
+          <td>全大会ページ</td>
+          <td>大会別ブランドカラー・ロゴをヘッダーに適用できておらず全大会が同じデザイン</td>
+          <td>デザイン差別化。実装コストに対して視覚効果が大きい</td>
+        </tr>
+        <tr class="row-green">
+          <td>30</td><td><span class="badge badge-green">🟢 低</span></td>
+          <td>ホームページ</td>
+          <td>大会リスト・シーズン一覧がプレーンなテキストのみで大会ブランドが活かされていない</td>
+          <td>ロゴ・カラー追加でビジュアル密度が上がる</td>
+        </tr>
+        <tr class="row-green">
+          <td>31</td><td><span class="badge badge-green">🟢 低</span></td>
+          <td>extract プロンプト</td>
+          <td>戦術ポイント数が常に3つ固定でデータ量・試合重要度に応じた可変化ができていない</td>
+          <td>データ豊富な試合は4つ、乏しい試合は2つが最適な場合がある</td>
+        </tr>
+        <tr class="row-green">
+          <td>32</td><td><span class="badge badge-green">🟢 低</span></td>
+          <td>Pricing</td>
+          <td>FAQ に「無料トライアルはありますか？」の項目がない</td>
+          <td>ユーザーのよくある疑問をカバーできていない</td>
+        </tr>
+        <tr class="row-green">
+          <td>33</td><td><span class="badge badge-green">🟢 低</span></td>
+          <td>プロンプト</td>
+          <td>カタカナ変換例（Marcus Smith 等）が特定の現役選手に依存しており陳腐化リスクがある</td>
+          <td>長期的な保守コスト。選手名の例は最小限にした方が良い</td>
+        </tr>
+        <tr class="row-green">
+          <td>34</td><td><span class="badge badge-green">🟢 低</span></td>
+          <td>プロンプト</td>
+          <td><code>additionalSignals</code> が常に空配列のままで将来の拡張時に変更箇所が暗黙化している</td>
+          <td>コメントで明示しておけば済む技術的負債</td>
+        </tr>
+        <tr class="row-green">
+          <td>35</td><td><span class="badge badge-green">🟢 低</span></td>
+          <td>Premiership</td>
+          <td>ヘッダー写真が木のシルエットでラグビーシーンでなくスポーツ感が薄い</td>
+          <td>差し替えるだけで改善できる</td>
+        </tr>
+        <tr class="row-green">
+          <td>36</td><td><span class="badge badge-green">🟢 低</span></td>
+          <td>SNS 運用</td>
+          <td>TikTok・Instagram Reels への展開がない</td>
+          <td>フォロワー1,000人以降に検討すべき。現状のリソースでは非現実的</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr>
+
+  <!-- ========== タスク1: ホーム ========== -->
+  <section class="section" id="task1-home">
+    <h2 class="section-title">タスク 1: サイト評価</h2>
+    <h3 class="section-subtitle">ホームページ（PC 1440px / Mobile 375px）</h3>
+
+    <div class="eval-block good">
+      <div class="eval-block-header">✓ 良い点</div>
+      <div class="eval-block-body"><ul>
+        <li>ヒーローのラグビー実写背景 + 「海外ラグビーを、日本語で深掘り。」は対象ユーザーに対して明快なバリュープロポジション</li>
+        <li>試合リストが日付順で並んでおり今週の試合が一目でわかる</li>
+        <li>PC・モバイル共にレイアウト崩れなし</li>
+      </ul></div>
+    </div>
+    <div class="eval-block bad">
+      <div class="eval-block-header">✗ 課題</div>
+      <div class="eval-block-body"><ul>
+        <li>ヘッダー以外は白地 + グレーの試合カードのみ。スポーツメディアとしての熱量が皆無でtemplate感がある</li>
+        <li>ヒーロー直下のAIプレビューサンプルが43字程度しか表示されず「深掘り」の深さが伝わらない</li>
+        <li>「Premiumを始める → ¥980/月」CTAがファーストビューにあるが、無料体験ゼロ状態での有料訴求は早すぎる</li>
+        <li>フォントがシステムフォントで、スポーツメディアとしての個性がない</li>
+        <li>「次のレビュー」「最近のレビュー」両セクションのデザインが同一で情報の重要度が視覚的に区別されていない</li>
+        <li>大会リスト・シーズン一覧がプレーンなテキストリストのみ。コンペティションブランドのロゴ・カラーが活かされていない</li>
+      </ul></div>
+    </div>
+    <div class="eval-block medium">
+      <div class="eval-block-header">→ 改善提案</div>
+      <div class="eval-block-body"><ul>
+        <li>（高）ファーストビューに「無料で読める最新プレビュー」を1〜2件フルカードで表示し、コンテンツ品質を体感させてからCTAに誘導する</li>
+        <li>（高）試合カードに「プレビューあり ✓」「レビューあり ✓」のステータスバッジを追加</li>
+        <li>（中）大会リストに各リーグのブランドカラーと公式ロゴを入れる</li>
+        <li>（低）Webfont を1〜2種導入してスポーツメディアとしてのエネルギー感を演出する</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- 大会ページ（league-one） -->
+  <section class="section" id="task1-comp">
+    <h3 class="section-subtitle">大会ページ（/c/league-one）</h3>
+    <div class="eval-block good">
+      <div class="eval-block-header">✓ 良い点</div>
+      <div class="eval-block-body"><ul>
+        <li>シーズン一覧の構造は明快</li>
+        <li>ページタイトルの日本語表記（ジャパンラグビー リーグワン）が正確</li>
+      </ul></div>
+    </div>
+    <div class="eval-block bad">
+      <div class="eval-block-header">✗ 課題</div>
+      <div class="eval-block-body"><ul>
+        <li>ページ全体の情報量が極端に少ない。試合2件 + シーズン2件で完結しており訪問理由が弱い</li>
+        <li>ヘッダー背景がリーグワンロゴの引き伸ばしで低品質に見える</li>
+        <li>シーズン一覧に優勝チーム・総試合数等の文脈情報が全くない</li>
+      </ul></div>
+    </div>
+    <div class="eval-block medium">
+      <div class="eval-block-header">→ 改善提案</div>
+      <div class="eval-block-body"><ul>
+        <li>（高）シーズン一覧に「優勝: ○○」「全○試合」を追加</li>
+        <li>（中）大会説明文（200字程度）を追加</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- シーズンページ -->
+  <section class="section" id="task1-season">
+    <h3 class="section-subtitle">シーズンページ（/c/league-one/2024-25）</h3>
+    <div class="eval-block good">
+      <div class="eval-block-header">✓ 良い点</div>
+      <div class="eval-block-body"><ul>
+        <li>全18節の試合を網羅しており情報量は十分</li>
+        <li>試合カード（チームバッジ + スコア + 会場）の視認性は良い</li>
+        <li>ISR 適用でパフォーマンス改善済み（PR #114）</li>
+      </ul></div>
+    </div>
+    <div class="eval-block bad">
+      <div class="eval-block-header">✗ 課題</div>
+      <div class="eval-block-body"><ul>
+        <li>第1〜第17節がアコーディオン折りたたみで最新節以外へのスクロール量が多い</li>
+        <li>「English match reviews available」バナーのデザインが地味でクリック率は低いと予想</li>
+        <li>試合カードにコンテンツ有無のステータスが表示されていない</li>
+      </ul></div>
+    </div>
+    <div class="eval-block medium">
+      <div class="eval-block-header">→ 改善提案</div>
+      <div class="eval-block-body"><ul>
+        <li>（高）最新節をデフォルト展開にする（PR #88で実装済みのはずだが実際の動作確認が必要）</li>
+        <li>（中）試合カードに「レビューあり」バッジを表示</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- 試合ページ -->
+  <section class="section" id="task1-match">
+    <h3 class="section-subtitle">試合ページ（Scotland vs England, Six Nations 2026）</h3>
+    <div class="eval-block good">
+      <div class="eval-block-header">✓ 良い点</div>
+      <div class="eval-block-body"><ul>
+        <li>スコア表示（31–20）が大きく明確</li>
+        <li>スコア推移グラフは他サービスにない差別化コンテンツ</li>
+        <li>出場選手一覧が両チーム並列で整理されている</li>
+        <li>レビュー本文に「マレーフィールド・スタジアム」「27回のラインアウト」等の具体的数値が入っており読み応えあり</li>
+      </ul></div>
+    </div>
+    <div class="eval-block bad">
+      <div class="eval-block-header">✗ 課題</div>
+      <div class="eval-block-body"><ul>
+        <li>スコアグラフの軸ラベルが小さく、モバイルでは特に読めない（推定8〜9px）</li>
+        <li>AI チャットセクションがページ最下部に押しやられており機能の存在に気づくユーザーは少ない</li>
+        <li>ペイウォール：フリーで読める量が短く「試合全体像」の途中で遮断される</li>
+        <li>出場選手リストがモバイルで縦一列表示になり40名以上が縦に並ぶ</li>
+      </ul></div>
+    </div>
+    <div class="eval-block medium">
+      <div class="eval-block-header">→ 改善提案</div>
+      <div class="eval-block-body"><ul>
+        <li>（高）AI チャットをスコアの直下またはフローティングボタンとして配置</li>
+        <li>（高）モバイルの出場選手リストをタブ切り替え（SCO / ENG）にして縦スクロール量を半減</li>
+        <li>（中）フリー公開分を現在より100〜200字延長してターニングポイントの冒頭まで見せる</li>
+        <li>（低）スコアグラフの軸ラベルを最低12pxに拡大</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="section" id="task1-pricing">
+    <h3 class="section-subtitle">Pricing ページ</h3>
+    <div class="eval-block good">
+      <div class="eval-block-header">✓ 良い点</div>
+      <div class="eval-block-body"><ul>
+        <li>Free vs Premium の比較表は明快</li>
+        <li>YouTubeデモ動画の埋め込みは差別化コンテンツとして機能している</li>
+        <li>FAQが5項目あり、よくある疑問をカバーしている</li>
+      </ul></div>
+    </div>
+    <div class="eval-block bad">
+      <div class="eval-block-header">✗ 課題</div>
+      <div class="eval-block-body"><ul>
+        <li>Premium サンプルコンテンツエリアと AI チャットエリアが空白表示（本番環境での要確認）</li>
+        <li>月額¥980のみで年払い・学割の選択肢がなく購入ハードルの多様化ができていない</li>
+        <li>ヒーローコピー「海外ラグビーを、もっと深く。」が抽象的。具体的数値に変えるべき</li>
+        <li>FAQ に「無料トライアルはありますか？」がない</li>
+      </ul></div>
+    </div>
+    <div class="eval-block medium">
+      <div class="eval-block-header">→ 改善提案</div>
+      <div class="eval-block-body"><ul>
+        <li>（高）サンプルコンテンツが正しく表示されているか本番環境で確認。空白ならば最高品質のレビュー1本をハードコードで表示</li>
+        <li>（高）ヒーローコピーを「週12試合のAI戦術分析が読み放題」等の具体的便益訴求に変える</li>
+        <li>（中）年払いプランの検討（¥9,800/年 = 2ヶ月分割引）</li>
+        <li>（低）FAQ に「無料トライアルはありますか？」を追加</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ========== 全大会評価 ========== -->
+  <section class="section" id="task1-all-comps">
+    <h2 class="section-title">全大会ページ評価</h2>
+
+    <div class="critical-box">
+      <h4>全大会共通の問題（3件）</h4>
+      <ul>
+        <li>大会説明文ゼロ — SEO テキスト不足・新規ユーザーが文脈を理解できない</li>
+        <li>「最近のレビュー」表示が大会によって不均一（Top 14・Rugby Championship・PNC では非表示）</li>
+        <li>PNC と Autumn Nations のヘッダー画像が完全に同一（最優先で修正）</li>
+      </ul>
+    </div>
+
+    <div class="comp-grid">
+      <div class="comp-card">
+        <div class="comp-card-header">Six Nations</div>
+        <div class="comp-card-body">
+          <p class="good-item">芝生背景が大会らしく雰囲気がある</p>
+          <p class="good-item">シーズン一覧が2020〜2027と深く SEO に有利</p>
+          <p class="bad-item">「最近のレビュー」が表示されていない</p>
+          <p class="bad-item">2027シーズンのクリック先が不明（404リスク）</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">Six Nations 2026（シーズン）</div>
+        <div class="comp-card-body">
+          <p class="good-item">全ラウンドの試合が充実しており完成度が高い</p>
+          <p class="good-item">試合カードにレビューバッジが適切に表示</p>
+          <p class="good-item">シーズンタブのUIが分かりやすい</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">Premiership</div>
+        <div class="comp-card-body">
+          <p class="good-item">最近のレビューが3件表示されており大会ページとして機能</p>
+          <p class="bad-item">94–33という異常スコアが表示（要確認）</p>
+          <p class="bad-item">ヘッダーが木のシルエットでスポーツ感が薄い</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">Premiership 2025-26（シーズン）</div>
+        <div class="comp-card-body">
+          <p class="good-item">全節アコーディオンで構造は適切</p>
+          <p class="good-item">最終節が展開されており最新試合がすぐ見える</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">URC ⭐ ヘッダー最高評価</div>
+        <div class="comp-card-body">
+          <p class="good-item">スクラム写真が全大会中で最もクオリティが高い</p>
+          <p class="good-item">プレーオフラウンドラベルが正しく表示</p>
+          <p class="bad-item">最近のレビューが1件のみ（他は3件）</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">URC 2025-26（シーズン）</div>
+        <div class="comp-card-body">
+          <p class="good-item">第1節〜第15節＋プレーオフまで全試合網羅</p>
+          <p class="good-item">プレーオフラベルの表示が正確</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">Top 14 ⚠️ コンテンツ薄</div>
+        <div class="comp-card-body">
+          <p class="good-item">夜のスタジアム照明ヘッダーは雰囲気が良い</p>
+          <p class="bad-item">最近のレビューが全く表示されていない</p>
+          <p class="bad-item">2024-25のみ、2025-26は準備中だけでコンテンツなし</p>
+          <p class="bad-item">表示試合数が他の大会と比べて少ない</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">Super Rugby Pacific</div>
+        <div class="comp-card-body">
+          <p class="good-item">タックルシーン写真がダークで迫力あり</p>
+          <p class="good-item">最近のレビューが3件表示</p>
+          <p class="bad-item">シーズン一覧が2026・2025の2件のみ（過去データ不足）</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">Super Rugby Pacific 2026 ⭐ コンテンツ最充実</div>
+        <div class="comp-card-body">
+          <p class="good-item">全大会中コンテンツが最も充実したシーズンページ</p>
+          <p class="good-item">全ラウンド＋プレーオフ網羅・キックオフ予定も表示</p>
+          <p class="bad-item">ページが非常に長くスクロール量が最大</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">Rugby Championship</div>
+        <div class="comp-card-body">
+          <p class="good-item">ヘッダー写真は実写でスポーツ感がある</p>
+          <p class="bad-item">最近のレビューが表示されていない</p>
+          <p class="bad-item">2026シーズンが準備中のみ</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">Rugby Championship 2025（シーズン）</div>
+        <div class="comp-card-body">
+          <p class="good-item">全6節・全試合が2列で整然と表示</p>
+          <p class="good-item">国旗アイコンが正確に表示されている</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">Rugby World Cup</div>
+        <div class="comp-card-body">
+          <p class="good-item">決勝・準決勝のレビューが最近のレビューとして表示</p>
+          <p class="bad-item">RWC 2027が「準備中」表示だがクリック先が不明</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">RWC 2023 ⚠️ ページが長すぎる</div>
+        <div class="comp-card-body">
+          <p class="good-item">試合データ・レビューともに網羅されている</p>
+          <p class="bad-item">約54試合が全展開。フィルターもページネーションもない</p>
+          <p class="bad-item">プール別・ラウンド別フィルターが必須</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">Autumn Nations</div>
+        <div class="comp-card-body">
+          <p class="good-item">JPN絡みの試合がレビューとして表示。日本ファンへの訴求力高</p>
+          <p class="bad-item">⚠️ ヘッダー画像がPNCと完全に同一（即時修正必要）</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-card-header">Pacific Nations Cup（PNC）</div>
+        <div class="comp-card-body">
+          <p class="good-item">JPN vs FIJ等の日本代表戦レビューあり</p>
+          <p class="bad-item">⚠️ ヘッダー画像がAutumn Nationsと完全に同一（即時修正）</p>
+          <p class="bad-item">最近のレビューが表示されていない</p>
+          <p class="bad-item">フッターナビゲーションにリンクがない（8大会中唯一）</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ========== タスク2: LLM ========== -->
+  <section class="section" id="task2">
+    <h2 class="section-title">タスク 2: LLMプロンプト・モデル評価</h2>
+
+    <h3 class="section-subtitle">モデル選択（models.ts）</h3>
+    <div class="eval-block good">
+      <div class="eval-block-header">✓ 良い点</div>
+      <div class="eval-block-body"><ul>
+        <li>FAST（gpt-4o-mini）= extract/QA、NARRATIVE（gpt-4o）= preview/recap という分割は適切でコスト最適</li>
+        <li><code>models.ts</code> で一元管理されているのでアップグレード時の変更箇所が1ヶ所</li>
+      </ul></div>
+    </div>
+    <div class="eval-block bad">
+      <div class="eval-block-header">✗ 課題</div>
+      <div class="eval-block-body"><ul>
+        <li>2026年5月時点では <code>gpt-4o</code> より <code>gpt-4.1</code> の方がナラティブ品質が高い可能性がある（実験未実施）</li>
+      </ul></div>
+    </div>
+
+    <h3 class="section-subtitle">パイプライン設計（pipeline.ts）</h3>
+    <div class="eval-block good">
+      <div class="eval-block-header">✓ 良い点</div>
+      <div class="eval-block-body"><ul>
+        <li>assemble → extract → generate → qa の4ステージ分離が明確</li>
+        <li><code>pipeline_runs</code> テーブルへの詳細ログとコストアラート機能あり</li>
+        <li>temperature を変えたリトライでナラティブの多様性を確保</li>
+      </ul></div>
+    </div>
+    <div class="critical-box">
+      <h4>🔴 重大な欠陥（2件）</h4>
+      <ul>
+        <li><strong>欠陥1（課題#1）:</strong> <code>buildQaContentPrompt(contentType, narrative, language)</code> に <code>assembled</code> データが渡されていない。<code>factual_grounding</code> がナラティブ単体の自己評価になっており、ハルシネーションを見逃すリスクがある。<code>winnerCheckBlock</code> も同様に「home_score/away_score を確認すること」と指示しながら実際のスコアが含まれていない。</li>
+        <li><strong>欠陥2（課題#2）:</strong> <code>pipeline.ts:258</code> の <code>content_md_ja: finalNarrative</code> は language が <code>"en"</code> の場合も同じカラムに保存している。英語コンテンツが日本語カラムに入り、将来の言語別クエリで混乱を招く。</li>
+      </ul>
+    </div>
+
+    <h3 class="section-subtitle">extract-tactical-points.ts（extract@2.0.0）</h3>
+    <div class="eval-block good">
+      <div class="eval-block-header">✓ 良い点</div>
+      <div class="eval-block-body"><ul>
+        <li>JSON スキーマが明確、禁止事項が具体的（数値根拠なし禁止・強調記号禁止等）</li>
+        <li>戦術次元の例示が豊富で方向性がわかりやすい</li>
+      </ul></div>
+    </div>
+    <div class="eval-block bad">
+      <div class="eval-block-header">✗ 課題</div>
+      <div class="eval-block-body"><ul>
+        <li><code>match_impact: "high | medium | low"</code> の判断基準が未定義。LLMが恣意的に全部 <code>high</code> にするリスクがある</li>
+        <li>戦術ポイントが常に3つ固定。データ豊富な試合は4つ、乏しい場合は2つが適切な場合がある</li>
+      </ul></div>
+    </div>
+
+    <h3 class="section-subtitle">generate-preview.ts / generate-recap.ts（preview@3.0.0 / recap@3.0.0）</h3>
+    <div class="eval-block good">
+      <div class="eval-block-header">✓ 良い点</div>
+      <div class="eval-block-body"><ul>
+        <li>ペルソナ（20年取材ジャーナリスト）が適切</li>
+        <li>「セクション0：この試合の核心」の必須出力は差別化コンテンツとして機能する</li>
+        <li>禁止表現リストが充実（「好調」「重要な一戦」「鍵となります」等）</li>
+        <li>データスパースモード対応、プレーオフフェーズ別指示、リーグワンの日本語表記分岐は良い設計</li>
+      </ul></div>
+    </div>
+    <div class="eval-block bad">
+      <div class="eval-block-header">✗ 課題</div>
+      <div class="eval-block-body"><ul>
+        <li><code>JSON.stringify(assembled)</code> をそのままプロンプトに埋め込んでおり（preview:116行、recap:134行）、イベント数が多い試合でトークンが肥大化するリスクがある</li>
+        <li>preview と recap でペルソナ・禁止事項・名前スタイル指示が完全重複（DRY違反）。共通の <code>buildNarrativeBasePrompt()</code> を抽出すべき</li>
+        <li>カタカナ変換例が特定の現役選手に依存しており陳腐化リスクがある</li>
+      </ul></div>
+    </div>
+
+    <h3 class="section-subtitle">qa-content.ts / qa.ts（qa@2.0.0）</h3>
+    <div class="eval-block good">
+      <div class="eval-block-header">✓ 良い点</div>
+      <div class="eval-block-body"><ul>
+        <li>4軸スコア + verdict 判定が明確</li>
+        <li>tactical_depth ≤ 2 で強制 retry は適切な品質ゲート</li>
+        <li>QA は temperature=0 で deterministic な評価を維持</li>
+      </ul></div>
+    </div>
+    <div class="eval-block bad">
+      <div class="eval-block-header">✗ 課題</div>
+      <div class="eval-block-body"><ul>
+        <li>factual_grounding 評価のための事実データが渡されていない（重大欠陥#1と同根）</li>
+        <li>verdict 判定ロジックがプロンプト（qa-content.ts:72行）とコード（qa.ts の <code>resolveVerdict</code>）の両方に存在し、LLM が返す <code>verdict</code> フィールドが実質的に無視されている</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ========== タスク3: SNS ========== -->
+  <section class="section" id="task3">
+    <h2 class="section-title">タスク 3: SNS 運用フロー評価</h2>
+
+    <h3 class="section-subtitle">現在の運用フロー</h3>
+    <div class="flow-box">
+      orchestrate cron → コンテンツ生成（preview / recap）<br>
+      ↓<br>
+      notify-discord cron → Discord JA/EN 別チャンネルに通知<br>
+      &nbsp;&nbsp;&nbsp;・X 投稿ドラフト（URL なし）<br>
+      &nbsp;&nbsp;&nbsp;・X リプライ用テキスト（「AI 戦術分析の全文はこちら 👇\nhttps://...」）<br>
+      &nbsp;&nbsp;&nbsp;・記事 URL<br>
+      ↓<br>
+      オーナーが手動で:<br>
+      1. ドラフトをコピーして X に投稿<br>
+      2. リプライで URL を投稿<br>
+      3. （任意）スター選手ハッシュタグをさらにリプライで追加
+    </div>
+
+    <div class="eval-block good">
+      <div class="eval-block-header">✓ 良い点</div>
+      <div class="eval-block-body"><ul>
+        <li>Discord での JA/EN 別チャンネル通知 + X リプライ用テキスト分離は理にかなった設計</li>
+        <li>URL をリプライに分離（PR #108）は X アルゴリズム対策として正しい方向性</li>
+        <li>大会別ハッシュタグの動的化（PR #106）は正しい改善</li>
+      </ul></div>
+    </div>
+    <div class="eval-block bad">
+      <div class="eval-block-header">✗ 課題・ボトルネック</div>
+      <div class="eval-block-body"><ul>
+        <li>試合の多い週は週20〜30回のコピペ操作が必要。持続不可能なオペレーション</li>
+        <li>試合終了→Discord通知→オーナー起床→手動投稿の遅延が数時間になる場合があり、エンゲージメントピークを逃している</li>
+        <li>画像付きツイートがなくテキストのみ（インプレッション30〜50%低下）</li>
+        <li>フォロワーがほぼ0の状態のためハッシュタグ経由の流入に完全依存</li>
+      </ul></div>
+    </div>
+    <div class="eval-block medium">
+      <div class="eval-block-header">→ 改善提案（優先度順）</div>
+      <div class="eval-block-body"><ul>
+        <li>（高）試合結果グラフィック画像を自動生成してツイートに添付する。Next.js の OGP 画像生成 API を16:9に流用することで低コストで実現可能</li>
+        <li>（中）Discord 通知にワンクリックコピーボタンを追加（Discord Bot 改修）して手動コピペの手間を大幅削減</li>
+        <li>（中）試合前プレビューの X スレッド化（メインツイート→戦術要約リプライ→URL リプライの3連投）</li>
+        <li>（低）Instagram への試合結果カード投稿（正方形1:1版を OGP 生成基盤で流用）</li>
+        <li>（低）TikTok/YouTube Shorts はフォロワー1,000人以降に検討</li>
+      </ul></div>
+    </div>
+
+    <h3 class="section-subtitle">EN アカウント向け特化改善</h3>
+    <div class="eval-block medium">
+      <div class="eval-block-header">→ 提案</div>
+      <div class="eval-block-body"><ul>
+        <li>League One の英語情報は NZ・豪・英のラグビーファンに刺さる可能性があり、英語圏の大規模ラグビーアカウントへのリプライで認知を取れる可能性は JA より高い</li>
+        <li>英語圏では <code>#RugbyUnion</code> <code>#LeagueOne</code> 等のハッシュタグ戦略を JA と別途設計すべき</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <hr>
+
+  <footer style="text-align:center;color:var(--text-muted);font-size:0.8rem;padding:2rem 0">
+    Tryline 総合評価レポート — 2026-05-23<br>
+    評価ツール: Playwright（スクリーンショット）+ コードリーディング（LLMプロンプト・パイプライン）
+  </footer>
+
+</div>
+</body>
+</html>
