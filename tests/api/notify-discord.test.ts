@@ -251,7 +251,12 @@ describe("/api/cron/notify-discord", () => {
     );
     const firstPayload = JSON.parse(
       (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
-    ) as { embeds: Array<{ fields: Array<{ value: string }> }> };
+    ) as { embeds: Array<{ fields: Array<{ name: string; value: string }> }> };
+    expect(firstPayload.embeds[0]?.fields.map((field) => field.name)).toEqual([
+      "① X に貼る（URLなし）",
+      "② リプライに貼る",
+      "③ 記事を開く",
+    ]);
     expect(firstPayload.embeds[0]?.fields[0]?.value).toContain(
       "```\ndraft tweet\n```",
     );
