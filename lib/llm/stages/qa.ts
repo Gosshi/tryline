@@ -24,6 +24,13 @@ export type QaStageResponse = {
   attempts: number;
 };
 
+type ParsedQaResponse = {
+  scores?: QaResult["scores"];
+  issues?: unknown;
+};
+
+// Single source of truth for QA verdicts. The LLM scores content only; code
+// applies the stable retry/reject thresholds used by the pipeline.
 function resolveVerdict(
   scores: QaResult["scores"],
   retryCount: number,
@@ -55,7 +62,7 @@ function resolveVerdict(
 }
 
 function parseQaResponse(jsonText: string, retryCount: number): QaResult {
-  const parsed = JSON.parse(jsonText) as QaResult;
+  const parsed = JSON.parse(jsonText) as ParsedQaResponse;
 
   if (!parsed.scores) {
     throw new Error("qa response missing scores");

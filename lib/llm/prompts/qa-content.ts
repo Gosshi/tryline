@@ -43,7 +43,7 @@ export function buildQaContentPrompt(
           "## 勝者整合性チェック",
           `この試合のスコア: ${matchContext.homeTeam} ${matchContext.homeScore} — ${matchContext.awayTeam} ${matchContext.awayScore}`,
           "スコアが高い方のチームが実際の勝者である。",
-          "本文中で敗者チームが勝利したかのように書かれていれば factual_grounding を 1 にして verdict を reject にすること。",
+          "本文中で敗者チームが勝利したかのように書かれていれば factual_grounding を 1 にすること。",
           "引き分け（同点）の場合はこのチェックを無視する。",
         ].join("\n")
       : "";
@@ -78,8 +78,7 @@ export function buildQaContentPrompt(
       "- 1: ほぼすべてが一般論または機械的な要約",
     ].join("\n"),
     winnerCheckBlock,
-    'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[],"verdict":"publish"|"retry"|"reject"}',
-    "verdict判定: tactical_depth が 2 以下なら無条件で retry（一般論を書き直させる）。それ以外は: いずれか2以下なら retry、全て3以上なら publish、重大欠陥で再試行価値がなければ reject。",
+    'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[]}',
     `本文: ${narrative}`,
   ].join("\n\n");
 }

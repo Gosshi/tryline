@@ -28,7 +28,8 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).toContain("- 2: 750字未満");
     expect(prompt).toContain("### tactical_depth (1-5)");
     expect(prompt).toContain("一般論が皆無");
-    expect(prompt).toContain("tactical_depth が 2 以下なら無条件で retry");
+    expect(prompt).not.toContain("verdict判定");
+    expect(prompt).not.toContain('"verdict"');
   });
 
   it("uses recap length thresholds in the information density rubric", () => {
