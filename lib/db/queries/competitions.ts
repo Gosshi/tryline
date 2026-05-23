@@ -1,6 +1,7 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 
 export type CompetitionRow = {
+  champion: string | null;
   id: string;
   slug: string;
   family: string;
@@ -20,6 +21,7 @@ export type HomepageCompetitionLink = {
 };
 
 type CompetitionDbRow = {
+  champion: string | null;
   id: string;
   slug: string;
   family: string;
@@ -36,6 +38,7 @@ type MatchContentCompetitionRow = {
 
 function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
   return {
+    champion: row.champion,
     endDate: row.end_date,
     family: row.family,
     id: row.id,
@@ -99,7 +102,7 @@ export async function listSeasonsByFamily(
     client
       .from("competitions")
       .select(
-        "id, slug, family, name, season, start_date, end_date, matches(count)",
+        "id, slug, family, name, season, champion, start_date, end_date, matches(count)",
       )
       .eq("family", family)
       .order("season", { ascending: false }),
@@ -149,7 +152,7 @@ export async function getCompetitionBySlug(
   const { data, error } = await client
     .from("competitions")
     .select(
-      "id, slug, family, name, season, start_date, end_date, matches(count)",
+      "id, slug, family, name, season, champion, start_date, end_date, matches(count)",
     )
     .eq("slug", slug)
     .maybeSingle();

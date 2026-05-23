@@ -169,29 +169,45 @@ export default async function CompetitionHubPage({ params }: Props) {
           <ul className="space-y-3">
             {seasons.map((season) => {
               const hasContent = season.publishedContentCount > 0;
+              const seasonStats = (
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
+                  <span>{season.matchCount} 試合</span>
+                  {season.champion && (
+                    <span className="font-semibold text-[var(--color-ink)]">
+                      🏆 {season.champion}
+                    </span>
+                  )}
+                </div>
+              );
 
               return (
                 <li key={season.slug}>
                   {hasContent ? (
                     <Link
-                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-slate-400 hover:bg-slate-50"
+                      className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-slate-400 hover:bg-slate-50"
                       href={`/c/${competition}/${season.season}`}
                     >
-                      <span className="text-lg font-semibold text-slate-900">
-                        {season.season}
-                      </span>
+                      <div>
+                        <span className="text-lg font-semibold text-slate-900">
+                          {season.season}
+                        </span>
+                        {seasonStats}
+                      </div>
                       {season.startDate && season.endDate && (
-                        <span className="text-sm text-slate-500">
+                        <span className="shrink-0 text-sm text-slate-500">
                           {season.startDate.slice(0, 7)} 〜{" "}
                           {season.endDate.slice(0, 7)}
                         </span>
                       )}
                     </Link>
                   ) : (
-                    <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 opacity-60">
-                      <span className="text-lg font-semibold text-slate-500">
-                        {season.season}
-                      </span>
+                    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 opacity-60">
+                      <div>
+                        <span className="text-lg font-semibold text-slate-500">
+                          {season.season}
+                        </span>
+                        {seasonStats}
+                      </div>
                       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                         準備中
                       </span>

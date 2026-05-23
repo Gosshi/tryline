@@ -241,6 +241,7 @@ export type Database = {
       };
       competitions: {
         Row: {
+          champion: string | null;
           country: string | null;
           created_at: string;
           end_date: string | null;
@@ -253,6 +254,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          champion?: string | null;
           country?: string | null;
           created_at?: string;
           end_date?: string | null;
@@ -265,6 +267,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          champion?: string | null;
           country?: string | null;
           created_at?: string;
           end_date?: string | null;
