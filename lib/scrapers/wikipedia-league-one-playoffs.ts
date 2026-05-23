@@ -85,7 +85,7 @@ function parseDataMw(value: string): unknown | null {
 }
 
 function findPlayoffHeading($: ReturnType<typeof load>) {
-  return $("[id], h2, h3")
+  return $("h2, h3, h4")
     .filter((_, element) => {
       const id = normalizeWhitespace($(element).attr("id") ?? "");
       const text = normalizeWhitespace($(element).text());
