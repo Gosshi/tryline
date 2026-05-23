@@ -1,3 +1,10 @@
+import {
+  buildPersona,
+  buildSignalsBlock,
+  buildStandingsBlock,
+  PROHIBITIONS_BLOCK,
+} from "./shared-prompt-blocks";
+
 import type {
   AdditionalSignal,
   AssembledContentInput,
@@ -20,39 +27,19 @@ export function buildGeneratePreviewPrompt(
     : isDataSparse
       ? "構成: 1)両チーム現状と近況(500-600字) 2)大会文脈・この試合の意味(400-500字) 3)戦術傾向と注目ポイント(400-500字)。全体で1,500字以上を目標とすること。キープレイヤーセクションは省略すること（ラインアップデータなし）。"
       : "構成: 1)両チーム現状(400-500字) 2)戦術ポイント展開(600-700字) 3)戦術傾向と展望(300-400字)。全体で1,500字以上を目標とすること。キープレイヤーセクションは省略すること（ラインアップデータなし）。";
-  const persona = [
-    "あなたは国際ラグビーを20年取材してきたジャーナリストです。",
-    "Number やRugby World誌に寄稿し、ファンが試合を深く理解できる",
-    "具体的・分析的な日本語文章を書くことを使命としています。",
-    "試合プレビューをマークダウンで作成してください。",
-  ].join("");
+  const persona = buildPersona("preview");
   const coreQuestionBlock = [
     "## セクション0（必須、200字以内）: # この試合の核心",
     "この試合が「何 対 何の争い」なのかを1文で表す問いを設定し、その根拠を数値で示すこと。",
     "例: 「Leinsterの平均31得点アタック対Saracensの平均14失点ディフェンス——どちらの実力値が本物か」",
     "このセクションを最初に必ず出力すること。",
   ].join("\n");
-  const prohibitionsBlock = [
-    "【絶対禁止表現 — 1つでも使った場合は書き直すこと】",
-    "- 「好調」「好調な」「絶好調」（代わりに「直近5試合で4勝」「平均得点32点」等の数値を使うこと）",
-    "- 「重要な一戦」「重要な試合」「重要な局面」",
-    "- 「鍵となります」「鍵を握ります」「鍵となるのは」",
-    "- 「注目のカード」「注目の一戦」",
-    "- 「接戦が予想されます」（代わりに双方の数値差で接戦度を判断すること）",
-    "- 「勝利を目指します」「勝利を狙います」（両チームは常に勝とうとしている）",
-    "- 「〜でしょうか」で文を終える（読者は答えを期待している）",
-  ].join("\n");
-  const signalsBlock =
-    additionalSignals.length === 0
-      ? ""
-      : `外部シグナル(距離を取った帰属表現で利用): ${JSON.stringify(additionalSignals)}`;
-  const standingsBlock =
-    assembled.competition_standings.length === 0
-      ? ""
-      : [
-          `現在の大会順位表（この試合前時点）: ${JSON.stringify(assembled.competition_standings)}`,
-          "順位争い・Grand Slam・木のスプーン等の大会文脈をプレビューに組み込むこと。",
-        ].join("\n");
+  const prohibitionsBlock = PROHIBITIONS_BLOCK;
+  const signalsBlock = buildSignalsBlock(additionalSignals);
+  const standingsBlock = buildStandingsBlock(
+    assembled.competition_standings,
+    "preview",
+  );
   const dataSparseBlock = isDataSparse
     ? [
         "【データスパースモード】ラインアップデータは存在しない。以下の代替戦略でプレビューを構成すること:",
