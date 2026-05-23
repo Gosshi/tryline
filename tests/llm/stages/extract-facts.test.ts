@@ -100,6 +100,46 @@ describe("extractTacticalPoints", () => {
     );
   });
 
+  it("accepts variable tactical point counts from valid JSON", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        tactical_points: tacticalPoints.slice(0, 2),
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 3000, outputTokens: 500 },
+    });
+
+    const sparseResult = await extractTacticalPoints(assembled);
+    expect(sparseResult.result.tactical_points).toHaveLength(2);
+
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        tactical_points: [
+          ...tacticalPoints,
+          {
+            away_situation: "直近5試合で平均9ペナルティ",
+            home_situation: "直近5試合で平均6ペナルティ",
+            match_impact: "medium",
+            matchup_implication: "規律差が地域獲得とPG機会を左右する",
+            tactical_dimension: "反則管理",
+          },
+          {
+            away_situation: "前節は自陣22m脱出で2ミス",
+            home_situation: "前節はキックリターンから2トライ",
+            match_impact: "low",
+            matchup_implication: "出口の精度がカウンター機会を左右する",
+            tactical_dimension: "出口戦略",
+          },
+        ],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 3000, outputTokens: 500 },
+    });
+
+    const richResult = await extractTacticalPoints(assembled);
+    expect(richResult.result.tactical_points).toHaveLength(5);
+  });
+
   it("retries once when first response is invalid JSON", async () => {
     openAIMock.createTextResponse
       .mockResolvedValueOnce({

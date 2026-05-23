@@ -50,8 +50,18 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildExtractTacticalPointsPrompt", () => {
-  it("uses extract prompt version 2.1.0", () => {
-    expect(PROMPT_VERSION).toBe("extract@2.1.0");
+  it("uses extract prompt version 2.2.0", () => {
+    expect(PROMPT_VERSION).toBe("extract@2.2.0");
+  });
+
+  it("documents variable tactical point counts", () => {
+    const prompt = buildExtractTacticalPointsPrompt(assembled);
+
+    expect(prompt).toContain("出力件数の目安");
+    expect(prompt).toContain("4〜5件");
+    expect(prompt).toContain("3件");
+    expect(prompt).toContain("2件");
+    expect(prompt).toContain("でたらめに埋めないこと");
   });
 
   it("documents match_impact criteria", () => {

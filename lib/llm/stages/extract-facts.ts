@@ -27,12 +27,12 @@ export type FactExtractionResponse = {
 
 function parseFactExtraction(jsonText: string): FactExtractionResult {
   const parsed = JSON.parse(jsonText) as FactExtractionResult;
+  const pointCount = Array.isArray(parsed.tactical_points)
+    ? parsed.tactical_points.length
+    : 0;
 
-  if (
-    !Array.isArray(parsed.tactical_points) ||
-    parsed.tactical_points.length !== 3
-  ) {
-    throw new Error("extract-facts must return exactly 3 tactical points");
+  if (pointCount < 2 || pointCount > 5) {
+    throw new Error("extract-facts must return 2 to 5 tactical points");
   }
 
   return parsed;
