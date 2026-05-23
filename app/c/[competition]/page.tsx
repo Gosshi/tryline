@@ -24,7 +24,7 @@ const COMPETITION_HERO_IMAGES: Record<string, string> = {
   "six-nations":
     "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80",
   premiership:
-    "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=1200&q=80",
+    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1280&q=80",
   "urc":
     "https://images.unsplash.com/photo-1480099225005-2513c8947aec?w=1200&q=80",
   "top-14":
