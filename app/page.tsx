@@ -174,7 +174,7 @@ export default async function HomePage() {
                     </span>
                   )}
               </p>
-              <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/75">
+              <p className="mt-3 line-clamp-6 text-sm leading-6 text-white/75">
                 {sampleMatch.recapExcerpt}
               </p>
               <p className="mt-3 text-right text-xs font-semibold text-white">
@@ -216,7 +216,7 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="mx-5 my-4 border-l-4 border-[var(--color-accent)] pl-4">
-              <p className="line-clamp-5 text-sm leading-relaxed text-[var(--color-ink)]">
+              <p className="line-clamp-8 text-sm leading-relaxed text-[var(--color-ink)]">
                 {sampleMatch.recapExcerpt}
               </p>
             </div>
