@@ -51,8 +51,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.1.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.1.0");
+  it("uses recap prompt version 4.2.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.2.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -61,7 +61,8 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("国際ラグビーを20年取材");
     expect(prompt).toContain("Number やRugby World誌");
     expect(prompt).toContain("# この試合の核心");
-    expect(prompt).toContain("試合前の「何 対 何の争い」");
+    expect(prompt).toContain("試合前の「何 対 何の争い」に対し実際の結果");
+    expect(prompt).not.toContain("セクション0");
     expect(prompt).toContain("【絶対禁止表現");
     expect(prompt).toContain("「好調」");
     expect(prompt).toContain("「鍵となります」");
@@ -87,7 +88,8 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain("MOM セクションは省略すること");
     expect(prompt).toContain("全体で2,000字以上を目標とすること");
-    expect(prompt).toContain("上記の見出し以外は絶対に追加してはならない");
+    expect(prompt).toContain("変更・追加・省略はすべて禁止");
+    expect(prompt).toContain("上記5つの見出し以外は絶対に追加してはならない");
     expect(prompt).toContain("# 試合概要");
     expect(prompt).toContain("# 総評");
     expect(prompt).toContain(
@@ -132,6 +134,8 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("# 試合全体像（400-500字）");
     expect(prompt).toContain("# ターニングポイント（600-700字）");
     expect(prompt).toContain("# 次戦への示唆（300-400字）");
+    expect(prompt).toContain("# この試合の核心（200字以内）");
+    expect(prompt).toContain("上記4つの見出し以外は絶対に追加してはならない");
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain("ラインアップデータなし");
     expect(prompt).toContain("全体で2,000字以上を目標とすること");
