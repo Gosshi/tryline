@@ -1,8 +1,18 @@
 import { MODELS } from "@/lib/llm/models";
 import { createTextResponse } from "@/lib/llm/openai";
-import { buildExtractTacticalPointsPrompt, PROMPT_VERSION } from "@/lib/llm/prompts/extract-tactical-points";
+import {
+  buildExtractTacticalPointsPrompt,
+  PROMPT_VERSION,
+} from "@/lib/llm/prompts/extract-tactical-points";
 
-import type { AssembledContentInput, FactExtractionResult } from "@/lib/llm/types";
+import type {
+  AssembledContentInput,
+  FactExtractionResult,
+} from "@/lib/llm/types";
+
+const MAX_EVENTS = 40;
+const MAX_STANDINGS_TEAMS = 10;
+const APPROX_TOKEN_WARNING_THRESHOLD = 20_000;
 
 export type FactExtractionResponse = {
   result: FactExtractionResult;
@@ -18,15 +28,46 @@ export type FactExtractionResponse = {
 function parseFactExtraction(jsonText: string): FactExtractionResult {
   const parsed = JSON.parse(jsonText) as FactExtractionResult;
 
-  if (!Array.isArray(parsed.tactical_points) || parsed.tactical_points.length !== 3) {
+  if (
+    !Array.isArray(parsed.tactical_points) ||
+    parsed.tactical_points.length !== 3
+  ) {
     throw new Error("extract-facts must return exactly 3 tactical points");
   }
 
   return parsed;
 }
 
-export async function extractTacticalPoints(input: AssembledContentInput): Promise<FactExtractionResponse> {
-  const prompt = buildExtractTacticalPointsPrompt(input);
+function trimAssembledInput(
+  input: AssembledContentInput,
+): AssembledContentInput {
+  return {
+    ...input,
+    competition_standings: input.competition_standings.slice(
+      0,
+      MAX_STANDINGS_TEAMS,
+    ),
+    match_events: input.match_events.slice(0, MAX_EVENTS),
+  };
+}
+
+function warnIfPromptInputIsLarge(input: AssembledContentInput): void {
+  const approximateTokens = JSON.stringify(input).length / 4;
+
+  if (approximateTokens > APPROX_TOKEN_WARNING_THRESHOLD) {
+    console.warn(
+      `extract-facts prompt input is approximately ${Math.round(approximateTokens)} tokens after trimming`,
+    );
+  }
+}
+
+export async function extractTacticalPoints(
+  input: AssembledContentInput,
+): Promise<FactExtractionResponse> {
+  const trimmedInput = trimAssembledInput(input);
+  warnIfPromptInputIsLarge(trimmedInput);
+
+  const prompt = buildExtractTacticalPointsPrompt(trimmedInput);
   let attempts = 0;
 
   while (attempts < 2) {
