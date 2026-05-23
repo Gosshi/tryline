@@ -58,4 +58,25 @@ describe("parseLeagueOnePlayoffMatchRefsHtml", () => {
   it("returns an empty array when the playoff section is absent", () => {
     expect(parseLeagueOnePlayoffMatchRefsHtml("<main></main>")).toEqual([]);
   });
+
+  it("detects a playoff heading rendered as h4", () => {
+    expect(
+      parseLeagueOnePlayoffMatchRefsHtml(`
+        <h4 id="プレーオフトーナメント">プレーオフトーナメント</h4>
+        <table>
+          <tr>
+            <td
+              data-mw='{"parts":[{"template":{"target":{"wt":"rugbybox"},"params":{"score":{"wt":"24-19"},"report":{"wt":"https://league-one.jp/match/40001/print"}}}}]}'
+            ></td>
+          </tr>
+        </table>
+      `),
+    ).toEqual([
+      {
+        awayScore: 19,
+        homeScore: 24,
+        leagueOneMatchId: 40001,
+      },
+    ]);
+  });
 });
