@@ -99,13 +99,13 @@ function findPlayoffHeading($: ReturnType<typeof load>) {
 }
 
 function isSectionBoundary(element: ReturnType<ReturnType<typeof load>>) {
-  if (element.is(".mw-heading")) {
+  if (element.is(".mw-heading2")) {
     return true;
   }
 
   const tagName = element.prop("tagName")?.toLowerCase();
 
-  return tagName === "h2" || tagName === "h3";
+  return tagName === "h2";
 }
 
 function getPlayoffSectionHtml($: ReturnType<typeof load>): string {
