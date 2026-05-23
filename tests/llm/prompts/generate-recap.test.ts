@@ -51,8 +51,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.3.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.3.0");
+  it("uses recap prompt version 4.4.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.4.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -137,23 +137,26 @@ describe("buildGenerateRecapPrompt", () => {
     );
 
     expect(prompt).toContain("# 試合全体像");
-    expect(prompt).not.toContain("# 試合全体像（400-500字）");
+    expect(prompt).toContain("# 試合全体像（400-500字）— 以下の要素をすべて含めること:");
     expect(prompt).toContain("# ターニングポイント");
-    expect(prompt).not.toContain("# ターニングポイント（600-700字）");
+    expect(prompt).toContain("# ターニングポイント（700-850字）— 以下の要素をすべて含めること:");
     expect(prompt).toContain("# 次戦への示唆");
-    expect(prompt).not.toContain("# 次戦への示唆（300-400字）");
+    expect(prompt).toContain("# 次戦への示唆（300-400字）— 以下の要素をすべて含めること:");
     expect(prompt).toContain("# この試合の核心");
-    expect(prompt).not.toContain("# この試合の核心（200字以内）");
+    expect(prompt).toContain("# この試合の核心（100-200字）");
     expect(prompt).toContain("上記4つの見出し以外は絶対に追加してはならない");
     expect(prompt).not.toContain("MOM選出と根拠");
-    expect(prompt).toContain("ラインアップデータなし");
-    expect(prompt).toContain("全体で2,000字以上を目標とすること");
+    expect(prompt).toContain("`# MOM` は `# ターニングポイント` 末尾に統合済み");
+    expect(prompt).toContain("全体で1,600字以上を目標とすること");
+    expect(prompt).toContain("【字数目標と記述内容");
+    expect(prompt).toContain("リード変化が起きた時点");
+    expect(prompt).toContain("逆転を許した側の守備・戦術的崩壊");
+    expect(prompt).toContain("MOM相当の内容をここに統合する");
     expect(prompt).toContain(
       "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。",
     );
     expect(prompt).not.toContain("【データスパースモード】");
-    expect(prompt).toContain("`# MOM`・`# マン・オブ・ザ・マッチ`");
-    expect(prompt).toContain("イベントデータに選手名が含まれていても MOM セクションは生成禁止");
+    expect(prompt).toContain("# ターニングポイント` 末尾に統合済み");
   });
 
   it("includes the MOM selection section when lineup data is available", () => {
