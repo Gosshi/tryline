@@ -74,7 +74,7 @@ export function ScoreGraph({
             />
             <text
               fill="oklch(45% 0.02 260)"
-              fontSize={9}
+              fontSize={11}
               textAnchor="end"
               x={PADDING.left - 4}
               y={toY(score) + 4}
@@ -137,7 +137,7 @@ export function ScoreGraph({
         {[0, 20, 40, 60, 80].map((minute) => (
           <text
             fill="oklch(45% 0.02 260)"
-            fontSize={9}
+            fontSize={11}
             key={minute}
             textAnchor="middle"
             x={toX(minute)}
