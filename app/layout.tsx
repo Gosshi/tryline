@@ -1,5 +1,5 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
-import { Inter, Noto_Serif_JP } from "next/font/google";
+import { Noto_Sans_JP, Oswald } from "next/font/google";
 
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -9,16 +9,17 @@ import type { Metadata, Viewport } from "next";
 
 import "./globals.css";
 
-const inter = Inter({
+const heading = Oswald({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-heading",
+  weight: ["400", "600", "700"],
   display: "swap",
 });
 
-const notoSerifJP = Noto_Serif_JP({
+const body = Noto_Sans_JP({
   subsets: ["latin"],
-  variable: "--font-noto-serif-jp",
-  weight: ["400", "700", "900"],
+  variable: "--font-body",
+  weight: ["400", "500", "700"],
   display: "swap",
 });
 
@@ -59,8 +60,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
-      <body className={`${inter.variable} ${notoSerifJP.variable} min-h-screen`}>
+    <html className={`${heading.variable} ${body.variable}`} lang="ja">
+      <body className="min-h-screen">
         <SiteHeader />
         {children}
         <SiteFooter />
