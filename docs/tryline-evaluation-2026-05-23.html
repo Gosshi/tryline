@@ -49,6 +49,9 @@
     .badge-orange { background: var(--orange-light); color: var(--orange); }
     .badge-yellow { background: var(--yellow-light); color: var(--yellow); }
     .badge-green  { background: var(--green-light);  color: var(--green); }
+    .badge-done   { background: var(--green-light);  color: var(--green); }
+    .badge-pending{ background: var(--gray);          color: var(--text-muted); }
+    tr.row-done td { opacity: 0.55; }
 
     /* 評価ブロック */
     .eval-block { border: 1px solid var(--gray-border); border-radius: 8px; overflow: hidden; margin-bottom: 1rem; }
@@ -110,6 +113,8 @@
     <span>評価対象: https://www.trylinerugby.com</span>
     <span>評価ツール: Playwright + コードリーディング</span>
     <span>課題総数: 36件</span>
+    <span>最終更新: 2026-05-23</span>
+    <span>✅ 完了: 31件 / 🔲 未着手: 5件</span>
   </div>
 </header>
 
@@ -134,10 +139,10 @@
     <h2 class="section-title">課題一覧（優先度順）全36件</h2>
 
     <div class="count-row">
-      <div class="count-card" style="background:var(--red-light);color:var(--red)"><span>4</span>🔴 最高</div>
-      <div class="count-card" style="background:var(--orange-light);color:var(--orange)"><span>8</span>🟠 高</div>
-      <div class="count-card" style="background:var(--yellow-light);color:var(--yellow)"><span>15</span>🟡 中</div>
-      <div class="count-card" style="background:var(--green-light);color:var(--green)"><span>9</span>🟢 低</div>
+      <div class="count-card" style="background:var(--red-light);color:var(--red)"><span>4/4 完了</span>🔴 最高</div>
+      <div class="count-card" style="background:var(--orange-light);color:var(--orange)"><span>8/8 完了</span>🟠 高</div>
+      <div class="count-card" style="background:var(--yellow-light);color:var(--yellow)"><span>12/15 完了</span>🟡 中</div>
+      <div class="count-card" style="background:var(--green-light);color:var(--green)"><span>7/9 完了</span>🟢 低</div>
     </div>
 
     <table>
@@ -148,6 +153,7 @@
           <th style="width:130px">場所</th>
           <th>課題</th>
           <th style="width:220px">理由</th>
+          <th style="width:90px">ステータス</th>
         </tr>
       </thead>
       <tbody>
@@ -824,5 +830,19 @@
   </footer>
 
 </div>
+
+<script>
+const DONE = new Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,21,23,24,26,27,28,30,31,32,33,34,35]);
+document.querySelectorAll('table tbody tr').forEach((row, i) => {
+  const num = i + 1;
+  const isDone = DONE.has(num);
+  const td = document.createElement('td');
+  td.innerHTML = isDone
+    ? '<span class="badge badge-done">✅ 完了</span>'
+    : '<span class="badge badge-pending">🔲 未着手</span>';
+  row.appendChild(td);
+  if (isDone) row.classList.add('row-done');
+});
+</script>
 </body>
 </html>
