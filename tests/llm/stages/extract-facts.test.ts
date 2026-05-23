@@ -125,4 +125,46 @@ describe("extractTacticalPoints", () => {
       }),
     );
   });
+
+  it("trims large event and standings inputs before building the prompt", async () => {
+    const largeInput = {
+      ...assembled,
+      competition_standings: Array.from({ length: 12 }, (_, index) => ({
+        bonus_points_losing: 0,
+        bonus_points_try: 0,
+        drawn: 0,
+        lost: index,
+        played: 12,
+        points_against: 180 + index,
+        points_for: 240 + index,
+        position: index + 1,
+        team_name: `Team ${index + 1}`,
+        total_points: 40 - index,
+        tries_for: 30 + index,
+        won: 12 - index,
+      })),
+      match_events: Array.from({ length: 45 }, (_, index) => ({
+        minute: index,
+        player_name: `Player ${index + 1}`,
+        team_name: index % 2 === 0 ? "Home" : "Away",
+        type: "try",
+      })),
+    };
+
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        tactical_points: tacticalPoints,
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 3000, outputTokens: 500 },
+    });
+
+    await extractTacticalPoints(largeInput);
+
+    const call = openAIMock.createTextResponse.mock.calls[0]?.[0];
+    expect(call?.input).toContain("Player 40");
+    expect(call?.input).not.toContain("Player 41");
+    expect(call?.input).toContain("Team 10");
+    expect(call?.input).not.toContain("Team 11");
+  });
 });
