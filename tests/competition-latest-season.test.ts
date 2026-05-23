@@ -11,6 +11,7 @@ function buildSeason(
   publishedContentCount = 0,
 ): CompetitionRow {
   return {
+    champion: null,
     endDate: null,
     family: "autumn-nations",
     id: season,
