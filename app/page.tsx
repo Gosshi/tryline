@@ -154,6 +154,34 @@ export default async function HomePage() {
               試合を見る
             </Link>
           </div>
+          {sampleMatch?.recapExcerpt && (
+            <Link
+              className="mt-8 block max-w-xl rounded-xl border border-white/15 bg-white/10 p-4 text-white/90 shadow-lg shadow-black/10 backdrop-blur-sm transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              href={`/matches/${sampleMatch.id}`}
+            >
+              <p className="text-xs font-semibold text-white/55">
+                {formatCompetitionTitle(
+                  sampleMatch.competition.name,
+                  sampleMatch.competition.season,
+                )}
+              </p>
+              <p className="mt-1 text-sm font-bold text-white">
+                {sampleMatch.homeTeam.name} vs {sampleMatch.awayTeam.name}
+                {sampleMatch.homeScore !== null &&
+                  sampleMatch.awayScore !== null && (
+                    <span className="ml-2 font-semibold tabular-nums text-white/70">
+                      {sampleMatch.homeScore}–{sampleMatch.awayScore}
+                    </span>
+                  )}
+              </p>
+              <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/75">
+                {sampleMatch.recapExcerpt}
+              </p>
+              <p className="mt-3 text-right text-xs font-semibold text-white">
+                プレビュー全文を読む →
+              </p>
+            </Link>
+          )}
         </div>
       </section>
 
