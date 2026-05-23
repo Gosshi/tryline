@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 import type { MatchLineupPlayer } from "@/lib/db/queries/match-lineups";
 
@@ -30,11 +33,74 @@ export function MatchLineupsSection({
         </h2>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="md:hidden">
+        <MobileLineupTabs
+          awayPlayers={awayPlayers}
+          awayTeamName={awayTeamName}
+          homePlayers={homePlayers}
+          homeTeamName={homeTeamName}
+        />
+      </div>
+
+      <div className="hidden gap-6 md:grid md:grid-cols-2">
         <PlayerColumn name={homeTeamName} players={homePlayers} />
         <PlayerColumn name={awayTeamName} players={awayPlayers} />
       </div>
     </section>
+  );
+}
+
+function MobileLineupTabs({
+  awayPlayers,
+  awayTeamName,
+  homePlayers,
+  homeTeamName,
+}: {
+  awayPlayers: MatchLineupPlayer[];
+  awayTeamName: string;
+  homePlayers: MatchLineupPlayer[];
+  homeTeamName: string;
+}) {
+  const [activeTeam, setActiveTeam] = useState<"home" | "away">("home");
+  const tabs = [
+    { id: "home" as const, name: homeTeamName, players: homePlayers },
+    { id: "away" as const, name: awayTeamName, players: awayPlayers },
+  ];
+  const activeTab = tabs.find((tab) => tab.id === activeTeam) ?? tabs[0]!;
+
+  return (
+    <div>
+      <div
+        aria-label="出場選手チーム切り替え"
+        className="mb-4 grid grid-cols-2 rounded-full bg-slate-100 p-1"
+        role="tablist"
+      >
+        {tabs.map((tab) => {
+          const selected = tab.id === activeTeam;
+
+          return (
+            <button
+              aria-selected={selected}
+              className={
+                selected
+                  ? "min-w-0 rounded-full bg-white px-3 py-2 text-xs font-bold text-slate-950 shadow-sm"
+                  : "min-w-0 rounded-full px-3 py-2 text-xs font-semibold text-slate-500"
+              }
+              key={tab.id}
+              onClick={() => setActiveTeam(tab.id)}
+              role="tab"
+              type="button"
+            >
+              <span className="block truncate">{tab.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div role="tabpanel">
+        <PlayerColumn name={activeTab.name} players={activeTab.players} />
+      </div>
+    </div>
   );
 }
 
