@@ -186,7 +186,7 @@ export function buildTweetText(params: XPostParams): string {
   const excerptSuffix = "...";
   const maxExcerptLength = Math.max(
     0,
-    X_POST_WEIGHTED_LENGTH_LIMIT - fixedLength - excerptSuffix.length,
+    X_POST_WEIGHTED_LENGTH_LIMIT - fixedLength - excerptSuffix.length - 1,
   );
   const excerpt = trimToWeightedLength(params.recapExcerpt, maxExcerptLength);
 
