@@ -41,7 +41,7 @@ function createMockDb(params: {
     select: vi.fn().mockReturnThis(),
     then: (
       resolve: (value: {
-        data?: Array<{ content_md_ja: string; match_id: string }>;
+        data?: Array<{ content_md: string; match_id: string }>;
         error: null;
       }) => unknown,
     ) => {
@@ -52,7 +52,7 @@ function createMockDb(params: {
       return Promise.resolve(
         resolve({
           data: params.contents.map((content) => ({
-            content_md_ja: content.content,
+            content_md: content.content,
             match_id: content.matchId,
           })),
           error: null,

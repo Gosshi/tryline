@@ -30,7 +30,7 @@ type MatchRow = {
 };
 
 type ContentRow = {
-  content_md_ja: string;
+  content_md: string;
   content_type: "preview" | "recap";
   id: string;
   language: "ja" | "en";
@@ -109,7 +109,7 @@ export async function POST(request: Request) {
         match_id,
         content_type,
         language,
-        content_md_ja,
+        content_md,
         matches!inner (
           kickoff_at,
           home_score,
@@ -207,7 +207,7 @@ export async function POST(request: Request) {
         homeTeamName: homeDisplayName,
         language: content.language,
         matchId: content.match_id,
-        recapExcerpt: createRecapExcerpt(content.content_md_ja),
+        recapExcerpt: createRecapExcerpt(content.content_md),
       });
       const replyText = buildReplyText(content.match_id, content.language);
       const matchUrl = `https://www.trylinerugby.com/matches/${content.match_id}${

@@ -249,7 +249,7 @@ export async function generateMatchContent(
     {
       match_id: matchId,
       content_type: contentType,
-      content_md_ja: finalNarrative,
+      content_md: finalNarrative,
       language,
       model_version: modelVersion,
       prompt_version: promptVersion,

@@ -10,7 +10,7 @@ type CliOptions = {
 };
 
 type ContentRow = {
-  content_md_ja: string;
+  content_md: string;
   match_id: string;
 };
 
@@ -111,7 +111,7 @@ export function findWinnerMismatchSuspicion(params: {
 async function getRecapRows(db: SupabaseClient<Database>) {
   const { data, error } = await db
     .from("match_content")
-    .select("match_id, content_md_ja")
+    .select("match_id, content_md")
     .eq("content_type", "recap")
     .in("status", [...SUSPECT_STATUSES]);
 
@@ -172,7 +172,7 @@ export async function runDiagnoseWinnerMismatch({
     try {
       const match = await getMatchRow(db, row.match_id);
       const suspicion = findWinnerMismatchSuspicion({
-        content: row.content_md_ja,
+        content: row.content_md,
         match,
       });
 
