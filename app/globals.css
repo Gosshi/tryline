@@ -50,8 +50,6 @@
   }
 
   body {
-    --font-heading: var(--font-noto-serif-jp), "Noto Serif JP", serif;
-    --font-body: var(--font-inter), Inter, system-ui, sans-serif;
     background-color: oklch(98.5% 0.005 95);
     color: oklch(18% 0.02 260);
     font-family: var(--font-body);
