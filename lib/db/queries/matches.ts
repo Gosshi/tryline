@@ -492,7 +492,7 @@ export async function getRecentlyReviewedMatchesForFamily(
     .from("match_content")
     .select(
       `
-        match:matches!match_content_match_id_fkey (
+        match:matches!inner (
           id,
           kickoff_at,
           status,
@@ -510,7 +510,7 @@ export async function getRecentlyReviewedMatchesForFamily(
             name,
             short_code
           ),
-          competition:competitions!matches_competition_id_fkey (
+          competition:competitions!inner (
             family,
             slug,
             name,
@@ -522,23 +522,23 @@ export async function getRecentlyReviewedMatchesForFamily(
     .eq("content_type", "recap")
     .eq("language", "ja")
     .eq("status", "published")
+    .eq("match.competition.family", family)
     .order("generated_at", { ascending: false })
-    .limit(50);
+    .limit(limit);
 
   if (error) {
     throw error;
   }
 
-  return (data satisfies Array<{ match: RecentlyReviewedMatchRow | null }>)
-    .filter((row) => row.match?.competition?.family === family)
-    .slice(0, limit)
-    .map((row) => {
+  return (data satisfies Array<{ match: RecentlyReviewedMatchRow | null }>).map(
+    (row) => {
       if (!row.match) {
         throw new Error("Recently reviewed family match is missing match.");
       }
 
       return mapMatchRow(row.match);
-    });
+    },
+  );
 }
 
 export async function getRecentLeagueOneEnglishRecaps(
