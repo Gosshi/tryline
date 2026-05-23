@@ -235,17 +235,17 @@ export async function POST(request: Request) {
             fields: [
               {
                 inline: false,
-                name: "X 投稿ドラフト（コピペ用）",
+                name: "① X に貼る（URLなし）",
                 value: `\`\`\`\n${draftTweet}\n\`\`\``,
               },
               {
                 inline: false,
-                name: "X リプライ用（URL）",
+                name: "② リプライに貼る",
                 value: `\`\`\`\n${replyText}\n\`\`\``,
               },
               {
                 inline: false,
-                name: "記事",
+                name: "③ 記事を開く",
                 value: matchUrl,
               },
             ],
