@@ -117,3 +117,11 @@ export async function getContentStatusMap(
 
   return map;
 }
+
+export async function getContentStatusForMatches(
+  matchIds: string[],
+): Promise<Record<string, MatchContentStatus>> {
+  const statusMap = await getContentStatusMap(matchIds);
+
+  return Object.fromEntries(statusMap);
+}
