@@ -6,6 +6,7 @@ import { MatchContentSection } from "@/components/match-content-section";
 import { MatchEventsSection } from "@/components/match-events-section";
 import { MatchHeader } from "@/components/match-header";
 import { MatchLineupsSection } from "@/components/match-lineups-section";
+import { PremiumMatchChat } from "@/components/premium-match-chat";
 import { PremiumRecapSection } from "@/components/premium-recap-section";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
@@ -157,6 +158,8 @@ export default async function MatchEnglishPage({
           homeDisplayName={homeDisplayName}
           match={match}
         />
+
+        <PremiumMatchChat matchId={id} />
 
         <div className="flex items-center justify-end">
           <LangToggle currentLang="en" matchId={match.id} />

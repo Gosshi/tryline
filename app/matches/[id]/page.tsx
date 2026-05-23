@@ -198,6 +198,8 @@ export default async function MatchDetailPage({
 
           <MatchHeader match={match} />
 
+          <PremiumMatchChat matchId={id} />
+
           {hasEnglishContent && (
             <div className="flex items-center justify-end">
               <LangToggle currentLang="ja" matchId={match.id} />
@@ -232,10 +234,11 @@ export default async function MatchDetailPage({
                 showCta={false}
               />
             )}
-            <PremiumRecapSection content={publishedContent.recap} match={match} />
+            <PremiumRecapSection
+              content={publishedContent.recap}
+              match={match}
+            />
           </section>
-
-          <PremiumMatchChat matchId={id} />
         </div>
       </main>
     </>
