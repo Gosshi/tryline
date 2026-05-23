@@ -279,19 +279,17 @@ describe("buildGenerateRecapPrompt", () => {
 
     expect(overseasPrompt).toContain("選手名は必ずカタカナで記載すること");
     expect(overseasPrompt).toContain("アルファベット表記は禁止");
-    expect(overseasPrompt).toContain("Marcus Smith → マーカス・スミス");
-    expect(overseasPrompt).toContain("Richie Mo'unga → リッチー・モウンガ");
-    expect(overseasPrompt).toContain("Antoine Dupont → アントワーヌ・デュポン");
-    expect(overseasPrompt).toContain("Siya Kolisi → シヤ・コリシ");
-    expect(overseasPrompt).toContain("Finn Russell → フィン・ラッセル");
     expect(overseasPrompt).toContain(
-      "Josh van der Flier → ジョシュ・ファン・デル・フリア",
+      "英語の人名はカタカナに変換し、姓名の間に中点（・）を入れること。",
     );
+    expect(overseasPrompt).toContain("小辞、複合姓は日本語として自然な読み");
+    expect(overseasPrompt).not.toContain("Marcus Smith → マーカス・スミス");
     expect(overseasPrompt).toContain(
       "チーム名は英語表記のまま（例: Reds、Leinster、Springboks）",
     );
     expect(leagueOnePrompt).toContain("選手名は日本語表記を使用すること");
-    expect(leagueOnePrompt).toContain("外国人選手はカタカナで記載すること");
+    expect(leagueOnePrompt).toContain("外国人選手は英語の人名をカタカナに変換");
+    expect(leagueOnePrompt).not.toContain("Brodie Retallick");
   });
 
   it("prevents player-name hallucination from missing lineup and event data", () => {

@@ -96,12 +96,11 @@ export function buildGenerateRecapPrompt(
   })();
   const nameStyleInstruction =
     assembled.match.competition?.family === "league-one"
-      ? "選手名は日本語表記を使用すること。外国人選手はカタカナで記載すること（例: Brodie Retallick → ブロディ・レタリック）。チーム名は日本語または通称表記を使用すること。"
+      ? "選手名は日本語表記を使用すること。外国人選手は英語の人名をカタカナに変換し、姓名の間に中点（・）を入れること。チーム名は日本語または通称表記を使用すること。"
       : [
           "選手名は必ずカタカナで記載すること。アルファベット表記は禁止。",
-          "例: Marcus Smith → マーカス・スミス、Richie Mo'unga → リッチー・モウンガ、",
-          "Antoine Dupont → アントワーヌ・デュポン、Siya Kolisi → シヤ・コリシ、",
-          "Finn Russell → フィン・ラッセル、Josh van der Flier → ジョシュ・ファン・デル・フリア。",
+          "英語の人名はカタカナに変換し、姓名の間に中点（・）を入れること。",
+          "アポストロフィ、van/de などの小辞、複合姓は日本語として自然な読みを優先すること。",
           "チーム名は英語表記のまま（例: Reds、Leinster、Springboks）。",
         ].join("");
 
