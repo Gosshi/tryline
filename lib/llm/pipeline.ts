@@ -138,6 +138,7 @@ export async function generateMatchContent(
       assembled,
       tacticalPoints: tactical.result.tactical_points,
       contentType,
+      // TODO(D009): Reddit/SNS シグナルが実装されたらここに渡す。現在は常に空配列。
       additionalSignals: [],
       attempt,
       language,
@@ -161,6 +162,7 @@ export async function generateMatchContent(
       inputHash: hashInput({
         assembled,
         tactical: tactical.result,
+        // TODO(D009): Reddit/SNS シグナルが実装されたらここに渡す。現在は常に空配列。
         additionalSignals: [],
       }),
       output: {
