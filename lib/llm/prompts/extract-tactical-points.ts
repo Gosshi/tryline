@@ -1,6 +1,6 @@
 import type { AssembledContentInput } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "extract@2.0.0";
+export const PROMPT_VERSION = "extract@2.1.0";
 
 export function buildExtractTacticalPointsPrompt(
   input: AssembledContentInput,
@@ -24,6 +24,12 @@ export function buildExtractTacticalPointsPrompt(
           },
         ],
       }),
+    ].join("\n"),
+    [
+      "【match_impact 判断基準】",
+      "high = 大会優勝・降格・プレーオフ進出がこの試合の結果に直接かかっている、または両チームの勝率・得失点差が統計的に拮抗（10%以内）している",
+      "medium = 順位に影響するが決定的ではない（プール戦中盤など）",
+      "low = 大会結果への影響が軽微（消化試合・大差が開いているグループ戦など）",
     ].join("\n"),
     [
       "【禁止事項】",
