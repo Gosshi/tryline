@@ -403,7 +403,7 @@ export async function getRecentlyReviewedMatches(
         recapGeneratedAt: row.generated_at,
         recapExcerpt: truncateAtSentenceBoundary(
           stripMarkdown(row.content_md),
-          120,
+          350,
         ),
       };
     });
