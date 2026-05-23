@@ -42,6 +42,7 @@ type DiscordEmbed = {
   title: string;
   description: string;
   color: number;
+  image?: { url: string };
   fields: Array<{
     name: string;
     value: string;
@@ -73,7 +74,9 @@ function requireDiscordWebhook(
   name: "DISCORD_WEBHOOK_EN" | "DISCORD_WEBHOOK_JA",
 ): string {
   if (!value) {
-    throw new Error(`Missing required Discord webhook environment variable: ${name}`);
+    throw new Error(
+      `Missing required Discord webhook environment variable: ${name}`,
+    );
   }
 
   return value;
@@ -213,6 +216,17 @@ export async function POST(request: Request) {
       const matchUrl = `https://www.trylinerugby.com/matches/${content.match_id}${
         content.language === "en" ? "/en" : ""
       }`;
+      const resultImageUrl = new URL("https://www.trylinerugby.com/api/og");
+      resultImageUrl.searchParams.set("type", "result");
+      resultImageUrl.searchParams.set("home", homeDisplayName);
+      resultImageUrl.searchParams.set("away", awayDisplayName);
+      if (match.home_score !== null) {
+        resultImageUrl.searchParams.set("hs", String(match.home_score));
+      }
+      if (match.away_score !== null) {
+        resultImageUrl.searchParams.set("as", String(match.away_score));
+      }
+      resultImageUrl.searchParams.set("comp", competitionLabel);
       const payload: DiscordPayload = {
         embeds: [
           {
@@ -235,6 +249,9 @@ export async function POST(request: Request) {
                 value: matchUrl,
               },
             ],
+            ...(content.content_type === "recap"
+              ? { image: { url: resultImageUrl.toString() } }
+              : {}),
             title: `${typeLabel} | ${competitionLabel}`,
           },
         ],
