@@ -747,6 +747,22 @@ export async function listAllMatchIds(): Promise<SitemapMatch[]> {
   }));
 }
 
+export async function listMatchIdsWithContent(): Promise<{ id: string }[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("match_content")
+    .select("match_id")
+    .eq("status", "published");
+
+  if (error) {
+    throw error;
+  }
+
+  const unique = [...new Set((data ?? []).map((row) => row.match_id))];
+
+  return unique.map((id) => ({ id }));
+}
+
 export async function getMatchContentEn(
   matchId: string,
 ): Promise<EnglishMatchContentBundle> {

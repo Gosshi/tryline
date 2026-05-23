@@ -2,16 +2,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { LangToggle } from "@/components/lang-toggle";
-import { MatchChat } from "@/components/match-chat";
 import { MatchContentSection } from "@/components/match-content-section";
 import { MatchEventsSection } from "@/components/match-events-section";
 import { MatchHeader } from "@/components/match-header";
 import { MatchLineupsSection } from "@/components/match-lineups-section";
-import { getUser, isPremium } from "@/lib/auth/server";
+import { PremiumMatchChat } from "@/components/premium-match-chat";
+import { PremiumRecapSection } from "@/components/premium-recap-section";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
-import { getMatchById, getMatchContentEn } from "@/lib/db/queries/matches";
+import {
+  getMatchById,
+  getMatchContentEn,
+  listMatchIdsWithContent,
+} from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { extractDescription } from "@/lib/match-content/description";
@@ -27,8 +31,13 @@ type MatchDetailPageProps = {
   }>;
 };
 
-export const revalidate = 60;
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const matches = await listMatchIdsWithContent();
+
+  return matches.map(({ id }) => ({ id }));
+}
 
 function toEventStatus(status: MatchStatus): string {
   switch (status) {
@@ -98,12 +107,11 @@ export default async function MatchDetailPage({
   params,
 }: MatchDetailPageProps) {
   const { id } = await params;
-  const [match, publishedContent, events, lineups, user] = await Promise.all([
+  const [match, publishedContent, events, lineups] = await Promise.all([
     getMatchById(id),
     getPublishedContentForMatch(id),
     getMatchEventsForMatch(id),
     getMatchLineupsForMatch(id),
-    getUser(),
   ]);
 
   if (!match) {
@@ -115,7 +123,6 @@ export default async function MatchDetailPage({
   const englishContent = await getMatchContentEn(id);
   const hasEnglishContent =
     englishContent.preview !== null || englishContent.recap !== null;
-  const premium = user ? await isPremium(user.id) : false;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
@@ -225,15 +232,10 @@ export default async function MatchDetailPage({
                 showCta={false}
               />
             )}
-            <MatchContentSection
-              content={publishedContent.recap}
-              contentType="recap"
-              isPremium={premium}
-              match={match}
-            />
+            <PremiumRecapSection content={publishedContent.recap} match={match} />
           </section>
 
-          <MatchChat isPremium={premium} matchId={id} />
+          <PremiumMatchChat matchId={id} />
         </div>
       </main>
     </>

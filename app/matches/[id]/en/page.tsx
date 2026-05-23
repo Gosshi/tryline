@@ -6,10 +6,15 @@ import { MatchContentSection } from "@/components/match-content-section";
 import { MatchEventsSection } from "@/components/match-events-section";
 import { MatchHeader } from "@/components/match-header";
 import { MatchLineupsSection } from "@/components/match-lineups-section";
-import { getUser, isPremium } from "@/lib/auth/server";
+import { PremiumRecapSection } from "@/components/premium-recap-section";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
-import { getMatchById, getMatchContentEn } from "@/lib/db/queries/matches";
+import {
+  getMatchById,
+  getMatchContentEn,
+  listAllMatchIds,
+  listMatchIdsWithContent,
+} from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { extractDescription } from "@/lib/match-content/description";
@@ -24,8 +29,22 @@ type MatchEnglishPageProps = {
   }>;
 };
 
-export const revalidate = 60;
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const [matchesWithContent, allMatches] = await Promise.all([
+    listMatchIdsWithContent(),
+    listAllMatchIds(),
+  ]);
+  const contentIds = new Set(matchesWithContent.map(({ id }) => id));
+
+  return allMatches
+    .filter(
+      (match) =>
+        contentIds.has(match.id) && match.competitionFamily === "league-one",
+    )
+    .map(({ id }) => ({ id }));
+}
 
 export async function generateMetadata({
   params,
@@ -90,19 +109,17 @@ export default async function MatchEnglishPage({
   params,
 }: MatchEnglishPageProps) {
   const { id } = await params;
-  const [match, englishContent, events, lineups, user] = await Promise.all([
+  const [match, englishContent, events, lineups] = await Promise.all([
     getMatchById(id),
     getMatchContentEn(id),
     getMatchEventsForMatch(id),
     getMatchLineupsForMatch(id),
-    getUser(),
   ]);
 
   if (!match || (!englishContent.preview && !englishContent.recap)) {
     notFound();
   }
 
-  const premium = user ? await isPremium(user.id) : false;
   const homeDisplayName = match.homeTeam.englishName ?? match.homeTeam.name;
   const awayDisplayName = match.awayTeam.englishName ?? match.awayTeam.name;
 
@@ -175,10 +192,8 @@ export default async function MatchEnglishPage({
             />
           )}
           {englishContent.recap && (
-            <MatchContentSection
+            <PremiumRecapSection
               content={englishContent.recap}
-              contentType="recap"
-              isPremium={premium}
               language="en"
               match={match}
             />

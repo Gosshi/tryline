@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { PremiumUpsellBanner } from "@/components/premium-upsell-banner";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
 import { StandingsTable } from "@/components/standings-table";
-import { getUser, getUserProfile } from "@/lib/auth/server";
 import {
   getCompetitionBySlug,
+  listFamilies,
   listSeasonsByFamily,
 } from "@/lib/db/queries/competitions";
 import { getContentStatusMap } from "@/lib/db/queries/match-content";
@@ -26,7 +27,25 @@ type Props = {
   params: Promise<{ competition: string; season: string }>;
 };
 
-export const revalidate = 60;
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const families = await listFamilies();
+  const params = (
+    await Promise.all(
+      families.map(async (competition) => {
+        const seasons = await listSeasonsByFamily(competition);
+
+        return seasons.map((season) => ({
+          competition,
+          season: season.season,
+        }));
+      }),
+    )
+  ).flat();
+
+  return params;
+}
 
 function formatDateJa(dateStr: string): string {
   const date = new Date(`${dateStr}T00:00:00`);
@@ -84,9 +103,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SeasonPage({ params }: Props) {
   const { competition, season } = await params;
-  const user = await getUser();
-  const profile = user ? await getUserProfile(user.id) : null;
-  const isPremium = profile?.subscription_status === "premium";
   const comp = await getCompetitionBySlug(`${competition}-${season}`);
 
   if (!comp) {
@@ -180,23 +196,7 @@ export default async function SeasonPage({ params }: Props) {
           </div>
         ) : (
           <>
-            {hasAnyContent && !isPremium && (
-              <div className="rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 px-5 py-4">
-                <p className="text-sm font-semibold text-[var(--color-ink)]">
-                  AI 日本語レビューを全文読むには Premium が必要です
-                </p>
-                <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
-                  各試合の詳細分析・プレビュー・AI チャットが月額 ¥980
-                  で読み放題。
-                </p>
-                <Link
-                  className="mt-3 inline-block rounded-full bg-[var(--color-accent)] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90"
-                  href="/pricing"
-                >
-                  Premium を始める — ¥980/月
-                </Link>
-              </div>
-            )}
+            {hasAnyContent && <PremiumUpsellBanner />}
             <SeasonMatchGroups
               contentStatusMap={Object.fromEntries(contentStatusMap)}
               family={family}
