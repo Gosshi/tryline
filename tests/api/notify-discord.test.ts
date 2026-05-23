@@ -20,6 +20,7 @@ type ContentFixture = {
 
 const dbMock = vi.hoisted(() => ({
   filters: [] as Array<{ column: string; value: unknown }>,
+  ors: [] as string[],
   rowsByLanguage: {
     en: [] as ContentFixture[],
     ja: [] as ContentFixture[],
@@ -70,7 +71,8 @@ vi.mock("@/lib/db/server", () => ({
         order() {
           return this;
         },
-        or() {
+        or(condition: string) {
+          dbMock.ors.push(condition);
           return this;
         },
         select() {
@@ -161,6 +163,7 @@ describe("/api/cron/notify-discord", () => {
     process.env.WIKIPEDIA_SQUAD_URL =
       "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
     dbMock.filters = [];
+    dbMock.ors = [];
     dbMock.rowsByLanguage.en = [];
     dbMock.rowsByLanguage.ja = [];
     dbMock.updates = [];
@@ -248,6 +251,7 @@ describe("/api/cron/notify-discord", () => {
       column: "discord_notified_at",
       value: null,
     });
+    expect(dbMock.ors).toEqual([]);
     expect(fetch).toHaveBeenNthCalledWith(
       1,
       "https://discord.com/api/webhooks/ja",
@@ -298,7 +302,7 @@ describe("/api/cron/notify-discord", () => {
     expect(xMock.postMatchRecapToX).not.toHaveBeenCalled();
   });
 
-  it("auto-posts Japanese recaps to X and stores the tweet id", async () => {
+  it("sends Japanese recap drafts without auto-posting to X", async () => {
     dbMock.rowsByLanguage.ja = [
       buildContent({
         content_type: "recap",
@@ -318,21 +322,13 @@ describe("/api/cron/notify-discord", () => {
 
     expect(response.status).toBe(200);
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(xMock.postMatchRecapToX).toHaveBeenCalledWith(
-      expect.objectContaining({
-        contentType: "recap",
-        language: "ja",
-        matchId: "match-4",
-      }),
-    );
+    expect(xMock.postMatchRecapToX).not.toHaveBeenCalled();
     expect(dbMock.updates[0]?.payload).toEqual({
       discord_notified_at: "2026-05-21T12:00:00.000Z",
-      x_posted_at: "2026-05-21T12:00:00.000Z",
-      x_tweet_id: "tweet-1",
     });
   });
 
-  it("keeps Discord notification when X auto-posting fails", async () => {
+  it("does not attempt X auto-posting for Japanese recaps", async () => {
     dbMock.rowsByLanguage.ja = [
       buildContent({
         content_type: "recap",
@@ -353,6 +349,7 @@ describe("/api/cron/notify-discord", () => {
 
     expect(response.status).toBe(200);
     expect(fetch).toHaveBeenCalledTimes(1);
+    expect(xMock.postMatchRecapToX).not.toHaveBeenCalled();
     expect(dbMock.updates[0]?.payload).toEqual({
       discord_notified_at: "2026-05-21T12:00:00.000Z",
     });
