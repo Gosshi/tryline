@@ -45,6 +45,21 @@ const DEFAULT_COMPETITION_HERO =
   "https://images.unsplash.com/photo-1767190937750-d6aaf8ea99d0?w=1200&q=80";
 
 const COMPETITION_DESCRIPTIONS: Record<string, string> = {
+  "six-nations":
+    "シックス・ネイションズはイングランド・アイルランド・スコットランド・ウェールズ・フランス・イタリアが争うヨーロッパ最高峰の国際ラグビー大会。毎年2〜3月に開催されます。",
+  premiership:
+    "プレミアシップはイングランドの最高峰クラブラグビーリーグ。各クラブがリーグ戦を戦い、上位チームによるプレーオフで優勝チームを決定します。",
+  urc: "ユナイテッド・ラグビー・チャンピオンシップ（URC）はアイルランド・スコットランド・ウェールズ・イタリア・南アフリカのクラブが参加する欧州・南ア混合リーグです。",
+  "top-14":
+    "トップ14はフランスの最高峰クラブラグビーリーグ。全14クラブによるリーグ戦とプレーオフで構成され、スタッド・ド・フランスでの決勝が最大の見どころです。",
+  "super-rugby-pacific":
+    "スーパーラグビー・パシフィックはニュージーランド・オーストラリア・フィジー・日本のクラブが争うアジア太平洋最高峰のクラブラグビー大会です。",
+  "rugby-championship":
+    "ラグビーチャンピオンシップは南半球強豪国ニュージーランド・南アフリカ・アルゼンチン・オーストラリアが争う国際ラグビー大会。毎年7〜9月に開催されます。",
+  rwc: "ラグビーワールドカップは4年に1度開催されるラグビーユニオン最大の国際大会。世界各国がプール戦からノックアウトを経て世界一を決めます。",
+  "autumn-nations":
+    "オータムネーションズシリーズは毎年11月に開催される秋の国際マッチシリーズ。ヨーロッパのティア1国が南半球・太平洋諸国を迎えてホームゲームを行います。",
+  pnc: "パシフィック・ネーションズカップは日本・フィジー・サモア・トンガ・アメリカ・カナダなどが参加するアジア太平洋の国際大会。日本代表の重要な強化機会です。",
   "league-one":
     "ジャパンラグビー リーグワンは、日本の最高峰クラブが争う国内プロラグビーリーグです。シーズンを通じて上位進出と優勝を争います。",
 };
@@ -52,7 +67,9 @@ const COMPETITION_DESCRIPTIONS: Record<string, string> = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { competition } = await params;
   const name = formatFamilyName(competition);
-  const description = `${name} の全シーズン試合結果・順位表・AI日本語レビュー一覧。`;
+  const description =
+    COMPETITION_DESCRIPTIONS[competition] ??
+    `${name} の全シーズン試合結果・順位表・AI日本語レビュー一覧。`;
 
   return {
     description,
