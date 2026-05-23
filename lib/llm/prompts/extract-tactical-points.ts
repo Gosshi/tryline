@@ -1,12 +1,19 @@
 import type { AssembledContentInput } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "extract@2.1.0";
+export const PROMPT_VERSION = "extract@2.2.0";
 
 export function buildExtractTacticalPointsPrompt(
   input: AssembledContentInput,
 ): string {
   return [
-    "あなたはラグビー戦術アナリストです。入力データだけを根拠に、試合の勝敗を左右する戦術的次元を3つ特定してください。",
+    [
+      "あなたはラグビー戦術アナリストです。入力データだけを根拠に、試合の勝敗を左右する戦術的次元を特定してください。",
+      "出力件数の目安:",
+      "- ラインアップ + イベント + 順位表がすべて揃っている: 4〜5件",
+      "- ラインアップまたはイベントのどちらかがある: 3件",
+      "- スコアのみでデータが乏しい: 2件",
+      "- 根拠のある戦術次元がなければ2件でも可。でたらめに埋めないこと。",
+    ].join("\n"),
     [
       "出力はJSONのみ。スキーマ:",
       JSON.stringify({
