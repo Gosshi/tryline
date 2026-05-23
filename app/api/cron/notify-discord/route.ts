@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
-import { buildReplyText, buildTweetText } from "@/lib/x/post";
+import { buildReplyText, buildTweetText, postMatchRecapToX } from "@/lib/x/post";
 
 export const maxDuration = 60;
 
@@ -32,10 +32,12 @@ type MatchRow = {
 type ContentRow = {
   content_md: string;
   content_type: "preview" | "recap";
+  discord_notified_at: string | null;
   id: string;
   language: "ja" | "en";
   match_id: string;
   matches: Relation<MatchRow>;
+  x_tweet_id: string | null;
 };
 
 type DiscordEmbed = {
@@ -113,6 +115,8 @@ export async function POST(request: Request) {
         content_type,
         language,
         content_md,
+        discord_notified_at,
+        x_tweet_id,
         matches!inner (
           kickoff_at,
           home_score,
@@ -130,7 +134,9 @@ export async function POST(request: Request) {
         .eq("status", "published")
         .eq("language", "ja")
         .in("content_type", ["recap", "preview"])
-        .is("discord_notified_at", null)
+        .or(
+          "discord_notified_at.is.null,and(content_type.eq.recap,x_tweet_id.is.null)",
+        )
         .gte("matches.kickoff_at", sevenDaysAgo)
         .order("generated_at", { ascending: true }),
       db
@@ -261,15 +267,63 @@ export async function POST(request: Request) {
           ? requireDiscordWebhook(DISCORD_WEBHOOK_EN, "DISCORD_WEBHOOK_EN")
           : requireDiscordWebhook(DISCORD_WEBHOOK_JA, "DISCORD_WEBHOOK_JA");
 
-      await postToDiscord(webhookUrl, payload);
+      if (!content.discord_notified_at) {
+        await postToDiscord(webhookUrl, payload);
+      }
 
-      const { error: updateError } = await db
-        .from("match_content")
-        .update({ discord_notified_at: new Date().toISOString() })
-        .eq("id", content.id);
+      let xTweetId: string | null = null;
+      if (
+        content.language === "ja" &&
+        content.content_type === "recap" &&
+        !content.x_tweet_id
+      ) {
+        try {
+          xTweetId = await postMatchRecapToX({
+            awayScore: match.away_score,
+            awayTeamName: awayDisplayName,
+            competitionFamily: competition?.family ?? null,
+            competitionLabel,
+            contentType: content.content_type,
+            homeScore: match.home_score,
+            homeTeamName: homeDisplayName,
+            language: content.language,
+            matchId: content.match_id,
+            recapExcerpt: createRecapExcerpt(content.content_md),
+          });
+        } catch (error) {
+          const err =
+            error instanceof Error
+              ? {
+                  message: error.message,
+                  rateLimit: (error as unknown as Record<string, unknown>)
+                    .rateLimit,
+                }
+              : error;
+          console.error("[notify-discord] X auto post failed", err);
+        }
+      }
 
-      if (updateError) {
-        throw updateError;
+      const updatePayload = {
+        ...(content.discord_notified_at
+          ? {}
+          : { discord_notified_at: new Date().toISOString() }),
+        ...(xTweetId
+          ? {
+              x_posted_at: new Date().toISOString(),
+              x_tweet_id: xTweetId,
+            }
+          : {}),
+      };
+
+      if (Object.keys(updatePayload).length > 0) {
+        const { error: updateError } = await db
+          .from("match_content")
+          .update(updatePayload)
+          .eq("id", content.id);
+
+        if (updateError) {
+          throw updateError;
+        }
       }
 
       results.push({ language: content.language, matchId: content.match_id });

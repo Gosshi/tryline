@@ -337,6 +337,7 @@ export type Database = {
           qa_scores: Json;
           status: string;
           x_posted_at: string | null;
+          x_tweet_id: string | null;
         };
         Insert: {
           content_md: string;
@@ -351,6 +352,7 @@ export type Database = {
           qa_scores: Json;
           status?: string;
           x_posted_at?: string | null;
+          x_tweet_id?: string | null;
         };
         Update: {
           content_md?: string;
@@ -365,6 +367,7 @@ export type Database = {
           qa_scores?: Json;
           status?: string;
           x_posted_at?: string | null;
+          x_tweet_id?: string | null;
         };
         Relationships: [
           {

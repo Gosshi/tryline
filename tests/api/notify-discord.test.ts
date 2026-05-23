@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 type ContentFixture = {
   content_md: string;
   content_type: "preview" | "recap";
+  discord_notified_at: string | null;
   id: string;
   language: "ja" | "en";
   match_id: string;
@@ -14,6 +15,7 @@ type ContentFixture = {
     home_team: { english_name: string | null; name: string };
     kickoff_at: string;
   };
+  x_tweet_id: string | null;
 };
 
 const dbMock = vi.hoisted(() => ({
@@ -28,6 +30,7 @@ const dbMock = vi.hoisted(() => ({
 const xMock = vi.hoisted(() => ({
   buildReplyText: vi.fn(),
   buildTweetText: vi.fn(),
+  postMatchRecapToX: vi.fn(),
 }));
 
 vi.mock("@/lib/db/server", () => ({
@@ -65,6 +68,9 @@ vi.mock("@/lib/db/server", () => ({
           return this;
         },
         order() {
+          return this;
+        },
+        or() {
           return this;
         },
         select() {
@@ -114,6 +120,7 @@ function buildContent(
   return {
     content_md: "## 見出し\n投稿本文の抜粋です。",
     content_type: overrides.content_type,
+    discord_notified_at: overrides.discord_notified_at ?? null,
     id: overrides.id,
     language: overrides.language ?? "ja",
     match_id: overrides.match_id,
@@ -129,6 +136,7 @@ function buildContent(
       home_team: { english_name: "Home", name: "ホーム" },
       kickoff_at: overrides.kickoff_at,
     },
+    x_tweet_id: overrides.x_tweet_id ?? null,
   };
 }
 
@@ -163,6 +171,7 @@ describe("/api/cron/notify-discord", () => {
           : `AI 戦術分析の全文はこちら 👇\nhttps://www.trylinerugby.com/matches/${matchId}`,
     );
     xMock.buildTweetText.mockReturnValue("draft tweet");
+    xMock.postMatchRecapToX.mockResolvedValue("tweet-1");
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.resolve({ ok: true, status: 204 })),
@@ -286,5 +295,66 @@ describe("/api/cron/notify-discord", () => {
       "future-preview",
       "finished-recap-en",
     ]);
+    expect(xMock.postMatchRecapToX).not.toHaveBeenCalled();
+  });
+
+  it("auto-posts Japanese recaps to X and stores the tweet id", async () => {
+    dbMock.rowsByLanguage.ja = [
+      buildContent({
+        content_type: "recap",
+        id: "finished-recap-ja",
+        kickoff_at: "2026-05-21T11:00:00.000Z",
+        match_id: "match-4",
+      }),
+    ];
+
+    const { POST } = await import("@/app/api/cron/notify-discord/route");
+    const response = await POST(
+      new Request("http://localhost/api/cron/notify-discord", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(xMock.postMatchRecapToX).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentType: "recap",
+        language: "ja",
+        matchId: "match-4",
+      }),
+    );
+    expect(dbMock.updates[0]?.payload).toEqual({
+      discord_notified_at: "2026-05-21T12:00:00.000Z",
+      x_posted_at: "2026-05-21T12:00:00.000Z",
+      x_tweet_id: "tweet-1",
+    });
+  });
+
+  it("keeps Discord notification when X auto-posting fails", async () => {
+    dbMock.rowsByLanguage.ja = [
+      buildContent({
+        content_type: "recap",
+        id: "finished-recap-ja",
+        kickoff_at: "2026-05-21T11:00:00.000Z",
+        match_id: "match-5",
+      }),
+    ];
+    xMock.postMatchRecapToX.mockRejectedValueOnce(new Error("rate limited"));
+
+    const { POST } = await import("@/app/api/cron/notify-discord/route");
+    const response = await POST(
+      new Request("http://localhost/api/cron/notify-discord", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(dbMock.updates[0]?.payload).toEqual({
+      discord_notified_at: "2026-05-21T12:00:00.000Z",
+    });
   });
 });

@@ -66,6 +66,10 @@ function requireEnv(name: string): string {
   return value;
 }
 
+function requireAnyEnv(primaryName: string, fallbackName: string): string {
+  return process.env[primaryName] ?? requireEnv(fallbackName);
+}
+
 function getXCredentials(language: "ja" | "en"): XCredentials {
   if (language === "en") {
     return {
@@ -80,7 +84,7 @@ function getXCredentials(language: "ja" | "en"): XCredentials {
     accessSecret: requireEnv("X_ACCESS_TOKEN_SECRET"),
     accessToken: requireEnv("X_ACCESS_TOKEN"),
     appKey: requireEnv("X_API_KEY"),
-    appSecret: requireEnv("X_API_KEY_SECRET"),
+    appSecret: requireAnyEnv("X_API_SECRET", "X_API_KEY_SECRET"),
   };
 }
 
@@ -135,18 +139,28 @@ function getHashtags(family: string | null, language: "ja" | "en"): string {
   return entry[language];
 }
 
-export async function postMatchRecapToX(params: XPostParams): Promise<string> {
+export async function postTweetWithReply(params: {
+  language: "ja" | "en";
+  replyText: string;
+  tweetText: string;
+}): Promise<{ replyId: string; tweetId: string }> {
   const client = new TwitterApi(getXCredentials(params.language));
-  const text = buildTweetText(params);
-
-  const { data: mainTweet } = await client.v2.tweet(text);
-  const replyText = buildReplyText(params.matchId, params.language);
-
-  await client.v2.tweet(replyText, {
+  const { data: mainTweet } = await client.v2.tweet(params.tweetText);
+  const { data: replyTweet } = await client.v2.tweet(params.replyText, {
     reply: { in_reply_to_tweet_id: mainTweet.id },
   });
 
-  return mainTweet.id;
+  return { replyId: replyTweet.id, tweetId: mainTweet.id };
+}
+
+export async function postMatchRecapToX(params: XPostParams): Promise<string> {
+  const result = await postTweetWithReply({
+    language: params.language,
+    replyText: buildReplyText(params.matchId, params.language),
+    tweetText: buildTweetText(params),
+  });
+
+  return result.tweetId;
 }
 
 export function buildTweetText(params: XPostParams): string {
