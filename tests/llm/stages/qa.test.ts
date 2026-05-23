@@ -8,6 +8,13 @@ const openAIMock = vi.hoisted(() => ({
 
 vi.mock("@/lib/llm/openai", () => openAIMock);
 
+const matchContext = {
+  awayScore: 17,
+  awayTeam: "France",
+  homeScore: 24,
+  homeTeam: "Ireland",
+};
+
 describe("evaluateNarrativeQuality", () => {
   it("returns publish when all scores are >= 3", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
@@ -27,6 +34,7 @@ describe("evaluateNarrativeQuality", () => {
 
     const result = await evaluateNarrativeQuality({
       contentType: "preview",
+      matchContext,
       narrative: "body",
       retryCount: 0,
     });
@@ -55,7 +63,12 @@ describe("evaluateNarrativeQuality", () => {
       usage: { inputTokens: 10, outputTokens: 10 },
     });
 
-    const result = await evaluateNarrativeQuality({ contentType: "preview", narrative: "body", retryCount: 1 });
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      matchContext,
+      narrative: "body",
+      retryCount: 1,
+    });
     expect(result.result.verdict).toBe("retry");
     expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -82,6 +95,7 @@ describe("evaluateNarrativeQuality", () => {
 
     const result = await evaluateNarrativeQuality({
       contentType: "preview",
+      matchContext,
       narrative: "body",
       retryCount: 0,
     });
@@ -105,11 +119,46 @@ describe("evaluateNarrativeQuality", () => {
       usage: { inputTokens: 10, outputTokens: 10 },
     });
 
-    const result = await evaluateNarrativeQuality({ contentType: "preview", narrative: "body", retryCount: 2 });
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      matchContext,
+      narrative: "body",
+      retryCount: 2,
+    });
     expect(result.result.verdict).toBe("reject");
     expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
       expect.objectContaining({
         jsonMode: true,
+      }),
+    );
+  });
+
+  it("passes match context into the QA prompt", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 3,
+          information_density: 3,
+          japanese_quality: 3,
+          tactical_depth: 3,
+        },
+        issues: [],
+        verdict: "publish",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    await evaluateNarrativeQuality({
+      contentType: "recap",
+      matchContext,
+      narrative: "body",
+      retryCount: 0,
+    });
+
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining("Ireland 24 — France 17"),
       }),
     );
   });

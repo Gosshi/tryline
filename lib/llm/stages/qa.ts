@@ -1,6 +1,10 @@
 import { MODELS } from "@/lib/llm/models";
 import { createTextResponse } from "@/lib/llm/openai";
-import { buildQaContentPrompt, PROMPT_VERSION } from "@/lib/llm/prompts/qa-content";
+import {
+  buildQaContentPrompt,
+  PROMPT_VERSION,
+  type QaMatchContext,
+} from "@/lib/llm/prompts/qa-content";
 
 import type {
   ContentLanguage,
@@ -67,6 +71,7 @@ function parseQaResponse(jsonText: string, retryCount: number): QaResult {
 export async function evaluateNarrativeQuality(options: {
   contentType: ContentType;
   language?: ContentLanguage;
+  matchContext: QaMatchContext;
   narrative: string;
   retryCount: number;
 }): Promise<QaStageResponse> {
@@ -74,6 +79,7 @@ export async function evaluateNarrativeQuality(options: {
     options.contentType,
     options.narrative,
     options.language ?? "ja",
+    options.matchContext,
   );
   let attempts = 0;
 

@@ -2,10 +2,18 @@ import type { ContentLanguage, ContentType } from "@/lib/llm/types";
 
 export const PROMPT_VERSION = "qa@2.0.0";
 
+export type QaMatchContext = {
+  awayScore: number | null;
+  awayTeam: string;
+  homeScore: number | null;
+  homeTeam: string;
+};
+
 export function buildQaContentPrompt(
   contentType: ContentType,
   narrative: string,
-  language: ContentLanguage = "ja",
+  language: ContentLanguage,
+  matchContext: QaMatchContext,
 ): string {
   const minLength = contentType === "recap" ? 2000 : 1500;
   const languageLabel = language === "en" ? "English" : "日本語";
@@ -28,10 +36,12 @@ export function buildQaContentPrompt(
           "- 1: 日本語として成立していない",
         ].join("\n");
   const winnerCheckBlock =
-    contentType === "recap"
+    contentType === "recap" &&
+    matchContext.homeScore !== null &&
+    matchContext.awayScore !== null
       ? [
           "## 勝者整合性チェック",
-          "入力データの home_score と away_score を確認すること。",
+          `この試合のスコア: ${matchContext.homeTeam} ${matchContext.homeScore} — ${matchContext.awayTeam} ${matchContext.awayScore}`,
           "スコアが高い方のチームが実際の勝者である。",
           "本文中で敗者チームが勝利したかのように書かれていれば factual_grounding を 1 にして verdict を reject にすること。",
           "引き分け（同点）の場合はこのチェックを無視する。",
