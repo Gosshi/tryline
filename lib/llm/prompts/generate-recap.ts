@@ -11,7 +11,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.0.0";
+export const PROMPT_VERSION = "recap@4.1.0";
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -32,6 +32,7 @@ export function buildGenerateRecapPrompt(
         "# ターニングポイント（500-600字）",
         "# MOM（300-400字）",
         "# 次戦への示唆（300-400字）",
+        "**上記の見出し以外は絶対に追加してはならない。`# 試合概要`・`# 試合の流れ`・`# まとめ`・`# 総評` 等、リストに存在しない見出しの出力は禁止。**",
         `全体で2,000字以上を目標とすること。${sectionHeadingInstruction}`,
       ].join("\n")
     : isDataSparse
@@ -41,6 +42,7 @@ export function buildGenerateRecapPrompt(
           "# 大会文脈と順位への影響（400-500字）",
           "# 両チームの近況と戦術傾向（500-600字）",
           "# 次戦への示唆（300-400字）",
+          "**上記の見出し以外は絶対に追加してはならない。`# 試合概要`・`# 試合の流れ`・`# まとめ`・`# 総評` 等、リストに存在しない見出しの出力は禁止。**",
           `全体で2,000字以上を目標とすること。MOM セクションは省略すること。${sectionHeadingInstruction}`,
         ].join("\n")
       : [
@@ -48,7 +50,9 @@ export function buildGenerateRecapPrompt(
           "# 試合全体像（400-500字）",
           "# ターニングポイント（600-700字）",
           "# 次戦への示唆（300-400字）",
+          "**上記の見出し以外は絶対に追加してはならない。`# 試合概要`・`# 試合の流れ`・`# まとめ`・`# 総評`・`# MOM`・`# マン・オブ・ザ・マッチ` 等、リストに存在しない見出しの出力は禁止。**",
           `全体で2,000字以上を目標とすること。MOM セクションは省略すること（ラインアップデータなし）。${sectionHeadingInstruction}`,
+          "**`# MOM`・`# マン・オブ・ザ・マッチ` セクションは絶対に出力してはならない。** イベントデータに選手名が含まれていても MOM セクションは生成禁止。MOM を記述したい場合は `# ターニングポイント` 内で選手名に言及すること。",
         ].join("\n");
   const persona = buildPersona("recap");
   const coreQuestionBlock = [
@@ -178,7 +182,7 @@ export function buildGenerateRecapPrompt(
     prohibitionsBlock,
     structureInstruction,
     matchPhaseBlock,
-    "各セクションが指定範囲の下限を下回った場合は書き足すこと。",
+    "各セクションが指定字数の**下限**を下回ってはならない。下限未満なら具体的な事実・戦術分析・選手描写を追加して下限まで書き足すこと。「字数確認済み」などのメタコメントは出力禁止。",
     "事実は入力データと一致させること。直接引用は15語以内。",
     "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。",
     "出力は日本語マークダウン本文のみ。",

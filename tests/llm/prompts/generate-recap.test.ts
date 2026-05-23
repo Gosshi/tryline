@@ -51,8 +51,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.0.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.0.0");
+  it("uses recap prompt version 4.1.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.1.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -87,6 +87,9 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain("MOM セクションは省略すること");
     expect(prompt).toContain("全体で2,000字以上を目標とすること");
+    expect(prompt).toContain("上記の見出し以外は絶対に追加してはならない");
+    expect(prompt).toContain("# 試合概要");
+    expect(prompt).toContain("# 総評");
     expect(prompt).toContain(
       "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。",
     );
@@ -105,7 +108,7 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).not.toContain("接戦の終盤");
     expect(prompt).not.toContain("逃げ表現");
     expect(prompt).toContain(
-      "各セクションが指定範囲の下限を下回った場合は書き足すこと",
+      "各セクションが指定字数の**下限**を下回ってはならない",
     );
   });
 
@@ -136,6 +139,8 @@ describe("buildGenerateRecapPrompt", () => {
       "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。",
     );
     expect(prompt).not.toContain("【データスパースモード】");
+    expect(prompt).toContain("`# MOM`・`# マン・オブ・ザ・マッチ`");
+    expect(prompt).toContain("イベントデータに選手名が含まれていても MOM セクションは生成禁止");
   });
 
   it("includes the MOM selection section when lineup data is available", () => {
