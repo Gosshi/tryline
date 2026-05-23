@@ -179,6 +179,12 @@ export async function generateMatchContent(
       qaResponse = await evaluateNarrativeQuality({
         contentType,
         language,
+        matchContext: {
+          awayScore: assembled.match.away_score,
+          awayTeam: assembled.match.away_team?.name ?? "Away",
+          homeScore: assembled.match.home_score,
+          homeTeam: assembled.match.home_team?.name ?? "Home",
+        },
         narrative: narrative.content,
         retryCount: attempt,
       });
