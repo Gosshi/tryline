@@ -68,8 +68,8 @@ export default async function HomePage() {
   ] = await Promise.all([
     listFamilies(),
     getRecentlyReviewedFamilies(4),
-    getRecentlyReviewedMatches(3),
-    getRecentlyReviewedMatches(1),
+    getRecentlyReviewedMatches(3, "ja"),
+    getRecentlyReviewedMatches(1, "ja"),
     getUpcomingMatches(5),
     getFavoriteTeamMatches(favoriteTeamSlugs),
   ]);
