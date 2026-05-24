@@ -45,7 +45,13 @@ describe("/api/cron/ingest-squads", () => {
 
   it("upserts players and returns 200", async () => {
     squadsMock.scrapeSquads.mockResolvedValue([
-      { team_slug: "england", name: "Player One", position: "FH", caps: 10, date_of_birth: "2000-01-01" },
+      {
+        team_slug: "england",
+        name: "Luke Cowan-Dickie",
+        position: "Hooker",
+        caps: 10,
+        date_of_birth: "2000-01-01",
+      },
       { team_slug: "france", name: "Player Two", position: "SH", caps: 20, date_of_birth: "1999-01-01" },
     ]);
 
@@ -62,9 +68,21 @@ describe("/api/cron/ingest-squads", () => {
     expect(body).toMatchObject({ upserted: 2, skipped_teams: [], no_data: false });
 
     const service = createServiceClient();
-    const { data, error } = await service.from("players").select("name").in("name", ["Player One", "Player Two"]);
+    const { data, error } = await service
+      .from("players")
+      .select("name, slug")
+      .in("name", ["Luke Cowan-Dickie", "Player Two"]);
 
     expect(error).toBeNull();
     expect(data).toHaveLength(2);
+    expect(data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "Luke Cowan-Dickie",
+          slug: "luke-cowan-dickie",
+        }),
+        expect.objectContaining({ name: "Player Two", slug: "player-two" }),
+      ]),
+    );
   });
 });

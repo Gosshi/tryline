@@ -1,9 +1,22 @@
+import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
 import { scrapeSquads } from "@/lib/scrapers/wikipedia-squads";
+
+function generatePlayerSlug(name: string): string {
+  const cleaned = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/, "");
+  if (cleaned) {
+    return cleaned;
+  }
+
+  return `player-${createHash("sha256").update(name, "utf8").digest("hex").slice(0, 8)}`;
+}
 
 export async function POST(request: Request) {
   try {
@@ -44,6 +57,7 @@ export async function POST(request: Request) {
         .map((player) => ({
           team_id: teamId,
           name: player.name,
+          slug: generatePlayerSlug(player.name),
           position: player.position,
           caps: player.caps,
           date_of_birth: player.date_of_birth,
