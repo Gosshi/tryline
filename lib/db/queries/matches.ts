@@ -182,6 +182,16 @@ type SitemapMatchRow = {
   } | null;
 };
 
+type SitemapContentMatchRow = {
+  match_id: string;
+  match: {
+    competition: {
+      family: string | null;
+      slug: string;
+    } | null;
+  } | null;
+};
+
 function isMatchStatus(value: string): value is MatchStatus {
   return [
     "scheduled",
@@ -752,20 +762,47 @@ export async function listAllMatchIds(): Promise<SitemapMatch[]> {
   }));
 }
 
-export async function listMatchIdsWithContent(): Promise<{ id: string }[]> {
+export async function listMatchIdsWithContent(): Promise<SitemapMatch[]> {
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("match_content")
-    .select("match_id")
+    .select(
+      `
+        match_id,
+        match:matches!match_content_match_id_fkey (
+          competition:competitions!matches_competition_id_fkey (
+            family,
+            slug
+          )
+        )
+      `,
+    )
     .eq("status", "published");
 
   if (error) {
     throw error;
   }
 
-  const unique = [...new Set((data ?? []).map((row) => row.match_id))];
+  const seen = new Set<string>();
+  const result: SitemapMatch[] = [];
 
-  return unique.map((id) => ({ id }));
+  for (const row of (data ?? []) as unknown as SitemapContentMatchRow[]) {
+    if (seen.has(row.match_id)) {
+      continue;
+    }
+
+    seen.add(row.match_id);
+    const competition = row.match?.competition ?? null;
+    result.push({
+      competitionFamily:
+        competition?.family ??
+        competition?.slug.replace(/-\d{4}(-\d{2})?$/, "") ??
+        null,
+      id: row.match_id,
+    });
+  }
+
+  return result;
 }
 
 export async function getMatchContentEn(
