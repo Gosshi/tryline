@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  estimateRegenerationCost,
   getCurrentPromptVersion,
   parseArgs,
   runRegenerateOverseasContent,
@@ -85,6 +86,7 @@ describe("regenerate-overseas-content", () => {
       dryRun: true,
       family: null,
       fromVersion: null,
+      ownerApproved: false,
     });
     expect(
       parseArgs(["--content-type=preview", "--family", "six-nations"]),
@@ -93,12 +95,34 @@ describe("regenerate-overseas-content", () => {
       dryRun: false,
       family: "six-nations",
       fromVersion: null,
+      ownerApproved: false,
     });
     expect(parseArgs(["--from-version=recap@1.8.0"])).toEqual({
       contentType: "recap",
       dryRun: false,
       family: null,
       fromVersion: "recap@1.8.0",
+      ownerApproved: false,
+    });
+    expect(parseArgs(["--confirm-owner-approved"])).toEqual({
+      contentType: "recap",
+      dryRun: false,
+      family: null,
+      fromVersion: null,
+      ownerApproved: true,
+    });
+  });
+
+  it("estimates regeneration cost before execution", () => {
+    expect(estimateRegenerationCost(255)).toEqual({
+      maxUsd: 13,
+      minUsd: 5.87,
+      targetCount: 255,
+    });
+    expect(estimateRegenerationCost(890)).toEqual({
+      maxUsd: 45.39,
+      minUsd: 20.47,
+      targetCount: 890,
     });
   });
 
@@ -154,6 +178,11 @@ describe("regenerate-overseas-content", () => {
       skippedLeagueOne: 1,
       targets: 2,
       totalRows: 4,
+    });
+    expect(result.costEstimate).toEqual({
+      maxUsd: 0.1,
+      minUsd: 0.05,
+      targetCount: 2,
     });
   });
 
@@ -237,6 +266,7 @@ describe("regenerate-overseas-content", () => {
       fromVersion: null,
       generateContent,
       logger,
+      ownerApproved: true,
     });
 
     expect(generateContent).toHaveBeenNthCalledWith(1, "match-2", "recap");
@@ -248,5 +278,31 @@ describe("regenerate-overseas-content", () => {
       skippedFamily: 1,
       targets: 2,
     });
+  });
+
+  it("blocks non-dry-run regeneration until Owner approval is confirmed", async () => {
+    const db = createMockDb([
+      {
+        family: "pnc",
+        matchId: "match-1",
+        promptVersion: "recap@1.5.0",
+      },
+    ]);
+    const generateContent = vi.fn();
+
+    await expect(
+      runRegenerateOverseasContent({
+        contentType: "recap",
+        currentVersion: "recap@1.6.0",
+        db,
+        dryRun: false,
+        family: null,
+        fromVersion: null,
+        generateContent,
+        logger: console,
+      }),
+    ).rejects.toThrow("requires Owner approval");
+
+    expect(generateContent).not.toHaveBeenCalled();
   });
 });

@@ -64,6 +64,7 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("試合前の「何 対 何の争い」に対し実際の結果");
     expect(prompt).not.toContain("セクション0");
     expect(prompt).toContain("【絶対禁止表現");
+    expect(prompt).toContain("入力データに無い統計");
     expect(prompt).toContain("「好調」");
     expect(prompt).toContain("「鍵となります」");
   });

@@ -69,9 +69,11 @@ describe("PricingPage", () => {
   it("renders the redesigned pricing landing page sections", async () => {
     render(await PricingPage());
 
-    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenCalledWith(1, "ja");
+    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenCalledWith(5, "ja");
     expect(
-      screen.getByRole("heading", { name: "海外ラグビーを、もっと深く。" }),
+      screen.getByRole("heading", {
+        name: "週10試合以上のAI戦術分析を、日本語で読み放題。",
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Premium を始める — ¥980/月" }),
@@ -139,14 +141,38 @@ describe("PricingPage", () => {
 
     expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenNthCalledWith(
       1,
-      1,
+      5,
       "ja",
     );
-    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenNthCalledWith(2, 1);
+    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenNthCalledWith(2, 5);
     expect(screen.getByText("Japan vs England")).toBeInTheDocument();
     expect(
       screen.getByText("A published English recap excerpt is available."),
     ).toBeInTheDocument();
+  });
+
+  it("skips sample recaps that contain unsupported fabricated statistics", async () => {
+    matchMocks.getRecentlyReviewedMatches.mockResolvedValueOnce([
+      {
+        awayTeam: { name: "France" },
+        competition: { name: "Six Nations", season: "2027" },
+        homeTeam: { name: "Ireland" },
+        recapExcerpt: "Irelandはスクラム成功率85%でFranceを圧倒した。",
+      },
+      {
+        awayTeam: { name: "Wales" },
+        competition: { name: "Six Nations", season: "2027" },
+        homeTeam: { name: "Scotland" },
+        recapExcerpt:
+          "Scotlandは後半のキック処理から陣地を押し返し、Walesの反撃を抑えた。",
+      },
+    ]);
+
+    render(await PricingPage());
+
+    expect(screen.queryByText(/スクラム成功率85%/)).not.toBeInTheDocument();
+    expect(screen.getByText("Scotland vs Wales")).toBeInTheDocument();
+    expect(screen.getByText(/後半のキック処理/)).toBeInTheDocument();
   });
 
   it("renders a meaningful fallback when no sample recap exists", async () => {

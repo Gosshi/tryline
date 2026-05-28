@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { PricingForm } from "@/app/pricing/pricing-form";
 import { HeroTexture } from "@/components/hero-texture";
+import { containsUnsupportedStatistic } from "@/lib/content/fabrication-guard";
 import {
   getLatestCompletedMatch,
   getRecentlyReviewedMatches,
@@ -69,6 +70,15 @@ const pricingVideoJsonLd = {
   uploadDate: "2025-01-01",
 };
 
+type PricingSample = Awaited<ReturnType<typeof getRecentlyReviewedMatches>>[number];
+
+function pickVerifiedSample(matches: PricingSample[]): PricingSample | null {
+  return (
+    matches.find((match) => !containsUnsupportedStatistic(match.recapExcerpt)) ??
+    null
+  );
+}
+
 function FeatureMark({ enabled }: { enabled: boolean }) {
   return (
     <span
@@ -81,14 +91,14 @@ function FeatureMark({ enabled }: { enabled: boolean }) {
 }
 
 export default async function PricingPage() {
-  const jaSamplePromise = getRecentlyReviewedMatches(1, "ja").then(
-    ([match]) => match ?? null,
+  const jaSamplePromise = getRecentlyReviewedMatches(5, "ja").then(
+    pickVerifiedSample,
   );
   const [sample, latestCompletedMatch] = await Promise.all([
     jaSamplePromise.then(
       (jaMatch) =>
         jaMatch ??
-        getRecentlyReviewedMatches(1).then(([match]) => match ?? null),
+        getRecentlyReviewedMatches(5).then(pickVerifiedSample),
     ),
     getLatestCompletedMatch(),
   ]);

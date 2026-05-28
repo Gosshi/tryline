@@ -1,3 +1,7 @@
+import {
+  containsUnsupportedStatistic,
+  UNSUPPORTED_STATISTIC_ISSUE,
+} from "@/lib/content/fabrication-guard";
 import { MODELS } from "@/lib/llm/models";
 import { createTextResponse } from "@/lib/llm/openai";
 import {
@@ -28,6 +32,14 @@ type ParsedQaResponse = {
   scores?: QaResult["scores"];
   issues?: unknown;
 };
+
+function appendIssue(issues: string[], issue: string): string[] {
+  return issues.includes(issue) ? issues : [...issues, issue];
+}
+
+function getContentLength(content: string): number {
+  return Array.from(content).length;
+}
 
 // Single source of truth for QA verdicts. The LLM scores content only; code
 // applies the stable retry/reject thresholds used by the pipeline.
@@ -69,23 +81,46 @@ function applyDeterministicQaGuards(
     narrative: string;
   },
 ): QaResult {
+  let guarded = result;
+
+  if (containsUnsupportedStatistic(options.narrative)) {
+    guarded = {
+      ...guarded,
+      issues: appendIssue(guarded.issues, UNSUPPORTED_STATISTIC_ISSUE),
+      scores: {
+        ...guarded.scores,
+        factual_grounding: 1,
+      },
+    };
+  }
+
+  const minLength = options.contentType === "recap" ? 1600 : 1500;
+  if (getContentLength(options.narrative) < minLength) {
+    guarded = {
+      ...guarded,
+      issues: appendIssue(guarded.issues, "本文が目標字数の下限未満です"),
+      scores: {
+        ...guarded.scores,
+        information_density: Math.min(guarded.scores.information_density, 3),
+      },
+    };
+  }
+
   if (
     options.contentType !== "recap" ||
     !options.hasEvents ||
     options.narrative.includes("# ターニングポイント")
   ) {
-    return result;
+    return guarded;
   }
 
   const issue = "ターニングポイントセクションが欠落しています";
   return {
-    ...result,
-    issues: result.issues.includes(issue)
-      ? result.issues
-      : [...result.issues, issue],
+    ...guarded,
+    issues: appendIssue(guarded.issues, issue),
     scores: {
-      ...result.scores,
-      information_density: Math.min(result.scores.information_density, 3),
+      ...guarded.scores,
+      information_density: Math.min(guarded.scores.information_density, 3),
     },
   };
 }

@@ -68,6 +68,7 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("【大会文脈型】");
     expect(prompt).toContain("パターン名は出力しない");
     expect(prompt).toContain("【絶対禁止表現");
+    expect(prompt).toContain("入力データに無い統計");
     expect(prompt).toContain("「好調」");
     expect(prompt).toContain("「鍵となります」");
   });
