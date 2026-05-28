@@ -51,8 +51,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildExtractTacticalPointsPrompt", () => {
-  it("uses extract prompt version 2.2.0", () => {
-    expect(PROMPT_VERSION).toBe("extract@2.2.0");
+  it("uses extract prompt version 2.3.0", () => {
+    expect(PROMPT_VERSION).toBe("extract@2.3.0");
   });
 
   it("documents variable tactical point counts", () => {
@@ -72,5 +72,18 @@ describe("buildExtractTacticalPointsPrompt", () => {
     expect(prompt).toContain("high = 大会優勝・降格・プレーオフ進出");
     expect(prompt).toContain("medium = 順位に影響するが決定的ではない");
     expect(prompt).toContain("low = 大会結果への影響が軽微");
+  });
+
+  it("keeps tactical examples limited to available input fields", () => {
+    const prompt = buildExtractTacticalPointsPrompt(assembled);
+    const examples = prompt.split("【戦術次元の例")[1]?.split("入力JSON")[0] ?? "";
+
+    expect(examples).toContain("key_stats.avg_points_for_last_5");
+    expect(examples).toContain("recent_form");
+    expect(examples).toContain("competition_standings");
+    expect(examples).not.toContain("成功率");
+    expect(examples).not.toContain("テリトリー");
+    expect(examples).not.toContain("ラインブレイク");
+    expect(prompt).toContain("入力データに存在しない指標");
   });
 });

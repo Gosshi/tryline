@@ -14,6 +14,7 @@ type CliOptions = {
   dryRun: boolean;
   family: string | null;
   fromVersion: string | null;
+  ownerApproved: boolean;
 };
 
 type ContentRow = {
@@ -34,6 +35,7 @@ type TargetRow = {
 
 export type RegenerateOverseasContentResult = {
   byFamily: Record<string, number>;
+  costEstimate: RegenerationCostEstimate;
   draft: number;
   failed: number;
   published: number;
@@ -61,15 +63,37 @@ type RunDeps = {
     contentType: ContentType,
   ) => Promise<PipelineResult>;
   logger?: Logger;
+  ownerApproved?: boolean;
 };
 
 const EXISTING_CONTENT_STATUSES = ["draft", "published"] as const;
+const ESTIMATED_COST_PER_TARGET_USD = {
+  max: 0.051,
+  min: 0.023,
+} as const;
+
+export type RegenerationCostEstimate = {
+  maxUsd: number;
+  minUsd: number;
+  targetCount: number;
+};
+
+export function estimateRegenerationCost(
+  targetCount: number,
+): RegenerationCostEstimate {
+  return {
+    maxUsd: Number((targetCount * ESTIMATED_COST_PER_TARGET_USD.max).toFixed(2)),
+    minUsd: Number((targetCount * ESTIMATED_COST_PER_TARGET_USD.min).toFixed(2)),
+    targetCount,
+  };
+}
 
 export function parseArgs(argv: string[]): CliOptions {
   let contentType: ContentType = "recap";
   let dryRun = false;
   let family: string | null = null;
   let fromVersion: string | null = null;
+  let ownerApproved = false;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -123,10 +147,15 @@ export function parseArgs(argv: string[]): CliOptions {
 
     if (arg === "--dry-run") {
       dryRun = true;
+      continue;
+    }
+
+    if (arg === "--confirm-owner-approved") {
+      ownerApproved = true;
     }
   }
 
-  return { contentType, dryRun, family, fromVersion };
+  return { contentType, dryRun, family, fromVersion, ownerApproved };
 }
 
 export function getCurrentPromptVersion(contentType: ContentType) {
@@ -231,6 +260,7 @@ export async function runRegenerateOverseasContent({
   fromVersion,
   generateContent,
   logger = console,
+  ownerApproved = false,
 }: RunDeps): Promise<RegenerateOverseasContentResult> {
   const contentRows = await getRegenerationCandidates(db, contentType);
   const {
@@ -246,14 +276,19 @@ export async function runRegenerateOverseasContent({
     fromVersion,
   });
   const byFamily = countByFamily(targets);
+  const costEstimate = estimateRegenerationCost(targets.length);
 
   logger.log(
     `Overseas ${contentType} regeneration targets: total=${contentRows.length} target=${targets.length} currentVersion=${currentVersion} fromVersion=${fromVersion ?? "any"}`,
   );
   logger.log(`By family: ${JSON.stringify(byFamily)}`);
+  logger.log(
+    `Estimated LLM cost: $${costEstimate.minUsd.toFixed(2)}-$${costEstimate.maxUsd.toFixed(2)} for ${costEstimate.targetCount} ${contentType} targets.`,
+  );
 
   const result: RegenerateOverseasContentResult = {
     byFamily,
+    costEstimate,
     draft: 0,
     failed: 0,
     published: 0,
@@ -269,8 +304,17 @@ export async function runRegenerateOverseasContent({
 
   if (dryRun) {
     logger.log("[dry-run] No content regeneration was executed.");
+    logger.log(
+      "Execution requires Owner approval and --confirm-owner-approved.",
+    );
 
     return result;
+  }
+
+  if (!ownerApproved) {
+    throw new Error(
+      "Regeneration requires Owner approval. Re-run with --confirm-owner-approved after approval.",
+    );
   }
 
   for (const target of targets) {
@@ -308,6 +352,7 @@ async function main() {
     fromVersion: options.fromVersion,
     generateContent: (matchId, contentType) =>
       generateMatchContent(matchId, contentType),
+    ownerApproved: options.ownerApproved,
   });
 }
 

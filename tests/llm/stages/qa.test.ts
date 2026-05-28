@@ -192,6 +192,94 @@ describe("evaluateNarrativeQuality", () => {
     );
   });
 
+  it("forces factual grounding failure when unsupported statistics are present", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      hasEvents: true,
+      matchContext,
+      narrative: `# ターニングポイント\nIrelandはスクラム成功率85%でFranceを押し込んだ。${"あ".repeat(
+        1600,
+      )}`,
+      retryCount: 0,
+    });
+
+    expect(result.result.scores.factual_grounding).toBe(1);
+    expect(result.result.issues).toContain("データに存在しない統計値を含む");
+    expect(result.result.verdict).not.toBe("publish");
+  });
+
+  it("caps information density for a short 1107-character recap", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      matchContext,
+      narrative: "あ".repeat(1107),
+      retryCount: 0,
+    });
+
+    expect(result.result.scores.information_density).toBe(3);
+    expect(result.result.issues).toContain("本文が目標字数の下限未満です");
+  });
+
+  it("does not penalize real score, try, and ranking numbers", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      hasEvents: true,
+      matchContext,
+      narrative: `# ターニングポイント\nIrelandが24-17でFranceに勝ち、トライ数2、順位1位という事実に基づいて整理した。${"あ".repeat(
+        1600,
+      )}`,
+      retryCount: 0,
+    });
+
+    expect(result.result.scores.factual_grounding).toBe(5);
+    expect(result.result.scores.information_density).toBe(5);
+    expect(result.result.issues).not.toContain(
+      "データに存在しない統計値を含む",
+    );
+  });
+
   it("passes hasEvents into the QA prompt", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       text: JSON.stringify({
