@@ -51,8 +51,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.0.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.0.0");
+  it("uses preview prompt version 3.1.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.1.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -61,7 +61,12 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("国際ラグビーを20年取材");
     expect(prompt).toContain("Number やRugby World誌");
     expect(prompt).toContain("# この試合の核心");
-    expect(prompt).toContain("何 対 何の争い");
+    expect(prompt).toContain("本質的な争点");
+    expect(prompt).toContain("数値・実績・文脈");
+    expect(prompt).toContain("【数値対決型】");
+    expect(prompt).toContain("【フォーム型】");
+    expect(prompt).toContain("【大会文脈型】");
+    expect(prompt).toContain("パターン名は出力しない");
     expect(prompt).toContain("【絶対禁止表現");
     expect(prompt).toContain("「好調」");
     expect(prompt).toContain("「鍵となります」");
@@ -88,9 +93,14 @@ describe("buildGeneratePreviewPrompt", () => {
   it("uses data-sparse structure when lineup and event data are unavailable", () => {
     const prompt = buildGeneratePreviewPrompt(assembled, [], []);
 
-    expect(prompt).toContain("両チーム現状と近況(500-600字)");
-    expect(prompt).toContain("大会文脈・この試合の意味(400-500字)");
-    expect(prompt).toContain("戦術傾向と注目ポイント(400-500字)");
+    expect(prompt).toContain("3セクション構成（セクション0を除く）");
+    expect(prompt).toContain("1)500-600字 2)400-500字 3)400-500字");
+    expect(prompt).toContain(
+      "各セクションの見出し名はこの試合の特性に応じて自由に設定すること",
+    );
+    expect(prompt).not.toContain("両チーム現状と近況(500-600字)");
+    expect(prompt).not.toContain("大会文脈・この試合の意味(400-500字)");
+    expect(prompt).not.toContain("戦術傾向と注目ポイント(400-500字)");
     expect(prompt).toContain("キープレイヤーセクションは省略すること");
     expect(prompt).toContain("【データスパースモード】");
     expect(prompt).toContain("recent_form の直近5試合スコア");
