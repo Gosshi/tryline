@@ -55,7 +55,7 @@ function getCompetitionLogoSrc(family: string): string {
 }
 
 export const metadata: Metadata = {
-  title: "海外ラグビーを日本語で深掘り",
+  alternates: { canonical: SITE_URL },
   description:
     "Six Nations・Premiership・URC など海外ラグビーの試合結果・AI日本語レビューを提供。DAZN・J SPORTS 加入者向けの試合コンパニオン。",
   openGraph: {
@@ -72,6 +72,7 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
   },
+  title: "海外ラグビーを日本語で深掘り",
 };
 
 export default async function HomePage() {
@@ -118,9 +119,37 @@ export default async function HomePage() {
   const sampleMatch = sampleReviews[0] ?? null;
   const favoriteTeamPageSlug =
     favoriteTeamSlugs.length === 1 ? (favoriteTeamSlugs[0] ?? null) : null;
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Tryline",
+      potentialAction: {
+        "@type": "SearchAction",
+        "query-input": "required name=search_term_string",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: `${SITE_URL}/?q={search_term_string}`,
+        },
+      },
+      url: SITE_URL,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      logo: `${SITE_URL}/og-image.png`,
+      name: "Tryline",
+      sameAs: ["https://x.com/tryline_rugbyjp"],
+      url: SITE_URL,
+    },
+  ];
 
   return (
     <main className="min-h-screen bg-slate-50">
+      <script
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        type="application/ld+json"
+      />
       <Suspense>
         <CheckoutSuccessTracker />
       </Suspense>
@@ -473,19 +502,19 @@ export default async function HomePage() {
                         />
                       </span>
                       <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="block font-semibold text-[var(--color-ink)]">
-                          {formatFamilyName(competition.family)}
-                        </span>
-                        {competition.family === "league-one" && (
-                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                            EN
+                        <div className="flex items-center gap-2">
+                          <span className="block font-semibold text-[var(--color-ink)]">
+                            {formatFamilyName(competition.family)}
                           </span>
-                        )}
-                      </div>
-                      <span className="mt-0.5 block text-xs text-[var(--color-ink-muted)]">
-                        {competition.season}
-                      </span>
+                          {competition.family === "league-one" && (
+                            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                              EN
+                            </span>
+                          )}
+                        </div>
+                        <span className="mt-0.5 block text-xs text-[var(--color-ink-muted)]">
+                          {competition.season}
+                        </span>
                       </div>
                     </div>
                     <span className="text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">

@@ -219,22 +219,22 @@ export function SeasonMatchGroups({
                   </div>
                   <ChevronIcon open={isOpen} />
                 </button>
-                {isOpen && (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {roundMatches.map((match) => (
-                      <MatchCard
-                        contentStatus={
-                          contentStatusMap[match.id] ?? {
-                            hasPreview: false,
-                            hasRecap: false,
-                          }
+                <div
+                  className={isOpen ? "grid gap-4 md:grid-cols-2" : "hidden"}
+                >
+                  {roundMatches.map((match) => (
+                    <MatchCard
+                      contentStatus={
+                        contentStatusMap[match.id] ?? {
+                          hasPreview: false,
+                          hasRecap: false,
                         }
-                        key={match.id}
-                        match={match}
-                      />
-                    ))}
-                  </div>
-                )}
+                      }
+                      key={match.id}
+                      match={match}
+                    />
+                  ))}
+                </div>
               </>
             ) : (
               <>

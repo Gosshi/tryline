@@ -84,6 +84,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = `${title} の試合結果・順位表・AI日本語レビュー一覧。`;
 
   return {
+    alternates: { canonical: `${SITE_URL}/c/${competition}/${season}` },
     description,
     openGraph: {
       description,
@@ -130,11 +131,42 @@ export default async function SeasonPage({ params }: Props) {
   );
   const groupedMatches = groupMatchesByRound(matches);
   const dateRange = formatDateRange(comp.startDate, comp.endDate);
-  const family = comp.slug.replace(/-\d{4}(-\d{2})?$/, "");
+  const family = comp.family;
   const accentColor = getCompetitionFamilyColor(family);
+  const pageUrl = `${SITE_URL}/c/${competition}/${season}`;
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        item: SITE_URL,
+        name: "Tryline",
+        position: 1,
+      },
+      {
+        "@type": "ListItem",
+        item: `${SITE_URL}/c/${competition}`,
+        name: formatFamilyName(comp.family),
+        position: 2,
+      },
+      {
+        "@type": "ListItem",
+        item: pageUrl,
+        name: formatCompetitionTitle(comp.name, comp.season),
+        position: 3,
+      },
+    ],
+  };
 
   return (
     <main className="min-h-screen bg-slate-50">
+      <script
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd),
+        }}
+        type="application/ld+json"
+      />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         <header
           className="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-slate-200"
