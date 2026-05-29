@@ -4,6 +4,11 @@ const twitterMock = vi.hoisted(() => ({
   tweet: vi.fn(),
 }));
 
+const mediaMock = vi.hoisted(() => ({
+  fetchOgImageBuffer: vi.fn(),
+  uploadMediaToX: vi.fn(),
+}));
+
 vi.mock("twitter-api-v2", () => ({
   TwitterApi: vi.fn(() => ({
     v2: {
@@ -11,6 +16,8 @@ vi.mock("twitter-api-v2", () => ({
     },
   })),
 }));
+
+vi.mock("@/lib/x/media", () => mediaMock);
 
 import { buildReplyText, buildTweetText, postMatchRecapToX } from "@/lib/x/post";
 
@@ -32,6 +39,8 @@ const baseParams: XPostParams = {
 describe("buildTweetText", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mediaMock.fetchOgImageBuffer.mockResolvedValue(Buffer.from([1, 2, 3]));
+    mediaMock.uploadMediaToX.mockResolvedValue("media-1");
   });
 
   it("uses Six Nations hashtags for English posts", () => {
@@ -98,14 +107,77 @@ describe("buildTweetText", () => {
 
     await expect(postMatchRecapToX(baseParams)).resolves.toBe("tweet-1");
 
+    expect(mediaMock.fetchOgImageBuffer).toHaveBeenCalledWith({
+      away: "France",
+      awayScore: 17,
+      competition: "Six Nations",
+      home: "Ireland",
+      homeScore: 24,
+    });
+    expect(mediaMock.uploadMediaToX).toHaveBeenCalledWith(
+      expect.anything(),
+      Buffer.from([1, 2, 3]),
+      "image/png",
+    );
     expect(twitterMock.tweet).toHaveBeenNthCalledWith(
       1,
       expect.not.stringContaining("https://www.trylinerugby.com"),
+      { media: { media_ids: ["media-1"] } },
     );
     expect(twitterMock.tweet).toHaveBeenNthCalledWith(
       2,
       "Full AI analysis 👇\nhttps://www.trylinerugby.com/matches/match-1/en",
       { reply: { in_reply_to_tweet_id: "tweet-1" } },
     );
+  });
+
+  it("continues with a text-only recap post when media upload fails", async () => {
+    process.env.X_EN_ACCESS_TOKEN_SECRET = "secret";
+    process.env.X_EN_ACCESS_TOKEN = "token";
+    process.env.X_EN_API_KEY = "key";
+    process.env.X_EN_API_KEY_SECRET = "key-secret";
+    mediaMock.uploadMediaToX.mockRejectedValueOnce(new Error("upload failed"));
+    twitterMock.tweet.mockResolvedValueOnce({ data: { id: "tweet-1" } });
+    twitterMock.tweet.mockResolvedValueOnce({ data: { id: "reply-1" } });
+
+    await expect(postMatchRecapToX(baseParams)).resolves.toBe("tweet-1");
+
+    expect(twitterMock.tweet).toHaveBeenNthCalledWith(
+      1,
+      expect.any(String),
+      undefined,
+    );
+  });
+
+  it("does not attach media for preview posts", async () => {
+    process.env.X_EN_ACCESS_TOKEN_SECRET = "secret";
+    process.env.X_EN_ACCESS_TOKEN = "token";
+    process.env.X_EN_API_KEY = "key";
+    process.env.X_EN_API_KEY_SECRET = "key-secret";
+    twitterMock.tweet.mockResolvedValueOnce({ data: { id: "tweet-1" } });
+    twitterMock.tweet.mockResolvedValueOnce({ data: { id: "reply-1" } });
+
+    await expect(
+      postMatchRecapToX({ ...baseParams, contentType: "preview" }),
+    ).resolves.toBe("tweet-1");
+
+    expect(mediaMock.fetchOgImageBuffer).not.toHaveBeenCalled();
+    expect(mediaMock.uploadMediaToX).not.toHaveBeenCalled();
+  });
+
+  it("does not attach media when a recap has no score", async () => {
+    process.env.X_EN_ACCESS_TOKEN_SECRET = "secret";
+    process.env.X_EN_ACCESS_TOKEN = "token";
+    process.env.X_EN_API_KEY = "key";
+    process.env.X_EN_API_KEY_SECRET = "key-secret";
+    twitterMock.tweet.mockResolvedValueOnce({ data: { id: "tweet-1" } });
+    twitterMock.tweet.mockResolvedValueOnce({ data: { id: "reply-1" } });
+
+    await expect(
+      postMatchRecapToX({ ...baseParams, awayScore: null }),
+    ).resolves.toBe("tweet-1");
+
+    expect(mediaMock.fetchOgImageBuffer).not.toHaveBeenCalled();
+    expect(mediaMock.uploadMediaToX).not.toHaveBeenCalled();
   });
 });
