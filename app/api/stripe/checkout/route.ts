@@ -26,6 +26,10 @@ export async function POST() {
     metadata: { userId: user.id },
     subscription_data: {
       metadata: { userId: user.id },
+      trial_period_days: 7,
+      trial_settings: {
+        end_behavior: { missing_payment_method: "cancel" },
+      },
     },
     mode: "subscription",
     payment_method_types: ["card"],

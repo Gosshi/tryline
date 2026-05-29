@@ -76,7 +76,12 @@ describe("PricingPage", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Premium を始める — ¥980/月" }),
+      screen.getByRole("button", { name: "7日間無料で試す" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "7日間無料 · その後 ¥980/月 · いつでもキャンセル可能 · Stripe 決済",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "無料で記事を読む" })).toHaveAttribute(
       "href",
@@ -117,6 +122,11 @@ describe("PricingPage", () => {
     ).toBeInTheDocument();
 
     expect(screen.getByText("無料でどこまで利用できますか？")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は AI 日本語レビュー全文・AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("返金ポリシーを教えてください。")).toBeInTheDocument();
     expect(screen.getByText("いつでもキャンセルできますか？")).toBeInTheDocument();
     expect(
