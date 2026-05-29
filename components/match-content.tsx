@@ -15,14 +15,11 @@ type InlineChunk =
   | { type: "text"; value: string }
   | { type: "link"; href: string; text: string };
 
-type MarkdownBlock =
+export type MarkdownBlock =
   | { type: "heading"; level: number; text: string }
   | { type: "list"; items: string[] }
   | { type: "table"; rows: string[][] }
   | { type: "paragraph"; text: string };
-
-const FREE_RECAP_CHAR_LIMIT = 450;
-const SENTENCE_ENDINGS = ["。", "！", "？", ".", "!", "?"] as const;
 
 function formatGeneratedAt(generatedAt: string, language: "ja" | "en"): string {
   const formatter = new Intl.DateTimeFormat(
@@ -199,85 +196,22 @@ function splitAtSecondHeading(blocks: MarkdownBlock[]): {
   return { free: blocks, locked: [] };
 }
 
-function getBlockText(block: MarkdownBlock): string {
-  if (block.type === "heading" || block.type === "paragraph") {
-    return block.text;
-  }
-
-  if (block.type === "list") {
-    return block.items.join("");
-  }
-
-  return block.rows.flat().join("");
-}
-
-function truncateParagraphAtSentenceEnd(text: string, limit: number): string {
-  if (text.length <= limit) {
-    return text;
-  }
-
-  const forwardWindow = text.slice(0, Math.min(text.length, limit + 150));
-  const nextSentenceEnd = Math.min(
-    ...SENTENCE_ENDINGS.map((ending) => {
-      const index = forwardWindow.indexOf(ending, limit);
-      return index === -1 ? Number.POSITIVE_INFINITY : index;
-    }),
-  );
-
-  if (Number.isFinite(nextSentenceEnd)) {
-    return text.slice(0, nextSentenceEnd + 1);
-  }
-
-  const candidate = text.slice(0, limit);
-  const previousSentenceEnd = Math.max(
-    ...SENTENCE_ENDINGS.map((ending) => candidate.lastIndexOf(ending)),
-  );
-
-  if (previousSentenceEnd > limit * 0.5) {
-    return text.slice(0, previousSentenceEnd + 1);
-  }
-
-  return `${candidate.trimEnd()}…`;
-}
-
-function splitAtFreeRecapLimit(blocks: MarkdownBlock[]): {
+export function splitRecapAtThirdHeading(blocks: MarkdownBlock[]): {
   free: MarkdownBlock[];
   locked: MarkdownBlock[];
 } {
-  const free: MarkdownBlock[] = [];
-  let charCount = 0;
+  let h1Count = 0;
 
-  for (let index = 0; index < blocks.length; index += 1) {
-    const block = blocks[index];
+  for (let i = 0; i < blocks.length; i += 1) {
+    const block = blocks[i];
 
-    if (!block) {
-      continue;
+    if (block?.type === "heading" && block.level === 1) {
+      h1Count += 1;
+
+      if (h1Count === 3) {
+        return { free: blocks.slice(0, i), locked: blocks.slice(i) };
+      }
     }
-
-    if (block.type === "heading") {
-      free.push(block);
-      continue;
-    }
-
-    const blockTextLength = getBlockText(block).length;
-
-    if (charCount + blockTextLength <= FREE_RECAP_CHAR_LIMIT) {
-      free.push(block);
-      charCount += blockTextLength;
-      continue;
-    }
-
-    if (block.type === "paragraph") {
-      free.push({
-        ...block,
-        text: truncateParagraphAtSentenceEnd(
-          block.text,
-          Math.max(1, FREE_RECAP_CHAR_LIMIT - charCount),
-        ),
-      });
-    }
-
-    return { free, locked: blocks.slice(index + 1) };
   }
 
   return { free: blocks, locked: [] };
@@ -393,7 +327,7 @@ export function MatchContent({
   const allBlocks = parseMarkdown(content.contentMdJa);
   const { free: freeBlocks, locked: lockedBlocks } = isLocked
     ? contentType === "recap"
-      ? splitAtFreeRecapLimit(allBlocks)
+      ? splitRecapAtThirdHeading(allBlocks)
       : splitAtSecondHeading(allBlocks)
     : { free: allBlocks, locked: [] };
   const blocks = isLocked ? freeBlocks : allBlocks;

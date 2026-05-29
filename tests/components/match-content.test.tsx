@@ -5,7 +5,11 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { MatchContent } from "@/components/match-content";
+import {
+  MatchContent,
+  splitRecapAtThirdHeading,
+  type MarkdownBlock,
+} from "@/components/match-content";
 
 import type { PublishedMatchContent } from "@/lib/db/queries/match-content";
 
@@ -140,14 +144,15 @@ describe("MatchContent", () => {
     expect(container.querySelector(".bg-gradient-to-t")).toBeInTheDocument();
   });
 
-  it("teases the next locked heading for free users", () => {
+  it("teases the third recap heading for free users", () => {
     const visibleText = "試合の流れをまとめた無料本文";
+    const secondSectionText = "試合全体像の全文";
 
     render(
       <MatchContent
         content={{
           ...baseContent,
-          contentMdJa: `# 試合概要\n\n${visibleText}\n\n# ターニングポイント\n\nロック本文`,
+          contentMdJa: `# この試合の核心\n\n${visibleText}\n\n# 試合全体像\n\n${secondSectionText}\n\n# ターニングポイント\n\nロック本文`,
         }}
         contentType="recap"
         isPremium={false}
@@ -156,38 +161,36 @@ describe("MatchContent", () => {
 
     expect(screen.getByText("次のセクション")).toBeInTheDocument();
     expect(screen.getByText("ターニングポイント →")).toBeInTheDocument();
+    expect(screen.getByText(secondSectionText)).toBeInTheDocument();
     expect(screen.queryByText("ロック本文")).toBeNull();
   });
 
-  it("falls back to the second h2 heading when h1 headings are absent", () => {
-    const visibleText = "H2構造の無料本文";
-    const lockedText = "H2構造のロック本文";
+  it("does not lock recap content when there are only two h1 headings", () => {
+    const secondText = "2つ目のH1本文";
 
     render(
       <MatchContent
         content={{
           ...baseContent,
-          contentMdJa: `## 試合全体像\n\n${visibleText}\n\n## ターニングポイント\n\n${lockedText}`,
+          contentMdJa: `# この試合の核心\n\n無料本文\n\n# 試合全体像\n\n${secondText}`,
         }}
         contentType="recap"
         isPremium={false}
       />,
     );
 
-    expect(screen.getByText(visibleText)).toBeInTheDocument();
-    expect(screen.getByText("次のセクション")).toBeInTheDocument();
-    expect(screen.getByText("ターニングポイント →")).toBeInTheDocument();
-    expect(screen.queryByText(lockedText)).toBeNull();
-    expect(screen.getByText(/続きは Premium/)).toBeInTheDocument();
+    expect(screen.getByText(secondText)).toBeInTheDocument();
+    expect(screen.queryByText("次のセクション")).toBeNull();
+    expect(screen.queryByText(/続きは Premium/)).toBeNull();
   });
 
-  it("prefers the second h1 heading when both h1 and h2 headings exist", () => {
+  it("locks recap content from the third h1 when h1 and h2 headings coexist", () => {
     render(
       <MatchContent
         content={{
           ...baseContent,
           contentMdJa:
-            "# 試合概要\n\n無料本文\n\n## 無料内の小見出し\n\n小見出し本文\n\n# 有料セクション\n\nロック本文",
+            "# この試合の核心\n\n無料本文\n\n## 無料内の小見出し\n\n小見出し本文\n\n# 試合全体像\n\n全体像本文\n\n# 有料セクション\n\nロック本文",
         }}
         contentType="recap"
         isPremium={false}
@@ -196,6 +199,7 @@ describe("MatchContent", () => {
 
     expect(screen.getByText("無料内の小見出し")).toBeInTheDocument();
     expect(screen.getByText("小見出し本文")).toBeInTheDocument();
+    expect(screen.getByText("全体像本文")).toBeInTheDocument();
     expect(screen.getByText("有料セクション →")).toBeInTheDocument();
     expect(screen.queryByText("ロック本文")).toBeNull();
   });
@@ -215,6 +219,48 @@ describe("MatchContent", () => {
     expect(screen.queryByText("次のセクション")).toBeNull();
     expect(screen.getByText("本文のみ")).toBeInTheDocument();
     expect(screen.queryByText(/続きは Premium/)).toBeNull();
+  });
+
+  it("splits recap blocks from the third h1 heading", () => {
+    const blocks: MarkdownBlock[] = [
+      { level: 1, text: "この試合の核心", type: "heading" },
+      { text: "核心本文", type: "paragraph" },
+      { level: 1, text: "試合全体像", type: "heading" },
+      { text: "全体像本文", type: "paragraph" },
+      { level: 1, text: "ターニングポイント", type: "heading" },
+      { text: "有料本文", type: "paragraph" },
+    ];
+
+    expect(splitRecapAtThirdHeading(blocks)).toEqual({
+      free: blocks.slice(0, 4),
+      locked: blocks.slice(4),
+    });
+  });
+
+  it("does not lock recap blocks with only two h1 headings", () => {
+    const blocks: MarkdownBlock[] = [
+      { level: 1, text: "この試合の核心", type: "heading" },
+      { text: "核心本文", type: "paragraph" },
+      { level: 1, text: "試合全体像", type: "heading" },
+      { text: "全体像本文", type: "paragraph" },
+    ];
+
+    expect(splitRecapAtThirdHeading(blocks)).toEqual({
+      free: blocks,
+      locked: [],
+    });
+  });
+
+  it("does not lock recap paragraph-only blocks", () => {
+    const blocks: MarkdownBlock[] = [
+      { text: "段落1", type: "paragraph" },
+      { text: "段落2", type: "paragraph" },
+    ];
+
+    expect(splitRecapAtThirdHeading(blocks)).toEqual({
+      free: blocks,
+      locked: [],
+    });
   });
 
   it("does not show a heading teaser for premium users", () => {
