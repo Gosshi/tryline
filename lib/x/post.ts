@@ -1,5 +1,7 @@
 import { TwitterApi } from "twitter-api-v2";
 
+import { fetchOgImageBuffer, uploadMediaToX } from "@/lib/x/media";
+
 export type XPostParams = {
   awayScore: number | null;
   awayTeamName: string;
@@ -140,12 +142,20 @@ function getHashtags(family: string | null, language: "ja" | "en"): string {
 }
 
 export async function postTweetWithReply(params: {
+  client?: TwitterApi;
   language: "ja" | "en";
+  mediaId?: string;
   replyText: string;
   tweetText: string;
 }): Promise<{ replyId: string; tweetId: string }> {
-  const client = new TwitterApi(getXCredentials(params.language));
-  const { data: mainTweet } = await client.v2.tweet(params.tweetText);
+  const client = params.client ?? new TwitterApi(getXCredentials(params.language));
+  const mediaOptions = params.mediaId
+    ? { media: { media_ids: [params.mediaId] as [string] } }
+    : undefined;
+  const { data: mainTweet } = await client.v2.tweet(
+    params.tweetText,
+    mediaOptions,
+  );
   const { data: replyTweet } = await client.v2.tweet(params.replyText, {
     reply: { in_reply_to_tweet_id: mainTweet.id },
   });
@@ -154,8 +164,32 @@ export async function postTweetWithReply(params: {
 }
 
 export async function postMatchRecapToX(params: XPostParams): Promise<string> {
+  const client = new TwitterApi(getXCredentials(params.language));
+  let mediaId: string | undefined;
+
+  if (
+    params.contentType === "recap" &&
+    params.homeScore !== null &&
+    params.awayScore !== null
+  ) {
+    try {
+      const imageBuffer = await fetchOgImageBuffer({
+        away: params.awayTeamName,
+        awayScore: params.awayScore,
+        competition: params.competitionLabel,
+        home: params.homeTeamName,
+        homeScore: params.homeScore,
+      });
+      mediaId = await uploadMediaToX(client, imageBuffer, "image/png");
+    } catch {
+      mediaId = undefined;
+    }
+  }
+
   const result = await postTweetWithReply({
+    client,
     language: params.language,
+    mediaId,
     replyText: buildReplyText(params.matchId, params.language),
     tweetText: buildTweetText(params),
   });
