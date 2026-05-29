@@ -30,7 +30,7 @@ const features = [
 const faqs = [
   {
     answer:
-      "現在、無料のプレビュー記事（試合前分析）をご登録なしでお読みいただけます。レビュー記事（試合後分析）と AI チャット機能は Premium 会員限定ですが、まずはプレビュー記事でコンテンツの質をお確かめください。",
+      "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は AI 日本語レビュー全文・AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
     question: "無料トライアルはありますか？",
   },
   {
@@ -133,7 +133,7 @@ export default async function PricingPage() {
             チャットが ¥980/月で使い放題。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <PricingForm buttonLabel="Premium を始める — ¥980/月" />
+            <PricingForm buttonLabel="7日間無料で試す" />
             <Link
               className="rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               href={trialUrl}
@@ -142,7 +142,7 @@ export default async function PricingPage() {
             </Link>
           </div>
           <p className="mt-3 text-xs text-white/45">
-            いつでもキャンセル可能 · Stripe 決済
+            7日間無料 · その後 ¥980/月 · いつでもキャンセル可能 · Stripe 決済
           </p>
         </div>
       </section>
