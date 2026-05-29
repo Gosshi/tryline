@@ -18,7 +18,10 @@ import {
 } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
-import { extractDescription } from "@/lib/match-content/description";
+import {
+  extractCoreSection,
+  extractDescription,
+} from "@/lib/match-content/description";
 import { createMatchOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
@@ -67,29 +70,34 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${match.homeTeam.name} vs ${match.awayTeam.name} — ${formatCompetitionTitle(
+  const competitionTitle = formatCompetitionTitle(
     match.competition.name,
     match.competition.season,
-  )}`;
-  const description = content.preview
-    ? extractDescription(content.preview.contentMdJa)
-    : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・AI日本語レビュー。`;
+  );
+  const title = `${match.homeTeam.name} vs ${match.awayTeam.name} — ${competitionTitle}`;
+  const hasScore = match.homeScore !== null && match.awayScore !== null;
+  const description =
+    match.status === "finished" && content.recap
+      ? extractCoreSection(content.recap.contentMdJa)
+      : match.status === "finished" && hasScore
+        ? `${match.homeTeam.name} ${match.homeScore}–${match.awayScore} ${match.awayTeam.name}（${competitionTitle}）の試合結果・AI日本語レビュー。`
+        : content.preview
+          ? extractDescription(content.preview.contentMdJa)
+          : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・AI日本語レビュー。`;
   const score =
     match.homeScore !== null && match.awayScore !== null
       ? `${match.homeScore}–${match.awayScore}`
       : undefined;
 
   return {
+    alternates: { canonical: `${SITE_URL}/matches/${id}` },
     description,
     openGraph: {
       description,
       images: [
         createMatchOgImage({
           away: match.awayTeam.name,
-          competition: formatCompetitionTitle(
-            match.competition.name,
-            match.competition.season,
-          ),
+          competition: competitionTitle,
           home: match.homeTeam.name,
           score,
           status: match.status === "in_progress" ? "live" : match.status,
@@ -123,7 +131,33 @@ export default async function MatchDetailPage({
   const englishContent = await getMatchContentEn(id);
   const hasEnglishContent =
     englishContent.preview !== null || englishContent.recap !== null;
-  const jsonLd = {
+  const competitionTitle = formatCompetitionTitle(
+    match.competition.name,
+    match.competition.season,
+  );
+  const pageUrl = `${SITE_URL}/matches/${id}`;
+  const score =
+    match.homeScore !== null && match.awayScore !== null
+      ? `${match.homeScore}–${match.awayScore}`
+      : undefined;
+  const description =
+    match.status === "finished" && publishedContent.recap
+      ? extractCoreSection(publishedContent.recap.contentMdJa)
+      : match.status === "finished" &&
+          match.homeScore !== null &&
+          match.awayScore !== null
+        ? `${match.homeTeam.name} ${match.homeScore}–${match.awayScore} ${match.awayTeam.name}（${competitionTitle}）の試合結果・AI日本語レビュー。`
+        : publishedContent.preview
+          ? extractDescription(publishedContent.preview.contentMdJa)
+          : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・AI日本語レビュー。`;
+  const ogImageUrl = createMatchOgImage({
+    away: match.awayTeam.name,
+    competition: competitionTitle,
+    home: match.homeTeam.name,
+    score,
+    status: match.status === "in_progress" ? "live" : match.status,
+  }).url;
+  const sportsEventJsonLd = {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
     awayTeam: {
@@ -161,6 +195,32 @@ export default async function MatchDetailPage({
         }
       : {}),
   };
+  const newsArticleJsonLd = publishedContent.recap
+    ? {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        author: { "@type": "Organization", name: "Tryline" },
+        dateModified: publishedContent.recap.generatedAt,
+        datePublished: publishedContent.recap.generatedAt,
+        description,
+        headline: `${match.homeTeam.name} vs ${match.awayTeam.name} — ${competitionTitle}`,
+        image: ogImageUrl.startsWith("http")
+          ? ogImageUrl
+          : `${SITE_URL}${ogImageUrl}`,
+        publisher: {
+          "@type": "Organization",
+          logo: {
+            "@type": "ImageObject",
+            url: `${SITE_URL}/og-image.png`,
+          },
+          name: "Tryline",
+        },
+        url: pageUrl,
+      }
+    : null;
+  const jsonLd = newsArticleJsonLd
+    ? [sportsEventJsonLd, newsArticleJsonLd]
+    : sportsEventJsonLd;
 
   return (
     <>

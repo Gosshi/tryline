@@ -3,7 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   SeasonMatchGroups,
@@ -14,6 +14,12 @@ import {
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { GroupKey } from "@/lib/format/match-groups";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/c/premiership/2024-25",
+  useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 function buildMatch(
   id: string,
@@ -131,7 +137,7 @@ describe("season match groups", () => {
       ),
     );
 
-    render(
+    const { container } = render(
       <SeasonMatchGroups
         contentStatusMap={{}}
         groupedMatches={groupedMatches}
@@ -139,7 +145,9 @@ describe("season match groups", () => {
     );
 
     const roundNineButton = screen.getByRole("button", { name: "第9節" });
+    const roundOneLink = container.querySelector('a[href="/matches/1"]');
 
+    expect(roundOneLink?.closest(".hidden")).toBeInTheDocument();
     expect(roundNineButton).toHaveAttribute("aria-expanded", "true");
     fireEvent.click(roundNineButton);
     expect(roundNineButton).toHaveAttribute("aria-expanded", "false");

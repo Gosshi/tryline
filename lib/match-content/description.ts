@@ -27,3 +27,26 @@ export function extractDescription(markdown: string): string {
 
   return truncateAtSentenceBoundary(plainText, MAX_DESCRIPTION_LENGTH);
 }
+
+export function extractCoreSection(markdown: string): string {
+  const heading = /^#\s*この試合の核心[^\n]*$/m.exec(markdown);
+
+  if (!heading) {
+    return extractDescription(markdown);
+  }
+
+  const contentStart = heading.index + heading[0].length;
+  const contentAfterHeading = markdown.slice(contentStart).replace(/^\n+/, "");
+  const nextHeadingIndex = contentAfterHeading.search(/^#[^#][^\n]*$/m);
+  const section =
+    nextHeadingIndex === -1
+      ? contentAfterHeading
+      : contentAfterHeading.slice(0, nextHeadingIndex);
+  const plainText = stripMarkdown(section.trim());
+
+  if (plainText.length <= MAX_DESCRIPTION_LENGTH) {
+    return plainText;
+  }
+
+  return truncateAtSentenceBoundary(plainText, MAX_DESCRIPTION_LENGTH);
+}
