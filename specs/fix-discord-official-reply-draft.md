@@ -150,7 +150,9 @@ if (content.content_type === "recap") {
 }
 ```
 
-**④ フィールドの追加（recap のみ）:**
+**④⑤ フィールドの追加（recap のみ、両チャンネル共通）:**
+
+日本語・英語を**別フィールド**に分けて追加する。
 
 ```typescript
 if (content.content_type === "recap") {
@@ -165,15 +167,23 @@ if (content.content_type === "recap") {
   const jaReply = buildOfficialReplyText({ ...baseParams, language: "ja" });
   const enReply = buildOfficialReplyText({ ...baseParams, language: "en" });
 
-  payload.embeds[0].fields.push({
-    inline: false,
-    name: "④ 公式へのリプライ案",
-    value: `🇯🇵\n\`\`\`\n${jaReply}\n\`\`\`\n🇬🇧\n\`\`\`\n${enReply}\n\`\`\``,
-  });
+  payload.embeds[0].fields.push(
+    {
+      inline: false,
+      name: "④ 公式へのリプライ案 🇯🇵",
+      value: `\`\`\`\n${jaReply}\n\`\`\``,
+    },
+    {
+      inline: false,
+      name: "⑤ 公式へのリプライ案 🇬🇧",
+      value: `\`\`\`\n${enReply}\n\`\`\``,
+    },
+  );
 }
 ```
 
-Discord embed の `value` は最大1024文字。超過する場合は日英を別フィールドに分割すること。
+- 両フィールドとも **JA チャンネル・EN チャンネルの両方**に送信する
+- Discord embed の `value` は最大1024文字。各フィールドが超過する場合は文字数を切り詰めること
 
 ---
 
@@ -195,5 +205,7 @@ Discord embed の `value` は最大1024文字。超過する場合は日英を�
 ## 未解決の質問
 
 1. `notable-players.ts` の初期リストは spec 記載のものでよいか。追加・修正は Owner が直接編集する運用。
-2. リプライ案を JA チャンネルのみに送るか、EN チャンネルにも送るか。
-3. Discord `value` 1024文字制限に引っかかる場合、日英を別フィールドに分割するか、日本語のみにするか。
+
+※ Q2・Q3 は決定済み:
+- リプライ案は **JA・EN 両チャンネル**に送る
+- 日本語・英語は **別フィールド（④⑤）**に分割する

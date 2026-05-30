@@ -371,16 +371,58 @@ describe("/api/cron/notify-discord", () => {
     expect(payload.embeds[0]?.fields[3]).toEqual(
       expect.objectContaining({
         inline: false,
-        name: "④ 公式へのリプライ案",
+        name: "④ 公式へのリプライ案 🇯🇵",
         value: expect.stringContaining("山田太郎が2トライ"),
       }),
     );
     expect(payload.embeds[0]?.fields[3]?.value).toContain("佐藤次郎がトライ");
-    expect(payload.embeds[0]?.fields[3]?.value).toContain("Home 24-17 Away.");
+    expect(payload.embeds[0]?.fields[4]).toEqual(
+      expect.objectContaining({
+        inline: false,
+        name: "⑤ 公式へのリプライ案 🇬🇧",
+        value: expect.stringContaining("Home 24-17 Away."),
+      }),
+    );
     expect(xMock.postMatchRecapToX).not.toHaveBeenCalled();
     expect(dbMock.updates[0]?.payload).toEqual({
       discord_notified_at: "2026-05-21T12:00:00.000Z",
     });
+  });
+
+  it("keeps official reply draft fields within the Discord value limit", async () => {
+    const longName = "長い選手名".repeat(220);
+    dbMock.rowsByLanguage.ja = [
+      buildContent({
+        content_type: "recap",
+        id: "finished-recap-long",
+        kickoff_at: "2026-05-21T11:00:00.000Z",
+        match_id: "match-long",
+      }),
+    ];
+    dbMock.eventsByMatch["match-long"] = [
+      { metadata: { player_name: longName }, type: "try" },
+    ];
+
+    const { POST } = await import("@/app/api/cron/notify-discord/route");
+    const response = await POST(
+      new Request("http://localhost/api/cron/notify-discord", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(
+      (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
+    ) as { embeds: Array<{ fields: Array<{ name: string; value: string }> }> };
+    const officialFields = payload.embeds[0]?.fields.slice(3) ?? [];
+    expect(officialFields.map((field) => field.name)).toEqual([
+      "④ 公式へのリプライ案 🇯🇵",
+      "⑤ 公式へのリプライ案 🇬🇧",
+    ]);
+    expect(officialFields.every((field) => field.value.length <= 1024)).toBe(
+      true,
+    );
   });
 
   it("does not attempt X auto-posting for Japanese recaps", async () => {

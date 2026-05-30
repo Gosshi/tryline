@@ -60,6 +60,9 @@ type DiscordPayload = {
   embeds: DiscordEmbed[];
 };
 
+const DISCORD_FIELD_VALUE_LIMIT = 1024;
+const CODE_BLOCK_OVERHEAD = "```\n\n```".length;
+
 function firstRelation<T>(relation: Relation<T>): T | null {
   if (Array.isArray(relation)) {
     return relation[0] ?? null;
@@ -97,6 +100,14 @@ function getPlayerNameFromMetadata(metadata: unknown): string {
   return typeof playerName === "string" ? playerName.trim() : "";
 }
 
+function truncateDiscordCodeBlockValue(text: string): string {
+  const maxTextLength = DISCORD_FIELD_VALUE_LIMIT - CODE_BLOCK_OVERHEAD;
+  const trimmedText =
+    text.length > maxTextLength ? text.slice(0, maxTextLength).trimEnd() : text;
+
+  return `\`\`\`\n${trimmedText}\n\`\`\``;
+}
+
 function appendOfficialReplyFields(
   embed: DiscordEmbed,
   params: {
@@ -128,27 +139,16 @@ function appendOfficialReplyFields(
     language: "en",
     tryScorers: params.tryScorers,
   });
-  const combinedValue = `🇯🇵\n\`\`\`\n${jaReply}\n\`\`\`\n🇬🇧\n\`\`\`\n${enReply}\n\`\`\``;
-
-  if (combinedValue.length <= 1024) {
-    embed.fields.push({
-      inline: false,
-      name: "④ 公式へのリプライ案",
-      value: combinedValue,
-    });
-    return;
-  }
-
   embed.fields.push(
     {
       inline: false,
-      name: "④ 公式へのリプライ案（日本語）",
-      value: `\`\`\`\n${jaReply}\n\`\`\``,
+      name: "④ 公式へのリプライ案 🇯🇵",
+      value: truncateDiscordCodeBlockValue(jaReply),
     },
     {
       inline: false,
-      name: "④ 公式へのリプライ案（英語）",
-      value: `\`\`\`\n${enReply}\n\`\`\``,
+      name: "⑤ 公式へのリプライ案 🇬🇧",
+      value: truncateDiscordCodeBlockValue(enReply),
     },
   );
 }
