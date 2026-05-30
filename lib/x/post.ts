@@ -24,7 +24,7 @@ type XCredentials = {
 
 const X_POST_WEIGHTED_LENGTH_LIMIT = 280;
 const X_URL_WEIGHT = 23;
-const HASHTAGS_BY_FAMILY: Record<string, { ja: string; en: string }> = {
+export const HASHTAGS_BY_FAMILY: Record<string, { ja: string; en: string }> = {
   "league-one": {
     en: "#LeagueOne #Rugby #JapanRugby",
     ja: "#リーグワン #ラグビー",

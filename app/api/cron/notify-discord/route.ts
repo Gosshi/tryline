@@ -4,6 +4,7 @@ import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
 import { buildReplyText, buildTweetText } from "@/lib/x/post";
+import { buildOfficialReplyText, type TryScorer } from "@/lib/x/reply-text";
 
 export const maxDuration = 60;
 
@@ -37,6 +38,10 @@ type ContentRow = {
   language: "ja" | "en";
   match_id: string;
   matches: Relation<MatchRow>;
+};
+
+type MatchEventRow = {
+  metadata: unknown;
 };
 
 type DiscordEmbed = {
@@ -81,6 +86,71 @@ function requireDiscordWebhook(
   }
 
   return value;
+}
+
+function getPlayerNameFromMetadata(metadata: unknown): string {
+  if (!metadata || typeof metadata !== "object") {
+    return "";
+  }
+
+  const playerName = (metadata as { player_name?: unknown }).player_name;
+  return typeof playerName === "string" ? playerName.trim() : "";
+}
+
+function appendOfficialReplyFields(
+  embed: DiscordEmbed,
+  params: {
+    awayScore: number;
+    awayTeamNameEn: string;
+    awayTeamNameJa: string;
+    competitionFamily: string | null;
+    homeScore: number;
+    homeTeamNameEn: string;
+    homeTeamNameJa: string;
+    tryScorers: TryScorer[];
+  },
+): void {
+  const jaReply = buildOfficialReplyText({
+    awayScore: params.awayScore,
+    awayTeamName: params.awayTeamNameJa,
+    competitionFamily: params.competitionFamily,
+    homeScore: params.homeScore,
+    homeTeamName: params.homeTeamNameJa,
+    language: "ja",
+    tryScorers: params.tryScorers,
+  });
+  const enReply = buildOfficialReplyText({
+    awayScore: params.awayScore,
+    awayTeamName: params.awayTeamNameEn,
+    competitionFamily: params.competitionFamily,
+    homeScore: params.homeScore,
+    homeTeamName: params.homeTeamNameEn,
+    language: "en",
+    tryScorers: params.tryScorers,
+  });
+  const combinedValue = `🇯🇵\n\`\`\`\n${jaReply}\n\`\`\`\n🇬🇧\n\`\`\`\n${enReply}\n\`\`\``;
+
+  if (combinedValue.length <= 1024) {
+    embed.fields.push({
+      inline: false,
+      name: "④ 公式へのリプライ案",
+      value: combinedValue,
+    });
+    return;
+  }
+
+  embed.fields.push(
+    {
+      inline: false,
+      name: "④ 公式へのリプライ案（日本語）",
+      value: `\`\`\`\n${jaReply}\n\`\`\``,
+    },
+    {
+      inline: false,
+      name: "④ 公式へのリプライ案（英語）",
+      value: `\`\`\`\n${enReply}\n\`\`\``,
+    },
+  );
 }
 
 async function postToDiscord(
@@ -190,6 +260,33 @@ export async function POST(request: Request) {
         content.language === "en"
           ? (awayTeam?.english_name ?? awayTeam?.name ?? "Away")
           : (awayTeam?.name ?? "Away");
+      let tryScorers: TryScorer[] = [];
+
+      if (content.content_type === "recap") {
+        const { data: events, error: eventsError } = await db
+          .from("match_events")
+          .select("metadata")
+          .eq("match_id", content.match_id)
+          .eq("type", "try");
+
+        if (eventsError) {
+          throw eventsError;
+        }
+
+        const scorerMap = new Map<string, number>();
+        for (const event of (events ?? []) as MatchEventRow[]) {
+          const playerName = getPlayerNameFromMetadata(event.metadata);
+          if (playerName) {
+            scorerMap.set(playerName, (scorerMap.get(playerName) ?? 0) + 1);
+          }
+        }
+        tryScorers = [...scorerMap.entries()]
+          .map(([playerName, count]) => ({ count, playerName }))
+          .sort(
+            (a, b) =>
+              b.count - a.count || a.playerName.localeCompare(b.playerName),
+          );
+      }
       const score =
         match.home_score !== null && match.away_score !== null
           ? `${match.home_score} - ${match.away_score}`
@@ -258,6 +355,24 @@ export async function POST(request: Request) {
           },
         ],
       };
+
+      if (content.content_type === "recap") {
+        const embed = payload.embeds[0];
+        if (!embed) {
+          throw new Error("Discord payload embed is missing.");
+        }
+
+        appendOfficialReplyFields(embed, {
+          awayScore: match.away_score ?? 0,
+          awayTeamNameEn: awayTeam?.english_name ?? awayTeam?.name ?? "Away",
+          awayTeamNameJa: awayTeam?.name ?? "Away",
+          competitionFamily: competition?.family ?? null,
+          homeScore: match.home_score ?? 0,
+          homeTeamNameEn: homeTeam?.english_name ?? homeTeam?.name ?? "Home",
+          homeTeamNameJa: homeTeam?.name ?? "Home",
+          tryScorers,
+        });
+      }
       const webhookUrl =
         content.language === "en"
           ? requireDiscordWebhook(DISCORD_WEBHOOK_EN, "DISCORD_WEBHOOK_EN")
