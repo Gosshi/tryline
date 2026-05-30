@@ -18,7 +18,13 @@ type ContentFixture = {
   x_tweet_id: string | null;
 };
 
+type EventFixture = {
+  metadata: { player_name?: string };
+  type: string;
+};
+
 const dbMock = vi.hoisted(() => ({
+  eventsByMatch: {} as Record<string, EventFixture[]>,
   filters: [] as Array<{ column: string; value: unknown }>,
   ors: [] as string[],
   rowsByLanguage: {
@@ -29,6 +35,12 @@ const dbMock = vi.hoisted(() => ({
 }));
 
 const xMock = vi.hoisted(() => ({
+  HASHTAGS_BY_FAMILY: {
+    "six-nations": {
+      en: "#SixNations #Rugby",
+      ja: "#シックスネーションズ #ラグビー",
+    },
+  },
   buildReplyText: vi.fn(),
   buildTweetText: vi.fn(),
   postMatchRecapToX: vi.fn(),
@@ -36,11 +48,13 @@ const xMock = vi.hoisted(() => ({
 
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: () => ({
-    from: () => {
+    from: (table: string) => {
       const state = {
         id: null as string | null,
         language: null as "ja" | "en" | null,
+        matchId: null as string | null,
         payload: null as Record<string, unknown> | null,
+        type: null as string | null,
       };
 
       const builder = {
@@ -51,6 +65,14 @@ vi.mock("@/lib/db/server", () => ({
 
           if (column === "id") {
             state.id = value;
+          }
+
+          if (column === "match_id") {
+            state.matchId = value;
+          }
+
+          if (column === "type") {
+            state.type = value;
           }
 
           return this;
@@ -79,7 +101,10 @@ vi.mock("@/lib/db/server", () => ({
           return this;
         },
         then(
-          resolve: (value: { data?: ContentFixture[]; error: null }) => void,
+          resolve: (value: {
+            data?: ContentFixture[] | EventFixture[];
+            error: null;
+          }) => void,
         ) {
           if (state.payload) {
             dbMock.updates.push({
@@ -89,11 +114,23 @@ vi.mock("@/lib/db/server", () => ({
             return Promise.resolve(resolve({ error: null }));
           }
 
+          if (table === "match_events") {
+            const events = state.matchId
+              ? (dbMock.eventsByMatch[state.matchId] ?? [])
+              : [];
+            return Promise.resolve(
+              resolve({
+                data: state.type
+                  ? events.filter((event) => event.type === state.type)
+                  : events,
+                error: null,
+              }),
+            );
+          }
+
           return Promise.resolve(
             resolve({
-              data: state.language
-                ? dbMock.rowsByLanguage[state.language]
-                : [],
+              data: state.language ? dbMock.rowsByLanguage[state.language] : [],
               error: null,
             }),
           );
@@ -163,6 +200,7 @@ describe("/api/cron/notify-discord", () => {
     process.env.WIKIPEDIA_SQUAD_URL =
       "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
     dbMock.filters = [];
+    dbMock.eventsByMatch = {};
     dbMock.ors = [];
     dbMock.rowsByLanguage.en = [];
     dbMock.rowsByLanguage.ja = [];
@@ -311,6 +349,11 @@ describe("/api/cron/notify-discord", () => {
         match_id: "match-4",
       }),
     ];
+    dbMock.eventsByMatch["match-4"] = [
+      { metadata: { player_name: "山田太郎" }, type: "try" },
+      { metadata: { player_name: "山田太郎" }, type: "try" },
+      { metadata: { player_name: "佐藤次郎" }, type: "try" },
+    ];
 
     const { POST } = await import("@/app/api/cron/notify-discord/route");
     const response = await POST(
@@ -322,6 +365,18 @@ describe("/api/cron/notify-discord", () => {
 
     expect(response.status).toBe(200);
     expect(fetch).toHaveBeenCalledTimes(1);
+    const payload = JSON.parse(
+      (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
+    ) as { embeds: Array<{ fields: Array<{ name: string; value: string }> }> };
+    expect(payload.embeds[0]?.fields[3]).toEqual(
+      expect.objectContaining({
+        inline: false,
+        name: "④ 公式へのリプライ案",
+        value: expect.stringContaining("山田太郎が2トライ"),
+      }),
+    );
+    expect(payload.embeds[0]?.fields[3]?.value).toContain("佐藤次郎がトライ");
+    expect(payload.embeds[0]?.fields[3]?.value).toContain("Home 24-17 Away.");
     expect(xMock.postMatchRecapToX).not.toHaveBeenCalled();
     expect(dbMock.updates[0]?.payload).toEqual({
       discord_notified_at: "2026-05-21T12:00:00.000Z",
