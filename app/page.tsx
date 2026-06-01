@@ -57,10 +57,10 @@ function getCompetitionLogoSrc(family: string): string {
 export const metadata: Metadata = {
   alternates: { canonical: SITE_URL },
   description:
-    "Six Nations・Premiership・URC など海外ラグビーの試合結果・AI日本語レビューを提供。DAZN・J SPORTS 加入者向けの試合コンパニオン。",
+    "Six Nations・Premiership・URC・リーグワンなど海外ラグビーの試合結果・順位表・AI日本語レビューを毎節お届け。海外ラグビーを日本語で深く追いたいファンのための試合コンパニオン。",
   openGraph: {
     description:
-      "Six Nations・Premiership・URC など海外ラグビーの試合結果・AI日本語レビューを提供。",
+      "Six Nations・Premiership・URC・リーグワンなど海外ラグビーの試合結果・順位表・AI日本語レビューを毎節お届け。",
     images: [
       {
         height: 630,
@@ -68,11 +68,12 @@ export const metadata: Metadata = {
         width: 1200,
       },
     ],
+    locale: "ja_JP",
     title: "Tryline — 海外ラグビーを日本語で深掘り",
     type: "website",
     url: SITE_URL,
   },
-  title: "海外ラグビーを日本語で深掘り",
+  title: { absolute: "海外ラグビー 試合結果・順位・日本語AIレビュー | Tryline" },
 };
 
 export default async function HomePage() {
@@ -494,7 +495,7 @@ export default async function HomePage() {
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-50 ring-1 ring-slate-100">
                         <Image
-                          alt=""
+                          alt={formatFamilyName(competition.family)}
                           className="h-9 w-9 object-contain"
                           height={36}
                           src={getCompetitionLogoSrc(competition.family)}
