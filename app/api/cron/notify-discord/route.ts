@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
+import { generateImpressionTweet } from "@/lib/x/impression-tweet";
 import { buildReplyText, buildTweetText } from "@/lib/x/post";
 import { buildOfficialReplyText, type TryScorer } from "@/lib/x/reply-text";
 
@@ -151,6 +152,30 @@ function appendOfficialReplyFields(
       value: truncateDiscordCodeBlockValue(enReply),
     },
   );
+}
+
+async function appendImpressionTweetField(
+  embed: DiscordEmbed,
+  params: {
+    awayScore: number;
+    awayTeamName: string;
+    competitionLabel: string;
+    homeScore: number;
+    homeTeamName: string;
+    recapExcerpt: string;
+    tryScorers: TryScorer[];
+  },
+): Promise<void> {
+  const impressionTweet = await generateImpressionTweet(params);
+  if (!impressionTweet) {
+    return;
+  }
+
+  embed.fields.push({
+    inline: false,
+    name: "⑥ 感想ツイート案（手動投稿用）",
+    value: truncateDiscordCodeBlockValue(impressionTweet),
+  });
 }
 
 async function postToDiscord(
@@ -370,6 +395,15 @@ export async function POST(request: Request) {
           homeScore: match.home_score ?? 0,
           homeTeamNameEn: homeTeam?.english_name ?? homeTeam?.name ?? "Home",
           homeTeamNameJa: homeTeam?.name ?? "Home",
+          tryScorers,
+        });
+        await appendImpressionTweetField(embed, {
+          awayScore: match.away_score ?? 0,
+          awayTeamName: awayDisplayName,
+          competitionLabel,
+          homeScore: match.home_score ?? 0,
+          homeTeamName: homeDisplayName,
+          recapExcerpt: createRecapExcerpt(content.content_md).slice(0, 200),
           tryScorers,
         });
       }

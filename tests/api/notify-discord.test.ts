@@ -46,6 +46,10 @@ const xMock = vi.hoisted(() => ({
   postMatchRecapToX: vi.fn(),
 }));
 
+const impressionMock = vi.hoisted(() => ({
+  generateImpressionTweet: vi.fn(),
+}));
+
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: () => ({
     from: (table: string) => {
@@ -146,6 +150,7 @@ vi.mock("@/lib/db/server", () => ({
   }),
 }));
 
+vi.mock("@/lib/x/impression-tweet", () => impressionMock);
 vi.mock("@/lib/x/post", () => xMock);
 
 function buildContent(
@@ -213,6 +218,9 @@ describe("/api/cron/notify-discord", () => {
     );
     xMock.buildTweetText.mockReturnValue("draft tweet");
     xMock.postMatchRecapToX.mockResolvedValue("tweet-1");
+    impressionMock.generateImpressionTweet.mockResolvedValue(
+      "最後まで目が離せない好ゲームだった。山田の2トライが効いたなあ #ラグビー",
+    );
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.resolve({ ok: true, status: 204 })),
@@ -333,6 +341,7 @@ describe("/api/cron/notify-discord", () => {
         language: "en",
       }),
     );
+    expect(impressionMock.generateImpressionTweet).toHaveBeenCalledTimes(1);
     expect(dbMock.updates.map((update) => update.id)).toEqual([
       "future-preview",
       "finished-recap-en",
@@ -383,10 +392,56 @@ describe("/api/cron/notify-discord", () => {
         value: expect.stringContaining("Home 24-17 Away."),
       }),
     );
+    expect(payload.embeds[0]?.fields[5]).toEqual(
+      expect.objectContaining({
+        inline: false,
+        name: "⑥ 感想ツイート案（手動投稿用）",
+        value: expect.stringContaining("最後まで目が離せない好ゲーム"),
+      }),
+    );
+    expect(impressionMock.generateImpressionTweet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        awayScore: 17,
+        competitionLabel: "Test League",
+        homeScore: 24,
+        tryScorers: [
+          { count: 2, playerName: "山田太郎" },
+          { count: 1, playerName: "佐藤次郎" },
+        ],
+      }),
+    );
     expect(xMock.postMatchRecapToX).not.toHaveBeenCalled();
     expect(dbMock.updates[0]?.payload).toEqual({
       discord_notified_at: "2026-05-21T12:00:00.000Z",
     });
+  });
+
+  it("omits the impression tweet field when generation fails", async () => {
+    impressionMock.generateImpressionTweet.mockResolvedValueOnce(null);
+    dbMock.rowsByLanguage.ja = [
+      buildContent({
+        content_type: "recap",
+        id: "finished-recap-no-impression",
+        kickoff_at: "2026-05-21T11:00:00.000Z",
+        match_id: "match-no-impression",
+      }),
+    ];
+
+    const { POST } = await import("@/app/api/cron/notify-discord/route");
+    const response = await POST(
+      new Request("http://localhost/api/cron/notify-discord", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(
+      (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
+    ) as { embeds: Array<{ fields: Array<{ name: string }> }> };
+    expect(payload.embeds[0]?.fields.map((field) => field.name)).not.toContain(
+      "⑥ 感想ツイート案（手動投稿用）",
+    );
   });
 
   it("keeps official reply draft fields within the Discord value limit", async () => {
@@ -415,7 +470,7 @@ describe("/api/cron/notify-discord", () => {
     const payload = JSON.parse(
       (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
     ) as { embeds: Array<{ fields: Array<{ name: string; value: string }> }> };
-    const officialFields = payload.embeds[0]?.fields.slice(3) ?? [];
+    const officialFields = payload.embeds[0]?.fields.slice(3, 5) ?? [];
     expect(officialFields.map((field) => field.name)).toEqual([
       "④ 公式へのリプライ案 🇯🇵",
       "⑤ 公式へのリプライ案 🇬🇧",
