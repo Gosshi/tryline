@@ -20,6 +20,11 @@ const qaMock = vi.hoisted(() => ({
 const dbMock = vi.hoisted(() => ({
   from: vi.fn(),
   insert: vi.fn(),
+  upsert: vi.fn(),
+}));
+
+const indexNowMock = vi.hoisted(() => ({
+  submitUrlsToIndexNow: vi.fn(),
 }));
 
 vi.mock("@/lib/db/server", () => ({
@@ -34,6 +39,7 @@ vi.mock("@/lib/llm/notify", () => ({
   notifyContentRejected: vi.fn(),
   notifyCostAlert: vi.fn(),
 }));
+vi.mock("@/lib/seo/indexnow", () => indexNowMock);
 
 import { generateMatchContent } from "@/lib/llm/pipeline";
 
@@ -94,8 +100,11 @@ const assembledWithoutEvents: AssembledContentInput = {
 describe("generateMatchContent recap event guard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    dbMock.insert.mockResolvedValue({ error: null });
+    dbMock.upsert.mockResolvedValue({ error: null });
     dbMock.from.mockReturnValue({
-      insert: dbMock.insert.mockResolvedValue({ error: null }),
+      insert: dbMock.insert,
+      upsert: dbMock.upsert,
     });
     assembleMock.assembleMatchContentInput.mockResolvedValue(
       assembledWithoutEvents,
@@ -116,5 +125,63 @@ describe("generateMatchContent recap event guard", () => {
     expect(extractFactsMock.extractTacticalPoints).not.toHaveBeenCalled();
     expect(generateNarrativeMock.generateNarrative).not.toHaveBeenCalled();
     expect(qaMock.evaluateNarrativeQuality).not.toHaveBeenCalled();
+  });
+
+  it("submits published league-one recap urls to IndexNow after persistence", async () => {
+    assembleMock.assembleMatchContentInput.mockResolvedValue({
+      ...assembledWithoutEvents,
+      match: {
+        ...assembledWithoutEvents.match,
+        competition: {
+          family: "league-one",
+          id: "competition-1",
+          name: "Japan Rugby League One",
+          season: "2025-26",
+        },
+      },
+      match_events: [
+        {
+          minute: 12,
+          player_name: "Player One",
+          team_name: "Home",
+          type: "try",
+        },
+      ],
+    });
+    extractFactsMock.extractTacticalPoints.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: { tactical_points: [] },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    generateNarrativeMock.generateNarrative.mockResolvedValue({
+      content: "# recap",
+      modelVersion: "gpt-4o",
+      promptVersion: "1.0.0",
+      temperature: 0.7,
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    qaMock.evaluateNarrativeQuality.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: {
+        issues: [],
+        scores: {
+          factual_grounding: 4,
+          information_density: 4,
+          japanese_quality: 4,
+          tactical_depth: 4,
+        },
+        verdict: "publish",
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    const result = await generateMatchContent("match-2", "recap");
+
+    expect(result.status).toBe("published");
+    expect(dbMock.upsert).toHaveBeenCalled();
+    expect(indexNowMock.submitUrlsToIndexNow).toHaveBeenCalledWith([
+      "https://www.trylinerugby.com/matches/match-2",
+      "https://www.trylinerugby.com/matches/match-2/en",
+    ]);
   });
 });

@@ -41,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
   const matchPages = matchIds.map((match) => ({
     changeFrequency: "weekly" as const,
-    lastModified: new Date(),
+    lastModified: new Date(match.updatedAt),
     priority: 0.7,
     url: `${base}/matches/${match.id}`,
   }));
@@ -49,7 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((match) => match.competitionFamily === "league-one")
     .map((match) => ({
       changeFrequency: "weekly" as const,
-      lastModified: new Date(),
+      lastModified: new Date(match.updatedAt),
       priority: 0.7,
       url: `${base}/matches/${match.id}/en`,
     }));

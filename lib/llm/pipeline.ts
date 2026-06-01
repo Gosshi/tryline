@@ -10,6 +10,8 @@ import {
   NARRATIVE_TEMPERATURE_SEQUENCE,
 } from "@/lib/llm/stages/generate-narrative";
 import { evaluateNarrativeQuality } from "@/lib/llm/stages/qa";
+import { submitUrlsToIndexNow } from "@/lib/seo/indexnow";
+import { SITE_URL } from "@/lib/site";
 
 import type { Json } from "@/lib/db/types";
 import type { ContentLanguage, ContentType, QaResult } from "@/lib/llm/types";
@@ -274,6 +276,16 @@ export async function generateMatchContent(
 
   if (upsertError) {
     throw upsertError;
+  }
+
+  if (persistedStatus === "published" && contentType === "recap") {
+    const urls = [`${SITE_URL}/matches/${matchId}`];
+
+    if (assembled.match.competition?.family === "league-one") {
+      urls.push(`${SITE_URL}/matches/${matchId}/en`);
+    }
+
+    await submitUrlsToIndexNow(urls);
   }
 
   if (persistedStatus === "draft") {
