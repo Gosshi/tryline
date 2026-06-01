@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/font/google", () => ({
   Inter: () => ({ variable: "--font-inter" }),
+  Noto_Sans_JP: () => ({ variable: "--font-body" }),
   Noto_Serif_JP: () => ({ variable: "--font-noto-serif-jp" }),
+  Oswald: () => ({ variable: "--font-heading" }),
 }));
 
 import { metadata } from "@/app/layout";

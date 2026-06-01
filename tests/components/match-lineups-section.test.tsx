@@ -44,9 +44,9 @@ describe("MatchLineupsSection", () => {
 
     expect(screen.getByText("出場選手")).toBeInTheDocument();
     expect(screen.queryByText("Team Sheets")).not.toBeInTheDocument();
-    expect(screen.getByText("10")).toBeInTheDocument();
-    expect(screen.getByText("Starting Fly-half")).toBeInTheDocument();
-    expect(screen.getByText("Fly-half")).toBeInTheDocument();
+    expect(screen.getAllByText("10")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Starting Fly-half")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Fly-half")[0]).toBeInTheDocument();
   });
 
   it("links lineup players when a player slug is available", () => {
@@ -59,8 +59,9 @@ describe("MatchLineupsSection", () => {
       />,
     );
 
-    expect(screen.getByRole("link", { name: "Starting Fly-half" }))
-      .toHaveAttribute("href", "/players/starting-fly-half");
+    expect(
+      screen.getAllByRole("link", { name: "Starting Fly-half" })[0],
+    ).toHaveAttribute("href", "/players/starting-fly-half");
   });
 
   it("renders a bench divider when replacements are available", () => {
@@ -73,6 +74,6 @@ describe("MatchLineupsSection", () => {
       />,
     );
 
-    expect(screen.getByText("控え")).toBeInTheDocument();
+    expect(screen.getAllByText("控え")[0]).toBeInTheDocument();
   });
 });
