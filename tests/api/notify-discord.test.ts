@@ -50,6 +50,10 @@ const impressionMock = vi.hoisted(() => ({
   generateImpressionTweet: vi.fn(),
 }));
 
+const previewThreadMock = vi.hoisted(() => ({
+  generatePreviewThread: vi.fn(),
+}));
+
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: () => ({
     from: (table: string) => {
@@ -152,6 +156,7 @@ vi.mock("@/lib/db/server", () => ({
 
 vi.mock("@/lib/x/impression-tweet", () => impressionMock);
 vi.mock("@/lib/x/post", () => xMock);
+vi.mock("@/lib/x/preview-thread", () => previewThreadMock);
 
 function buildContent(
   overrides: Partial<ContentFixture> & {
@@ -221,6 +226,12 @@ describe("/api/cron/notify-discord", () => {
     impressionMock.generateImpressionTweet.mockResolvedValue(
       "最後まで目が離せない好ゲームだった。山田の2トライが効いたなあ #ラグビー",
     );
+    previewThreadMock.generatePreviewThread.mockResolvedValue({
+      tweet1: "ホームの接点支配はアウェイの速攻を止められるか？",
+      tweet2: "- 接点の優位\n- キック裏の攻防\n- 終盤の規律 #ラグビー",
+      tweet3:
+        "AI 戦術分析の全文はこちら 👇\nhttps://www.trylinerugby.com/matches/match-2",
+    });
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.resolve({ ok: true, status: 204 })),
@@ -315,6 +326,7 @@ describe("/api/cron/notify-discord", () => {
       "① X に貼る（URLなし）",
       "② リプライに貼る",
       "③ 記事を開く",
+      "⑤ プレビュースレッド案（手動投稿用）",
     ]);
     expect(firstPayload.embeds[0]?.fields[0]?.value).toContain(
       "```\ndraft tweet\n```",
@@ -324,6 +336,13 @@ describe("/api/cron/notify-discord", () => {
     );
     expect(firstPayload.embeds[0]?.fields[2]?.value).toBe(
       "https://www.trylinerugby.com/matches/match-2",
+    );
+    expect(firstPayload.embeds[0]?.fields[3]?.value).toContain("🐦 ツイート1");
+    expect(firstPayload.embeds[0]?.fields[3]?.value).toContain(
+      "ホームの接点支配",
+    );
+    expect(firstPayload.embeds[0]?.fields[3]?.value).toContain(
+      "AI 戦術分析の全文はこちら",
     );
     expect(xMock.buildReplyText).toHaveBeenNthCalledWith(1, "match-2", "ja");
     expect(xMock.buildReplyText).toHaveBeenNthCalledWith(2, "match-3", "en");
@@ -342,6 +361,17 @@ describe("/api/cron/notify-discord", () => {
       }),
     );
     expect(impressionMock.generateImpressionTweet).toHaveBeenCalledTimes(1);
+    expect(previewThreadMock.generatePreviewThread).toHaveBeenCalledTimes(1);
+    expect(previewThreadMock.generatePreviewThread).toHaveBeenCalledWith(
+      expect.objectContaining({
+        awayTeamName: "アウェイ",
+        competitionFamily: "six-nations",
+        competitionLabel: "Test League",
+        homeTeamName: "ホーム",
+        matchId: "match-2",
+        previewMarkdown: "## 見出し\n投稿本文の抜粋です。",
+      }),
+    );
     expect(dbMock.updates.map((update) => update.id)).toEqual([
       "future-preview",
       "finished-recap-en",
@@ -410,6 +440,7 @@ describe("/api/cron/notify-discord", () => {
         ],
       }),
     );
+    expect(previewThreadMock.generatePreviewThread).not.toHaveBeenCalled();
     expect(xMock.postMatchRecapToX).not.toHaveBeenCalled();
     expect(dbMock.updates[0]?.payload).toEqual({
       discord_notified_at: "2026-05-21T12:00:00.000Z",
@@ -441,6 +472,34 @@ describe("/api/cron/notify-discord", () => {
     ) as { embeds: Array<{ fields: Array<{ name: string }> }> };
     expect(payload.embeds[0]?.fields.map((field) => field.name)).not.toContain(
       "⑥ 感想ツイート案（手動投稿用）",
+    );
+  });
+
+  it("omits the preview thread field when generation fails", async () => {
+    previewThreadMock.generatePreviewThread.mockResolvedValueOnce(null);
+    dbMock.rowsByLanguage.ja = [
+      buildContent({
+        content_type: "preview",
+        id: "future-preview-no-thread",
+        kickoff_at: "2026-05-21T12:01:00.000Z",
+        match_id: "match-no-thread",
+      }),
+    ];
+
+    const { POST } = await import("@/app/api/cron/notify-discord/route");
+    const response = await POST(
+      new Request("http://localhost/api/cron/notify-discord", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(
+      (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
+    ) as { embeds: Array<{ fields: Array<{ name: string }> }> };
+    expect(payload.embeds[0]?.fields.map((field) => field.name)).not.toContain(
+      "⑤ プレビュースレッド案（手動投稿用）",
     );
   });
 
