@@ -64,6 +64,7 @@ export type LatestCompletedMatch = {
 export type SitemapMatch = {
   competitionFamily: string | null;
   id: string;
+  updatedAt: string;
 };
 
 export type EnglishMatchContent = {
@@ -183,6 +184,7 @@ type SitemapMatchRow = {
 };
 
 type SitemapContentMatchRow = {
+  generated_at: string;
   match_id: string;
   match: {
     competition: {
@@ -759,6 +761,7 @@ export async function listAllMatchIds(): Promise<SitemapMatch[]> {
       row.competition?.slug.replace(/-\d{4}(-\d{2})?$/, "") ??
       null,
     id: row.id,
+    updatedAt: new Date().toISOString(),
   }));
 }
 
@@ -768,6 +771,7 @@ export async function listMatchIdsWithContent(): Promise<SitemapMatch[]> {
     .from("match_content")
     .select(
       `
+        generated_at,
         match_id,
         match:matches!match_content_match_id_fkey (
           competition:competitions!matches_competition_id_fkey (
@@ -777,7 +781,8 @@ export async function listMatchIdsWithContent(): Promise<SitemapMatch[]> {
         )
       `,
     )
-    .eq("status", "published");
+    .eq("status", "published")
+    .order("generated_at", { ascending: false });
 
   if (error) {
     throw error;
@@ -799,6 +804,7 @@ export async function listMatchIdsWithContent(): Promise<SitemapMatch[]> {
         competition?.slug.replace(/-\d{4}(-\d{2})?$/, "") ??
         null,
       id: row.match_id,
+      updatedAt: row.generated_at,
     });
   }
 
