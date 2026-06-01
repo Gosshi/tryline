@@ -9,13 +9,24 @@ import {
   getRecentlyReviewedMatches,
 } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
+import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "プランを選ぶ",
+  alternates: { canonical: `${SITE_URL}/pricing` },
   description:
     "¥980/月で海外ラグビーの AI 日本語レビュー全文・AI チャットが読み放題。",
+  openGraph: {
+    description:
+      "¥980/月で海外ラグビーの AI 日本語レビュー全文・AI チャットが読み放題。",
+    images: [{ height: 630, url: `${SITE_URL}/og-image.png`, width: 1200 }],
+    locale: "ja_JP",
+    title: "プランを選ぶ | Tryline",
+    type: "website",
+    url: `${SITE_URL}/pricing`,
+  },
+  title: "プランを選ぶ",
 };
 
 const features = [
@@ -70,6 +81,19 @@ const pricingVideoJsonLd = {
   uploadDate: "2025-01-01",
 };
 
+const pricingFaqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+    name: faq.question,
+  })),
+};
+
 type PricingSample = Awaited<ReturnType<typeof getRecentlyReviewedMatches>>[number];
 
 function pickVerifiedSample(matches: PricingSample[]): PricingSample | null {
@@ -111,6 +135,12 @@ export default async function PricingPage() {
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(pricingVideoJsonLd),
+        }}
+        type="application/ld+json"
+      />
+      <script
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(pricingFaqJsonLd),
         }}
         type="application/ld+json"
       />
