@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { XIcon } from "@/components/icons/x-icon";
+
 export function SiteFooter() {
   const competitionLinks = [
     { href: "/c/six-nations", label: "Six Nations" },
@@ -29,7 +31,7 @@ export function SiteFooter() {
           </p>
           <nav
             aria-label="フッターナビゲーション"
-            className="grid gap-8 sm:grid-cols-2"
+            className="grid gap-8 sm:grid-cols-3"
           >
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-900">
@@ -57,6 +59,24 @@ export function SiteFooter() {
                     </Link>
                   </li>
                 ))}
+              </ul>
+            </div>
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-900">
+                フォロー
+              </h2>
+              <ul className="mt-3 space-y-2 text-xs text-slate-500">
+                <li>
+                  <a
+                    className="flex items-center gap-1.5 hover:text-slate-900"
+                    href="https://x.com/tryline_rugbyjp"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <XIcon className="h-3.5 w-3.5" />
+                    @tryline_rugbyjp
+                  </a>
+                </li>
               </ul>
             </div>
           </nav>

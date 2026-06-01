@@ -40,7 +40,18 @@ describe("MobileHeaderMenu", () => {
 
     fireEvent.click(toggle);
 
-    expect(screen.getByRole("navigation", { name: "モバイルナビゲーション" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: "モバイルナビゲーション" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /@tryline_rugbyjp/ }),
+    ).toHaveAttribute("href", "https://x.com/tryline_rugbyjp");
+    expect(
+      screen.getByRole("link", { name: /@tryline_rugbyjp/ }),
+    ).toHaveAttribute("target", "_blank");
+    expect(
+      screen.getByRole("link", { name: /@tryline_rugbyjp/ }),
+    ).toHaveAttribute("rel", "noopener noreferrer");
     expect(
       screen.getByRole("button", { name: "メニューを閉じる" }),
     ).toHaveAttribute("aria-expanded", "true");

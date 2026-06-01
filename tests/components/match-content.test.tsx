@@ -43,6 +43,17 @@ describe("MatchContent", () => {
     expect(screen.getByText("項目1")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Tryline" })).toBeInTheDocument();
     expect(screen.getByText("列1")).toBeInTheDocument();
+    expect(
+      screen.getByText("🏉 最新情報・更新通知は X で"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "フォローする" })).toHaveAttribute(
+      "href",
+      "https://x.com/tryline_rugbyjp",
+    );
+    expect(screen.getByRole("link", { name: "フォローする" })).toHaveAttribute(
+      "target",
+      "_blank",
+    );
   });
 
   it("does not create executable script elements", () => {
@@ -163,6 +174,10 @@ describe("MatchContent", () => {
     expect(screen.getByText("ターニングポイント →")).toBeInTheDocument();
     expect(screen.getByText(secondSectionText)).toBeInTheDocument();
     expect(screen.queryByText("ロック本文")).toBeNull();
+    expect(screen.getByRole("link", { name: "フォローする" })).toHaveAttribute(
+      "rel",
+      "noopener noreferrer",
+    );
   });
 
   it("does not lock recap content when there are only two h1 headings", () => {
