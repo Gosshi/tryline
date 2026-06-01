@@ -32,10 +32,20 @@ describe("SiteHeader", () => {
       "aria-haspopup",
       "listbox",
     );
-    expect(screen.getByRole("button", { name: "メニューを開く" })).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
-    expect(screen.queryByRole("link", { name: "順位表" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "メニューを開く" }),
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.getByRole("link", { name: "X (Twitter) @tryline_rugbyjp" }),
+    ).toHaveAttribute("href", "https://x.com/tryline_rugbyjp");
+    expect(
+      screen.getByRole("link", { name: "X (Twitter) @tryline_rugbyjp" }),
+    ).toHaveAttribute("target", "_blank");
+    expect(
+      screen.getByRole("link", { name: "X (Twitter) @tryline_rugbyjp" }),
+    ).toHaveAttribute("rel", "noopener noreferrer");
+    expect(
+      screen.queryByRole("link", { name: "順位表" }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { AuthModal } from "@/components/auth-modal";
 import { HEADER_COMPETITIONS } from "@/components/competition-nav-dropdown";
+import { XIcon } from "@/components/icons/x-icon";
 import { UserMenu } from "@/components/user-menu";
 import { getCompetitionFamilyColor } from "@/lib/format/competition";
 
@@ -90,10 +91,7 @@ export function MobileHeaderMenu({
       </button>
 
       {isOpen && (
-        <div
-          className="fixed inset-0 z-50 md:hidden"
-          onClick={closeMenu}
-        >
+        <div className="fixed inset-0 z-50 md:hidden" onClick={closeMenu}>
           <div
             className="absolute inset-x-0 top-14 border-t border-slate-200 bg-white shadow-lg"
             onClick={(event) => event.stopPropagation()}
@@ -117,9 +115,7 @@ export function MobileHeaderMenu({
                   <button
                     aria-expanded={isCompetitionsOpen}
                     className="flex min-h-[44px] w-full items-center justify-between px-2 py-3 text-left text-sm font-medium text-slate-700"
-                    onClick={() =>
-                      setIsCompetitionsOpen((current) => !current)
-                    }
+                    onClick={() => setIsCompetitionsOpen((current) => !current)}
                     type="button"
                   >
                     <span>大会</span>
@@ -159,6 +155,18 @@ export function MobileHeaderMenu({
                     </Link>
                   </li>
                 )}
+                <li>
+                  <a
+                    className="flex min-h-[44px] items-center gap-2 px-2 py-3 text-sm font-medium text-slate-700"
+                    href="https://x.com/tryline_rugbyjp"
+                    onClick={closeMenu}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <XIcon className="h-4 w-4" />
+                    @tryline_rugbyjp
+                  </a>
+                </li>
               </ul>
 
               <div className="mt-2 border-t border-slate-200 pt-2">
