@@ -5,6 +5,8 @@ import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { AnchorHTMLAttributes } from "react";
+
 import {
   SeasonMatchGroups,
   getDefaultOpenGroupIndex,
@@ -19,6 +21,17 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/c/premiership/2024-25",
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
+}));
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    href,
+    ...props
+  }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 function buildMatch(
