@@ -69,21 +69,21 @@ describe("Wikipedia URC season parser", () => {
         dateKey: "2025-09-26",
         dateText: "26 September 2025",
         homeTeamName: "Stormers",
-        sectionId: "Round_1_0",
+        sectionId: "Round_1_Stormers_v_Leinster",
       },
       {
         awayTeamName: "Cardiff",
         dateKey: "2025-09-27",
         dateText: "27 September 2025",
         homeTeamName: "Zebre",
-        sectionId: "Round_1_1",
+        sectionId: "Round_1_Zebre_v_Cardiff",
       },
       {
         awayTeamName: "Scarlets",
         dateKey: "2025-10-03",
         dateText: "3 October 2025",
         homeTeamName: "Munster",
-        sectionId: "Round_2_0",
+        sectionId: "Round_2_Munster_v_Scarlets",
       },
     ]);
   });

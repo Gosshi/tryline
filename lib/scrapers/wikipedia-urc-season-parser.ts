@@ -30,6 +30,12 @@ function roundNumberFromId(roundId: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
+function teamNameEventIdSegment(name: string): string {
+  return normalizeWikipediaTeamName(name)
+    .replace(/[^A-Za-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
 function firstNonEmptyLinkText(
   $: ReturnType<typeof load>,
   cell: ReturnType<ReturnType<typeof load>>,
@@ -107,8 +113,6 @@ export function parseWikipediaUrcSeasonMatches(
       continue;
     }
 
-    let matchIndex = 0;
-
     for (const table of tables) {
       const rows = $(table as any).find("tbody > tr").toArray();
 
@@ -129,7 +133,6 @@ export function parseWikipediaUrcSeasonMatches(
         );
 
         if (!homeTeamName || !awayTeamName) {
-          matchIndex += 1;
           continue;
         }
 
@@ -138,9 +141,8 @@ export function parseWikipediaUrcSeasonMatches(
           dateKey: dateKeyFromText(dateText),
           dateText,
           homeTeamName,
-          sectionId: `${roundId}_${matchIndex}`,
+          sectionId: `${roundId}_${teamNameEventIdSegment(homeTeamName)}_v_${teamNameEventIdSegment(awayTeamName)}`,
         });
-        matchIndex += 1;
       }
     }
   }

@@ -165,7 +165,7 @@ describe("seed-wikipedia-external-ids", () => {
         dateKey: "2025-09-26",
         dateText: "2025-09-26",
         homeTeamName: "Stormers",
-        sectionId: "Round_1_0",
+        sectionId: "Round_1_Stormers_v_Leinster",
       },
       [
         {

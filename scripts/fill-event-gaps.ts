@@ -22,6 +22,7 @@ type CliOptions = {
 type MatchGapRow = {
   away_team_id: string;
   away_team: { name: string } | null;
+  competition: { family: string; season: string } | null;
   external_ids: Json;
   home_team_id: string;
   home_team: { name: string } | null;
@@ -70,7 +71,54 @@ function sleep(ms: number) {
   });
 }
 
-function getWikipediaSource(externalIds: Json) {
+function buildSuperRugbyPacificListUrl(season: string): string | null {
+  if (!/^\d{4}$/.test(season)) {
+    return null;
+  }
+
+  return `https://en.wikipedia.org/wiki/List_of_${season}_Super_Rugby_Pacific_matches`;
+}
+
+function buildLeagueOneEnglishUrl(season: string): string | null {
+  if (!/^\d{4}-\d{2}$/.test(season)) {
+    return null;
+  }
+
+  return `https://en.wikipedia.org/wiki/${season}_Japan_Rugby_League_One_%E2%80%93_Division_1`;
+}
+
+function normalizeWikipediaUrl(match: MatchGapRow, url: string | null) {
+  const family = match.competition?.family;
+  const season = match.competition?.season;
+
+  if (family === "super-rugby-pacific" && season) {
+    const listUrl = buildSuperRugbyPacificListUrl(season);
+
+    if (
+      listUrl &&
+      (!url || /\/wiki\/\d{4}_Super_Rugby_Pacific_season$/.test(url))
+    ) {
+      return listUrl;
+    }
+  }
+
+  if (family === "league-one" && season && url?.startsWith("https://es.wikipedia.org/")) {
+    return buildLeagueOneEnglishUrl(season) ?? url;
+  }
+
+  if (
+    family === "rwc" &&
+    url?.includes("2023_Rugby_World_Cup_third-place_play-off")
+  ) {
+    return "https://en.wikipedia.org/wiki/2023_Rugby_World_Cup";
+  }
+
+  return url;
+}
+
+function getWikipediaSource(match: MatchGapRow) {
+  const { external_ids: externalIds } = match;
+
   if (
     !externalIds ||
     typeof externalIds !== "object" ||
@@ -80,12 +128,13 @@ function getWikipediaSource(externalIds: Json) {
   }
 
   const ids = externalIds as WikipediaExternalIds;
-  const url =
+  const rawUrl =
     typeof ids.wikipedia_url === "string"
       ? ids.wikipedia_url
       : typeof ids.wikipedia === "string"
         ? ids.wikipedia
         : null;
+  const url = normalizeWikipediaUrl(match, rawUrl);
 
   if (!url) {
     return null;
@@ -123,6 +172,7 @@ async function loadGapMatches(limit: number): Promise<MatchGapRow[]> {
         home_team_id,
         away_team_id,
         external_ids,
+        competition:competitions!matches_competition_id_fkey(family, season),
         home_team:teams!matches_home_team_id_fkey(name),
         away_team:teams!matches_away_team_id_fkey(name),
         match_events(id)
@@ -138,12 +188,12 @@ async function loadGapMatches(limit: number): Promise<MatchGapRow[]> {
   return ((data ?? []) as MatchGapRow[]).filter(
     (match) =>
       match.match_events.length === 0 &&
-      getWikipediaSource(match.external_ids) !== null,
+      getWikipediaSource(match) !== null,
   );
 }
 
 async function fillMatch(match: MatchGapRow): Promise<number> {
-  const source = getWikipediaSource(match.external_ids);
+  const source = getWikipediaSource(match);
 
   if (!source) {
     return 0;
@@ -186,7 +236,7 @@ async function main() {
   let filled = 0;
 
   for (const match of gaps) {
-    const source = getWikipediaSource(match.external_ids);
+    const source = getWikipediaSource(match);
     console.log(`Fetching ${source?.url ?? "missing Wikipedia URL"} ...`);
 
     try {
@@ -200,7 +250,7 @@ async function main() {
       console.log(`  -> upserted ${inserted} events`);
       filled += 1;
     } catch (error) {
-      console.error(`  -> error: ${String(error)}`);
+      console.warn(`  -> warning: ${String(error)}; skipping`);
     }
 
     await sleep(2_000);
