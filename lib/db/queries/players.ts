@@ -69,11 +69,12 @@ type PlayerIndexRow = {
   slug: string | null;
 };
 
-type PlayerLineupIndexRow = {
-  player: PlayerIndexRow | PlayerIndexRow[] | null;
+type PlayerIdRow = {
+  player_id: string | null;
 };
 
 const UNRESOLVED_PLAYER_SLUG_PATTERN = /^player-[a-f0-9]{8}$/i;
+const SUPABASE_PAGE_SIZE = 1000;
 
 function firstRelation<T>(relation: T | T[] | null | undefined): T | null {
   if (Array.isArray(relation)) {
@@ -112,6 +113,71 @@ export function isIndexablePlayer(
 
 async function listPublishedContentMatchIds(): Promise<string[]> {
   return (await listMatchIdsWithContent()).map((match) => match.id);
+}
+
+async function listLineupPlayerIdsForMatchIds(
+  matchIds: string[],
+): Promise<string[]> {
+  if (matchIds.length === 0) {
+    return [];
+  }
+
+  const client = getSupabasePublicServerClient();
+  const playerIds = new Set<string>();
+
+  for (const matchIdChunk of chunkArray(matchIds, 200)) {
+    for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
+      const { data, error } = await client
+        .from("match_lineups")
+        .select("player_id")
+        .in("match_id", matchIdChunk)
+        .range(from, from + SUPABASE_PAGE_SIZE - 1);
+
+      if (error) {
+        throw error;
+      }
+
+      const rows = (data ?? []) as PlayerIdRow[];
+
+      for (const row of rows) {
+        if (row.player_id) {
+          playerIds.add(row.player_id);
+        }
+      }
+
+      if (rows.length < SUPABASE_PAGE_SIZE) {
+        break;
+      }
+    }
+  }
+
+  return [...playerIds];
+}
+
+async function listPlayerIndexRowsByIds(
+  playerIds: string[],
+): Promise<PlayerIndexRow[]> {
+  if (playerIds.length === 0) {
+    return [];
+  }
+
+  const client = getSupabasePublicServerClient();
+  const rows: PlayerIndexRow[] = [];
+
+  for (const playerIdChunk of chunkArray(playerIds, 200)) {
+    const { data, error } = await client
+      .from("players")
+      .select("id, name, slug, canonical_player_id")
+      .in("id", playerIdChunk);
+
+    if (error) {
+      throw error;
+    }
+
+    rows.push(...((data ?? []) as PlayerIndexRow[]));
+  }
+
+  return rows;
 }
 
 async function getPlayerIdsForLineupLookup(playerId: string): Promise<string[]> {
@@ -319,54 +385,18 @@ export async function listIndexablePlayerSlugs(): Promise<string[]> {
     return [];
   }
 
-  const client = getSupabasePublicServerClient();
-  const canonicalIds = new Set<string>();
-
-  for (const matchIdChunk of chunkArray(matchIds, 200)) {
-    const { data, error } = await client
-      .from("match_lineups")
-      .select(
-        `
-          player:players!match_lineups_player_id_fkey (
-            id,
-            name,
-            slug,
-            canonical_player_id
-          )
-        `,
-      )
-      .in("match_id", matchIdChunk);
-
-    if (error) {
-      throw error;
-    }
-
-    for (const row of (data ?? []) as unknown as PlayerLineupIndexRow[]) {
-      const player = firstRelation(row.player);
-
-      if (!player) {
-        continue;
-      }
-
-      canonicalIds.add(player.canonical_player_id ?? player.id);
-    }
-  }
+  const lineupPlayerIds = await listLineupPlayerIdsForMatchIds(matchIds);
+  const lineupPlayers = await listPlayerIndexRowsByIds(lineupPlayerIds);
+  const canonicalIds = new Set(
+    lineupPlayers.map((player) => player.canonical_player_id ?? player.id),
+  );
 
   if (canonicalIds.size === 0) {
     return [];
   }
 
-  const { data, error } = await client
-    .from("players")
-    .select("id, name, slug, canonical_player_id")
-    .in("id", [...canonicalIds])
-    .is("canonical_player_id", null);
-
-  if (error || !data) {
-    return [];
-  }
-
-  return (data as PlayerIndexRow[])
+  return (await listPlayerIndexRowsByIds([...canonicalIds]))
+    .filter((player) => player.canonical_player_id === null)
     .filter((player) =>
       isIndexablePlayer({
         canonicalSlug: null,

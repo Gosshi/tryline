@@ -43,6 +43,7 @@ const lineupPlayers = [
 const canonicalPlayers = [
   lineupPlayers[0]!,
   lineupPlayers[1]!,
+  lineupPlayers[2]!,
   {
     canonical_player_id: null,
     id: "canonical-player",
@@ -57,6 +58,35 @@ const canonicalPlayers = [
   },
 ];
 
+function mockMatchLineupPages(pages: Array<Array<{ player_id: string }>>) {
+  const range = vi.fn((from: number) =>
+    Promise.resolve({
+      data: pages[Math.floor(from / 1000)] ?? [],
+      error: null,
+    }),
+  );
+  const select = vi.fn(() => ({
+    in: vi.fn(() => ({
+      range,
+    })),
+  }));
+
+  return { range, select };
+}
+
+function mockPlayersTable() {
+  return {
+    select: vi.fn(() => ({
+      in: vi.fn((_column: string, ids: string[]) =>
+        Promise.resolve({
+          data: canonicalPlayers.filter((player) => ids.includes(player.id)),
+          error: null,
+        }),
+      ),
+    })),
+  };
+}
+
 describe("indexable player queries", () => {
   beforeEach(() => {
     clientMock.from.mockReset();
@@ -67,36 +97,17 @@ describe("indexable player queries", () => {
     matchesMock.listMatchIdsWithContent.mockResolvedValue([
       { competitionFamily: "premiership", id: "match-with-content" },
     ]);
+    const matchLineups = mockMatchLineupPages([
+      lineupPlayers.map((player) => ({ player_id: player.id })),
+    ]);
 
     clientMock.from.mockImplementation((table: string) => {
       if (table === "match_lineups") {
-        return {
-          select: vi.fn(() => ({
-            in: vi.fn(() =>
-              Promise.resolve({
-                data: lineupPlayers.map((player) => ({ player })),
-                error: null,
-              }),
-            ),
-          })),
-        };
+        return matchLineups;
       }
 
       if (table === "players") {
-        return {
-          select: vi.fn(() => ({
-            in: vi.fn((_column: string, ids: string[]) => ({
-              is: vi.fn(() =>
-                Promise.resolve({
-                  data: canonicalPlayers.filter((player) =>
-                    ids.includes(player.id),
-                  ),
-                  error: null,
-                }),
-              ),
-            })),
-          })),
-        };
+        return mockPlayersTable();
       }
 
       throw new Error(`Unexpected table: ${table}`);
@@ -106,6 +117,7 @@ describe("indexable player queries", () => {
       "finn-russell",
       "maro-itoje",
     ]);
+    expect(matchLineups.select).toHaveBeenCalledWith("player_id");
   });
 
   it("returns an empty list when no matches have published content", async () => {
@@ -113,6 +125,36 @@ describe("indexable player queries", () => {
 
     await expect(listIndexablePlayerSlugs()).resolves.toEqual([]);
     expect(clientMock.from).not.toHaveBeenCalled();
+  });
+
+  it("pages through lineups beyond the PostgREST row limit", async () => {
+    matchesMock.listMatchIdsWithContent.mockResolvedValue([
+      { competitionFamily: "premiership", id: "match-with-content" },
+    ]);
+    const firstPage = Array.from({ length: 1000 }, (_, index) => ({
+      player_id: index % 2 === 0 ? "real-player" : "anonymous-player",
+    }));
+    const secondPage = [{ player_id: "alias-player" }];
+    const matchLineups = mockMatchLineupPages([firstPage, secondPage]);
+
+    clientMock.from.mockImplementation((table: string) => {
+      if (table === "match_lineups") {
+        return matchLineups;
+      }
+
+      if (table === "players") {
+        return mockPlayersTable();
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    await expect(listIndexablePlayerSlugs()).resolves.toEqual([
+      "finn-russell",
+      "maro-itoje",
+    ]);
+    expect(matchLineups.range).toHaveBeenNthCalledWith(1, 0, 999);
+    expect(matchLineups.range).toHaveBeenNthCalledWith(2, 1000, 1999);
   });
 
   it("identifies indexable player details in one helper", () => {
