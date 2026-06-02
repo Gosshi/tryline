@@ -1,8 +1,10 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
+import { listMatchIdsWithContent } from "@/lib/db/queries/matches";
 
 export type PlayerDetail = {
   aliasTeams: { name: string; slug: string }[];
   canonicalSlug: string | null;
+  hasPublishedContentMatch: boolean;
   id: string;
   name: string;
   position: string | null;
@@ -60,12 +62,105 @@ type PlayerAliasTeamRow = {
   team: { name: string; slug: string } | { name: string; slug: string }[] | null;
 };
 
+type PlayerIndexRow = {
+  canonical_player_id: string | null;
+  id: string;
+  name: string;
+  slug: string | null;
+};
+
+type PlayerLineupIndexRow = {
+  player: PlayerIndexRow | PlayerIndexRow[] | null;
+};
+
+const UNRESOLVED_PLAYER_SLUG_PATTERN = /^player-[a-f0-9]{8}$/i;
+
 function firstRelation<T>(relation: T | T[] | null | undefined): T | null {
   if (Array.isArray(relation)) {
     return relation[0] ?? null;
   }
 
   return relation ?? null;
+}
+
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
+function isResolvedPlayerSlug(slug: string | null): slug is string {
+  return Boolean(slug) && !UNRESOLVED_PLAYER_SLUG_PATTERN.test(slug ?? "");
+}
+
+export function isIndexablePlayer(
+  player: Pick<
+    PlayerDetail,
+    "canonicalSlug" | "hasPublishedContentMatch" | "slug"
+  >,
+): boolean {
+  return (
+    player.canonicalSlug === null &&
+    player.hasPublishedContentMatch &&
+    isResolvedPlayerSlug(player.slug)
+  );
+}
+
+async function listPublishedContentMatchIds(): Promise<string[]> {
+  return (await listMatchIdsWithContent()).map((match) => match.id);
+}
+
+async function getPlayerIdsForLineupLookup(playerId: string): Promise<string[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("players")
+    .select("id")
+    .or(`id.eq.${playerId},canonical_player_id.eq.${playerId}`);
+
+  if (error) {
+    throw error;
+  }
+
+  const ids = (data ?? []).map((player) => player.id);
+
+  return ids.length > 0 ? ids : [playerId];
+}
+
+async function hasPublishedContentLineup(
+  playerId: string,
+): Promise<boolean> {
+  const [playerIds, matchIds] = await Promise.all([
+    getPlayerIdsForLineupLookup(playerId),
+    listPublishedContentMatchIds(),
+  ]);
+
+  if (playerIds.length === 0 || matchIds.length === 0) {
+    return false;
+  }
+
+  const client = getSupabasePublicServerClient();
+
+  for (const matchIdChunk of chunkArray(matchIds, 200)) {
+    const { count, error } = await client
+      .from("match_lineups")
+      .select("id", { count: "exact", head: true })
+      .in("player_id", playerIds)
+      .in("match_id", matchIdChunk);
+
+    if (error) {
+      throw error;
+    }
+
+    if ((count ?? 0) > 0) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export async function getPlayerBySlug(
@@ -88,6 +183,7 @@ export async function getPlayerBySlug(
   const primaryTeamSlug = row.team?.slug ?? "";
   let canonicalSlug: string | null = null;
   const aliasTeams: { name: string; slug: string }[] = [];
+  let hasPublishedContentMatch = false;
 
   if (row.canonical_player_id) {
     const { data: canonicalData } = await client
@@ -98,6 +194,10 @@ export async function getPlayerBySlug(
 
     canonicalSlug = (canonicalData as { slug: string } | null)?.slug ?? null;
   } else {
+    hasPublishedContentMatch = isResolvedPlayerSlug(row.slug)
+      ? await hasPublishedContentLineup(row.id)
+      : false;
+
     const { data: aliasData } = await client
       .from("players")
       .select("team:teams!players_team_id_fkey ( name, slug )")
@@ -120,6 +220,7 @@ export async function getPlayerBySlug(
   return {
     aliasTeams,
     canonicalSlug,
+    hasPublishedContentMatch,
     id: row.id,
     name: row.name,
     position: row.position ?? null,
@@ -209,6 +310,73 @@ export async function listAllPlayerSlugs(): Promise<string[]> {
   }
 
   return data.map((player) => player.slug);
+}
+
+export async function listIndexablePlayerSlugs(): Promise<string[]> {
+  const matchIds = await listPublishedContentMatchIds();
+
+  if (matchIds.length === 0) {
+    return [];
+  }
+
+  const client = getSupabasePublicServerClient();
+  const canonicalIds = new Set<string>();
+
+  for (const matchIdChunk of chunkArray(matchIds, 200)) {
+    const { data, error } = await client
+      .from("match_lineups")
+      .select(
+        `
+          player:players!match_lineups_player_id_fkey (
+            id,
+            name,
+            slug,
+            canonical_player_id
+          )
+        `,
+      )
+      .in("match_id", matchIdChunk);
+
+    if (error) {
+      throw error;
+    }
+
+    for (const row of (data ?? []) as unknown as PlayerLineupIndexRow[]) {
+      const player = firstRelation(row.player);
+
+      if (!player) {
+        continue;
+      }
+
+      canonicalIds.add(player.canonical_player_id ?? player.id);
+    }
+  }
+
+  if (canonicalIds.size === 0) {
+    return [];
+  }
+
+  const { data, error } = await client
+    .from("players")
+    .select("id, name, slug, canonical_player_id")
+    .in("id", [...canonicalIds])
+    .is("canonical_player_id", null);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return (data as PlayerIndexRow[])
+    .filter((player) =>
+      isIndexablePlayer({
+        canonicalSlug: null,
+        hasPublishedContentMatch: true,
+        slug: player.slug ?? "",
+      }),
+    )
+    .map((player) => player.slug)
+    .filter((slug): slug is string => Boolean(slug))
+    .sort((left, right) => left.localeCompare(right));
 }
 
 export async function getPlayersByTeamSlug(

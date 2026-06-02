@@ -98,8 +98,8 @@ describe("H2H page", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText(/Tryline 収録分/).length).toBeGreaterThan(0);
     expect(container.querySelector('a[href="/matches/match-1"]')).toBeTruthy();
-    expect(container.querySelector('a[href="/t/leinster"]')).toBeTruthy();
-    expect(container.querySelector('a[href="/t/toulouse"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/teams/leinster"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/teams/toulouse"]')).toBeTruthy();
     expect(
       container.textContent?.includes('"@type":"BreadcrumbList"'),
     ).toBe(true);

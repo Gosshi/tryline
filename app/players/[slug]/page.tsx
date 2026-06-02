@@ -5,6 +5,7 @@ import { Fragment } from "react";
 import {
   getMatchesForPlayer,
   getPlayerBySlug,
+  isIndexablePlayer,
 } from "@/lib/db/queries/players";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 
@@ -49,8 +50,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Tryline" };
   }
 
+  const robots = isIndexablePlayer(player)
+    ? {}
+    : {
+        robots: {
+          follow: true,
+          index: false,
+        },
+      };
+
   return {
     description: `${player.name}（${player.teamName}）の出場試合・スタッツ一覧。`,
+    ...robots,
     title: `${player.name} — ${player.teamName}`,
   };
 }

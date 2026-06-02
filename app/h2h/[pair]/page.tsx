@@ -227,7 +227,7 @@ function TeamSummary({
       className={`group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
         align === "right" ? "justify-end lg:text-right" : "justify-start"
       }`}
-      href={`/t/${team.slug}`}
+      href={`/teams/${team.slug}`}
     >
       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-slate-950 text-sm font-black text-white">
         {team.shortCode}
@@ -306,7 +306,7 @@ function TeamPageLink({ team }: { team: HeadToHeadTeam }) {
   return (
     <Link
       className="rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-950 transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-      href={`/t/${team.slug}`}
+      href={`/teams/${team.slug}`}
     >
       {team.name}のページへ
       <span aria-hidden className="ml-1">

@@ -9,6 +9,7 @@ import { getContentStatusMap } from "@/lib/db/queries/match-content";
 import { getPlayersByTeamSlug } from "@/lib/db/queries/players";
 import { getTeamStatsDataBySlug } from "@/lib/db/queries/team-stats";
 import { getTeamPageDataBySlug } from "@/lib/db/queries/teams";
+import { SITE_URL } from "@/lib/site";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { TeamMatchItem } from "@/lib/db/queries/teams";
@@ -48,6 +49,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
+    alternates: {
+      canonical: `${SITE_URL}/teams/${data.team.slug}`,
+    },
     description: `${data.team.name}の最近の試合と次戦の日程`,
     title: data.team.name,
   };

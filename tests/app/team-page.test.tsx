@@ -166,6 +166,9 @@ describe("TeamPage", () => {
     await expect(
       generateMetadata({ params: Promise.resolve({ slug: "bath" }) }),
     ).resolves.toMatchObject({
+      alternates: {
+        canonical: "https://www.trylinerugby.com/teams/bath",
+      },
       description: "Bathの最近の試合と次戦の日程",
       title: "Bath",
     });
