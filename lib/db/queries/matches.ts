@@ -57,6 +57,31 @@ export type TeamPageMatch = MatchListItem & {
   competition: { slug: string; name: string; season: string };
 };
 
+export type HeadToHeadTeam = {
+  slug: string;
+  name: string;
+  shortCode: string;
+};
+
+export type HeadToHeadMatch = MatchListItem & {
+  competition: { slug: string; name: string; season: string };
+};
+
+export type HeadToHeadPageData = {
+  canonicalSlug: string;
+  matches: HeadToHeadMatch[];
+  teamA: HeadToHeadTeam;
+  teamB: HeadToHeadTeam;
+};
+
+export type HeadToHeadPair = {
+  matchCount: number;
+  slug: string;
+  teamA: HeadToHeadTeam;
+  teamB: HeadToHeadTeam;
+  updatedAt: string;
+};
+
 export type LatestCompletedMatch = {
   id: string;
 };
@@ -210,6 +235,44 @@ type RoundHubQueryRow = {
   } | null;
 };
 
+type HeadToHeadTeamRow = {
+  id: string;
+  name: string;
+  short_code: string | null;
+  slug: string;
+};
+
+type HeadToHeadMatchRow = BaseMatchRow & {
+  competition: {
+    name: string;
+    season: string;
+    slug: string;
+  } | null;
+};
+
+type HeadToHeadPairQueryRow = {
+  away_team: HeadToHeadTeamRow | null;
+  home_team: HeadToHeadTeamRow | null;
+  kickoff_at: string;
+};
+
+function mapHeadToHeadTeam(row: HeadToHeadTeamRow): HeadToHeadTeam {
+  return {
+    name: row.name,
+    shortCode: row.short_code ?? row.name.slice(0, 3).toUpperCase(),
+    slug: row.slug,
+  };
+}
+
+function sortHeadToHeadTeamRows(
+  teamA: HeadToHeadTeamRow,
+  teamB: HeadToHeadTeamRow,
+): [HeadToHeadTeamRow, HeadToHeadTeamRow] {
+  return teamA.slug.localeCompare(teamB.slug) <= 0
+    ? [teamA, teamB]
+    : [teamB, teamA];
+}
+
 function isMatchStatus(value: string): value is MatchStatus {
   return [
     "scheduled",
@@ -314,6 +377,23 @@ async function getCompetitionBySlug(competitionSlug: string) {
     .from("competitions")
     .select("id")
     .eq("slug", competitionSlug)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+async function getHeadToHeadTeamBySlug(
+  teamSlug: string,
+): Promise<HeadToHeadTeamRow | null> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("teams")
+    .select("id, slug, name, short_code")
+    .eq("slug", teamSlug)
     .maybeSingle();
 
   if (error) {
@@ -912,6 +992,245 @@ export async function getRoundMatches(
   const matches = await listMatchesForCompetition(`${competition}-${season}`);
 
   return matches.filter((match) => match.round === round);
+}
+
+export function normalizeHeadToHeadSlug(
+  teamSlugA: string,
+  teamSlugB: string,
+): string {
+  return [teamSlugA, teamSlugB]
+    .sort((left, right) => left.localeCompare(right))
+    .join("-vs-");
+}
+
+export function parseHeadToHeadSlug(
+  pairSlug: string,
+): { teamSlugA: string; teamSlugB: string } | null {
+  const parts = pairSlug.split("-vs-");
+
+  if (parts.length !== 2 || !parts[0] || !parts[1] || parts[0] === parts[1]) {
+    return null;
+  }
+
+  return {
+    teamSlugA: parts[0],
+    teamSlugB: parts[1],
+  };
+}
+
+export function mapHeadToHeadRowsToPairs(
+  rows: HeadToHeadPairQueryRow[],
+  limit = 200,
+): HeadToHeadPair[] {
+  const bySlug = new Map<string, HeadToHeadPair>();
+
+  for (const row of rows) {
+    if (!row.home_team || !row.away_team) {
+      continue;
+    }
+
+    const [teamA, teamB] = sortHeadToHeadTeamRows(
+      row.home_team,
+      row.away_team,
+    );
+    const slug = normalizeHeadToHeadSlug(teamA.slug, teamB.slug);
+    const existing = bySlug.get(slug);
+
+    if (!existing) {
+      bySlug.set(slug, {
+        matchCount: 1,
+        slug,
+        teamA: mapHeadToHeadTeam(teamA),
+        teamB: mapHeadToHeadTeam(teamB),
+        updatedAt: row.kickoff_at,
+      });
+      continue;
+    }
+
+    existing.matchCount += 1;
+    if (row.kickoff_at > existing.updatedAt) {
+      existing.updatedAt = row.kickoff_at;
+    }
+  }
+
+  return [...bySlug.values()]
+    .sort((left, right) => {
+      const countOrder = right.matchCount - left.matchCount;
+
+      if (countOrder !== 0) {
+        return countOrder;
+      }
+
+      return right.updatedAt.localeCompare(left.updatedAt);
+    })
+    .slice(0, limit);
+}
+
+export async function listHeadToHeadPairs(
+  limit = 200,
+): Promise<HeadToHeadPair[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        kickoff_at,
+        home_team:teams!matches_home_team_id_fkey (
+          id,
+          slug,
+          name,
+          short_code
+        ),
+        away_team:teams!matches_away_team_id_fkey (
+          id,
+          slug,
+          name,
+          short_code
+        )
+      `,
+    )
+    .order("kickoff_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return mapHeadToHeadRowsToPairs(
+    (data ?? []) as unknown as HeadToHeadPairQueryRow[],
+    limit,
+  );
+}
+
+export async function getHeadToHeadMatches(
+  teamSlugA: string,
+  teamSlugB: string,
+): Promise<HeadToHeadMatch[]> {
+  if (teamSlugA === teamSlugB) {
+    return [];
+  }
+
+  const [teamA, teamB] = await Promise.all([
+    getHeadToHeadTeamBySlug(teamSlugA),
+    getHeadToHeadTeamBySlug(teamSlugB),
+  ]);
+
+  if (!teamA || !teamB) {
+    return [];
+  }
+
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        id,
+        kickoff_at,
+        status,
+        home_score,
+        away_score,
+        venue,
+        external_ids,
+        home_team:teams!matches_home_team_id_fkey (
+          slug,
+          name,
+          short_code
+        ),
+        away_team:teams!matches_away_team_id_fkey (
+          slug,
+          name,
+          short_code
+        ),
+        competition:competitions!matches_competition_id_fkey (
+          slug,
+          name,
+          season
+        )
+      `,
+    )
+    .or(
+      `and(home_team_id.eq.${teamA.id},away_team_id.eq.${teamB.id}),and(home_team_id.eq.${teamB.id},away_team_id.eq.${teamA.id})`,
+    )
+    .order("kickoff_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as unknown as HeadToHeadMatchRow[])
+    .filter((row) => row.competition !== null)
+    .map((row) => {
+      if (!row.competition) {
+        throw new Error("Head-to-head match is missing competition.");
+      }
+
+      return {
+        ...mapMatchRow(row),
+        competition: row.competition,
+      };
+    });
+}
+
+export async function getHeadToHeadPageData(
+  teamSlugA: string,
+  teamSlugB: string,
+): Promise<HeadToHeadPageData | null> {
+  if (teamSlugA === teamSlugB) {
+    return null;
+  }
+
+  const [teamA, teamB, matches] = await Promise.all([
+    getHeadToHeadTeamBySlug(teamSlugA),
+    getHeadToHeadTeamBySlug(teamSlugB),
+    getHeadToHeadMatches(teamSlugA, teamSlugB),
+  ]);
+
+  if (!teamA || !teamB || matches.length === 0) {
+    return null;
+  }
+
+  const [canonicalTeamA, canonicalTeamB] = sortHeadToHeadTeamRows(teamA, teamB);
+
+  return {
+    canonicalSlug: normalizeHeadToHeadSlug(
+      canonicalTeamA.slug,
+      canonicalTeamB.slug,
+    ),
+    matches,
+    teamA: mapHeadToHeadTeam(canonicalTeamA),
+    teamB: mapHeadToHeadTeam(canonicalTeamB),
+  };
+}
+
+export async function countHeadToHeadMatches(
+  teamSlugA: string,
+  teamSlugB: string,
+): Promise<number> {
+  if (teamSlugA === teamSlugB) {
+    return 0;
+  }
+
+  const [teamA, teamB] = await Promise.all([
+    getHeadToHeadTeamBySlug(teamSlugA),
+    getHeadToHeadTeamBySlug(teamSlugB),
+  ]);
+
+  if (!teamA || !teamB) {
+    return 0;
+  }
+
+  const client = getSupabasePublicServerClient();
+  const { count, error } = await client
+    .from("matches")
+    .select("id", { count: "exact", head: true })
+    .or(
+      `and(home_team_id.eq.${teamA.id},away_team_id.eq.${teamB.id}),and(home_team_id.eq.${teamB.id},away_team_id.eq.${teamA.id})`,
+    );
+
+  if (error) {
+    throw error;
+  }
+
+  return count ?? 0;
 }
 
 export async function getMatchContentEn(

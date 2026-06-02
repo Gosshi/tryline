@@ -12,9 +12,11 @@ import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
 import {
+  countHeadToHeadMatches,
   getMatchById,
   getMatchContentEn,
   listMatchIdsWithContent,
+  normalizeHeadToHeadSlug,
 } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
@@ -126,6 +128,17 @@ export default async function MatchDetailPage({
     notFound();
   }
 
+  const headToHeadCount = await countHeadToHeadMatches(
+    match.homeTeam.slug,
+    match.awayTeam.slug,
+  );
+  const headToHeadHref =
+    headToHeadCount >= 2
+      ? `/h2h/${normalizeHeadToHeadSlug(
+          match.homeTeam.slug,
+          match.awayTeam.slug,
+        )}`
+      : null;
   const shouldShowPreviewSection =
     match.status !== "finished" || publishedContent.preview !== null;
   const englishContent = await getMatchContentEn(id);
@@ -256,7 +269,7 @@ export default async function MatchDetailPage({
             </ol>
           </nav>
 
-          <MatchHeader match={match} />
+          <MatchHeader headToHeadHref={headToHeadHref} match={match} />
 
           <PremiumMatchChat matchId={id} />
 
