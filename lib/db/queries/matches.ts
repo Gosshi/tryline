@@ -256,6 +256,57 @@ type HeadToHeadPairQueryRow = {
   kickoff_at: string;
 };
 
+const RECENTLY_REVIEWED_MATCH_SELECT = `
+  generated_at,
+  content_md,
+  match:matches!match_content_match_id_fkey (
+    id,
+    kickoff_at,
+    status,
+    home_score,
+    away_score,
+    venue,
+    external_ids,
+    home_team:teams!matches_home_team_id_fkey (
+      slug,
+      name,
+      short_code
+    ),
+    away_team:teams!matches_away_team_id_fkey (
+      slug,
+      name,
+      short_code
+    ),
+    competition:competitions!matches_competition_id_fkey (
+      slug,
+      name,
+      season
+    )
+  )
+`;
+
+function mapRecentlyReviewedContentRow(
+  row: RecentlyReviewedContentRow,
+): RecentlyReviewedMatch | null {
+  if (!row.match) {
+    return null;
+  }
+
+  if (!row.match.competition) {
+    throw new Error("Recently reviewed match is missing competition.");
+  }
+
+  return {
+    ...mapMatchRow(row.match),
+    competition: row.match.competition,
+    recapGeneratedAt: row.generated_at,
+    recapExcerpt: truncateAtSentenceBoundary(
+      stripMarkdown(row.content_md),
+      350,
+    ),
+  };
+}
+
 function mapHeadToHeadTeam(row: HeadToHeadTeamRow): HeadToHeadTeam {
   return {
     name: row.name,
@@ -454,36 +505,7 @@ export async function getRecentlyReviewedMatches(
   const client = getSupabasePublicServerClient();
   let query = client
     .from("match_content")
-    .select(
-      `
-        generated_at,
-        content_md,
-        match:matches!match_content_match_id_fkey (
-          id,
-          kickoff_at,
-          status,
-          home_score,
-          away_score,
-          venue,
-          external_ids,
-          home_team:teams!matches_home_team_id_fkey (
-            slug,
-            name,
-            short_code
-          ),
-          away_team:teams!matches_away_team_id_fkey (
-            slug,
-            name,
-            short_code
-          ),
-          competition:competitions!matches_competition_id_fkey (
-            slug,
-            name,
-            season
-          )
-        )
-      `,
-    )
+    .select(RECENTLY_REVIEWED_MATCH_SELECT)
     .eq("content_type", "recap")
     .eq("status", "published")
     .order("generated_at", { ascending: false });
@@ -499,22 +521,38 @@ export async function getRecentlyReviewedMatches(
   }
 
   return (data satisfies RecentlyReviewedContentRow[])
-    .filter((row) => row.match !== null)
-    .map((row) => {
-      if (!row.match?.competition) {
-        throw new Error("Recently reviewed match is missing competition.");
-      }
+    .map(mapRecentlyReviewedContentRow)
+    .filter((match): match is RecentlyReviewedMatch => match !== null);
+}
 
-      return {
-        ...mapMatchRow(row.match),
-        competition: row.match.competition,
-        recapGeneratedAt: row.generated_at,
-        recapExcerpt: truncateAtSentenceBoundary(
-          stripMarkdown(row.content_md),
-          350,
-        ),
-      };
-    });
+export async function getRecentlyReviewedMatchById(
+  matchId: string,
+  language?: "ja" | "en",
+): Promise<RecentlyReviewedMatch | null> {
+  const client = getSupabasePublicServerClient();
+  let query = client
+    .from("match_content")
+    .select(RECENTLY_REVIEWED_MATCH_SELECT)
+    .eq("content_type", "recap")
+    .eq("status", "published")
+    .eq("match_id", matchId);
+
+  if (language) {
+    query = query.eq("language", language);
+  }
+
+  const { data, error } = await query
+    .order("generated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data
+    ? mapRecentlyReviewedContentRow(data satisfies RecentlyReviewedContentRow)
+    : null;
 }
 
 export async function getRecentlyReviewedFamilies(
@@ -1029,10 +1067,7 @@ export function mapHeadToHeadRowsToPairs(
       continue;
     }
 
-    const [teamA, teamB] = sortHeadToHeadTeamRows(
-      row.home_team,
-      row.away_team,
-    );
+    const [teamA, teamB] = sortHeadToHeadTeamRows(row.home_team, row.away_team);
     const slug = normalizeHeadToHeadSlug(teamA.slug, teamB.slug);
     const existing = bySlug.get(slug);
 
