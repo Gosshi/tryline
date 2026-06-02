@@ -8,6 +8,7 @@ import { MatchHeader } from "@/components/match-header";
 import { MatchLineupsSection } from "@/components/match-lineups-section";
 import { PremiumMatchChat } from "@/components/premium-match-chat";
 import { PremiumRecapSection } from "@/components/premium-recap-section";
+import { SampleRecapCta } from "@/components/sample-recap-cta";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
@@ -24,6 +25,7 @@ import {
   extractCoreSection,
   extractDescription,
 } from "@/lib/match-content/description";
+import { isSampleMatch } from "@/lib/sample-matches";
 import { createMatchOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
@@ -144,6 +146,8 @@ export default async function MatchDetailPage({
   const englishContent = await getMatchContentEn(id);
   const hasEnglishContent =
     englishContent.preview !== null || englishContent.recap !== null;
+  const isFreeSampleRecap =
+    isSampleMatch(id) && publishedContent.recap !== null;
   const competitionTitle = formatCompetitionTitle(
     match.competition.name,
     match.competition.season,
@@ -307,10 +311,22 @@ export default async function MatchDetailPage({
                 showCta={false}
               />
             )}
-            <PremiumRecapSection
-              content={publishedContent.recap}
-              match={match}
-            />
+            {isFreeSampleRecap ? (
+              <>
+                <MatchContentSection
+                  content={publishedContent.recap}
+                  contentType="recap"
+                  isPremium={true}
+                  match={match}
+                />
+                <SampleRecapCta matchId={id} />
+              </>
+            ) : (
+              <PremiumRecapSection
+                content={publishedContent.recap}
+                match={match}
+              />
+            )}
           </section>
         </div>
       </main>

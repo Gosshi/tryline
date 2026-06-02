@@ -8,6 +8,7 @@ import { MatchHeader } from "@/components/match-header";
 import { MatchLineupsSection } from "@/components/match-lineups-section";
 import { PremiumMatchChat } from "@/components/premium-match-chat";
 import { PremiumRecapSection } from "@/components/premium-recap-section";
+import { SampleRecapCta } from "@/components/sample-recap-cta";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
 import {
@@ -19,6 +20,7 @@ import {
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { extractDescription } from "@/lib/match-content/description";
+import { isSampleMatch } from "@/lib/sample-matches";
 import { createMatchOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
@@ -123,6 +125,8 @@ export default async function MatchEnglishPage({
 
   const homeDisplayName = match.homeTeam.englishName ?? match.homeTeam.name;
   const awayDisplayName = match.awayTeam.englishName ?? match.awayTeam.name;
+  const isFreeSampleRecap =
+    isSampleMatch(id) && englishContent.recap !== null;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -195,11 +199,24 @@ export default async function MatchEnglishPage({
             />
           )}
           {englishContent.recap && (
-            <PremiumRecapSection
-              content={englishContent.recap}
-              language="en"
-              match={match}
-            />
+            isFreeSampleRecap ? (
+              <>
+                <MatchContentSection
+                  content={englishContent.recap}
+                  contentType="recap"
+                  isPremium={true}
+                  language="en"
+                  match={match}
+                />
+                <SampleRecapCta language="en" matchId={id} />
+              </>
+            ) : (
+              <PremiumRecapSection
+                content={englishContent.recap}
+                language="en"
+                match={match}
+              />
+            )
           )}
         </section>
       </div>
