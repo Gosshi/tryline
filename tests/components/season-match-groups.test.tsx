@@ -152,4 +152,20 @@ describe("season match groups", () => {
     fireEvent.click(roundNineButton);
     expect(roundNineButton).toHaveAttribute("aria-expanded", "false");
   });
+
+  it("links numeric round headings to round hub pages", () => {
+    const groupedMatches = [buildGroup(3, "2026-01-15T00:00:00.000Z")];
+
+    const { container } = render(
+      <SeasonMatchGroups
+        contentStatusMap={{}}
+        groupedMatches={groupedMatches}
+        roundHubBasePath="/c/six-nations/2025"
+      />,
+    );
+
+    expect(
+      container.querySelector('a[href="/c/six-nations/2025/round/3"]'),
+    ).toHaveTextContent("第3節の結果・日程");
+  });
 });
