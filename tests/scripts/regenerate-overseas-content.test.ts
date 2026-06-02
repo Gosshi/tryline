@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -43,9 +46,16 @@ function pipelineResult(
 }
 
 function createMockDb(contentRows: ContentFixture[]): SupabaseClient<Database> {
+  const state: { matchIds: string[] | null } = { matchIds: null };
   const contentBuilder = {
     eq: vi.fn().mockReturnThis(),
-    in: vi.fn().mockReturnThis(),
+    in: vi.fn((column: string, values: string[]) => {
+      if (column === "match_id") {
+        state.matchIds = values;
+      }
+
+      return contentBuilder;
+    }),
     select: vi.fn().mockReturnThis(),
     then: (
       resolve: (value: {
@@ -59,13 +69,17 @@ function createMockDb(contentRows: ContentFixture[]): SupabaseClient<Database> {
     ) =>
       Promise.resolve(
         resolve({
-          data: contentRows.map((row) => ({
-            match: {
-              competition: row.family ? { family: row.family } : null,
-            },
-            match_id: row.matchId,
-            prompt_version: row.promptVersion,
-          })),
+          data: contentRows
+            .filter(
+              (row) => state.matchIds === null || state.matchIds.includes(row.matchId),
+            )
+            .map((row) => ({
+              match: {
+                competition: row.family ? { family: row.family } : null,
+              },
+              match_id: row.matchId,
+              prompt_version: row.promptVersion,
+            })),
           error: null,
         }),
       ),
@@ -86,6 +100,7 @@ describe("regenerate-overseas-content", () => {
       dryRun: true,
       family: null,
       fromVersion: null,
+      matchIds: [],
       ownerApproved: false,
     });
     expect(
@@ -95,6 +110,7 @@ describe("regenerate-overseas-content", () => {
       dryRun: false,
       family: "six-nations",
       fromVersion: null,
+      matchIds: [],
       ownerApproved: false,
     });
     expect(parseArgs(["--from-version=recap@1.8.0"])).toEqual({
@@ -102,6 +118,7 @@ describe("regenerate-overseas-content", () => {
       dryRun: false,
       family: null,
       fromVersion: "recap@1.8.0",
+      matchIds: [],
       ownerApproved: false,
     });
     expect(parseArgs(["--confirm-owner-approved"])).toEqual({
@@ -109,7 +126,28 @@ describe("regenerate-overseas-content", () => {
       dryRun: false,
       family: null,
       fromVersion: null,
+      matchIds: [],
       ownerApproved: true,
+    });
+  });
+
+  it("parses match ids from file and comma-separated args with trimming and dedupe", () => {
+    const dir = mkdtempSync(join(tmpdir(), "tryline-match-ids-"));
+    const filePath = join(dir, "fabricated-ids.txt");
+    writeFileSync(
+      filePath,
+      "\uFEFFmatch-1\n\n match-2 \nmatch-1\n",
+      "utf8",
+    );
+
+    expect(
+      parseArgs([
+        "--match-ids-file",
+        filePath,
+        "--match-ids=match-2, match-3,,match-3",
+      ]),
+    ).toMatchObject({
+      matchIds: ["match-1", "match-2", "match-3"],
     });
   });
 
@@ -227,6 +265,111 @@ describe("regenerate-overseas-content", () => {
       targets: 1,
       totalRows: 3,
     });
+  });
+
+  it("includes current-version rows when match ids are specified", async () => {
+    const db = createMockDb([
+      {
+        family: "premiership",
+        matchId: "match-current",
+        promptVersion: "recap@4.4.0",
+      },
+      {
+        family: "premiership",
+        matchId: "match-other",
+        promptVersion: "recap@1.9.0",
+      },
+    ]);
+    const generateContent = vi.fn();
+
+    const result = await runRegenerateOverseasContent({
+      contentType: "recap",
+      currentVersion: "recap@4.4.0",
+      db,
+      dryRun: true,
+      family: null,
+      fromVersion: "recap@1.9.0",
+      generateContent,
+      logger: console,
+      matchIds: ["match-current"],
+    });
+
+    expect(generateContent).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      byFamily: {
+        premiership: 1,
+      },
+      skippedCurrentVersion: 0,
+      skippedFromVersion: 0,
+      targets: 1,
+      totalRows: 1,
+    });
+  });
+
+  it("ignores family and League One skips when match ids are specified", async () => {
+    const db = createMockDb([
+      {
+        family: "league-one",
+        matchId: "match-league-one",
+        promptVersion: "recap@4.4.0",
+      },
+    ]);
+    const generateContent = vi.fn();
+
+    const result = await runRegenerateOverseasContent({
+      contentType: "recap",
+      currentVersion: "recap@4.4.0",
+      db,
+      dryRun: true,
+      family: "six-nations",
+      fromVersion: null,
+      generateContent,
+      logger: console,
+      matchIds: ["match-league-one"],
+    });
+
+    expect(generateContent).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      byFamily: {
+        "league-one": 1,
+      },
+      skippedFamily: 0,
+      skippedLeagueOne: 0,
+      targets: 1,
+      totalRows: 1,
+    });
+  });
+
+  it("warns and skips requested match ids with no existing recap row", async () => {
+    const db = createMockDb([
+      {
+        family: "pnc",
+        matchId: "match-found",
+        promptVersion: "recap@1.9.0",
+      },
+    ]);
+    const logger = {
+      error: vi.fn(),
+      log: vi.fn(),
+      warn: vi.fn(),
+    };
+
+    const result = await runRegenerateOverseasContent({
+      contentType: "recap",
+      currentVersion: "recap@4.4.0",
+      db,
+      dryRun: true,
+      family: null,
+      fromVersion: null,
+      generateContent: vi.fn(),
+      logger,
+      matchIds: ["match-found", "match-missing"],
+    });
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[regenerate-overseas-content] no existing recap row found for match_id=match-missing; skipped.",
+    );
+    expect(result.targets).toBe(1);
   });
 
   it("regenerates sequentially and continues after errors", async () => {

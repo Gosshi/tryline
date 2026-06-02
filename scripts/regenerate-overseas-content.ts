@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { generateMatchContent } from "@/lib/llm/pipeline";
 import { PROMPT_VERSION as PREVIEW_VERSION } from "@/lib/llm/prompts/generate-preview";
@@ -14,6 +16,7 @@ type CliOptions = {
   dryRun: boolean;
   family: string | null;
   fromVersion: string | null;
+  matchIds: string[];
   ownerApproved: boolean;
 };
 
@@ -63,6 +66,7 @@ type RunDeps = {
     contentType: ContentType,
   ) => Promise<PipelineResult>;
   logger?: Logger;
+  matchIds?: string[];
   ownerApproved?: boolean;
 };
 
@@ -88,11 +92,42 @@ export function estimateRegenerationCost(
   };
 }
 
+function uniqueMatchIds(values: string[]): string[] {
+  const seen = new Set<string>();
+  const ids: string[] = [];
+
+  for (const value of values) {
+    const normalized = value.trim().replace(/^\uFEFF/, "");
+
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+    ids.push(normalized);
+  }
+
+  return ids;
+}
+
+function parseCommaSeparatedMatchIds(value: string | null | undefined) {
+  return uniqueMatchIds((value ?? "").split(","));
+}
+
+function parseMatchIdsFile(path: string | null | undefined) {
+  if (!path) {
+    return [];
+  }
+
+  return uniqueMatchIds(readFileSync(path, "utf8").split(/\r?\n/));
+}
+
 export function parseArgs(argv: string[]): CliOptions {
   let contentType: ContentType = "recap";
   let dryRun = false;
   let family: string | null = null;
   let fromVersion: string | null = null;
+  let matchIds: string[] = [];
   let ownerApproved = false;
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -145,6 +180,40 @@ export function parseArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === "--match-ids") {
+      matchIds = uniqueMatchIds([
+        ...matchIds,
+        ...parseCommaSeparatedMatchIds(argv[index + 1]),
+      ]);
+      index += 1;
+      continue;
+    }
+
+    if (arg?.startsWith("--match-ids=")) {
+      matchIds = uniqueMatchIds([
+        ...matchIds,
+        ...parseCommaSeparatedMatchIds(arg.slice("--match-ids=".length)),
+      ]);
+      continue;
+    }
+
+    if (arg === "--match-ids-file") {
+      matchIds = uniqueMatchIds([
+        ...matchIds,
+        ...parseMatchIdsFile(argv[index + 1]),
+      ]);
+      index += 1;
+      continue;
+    }
+
+    if (arg?.startsWith("--match-ids-file=")) {
+      matchIds = uniqueMatchIds([
+        ...matchIds,
+        ...parseMatchIdsFile(arg.slice("--match-ids-file=".length)),
+      ]);
+      continue;
+    }
+
     if (arg === "--dry-run") {
       dryRun = true;
       continue;
@@ -155,7 +224,14 @@ export function parseArgs(argv: string[]): CliOptions {
     }
   }
 
-  return { contentType, dryRun, family, fromVersion, ownerApproved };
+  return {
+    contentType,
+    dryRun,
+    family,
+    fromVersion,
+    matchIds,
+    ownerApproved,
+  };
 }
 
 export function getCurrentPromptVersion(contentType: ContentType) {
@@ -171,6 +247,8 @@ function buildTargetRows(params: {
   currentVersion: string;
   family: string | null;
   fromVersion: string | null;
+  logger?: Logger;
+  matchIds: string[];
 }) {
   const counters = {
     skippedCurrentVersion: 0,
@@ -179,6 +257,31 @@ function buildTargetRows(params: {
     skippedLeagueOne: 0,
   };
   const targets: TargetRow[] = [];
+
+  if (params.matchIds.length > 0) {
+    const rowsByMatchId = new Map(
+      params.contentRows.map((row) => [row.match_id, row]),
+    );
+
+    for (const matchId of params.matchIds) {
+      const row = rowsByMatchId.get(matchId);
+
+      if (!row) {
+        params.logger?.warn(
+          `[regenerate-overseas-content] no existing recap row found for match_id=${matchId}; skipped.`,
+        );
+        continue;
+      }
+
+      targets.push({
+        family: getFamily(row) ?? "unknown",
+        matchId: row.match_id,
+        promptVersion: row.prompt_version,
+      });
+    }
+
+    return { ...counters, targets };
+  }
 
   for (const row of params.contentRows) {
     const rowFamily = getFamily(row);
@@ -227,8 +330,9 @@ function countByFamily(targets: TargetRow[]) {
 async function getRegenerationCandidates(
   db: SupabaseClient<Database>,
   contentType: ContentType,
+  matchIds: string[],
 ) {
-  const { data, error } = await db
+  let query = db
     .from("match_content")
     .select(
       `
@@ -243,6 +347,12 @@ async function getRegenerationCandidates(
     )
     .eq("content_type", contentType)
     .in("status", [...EXISTING_CONTENT_STATUSES]);
+
+  if (matchIds.length > 0) {
+    query = query.in("match_id", matchIds);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -260,9 +370,14 @@ export async function runRegenerateOverseasContent({
   fromVersion,
   generateContent,
   logger = console,
+  matchIds = [],
   ownerApproved = false,
 }: RunDeps): Promise<RegenerateOverseasContentResult> {
-  const contentRows = await getRegenerationCandidates(db, contentType);
+  const contentRows = await getRegenerationCandidates(
+    db,
+    contentType,
+    matchIds,
+  );
   const {
     skippedCurrentVersion,
     skippedFamily,
@@ -274,12 +389,14 @@ export async function runRegenerateOverseasContent({
     currentVersion,
     family,
     fromVersion,
+    logger,
+    matchIds,
   });
   const byFamily = countByFamily(targets);
   const costEstimate = estimateRegenerationCost(targets.length);
 
   logger.log(
-    `Overseas ${contentType} regeneration targets: total=${contentRows.length} target=${targets.length} currentVersion=${currentVersion} fromVersion=${fromVersion ?? "any"}`,
+    `Overseas ${contentType} regeneration targets: total=${contentRows.length} target=${targets.length} currentVersion=${currentVersion} fromVersion=${matchIds.length > 0 ? "ignored" : (fromVersion ?? "any")} matchIds=${matchIds.length}`,
   );
   logger.log(`By family: ${JSON.stringify(byFamily)}`);
   logger.log(
@@ -352,6 +469,7 @@ async function main() {
     fromVersion: options.fromVersion,
     generateContent: (matchId, contentType) =>
       generateMatchContent(matchId, contentType),
+    matchIds: options.matchIds,
     ownerApproved: options.ownerApproved,
   });
 }
