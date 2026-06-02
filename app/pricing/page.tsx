@@ -3,12 +3,9 @@ import Link from "next/link";
 
 import { PricingForm } from "@/app/pricing/pricing-form";
 import { HeroTexture } from "@/components/hero-texture";
-import { containsUnsupportedStatistic } from "@/lib/content/fabrication-guard";
-import {
-  getLatestCompletedMatch,
-  getRecentlyReviewedMatches,
-} from "@/lib/db/queries/matches";
+import { getRecentlyReviewedMatchById } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
+import { PRIMARY_SAMPLE_MATCH_ID } from "@/lib/sample-matches";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -94,15 +91,6 @@ const pricingFaqJsonLd = {
   })),
 };
 
-type PricingSample = Awaited<ReturnType<typeof getRecentlyReviewedMatches>>[number];
-
-function pickVerifiedSample(matches: PricingSample[]): PricingSample | null {
-  return (
-    matches.find((match) => !containsUnsupportedStatistic(match.recapExcerpt)) ??
-    null
-  );
-}
-
 function FeatureMark({ enabled }: { enabled: boolean }) {
   return (
     <span
@@ -115,20 +103,11 @@ function FeatureMark({ enabled }: { enabled: boolean }) {
 }
 
 export default async function PricingPage() {
-  const jaSamplePromise = getRecentlyReviewedMatches(5, "ja").then(
-    pickVerifiedSample,
+  const sample = await getRecentlyReviewedMatchById(
+    PRIMARY_SAMPLE_MATCH_ID,
+    "ja",
   );
-  const [sample, latestCompletedMatch] = await Promise.all([
-    jaSamplePromise.then(
-      (jaMatch) =>
-        jaMatch ??
-        getRecentlyReviewedMatches(5).then(pickVerifiedSample),
-    ),
-    getLatestCompletedMatch(),
-  ]);
-  const trialUrl = latestCompletedMatch
-    ? `/matches/${latestCompletedMatch.id}`
-    : "/";
+  const trialUrl = sample ? `/matches/${PRIMARY_SAMPLE_MATCH_ID}` : "/";
 
   return (
     <main className="min-h-screen bg-slate-50">

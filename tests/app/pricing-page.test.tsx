@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import PricingPage, { metadata } from "@/app/pricing/page";
 import { PricingForm } from "@/app/pricing/pricing-form";
+import { PRIMARY_SAMPLE_MATCH_ID } from "@/lib/sample-matches";
 
 const authMocks = vi.hoisted(() => ({
   getUser: vi.fn(),
@@ -20,8 +21,7 @@ const authMocks = vi.hoisted(() => ({
 }));
 
 const matchMocks = vi.hoisted(() => ({
-  getLatestCompletedMatch: vi.fn(),
-  getRecentlyReviewedMatches: vi.fn(),
+  getRecentlyReviewedMatchById: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/client", () => ({
@@ -34,24 +34,20 @@ vi.mock("@/lib/auth/client", () => ({
 }));
 
 vi.mock("@/lib/db/queries/matches", () => ({
-  getLatestCompletedMatch: matchMocks.getLatestCompletedMatch,
-  getRecentlyReviewedMatches: matchMocks.getRecentlyReviewedMatches,
+  getRecentlyReviewedMatchById: matchMocks.getRecentlyReviewedMatchById,
 }));
 
 describe("PricingPage", () => {
   beforeEach(() => {
-    matchMocks.getRecentlyReviewedMatches.mockReset();
-    matchMocks.getLatestCompletedMatch.mockReset();
-    matchMocks.getRecentlyReviewedMatches.mockResolvedValue([
-      {
-        awayTeam: { name: "France" },
-        competition: { name: "Six Nations", season: "2027" },
-        homeTeam: { name: "Ireland" },
-        recapExcerpt:
-          "前半の接点でIrelandが優位を作り、Franceの外側防御を何度も揺さぶったレビュー本文です。",
-      },
-    ]);
-    matchMocks.getLatestCompletedMatch.mockResolvedValue({ id: "match-1" });
+    matchMocks.getRecentlyReviewedMatchById.mockReset();
+    matchMocks.getRecentlyReviewedMatchById.mockResolvedValue({
+      awayTeam: { name: "Gloucester" },
+      competition: { name: "Premiership", season: "2025-26" },
+      homeTeam: { name: "Northampton" },
+      id: PRIMARY_SAMPLE_MATCH_ID,
+      recapExcerpt:
+        "Northamptonは終盤の接点でGloucesterの圧力を受け止め、接戦を制したレビュー本文です。",
+    });
   });
 
   afterEach(() => {
@@ -69,7 +65,10 @@ describe("PricingPage", () => {
   it("renders the redesigned pricing landing page sections", async () => {
     render(await PricingPage());
 
-    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenCalledWith(5, "ja");
+    expect(matchMocks.getRecentlyReviewedMatchById).toHaveBeenCalledWith(
+      PRIMARY_SAMPLE_MATCH_ID,
+      "ja",
+    );
     expect(
       screen.getByRole("heading", {
         name: "週10試合以上のAI戦術分析を、日本語で読み放題。",
@@ -83,10 +82,9 @@ describe("PricingPage", () => {
         "7日間無料 · その後 ¥980/月 · いつでもキャンセル可能 · Stripe 決済",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "無料で記事を読む" })).toHaveAttribute(
-      "href",
-      "/matches/match-1",
-    );
+    expect(
+      screen.getByRole("link", { name: "無料で記事を読む" }),
+    ).toHaveAttribute("href", `/matches/${PRIMARY_SAMPLE_MATCH_ID}`);
     expect(screen.getByText("8大会対応")).toBeInTheDocument();
     expect(screen.getByText("500試合以上")).toBeInTheDocument();
     expect(screen.getByText("AI日本語解説")).toBeInTheDocument();
@@ -115,83 +113,40 @@ describe("PricingPage", () => {
         name: "Premium のレビューはこんな内容です",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Ireland vs France")).toBeInTheDocument();
-    expect(screen.getByText(/前半の接点でIrelandが優位/)).toBeInTheDocument();
+    expect(screen.getByText("Northampton vs Gloucester")).toBeInTheDocument();
+    expect(screen.getByText(/Northamptonは終盤の接点/)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Premium で全文を読む" }),
     ).toBeInTheDocument();
 
-    expect(screen.getByText("無料でどこまで利用できますか？")).toBeInTheDocument();
+    expect(
+      screen.getByText("無料でどこまで利用できますか？"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
         "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は AI 日本語レビュー全文・AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("返金ポリシーを教えてください。")).toBeInTheDocument();
-    expect(screen.getByText("いつでもキャンセルできますか？")).toBeInTheDocument();
+    expect(
+      screen.getByText("返金ポリシーを教えてください。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("いつでもキャンセルできますか？"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("どの大会のコンテンツが読めますか？"),
     ).toBeInTheDocument();
     expect(screen.getByText("支払い方法は？")).toBeInTheDocument();
   });
 
-  it("falls back to any published recap when Japanese sample content is empty", async () => {
-    matchMocks.getRecentlyReviewedMatches
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([
-        {
-          awayTeam: { name: "England" },
-          competition: { name: "Rugby World Cup", season: "2027" },
-          homeTeam: { name: "Japan" },
-          recapExcerpt: "A published English recap excerpt is available.",
-        },
-      ]);
-
-    render(await PricingPage());
-
-    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenNthCalledWith(
-      1,
-      5,
-      "ja",
-    );
-    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenNthCalledWith(2, 5);
-    expect(screen.getByText("Japan vs England")).toBeInTheDocument();
-    expect(
-      screen.getByText("A published English recap excerpt is available."),
-    ).toBeInTheDocument();
-  });
-
-  it("skips sample recaps that contain unsupported fabricated statistics", async () => {
-    matchMocks.getRecentlyReviewedMatches.mockResolvedValueOnce([
-      {
-        awayTeam: { name: "France" },
-        competition: { name: "Six Nations", season: "2027" },
-        homeTeam: { name: "Ireland" },
-        recapExcerpt: "Irelandはスクラム成功率85%でFranceを圧倒した。",
-      },
-      {
-        awayTeam: { name: "Wales" },
-        competition: { name: "Six Nations", season: "2027" },
-        homeTeam: { name: "Scotland" },
-        recapExcerpt:
-          "Scotlandは後半のキック処理から陣地を押し返し、Walesの反撃を抑えた。",
-      },
-    ]);
-
-    render(await PricingPage());
-
-    expect(screen.queryByText(/スクラム成功率85%/)).not.toBeInTheDocument();
-    expect(screen.getByText("Scotland vs Wales")).toBeInTheDocument();
-    expect(screen.getByText(/後半のキック処理/)).toBeInTheDocument();
-  });
-
   it("renders a meaningful fallback when no sample recap exists", async () => {
-    matchMocks.getRecentlyReviewedMatches
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+    matchMocks.getRecentlyReviewedMatchById.mockResolvedValueOnce(null);
 
     render(await PricingPage());
 
+    expect(
+      screen.getByRole("link", { name: "無料で記事を読む" }),
+    ).toHaveAttribute("href", "/");
     expect(screen.getByText("試合直後に更新")).toBeInTheDocument();
     expect(
       screen.getByText(/レビュー全文と AI チャットは Premium 限定です。/),
@@ -199,17 +154,6 @@ describe("PricingPage", () => {
     expect(
       screen.queryByText("公開済みレビューを準備中です。"),
     ).not.toBeInTheDocument();
-  });
-
-  it("falls back to the homepage when there is no completed match yet", async () => {
-    matchMocks.getLatestCompletedMatch.mockResolvedValueOnce(null);
-
-    render(await PricingPage());
-
-    expect(screen.getByRole("link", { name: "無料で記事を読む" })).toHaveAttribute(
-      "href",
-      "/",
-    );
   });
 });
 
