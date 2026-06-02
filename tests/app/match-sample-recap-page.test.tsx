@@ -1,0 +1,216 @@
+// @vitest-environment jsdom
+
+import "@testing-library/jest-dom/vitest";
+
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const matchContentMocks = vi.hoisted(() => ({
+  getPublishedContentForMatch: vi.fn(),
+}));
+
+const matchEventMocks = vi.hoisted(() => ({
+  getMatchEventsForMatch: vi.fn(),
+}));
+
+const matchLineupMocks = vi.hoisted(() => ({
+  getMatchLineupsForMatch: vi.fn(),
+}));
+
+const matchMocks = vi.hoisted(() => ({
+  countHeadToHeadMatches: vi.fn(),
+  getMatchById: vi.fn(),
+  getMatchContentEn: vi.fn(),
+  listAllMatchIds: vi.fn(),
+  listMatchIdsWithContent: vi.fn(),
+  normalizeHeadToHeadSlug: vi.fn(() => "sample-home-vs-sample-away"),
+}));
+
+const navigationMocks = vi.hoisted(() => ({
+  notFound: vi.fn(() => {
+    throw new Error("NEXT_NOT_FOUND");
+  }),
+}));
+
+vi.mock("@/components/lang-toggle", () => ({
+  LangToggle: () => <div data-testid="lang-toggle" />,
+}));
+
+vi.mock("@/components/match-events-section", () => ({
+  MatchEventsSection: () => <div data-testid="match-events" />,
+}));
+
+vi.mock("@/components/match-header", () => ({
+  MatchHeader: () => <div data-testid="match-header" />,
+}));
+
+vi.mock("@/components/match-lineups-section", () => ({
+  MatchLineupsSection: () => <div data-testid="match-lineups" />,
+}));
+
+vi.mock("@/components/premium-match-chat", () => ({
+  PremiumMatchChat: () => <div data-testid="premium-match-chat" />,
+}));
+
+vi.mock("@/components/premium-recap-section", () => ({
+  PremiumRecapSection: () => <div data-testid="premium-recap-section" />,
+}));
+
+vi.mock("@/lib/db/queries/match-content", () => matchContentMocks);
+vi.mock("@/lib/db/queries/match-events", () => matchEventMocks);
+vi.mock("@/lib/db/queries/match-lineups", () => matchLineupMocks);
+vi.mock("@/lib/db/queries/matches", () => matchMocks);
+vi.mock("next/navigation", () => navigationMocks);
+
+import MatchEnglishPage from "@/app/matches/[id]/en/page";
+import MatchDetailPage from "@/app/matches/[id]/page";
+
+import type { PublishedMatchContentBundle } from "@/lib/db/queries/match-content";
+import type {
+  EnglishMatchContentBundle,
+  MatchDetail,
+} from "@/lib/db/queries/matches";
+
+const sampleMatchId = "a06219be-9d24-486b-92a5-7f9f88ef8826";
+const nonSampleMatchId = "00000000-0000-0000-0000-000000000000";
+
+const match: MatchDetail = {
+  awayScore: 32,
+  awayTeam: {
+    englishName: "Sample Away",
+    name: "サンプルアウェイ",
+    shortCode: "AWY",
+    slug: "sample-away",
+  },
+  awayTeamId: "away-team",
+  competition: {
+    family: "premiership",
+    name: "Premiership Rugby",
+    season: "2025-26",
+    slug: "premiership-2025-26",
+  },
+  homeScore: 36,
+  homeTeam: {
+    englishName: "Sample Home",
+    name: "サンプルホーム",
+    shortCode: "HME",
+    slug: "sample-home",
+  },
+  homeTeamId: "home-team",
+  id: sampleMatchId,
+  kickoffAt: "2026-05-30T14:00:00.000Z",
+  round: 18,
+  roundName: null,
+  status: "finished",
+  venue: "Sample Stadium",
+};
+
+const sampleRecap = {
+  contentMdJa:
+    "# この試合の核心\n\n無料で見える冒頭。\n\n# 試合全体像\n\n全体像。\n\n# ターニングポイント\n\nサンプル全文だけに含まれる終盤分析。\n\n# 次戦への示唆\n\n締め。",
+  contentType: "recap" as const,
+  generatedAt: "2026-05-30T18:00:00.000Z",
+  modelVersion: "gpt-4o",
+  promptVersion: "recap@4.4.0",
+};
+
+const preview = {
+  contentMdJa: "プレビュー本文",
+  contentType: "preview" as const,
+  generatedAt: "2026-05-29T18:00:00.000Z",
+  modelVersion: "gpt-4o",
+  promptVersion: "preview@3.1.0",
+};
+
+function setCommonMocks(params: {
+  englishContent?: EnglishMatchContentBundle;
+  id?: string;
+  publishedContent?: PublishedMatchContentBundle;
+}) {
+  matchMocks.getMatchById.mockResolvedValue({
+    ...match,
+    id: params.id ?? sampleMatchId,
+  });
+  matchContentMocks.getPublishedContentForMatch.mockResolvedValue(
+    params.publishedContent ?? {
+      preview,
+      recap: sampleRecap,
+    },
+  );
+  matchMocks.getMatchContentEn.mockResolvedValue(
+    params.englishContent ?? {
+      preview: null,
+      recap: null,
+    },
+  );
+  matchEventMocks.getMatchEventsForMatch.mockResolvedValue([]);
+  matchLineupMocks.getMatchLineupsForMatch.mockResolvedValue([]);
+  matchMocks.countHeadToHeadMatches.mockResolvedValue(0);
+}
+
+describe("match sample recap page", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setCommonMocks({});
+  });
+
+  it("server-renders the full sample recap without PremiumRecapSection", async () => {
+    const element = await MatchDetailPage({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    render(element);
+
+    expect(
+      screen.getByText("サンプル全文だけに含まれる終盤分析。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("これは無料サンプルのレビューです。"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("premium-recap-section")).toBeNull();
+  });
+
+  it("keeps non-sample recaps on the existing premium gate", async () => {
+    setCommonMocks({ id: nonSampleMatchId });
+
+    const element = await MatchDetailPage({
+      params: Promise.resolve({ id: nonSampleMatchId }),
+    });
+
+    render(element);
+
+    expect(screen.getByTestId("premium-recap-section")).toBeInTheDocument();
+    expect(
+      screen.queryByText("サンプル全文だけに含まれる終盤分析。"),
+    ).toBeNull();
+  });
+
+  it("server-renders English sample recaps when English content exists", async () => {
+    setCommonMocks({
+      englishContent: {
+        preview: null,
+        recap: {
+          ...sampleRecap,
+          contentMdJa:
+            "# Core question\n\nOpening.\n\n# Match shape\n\nMiddle.\n\n# Turning point\n\nEnglish full sample section.\n\n# What next\n\nClose.",
+        },
+      },
+    });
+
+    const element = await MatchEnglishPage({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    render(element);
+
+    expect(screen.getByText("English full sample section.")).toBeInTheDocument();
+    expect(
+      screen.getByText("This full review is a free sample."),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("premium-recap-section")).toBeNull();
+  });
+});
