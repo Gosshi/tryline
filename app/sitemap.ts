@@ -3,6 +3,7 @@ import {
   listSeasonsByFamily,
 } from "@/lib/db/queries/competitions";
 import {
+  listHeadToHeadPairs,
   listMatchIdsWithContent,
   listRoundHubParams,
 } from "@/lib/db/queries/matches";
@@ -16,13 +17,15 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE_URL;
-  const [families, matchIds, playerSlugs, roundHubs, teams] = await Promise.all([
-    listFamilies(),
-    listMatchIdsWithContent(),
-    listAllPlayerSlugs(),
-    listRoundHubParams(),
-    listAllTeams(),
-  ]);
+  const [families, headToHeadPairs, matchIds, playerSlugs, roundHubs, teams] =
+    await Promise.all([
+      listFamilies(),
+      listHeadToHeadPairs(),
+      listMatchIdsWithContent(),
+      listAllPlayerSlugs(),
+      listRoundHubParams(),
+      listAllTeams(),
+    ]);
   const seasonPages = (
     await Promise.all(
       families.map(async (family) => {
@@ -63,6 +66,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.65,
     url: `${base}/c/${roundHub.competition}/${roundHub.season}/round/${roundHub.round}`,
   }));
+  const headToHeadPages = headToHeadPairs.map((pair) => ({
+    changeFrequency: "monthly" as const,
+    lastModified: new Date(pair.updatedAt),
+    priority: 0.5,
+    url: `${base}/h2h/${pair.slug}`,
+  }));
   const teamPages = teams.map((team) => ({
     changeFrequency: "weekly" as const,
     lastModified: new Date(),
@@ -94,6 +103,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...familyPages,
     ...seasonPages,
     ...roundHubPages,
+    ...headToHeadPages,
     ...matchPages,
     ...enMatchPages,
     ...teamPages,

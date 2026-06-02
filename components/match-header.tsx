@@ -14,6 +14,7 @@ import type { MatchDetail } from "@/lib/db/queries/matches";
 
 type MatchHeaderProps = {
   awayDisplayName?: string;
+  headToHeadHref?: string | null;
   homeDisplayName?: string;
   match: MatchDetail;
 };
@@ -44,6 +45,7 @@ function buildYouTubeSearchUrl(
 
 export function MatchHeader({
   awayDisplayName,
+  headToHeadHref,
   homeDisplayName,
   match,
 }: MatchHeaderProps) {
@@ -128,29 +130,40 @@ export function MatchHeader({
           {match.venue && <span>{match.venue}</span>}
         </div>
 
-        {match.status === "finished" && (
-          <div className="mt-3 border-t border-slate-100 pt-3">
-            <a
-              className="inline-flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
-              href={buildYouTubeSearchUrl(
-                homeName,
-                awayName,
-                match.kickoffAt,
-              )}
-              rel="noreferrer noopener"
-              target="_blank"
-            >
-              <svg
-                aria-hidden
-                className="h-4 w-4 text-white"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+        {(match.status === "finished" || headToHeadHref) && (
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+            {match.status === "finished" && (
+              <a
+                className="inline-flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                href={buildYouTubeSearchUrl(
+                  homeName,
+                  awayName,
+                  match.kickoffAt,
+                )}
+                rel="noreferrer noopener"
+                target="_blank"
               >
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-              </svg>
-              YouTube でハイライトを検索
-            </a>
+                <svg
+                  aria-hidden
+                  className="h-4 w-4 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                </svg>
+                YouTube でハイライトを検索
+              </a>
+            )}
+            {headToHeadHref && (
+              <Link
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
+                href={headToHeadHref}
+              >
+                両者の対戦成績
+                <span aria-hidden>→</span>
+              </Link>
+            )}
           </div>
         )}
       </div>

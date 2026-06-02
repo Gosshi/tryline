@@ -131,6 +131,16 @@ describe("MatchHeader", () => {
     );
   });
 
+  it("renders an H2H link when a stored matchup URL is provided", () => {
+    render(
+      <MatchHeader headToHeadHref="/h2h/france-vs-ireland" match={match} />,
+    );
+
+    expect(
+      screen.getByRole("link", { name: "両者の対戦成績" }),
+    ).toHaveAttribute("href", "/h2h/france-vs-ireland");
+  });
+
   it("uses display name overrides for EN pages", () => {
     render(
       <MatchHeader
