@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -14,6 +15,7 @@ type SeasonMatchGroupsProps = {
   contentStatusMap: Record<string, MatchContentStatus>;
   family?: string;
   groupedMatches: Array<[GroupKey, MatchListItem[]]>;
+  roundHubBasePath?: string;
 };
 
 const ROUND_FILTERS = [
@@ -108,6 +110,7 @@ export function SeasonMatchGroups({
   contentStatusMap,
   family,
   groupedMatches,
+  roundHubBasePath,
 }: SeasonMatchGroupsProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -191,6 +194,8 @@ export function SeasonMatchGroups({
             ? (groupKey.round ?? groupKey.roundName ?? "unassigned")
             : `week-${groupKey.weekIndex}`;
         const isOpen = openIndexes.has(index);
+        const roundHubHref = getRoundHubHref(groupKey, roundHubBasePath);
+        const roundHubRound = groupKey.type === "round" ? groupKey.round : null;
 
         return (
           <section className="space-y-4" key={key}>
@@ -219,6 +224,9 @@ export function SeasonMatchGroups({
                   </div>
                   <ChevronIcon open={isOpen} />
                 </button>
+                {roundHubHref && (
+                  <RoundHubLink href={roundHubHref} round={roundHubRound} />
+                )}
                 <div
                   className={isOpen ? "grid gap-4 md:grid-cols-2" : "hidden"}
                 >
@@ -238,7 +246,17 @@ export function SeasonMatchGroups({
               </>
             ) : (
               <>
-                <RoundHeading family={family} groupKey={groupKey} />
+                <div className="space-y-2">
+                  <RoundHeading family={family} groupKey={groupKey} />
+                  {roundHubHref && (
+                    <div className="text-center">
+                      <RoundHubLink
+                        href={roundHubHref}
+                        round={roundHubRound}
+                      />
+                    </div>
+                  )}
+                </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   {roundMatches.map((match) => (
                     <MatchCard
@@ -259,6 +277,32 @@ export function SeasonMatchGroups({
         );
       })}
     </>
+  );
+}
+
+function getRoundHubHref(
+  groupKey: GroupKey,
+  roundHubBasePath: string | undefined,
+): string | null {
+  if (
+    !roundHubBasePath ||
+    groupKey.type !== "round" ||
+    groupKey.round === null
+  ) {
+    return null;
+  }
+
+  return `${roundHubBasePath}/round/${groupKey.round}`;
+}
+
+function RoundHubLink({ href, round }: { href: string; round: number | null }) {
+  return (
+    <Link
+      className="inline-flex text-xs font-semibold text-[var(--color-accent)] underline-offset-4 transition-colors hover:text-[var(--color-ink)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+      href={href}
+    >
+      {round === null ? "この節のページ" : `第${round}節の結果・日程 →`}
+    </Link>
   );
 }
 

@@ -14,11 +14,23 @@ import {
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { GroupKey } from "@/lib/format/match-groups";
+import type { AnchorHTMLAttributes } from "react";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/c/premiership/2024-25",
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
+}));
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    href,
+    ...props
+  }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 function buildMatch(
@@ -151,5 +163,21 @@ describe("season match groups", () => {
     expect(roundNineButton).toHaveAttribute("aria-expanded", "true");
     fireEvent.click(roundNineButton);
     expect(roundNineButton).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("links numeric round headings to round hub pages", () => {
+    const groupedMatches = [buildGroup(3, "2026-01-15T00:00:00.000Z")];
+
+    const { container } = render(
+      <SeasonMatchGroups
+        contentStatusMap={{}}
+        groupedMatches={groupedMatches}
+        roundHubBasePath="/c/six-nations/2025"
+      />,
+    );
+
+    expect(
+      container.querySelector('a[href="/c/six-nations/2025/round/3"]'),
+    ).toHaveTextContent("第3節の結果・日程");
   });
 });

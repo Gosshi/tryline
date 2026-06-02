@@ -235,6 +235,7 @@ export default async function SeasonPage({ params }: Props) {
                 contentStatusMap={contentStatusMap}
                 family={family}
                 groupedMatches={groupedMatches}
+                roundHubBasePath={`/c/${competition}/${season}`}
               />
             </Suspense>
           </>

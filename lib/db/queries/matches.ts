@@ -67,6 +67,13 @@ export type SitemapMatch = {
   updatedAt: string;
 };
 
+export type RoundHubParam = {
+  competition: string;
+  round: number;
+  season: string;
+  updatedAt: string;
+};
+
 export type EnglishMatchContent = {
   contentMdJa: string;
   contentType: "preview" | "recap";
@@ -191,6 +198,15 @@ type SitemapContentMatchRow = {
       family: string | null;
       slug: string;
     } | null;
+  } | null;
+};
+
+type RoundHubQueryRow = {
+  external_ids: Json;
+  kickoff_at: string;
+  competition: {
+    family: string;
+    season: string;
   } | null;
 };
 
@@ -809,6 +825,93 @@ export async function listMatchIdsWithContent(): Promise<SitemapMatch[]> {
   }
 
   return result;
+}
+
+export function mapRoundHubRowsToParams(
+  rows: RoundHubQueryRow[],
+): RoundHubParam[] {
+  const byKey = new Map<string, RoundHubParam>();
+
+  for (const row of rows) {
+    const round = getRoundFromExternalIds(row.external_ids);
+    const competition = row.competition;
+
+    if (!competition || round === null) {
+      continue;
+    }
+
+    const key = `${competition.family}:${competition.season}:${round}`;
+    const existing = byKey.get(key);
+
+    if (!existing || row.kickoff_at > existing.updatedAt) {
+      byKey.set(key, {
+        competition: competition.family,
+        round,
+        season: competition.season,
+        updatedAt: row.kickoff_at,
+      });
+    }
+  }
+
+  return [...byKey.values()].sort((left, right) => {
+    const competitionOrder = left.competition.localeCompare(right.competition);
+
+    if (competitionOrder !== 0) {
+      return competitionOrder;
+    }
+
+    const seasonOrder = right.season.localeCompare(left.season);
+
+    if (seasonOrder !== 0) {
+      return seasonOrder;
+    }
+
+    return left.round - right.round;
+  });
+}
+
+export async function listRoundHubParams(): Promise<RoundHubParam[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        kickoff_at,
+        external_ids,
+        competition:competitions!matches_competition_id_fkey (
+          family,
+          season
+        )
+      `,
+    )
+    .order("kickoff_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return mapRoundHubRowsToParams((data ?? []) as RoundHubQueryRow[]);
+}
+
+export async function listRoundsForCompetition(
+  competition: string,
+  season: string,
+): Promise<number[]> {
+  const matches = await listMatchesForCompetition(`${competition}-${season}`);
+
+  return [...new Set(matches.map((match) => match.round))]
+    .filter((round): round is number => round !== null)
+    .sort((left, right) => left - right);
+}
+
+export async function getRoundMatches(
+  competition: string,
+  season: string,
+  round: number,
+): Promise<MatchListItem[]> {
+  const matches = await listMatchesForCompetition(`${competition}-${season}`);
+
+  return matches.filter((match) => match.round === round);
 }
 
 export async function getMatchContentEn(
