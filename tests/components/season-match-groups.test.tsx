@@ -5,8 +5,6 @@ import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { AnchorHTMLAttributes } from "react";
-
 import {
   SeasonMatchGroups,
   getDefaultOpenGroupIndex,
@@ -16,6 +14,7 @@ import {
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { GroupKey } from "@/lib/format/match-groups";
+import type { AnchorHTMLAttributes } from "react";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/c/premiership/2024-25",
