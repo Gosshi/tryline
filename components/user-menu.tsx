@@ -88,7 +88,7 @@ export function UserMenu({
               {favoriteTeams.map((team) => (
                 <Link
                   className="block py-1 text-xs font-medium text-[var(--color-accent)] hover:underline"
-                  href={`/t/${team.slug}`}
+                  href={`/teams/${team.slug}`}
                   key={team.slug}
                   onClick={() => setOpen(false)}
                 >

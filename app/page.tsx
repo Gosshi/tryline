@@ -302,7 +302,7 @@ export default async function HomePage() {
             {favoriteTeamPageSlug && (
               <Link
                 className="text-xs text-[var(--color-ink-muted)] transition-colors hover:text-[var(--color-ink)]"
-                href={`/t/${favoriteTeamPageSlug}`}
+                href={`/teams/${favoriteTeamPageSlug}`}
               >
                 チームページ →
               </Link>

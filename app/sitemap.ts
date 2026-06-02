@@ -7,7 +7,7 @@ import {
   listMatchIdsWithContent,
   listRoundHubParams,
 } from "@/lib/db/queries/matches";
-import { listAllPlayerSlugs } from "@/lib/db/queries/players";
+import { listIndexablePlayerSlugs } from "@/lib/db/queries/players";
 import { listAllTeams } from "@/lib/db/queries/teams";
 import { SITE_URL } from "@/lib/site";
 
@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       listFamilies(),
       listHeadToHeadPairs(),
       listMatchIdsWithContent(),
-      listAllPlayerSlugs(),
+      listIndexablePlayerSlugs(),
       listRoundHubParams(),
       listAllTeams(),
     ]);
@@ -76,7 +76,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly" as const,
     lastModified: new Date(),
     priority: 0.7,
-    url: `${base}/t/${team.slug}`,
+    url: `${base}/teams/${team.slug}`,
   }));
   const playerPages = playerSlugs.map((slug) => ({
     changeFrequency: "weekly" as const,
