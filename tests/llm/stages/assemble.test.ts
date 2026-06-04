@@ -144,6 +144,49 @@ describe("assembleMatchContentInput", () => {
     expect(result.match_phase).toBe("playoff_final");
   });
 
+  it("derives third-place playoff phase before final fallback", async () => {
+    const { matchId, service } = await insertMatchFixture();
+
+    await service
+      .from("matches")
+      .update({
+        external_ids: { round_name: "3rd place match/Final", source: "live" },
+      })
+      .eq("id", matchId);
+
+    const result = await assembleMatchContentInput(matchId);
+
+    expect(result.match_phase).toBe("playoff_third_place");
+  });
+
+  it("keeps semifinal and numeric round phase derivation", async () => {
+    const semifinal = await insertMatchFixture();
+
+    await semifinal.service
+      .from("matches")
+      .update({
+        external_ids: { round_name: "Semi-final", source: "live" },
+      })
+      .eq("id", semifinal.matchId);
+
+    const semifinalResult = await assembleMatchContentInput(semifinal.matchId);
+
+    expect(semifinalResult.match_phase).toBe("playoff_semifinal");
+
+    const league = await insertMatchFixture();
+
+    await league.service
+      .from("matches")
+      .update({
+        external_ids: { source: "live", wikipedia_round: 2 },
+      })
+      .eq("id", league.matchId);
+
+    const leagueResult = await assembleMatchContentInput(league.matchId);
+
+    expect(leagueResult.match_phase).toBe("league");
+  });
+
   it("loads match_events for finished matches only", async () => {
     const { matchId, homeTeamId, service } = await insertMatchFixture();
 

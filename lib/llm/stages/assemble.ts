@@ -229,10 +229,7 @@ export function computeScoreTimeline(
     for (let index = scoringSnapshots.length - 1; index >= 0; index -= 1) {
       const snapshot = scoringSnapshots[index]!;
 
-      if (
-        snapshot.leaderAfter === winner &&
-        snapshot.leaderBefore !== winner
-      ) {
+      if (snapshot.leaderAfter === winner && snapshot.leaderBefore !== winner) {
         winningScore = {
           minute: snapshot.event.minute ?? 0,
           player: snapshot.event.player_name,
@@ -268,7 +265,7 @@ function resolveTeamName(
   return language === "en" && englishName ? englishName : name;
 }
 
-function deriveMatchPhase(externalIds: unknown): MatchPhase | null {
+export function deriveMatchPhase(externalIds: unknown): MatchPhase | null {
   if (
     !externalIds ||
     typeof externalIds !== "object" ||
@@ -289,6 +286,10 @@ function deriveMatchPhase(externalIds: unknown): MatchPhase | null {
 
   if (!roundName) {
     return null;
+  }
+
+  if (roundName.includes("3rd place") || roundName.includes("bronze")) {
+    return "playoff_third_place";
   }
 
   if (
@@ -650,11 +651,7 @@ export async function assembleMatchContentInput(
 
   const homeFormStats = computeTeamFormStats(homeRecent, homeTeamName);
   const awayFormStats = computeTeamFormStats(awayRecent, awayTeamName);
-  const matchStats = computeMatchStats(
-    matchEvents,
-    homeTeamName,
-    awayTeamName,
-  );
+  const matchStats = computeMatchStats(matchEvents, homeTeamName, awayTeamName);
   const scoreTimeline = computeScoreTimeline(
     matchEvents,
     homeTeamName,

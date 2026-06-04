@@ -169,6 +169,21 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("タイトル争いの文脈");
   });
 
+  it("includes third-place playoff preview guardrails", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        match_phase: "playoff_third_place",
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("この試合は3位決定戦です");
+    expect(prompt).toContain("決勝ではありません");
+    expect(prompt).toContain("「決勝」「チャンピオン」「優勝」「タイトル」");
+  });
+
   it("switches player-name style by competition family", () => {
     const overseasPrompt = buildGeneratePreviewPrompt(assembled, [], []);
     const leagueOnePrompt = buildGeneratePreviewPrompt(
@@ -209,7 +224,9 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain(
       "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること",
     );
-    expect(prompt).toContain("データに存在しない選手名を推測・創作してはならない");
+    expect(prompt).toContain(
+      "データに存在しない選手名を推測・創作してはならない",
+    );
     expect(prompt).toContain("ラインアップが空の場合は選手名に言及せず");
   });
 });

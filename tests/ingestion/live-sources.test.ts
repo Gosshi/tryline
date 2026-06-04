@@ -108,6 +108,37 @@ const LEAGUE_ONE_PLAYOFF_HTML = `
 </div>
 `;
 
+const LEAGUE_ONE_PLAYOFF_FINALS_HTML = `
+<div class="c-schedule">
+  <div class="ttl-wrap">
+    <h3 class="ttl">NTT JAPAN RUGBY LEAGUE ONE 2025-26 PLAY-OFFS<br> 3rd place match/Final (2026POTM01)</h3>
+    <p class="place"><a>National Stadium (Tokyo)</a></p>
+  </div>
+  <div class="con">
+    <div class="datetime"><p class="date">31.05 <span>Sun</span></p><p class="time">12:05</p></div>
+    <ul class="game">
+      <li class="home"><a><p class="name only-pc">TOKYO SUNGOLIATH</p></a><p class="score"></p></li>
+      <li class="away"><a><p class="name only-pc">SAITAMA WILD KNIGHTS</p></a><p class="score"></p></li>
+    </ul>
+  </div>
+  <div class="info"><a href="/en/match/29559" class="btn-match-detail">Match Info</a></div>
+</div>
+<div class="c-schedule">
+  <div class="ttl-wrap">
+    <h3 class="ttl">NTT JAPAN RUGBY LEAGUE ONE 2025-26 PLAY-OFFS<br> 3rd place match/Final (2026POF01)</h3>
+    <p class="place"><a>National Stadium (Tokyo)</a></p>
+  </div>
+  <div class="con">
+    <div class="datetime"><p class="date">31.05 <span>Sun</span></p><p class="time">15:05</p></div>
+    <ul class="game">
+      <li class="home"><a><p class="name only-pc">KOBELCO KOBE STEELERS</p></a><p class="score"></p></li>
+      <li class="away"><a><p class="name only-pc">Kubota Spears</p></a><p class="score"></p></li>
+    </ul>
+  </div>
+  <div class="info"><a href="/en/match/29560" class="btn-match-detail">Match Info</a></div>
+</div>
+`;
+
 const SUPER_RUGBY_PACIFIC_HTML = `
 <div class="mw-heading mw-heading2"><h2 id="Round_1">Round 1</h2></div>
 <div class="vevent summary" id="Crusaders_v_Hurricanes">
@@ -257,10 +288,7 @@ describe("live competition source adapters", () => {
   });
 
   it("keeps League One playoff cards and stores the stage name", () => {
-    const matches = parseLeagueOneLiveHtml(
-      LEAGUE_ONE_PLAYOFF_HTML,
-      "2025-26",
-    );
+    const matches = parseLeagueOneLiveHtml(LEAGUE_ONE_PLAYOFF_HTML, "2025-26");
 
     expect(matches).toHaveLength(1);
     expect(matches[0]).toMatchObject({
@@ -274,5 +302,30 @@ describe("live competition source adapters", () => {
       roundName: "SEMI-FINAL",
       status: "scheduled",
     });
+  });
+
+  it("separates League One third-place and final playoff labels", () => {
+    const matches = parseLeagueOneLiveHtml(
+      LEAGUE_ONE_PLAYOFF_FINALS_HTML,
+      "2025-26",
+    );
+
+    expect(matches).toHaveLength(2);
+    expect(matches[0]).toMatchObject({
+      awayTeamSlug: "saitama-wild-knights",
+      eventId: "match_29559",
+      homeTeamSlug: "tokyo-suntory-sungoliath",
+      round: null,
+      roundName: "3rd place match",
+    });
+    expect(matches[1]).toMatchObject({
+      awayTeamSlug: "kubota-spears",
+      eventId: "match_29560",
+      homeTeamSlug: "kobelco-kobe-steelers",
+      round: null,
+      roundName: "Final",
+    });
+    expect(matches[0]?.roundName).not.toBe(matches[1]?.roundName);
+    expect(matches[0]?.roundName?.toLowerCase()).not.toContain("final");
   });
 });

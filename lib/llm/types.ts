@@ -19,6 +19,7 @@ export type MatchPhase =
   | "league"
   | "playoff_final"
   | "playoff_other"
+  | "playoff_third_place"
   | "playoff_semifinal";
 
 export type FactExtractionResult = {
