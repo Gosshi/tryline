@@ -138,16 +138,24 @@ describe("buildGenerateRecapPrompt", () => {
     );
 
     expect(prompt).toContain("# 試合全体像");
-    expect(prompt).toContain("# 試合全体像（400-500字）— 以下の要素をすべて含めること:");
+    expect(prompt).toContain(
+      "# 試合全体像（400-500字）— 以下の要素をすべて含めること:",
+    );
     expect(prompt).toContain("# ターニングポイント");
-    expect(prompt).toContain("# ターニングポイント（700-850字）— 以下の要素をすべて含めること:");
+    expect(prompt).toContain(
+      "# ターニングポイント（700-850字）— 以下の要素をすべて含めること:",
+    );
     expect(prompt).toContain("# 次戦への示唆");
-    expect(prompt).toContain("# 次戦への示唆（300-400字）— 以下の要素をすべて含めること:");
+    expect(prompt).toContain(
+      "# 次戦への示唆（300-400字）— 以下の要素をすべて含めること:",
+    );
     expect(prompt).toContain("# この試合の核心");
     expect(prompt).toContain("# この試合の核心（100-200字）");
     expect(prompt).toContain("上記4つの見出し以外は絶対に追加してはならない");
     expect(prompt).not.toContain("MOM選出と根拠");
-    expect(prompt).toContain("`# MOM` は `# ターニングポイント` 末尾に統合済み");
+    expect(prompt).toContain(
+      "`# MOM` は `# ターニングポイント` 末尾に統合済み",
+    );
     expect(prompt).toContain("全体で1,600字以上を目標とすること");
     expect(prompt).toContain("【字数目標と記述内容");
     expect(prompt).toContain("リード変化が起きた時点");
@@ -228,6 +236,21 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("レビュー冒頭でこの事実を明記");
   });
 
+  it("includes third-place playoff recap guardrails", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        match_phase: "playoff_third_place",
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("この試合は3位決定戦です");
+    expect(prompt).toContain("決勝ではありません");
+    expect(prompt).toContain("「決勝」「チャンピオン」「優勝」「タイトル」");
+  });
+
   it("includes match events only when present", () => {
     const withoutEvents = buildGenerateRecapPrompt(assembled, [], []);
     const withEvents = buildGenerateRecapPrompt(
@@ -303,7 +326,9 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("前半終了時スコア: サントリー 27 — リコー 10");
     expect(prompt).toContain("78分: リコー 33—35");
     expect(prompt).toContain("84分: サントリー 38—35");
-    expect(prompt).toContain("勝利を決めた得点: 84分 サントリー 森川由起乙（try）");
+    expect(prompt).toContain(
+      "勝利を決めた得点: 84分 サントリー 森川由起乙（try）",
+    );
     expect(prompt).toContain("# ターニングポイントでは");
   });
 

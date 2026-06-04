@@ -106,10 +106,9 @@ export function buildGenerateRecapPrompt(
     assembled.competition_standings,
     "recap",
   );
-  const matchEventsBlock =
-    !hasEvents
-      ? ""
-      : `スコアリングイベント（tryスコアラー・コンバージョン・ペナルティ・カード等）は以下のデータのみを根拠に記述すること:\n${JSON.stringify(assembled.match_events)}`;
+  const matchEventsBlock = !hasEvents
+    ? ""
+    : `スコアリングイベント（tryスコアラー・コンバージョン・ペナルティ・カード等）は以下のデータのみを根拠に記述すること:\n${JSON.stringify(assembled.match_events)}`;
   const scoreTimelineBlock = (() => {
     if (!hasEvents || !assembled.score_timeline) {
       return "";
@@ -193,6 +192,10 @@ export function buildGenerateRecapPrompt(
 
     if (phase === "playoff_semifinal") {
       return "この試合はプレーオフ準決勝です。決勝進出の意義と敗退チームへの示唆をレビューに含めること。";
+    }
+
+    if (phase === "playoff_third_place") {
+      return "この試合は3位決定戦です。決勝ではありません。3位（ブロンズ）を懸けた一戦として描写し、「決勝」「チャンピオン」「優勝」「タイトル」という表現を使わないこと。";
     }
 
     if (phase === "playoff_other") {
