@@ -1,1 +1,0 @@
--- Intentionally empty. Seed data is out of scope for p1-data-model.

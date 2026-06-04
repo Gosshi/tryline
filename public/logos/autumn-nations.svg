@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Autumn Nations">
-  <rect width="64" height="64" rx="14" fill="#2D2D2D"/>
-  <path d="M32 11c8 9 13 16 13 25 0 10-6 17-13 17s-13-7-13-17c0-9 5-16 13-25Z" fill="#F97316"/>
-  <path d="M32 18v29" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-</svg>

@@ -95,6 +95,15 @@ function parsePlayoffStageName(title: string): string | null {
   const stageName = match?.[1]
     ? normalizeWhitespace(match[1]).replace(/\s*\([^)]*\)\s*$/g, "")
     : "PLAY-OFFS";
+  const playoffCode = title.match(/\(([^)]*PO(?:TM|F)\d*)\)/i)?.[1] ?? null;
+
+  if (/POTM/i.test(playoffCode ?? "")) {
+    return "3rd place match";
+  }
+
+  if (/POF/i.test(playoffCode ?? "")) {
+    return "Final";
+  }
 
   return stageName || "PLAY-OFFS";
 }

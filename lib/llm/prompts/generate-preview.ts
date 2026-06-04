@@ -76,6 +76,10 @@ export function buildGeneratePreviewPrompt(
       return "この試合はプレーオフ準決勝です。決勝進出をかけた一戦としての緊張感と文脈をプレビューに反映すること。";
     }
 
+    if (phase === "playoff_third_place") {
+      return "この試合は3位決定戦です。決勝ではありません。3位（ブロンズ）を懸けた一戦として描写し、「決勝」「チャンピオン」「優勝」「タイトル」という表現を使わないこと。";
+    }
+
     if (phase === "playoff_other") {
       return "この試合はプレーオフ戦です。その意義と文脈をプレビューに含めること。";
     }
