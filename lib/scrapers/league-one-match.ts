@@ -192,6 +192,7 @@ export function parseLeagueOneMatchPrintHtml(
 
 export async function fetchLeagueOneMatchDetail(
   matchId: number,
+  options: { allowEmptyLineups?: boolean } = {},
 ): Promise<LeagueOneMatchDetail> {
   const response = await fetchWithPolicy(
     `${LEAGUE_ONE_BASE_URL}/match/${matchId}/print`,
@@ -199,7 +200,7 @@ export async function fetchLeagueOneMatchDetail(
   const html = await response.text();
   const detail = parseLeagueOneMatchPrintHtml(html);
 
-  if (detail.players.length === 0) {
+  if (detail.players.length === 0 && !options.allowEmptyLineups) {
     throw new Error(`No League One lineups found for match ${matchId}.`);
   }
 

@@ -66,16 +66,14 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
       }
       return matchesBuilder;
     }),
-    order: vi.fn(
-      (column: string, options?: { ascending?: boolean }) => {
-        if (column === "kickoff_at") {
-          matchesBuilder.state.orderByKickoff = options?.ascending
-            ? "asc"
-            : "desc";
-        }
-        return matchesBuilder;
-      },
-    ),
+    order: vi.fn((column: string, options?: { ascending?: boolean }) => {
+      if (column === "kickoff_at") {
+        matchesBuilder.state.orderByKickoff = options?.ascending
+          ? "asc"
+          : "desc";
+      }
+      return matchesBuilder;
+    }),
     single: vi.fn(() =>
       Promise.resolve({
         data: matchesBuilder.state.id
@@ -215,7 +213,7 @@ describe("runOrchestrate", () => {
       now,
     });
 
-    expect(ingestLineups).toHaveBeenCalledWith("scheduled-1");
+    expect(ingestLineups).toHaveBeenCalledWith("scheduled-1", null);
     expect(generateContent).toHaveBeenCalledWith("scheduled-1", "preview");
     expect(result.previews).toEqual({ triggered: 1, skipped: 0 });
     expect(result.lineups).toEqual({ triggered: 1, no_url: 0 });
@@ -243,7 +241,7 @@ describe("runOrchestrate", () => {
 
     expect(generateContent).toHaveBeenCalledTimes(1);
     expect(generateContent).toHaveBeenCalledWith("srp-next-day", "preview");
-    expect(ingestLineups).toHaveBeenCalledWith("srp-next-day");
+    expect(ingestLineups).toHaveBeenCalledWith("srp-next-day", null);
     expect(result.previews).toEqual({ triggered: 1, skipped: 0 });
   });
 
@@ -304,6 +302,14 @@ describe("runOrchestrate", () => {
       "six-nations-preview",
       "preview",
       "en",
+    );
+    expect(ingestLineups).toHaveBeenCalledWith(
+      "league-one-preview",
+      "league-one",
+    );
+    expect(ingestLineups).toHaveBeenCalledWith(
+      "six-nations-preview",
+      "six-nations",
     );
   });
 
@@ -374,16 +380,8 @@ describe("runOrchestrate", () => {
       now,
     });
 
-    expect(generateContent).toHaveBeenNthCalledWith(
-      1,
-      "new-finished",
-      "recap",
-    );
-    expect(generateContent).toHaveBeenNthCalledWith(
-      2,
-      "old-finished",
-      "recap",
-    );
+    expect(generateContent).toHaveBeenNthCalledWith(1, "new-finished", "recap");
+    expect(generateContent).toHaveBeenNthCalledWith(2, "old-finished", "recap");
   });
 
   it("counts skipped recap generation results without triggering push notifications", async () => {
