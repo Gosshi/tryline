@@ -38,6 +38,7 @@ const tacticalPoints = [
     tactical_dimension: "終盤得点力",
   },
 ] as const;
+const longJaPreview = `# narrative\n${"あ".repeat(1500)}`;
 
 describe("generateMatchContent", () => {
   beforeAll(() => {
@@ -73,7 +74,7 @@ describe("generateMatchContent", () => {
         usage: { inputTokens: 3000, outputTokens: 500 },
       })
       .mockResolvedValueOnce({
-        text: "# narrative",
+        text: longJaPreview,
         model: "gpt-4o-2024-11-20",
         usage: { inputTokens: 3500, outputTokens: 2500 },
       })
@@ -121,7 +122,7 @@ describe("generateMatchContent", () => {
         usage: { inputTokens: 3000, outputTokens: 500 },
       })
       .mockResolvedValueOnce({
-        text: "# narrative-1",
+        text: `# narrative-1\n${"あ".repeat(1500)}`,
         model: "gpt-4o-2024-11-20",
         usage: { inputTokens: 3500, outputTokens: 2500 },
       })
@@ -140,7 +141,7 @@ describe("generateMatchContent", () => {
         usage: { inputTokens: 3000, outputTokens: 200 },
       })
       .mockResolvedValueOnce({
-        text: "# narrative-2",
+        text: `# narrative-2\n${"い".repeat(1500)}`,
         model: "gpt-4o-2024-11-20",
         usage: { inputTokens: 3500, outputTokens: 2500 },
       })
@@ -159,7 +160,7 @@ describe("generateMatchContent", () => {
         usage: { inputTokens: 3000, outputTokens: 200 },
       })
       .mockResolvedValueOnce({
-        text: "# narrative-3",
+        text: `# narrative-3\n${"う".repeat(1500)}`,
         model: "gpt-4o-2024-11-20",
         usage: { inputTokens: 3500, outputTokens: 2500 },
       })
@@ -206,7 +207,7 @@ describe("generateMatchContent", () => {
         usage: { inputTokens: 5_000_000, outputTokens: 1_000_000 },
       })
       .mockResolvedValueOnce({
-        text: "# expensive narrative",
+        text: longJaPreview,
         model: "gpt-4o-2024-11-20",
         usage: { inputTokens: 5_000_000, outputTokens: 5_000_000 },
       })

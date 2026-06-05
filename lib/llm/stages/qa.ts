@@ -2,6 +2,11 @@ import {
   containsUnsupportedStatistic,
   UNSUPPORTED_STATISTIC_ISSUE,
 } from "@/lib/content/fabrication-guard";
+import {
+  CONTENT_LENGTH_ISSUE,
+  getContentLengthRequirement,
+  measureContentLength,
+} from "@/lib/llm/content-length";
 import { MODELS } from "@/lib/llm/models";
 import { createTextResponse } from "@/lib/llm/openai";
 import {
@@ -37,8 +42,8 @@ function appendIssue(issues: string[], issue: string): string[] {
   return issues.includes(issue) ? issues : [...issues, issue];
 }
 
-function getContentLength(content: string): number {
-  return Array.from(content).length;
+export function isContentLengthIssue(result: QaResult): boolean {
+  return result.issues.includes(CONTENT_LENGTH_ISSUE);
 }
 
 // Single source of truth for QA verdicts. The LLM scores content only; code
@@ -46,7 +51,12 @@ function getContentLength(content: string): number {
 function resolveVerdict(
   scores: QaResult["scores"],
   retryCount: number,
+  lengthUnderMinimum: boolean,
 ): QaVerdict {
+  if (lengthUnderMinimum) {
+    return "retry";
+  }
+
   if (scores.tactical_depth <= 2) {
     if (retryCount >= 2) {
       return "reject";
@@ -78,6 +88,7 @@ function applyDeterministicQaGuards(
   options: {
     contentType: ContentType;
     hasEvents: boolean;
+    language: ContentLanguage;
     narrative: string;
   },
 ): QaResult {
@@ -94,14 +105,20 @@ function applyDeterministicQaGuards(
     };
   }
 
-  const minLength = options.contentType === "recap" ? 1600 : 1500;
-  if (getContentLength(options.narrative) < minLength) {
+  const lengthRequirement = getContentLengthRequirement(
+    options.contentType,
+    options.language,
+  );
+  if (
+    measureContentLength(options.narrative, lengthRequirement) <
+    lengthRequirement.min
+  ) {
     guarded = {
       ...guarded,
-      issues: appendIssue(guarded.issues, "本文が目標字数の下限未満です"),
+      issues: appendIssue(guarded.issues, CONTENT_LENGTH_ISSUE),
       scores: {
         ...guarded.scores,
-        information_density: Math.min(guarded.scores.information_density, 3),
+        information_density: Math.min(guarded.scores.information_density, 2),
       },
     };
   }
@@ -131,6 +148,7 @@ function parseQaResponse(
   options: {
     contentType: ContentType;
     hasEvents: boolean;
+    language: ContentLanguage;
     narrative: string;
   },
 ): QaResult {
@@ -148,10 +166,15 @@ function parseQaResponse(
     },
     options,
   );
+  const lengthUnderMinimum = isContentLengthIssue(guarded);
 
   return {
     ...guarded,
-    verdict: resolveVerdict(guarded.scores, retryCount),
+    verdict: resolveVerdict(
+      guarded.scores,
+      retryCount,
+      lengthUnderMinimum,
+    ),
   };
 }
 
@@ -187,6 +210,7 @@ export async function evaluateNarrativeQuality(options: {
       const result = parseQaResponse(response.text, options.retryCount, {
         contentType: options.contentType,
         hasEvents,
+        language: options.language ?? "ja",
         narrative: options.narrative,
       });
 

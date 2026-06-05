@@ -11,7 +11,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.2.0";
+export const PROMPT_VERSION = "preview@3.3.0";
 
 export function buildGeneratePreviewPrompt(
   assembled: AssembledContentInput,
@@ -23,10 +23,10 @@ export function buildGeneratePreviewPrompt(
     assembled.projected_lineups.away.length > 0;
   const isDataSparse = assembled.match_events.length === 0 && !hasLineups;
   const structureInstruction = hasLineups
-    ? "構成: 3セクション構成（セクション0を除く）。1)400-500字 2)600-700字 3)300-400字。全体で1,500字以上を目標とすること。各セクションの見出し名はこの試合の特性に応じて自由に設定すること（「両チーム現状」に固定しない）。3セクションのうち1つはキープレイヤー/注目マッチアップを扱うセクションにすること。"
+    ? "構成: 3セクション構成（セクション0を除く）。1)400-500字 2)600-700字 3)300-400字。全体で1,500字以上を下限とし、下回ってはならない。各セクションの見出し名はこの試合の特性に応じて自由に設定すること（「両チーム現状」に固定しない）。3セクションのうち1つはキープレイヤー/注目マッチアップを扱うセクションにすること。"
     : isDataSparse
-      ? "構成: 3セクション構成（セクション0を除く）。1)500-600字 2)400-500字 3)400-500字。全体で1,500字以上を目標とすること。各セクションの見出し名はこの試合の特性に応じて自由に設定すること。キープレイヤーセクションは省略すること（ラインアップデータなし）。"
-      : "構成: 3セクション構成（セクション0を除く）。1)400-500字 2)600-700字 3)300-400字。全体で1,500字以上を目標とすること。各セクションの見出し名はこの試合の特性に応じて自由に設定すること。キープレイヤーセクションは省略すること（ラインアップデータなし）。";
+      ? "構成: 3セクション構成（セクション0を除く）。1)500-600字 2)400-500字 3)400-500字。全体で1,500字以上を下限とし、下回ってはならない。各セクションの見出し名はこの試合の特性に応じて自由に設定すること。キープレイヤーセクションは省略すること（ラインアップデータなし）。"
+      : "構成: 3セクション構成（セクション0を除く）。1)400-500字 2)600-700字 3)300-400字。全体で1,500字以上を下限とし、下回ってはならない。各セクションの見出し名はこの試合の特性に応じて自由に設定すること。キープレイヤーセクションは省略すること（ラインアップデータなし）。";
   const persona = buildPersona("preview");
   const coreQuestionBlock = [
     "## セクション0（必須、200字以内）: # この試合の核心",
@@ -112,7 +112,8 @@ export function buildGeneratePreviewPrompt(
     prohibitionsBlock,
     structureInstruction,
     matchPhaseBlock,
-    "各セクションが指定範囲の下限を下回った場合は書き足すこと。",
+    "各セクションが指定範囲の下限を下回った場合は、入力データにある recent_form・h2h_last_5・competition_standings・key_stats・projected_lineups・match_events から具体的な根拠を追加して書き足すこと。",
+    "全体が1,500字未満の場合は出力前に薄いセクションを加筆すること。水増し、同義反復、一般論、「字数確認済み」などのメタコメントは禁止。",
     "事実は入力データと一致させること。直接引用は15語以内。",
     "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。",
     lineupUsageBlock,

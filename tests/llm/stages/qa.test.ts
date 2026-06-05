@@ -14,6 +14,8 @@ const matchContext = {
   homeScore: 24,
   homeTeam: "Ireland",
 };
+const longJaPreview = "あ".repeat(1500);
+const longJaRecap = "あ".repeat(2000);
 
 describe("evaluateNarrativeQuality", () => {
   it("returns publish when all scores are >= 3", async () => {
@@ -35,7 +37,7 @@ describe("evaluateNarrativeQuality", () => {
     const result = await evaluateNarrativeQuality({
       contentType: "preview",
       matchContext,
-      narrative: "body",
+      narrative: longJaPreview,
       retryCount: 0,
     });
 
@@ -66,7 +68,7 @@ describe("evaluateNarrativeQuality", () => {
     const result = await evaluateNarrativeQuality({
       contentType: "preview",
       matchContext,
-      narrative: "body",
+      narrative: longJaPreview,
       retryCount: 1,
     });
     expect(result.result.verdict).toBe("retry");
@@ -96,7 +98,7 @@ describe("evaluateNarrativeQuality", () => {
     const result = await evaluateNarrativeQuality({
       contentType: "preview",
       matchContext,
-      narrative: "body",
+      narrative: longJaPreview,
       retryCount: 0,
     });
 
@@ -122,7 +124,7 @@ describe("evaluateNarrativeQuality", () => {
     const result = await evaluateNarrativeQuality({
       contentType: "preview",
       matchContext,
-      narrative: "body",
+      narrative: longJaPreview,
       retryCount: 2,
     });
     expect(result.result.verdict).toBe("reject");
@@ -152,7 +154,7 @@ describe("evaluateNarrativeQuality", () => {
     await evaluateNarrativeQuality({
       contentType: "recap",
       matchContext,
-      narrative: "body",
+      narrative: longJaRecap,
       retryCount: 0,
     });
 
@@ -186,7 +188,7 @@ describe("evaluateNarrativeQuality", () => {
       retryCount: 0,
     });
 
-    expect(result.result.scores.information_density).toBe(3);
+    expect(result.result.scores.information_density).toBe(2);
     expect(result.result.issues).toContain(
       "ターニングポイントセクションが欠落しています",
     );
@@ -244,8 +246,65 @@ describe("evaluateNarrativeQuality", () => {
       retryCount: 0,
     });
 
-    expect(result.result.scores.information_density).toBe(3);
+    expect(result.result.scores.information_density).toBe(2);
     expect(result.result.issues).toContain("本文が目標字数の下限未満です");
+  });
+
+  it("gates short Japanese preview content even when model scores are high", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      language: "ja",
+      matchContext,
+      narrative: "あ".repeat(1499),
+      retryCount: 0,
+    });
+
+    expect(result.result.verdict).toBe("retry");
+    expect(result.result.scores.information_density).toBe(2);
+    expect(result.result.issues).toContain("本文が目標字数の下限未満です");
+  });
+
+  it("uses English word thresholds instead of Japanese character thresholds", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      language: "en",
+      matchContext,
+      narrative: Array.from({ length: 1000 }, () => "word").join(" "),
+      retryCount: 0,
+    });
+
+    expect(result.result.verdict).toBe("publish");
+    expect(result.result.issues).not.toContain(
+      "本文が目標字数の下限未満です",
+    );
   });
 
   it("does not penalize real score, try, and ranking numbers", async () => {
@@ -268,7 +327,7 @@ describe("evaluateNarrativeQuality", () => {
       hasEvents: true,
       matchContext,
       narrative: `# ターニングポイント\nIrelandが24-17でFranceに勝ち、トライ数2、順位1位という事実に基づいて整理した。${"あ".repeat(
-        1600,
+        2000,
       )}`,
       retryCount: 0,
     });
@@ -299,7 +358,7 @@ describe("evaluateNarrativeQuality", () => {
       contentType: "recap",
       hasEvents: true,
       matchContext,
-      narrative: "# ターニングポイント\nbody",
+      narrative: `# ターニングポイント\n${longJaRecap}`,
       retryCount: 0,
     });
 

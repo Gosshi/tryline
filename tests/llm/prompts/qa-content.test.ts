@@ -14,8 +14,8 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.0.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.0.0");
+  it("uses qa prompt version 2.1.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.1.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -26,10 +26,20 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).toContain("- 4: 1500字以上");
     expect(prompt).toContain("- 3: 1125字以上");
     expect(prompt).toContain("- 2: 750字未満");
+    expect(prompt).toContain("## 字数ゲート");
+    expect(prompt).toContain("本文が1500字未満の場合");
     expect(prompt).toContain("### tactical_depth (1-5)");
     expect(prompt).toContain("一般論が皆無");
     expect(prompt).not.toContain("verdict判定");
     expect(prompt).not.toContain('"verdict"');
+  });
+
+  it("uses English word thresholds without Japanese character targets", () => {
+    const prompt = buildQaContentPrompt("preview", "Body", "en", matchContext);
+
+    expect(prompt).toContain("- 5: 1000 words以上");
+    expect(prompt).toContain("本文が1000 words未満の場合");
+    expect(prompt).not.toContain("- 5: 1500字以上");
   });
 
   it("uses recap length thresholds in the information density rubric", () => {

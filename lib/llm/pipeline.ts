@@ -8,8 +8,12 @@ import { extractTacticalPoints } from "@/lib/llm/stages/extract-facts";
 import {
   generateNarrative,
   NARRATIVE_TEMPERATURE_SEQUENCE,
+  reviseNarrativeLength,
 } from "@/lib/llm/stages/generate-narrative";
-import { evaluateNarrativeQuality } from "@/lib/llm/stages/qa";
+import {
+  evaluateNarrativeQuality,
+  isContentLengthIssue,
+} from "@/lib/llm/stages/qa";
 import { submitUrlsToIndexNow } from "@/lib/seo/indexnow";
 import { SITE_URL } from "@/lib/site";
 
@@ -17,6 +21,9 @@ import type { Json } from "@/lib/db/types";
 import type { ContentLanguage, ContentType, QaResult } from "@/lib/llm/types";
 
 const COST_ALERT_THRESHOLD_USD = 0.2;
+const MAX_LENGTH_REVISION_ATTEMPTS = 1;
+const LENGTH_REVISION_FALLBACK_ISSUE =
+  "字数下限未達のまま加筆リトライ上限に到達しました";
 
 export type PipelineResult = {
   matchId: string;
@@ -130,6 +137,7 @@ export async function generateMatchContent(
   let finalNarrative = "";
   let modelVersion = "";
   let promptVersion = "";
+  let lengthRevisionAttempts = 0;
 
   for (
     let attempt = 0;
@@ -244,6 +252,120 @@ export async function generateMatchContent(
 
     if (qaResponse.result.verdict === "publish") {
       break;
+    }
+
+    if (
+      language === "ja" &&
+      qaResponse.result.verdict === "retry" &&
+      isContentLengthIssue(qaResponse.result) &&
+      lengthRevisionAttempts < MAX_LENGTH_REVISION_ATTEMPTS
+    ) {
+      lengthRevisionAttempts += 1;
+      const revisionStartedAt = Date.now();
+      const revised = await reviseNarrativeLength({
+        additionalSignals: [],
+        assembled,
+        contentType,
+        currentContent: finalNarrative,
+        language,
+        promptVersion,
+        tacticalPoints: tactical.result.tactical_points,
+      });
+
+      finalNarrative = revised.content;
+      modelVersion = revised.modelVersion;
+      promptVersion = revised.promptVersion;
+
+      const revisionCostUsd = calculateCostUsd({
+        modelVersion: revised.modelVersion,
+        inputTokens: revised.usage.inputTokens,
+        outputTokens: revised.usage.outputTokens,
+      });
+      totalCostUsd += revisionCostUsd;
+
+      await logPipelineRun({
+        matchId,
+        contentType,
+        stage: 3,
+        inputHash: hashInput({
+          assembled,
+          contentType,
+          currentContent: narrative.content,
+          reason: "content_length_under_minimum",
+          tactical: tactical.result,
+        }),
+        output: {
+          content: revised.content,
+          lengthRevisionAttempts,
+          reason: "content_length_under_minimum",
+          temperature: revised.temperature,
+        },
+        costUsd: revisionCostUsd,
+        durationMs: Date.now() - revisionStartedAt,
+        status: "retry",
+      });
+
+      const revisionQaStartedAt = Date.now();
+      const revisionQaResponse = await evaluateNarrativeQuality({
+        contentType,
+        language,
+        matchContext: {
+          awayScore: assembled.match.away_score,
+          awayTeam: assembled.match.away_team?.name ?? "Away",
+          homeScore: assembled.match.home_score,
+          homeTeam: assembled.match.home_team?.name ?? "Home",
+        },
+        hasEvents,
+        narrative: revised.content,
+        retryCount: attempt + 1,
+      });
+      finalQa = revisionQaResponse.result;
+
+      const revisionQaCostUsd = calculateCostUsd({
+        modelVersion: revisionQaResponse.modelVersion,
+        inputTokens: revisionQaResponse.usage.inputTokens,
+        outputTokens: revisionQaResponse.usage.outputTokens,
+      });
+      totalCostUsd += revisionQaCostUsd;
+
+      await logPipelineRun({
+        matchId,
+        contentType,
+        stage: 4,
+        inputHash: hashInput({ narrative: revised.content }),
+        output: revisionQaResponse.result,
+        costUsd: revisionQaCostUsd,
+        durationMs: Date.now() - revisionQaStartedAt,
+        status:
+          revisionQaResponse.result.verdict === "retry" ? "retry" : "success",
+      });
+
+      if (revisionQaResponse.result.verdict === "publish") {
+        break;
+      }
+
+      if (isContentLengthIssue(revisionQaResponse.result)) {
+        finalQa = {
+          ...revisionQaResponse.result,
+          issues: [
+            ...new Set([
+              ...revisionQaResponse.result.issues,
+              LENGTH_REVISION_FALLBACK_ISSUE,
+            ]),
+          ],
+          verdict: "publish",
+        };
+        console.warn("[content-pipeline] publishing below length minimum", {
+          contentType,
+          language,
+          matchId,
+        });
+        break;
+      }
+
+      if (revisionQaResponse.result.verdict === "reject") {
+        break;
+      }
     }
 
     if (qaResponse.result.verdict === "reject") {

@@ -51,8 +51,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.2.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.2.0");
+  it("uses preview prompt version 3.3.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.3.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -85,10 +85,14 @@ describe("buildGeneratePreviewPrompt", () => {
   it("includes the minimum length instruction", () => {
     const prompt = buildGeneratePreviewPrompt(assembled, [], []);
 
-    expect(prompt).toContain("全体で1,500字以上を目標とすること");
     expect(prompt).toContain(
-      "各セクションが指定範囲の下限を下回った場合は書き足すこと",
+      "全体で1,500字以上を下限とし、下回ってはならない",
     );
+    expect(prompt).toContain(
+      "各セクションが指定範囲の下限を下回った場合は、入力データにある",
+    );
+    expect(prompt).toContain("全体が1,500字未満の場合は出力前に薄いセクションを加筆");
+    expect(prompt).toContain("水増し、同義反復、一般論");
   });
 
   it("uses data-sparse structure when lineup and event data are unavailable", () => {
