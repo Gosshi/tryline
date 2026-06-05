@@ -278,7 +278,7 @@ describe("evaluateNarrativeQuality", () => {
     expect(result.result.issues).toContain("本文が目標字数の下限未満です");
   });
 
-  it("uses English word thresholds instead of Japanese character thresholds", async () => {
+  it("publishes a 650-word English preview without triggering the length gate", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       text: JSON.stringify({
         scores: {
@@ -297,7 +297,36 @@ describe("evaluateNarrativeQuality", () => {
       contentType: "preview",
       language: "en",
       matchContext,
-      narrative: Array.from({ length: 1000 }, () => "word").join(" "),
+      narrative: Array.from({ length: 650 }, () => "word").join(" "),
+      retryCount: 0,
+    });
+
+    expect(result.result.verdict).toBe("publish");
+    expect(result.result.issues).not.toContain(
+      "本文が目標字数の下限未満です",
+    );
+  });
+
+  it("publishes a 650-word English recap without triggering the length gate", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      language: "en",
+      matchContext,
+      narrative: Array.from({ length: 650 }, () => "word").join(" "),
       retryCount: 0,
     });
 

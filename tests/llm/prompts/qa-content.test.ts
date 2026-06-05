@@ -37,9 +37,17 @@ describe("buildQaContentPrompt", () => {
   it("uses English word thresholds without Japanese character targets", () => {
     const prompt = buildQaContentPrompt("preview", "Body", "en", matchContext);
 
-    expect(prompt).toContain("- 5: 1000 words以上");
-    expect(prompt).toContain("本文が1000 words未満の場合");
+    expect(prompt).toContain("- 5: 550 words以上");
+    expect(prompt).toContain("本文が550 words未満の場合");
     expect(prompt).not.toContain("- 5: 1500字以上");
+  });
+
+  it("uses lower English recap word thresholds", () => {
+    const prompt = buildQaContentPrompt("recap", "Body", "en", matchContext);
+
+    expect(prompt).toContain("- 5: 600 words以上");
+    expect(prompt).toContain("本文が600 words未満の場合");
+    expect(prompt).not.toContain("- 5: 2000字以上");
   });
 
   it("uses recap length thresholds in the information density rubric", () => {

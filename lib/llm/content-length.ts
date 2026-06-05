@@ -12,8 +12,8 @@ const CONTENT_LENGTH_REQUIREMENTS: Record<
   Record<ContentType, ContentLengthRequirement>
 > = {
   en: {
-    preview: { min: 1000, unit: "words" },
-    recap: { min: 1200, unit: "words" },
+    preview: { min: 550, unit: "words" },
+    recap: { min: 600, unit: "words" },
   },
   ja: {
     preview: { min: 1500, unit: "characters" },
