@@ -28,6 +28,11 @@ on:
         type: choice
         options: ["auto", "preview", "recap"]
         default: "auto"
+      language:
+        description: "再生成する言語（ja/en）"
+        type: choice
+        options: ["ja", "en"]
+        default: "ja"
 
 jobs:
   backfill:
@@ -37,6 +42,7 @@ jobs:
       AUTH: "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
       INPUT_MATCH_IDS: ${{ inputs.match_ids }}
       CONTENT_TYPE: ${{ inputs.content_type }}
+      LANGUAGE: ${{ inputs.language }}
     steps:
       - name: Resolve targets
         id: targets
@@ -77,7 +83,7 @@ jobs:
             echo "== generate-content $1: $2 =="
             code=$(curl -s -o /tmp/gen.json -w "%{http_code}" -X POST \
               "$BASE/api/cron/generate-content" -H "$AUTH" -H "Content-Type: application/json" \
-              -d "{\"contentType\":\"$1\",\"matchIds\":[\"$2\"]}")
+              -d "{\"contentType\":\"$1\",\"matchIds\":[\"$2\"],\"language\":\"$LANGUAGE\"}")
             echo "HTTP $code"; cat /tmp/gen.json; echo
             if [ "$code" != "200" ]; then echo "WARN: regen non-200 for $2"; fi
           }
