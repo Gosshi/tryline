@@ -71,7 +71,8 @@ function createMockDb(contentRows: ContentFixture[]): SupabaseClient<Database> {
         resolve({
           data: contentRows
             .filter(
-              (row) => state.matchIds === null || state.matchIds.includes(row.matchId),
+              (row) =>
+                state.matchIds === null || state.matchIds.includes(row.matchId),
             )
             .map((row) => ({
               match: {
@@ -134,11 +135,7 @@ describe("regenerate-overseas-content", () => {
   it("parses match ids from file and comma-separated args with trimming and dedupe", () => {
     const dir = mkdtempSync(join(tmpdir(), "tryline-match-ids-"));
     const filePath = join(dir, "fabricated-ids.txt");
-    writeFileSync(
-      filePath,
-      "\uFEFFmatch-1\n\n match-2 \nmatch-1\n",
-      "utf8",
-    );
+    writeFileSync(filePath, "\uFEFFmatch-1\n\n match-2 \nmatch-1\n", "utf8");
 
     expect(
       parseArgs([
@@ -165,8 +162,8 @@ describe("regenerate-overseas-content", () => {
   });
 
   it("exposes current prompt versions", () => {
-    expect(getCurrentPromptVersion("preview")).toBe("preview@3.1.0");
-    expect(getCurrentPromptVersion("recap")).toBe("recap@4.4.0");
+    expect(getCurrentPromptVersion("preview")).toBe("preview@3.2.0");
+    expect(getCurrentPromptVersion("recap")).toBe("recap@4.5.0");
   });
 
   it("reports dry-run targets by family and excludes League One", async () => {
@@ -272,7 +269,7 @@ describe("regenerate-overseas-content", () => {
       {
         family: "premiership",
         matchId: "match-current",
-        promptVersion: "recap@4.4.0",
+        promptVersion: "recap@4.5.0",
       },
       {
         family: "premiership",
@@ -284,7 +281,7 @@ describe("regenerate-overseas-content", () => {
 
     const result = await runRegenerateOverseasContent({
       contentType: "recap",
-      currentVersion: "recap@4.4.0",
+      currentVersion: "recap@4.5.0",
       db,
       dryRun: true,
       family: null,
@@ -311,14 +308,14 @@ describe("regenerate-overseas-content", () => {
       {
         family: "league-one",
         matchId: "match-league-one",
-        promptVersion: "recap@4.4.0",
+        promptVersion: "recap@4.5.0",
       },
     ]);
     const generateContent = vi.fn();
 
     const result = await runRegenerateOverseasContent({
       contentType: "recap",
-      currentVersion: "recap@4.4.0",
+      currentVersion: "recap@4.5.0",
       db,
       dryRun: true,
       family: "six-nations",
@@ -356,7 +353,7 @@ describe("regenerate-overseas-content", () => {
 
     const result = await runRegenerateOverseasContent({
       contentType: "recap",
-      currentVersion: "recap@4.4.0",
+      currentVersion: "recap@4.5.0",
       db,
       dryRun: true,
       family: null,

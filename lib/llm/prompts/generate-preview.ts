@@ -11,7 +11,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.1.0";
+export const PROMPT_VERSION = "preview@3.2.0";
 
 export function buildGeneratePreviewPrompt(
   assembled: AssembledContentInput,
@@ -23,7 +23,7 @@ export function buildGeneratePreviewPrompt(
     assembled.projected_lineups.away.length > 0;
   const isDataSparse = assembled.match_events.length === 0 && !hasLineups;
   const structureInstruction = hasLineups
-    ? "構成: 3セクション構成（セクション0を除く）。1)400-500字 2)600-700字 3)300-400字。全体で1,500字以上を目標とすること。各セクションの見出し名はこの試合の特性に応じて自由に設定すること（「両チーム現状」に固定しない）。"
+    ? "構成: 3セクション構成（セクション0を除く）。1)400-500字 2)600-700字 3)300-400字。全体で1,500字以上を目標とすること。各セクションの見出し名はこの試合の特性に応じて自由に設定すること（「両チーム現状」に固定しない）。3セクションのうち1つはキープレイヤー/注目マッチアップを扱うセクションにすること。"
     : isDataSparse
       ? "構成: 3セクション構成（セクション0を除く）。1)500-600字 2)400-500字 3)400-500字。全体で1,500字以上を目標とすること。各セクションの見出し名はこの試合の特性に応じて自由に設定すること。キープレイヤーセクションは省略すること（ラインアップデータなし）。"
       : "構成: 3セクション構成（セクション0を除く）。1)400-500字 2)600-700字 3)300-400字。全体で1,500字以上を目標とすること。各セクションの見出し名はこの試合の特性に応じて自由に設定すること。キープレイヤーセクションは省略すること（ラインアップデータなし）。";
@@ -57,6 +57,16 @@ export function buildGeneratePreviewPrompt(
         "- key_stats.home/away の avg_score_diff_last_5 が正なら攻撃優位、負なら守備に課題があると読み取ること",
         "- key_stats.home/away の result_streak が winning/losing の場合は連勝・連敗ストリーク（何連勝/連敗かは recent_form から数える）を明示すること",
         "- 「情報が少ない」「選手不明」等の逃げ表現は一切禁止。手元のデータで書き切ること",
+      ].join("\n")
+    : "";
+  const lineupUsageBlock = hasLineups
+    ? [
+        "【ラインアップ実名活用】projected_lineups に存在する選手名は積極的に本文へ登場させること。",
+        "- projected_lineups.home から最低3名、projected_lineups.away から最低3名の実名を本文に含めること。",
+        "- キーポジション（9番、10番、11番・14番・15番、主将、2番など）を優先し、先発選手は「先発」として扱うこと。",
+        "- is_starter が false の選手は「ベンチ」「リザーブ」「途中投入候補」として区別し、先発扱いしないこと。",
+        "- 対面ポジションまたは役割が近い選手同士の実名マッチアップを最低1つ描くこと。",
+        "- match_events に存在する選手名も実在名として利用してよい。ただし projected_lineups・match_events に存在しない選手名、役職、引退・移籍などの外部文脈は創作しないこと。",
       ].join("\n")
     : "";
   const matchPhaseBlock = (() => {
@@ -105,6 +115,7 @@ export function buildGeneratePreviewPrompt(
     "各セクションが指定範囲の下限を下回った場合は書き足すこと。",
     "事実は入力データと一致させること。直接引用は15語以内。",
     "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。",
+    lineupUsageBlock,
     "出力は日本語マークダウン本文のみ。",
     "強調記号（**、*、__、_）・コードブロック（```）・引用（>）は使用禁止。見出し(#)と箇条書き(-)のみ使用すること。",
     nameStyleInstruction,
