@@ -33,7 +33,10 @@ const EVENT_TYPE_TO_DB: Record<LeagueOneEvent["event_type"], string> = {
   conversion: "conversion",
   drop_goal: "drop_goal",
   penalty: "penalty_goal",
+  red_card: "red_card",
+  substitution: "substitution",
   try: "try",
+  yellow_card: "yellow_card",
 };
 
 function parseSeasonArg(value: string | undefined) {
@@ -356,12 +359,33 @@ async function upsertMatchEvents(params: {
       event.team_side === "home" ? params.homeTeamId : params.awayTeamId;
     const playerIds =
       event.team_side === "home" ? params.homePlayerIds : params.awayPlayerIds;
+    const playerNameForResolution =
+      event.event_type === "substitution"
+        ? event.player_in_name
+        : event.player_name;
+    const metadata =
+      event.event_type === "substitution"
+        ? {
+            jersey_in: event.jersey_in,
+            jersey_out: event.jersey_out,
+            player_in_name: event.player_in_name,
+            player_out_name: event.player_out_name,
+            source: SOURCE,
+          }
+        : {
+            ...(event.event_type === "yellow_card" ||
+            event.event_type === "red_card"
+              ? { card: event.event_type }
+              : {}),
+            player_name: event.player_name,
+            source: SOURCE,
+          };
 
     return {
       match_id: params.matchId,
-      metadata: { player_name: event.player_name, source: SOURCE } as Json,
+      metadata: metadata as Json,
       minute: event.minute,
-      player_id: playerIds.get(event.player_name) ?? null,
+      player_id: playerIds.get(playerNameForResolution) ?? null,
       team_id: teamId,
       type: EVENT_TYPE_TO_DB[event.event_type],
     };

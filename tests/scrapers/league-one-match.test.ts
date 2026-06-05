@@ -40,6 +40,66 @@ const HTML = `
 </section>
 `;
 
+const HTML_WITH_SUBSTITUTIONS_AND_CARDS = `
+<section id="team">
+  <div class="team home">
+    <table>
+      <tr><th>#</th><th>Name</th><th>Pos.</th></tr>
+      <tr><td>2</td><td>Home Hooker（180/105/30）</td><td>HO</td></tr>
+      <tr><td>10</td><td>Home Flyhalf（180/90/28）</td><td>SO</td></tr>
+      <tr><td>16</td><td>Home Reserve Hooker（178/103/25）</td><td>Re.</td></tr>
+    </table>
+  </div>
+  <div class="team away">
+    <table>
+      <tr><th>#</th><th>Name</th><th>Pos.</th></tr>
+      <tr><td>8</td><td>Away Number Eight（184/100/32）</td><td>NO8</td></tr>
+      <tr><td>10</td><td>Away Flyhalf（176/84/24）</td><td>SO</td></tr>
+      <tr><td>16</td><td>Away Reserve Hooker（179/101/29）</td><td>Re.</td></tr>
+    </table>
+  </div>
+</section>
+<section id="score">
+  <table>
+    <tr><th>前半</th><th>チーム名</th><th>#.Name</th><th>種</th><th>H</th><th></th><th>V</th></tr>
+    <tr><td>18分</td><td>AWAY</td><td>8.Away Number Eight</td><td>T</td><td>0</td><td>-</td><td>5</td></tr>
+    <tr><td>19分</td><td>AWAY</td><td>10.Away Flyhalf</td><td>G</td><td>0</td><td>-</td><td>7</td></tr>
+    <tr><th>後半</th><th>チーム名</th><th>#.Name</th><th>種</th><th>H</th><th></th><th>V</th></tr>
+    <tr><td>7分</td><td>HOME</td><td>10.Home Flyhalf</td><td>PG</td><td>3</td><td>-</td><td>7</td></tr>
+  </table>
+</section>
+<section id="replacement">
+  <h2>交替/入替</h2>
+  <div class="team home">
+    <table>
+      <tr><th>時間</th><th>Host</th></tr>
+      <tr><td>後半15分</td><td>2 → 16</td></tr>
+    </table>
+  </div>
+  <div class="team away">
+    <table>
+      <tr><th>時間</th><th>Visitor</th></tr>
+      <tr><td>後半20分</td><td>8 → 16</td></tr>
+    </table>
+  </div>
+</section>
+<section id="cards">
+  <h2>カード/処分</h2>
+  <div class="team away">
+    <table>
+      <tr><th>時間</th><th>Visitor</th><th>カード</th></tr>
+      <tr><td>後半22分</td><td>8</td><td>イエローカード</td></tr>
+    </table>
+  </div>
+  <div class="team home">
+    <table>
+      <tr><th>時間</th><th>Host</th><th>カード</th></tr>
+      <tr><td>後半35分</td><td>10</td><td>レッドカード</td></tr>
+    </table>
+  </div>
+</section>
+`;
+
 describe("parseLeagueOneMatchPrintHtml", () => {
   it("parses lineups and scoring events from the print report", () => {
     const result = parseLeagueOneMatchPrintHtml(HTML);
@@ -81,6 +141,98 @@ describe("parseLeagueOneMatchPrintHtml", () => {
         team_side: "home",
       },
     ]);
+  });
+
+  it("parses substitutions and cards from print report tables using lineup names", () => {
+    const result = parseLeagueOneMatchPrintHtml(
+      HTML_WITH_SUBSTITUTIONS_AND_CARDS,
+    );
+
+    expect(
+      result.events.filter((event) =>
+        ["try", "conversion", "penalty"].includes(event.event_type),
+      ),
+    ).toEqual([
+      {
+        event_type: "try",
+        minute: 18,
+        player_name: "Away Number Eight",
+        team_side: "away",
+      },
+      {
+        event_type: "conversion",
+        minute: 19,
+        player_name: "Away Flyhalf",
+        team_side: "away",
+      },
+      {
+        event_type: "penalty",
+        minute: 47,
+        player_name: "Home Flyhalf",
+        team_side: "home",
+      },
+    ]);
+    expect(result.events).toContainEqual({
+      event_type: "substitution",
+      jersey_in: 16,
+      jersey_out: 2,
+      minute: 55,
+      player_in_name: "Home Reserve Hooker",
+      player_out_name: "Home Hooker",
+      team_side: "home",
+    });
+    expect(result.events).toContainEqual({
+      event_type: "substitution",
+      jersey_in: 16,
+      jersey_out: 8,
+      minute: 60,
+      player_in_name: "Away Reserve Hooker",
+      player_out_name: "Away Number Eight",
+      team_side: "away",
+    });
+    expect(result.events).toContainEqual({
+      event_type: "yellow_card",
+      jersey_number: 8,
+      minute: 62,
+      player_name: "Away Number Eight",
+      team_side: "away",
+    });
+    expect(result.events).toContainEqual({
+      event_type: "red_card",
+      jersey_number: 10,
+      minute: 75,
+      player_name: "Home Flyhalf",
+      team_side: "home",
+    });
+  });
+
+  it("skips unresolved substitution and card rows without throwing", () => {
+    const result = parseLeagueOneMatchPrintHtml(`
+      <section id="team">
+        <div class="team home">
+          <table>
+            <tr><td>2</td><td>Home Hooker</td><td>HO</td></tr>
+          </table>
+        </div>
+        <div class="team away">
+          <table>
+            <tr><td>8</td><td>Away Number Eight</td><td>NO8</td></tr>
+          </table>
+        </div>
+      </section>
+      <section id="replacement">
+        <div class="team home">
+          <table><tr><td>後半15分</td><td>2 → 16</td></tr></table>
+        </div>
+      </section>
+      <section id="cards">
+        <div class="team away">
+          <table><tr><td>後半22分</td><td>9</td><td>イエローカード</td></tr></table>
+        </div>
+      </section>
+    `);
+
+    expect(result.events).toEqual([]);
   });
 
   it("parses Japanese player names and Japanese timeline labels", () => {

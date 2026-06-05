@@ -1,9 +1,10 @@
 import { load } from "cheerio";
 
-export type ParsedMatchEvent = {
+export type ParsedPlayerMatchEvent = {
   isPenaltyTry: boolean;
   minute: number | null;
   playerName: string;
+  source?: string;
   teamSide: "home" | "away";
   type:
     | "conversion"
@@ -14,8 +15,23 @@ export type ParsedMatchEvent = {
     | "yellow_card";
 };
 
-type MatchEventType = ParsedMatchEvent["type"];
-type TeamSide = ParsedMatchEvent["teamSide"];
+export type ParsedSubstitutionMatchEvent = {
+  jerseyIn: number;
+  jerseyOut: number;
+  minute: number | null;
+  playerInName: string;
+  playerOutName: string;
+  source?: string;
+  teamSide: "home" | "away";
+  type: "substitution";
+};
+
+export type ParsedMatchEvent =
+  | ParsedPlayerMatchEvent
+  | ParsedSubstitutionMatchEvent;
+
+type MatchEventType = ParsedPlayerMatchEvent["type"];
+type TeamSide = ParsedPlayerMatchEvent["teamSide"];
 
 // Bold inline labels as they appear in Wikipedia Six Nations season page vevent blocks.
 // Each label corresponds to an event type. The key is the label text, lowercased.
@@ -59,7 +75,10 @@ function parseMinutes(value: string): Array<number | null> {
 //
 // Note: <td> outside a <table> is stripped by HTML parsers; content lands in <body>.
 // We iterate $("body").contents() rather than looking for a <td> element.
-function parseScoringCell(cellHtml: string, teamSide: TeamSide): ParsedMatchEvent[] {
+function parseScoringCell(
+  cellHtml: string,
+  teamSide: TeamSide,
+): ParsedMatchEvent[] {
   const $ = load(cellHtml);
   const events: ParsedMatchEvent[] = [];
   let currentType: MatchEventType | null = null;
@@ -81,7 +100,13 @@ function parseScoringCell(cellHtml: string, teamSide: TeamSide): ParsedMatchEven
 
     if (playerName) {
       for (const minute of parseMinutes(minutesBuffer)) {
-        events.push({ isPenaltyTry, minute, playerName, teamSide, type: currentType });
+        events.push({
+          isPenaltyTry,
+          minute,
+          playerName,
+          teamSide,
+          type: currentType,
+        });
       }
     }
 
@@ -89,37 +114,39 @@ function parseScoringCell(cellHtml: string, teamSide: TeamSide): ParsedMatchEven
     currentPlayer = null;
   }
 
-  $("body").contents().each((_, node: any) => {
-    if (node.type === "tag") {
-      const tag: string = (node.tagName ?? "").toLowerCase();
+  $("body")
+    .contents()
+    .each((_, node: any) => {
+      if (node.type === "tag") {
+        const tag: string = (node.tagName ?? "").toLowerCase();
 
-      if (tag === "b") {
-        flush();
-        const labelText = normalizeWhitespace($(node).text()).toLowerCase();
-        currentType = BOLD_LABEL_TO_TYPE[labelText] ?? null;
-      } else if (tag === "a") {
-        flush();
-        currentPlayer = normalizeWhitespace($(node).text());
-      } else if (tag === "br") {
-        flush();
-      }
-    } else if (node.type === "text") {
-      const text: string = node.data ?? "";
-
-      if (currentPlayer !== null) {
-        minutesBuffer += text;
-      } else if (currentType !== null) {
-        // "Penalty try" appears as plain text (no <a> tag)
-        const trimmed = normalizeWhitespace(text);
-
-        if (/^penalty try/i.test(trimmed)) {
+        if (tag === "b") {
           flush();
-          currentPlayer = "Penalty try";
-          minutesBuffer = trimmed.slice("Penalty try".length);
+          const labelText = normalizeWhitespace($(node).text()).toLowerCase();
+          currentType = BOLD_LABEL_TO_TYPE[labelText] ?? null;
+        } else if (tag === "a") {
+          flush();
+          currentPlayer = normalizeWhitespace($(node).text());
+        } else if (tag === "br") {
+          flush();
+        }
+      } else if (node.type === "text") {
+        const text: string = node.data ?? "";
+
+        if (currentPlayer !== null) {
+          minutesBuffer += text;
+        } else if (currentType !== null) {
+          // "Penalty try" appears as plain text (no <a> tag)
+          const trimmed = normalizeWhitespace(text);
+
+          if (/^penalty try/i.test(trimmed)) {
+            flush();
+            currentPlayer = "Penalty try";
+            minutesBuffer = trimmed.slice("Penalty try".length);
+          }
         }
       }
-    }
-  });
+    });
 
   flush();
   return events;
@@ -127,7 +154,9 @@ function parseScoringCell(cellHtml: string, teamSide: TeamSide): ParsedMatchEven
 
 // rawHtml is the outer HTML of a div.vevent.summary block from a Wikipedia Six Nations season page.
 // The scoring table's detail row (font-size:85%) has td[0]=home scoring, td[2]=away scoring.
-export function parseMatchEventsFromVeventHtml(rawHtml: string): ParsedMatchEvent[] {
+export function parseMatchEventsFromVeventHtml(
+  rawHtml: string,
+): ParsedMatchEvent[] {
   const $ = load(rawHtml);
 
   const scoringRow = $("tr")

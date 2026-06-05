@@ -4,8 +4,14 @@ import type { Json } from "@/lib/db/types";
 import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
 
 type MatchEventMetadata = {
-  player_name: string;
+  card?: string;
   is_penalty_try?: boolean;
+  jersey_in?: number;
+  jersey_out?: number;
+  player_in_name?: string;
+  player_name?: string;
+  player_out_name?: string;
+  source?: string;
 };
 
 async function resolvePlayerId(params: {
@@ -27,10 +33,28 @@ async function resolvePlayerId(params: {
 }
 
 function buildMetadata(event: ParsedMatchEvent): MatchEventMetadata {
+  if (event.type === "substitution") {
+    return {
+      jersey_in: event.jerseyIn,
+      jersey_out: event.jerseyOut,
+      player_in_name: event.playerInName,
+      player_out_name: event.playerOutName,
+      ...(event.source ? { source: event.source } : {}),
+    };
+  }
+
   return {
     ...(event.isPenaltyTry ? { is_penalty_try: true } : {}),
+    ...(event.source ? { source: event.source } : {}),
+    ...(event.type === "yellow_card" || event.type === "red_card"
+      ? { card: event.type }
+      : {}),
     player_name: event.playerName,
   };
+}
+
+function getPlayerNameForResolution(event: ParsedMatchEvent): string {
+  return event.type === "substitution" ? event.playerInName : event.playerName;
 }
 
 export async function upsertMatchEvents(params: {
@@ -58,7 +82,7 @@ export async function upsertMatchEvents(params: {
       const teamId =
         event.teamSide === "home" ? params.homeTeamId : params.awayTeamId;
       const playerId = await resolvePlayerId({
-        playerName: event.playerName,
+        playerName: getPlayerNameForResolution(event),
         teamId,
       });
 
