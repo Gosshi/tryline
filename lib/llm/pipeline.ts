@@ -13,6 +13,7 @@ import {
 import {
   evaluateNarrativeQuality,
   isContentLengthIssue,
+  isFactualGroundingHardBlock,
 } from "@/lib/llm/stages/qa";
 import { submitUrlsToIndexNow } from "@/lib/seo/indexnow";
 import { SITE_URL } from "@/lib/site";
@@ -24,6 +25,8 @@ const COST_ALERT_THRESHOLD_USD = 0.2;
 const MAX_LENGTH_REVISION_ATTEMPTS = 1;
 const LENGTH_REVISION_FALLBACK_ISSUE =
   "字数下限未達のまま加筆リトライ上限に到達しました";
+const FACTUAL_REVISION_FALLBACK_ISSUE =
+  "加筆リトライで事実根拠が低下したため短い正確な版を採用しました";
 
 export type PipelineResult = {
   matchId: string;
@@ -258,8 +261,13 @@ export async function generateMatchContent(
       language === "ja" &&
       qaResponse.result.verdict === "retry" &&
       isContentLengthIssue(qaResponse.result) &&
+      !isFactualGroundingHardBlock(qaResponse.result) &&
       lengthRevisionAttempts < MAX_LENGTH_REVISION_ATTEMPTS
     ) {
+      const baselineNarrative = finalNarrative;
+      const baselineModelVersion = modelVersion;
+      const baselinePromptVersion = promptVersion;
+      const baselineQa = qaResponse.result;
       lengthRevisionAttempts += 1;
       const revisionStartedAt = Date.now();
       const revised = await reviseNarrativeLength({
@@ -339,6 +347,37 @@ export async function generateMatchContent(
         status:
           revisionQaResponse.result.verdict === "retry" ? "retry" : "success",
       });
+
+      if (
+        isFactualGroundingHardBlock(revisionQaResponse.result) ||
+        revisionQaResponse.result.scores.factual_grounding <
+          baselineQa.scores.factual_grounding
+      ) {
+        finalNarrative = baselineNarrative;
+        modelVersion = baselineModelVersion;
+        promptVersion = baselinePromptVersion;
+        finalQa = {
+          ...baselineQa,
+          issues: [
+            ...new Set([
+              ...baselineQa.issues,
+              FACTUAL_REVISION_FALLBACK_ISSUE,
+            ]),
+          ],
+          verdict: "publish",
+        };
+        console.warn(
+          "[content-pipeline] discarded length revision with weaker factual grounding",
+          {
+            baselineFactual: baselineQa.scores.factual_grounding,
+            contentType,
+            language,
+            matchId,
+            revisionFactual: revisionQaResponse.result.scores.factual_grounding,
+          },
+        );
+        break;
+      }
 
       if (revisionQaResponse.result.verdict === "publish") {
         break;
