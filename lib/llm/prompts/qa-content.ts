@@ -1,6 +1,8 @@
+import { getContentLengthRequirement } from "@/lib/llm/content-length";
+
 import type { ContentLanguage, ContentType } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.0.0";
+export const PROMPT_VERSION = "qa@2.1.0";
 
 export type QaMatchContext = {
   awayScore: number | null;
@@ -16,7 +18,9 @@ export function buildQaContentPrompt(
   matchContext: QaMatchContext,
   hasEvents = false,
 ): string {
-  const minLength = contentType === "recap" ? 2000 : 1500;
+  const lengthRequirement = getContentLengthRequirement(contentType, language);
+  const unitLabel = lengthRequirement.unit === "words" ? " words" : "字";
+  const minLength = lengthRequirement.min;
   const languageLabel = language === "en" ? "English" : "日本語";
   const qualityRubric =
     language === "en"
@@ -65,11 +69,15 @@ export function buildQaContentPrompt(
       "## 採点ルーブリック",
       "",
       "### information_density (1-5)",
-      `- 5: ${minLength}字以上かつ具体的な試合描写・戦術分析・選手名が豊富`,
-      `- 4: ${minLength}字以上かつ一般的な内容を含むが実質的な情報あり`,
-      `- 3: ${Math.round(minLength * 0.75)}字以上。情報密度は普通`,
-      `- 2: ${Math.round(minLength * 0.5)}字未満、または内容が薄く抽象的な記述が多い`,
+      `- 5: ${minLength}${unitLabel}以上かつ具体的な試合描写・戦術分析・選手名が豊富`,
+      `- 4: ${minLength}${unitLabel}以上かつ一般的な内容を含むが実質的な情報あり`,
+      `- 3: ${Math.round(minLength * 0.75)}${unitLabel}以上。情報密度は普通`,
+      `- 2: ${Math.round(minLength * 0.5)}${unitLabel}未満、または内容が薄く抽象的な記述が多い`,
       "- 1: 極めて短い、または内容がほぼない",
+      "",
+      "## 字数ゲート",
+      `本文が${minLength}${unitLabel}未満の場合は issues に「本文が目標字数の下限未満です」を必ず追加すること。`,
+      "ただし字数を満たしていても、同じ内容の言い換えや一般論で水増ししている場合は information_density を下げること。",
       "",
       qualityRubric,
       "",

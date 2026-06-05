@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { generateNarrative } from "@/lib/llm/stages/generate-narrative";
+import {
+  generateNarrative,
+  reviseNarrativeLength,
+} from "@/lib/llm/stages/generate-narrative";
 
 const openAIMock = vi.hoisted(() => ({
   createTextResponse: vi.fn(),
@@ -198,6 +201,44 @@ describe("generateNarrative", () => {
     expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
       expect.objectContaining({
         input: expect.stringContaining("Target: 1,200+ words total."),
+      }),
+    );
+  });
+
+  it("builds a focused Japanese length revision prompt", async () => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: "# revised",
+      model: "gpt-4o-2024-11-20",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    const result = await reviseNarrativeLength({
+      additionalSignals: [],
+      assembled,
+      contentType: "preview",
+      currentContent: "# short",
+      language: "ja",
+      promptVersion: "preview@3.3.0",
+      tacticalPoints: [],
+    });
+
+    expect(result.promptVersion).toBe(
+      "preview@3.3.0+length-revision@1.0.0",
+    );
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining("字数下限未満です"),
+        temperature: 0.6,
+      }),
+    );
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining("水増し、同義反復、抽象的な一般論"),
+      }),
+    );
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining("最終出力は1500字以上"),
       }),
     );
   });

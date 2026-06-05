@@ -11,6 +11,7 @@ const extractFactsMock = vi.hoisted(() => ({
 const generateNarrativeMock = vi.hoisted(() => ({
   generateNarrative: vi.fn(),
   NARRATIVE_TEMPERATURE_SEQUENCE: [0.7],
+  reviseNarrativeLength: vi.fn(),
 }));
 
 const qaMock = vi.hoisted(() => ({

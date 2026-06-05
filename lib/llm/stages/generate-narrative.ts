@@ -1,3 +1,7 @@
+import {
+  getContentLengthRequirement,
+  measureContentLength,
+} from "@/lib/llm/content-length";
 import { MODELS } from "@/lib/llm/models";
 import { createTextResponse } from "@/lib/llm/openai";
 import {
@@ -20,6 +24,7 @@ import type {
 export const NARRATIVE_TEMPERATURE_SEQUENCE = [0.7, 0.9, 0.4] as const;
 const ENGLISH_PREVIEW_PROMPT_VERSION = "preview@2.0.0-en";
 const ENGLISH_RECAP_PROMPT_VERSION = "recap@2.2.0-en";
+const LENGTH_REVISION_PROMPT_VERSION = "length-revision@1.0.0";
 
 export type NarrativeResponse = {
   content: string;
@@ -73,6 +78,45 @@ export async function generateNarrative(options: {
   };
 }
 
+export async function reviseNarrativeLength(options: {
+  additionalSignals: AdditionalSignal[];
+  assembled: AssembledContentInput;
+  contentType: ContentType;
+  currentContent: string;
+  language?: ContentLanguage;
+  promptVersion: string;
+  tacticalPoints: TacticalPoint[];
+}): Promise<NarrativeResponse> {
+  const language = options.language ?? "ja";
+  const requirement = getContentLengthRequirement(options.contentType, language);
+  const currentLength = measureContentLength(
+    options.currentContent,
+    requirement,
+  );
+  const prompt =
+    language === "en"
+      ? buildEnglishLengthRevisionPrompt(options, requirement.min, currentLength)
+      : buildJapaneseLengthRevisionPrompt(
+          options,
+          requirement.min,
+          currentLength,
+        );
+
+  const response = await createTextResponse({
+    model: MODELS.NARRATIVE,
+    input: prompt,
+    temperature: 0.6,
+  });
+
+  return {
+    content: response.text,
+    modelVersion: response.model,
+    promptVersion: `${options.promptVersion}+${LENGTH_REVISION_PROMPT_VERSION}`,
+    usage: response.usage,
+    temperature: 0.6,
+  };
+}
+
 function buildJapaneseNarrativePrompt(options: {
   assembled: AssembledContentInput;
   tacticalPoints: TacticalPoint[];
@@ -105,6 +149,43 @@ function buildJapaneseNarrativePrompt(options: {
         ].join("\n");
 
   return [firstSectionInstruction, basePrompt].join("\n\n");
+}
+
+function buildJapaneseLengthRevisionPrompt(
+  options: {
+    additionalSignals: AdditionalSignal[];
+    assembled: AssembledContentInput;
+    contentType: ContentType;
+    currentContent: string;
+    tacticalPoints: TacticalPoint[];
+  },
+  minLength: number,
+  currentLength: number,
+) {
+  const contentLabel = options.contentType === "preview" ? "プレビュー" : "レビュー";
+  const signalsBlock =
+    options.additionalSignals.length === 0
+      ? ""
+      : `追加シグナル: ${JSON.stringify(options.additionalSignals)}`;
+
+  return [
+    `あなたはTrylineの編集デスクです。以下の日本語${contentLabel}は字数下限未満です。`,
+    `現在の本文長: ${currentLength}字 / 下限: ${minLength}字`,
+    [
+      "既存本文を全面的に書き換えず、見出し構成・主張・事実関係を維持したまま、薄いセクションに具体的な根拠を加筆してください。",
+      "加筆に使える根拠は、試合データ、戦術ポイント、recent_form、h2h_last_5、competition_standings、key_stats、projected_lineups、match_events に含まれる情報だけです。",
+      "水増し、同義反復、抽象的な一般論、入力にない選手名・統計・出来事の創作は禁止です。",
+      "強調記号（**、*、__、_）・コードブロック・引用は使用禁止。見出し(#)と箇条書き(-)のみ使用できます。",
+      "「加筆しました」「字数確認済み」などのメタコメントは出力しないでください。",
+      `最終出力は${minLength}字以上の日本語マークダウン本文のみです。`,
+    ].join("\n"),
+    `現在の本文:\n${options.currentContent}`,
+    `試合データ: ${JSON.stringify(options.assembled)}`,
+    `戦術ポイント: ${JSON.stringify(options.tacticalPoints)}`,
+    signalsBlock,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 function buildEnglishNarrativePrompt(options: {
@@ -178,6 +259,43 @@ function buildEnglishNarrativePrompt(options: {
     `Tactical points: ${JSON.stringify(options.tacticalPoints)}`,
     signalsBlock,
     "Return only the English Markdown body.",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function buildEnglishLengthRevisionPrompt(
+  options: {
+    additionalSignals: AdditionalSignal[];
+    assembled: AssembledContentInput;
+    contentType: ContentType;
+    currentContent: string;
+    tacticalPoints: TacticalPoint[];
+  },
+  minLength: number,
+  currentLength: number,
+) {
+  const contentLabel =
+    options.contentType === "preview" ? "match preview" : "match recap";
+  const signalsBlock =
+    options.additionalSignals.length === 0
+      ? ""
+      : `Additional signals: ${JSON.stringify(options.additionalSignals)}`;
+
+  return [
+    `You are Tryline's editor. The following English ${contentLabel} is below the required length.`,
+    `Current length: ${currentLength} words / minimum: ${minLength} words.`,
+    [
+      "Keep the existing structure, argument, and facts, and expand only the thin sections with concrete details from the input data.",
+      "Use only match data, tactical points, recent_form, h2h_last_5, competition_standings, key_stats, projected_lineups, and match_events.",
+      "Do not pad with repetition, generic commentary, invented player names, invented statistics, or invented events.",
+      "Never use Japanese characters. Use headings (#) and bullet lists (-) only. Do not use bold, italics, blockquotes, or code fences.",
+      `Return only the revised English Markdown body with at least ${minLength} words.`,
+    ].join("\n"),
+    `Current body:\n${options.currentContent}`,
+    `Match data: ${JSON.stringify(options.assembled)}`,
+    `Tactical points: ${JSON.stringify(options.tacticalPoints)}`,
+    signalsBlock,
   ]
     .filter(Boolean)
     .join("\n\n");
