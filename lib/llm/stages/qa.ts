@@ -46,13 +46,29 @@ export function isContentLengthIssue(result: QaResult): boolean {
   return result.issues.includes(CONTENT_LENGTH_ISSUE);
 }
 
+export function isFactualGroundingHardBlock(result: QaResult): boolean {
+  return (
+    result.scores.factual_grounding <= 2 ||
+    result.issues.includes(UNSUPPORTED_STATISTIC_ISSUE)
+  );
+}
+
 // Single source of truth for QA verdicts. The LLM scores content only; code
 // applies the stable retry/reject thresholds used by the pipeline.
 function resolveVerdict(
   scores: QaResult["scores"],
   retryCount: number,
+  factualHardBlock: boolean,
   lengthUnderMinimum: boolean,
 ): QaVerdict {
+  if (factualHardBlock) {
+    if (retryCount >= 2) {
+      return "reject";
+    }
+
+    return "retry";
+  }
+
   if (lengthUnderMinimum) {
     return "retry";
   }
@@ -167,12 +183,14 @@ function parseQaResponse(
     options,
   );
   const lengthUnderMinimum = isContentLengthIssue(guarded);
+  const factualHardBlock = isFactualGroundingHardBlock(guarded);
 
   return {
     ...guarded,
     verdict: resolveVerdict(
       guarded.scores,
       retryCount,
+      factualHardBlock,
       lengthUnderMinimum,
     ),
   };

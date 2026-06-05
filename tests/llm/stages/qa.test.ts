@@ -224,6 +224,58 @@ describe("evaluateNarrativeQuality", () => {
     expect(result.result.verdict).not.toBe("publish");
   });
 
+  it("blocks publishing when factual grounding is <= 2 even if length passes", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 2,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: ["事実根拠が弱い"],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      matchContext,
+      narrative: longJaPreview,
+      retryCount: 0,
+    });
+
+    expect(result.result.verdict).toBe("retry");
+  });
+
+  it("rejects factual hard blocks after the final retry instead of publishing for length", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      matchContext,
+      narrative: `Franceはスクラム成功率85%でIrelandを押し込んだ。${longJaPreview}`,
+      retryCount: 2,
+    });
+
+    expect(result.result.scores.factual_grounding).toBe(1);
+    expect(result.result.issues).toContain("データに存在しない統計値を含む");
+    expect(result.result.verdict).toBe("reject");
+  });
+
   it("caps information density for a short 1107-character recap", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       text: JSON.stringify({

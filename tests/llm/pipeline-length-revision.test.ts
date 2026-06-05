@@ -19,6 +19,11 @@ const qaMock = vi.hoisted(() => ({
   isContentLengthIssue: vi.fn((result: { issues: string[] }) =>
     result.issues.includes("本文が目標字数の下限未満です"),
   ),
+  isFactualGroundingHardBlock: vi.fn(
+    (result: { issues: string[]; scores: { factual_grounding: number } }) =>
+      result.scores.factual_grounding <= 2 ||
+      result.issues.includes("データに存在しない統計値を含む"),
+  ),
 }));
 
 const dbMock = vi.hoisted(() => ({
@@ -204,5 +209,111 @@ describe("generateMatchContent length revision", () => {
       expect.objectContaining({ language: "ja", matchId: "match-1" }),
     );
     warnSpy.mockRestore();
+  });
+
+  it("keeps the short baseline when length revision lowers factual grounding", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    qaMock.evaluateNarrativeQuality
+      .mockResolvedValueOnce({
+        modelVersion: "gpt-4o-mini",
+        result: {
+          issues: ["本文が目標字数の下限未満です"],
+          scores: {
+            ...qaScores,
+            factual_grounding: 4,
+            information_density: 2,
+          },
+          verdict: "retry",
+        },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      })
+      .mockResolvedValueOnce({
+        modelVersion: "gpt-4o-mini",
+        result: {
+          issues: ["データに存在しない統計値を含む"],
+          scores: {
+            ...qaScores,
+            factual_grounding: 1,
+          },
+          verdict: "retry",
+        },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      });
+
+    const result = await generateMatchContent("match-1", "preview", "ja");
+
+    expect(result.status).toBe("published");
+    expect(result.qa?.scores.factual_grounding).toBe(4);
+    expect(result.qa?.issues).toContain(
+      "加筆リトライで事実根拠が低下したため短い正確な版を採用しました",
+    );
+    expect(dbMock.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content_md: "# short",
+        prompt_version: "preview@3.3.0",
+        status: "published",
+      }),
+      expect.any(Object),
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[content-pipeline] discarded length revision with weaker factual grounding",
+      expect.objectContaining({
+        baselineFactual: 4,
+        language: "ja",
+        matchId: "match-1",
+        revisionFactual: 1,
+      }),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("does not run length revision when the baseline has a factual hard block", async () => {
+    qaMock.evaluateNarrativeQuality
+      .mockResolvedValueOnce({
+        modelVersion: "gpt-4o-mini",
+        result: {
+          issues: [
+            "本文が目標字数の下限未満です",
+            "データに存在しない統計値を含む",
+          ],
+          scores: {
+            ...qaScores,
+            factual_grounding: 1,
+            information_density: 2,
+          },
+          verdict: "retry",
+        },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      })
+      .mockResolvedValueOnce({
+        modelVersion: "gpt-4o-mini",
+        result: {
+          issues: ["データに存在しない統計値を含む"],
+          scores: {
+            ...qaScores,
+            factual_grounding: 1,
+          },
+          verdict: "retry",
+        },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      })
+      .mockResolvedValueOnce({
+        modelVersion: "gpt-4o-mini",
+        result: {
+          issues: ["データに存在しない統計値を含む"],
+          scores: {
+            ...qaScores,
+            factual_grounding: 1,
+          },
+          verdict: "reject",
+        },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      });
+
+    const result = await generateMatchContent("match-1", "preview", "ja");
+
+    expect(result.status).toBe("draft");
+    expect(result.qa?.verdict).toBe("reject");
+    expect(generateNarrativeMock.reviseNarrativeLength).not.toHaveBeenCalled();
   });
 });
