@@ -2,16 +2,32 @@ name: Cron — Ingest League One Playoff Lineups (manual backfill)
 
 # プレーオフ（QF/SF/3決/決勝）の lineup を取込→対象コンテンツを再生成する手動ワークフロー。
 # workflow_dispatch のみ（スケジュールなし）。本番書込＋LLM課金が発生するため手動起動限定。
-# 取込ルート: /api/cron/ingest-league-one-lineups?match_id=<uuid>（PR #367 で追加）
+# 取込ルート: /api/cron/ingest-league-one-lineups?match_id=<uuid>（PR #367/#369）
 # 再生成ルート: /api/cron/generate-content（body: {contentType, matchIds[]}）
+#
+# match_ids 未指定 = プレーオフ6試合を対象（既定の backfill）。
+# match_ids 指定 = そのIDのみ（例: 3決だけ regen）。content_type=auto は status から判定（finished→recap / scheduled→preview）。
 
 on:
   workflow_dispatch:
     inputs:
-      regenerate:
-        description: "取込後にプレビュー/recap を再生成する"
+      match_ids:
+        description: "対象 match_id（空白区切り）。空なら playoff 6試合"
+        type: string
+        default: ""
+      ingest:
+        description: "lineup を取込む"
         type: boolean
         default: true
+      regenerate:
+        description: "コンテンツを再生成する"
+        type: boolean
+        default: true
+      content_type:
+        description: "再生成タイプ（auto/preview/recap）"
+        type: choice
+        options: ["auto", "preview", "recap"]
+        default: "auto"
 
 jobs:
   backfill:
@@ -19,14 +35,31 @@ jobs:
     env:
       BASE: ${{ secrets.PRODUCTION_URL }}
       AUTH: "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+      INPUT_MATCH_IDS: ${{ inputs.match_ids }}
+      CONTENT_TYPE: ${{ inputs.content_type }}
     steps:
-      - name: Ingest playoff lineups
+      - name: Resolve targets
+        id: targets
         run: |
           set -uo pipefail
-          # finished = QF×2, SF×2 / scheduled = 3決, 決勝
+          # status 別の既定リスト（auto 判定にも使う）
           FINISHED="2cbc8b44-2404-42c0-8ea3-6e96cf4ac3f6 8bf38c7c-0c06-4a81-b659-9c35c22da6bb b4eab29f-18ee-444f-a795-f044e87c8908 f74d5e5b-de8f-4bb9-a53a-7d0b8726319f"
           SCHEDULED="96863688-cf14-40f8-b3d7-8d485ae5504b 0fd7d8e6-37f9-4b58-82dd-9c2d5592fd64"
-          for id in $FINISHED $SCHEDULED; do
+          if [ -n "${INPUT_MATCH_IDS// /}" ]; then
+            TARGETS="$INPUT_MATCH_IDS"
+          else
+            TARGETS="$FINISHED $SCHEDULED"
+          fi
+          echo "finished=$FINISHED" >> "$GITHUB_OUTPUT"
+          echo "scheduled=$SCHEDULED" >> "$GITHUB_OUTPUT"
+          echo "targets=$TARGETS" >> "$GITHUB_OUTPUT"
+          echo "Targets: $TARGETS"
+
+      - name: Ingest lineups
+        if: ${{ inputs.ingest }}
+        run: |
+          set -uo pipefail
+          for id in ${{ steps.targets.outputs.targets }}; do
             echo "== ingest-league-one-lineups: $id =="
             code=$(curl -s -o /tmp/resp.json -w "%{http_code}" -X POST \
               "$BASE/api/cron/ingest-league-one-lineups?match_id=$id" -H "$AUTH")
@@ -34,12 +67,12 @@ jobs:
             if [ "$code" != "200" ]; then echo "WARN: ingest non-200 for $id"; fi
           done
 
-      - name: Regenerate content (recap for finished, preview for scheduled)
+      - name: Regenerate content
         if: ${{ inputs.regenerate }}
         run: |
           set -uo pipefail
-          FINISHED="2cbc8b44-2404-42c0-8ea3-6e96cf4ac3f6 8bf38c7c-0c06-4a81-b659-9c35c22da6bb b4eab29f-18ee-444f-a795-f044e87c8908 f74d5e5b-de8f-4bb9-a53a-7d0b8726319f"
-          SCHEDULED="96863688-cf14-40f8-b3d7-8d485ae5504b 0fd7d8e6-37f9-4b58-82dd-9c2d5592fd64"
+          FINISHED="${{ steps.targets.outputs.finished }}"
+          SCHEDULED="${{ steps.targets.outputs.scheduled }}"
           regen() { # $1=contentType $2=matchId
             echo "== generate-content $1: $2 =="
             code=$(curl -s -o /tmp/gen.json -w "%{http_code}" -X POST \
@@ -48,6 +81,12 @@ jobs:
             echo "HTTP $code"; cat /tmp/gen.json; echo
             if [ "$code" != "200" ]; then echo "WARN: regen non-200 for $2"; fi
           }
-          # 1試合ずつ（Vercel function maxDuration 300s 内に収めるためバッチにしない）
-          for id in $FINISHED; do regen recap "$id"; done
-          for id in $SCHEDULED; do regen preview "$id"; done
+          classify() { # echo recap/preview by membership; fallback preview
+            case " $FINISHED " in *" $1 "*) echo recap; return;; esac
+            case " $SCHEDULED " in *" $1 "*) echo preview; return;; esac
+            echo preview
+          }
+          for id in ${{ steps.targets.outputs.targets }}; do
+            if [ "$CONTENT_TYPE" = "auto" ]; then ct=$(classify "$id"); else ct="$CONTENT_TYPE"; fi
+            regen "$ct" "$id"
+          done
