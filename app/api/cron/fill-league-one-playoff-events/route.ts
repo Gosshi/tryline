@@ -34,7 +34,10 @@ type MatchExternalIds = {
 };
 
 const bodySchema = z.object({
-  season: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+  season: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
 });
 
 function sleep(ms: number) {
@@ -74,10 +77,36 @@ function extractLeagueOneMatchId(externalIds: Json): number | null {
 }
 
 function mapLeagueOneEvent(event: LeagueOneEvent): ParsedMatchEvent {
+  if (event.event_type === "substitution") {
+    return {
+      jerseyIn: event.jersey_in,
+      jerseyOut: event.jersey_out,
+      minute: event.minute,
+      playerInName: event.player_in_name,
+      playerOutName: event.player_out_name,
+      source: "league-one.jp",
+      teamSide: event.team_side,
+      type: "substitution",
+    };
+  }
+
+  if (event.event_type === "yellow_card" || event.event_type === "red_card") {
+    return {
+      isPenaltyTry: false,
+      minute: event.minute,
+      playerName: event.player_name,
+      source: "league-one.jp",
+      teamSide: event.team_side,
+      type: event.event_type,
+    };
+  }
+
   return {
-    isPenaltyTry: event.event_type === "try" && event.player_name === "Penalty try",
+    isPenaltyTry:
+      event.event_type === "try" && event.player_name === "Penalty try",
     minute: event.minute,
     playerName: event.player_name,
+    source: "league-one.jp",
     teamSide: event.team_side,
     type: event.event_type === "penalty" ? "penalty_goal" : event.event_type,
   };
@@ -233,7 +262,11 @@ export async function POST(request: Request) {
 
     const match = matchesByLeagueOneId.get(ref.leagueOneMatchId);
 
-    if (!match || match.status !== "finished" || match.match_events.length > 0) {
+    if (
+      !match ||
+      match.status !== "finished" ||
+      match.match_events.length > 0
+    ) {
       skipped += 1;
       continue;
     }

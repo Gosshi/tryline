@@ -91,4 +91,64 @@ describe("upsertMatchEvents", () => {
       },
     });
   });
+
+  it("uses the incoming player id and stores lineup names for substitutions", async () => {
+    const { awayTeamId, homeTeamId, matchId, service } =
+      await insertMatchFixture();
+    const { data: players, error: playersError } = await service
+      .from("players")
+      .insert([
+        { team_id: homeTeamId, name: "Home Hooker", position: "Hooker" },
+        {
+          team_id: homeTeamId,
+          name: "Home Reserve Hooker",
+          position: "Hooker",
+        },
+      ])
+      .select("id, name");
+
+    expect(playersError).toBeNull();
+
+    const result = await upsertMatchEvents({
+      awayTeamId,
+      events: [
+        {
+          type: "substitution",
+          minute: 55,
+          teamSide: "home",
+          playerInName: "Home Reserve Hooker",
+          playerOutName: "Home Hooker",
+          jerseyIn: 16,
+          jerseyOut: 2,
+          source: "league-one.jp",
+        },
+      ],
+      homeTeamId,
+      matchId,
+    });
+
+    expect(result.inserted).toBe(1);
+
+    const { data, error } = await service
+      .from("match_events")
+      .select("type, minute, player_id, metadata")
+      .eq("match_id", matchId)
+      .single();
+
+    expect(error).toBeNull();
+    expect(data).toMatchObject({
+      type: "substitution",
+      minute: 55,
+      player_id: players?.find(
+        (player) => player.name === "Home Reserve Hooker",
+      )?.id,
+      metadata: {
+        jersey_in: 16,
+        jersey_out: 2,
+        player_in_name: "Home Reserve Hooker",
+        player_out_name: "Home Hooker",
+        source: "league-one.jp",
+      },
+    });
+  });
 });

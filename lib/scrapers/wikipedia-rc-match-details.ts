@@ -5,10 +5,13 @@ import { extractWikipediaRcMatchFragment } from "@/lib/scrapers/wikipedia-rc-sea
 
 import type { WikipediaClubMatchDetails } from "@/lib/scrapers/wikipedia-club-match-details";
 import type { WikipediaLineupPlayer } from "@/lib/scrapers/wikipedia-lineups";
-import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
+import type {
+  ParsedMatchEvent,
+  ParsedPlayerMatchEvent,
+} from "@/lib/scrapers/wikipedia-match-events";
 
 type TeamSide = ParsedMatchEvent["teamSide"];
-type MatchEventType = ParsedMatchEvent["type"];
+type MatchEventType = ParsedPlayerMatchEvent["type"];
 
 const SCORE_PATTERN = /\b\d+\s*[–-]\s*\d+\b/;
 
@@ -42,10 +45,16 @@ const POSITION_NUMBER: Record<string, number> = {
 };
 
 function cleanText(text: string): string {
-  return text.replace(/\[[^\]]+\]/g, "").replace(/\s+/g, " ").trim();
+  return text
+    .replace(/\[[^\]]+\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function parseScoringText(text: string, teamSide: TeamSide): ParsedMatchEvent[] {
+function parseScoringText(
+  text: string,
+  teamSide: TeamSide,
+): ParsedMatchEvent[] {
   const events: ParsedMatchEvent[] = [];
   const labelPattern = /\b(Try|Tries|Con|Cons|Pen|Pens|DG|Drop):/gi;
   const labels = [...text.matchAll(labelPattern)];
@@ -73,9 +82,9 @@ function parseScoringText(text: string, teamSide: TeamSide): ParsedMatchEvent[] 
       }
 
       const playerName = cleanText(matched[1] ?? "");
-      const parsedMinutes = [...(matched[2] ?? "").matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g)].map(
-        (minuteMatch) => Number(minuteMatch[1]),
-      );
+      const parsedMinutes = [
+        ...(matched[2] ?? "").matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g),
+      ].map((minuteMatch) => Number(minuteMatch[1]));
       const resolvedMinutes: Array<number | null> =
         parsedMinutes.length > 0 ? parsedMinutes : [null];
 
@@ -162,7 +171,9 @@ function parseRcLineup(fragmentHtml: string, sourceUrl: string) {
     const cells = $(row).children("td, th");
     const positionIndex = cells
       .toArray()
-      .findIndex((cell) => POSITION_NUMBER[cleanText($(cell).text()).toUpperCase()]);
+      .findIndex(
+        (cell) => POSITION_NUMBER[cleanText($(cell).text()).toUpperCase()],
+      );
 
     if (positionIndex < 0) {
       return;
