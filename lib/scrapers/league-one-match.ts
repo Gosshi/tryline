@@ -1,5 +1,6 @@
 import { load } from "cheerio";
 
+import { FetchError } from "@/lib/scrapers/errors";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 export type LeagueOnePlayer = {
@@ -18,6 +19,7 @@ export type LeagueOneEvent = {
 export type LeagueOneMatchDetail = {
   players: LeagueOnePlayer[];
   events: LeagueOneEvent[];
+  sourceUrl: string;
 };
 
 type ScoreState = {
@@ -26,6 +28,8 @@ type ScoreState = {
 };
 
 const LEAGUE_ONE_BASE_URL = "https://league-one.jp";
+const JAPANESE_NAME_CHAR_PATTERN =
+  /([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー])\s+([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー])/gu;
 
 const EVENT_TYPE_BY_PRINT_LABEL: Record<string, LeagueOneEvent["event_type"]> =
   {
@@ -46,7 +50,9 @@ function cleanPlayerName(value: string) {
       .replace(/（[^）]*）/g, "")
       .replace(/\([^)]*\)/g, "")
       .replace(/\s+$/, ""),
-  );
+  )
+    .replace(/\s*・\s*/g, "・")
+    .replace(JAPANESE_NAME_CHAR_PATTERN, "$1$2");
 }
 
 function parseLineupPlayers(
@@ -65,6 +71,36 @@ function parseLineupPlayers(
 
     const jerseyNumber = Number(normalizeWhitespace(cells.eq(0).text()));
     const playerName = cleanPlayerName(cells.eq(1).text());
+
+    if (!Number.isInteger(jerseyNumber) || !playerName) {
+      return;
+    }
+
+    players.push({
+      jersey_number: jerseyNumber,
+      player_name: playerName,
+      team_side: teamSide,
+    });
+  });
+
+  return players;
+}
+
+function parseMatchPageLineupPlayers(
+  $: ReturnType<typeof load>,
+  selector: string,
+  teamSide: LeagueOnePlayer["team_side"],
+) {
+  const players: LeagueOnePlayer[] = [];
+
+  $(`ol.match-member-${selector} li`).each((_, row) => {
+    const item = $(row);
+    const jerseyNumber = Number(item.attr("id")?.match(/\d+/)?.[0] ?? "");
+    const nameNode = item.find("a").first().clone();
+
+    nameNode.find(".player-info").remove();
+
+    const playerName = cleanPlayerName(nameNode.text());
 
     if (!Number.isInteger(jerseyNumber) || !playerName) {
       return;
@@ -179,6 +215,7 @@ function parseScoringEvents($: ReturnType<typeof load>) {
 
 export function parseLeagueOneMatchPrintHtml(
   html: string,
+  sourceUrl = `${LEAGUE_ONE_BASE_URL}/match/unknown/print`,
 ): LeagueOneMatchDetail {
   const $ = load(html);
   const players = [
@@ -187,18 +224,57 @@ export function parseLeagueOneMatchPrintHtml(
   ];
   const events = parseScoringEvents($);
 
-  return { events, players };
+  return { events, players, sourceUrl };
+}
+
+export function parseLeagueOneMatchPageHtml(
+  html: string,
+  sourceUrl = `${LEAGUE_ONE_BASE_URL}/match/unknown?t1=1`,
+): LeagueOneMatchDetail {
+  const $ = load(html);
+  const players = [
+    ...parseMatchPageLineupPlayers($, "left", "home"),
+    ...parseMatchPageLineupPlayers($, "right", "away"),
+  ];
+
+  return { events: [], players, sourceUrl };
 }
 
 export async function fetchLeagueOneMatchDetail(
   matchId: number,
   options: { allowEmptyLineups?: boolean } = {},
 ): Promise<LeagueOneMatchDetail> {
-  const response = await fetchWithPolicy(
-    `${LEAGUE_ONE_BASE_URL}/match/${matchId}/print`,
-  );
-  const html = await response.text();
-  const detail = parseLeagueOneMatchPrintHtml(html);
+  const printUrl = `${LEAGUE_ONE_BASE_URL}/match/${matchId}/print`;
+  const matchPageUrl = `${LEAGUE_ONE_BASE_URL}/match/${matchId}?t1=1`;
+  let detail: LeagueOneMatchDetail | null = null;
+
+  try {
+    const response = await fetchWithPolicy(printUrl);
+    const html = await response.text();
+    detail = parseLeagueOneMatchPrintHtml(html, printUrl);
+  } catch (error) {
+    if (!(error instanceof FetchError) || error.status !== 404) {
+      throw error;
+    }
+  }
+
+  if (!detail || detail.players.length === 0) {
+    try {
+      const response = await fetchWithPolicy(matchPageUrl);
+      const html = await response.text();
+      detail = parseLeagueOneMatchPageHtml(html, matchPageUrl);
+    } catch (error) {
+      if (
+        options.allowEmptyLineups &&
+        error instanceof FetchError &&
+        error.status === 404
+      ) {
+        return { events: [], players: [], sourceUrl: matchPageUrl };
+      }
+
+      throw error;
+    }
+  }
 
   if (detail.players.length === 0 && !options.allowEmptyLineups) {
     throw new Error(`No League One lineups found for match ${matchId}.`);
