@@ -11,7 +11,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.4.0";
+export const PROMPT_VERSION = "recap@4.5.0";
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -38,7 +38,7 @@ export function buildGenerateRecapPrompt(
         "- この試合の核心: 200字以内。試合前の「何 対 何の争い」に対し実際の結果がどう答えたかを1〜2文で述べる",
         "- 試合全体像: 400-500字",
         "- ターニングポイント: 500-600字",
-        "- MOM: 300-400字",
+        "- MOM: 300-400字。projected_lineups または match_events に存在する実名を使い、選出理由を具体化する",
         "- 次戦への示唆: 300-400字",
         "",
         "見出し行には「# セクション名」のみを書くこと。字数指示・説明文を見出し行に含めてはならない。",
@@ -165,6 +165,16 @@ export function buildGenerateRecapPrompt(
         "- key_stats.match.late_scoring が true の場合、終盤まで試合が動いた展開であることを明記すること",
       ].join("\n")
     : "";
+  const lineupUsageBlock = hasLineups
+    ? [
+        "【ラインアップ実名活用】projected_lineups に存在する選手名は積極的に本文へ登場させること。",
+        "- projected_lineups.home から最低3名、projected_lineups.away から最低3名の実名を本文に含めること。",
+        "- キーポジション（9番、10番、11番・14番・15番、主将、2番など）を優先し、先発選手は「先発」として扱うこと。",
+        "- is_starter が false の選手は「ベンチ」「リザーブ」「途中投入候補」として区別し、先発扱いしないこと。",
+        "- 対面ポジションまたは役割が近い選手同士の実名マッチアップを最低1つ描くこと。",
+        "- match_events に存在する得点者・カード対象者などの選手名も実在名として利用してよい。ただし projected_lineups・match_events に存在しない選手名、役職、引退・移籍などの外部文脈は創作しないこと。",
+      ].join("\n")
+    : "";
   const matchPhaseBlock = (() => {
     const phase = assembled.match_phase;
     const homeScore = assembled.match.home_score;
@@ -226,6 +236,7 @@ export function buildGenerateRecapPrompt(
     "各セクションが指定字数の**下限**を下回ってはならない。下限未満なら具体的な事実・戦術分析・選手描写を追加して下限まで書き足すこと。「字数確認済み」などのメタコメントは出力禁止。",
     "事実は入力データと一致させること。直接引用は15語以内。",
     "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。",
+    lineupUsageBlock,
     "出力は日本語マークダウン本文のみ。",
     "強調記号（**、*、__、_）・コードブロック（```）・引用（>）は使用禁止。見出し(#)と箇条書き(-)のみ使用すること。",
     nameStyleInstruction,

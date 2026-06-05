@@ -51,8 +51,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.4.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.4.0");
+  it("uses recap prompt version 4.5.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.5.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -93,6 +93,7 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("見出し行には「# セクション名」のみを書くこと");
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain("MOM セクションは省略すること");
+    expect(prompt).not.toContain("【ラインアップ実名活用】");
     expect(prompt).toContain("全体で2,000字以上を目標とすること");
     expect(prompt).toContain("変更・追加・省略は禁止");
     expect(prompt).toContain("上記5つの見出し以外は絶対に追加してはならない");
@@ -190,10 +191,74 @@ describe("buildGenerateRecapPrompt", () => {
 
     expect(prompt).toContain("# MOM");
     expect(prompt).not.toContain("# MOM（300-400字）");
+    expect(prompt).toContain("実名を使い、選出理由を具体化する");
     expect(prompt).toContain("全体で2,000字以上を目標とすること");
     expect(prompt).toContain(
       "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。",
     );
+  });
+
+  it("requires real lineup names and matchups when lineup data is available", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        projected_lineups: {
+          away: [
+            {
+              is_starter: true,
+              jersey_number: 9,
+              name: "Away Nine",
+              position: "Scrum-half",
+            },
+            {
+              is_starter: true,
+              jersey_number: 10,
+              name: "Away Ten",
+              position: "Fly-half",
+            },
+            {
+              is_starter: false,
+              jersey_number: 22,
+              name: "Away Reserve",
+              position: "Centre",
+            },
+          ],
+          home: [
+            {
+              is_starter: true,
+              jersey_number: 9,
+              name: "Home Nine",
+              position: "Scrum-half",
+            },
+            {
+              is_starter: true,
+              jersey_number: 10,
+              name: "Home Ten",
+              position: "Fly-half",
+            },
+            {
+              is_starter: false,
+              jersey_number: 21,
+              name: "Home Reserve",
+              position: "Scrum-half",
+            },
+          ],
+        },
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("【ラインアップ実名活用】");
+    expect(prompt).toContain("projected_lineups.home から最低3名");
+    expect(prompt).toContain("projected_lineups.away から最低3名");
+    expect(prompt).toContain("実名マッチアップを最低1つ");
+    expect(prompt).toContain("is_starter が false の選手");
+    expect(prompt).toContain("先発扱いしないこと");
+    expect(prompt).toContain(
+      "projected_lineups・match_events に存在しない選手名",
+    );
+    expect(prompt).not.toContain("マーカス・スミス");
   });
 
   it("includes playoff final context with the champion team", () => {

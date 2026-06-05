@@ -51,8 +51,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.1.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.1.0");
+  it("uses preview prompt version 3.2.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.2.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -103,6 +103,7 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).not.toContain("大会文脈・この試合の意味(400-500字)");
     expect(prompt).not.toContain("戦術傾向と注目ポイント(400-500字)");
     expect(prompt).toContain("キープレイヤーセクションは省略すること");
+    expect(prompt).not.toContain("【ラインアップ実名活用】");
     expect(prompt).toContain("【データスパースモード】");
     expect(prompt).toContain("recent_form の直近5試合スコア");
     expect(prompt).toContain("competition_standings の現在順位・勝ち点差");
@@ -112,6 +113,70 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("key_stats.home/away の avg_score_diff_last_5");
     expect(prompt).toContain("key_stats.home/away の result_streak");
     expect(prompt).toContain("逃げ表現は一切禁止");
+  });
+
+  it("requires real lineup names and matchups when lineup data is available", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        projected_lineups: {
+          away: [
+            {
+              is_starter: true,
+              jersey_number: 9,
+              name: "Away Nine",
+              position: "Scrum-half",
+            },
+            {
+              is_starter: true,
+              jersey_number: 10,
+              name: "Away Ten",
+              position: "Fly-half",
+            },
+            {
+              is_starter: false,
+              jersey_number: 22,
+              name: "Away Reserve",
+              position: "Centre",
+            },
+          ],
+          home: [
+            {
+              is_starter: true,
+              jersey_number: 9,
+              name: "Home Nine",
+              position: "Scrum-half",
+            },
+            {
+              is_starter: true,
+              jersey_number: 10,
+              name: "Home Ten",
+              position: "Fly-half",
+            },
+            {
+              is_starter: false,
+              jersey_number: 21,
+              name: "Home Reserve",
+              position: "Scrum-half",
+            },
+          ],
+        },
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("キープレイヤー/注目マッチアップ");
+    expect(prompt).toContain("【ラインアップ実名活用】");
+    expect(prompt).toContain("projected_lineups.home から最低3名");
+    expect(prompt).toContain("projected_lineups.away から最低3名");
+    expect(prompt).toContain("実名マッチアップを最低1つ");
+    expect(prompt).toContain("is_starter が false の選手");
+    expect(prompt).toContain("先発扱いしないこと");
+    expect(prompt).toContain(
+      "projected_lineups・match_events に存在しない選手名",
+    );
+    expect(prompt).not.toContain("マーカス・スミス");
   });
 
   it("includes competition standings only when present", () => {
