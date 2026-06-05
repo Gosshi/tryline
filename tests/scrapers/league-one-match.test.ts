@@ -127,4 +127,15 @@ describe("parseLeagueOneMatchPrintHtml", () => {
       },
     ]);
   });
+
+  it("returns empty lineups when the print page has no announced members", () => {
+    const result = parseLeagueOneMatchPrintHtml(`
+      <section id="team">
+        <p>Members will be announced later.</p>
+      </section>
+    `);
+
+    expect(result.players).toEqual([]);
+    expect(result.events).toEqual([]);
+  });
 });

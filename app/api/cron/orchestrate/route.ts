@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { POST as ingestLeagueOneLineupsRoute } from "@/app/api/cron/ingest-league-one-lineups/route";
 import { POST as ingestLineupsRoute } from "@/app/api/cron/ingest-lineups/route";
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { runOrchestrate } from "@/lib/cron/orchestrate";
@@ -11,18 +12,26 @@ import type { PushMatchInfo } from "@/lib/cron/orchestrate";
 
 export const maxDuration = 300;
 
-async function ingestLineups(matchId: string): Promise<"triggered" | "no_url"> {
+async function ingestLineups(
+  matchId: string,
+  competitionFamily?: string | null,
+): Promise<"triggered" | "no_url"> {
   const { CRON_SECRET } = getServerEnv();
-  const response = await ingestLineupsRoute(
-    new Request(
-      `http://localhost/api/cron/ingest-lineups?match_id=${matchId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${CRON_SECRET}`,
-        },
+  const route =
+    competitionFamily === "league-one"
+      ? ingestLeagueOneLineupsRoute
+      : ingestLineupsRoute;
+  const pathname =
+    competitionFamily === "league-one"
+      ? "ingest-league-one-lineups"
+      : "ingest-lineups";
+  const response = await route(
+    new Request(`http://localhost/api/cron/${pathname}?match_id=${matchId}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CRON_SECRET}`,
       },
-    ),
+    }),
   );
 
   if (response.ok) {

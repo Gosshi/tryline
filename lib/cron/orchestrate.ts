@@ -48,7 +48,10 @@ export type RunOrchestrateDeps = {
     contentType: ContentType,
     language?: ContentLanguage,
   ) => Promise<{ status?: string } | void>;
-  ingestLineups: (matchId: string) => Promise<LineupIngestOutcome>;
+  ingestLineups: (
+    matchId: string,
+    competitionFamily?: string | null,
+  ) => Promise<LineupIngestOutcome>;
   now?: Date;
   sendPushNotification?: (info: PushMatchInfo) => Promise<void>;
 };
@@ -239,8 +242,12 @@ export async function runOrchestrate(
   await Promise.all(
     previewCandidates.eligibleMatches.map(async (match) => {
       const matchId = match.id;
+      const competitionFamily = firstRelation(match.competition)?.family ?? null;
       try {
-        const lineupOutcome = await deps.ingestLineups(matchId);
+        const lineupOutcome = await deps.ingestLineups(
+          matchId,
+          competitionFamily,
+        );
         if (lineupOutcome === "no_url") {
           result.lineups.no_url += 1;
         } else {
