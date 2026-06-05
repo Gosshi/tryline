@@ -57,6 +57,18 @@ node --env-file=.env.production.local tools/run-ts.cjs scripts/import-league-one
 # 流大/中村亮土 が match_29559 の match_lineups に存在するか
 ```
 
+## 追加タスク（2026-06-05・PR #367 実行で判明した残バグ）
+
+PR #367 は **finished 試合のみ動作**。scheduled（3決・決勝）は **HTTP 500** で取り込めない。確定根因＝`fetchLeagueOneMatchDetail` が `https://league-one.jp/match/{id}/print` を叩くが、**print ページは finished のみ生成**（`/match/29559/print` は 404）。spec「追記（2026-06-05）」参照。
+
+直すこと:
+1. **scheduled の lineup ソースを `?t1=1` 系の試合ページにフォールバック**（`/print` は finished 用に残してよい）。`lib/scrapers/league-one-match.ts` の `fetchLeagueOneMatchDetail` / `parseLineupPlayers` を、試合前に存在する URL の HTML 構造に対応させる。
+2. **print 404（lineup ソース不在）を 500 にせず `no_lineup` で正常終了**（`fetchWithPolicy` の 404 を catch）。
+3. テスト追加: 404→no_lineup（500にならない）、`?t1=1` HTML から 23×2 抽出、`/match/29559` で `流大`/`中村亮土` がリザーブとして取れる。
+4. 検証: 3決 `96863688-cf14-40f8-b3d7-8d485ae5504b`（status=scheduled・メンバー発表済）で取込成功（46行）すること。
+
+参考: finished 4試合（QF/SF）は現状でも46行ずつ取込成功済み（回帰させない）。
+
 ## 注意（CLAUDE.md 準拠）
 
 - 本番 DB 書込・プレビュー再生成は Owner 承認後に Owner が実行。Codex は production キーで自動実行しない。

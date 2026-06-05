@@ -104,7 +104,32 @@
 1. **恒久化の形**: 案A（既存手動スクリプトを playoff 対応に拡張）か、案B（cron 化）か。RWC2027 まで運用が続く前提なら案B推奨。
 2. **upcoming 取込の頻度**: 決勝/3決の試合前反映をどこまで自動化するか（毎日 cron か、試合の前日に手動トリガか）。
 3. **league_one_match_id の取得元**: 案Bで DB から回す場合、`wikipedia_event_id` の `match_` プレフィックスを剥がして数値 id を使う想定でよいか（`match_29559` → `29559`）。
-4. **`/print` ページの可用性**: upcoming 試合でも `/match/{id}/print` にメンバーが出るか（`?t1=1` タブとの差異）。出ない場合のフォールバック。
+4. ~~**`/print` ページの可用性**: upcoming 試合でも `/match/{id}/print` にメンバーが出るか~~ → **確定済（2026-06-05）: scheduled は `/print` が404。`?t1=1` 系へのフォールバック必須。上「追記」参照。**
+
+## 追記（2026-06-05・PR #367 マージ後の実行結果＝確定根因）
+
+PR #367（`lib/ingestion/league-one-lineups.ts` + `app/api/cron/ingest-league-one-lineups`）をマージし、手動 workflow（PR #368）で6試合を取込実行した結果：
+
+- ✅ **finished 4試合（QF×2・SF×2）= 各46行（23×2）取込成功**。
+- ❌ **scheduled 2試合（3決・決勝）= HTTP 500**。
+
+確定根因（実測）:
+- ingester は `fetchLeagueOneMatchDetail` で **`https://league-one.jp/match/{id}/print`** を取得するが、**この print ページは「終了した試合」しか生成されない**。`https://league-one.jp/match/29559/print`（3決・メンバー発表済）は **HTTP 404**。
+- `fetchWithPolicy` が 404 で throw → ルートが 500。`allowEmptyLineups: true` は print が 200 で返る前提のため効かない（取得自体が失敗）。
+- 公式のメンバーは **`/match/{id}?t1=1`（試合ページのタブ）** には試合前から出るが、`/print` には出ない。→ 旧 spec の「未解決の質問 #4」が的中。
+
+### この修正の狙い（なぜ優先するか）
+単なるバグ潰しではなく**プロダクト価値の投資**。試合前に lineup を反映できると、プレビューが実名で厚くなる（注目マッチアップ／スター先発の明示／引退等の人間ドラマ／AIチャットの土台／実名による SEO 厚み）。「試合中心データモデル」の不変条件にも素直に乗り、コンテンツと AI チャットの両方に効く。優先度は中バグより上で扱ってよい。
+
+### 追加要件（この修正で必ず対応）
+1. **scheduled（試合前）の lineup ソースを `?t1=1` 系の試合ページに切替/フォールバック**する。`/print` は finished のみ。
+   - 実装案: `fetchLeagueOneMatchDetail` を「status か print 404 を見て」`/match/{id}`（t1=1 タブ）からも lineup を抽出できるようにする。パーサ（`parseLineupPlayers`）が両 HTML 構造に対応するか確認。
+2. **404 を 500 にしない**: print 404（or lineup ソース不在）は **`no_lineup` として正常終了**（spec 受け入れ条件#3）。`fetchWithPolicy` の 404 を catch して扱う。
+3. 受け入れ条件#4（scheduled でも取り込める）の検証を、**`/print` ではなく試合前に存在する URL**で行うこと。
+
+### post-match の挙動（運用メモ）
+- 3決は6/6、決勝は6/7の**試合後に `/print` が生成**される。現コードのままでも、**試合後に workflow（PR #368）を再実行すれば lineup＋recap は入る**。
+- したがって「試合後の実名反映」は現状でも可能。**未対応なのは「試合前の実名プレビュー」だけ**。
 
 ## 週末の暫定対応（この修正と並行・Track B 用メモ）
 - 修正完了まで、決勝Xは「スタメン反映済プレビュー」と謳わず**プレビューへの送客のみ**に弱める（`docs/x-drafts-weekend-2026-06.md` ③ の注記参照）。

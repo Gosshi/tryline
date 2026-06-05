@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { parseLeagueOneMatchPrintHtml } from "@/lib/scrapers/league-one-match";
+import {
+  parseLeagueOneMatchPageHtml,
+  parseLeagueOneMatchPrintHtml,
+} from "@/lib/scrapers/league-one-match";
 
 const HTML = `
 <section id="team">
@@ -137,5 +140,64 @@ describe("parseLeagueOneMatchPrintHtml", () => {
 
     expect(result.players).toEqual([]);
     expect(result.events).toEqual([]);
+  });
+
+  it("parses scheduled match-page lineups from t1=1 member lists", () => {
+    function member(side: "a" | "h", jerseyNumber: number, name: string) {
+      return [
+        `<style>li#${side}${jerseyNumber}:before { content: "${jerseyNumber}"; }</style>`,
+        `<li id="${side}${jerseyNumber}"><a href="/player/${jerseyNumber}">`,
+        `${name}<br><span class="player-info">180cm/90kg/30歳/カテゴリA</span>`,
+        "</a></li>",
+      ].join("");
+    }
+
+    const homeMembers = Array.from({ length: 23 }, (_, index) => {
+      const jerseyNumber = index + 1;
+      const name =
+        jerseyNumber === 21
+          ? "流 大"
+          : jerseyNumber === 22
+            ? "中村 亮土"
+            : `東京 選手${jerseyNumber}`;
+
+      return member("h", jerseyNumber, name);
+    });
+    const awayMembers = Array.from({ length: 23 }, (_, index) => {
+      const jerseyNumber = index + 1;
+
+      return member("a", jerseyNumber, `埼玉 選手${jerseyNumber}`);
+    });
+    const result = parseLeagueOneMatchPageHtml(`
+      <h2 class="match-subttl">メンバー</h2>
+      <h3 class="c-title-5">東京サントリーサンゴリアス</h3>
+      <h4 class="c-title-4 ta-c">スターティングメンバー</h4>
+      <ol class="match-member match-member-left starting-member">${homeMembers.slice(0, 15).join("")}</ol>
+      <h4 class="c-title-4 ta-c">リサーブメンバー</h4>
+      <ol class="match-member match-member-left">${homeMembers.slice(15).join("")}</ol>
+      <h3 class="c-title-5">埼玉パナソニックワイルドナイツ</h3>
+      <h4 class="c-title-4 ta-c">スターティングメンバー</h4>
+      <ol class="match-member match-member-right starting-member">${awayMembers.slice(0, 15).join("")}</ol>
+      <h4 class="c-title-4 ta-c">リサーブメンバー</h4>
+      <ol class="match-member match-member-right">${awayMembers.slice(15).join("")}</ol>
+    `);
+
+    expect(result.players).toHaveLength(46);
+    expect(result.players).toContainEqual({
+      jersey_number: 21,
+      player_name: "流大",
+      team_side: "home",
+    });
+    expect(result.players).toContainEqual({
+      jersey_number: 22,
+      player_name: "中村亮土",
+      team_side: "home",
+    });
+    expect(
+      result.players.filter((player) => player.team_side === "home"),
+    ).toHaveLength(23);
+    expect(
+      result.players.filter((player) => player.team_side === "away"),
+    ).toHaveLength(23);
   });
 });

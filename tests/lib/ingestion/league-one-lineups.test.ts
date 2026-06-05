@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildLeagueOnePlayerSlug,
+  buildLeagueOneMatchPageLineupUrl,
   buildLeagueOnePrintUrl,
   extractLeagueOneMatchNumber,
   isLeagueOneLineupTarget,
@@ -17,6 +18,9 @@ describe("League One lineup ingestion helpers", () => {
     ).toBe(29559);
     expect(buildLeagueOnePrintUrl(29559)).toBe(
       "https://league-one.jp/match/29559/print",
+    );
+    expect(buildLeagueOneMatchPageLineupUrl(29559)).toBe(
+      "https://league-one.jp/match/29559?t1=1",
     );
   });
 

@@ -73,6 +73,10 @@ export function buildLeagueOnePrintUrl(matchNumber: number): string {
   return `${LEAGUE_ONE_BASE_URL}/match/${matchNumber}/print`;
 }
 
+export function buildLeagueOneMatchPageLineupUrl(matchNumber: number): string {
+  return `${LEAGUE_ONE_BASE_URL}/match/${matchNumber}?t1=1`;
+}
+
 export function isLeagueOneLineupTarget(
   target: LeagueOneLineupTarget,
 ): boolean {
@@ -192,7 +196,7 @@ async function upsertMatchLineups(params: {
   db: LeagueOneLineupsDb;
   detail: LeagueOneMatchDetail;
   match: LeagueOneLineupTarget;
-  printUrl: string;
+  sourceUrl: string;
 }) {
   const homePlayers = params.detail.players.filter(
     (player) => player.team_side === "home",
@@ -231,7 +235,7 @@ async function upsertMatchLineups(params: {
         jersey_number: player.jersey_number,
         match_id: params.match.id,
         player_id: playerId,
-        source_url: params.printUrl,
+        source_url: params.sourceUrl,
         team_id: teamId,
       },
     ];
@@ -299,7 +303,6 @@ export async function ingestLeagueOneLineups(params: {
     const detail = await fetchMatchDetail(matchNumber, {
       allowEmptyLineups: true,
     });
-    const printUrl = buildLeagueOnePrintUrl(matchNumber);
 
     if (detail.players.length === 0) {
       result.no_lineup += 1;
@@ -311,7 +314,7 @@ export async function ingestLeagueOneLineups(params: {
       db: params.db,
       detail,
       match: target,
-      printUrl,
+      sourceUrl: detail.sourceUrl,
     });
     result.processed += 1;
   }
