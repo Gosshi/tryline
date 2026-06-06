@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   generateNarrative,
   reviseNarrativeLength,
+  stripWrappingCodeFence,
 } from "@/lib/llm/stages/generate-narrative";
 
 const openAIMock = vi.hoisted(() => ({
@@ -54,6 +55,35 @@ const assembled = {
   score_timeline: null,
   sourced_facts: [],
 };
+
+describe("stripWrappingCodeFence", () => {
+  it("removes a wrapping markdown code fence", () => {
+    expect(
+      stripWrappingCodeFence("```markdown\n# 見出し\n本文\n```"),
+    ).toBe("# 見出し\n本文");
+  });
+
+  it("removes a wrapping unlabeled code fence", () => {
+    expect(stripWrappingCodeFence("```\n# 見出し\n```")).toBe("# 見出し");
+  });
+
+  it("leaves unfenced content unchanged", () => {
+    expect(stripWrappingCodeFence("# 見出し\n本文")).toBe("# 見出し\n本文");
+  });
+
+  it("leaves internal-only code fences unchanged", () => {
+    const content = "# 見出し\n```markdown\n本文\n```";
+
+    expect(stripWrappingCodeFence(content)).toBe(content);
+  });
+
+  it("leaves unmatched opening or closing fences unchanged", () => {
+    expect(stripWrappingCodeFence("```markdown\n# 見出し")).toBe(
+      "```markdown\n# 見出し",
+    );
+    expect(stripWrappingCodeFence("# 見出し\n```")).toBe("# 見出し\n```");
+  });
+});
 
 describe("generateNarrative", () => {
   beforeEach(() => {
@@ -144,6 +174,24 @@ describe("generateNarrative", () => {
         ),
       }),
     );
+  });
+
+  it("strips wrapping code fences from generated content", async () => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: "```markdown\n# preview\n本文\n```",
+      model: "gpt-4o-2024-11-20",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    const result = await generateNarrative({
+      additionalSignals: [],
+      assembled,
+      attempt: 0,
+      contentType: "preview",
+      tacticalPoints: [],
+    });
+
+    expect(result.content).toBe("# preview\n本文");
   });
 
   it("uses the strengthened English preview prompt and version", async () => {
@@ -242,5 +290,25 @@ describe("generateNarrative", () => {
         input: expect.stringContaining("最終出力は1500字以上"),
       }),
     );
+  });
+
+  it("strips wrapping code fences from length revision content", async () => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: "```\n# revised\n本文\n```",
+      model: "gpt-4o-2024-11-20",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    const result = await reviseNarrativeLength({
+      additionalSignals: [],
+      assembled,
+      contentType: "preview",
+      currentContent: "# short",
+      language: "ja",
+      promptVersion: "preview@3.3.0",
+      tacticalPoints: [],
+    });
+
+    expect(result.content).toBe("# revised\n本文");
   });
 });

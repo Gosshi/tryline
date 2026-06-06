@@ -37,6 +37,17 @@ export type NarrativeResponse = {
   temperature: number;
 };
 
+export function stripWrappingCodeFence(text: string): string {
+  const trimmed = text.trim();
+  const match = trimmed.match(/^```[^\r\n]*\r?\n([\s\S]*)\r?\n```$/);
+
+  if (!match) {
+    return text;
+  }
+
+  return match[1]?.trim() ?? "";
+}
+
 export async function generateNarrative(options: {
   assembled: AssembledContentInput;
   tacticalPoints: TacticalPoint[];
@@ -65,7 +76,7 @@ export async function generateNarrative(options: {
   });
 
   return {
-    content: response.text,
+    content: stripWrappingCodeFence(response.text),
     modelVersion: response.model,
     promptVersion:
       language === "en"
@@ -109,7 +120,7 @@ export async function reviseNarrativeLength(options: {
   });
 
   return {
-    content: response.text,
+    content: stripWrappingCodeFence(response.text),
     modelVersion: response.model,
     promptVersion: `${options.promptVersion}+${LENGTH_REVISION_PROMPT_VERSION}`,
     usage: response.usage,
