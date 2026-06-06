@@ -1,6 +1,8 @@
 import type {
   SourcedFact,
   SourcedFactConfidence,
+  SourcedFactRejection,
+  SourcedFactRejectionReason,
 } from "@/lib/llm/sourced-facts/types";
 
 const OFFICIAL_DOMAINS = [
@@ -83,12 +85,31 @@ function normalizeConfidence(
   return "medium";
 }
 
+const SCORE_PATTERN = /\b\d{1,3}\s*[-–]\s*\d{1,3}\b/;
+const RELATIVE_RECENCY_PATTERN =
+  /\b(most recent|latest encounter|latest meeting|previous meeting|previous encounter|last time they met|last meeting|last encounter)\b/i;
+
+export function getDbAuthoritativeFactRejectionReason(
+  fact: string,
+): SourcedFactRejectionReason | null {
+  if (SCORE_PATTERN.test(fact)) {
+    return "db_authoritative_score";
+  }
+
+  if (RELATIVE_RECENCY_PATTERN.test(fact)) {
+    return "db_authoritative_relative_recency";
+  }
+
+  return null;
+}
+
 export function filterAllowedSourcedFacts(
   facts: Array<{
     confidence?: unknown;
     fact?: unknown;
     source_url?: unknown;
   }>,
+  options?: { rejected?: SourcedFactRejection[] },
 ): SourcedFact[] {
   const normalized = facts
     .map((item) => {
@@ -108,6 +129,16 @@ export function filterAllowedSourcedFacts(
         !sourceDomain ||
         !isAllowedSourcedFactDomain(sourceDomain)
       ) {
+        return null;
+      }
+
+      const dbAuthoritativeReason =
+        getDbAuthoritativeFactRejectionReason(fact);
+      if (dbAuthoritativeReason) {
+        options?.rejected?.push({
+          fact,
+          reason: dbAuthoritativeReason,
+        });
         return null;
       }
 

@@ -2,12 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   filterAllowedSourcedFacts,
+  getDbAuthoritativeFactRejectionReason,
   isAllowedSourcedFactDomain,
 } from "@/lib/llm/sourced-facts/allowlist";
 import {
   fetchSourcedFactsForMatch,
   parseSourcedFactsResponse,
 } from "@/lib/llm/sourced-facts/fetch";
+
+import type { SourcedFactRejection } from "@/lib/llm/sourced-facts/types";
 
 const dbMock = vi.hoisted(() => ({
   from: vi.fn(),
@@ -97,6 +100,69 @@ describe("sourced facts allowlist", () => {
     ]);
 
     expect(facts[0]?.confidence).toBe("high");
+  });
+
+  it("rejects DB-authoritative score facts", () => {
+    const rejected: SourcedFactRejection[] = [];
+    const facts = filterAllowedSourcedFacts(
+      [
+        {
+          confidence: "high",
+          fact: "Kubota Spears defeated Kobelco Kobe 33-28 in their December meeting.",
+          source_url: "https://www.rugbypass.com/news/result",
+        },
+      ],
+      { rejected },
+    );
+
+    expect(facts).toEqual([]);
+    expect(rejected).toEqual([
+      {
+        fact: "Kubota Spears defeated Kobelco Kobe 33-28 in their December meeting.",
+        reason: "db_authoritative_score",
+      },
+    ]);
+    expect(
+      getDbAuthoritativeFactRejectionReason("Kobe won 24–19 in May."),
+    ).toBe("db_authoritative_score");
+  });
+
+  it("rejects relative recency claims", () => {
+    const facts = filterAllowedSourcedFacts([
+      {
+        confidence: "high",
+        fact: "In their most recent encounter, Kubota Spears beat Kobe.",
+        source_url: "https://www.rugbypass.com/news/recent",
+      },
+    ]);
+
+    expect(facts).toEqual([]);
+    expect(
+      getDbAuthoritativeFactRejectionReason(
+        "In their latest encounter, Kubota Spears beat Kobe.",
+      ),
+    ).toBe("db_authoritative_relative_recency");
+  });
+
+  it("allows off-DB injury and lineup facts", () => {
+    const facts = filterAllowedSourcedFacts([
+      {
+        confidence: "medium",
+        fact: "Player X is out with a hamstring injury.",
+        source_url: "https://www.rugbypass.com/news/injury",
+      },
+      {
+        confidence: "medium",
+        fact: "Kobe lineup features Retallick, Savea.",
+        source_url: "https://www.rugbypass.com/news/lineup",
+      },
+    ]);
+
+    expect(facts).toHaveLength(2);
+    expect(facts.map((fact) => fact.fact)).toEqual([
+      "Player X is out with a hamstring injury.",
+      "Kobe lineup features Retallick, Savea.",
+    ]);
   });
 });
 
@@ -251,6 +317,40 @@ describe("fetchSourcedFactsForMatch", () => {
         }),
       ],
       { onConflict: "match_id,fact" },
+    );
+  });
+
+  it("scopes web search away from DB-authoritative records and results", async () => {
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    const input = openAIMock.createWebSearchJsonResponse.mock.calls[0]?.[0]
+      ?.input as string;
+    expect(input).not.toContain("head-to-head");
+    expect(input).not.toContain("recent form");
+    expect(input).toContain("player news such as retirements");
+    expect(input).toContain(
+      "Do not return past result scores, league standings, or win/loss records",
+    );
+    expect(input).toContain(
+      "Never use relative recency phrasing such as 'most recent'",
     );
   });
 });
