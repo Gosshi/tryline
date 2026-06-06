@@ -231,6 +231,14 @@ function buildEnglishNarrativePrompt(options: {
     options.additionalSignals.length === 0
       ? ""
       : `Additional signals, if useful with careful attribution: ${JSON.stringify(options.additionalSignals)}`;
+  const sourcedFactsBlock =
+    options.assembled.sourced_facts.length === 0
+      ? ""
+      : [
+          "Allowed sourced facts:",
+          JSON.stringify(options.assembled.sourced_facts),
+          "Use these facts only by paraphrasing. Do not invent web-sourced injuries, absences, quotes, statistics, or player news not listed here.",
+        ].join("\n");
 
   return [
     `You are a rugby journalist. Write a detailed ${contentLabel} in English.`,
@@ -251,6 +259,7 @@ function buildEnglishNarrativePrompt(options: {
     "Direct quotations must be 15 words or fewer.",
     "The home_score and away_score fields are the authoritative final score when present. The higher score is the winner.",
     eventsInstruction,
+    sourcedFactsBlock,
     !isPreview && !hasLineups
       ? "For recaps without lineup data, omit the Player of the Match section rather than inventing a standout player."
       : "",

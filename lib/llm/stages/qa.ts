@@ -105,12 +105,18 @@ function applyDeterministicQaGuards(
     contentType: ContentType;
     hasEvents: boolean;
     language: ContentLanguage;
+    matchContext: QaMatchContext;
     narrative: string;
   },
 ): QaResult {
   let guarded = result;
 
-  if (containsUnsupportedStatistic(options.narrative)) {
+  if (
+    containsUnsupportedStatistic(
+      options.narrative,
+      options.matchContext.sourcedFacts?.map((fact) => fact.fact) ?? [],
+    )
+  ) {
     guarded = {
       ...guarded,
       issues: appendIssue(guarded.issues, UNSUPPORTED_STATISTIC_ISSUE),
@@ -165,6 +171,7 @@ function parseQaResponse(
     contentType: ContentType;
     hasEvents: boolean;
     language: ContentLanguage;
+    matchContext: QaMatchContext;
     narrative: string;
   },
 ): QaResult {
@@ -229,6 +236,7 @@ export async function evaluateNarrativeQuality(options: {
         contentType: options.contentType,
         hasEvents,
         language: options.language ?? "ja",
+        matchContext: options.matchContext,
         narrative: options.narrative,
       });
 

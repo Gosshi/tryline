@@ -48,6 +48,7 @@ const assembled: AssembledContentInput = {
     },
   },
   score_timeline: null,
+  sourced_facts: [],
 };
 
 describe("buildGeneratePreviewPrompt", () => {
@@ -291,11 +292,34 @@ describe("buildGeneratePreviewPrompt", () => {
     const prompt = buildGeneratePreviewPrompt(assembled, [], []);
 
     expect(prompt).toContain(
-      "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること",
+      "選手名は入力データ（projected_lineups・match_events・sourced_facts）に含まれるものだけを使用すること",
     );
     expect(prompt).toContain(
       "データに存在しない選手名を推測・創作してはならない",
     );
     expect(prompt).toContain("ラインアップが空の場合は選手名に言及せず");
+  });
+
+  it("includes sourced facts with paraphrase and grounding guardrails", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        sourced_facts: [
+          {
+            confidence: "high",
+            fact: "Malcolm Marx is expected to miss the final through injury.",
+            source_domain: "rugbypass.com",
+            source_url: "https://www.rugbypass.com/news/marx",
+          },
+        ],
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("【出典付き補強事実 sourced_facts】");
+    expect(prompt).toContain("Malcolm Marx is expected to miss");
+    expect(prompt).toContain("自分の日本語で言い換えること");
+    expect(prompt).toContain("sourced_facts に含まれないWeb由来");
   });
 });

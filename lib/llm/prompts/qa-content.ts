@@ -1,6 +1,10 @@
 import { getContentLengthRequirement } from "@/lib/llm/content-length";
 
-import type { ContentLanguage, ContentType } from "@/lib/llm/types";
+import type {
+  ContentLanguage,
+  ContentType,
+  SourcedFactInput,
+} from "@/lib/llm/types";
 
 export const PROMPT_VERSION = "qa@2.1.0";
 
@@ -9,6 +13,7 @@ export type QaMatchContext = {
   awayTeam: string;
   homeScore: number | null;
   homeTeam: string;
+  sourcedFacts?: SourcedFactInput[];
 };
 
 export function buildQaContentPrompt(
@@ -61,6 +66,15 @@ export function buildQaContentPrompt(
           "information_density のスコアを最大 3 に制限すること。",
         ].join("\n")
       : "";
+  const sourcedFactsBlock =
+    matchContext.sourcedFacts && matchContext.sourcedFacts.length > 0
+      ? [
+          "## sourced_facts grounding",
+          "以下はallowlist済み出典から抽出された許可済み事実です。本文の事実根拠としてDB入力と同等に扱ってよい。",
+          "ただし、本文がこの一覧に無いWeb由来の統計・欠場・負傷・発言・カード情報を述べている場合は factual_grounding を下げること。",
+          JSON.stringify(matchContext.sourcedFacts),
+        ].join("\n")
+      : "";
 
   return [
     `あなたは編集デスクです。以下の${languageLabel}コンテンツを品質評価してください。`,
@@ -97,6 +111,7 @@ export function buildQaContentPrompt(
     ].join("\n"),
     winnerCheckBlock,
     turningPointCheckBlock,
+    sourcedFactsBlock,
     'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[]}',
     `本文: ${narrative}`,
   ].join("\n\n");

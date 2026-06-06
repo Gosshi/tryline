@@ -276,6 +276,45 @@ describe("evaluateNarrativeQuality", () => {
     expect(result.result.verdict).toBe("reject");
   });
 
+  it("allows sourced facts to ground otherwise unsupported statistics", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      matchContext: {
+        ...matchContext,
+        sourcedFacts: [
+          {
+            confidence: "high",
+            fact: "Ireland had an 85% lineout success rate in the semifinal.",
+            source_domain: "rugbypass.com",
+            source_url: "https://www.rugbypass.com/news/lineout",
+          },
+        ],
+      },
+      narrative: `# 見どころ\nIrelandはラインアウト成功率85%を足場に戦う。${longJaPreview}`,
+      retryCount: 0,
+    });
+
+    expect(result.result.scores.factual_grounding).toBe(5);
+    expect(result.result.issues).not.toContain(
+      "データに存在しない統計値を含む",
+    );
+    expect(result.result.verdict).toBe("publish");
+  });
+
   it("caps information density for a short 1107-character recap", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       text: JSON.stringify({

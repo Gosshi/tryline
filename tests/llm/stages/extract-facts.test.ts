@@ -49,6 +49,7 @@ const assembled = {
     },
   },
   score_timeline: null,
+  sourced_facts: [],
 };
 
 const tacticalPoints = [
