@@ -4,7 +4,10 @@ import {
   filterAllowedSourcedFacts,
   isAllowedSourcedFactDomain,
 } from "@/lib/llm/sourced-facts/allowlist";
-import { fetchSourcedFactsForMatch } from "@/lib/llm/sourced-facts/fetch";
+import {
+  fetchSourcedFactsForMatch,
+  parseSourcedFactsResponse,
+} from "@/lib/llm/sourced-facts/fetch";
 
 const dbMock = vi.hoisted(() => ({
   from: vi.fn(),
@@ -94,6 +97,74 @@ describe("sourced facts allowlist", () => {
     ]);
 
     expect(facts[0]?.confidence).toBe("high");
+  });
+});
+
+describe("parseSourcedFactsResponse", () => {
+  const allowedFact = {
+    confidence: "medium",
+    fact: "Malcolm Marx is expected to miss the final through injury.",
+    source_url: "https://www.rugbypass.com/news/marx",
+  };
+
+  it("extracts facts from a plain JSON string", () => {
+    const facts = parseSourcedFactsResponse(
+      JSON.stringify({ facts: [allowedFact] }),
+    );
+
+    expect(facts).toHaveLength(1);
+    expect(facts[0]?.source_domain).toBe("rugbypass.com");
+  });
+
+  it("extracts facts from a json code fence", () => {
+    const facts = parseSourcedFactsResponse(
+      [
+        "```json",
+        JSON.stringify({ facts: [allowedFact] }),
+        "```",
+      ].join("\n"),
+    );
+
+    expect(facts).toHaveLength(1);
+    expect(facts[0]?.fact).toBe(allowedFact.fact);
+  });
+
+  it("extracts facts from JSON with surrounding prose", () => {
+    const facts = parseSourcedFactsResponse(
+      `Here are the sourced facts:\n${JSON.stringify({
+        facts: [allowedFact],
+      })}\nUse them carefully.`,
+    );
+
+    expect(facts).toHaveLength(1);
+    expect(facts[0]?.confidence).toBe("medium");
+  });
+
+  it("returns an empty array for invalid non-JSON text", () => {
+    expect(parseSourcedFactsResponse("not json")).toEqual([]);
+    expect(parseSourcedFactsResponse("")).toEqual([]);
+    expect(parseSourcedFactsResponse('{"facts":')).toEqual([]);
+    expect(
+      parseSourcedFactsResponse('{"facts":{"fact":"not an array"}}'),
+    ).toEqual([]);
+  });
+
+  it("filters out non-allowlisted domains", () => {
+    const facts = parseSourcedFactsResponse(
+      JSON.stringify({
+        facts: [
+          allowedFact,
+          {
+            confidence: "high",
+            fact: "A betting site lists made-up team news.",
+            source_url: "https://www.sportytrader.com/rugby",
+          },
+        ],
+      }),
+    );
+
+    expect(facts).toHaveLength(1);
+    expect(facts[0]?.source_domain).toBe("rugbypass.com");
   });
 });
 

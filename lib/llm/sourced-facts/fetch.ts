@@ -157,9 +157,38 @@ function buildSearchPrompt(match: MatchForSourcedFacts, contentType: ContentType
   ].join("\n\n");
 }
 
-function parseSourcedFactsResponse(text: string): SourcedFact[] {
-  const parsed = JSON.parse(text) as ParsedSourcedFactsResponse;
-  return filterAllowedSourcedFacts(Array.isArray(parsed.facts) ? parsed.facts : []);
+function extractJsonObjectText(text: string): string | null {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const candidate = fenced?.[1]?.trim() ?? trimmed;
+  const firstBrace = candidate.indexOf("{");
+  const lastBrace = candidate.lastIndexOf("}");
+
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+    return null;
+  }
+
+  return candidate.slice(firstBrace, lastBrace + 1);
+}
+
+export function parseSourcedFactsResponse(text: string): SourcedFact[] {
+  const jsonText = extractJsonObjectText(text);
+  if (!jsonText) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(jsonText) as ParsedSourcedFactsResponse;
+    return filterAllowedSourcedFacts(
+      Array.isArray(parsed.facts) ? parsed.facts : [],
+    );
+  } catch {
+    return [];
+  }
 }
 
 function metadataForFact(params: {
