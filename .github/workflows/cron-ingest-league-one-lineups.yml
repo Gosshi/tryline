@@ -33,6 +33,10 @@ on:
         type: choice
         options: ["ja", "en"]
         default: "ja"
+      fetch_facts:
+        description: "再生成前に web 検索で sourced_facts を取得する"
+        type: boolean
+        default: false
 
 jobs:
   backfill:
@@ -71,6 +75,26 @@ jobs:
               "$BASE/api/cron/ingest-league-one-lineups?match_id=$id" -H "$AUTH")
             echo "HTTP $code"; cat /tmp/resp.json; echo
             if [ "$code" != "200" ]; then echo "WARN: ingest non-200 for $id"; fi
+          done
+
+      - name: Fetch web sourced facts
+        if: ${{ inputs.fetch_facts }}
+        run: |
+          set -uo pipefail
+          FINISHED="${{ steps.targets.outputs.finished }}"
+          SCHEDULED="${{ steps.targets.outputs.scheduled }}"
+          classify() {
+            case " $FINISHED " in *" $1 "*) echo recap; return;; esac
+            case " $SCHEDULED " in *" $1 "*) echo preview; return;; esac
+            echo preview
+          }
+          for id in ${{ steps.targets.outputs.targets }}; do
+            if [ "$CONTENT_TYPE" = "auto" ]; then ct=$(classify "$id"); else ct="$CONTENT_TYPE"; fi
+            echo "== fetch-sourced-facts $ct: $id =="
+            code=$(curl -s -o /tmp/sf.json -w "%{http_code}" -X POST \
+              "$BASE/api/cron/fetch-sourced-facts?match_id=$id&content_type=$ct&force=true" -H "$AUTH")
+            echo "HTTP $code"; cat /tmp/sf.json; echo
+            if [ "$code" != "200" ]; then echo "WARN: fetch-sourced-facts non-200 for $id"; fi
           done
 
       - name: Regenerate content
