@@ -42,6 +42,15 @@ export function buildGeneratePreviewPrompt(
   ].join("\n");
   const prohibitionsBlock = PROHIBITIONS_BLOCK;
   const signalsBlock = buildSignalsBlock(additionalSignals);
+  const sourcedFactsBlock =
+    assembled.sourced_facts.length === 0
+      ? ""
+      : [
+          "【出典付き補強事実 sourced_facts】以下はallowlist済みの信頼ソースから抽出した事実です。本文の根拠として使ってよい。",
+          "使う場合は必ず自分の日本語で言い換えること。原文の長い直接引用は禁止。同一ソースから複数引用しないこと。",
+          "sourced_facts に含まれないWeb由来の負傷・欠場・統計・発言を推測して書いてはならない。",
+          JSON.stringify(assembled.sourced_facts),
+        ].join("\n");
   const standingsBlock = buildStandingsBlock(
     assembled.competition_standings,
     "preview",
@@ -115,7 +124,8 @@ export function buildGeneratePreviewPrompt(
     "各セクションが指定範囲の下限を下回った場合は、入力データにある recent_form・h2h_last_5・competition_standings・key_stats・projected_lineups・match_events から具体的な根拠を追加して書き足すこと。",
     "全体が1,500字未満の場合は出力前に薄いセクションを加筆すること。水増し、同義反復、一般論、「字数確認済み」などのメタコメントは禁止。",
     "事実は入力データと一致させること。直接引用は15語以内。",
-    "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。",
+    "事実は試合データと sourced_facts に含まれるものだけを使用すること。入力にない統計・スコア・負傷・欠場・発言・選手名を推測・創作してはならない。",
+    "選手名は入力データ（projected_lineups・match_events・sourced_facts）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。",
     lineupUsageBlock,
     "出力は日本語マークダウン本文のみ。",
     "強調記号（**、*、__、_）・コードブロック（```）・引用（>）は使用禁止。見出し(#)と箇条書き(-)のみ使用すること。",
@@ -124,6 +134,7 @@ export function buildGeneratePreviewPrompt(
     `試合データ: ${JSON.stringify(assembled)}`,
     dataSparseBlock,
     standingsBlock,
+    sourcedFactsBlock,
     [
       "戦術ポイント（tactical_dimension / home_situation / away_situation / matchup_implication を本文の根拠として使うこと）:",
       JSON.stringify(tacticalPoints),

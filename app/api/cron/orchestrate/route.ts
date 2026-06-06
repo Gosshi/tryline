@@ -7,6 +7,7 @@ import { runOrchestrate } from "@/lib/cron/orchestrate";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
 import { generateMatchContent } from "@/lib/llm/pipeline";
+import { fetchSourcedFactsForMatch } from "@/lib/llm/sourced-facts/fetch";
 
 import type { PushMatchInfo } from "@/lib/cron/orchestrate";
 
@@ -74,6 +75,9 @@ export async function POST(request: Request) {
 
     const result = await runOrchestrate({
       db: getSupabaseServerClient(),
+      fetchSourcedFacts: async (matchId, contentType) => {
+        await fetchSourcedFactsForMatch({ contentType, matchId });
+      },
       generateContent: generateMatchContent,
       ingestLineups,
       sendPushNotification,

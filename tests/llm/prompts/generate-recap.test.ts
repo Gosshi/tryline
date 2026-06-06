@@ -48,6 +48,7 @@ const assembled: AssembledContentInput = {
     },
   },
   score_timeline: null,
+  sourced_facts: [],
 };
 
 describe("buildGenerateRecapPrompt", () => {
@@ -466,7 +467,7 @@ describe("buildGenerateRecapPrompt", () => {
     const prompt = buildGenerateRecapPrompt(assembled, [], []);
 
     expect(prompt).toContain(
-      "選手名は入力データ（projected_lineups・match_events）に含まれるものだけを使用すること",
+      "選手名は入力データ（projected_lineups・match_events・sourced_facts）に含まれるものだけを使用すること",
     );
     expect(prompt).toContain(
       "データに存在しない選手名を推測・創作してはならない",

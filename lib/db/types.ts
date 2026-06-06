@@ -379,6 +379,53 @@ export type Database = {
           },
         ];
       };
+      match_sourced_facts: {
+        Row: {
+          confidence: string;
+          content_type: string;
+          fact: string;
+          fetched_at: string;
+          id: string;
+          match_id: string;
+          metadata: Json;
+          model_version: string;
+          source_domain: string;
+          source_url: string;
+        };
+        Insert: {
+          confidence: string;
+          content_type: string;
+          fact: string;
+          fetched_at?: string;
+          id?: string;
+          match_id: string;
+          metadata?: Json;
+          model_version: string;
+          source_domain: string;
+          source_url: string;
+        };
+        Update: {
+          confidence?: string;
+          content_type?: string;
+          fact?: string;
+          fetched_at?: string;
+          id?: string;
+          match_id?: string;
+          metadata?: Json;
+          model_version?: string;
+          source_domain?: string;
+          source_url?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_sourced_facts_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       match_events: {
         Row: {
           created_at: string;

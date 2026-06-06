@@ -48,6 +48,10 @@ export type RunOrchestrateDeps = {
     contentType: ContentType,
     language?: ContentLanguage,
   ) => Promise<{ status?: string } | void>;
+  fetchSourcedFacts?: (
+    matchId: string,
+    contentType: ContentType,
+  ) => Promise<void>;
   ingestLineups: (
     matchId: string,
     competitionFamily?: string | null,
@@ -261,6 +265,7 @@ export async function runOrchestrate(
       }
 
       try {
+        await deps.fetchSourcedFacts?.(matchId, "preview");
         await deps.generateContent(matchId, "preview");
         await generateLeagueOneEnglishContent(deps, match, "preview");
         result.previews.triggered += 1;
@@ -279,6 +284,7 @@ export async function runOrchestrate(
   )) {
     const matchId = match.id;
     try {
+      await deps.fetchSourcedFacts?.(matchId, "recap");
       const generated = await deps.generateContent(matchId, "recap");
       if (generated?.status === "skipped") {
         result.recaps.skipped += 1;

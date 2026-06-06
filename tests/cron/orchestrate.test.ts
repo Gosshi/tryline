@@ -219,6 +219,32 @@ describe("runOrchestrate", () => {
     expect(result.lineups).toEqual({ triggered: 1, no_url: 0 });
   });
 
+  it("fetches sourced facts before preview generation when provided", async () => {
+    const db = createMockDb({
+      scheduledIds: ["scheduled-1"],
+      finishedIds: [],
+    });
+    const calls: string[] = [];
+    const generateContent = vi.fn().mockImplementation(async () => {
+      calls.push("generate");
+    });
+    const fetchSourcedFacts = vi.fn().mockImplementation(async () => {
+      calls.push("facts");
+    });
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+
+    await runOrchestrate({
+      db,
+      fetchSourcedFacts,
+      generateContent,
+      ingestLineups,
+      now,
+    });
+
+    expect(fetchSourcedFacts).toHaveBeenCalledWith("scheduled-1", "preview");
+    expect(calls).toEqual(["facts", "generate"]);
+  });
+
   it("includes next-day early UTC kickoffs in the 12-72h preview window", async () => {
     const db = createMockDb({
       scheduledIds: ["too-soon", "srp-next-day", "too-late"],

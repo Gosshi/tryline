@@ -77,7 +77,11 @@ export async function generateMatchContent(
   const db = getSupabaseServerClient();
 
   const stage1StartedAt = Date.now();
-  const assembled = await assembleMatchContentInput(matchId, language);
+  const assembled = await assembleMatchContentInput(
+    matchId,
+    language,
+    contentType,
+  );
   await logPipelineRun({
     matchId,
     contentType,
@@ -200,6 +204,7 @@ export async function generateMatchContent(
           awayTeam: assembled.match.away_team?.name ?? "Away",
           homeScore: assembled.match.home_score,
           homeTeam: assembled.match.home_team?.name ?? "Home",
+          sourcedFacts: assembled.sourced_facts,
         },
         hasEvents,
         narrative: narrative.content,
@@ -322,6 +327,7 @@ export async function generateMatchContent(
           awayTeam: assembled.match.away_team?.name ?? "Away",
           homeScore: assembled.match.home_score,
           homeTeam: assembled.match.home_team?.name ?? "Home",
+          sourcedFacts: assembled.sourced_facts,
         },
         hasEvents,
         narrative: revised.content,

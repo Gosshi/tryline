@@ -98,6 +98,24 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).toContain("information_density のスコアを最大 3");
   });
 
+  it("adds sourced facts as allowed grounding context", () => {
+    const prompt = buildQaContentPrompt("preview", "本文", "ja", {
+      ...matchContext,
+      sourcedFacts: [
+        {
+          confidence: "medium",
+          fact: "Malcolm Marx is expected to miss the final.",
+          source_domain: "rugbypass.com",
+          source_url: "https://www.rugbypass.com/news/marx",
+        },
+      ],
+    });
+
+    expect(prompt).toContain("## sourced_facts grounding");
+    expect(prompt).toContain("許可済み事実");
+    expect(prompt).toContain("Malcolm Marx is expected to miss");
+  });
+
   it("omits turning point section checks when events are absent", () => {
     const prompt = buildQaContentPrompt(
       "recap",

@@ -56,6 +56,13 @@ export type ScoreTimeline = {
   } | null;
 };
 
+export type SourcedFactInput = {
+  fact: string;
+  source_url: string;
+  source_domain: string;
+  confidence: "high" | "medium";
+};
+
 export type AssembledContentInput = {
   match: {
     id: string;
@@ -176,4 +183,5 @@ export type AssembledContentInput = {
     };
   };
   score_timeline: ScoreTimeline | null;
+  sourced_facts: SourcedFactInput[];
 };

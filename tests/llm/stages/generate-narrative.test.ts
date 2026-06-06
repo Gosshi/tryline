@@ -52,6 +52,7 @@ const assembled = {
     },
   },
   score_timeline: null,
+  sourced_facts: [],
 };
 
 describe("generateNarrative", () => {

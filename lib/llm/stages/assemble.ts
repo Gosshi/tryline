@@ -1,8 +1,10 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { loadSourcedFactsForMatch } from "@/lib/llm/sourced-facts/fetch";
 
 import type { Json } from "@/lib/db/types";
 import type {
   AssembledContentInput,
+  ContentType,
   ContentLanguage,
   MatchPhase,
   ScoreTimeline,
@@ -443,6 +445,7 @@ async function loadMatchEvents(
 export async function assembleMatchContentInput(
   matchId: string,
   language: ContentLanguage = "ja",
+  contentType: ContentType = "preview",
 ): Promise<AssembledContentInput> {
   const db = getSupabaseServerClient();
 
@@ -642,11 +645,13 @@ export async function assembleMatchContentInput(
     awayProjectedLineups,
     competitionStandings,
     matchEvents,
+    sourcedFacts,
   ] = await Promise.all([
     loadProjectedLineup(matchId, homeTeamId),
     loadProjectedLineup(matchId, awayTeamId),
     loadCompetitionStandings(match.competition_id, language),
     loadMatchEvents(matchId, match.status, language),
+    loadSourcedFactsForMatch(matchId, contentType),
   ]);
 
   const homeFormStats = computeTeamFormStats(homeRecent, homeTeamName);
@@ -717,5 +722,14 @@ export async function assembleMatchContentInput(
       match: matchStats,
     },
     score_timeline: scoreTimeline,
+    sourced_facts: sourcedFacts.map((fact) => ({
+      confidence:
+        fact.confidence === "high" || fact.confidence === "medium"
+          ? fact.confidence
+          : "medium",
+      fact: fact.fact,
+      source_domain: fact.source_domain,
+      source_url: fact.source_url,
+    })),
   };
 }
