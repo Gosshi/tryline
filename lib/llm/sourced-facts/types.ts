@@ -9,6 +9,15 @@ export type SourcedFact = {
   confidence: SourcedFactConfidence;
 };
 
+export type SourcedFactRejectionReason =
+  | "db_authoritative_score"
+  | "db_authoritative_relative_recency";
+
+export type SourcedFactRejection = {
+  fact: string;
+  reason: SourcedFactRejectionReason;
+};
+
 export type StoredSourcedFact = SourcedFact & {
   content_type: ContentType | "shared";
   fetched_at: string;

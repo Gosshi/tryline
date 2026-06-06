@@ -8,6 +8,7 @@ import { filterAllowedSourcedFacts } from "@/lib/llm/sourced-facts/allowlist";
 import type { Json } from "@/lib/db/types";
 import type {
   SourcedFact,
+  SourcedFactRejection,
   StoredSourcedFact,
 } from "@/lib/llm/sourced-facts/types";
 import type { ContentType } from "@/lib/llm/types";
@@ -137,9 +138,8 @@ function buildSearchPrompt(match: MatchForSourcedFacts, contentType: ContentType
       "- latest team news",
       "- injuries",
       "- latest lineup changes",
+      "- player news such as retirements, transfers, and availability",
       "- key players",
-      "- recent form",
-      "- head-to-head",
       "- stakes and knockout/final context",
     ].join("\n"),
     [
@@ -150,6 +150,8 @@ function buildSearchPrompt(match: MatchForSourcedFacts, contentType: ContentType
       "- Use high only for official-source facts or facts confirmed by at least two sources.",
       "- Use medium for a single trusted third-party source.",
       "- Use low for uncertain or weakly supported facts.",
+      "- Do not return past result scores, league standings, or win/loss records (the database is authoritative for these).",
+      "- When referencing any past match, include the exact date. Never use relative recency phrasing such as 'most recent', 'previous meeting', or 'last time they met'.",
       "- Do not include quotes longer than 15 words. Prefer paraphrased facts.",
       "- Do not return article text or copyrighted prose.",
     ].join("\n"),
@@ -175,7 +177,10 @@ function extractJsonObjectText(text: string): string | null {
   return candidate.slice(firstBrace, lastBrace + 1);
 }
 
-export function parseSourcedFactsResponse(text: string): SourcedFact[] {
+export function parseSourcedFactsResponse(
+  text: string,
+  options?: { rejected?: SourcedFactRejection[] },
+): SourcedFact[] {
   const jsonText = extractJsonObjectText(text);
   if (!jsonText) {
     return [];
@@ -185,6 +190,7 @@ export function parseSourcedFactsResponse(text: string): SourcedFact[] {
     const parsed = JSON.parse(jsonText) as ParsedSourcedFactsResponse;
     return filterAllowedSourcedFacts(
       Array.isArray(parsed.facts) ? parsed.facts : [],
+      options,
     );
   } catch {
     return [];
@@ -294,7 +300,10 @@ export async function fetchSourcedFactsForMatch(options: {
     input: prompt,
     temperature: 0,
   });
-  const facts = parseSourcedFactsResponse(response.text);
+  const rejectedFacts: SourcedFactRejection[] = [];
+  const facts = parseSourcedFactsResponse(response.text, {
+    rejected: rejectedFacts,
+  });
   const fetchedAt = now.toISOString();
   const rows = facts.slice(0, MAX_STORED_FACTS).map((fact) => ({
     confidence: fact.confidence,
@@ -326,6 +335,11 @@ export async function fetchSourcedFactsForMatch(options: {
     cached: false,
     facts: rows as StoredSourcedFact[],
     fetched: true,
-    skippedReason: null,
+    skippedReason:
+      rejectedFacts.length > 0
+        ? `db_authoritative_filtered:${[
+            ...new Set(rejectedFacts.map((item) => item.reason)),
+          ].join(",")}`
+        : null,
   };
 }
