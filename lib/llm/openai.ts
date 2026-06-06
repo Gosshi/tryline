@@ -58,7 +58,6 @@ export async function createWebSearchJsonResponse(options: {
     model: options.model,
     input: options.input,
     temperature: options.temperature ?? 0,
-    text: { format: { type: "json_object" } },
     tools: [{ type: "web_search_preview" }],
   } as Parameters<ResponsesCreate>[0])) as OpenAINonStreamingResponse;
 
