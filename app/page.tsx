@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { WeekSchedule } from "@/components/calendar/week-schedule";
 import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { FavoriteTeamsBanner } from "@/components/favorite-teams-banner";
 import { HeroTexture } from "@/components/hero-texture";
@@ -16,6 +17,7 @@ import {
 } from "@/lib/db/queries/competitions";
 import {
   getFavoriteTeamMatches,
+  getMatchesInRange,
   getRecentlyReviewedFamilies,
   getRecentlyReviewedMatches,
   getUpcomingMatches,
@@ -29,6 +31,7 @@ import {
   formatKickoffJstDate,
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
+import { getCurrentJstWeekRangeUtc } from "@/lib/format/week";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -80,11 +83,13 @@ export default async function HomePage() {
   const user = await getUser();
   const profile = user ? await getUserProfile(user.id) : null;
   const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
+  const weekRange = getCurrentJstWeekRangeUtc();
   const [
     families,
     reviewedFamilies,
     recentReviews,
     sampleReviews,
+    weeklyMatches,
     upcomingMatches,
     favoriteMatches,
   ] = await Promise.all([
@@ -92,6 +97,7 @@ export default async function HomePage() {
     getRecentlyReviewedFamilies(4),
     getRecentlyReviewedMatches(3, "ja"),
     getRecentlyReviewedMatches(1, "ja"),
+    getMatchesInRange(weekRange.startUtcIso, weekRange.endUtcIso),
     getUpcomingMatches(5),
     getFavoriteTeamMatches(favoriteTeamSlugs),
   ]);
@@ -118,6 +124,10 @@ export default async function HomePage() {
     ).filter((link) => link !== null),
   );
   const sampleMatch = sampleReviews[0] ?? null;
+  const nowIso = new Date().toISOString();
+  const homepageWeekMatches = weeklyMatches
+    .filter((match) => match.kickoffAt >= nowIso)
+    .slice(0, 6);
   const favoriteTeamPageSlug =
     favoriteTeamSlugs.length === 1 ? (favoriteTeamSlugs[0] ?? null) : null;
   const jsonLd = [
@@ -319,6 +329,30 @@ export default async function HomePage() {
       )}
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                今週の試合
+              </h2>
+              <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
+                全大会横断・JST表示
+              </p>
+            </div>
+            <Link
+              className="text-xs font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)]"
+              href="/calendar"
+            >
+              今週をすべて見る →
+            </Link>
+          </div>
+          <WeekSchedule
+            compact
+            emptyMessage="今週の残り試合はありません。"
+            matches={homepageWeekMatches}
+          />
+        </section>
+
         {upcomingMatches.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">

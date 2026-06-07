@@ -52,6 +52,10 @@ describe("MobileHeaderMenu", () => {
     expect(
       screen.getByRole("link", { name: /@tryline_rugbyjp/ }),
     ).toHaveAttribute("rel", "noopener noreferrer");
+    expect(screen.getByRole("link", { name: "カレンダー" })).toHaveAttribute(
+      "href",
+      "/calendar",
+    );
     expect(
       screen.getByRole("button", { name: "メニューを閉じる" }),
     ).toHaveAttribute("aria-expanded", "true");
