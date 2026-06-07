@@ -49,6 +49,14 @@ export async function SiteHeader() {
             <li>
               <CompetitionNavDropdown />
             </li>
+            <li>
+              <Link
+                className="-my-1.5 rounded px-3 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0 sm:py-1.5"
+                href="/calendar"
+              >
+                カレンダー
+              </Link>
+            </li>
             {!user && (
               <li>
                 <Link

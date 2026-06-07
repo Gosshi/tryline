@@ -32,6 +32,10 @@ describe("SiteHeader", () => {
       "aria-haspopup",
       "listbox",
     );
+    expect(screen.getByRole("link", { name: "カレンダー" })).toHaveAttribute(
+      "href",
+      "/calendar",
+    );
     expect(
       screen.getByRole("button", { name: "メニューを開く" }),
     ).toHaveAttribute("aria-expanded", "false");

@@ -144,6 +144,15 @@ export function MobileHeaderMenu({
                     </ul>
                   )}
                 </li>
+                <li>
+                  <Link
+                    className="block min-h-[44px] px-2 py-3 text-sm font-medium text-slate-700"
+                    href="/calendar"
+                    onClick={closeMenu}
+                  >
+                    カレンダー
+                  </Link>
+                </li>
                 {!user && (
                   <li>
                     <Link

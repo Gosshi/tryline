@@ -86,6 +86,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
   const staticPages = [
     {
+      changeFrequency: "daily" as const,
+      lastModified: new Date(),
+      priority: 0.8,
+      url: `${base}/calendar`,
+    },
+    {
       changeFrequency: "monthly" as const,
       lastModified: new Date(),
       priority: 0.5,

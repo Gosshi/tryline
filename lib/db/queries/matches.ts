@@ -51,6 +51,10 @@ export type UpcomingMatch = MatchListItem & {
   competition: { family: string; slug: string; name: string; season: string };
 };
 
+export type CalendarMatch = UpcomingMatch & {
+  hasContent: boolean;
+};
+
 export type FavoriteTeamMatch = UpcomingMatch;
 
 export type TeamPageMatch = MatchListItem & {
@@ -224,6 +228,10 @@ type SitemapContentMatchRow = {
       slug: string;
     } | null;
   } | null;
+};
+
+type MatchContentIdRow = {
+  match_id: string;
 };
 
 type RoundHubQueryRow = {
@@ -797,6 +805,108 @@ export async function getUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
         competition: row.competition,
       };
     });
+}
+
+function sortCalendarMatches(matches: CalendarMatch[]): CalendarMatch[] {
+  return [...matches].sort((a, b) => {
+    const kickoff = a.kickoffAt.localeCompare(b.kickoffAt);
+    if (kickoff !== 0) {
+      return kickoff;
+    }
+
+    const competition = a.competition.name.localeCompare(b.competition.name);
+    if (competition !== 0) {
+      return competition;
+    }
+
+    const home = a.homeTeam.name.localeCompare(b.homeTeam.name);
+    if (home !== 0) {
+      return home;
+    }
+
+    return a.awayTeam.name.localeCompare(b.awayTeam.name);
+  });
+}
+
+export async function getMatchesInRange(
+  startUtcIso: string,
+  endUtcIso: string,
+): Promise<CalendarMatch[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        id,
+        kickoff_at,
+        status,
+        home_score,
+        away_score,
+        venue,
+        external_ids,
+        home_team:teams!matches_home_team_id_fkey (
+          slug,
+          name,
+          short_code
+        ),
+        away_team:teams!matches_away_team_id_fkey (
+          slug,
+          name,
+          short_code
+        ),
+        competition:competitions!matches_competition_id_fkey (
+          family,
+          slug,
+          name,
+          season
+        )
+      `,
+    )
+    .gte("kickoff_at", startUtcIso)
+    .lt("kickoff_at", endUtcIso)
+    .order("kickoff_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data satisfies UpcomingMatchRow[]).filter(
+    (row) => row.competition !== null,
+  );
+  const matchIds = rows.map((row) => row.id);
+  const contentMatchIds = new Set<string>();
+
+  if (matchIds.length > 0) {
+    const { data: contentRows, error: contentError } = await client
+      .from("match_content")
+      .select("match_id")
+      .in("match_id", matchIds)
+      .eq("language", "ja")
+      .eq("status", "published")
+      .in("content_type", ["preview", "recap"]);
+
+    if (contentError) {
+      throw contentError;
+    }
+
+    for (const row of (contentRows ?? []) as MatchContentIdRow[]) {
+      contentMatchIds.add(row.match_id);
+    }
+  }
+
+  return sortCalendarMatches(
+    rows.map((row) => {
+      if (!row.competition) {
+        throw new Error("Calendar match is missing competition.");
+      }
+
+      return {
+        ...mapMatchRow(row),
+        competition: row.competition,
+        hasContent: contentMatchIds.has(row.id),
+      };
+    }),
+  );
 }
 
 export async function getFavoriteTeamMatches(
