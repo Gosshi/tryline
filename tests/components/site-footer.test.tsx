@@ -11,11 +11,22 @@ describe("SiteFooter", () => {
   it("renders the X follow link", () => {
     render(<SiteFooter />);
 
-    const link = screen.getByRole("link", { name: /@tryline_rugbyjp/ });
+    const link = screen.getByRole("link", {
+      name: "X (Twitter) @tryline_rugbyjp",
+    });
+    const noteLink = screen.getByRole("link", {
+      name: "note @tryline_rugbyjp",
+    });
 
     expect(screen.getByText("フォロー")).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "https://x.com/tryline_rugbyjp");
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(noteLink).toHaveAttribute(
+      "href",
+      "https://note.com/tryline_rugbyjp",
+    );
+    expect(noteLink).toHaveAttribute("target", "_blank");
+    expect(noteLink).toHaveAttribute("rel", "noopener noreferrer");
   });
 });

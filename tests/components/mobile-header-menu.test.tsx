@@ -44,13 +44,22 @@ describe("MobileHeaderMenu", () => {
       screen.getByRole("navigation", { name: "モバイルナビゲーション" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /@tryline_rugbyjp/ }),
+      screen.getByRole("link", { name: "X (Twitter) @tryline_rugbyjp" }),
     ).toHaveAttribute("href", "https://x.com/tryline_rugbyjp");
     expect(
-      screen.getByRole("link", { name: /@tryline_rugbyjp/ }),
+      screen.getByRole("link", { name: "X (Twitter) @tryline_rugbyjp" }),
     ).toHaveAttribute("target", "_blank");
     expect(
-      screen.getByRole("link", { name: /@tryline_rugbyjp/ }),
+      screen.getByRole("link", { name: "X (Twitter) @tryline_rugbyjp" }),
+    ).toHaveAttribute("rel", "noopener noreferrer");
+    expect(
+      screen.getByRole("link", { name: "note @tryline_rugbyjp" }),
+    ).toHaveAttribute("href", "https://note.com/tryline_rugbyjp");
+    expect(
+      screen.getByRole("link", { name: "note @tryline_rugbyjp" }),
+    ).toHaveAttribute("target", "_blank");
+    expect(
+      screen.getByRole("link", { name: "note @tryline_rugbyjp" }),
     ).toHaveAttribute("rel", "noopener noreferrer");
     expect(screen.getByRole("link", { name: "カレンダー" })).toHaveAttribute(
       "href",
