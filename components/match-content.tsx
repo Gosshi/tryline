@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 
+import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
 
 import type { PublishedMatchContent } from "@/lib/db/queries/match-content";
@@ -320,16 +321,28 @@ function renderBlock(block: MarkdownBlock, index: number) {
 function XFollowCta() {
   return (
     <div className="mt-8 flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm text-slate-600">🏉 最新情報・更新通知は X で</p>
-      <a
-        className="flex w-fit items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-        href="https://x.com/tryline_rugbyjp"
-        rel="noopener noreferrer"
-        target="_blank"
-      >
-        <XIcon className="h-3.5 w-3.5" />
-        フォローする
-      </a>
+      <p className="text-sm text-slate-600">🏉 最新情報・更新通知は X / note で</p>
+      <div className="flex flex-wrap gap-2">
+        <a
+          className="flex w-fit items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          href="https://x.com/tryline_rugbyjp"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <XIcon className="h-3.5 w-3.5" />
+          フォローする
+        </a>
+        <a
+          aria-label="note @tryline_rugbyjp"
+          className="flex w-fit items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          href="https://note.com/tryline_rugbyjp"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <NoteIcon className="h-3.5 w-10" />
+          note
+        </a>
+      </div>
     </div>
   );
 }

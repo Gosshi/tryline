@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
 
 export function SiteFooter() {
@@ -68,6 +69,7 @@ export function SiteFooter() {
               <ul className="mt-3 space-y-2 text-xs text-slate-500">
                 <li>
                   <a
+                    aria-label="X (Twitter) @tryline_rugbyjp"
                     className="flex items-center gap-1.5 hover:text-slate-900"
                     href="https://x.com/tryline_rugbyjp"
                     rel="noopener noreferrer"
@@ -75,6 +77,18 @@ export function SiteFooter() {
                   >
                     <XIcon className="h-3.5 w-3.5" />
                     @tryline_rugbyjp
+                  </a>
+                </li>
+                <li>
+                  <a
+                    aria-label="note @tryline_rugbyjp"
+                    className="flex items-center gap-1.5 hover:text-slate-900"
+                    href="https://note.com/tryline_rugbyjp"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <NoteIcon className="h-3.5 w-10" />
+                    note @tryline_rugbyjp
                   </a>
                 </li>
               </ul>

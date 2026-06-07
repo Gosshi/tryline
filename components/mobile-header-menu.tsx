@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { AuthModal } from "@/components/auth-modal";
 import { HEADER_COMPETITIONS } from "@/components/competition-nav-dropdown";
+import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { UserMenu } from "@/components/user-menu";
 import { getCompetitionFamilyColor } from "@/lib/format/competition";
@@ -166,6 +167,7 @@ export function MobileHeaderMenu({
                 )}
                 <li>
                   <a
+                    aria-label="X (Twitter) @tryline_rugbyjp"
                     className="flex min-h-[44px] items-center gap-2 px-2 py-3 text-sm font-medium text-slate-700"
                     href="https://x.com/tryline_rugbyjp"
                     onClick={closeMenu}
@@ -173,6 +175,19 @@ export function MobileHeaderMenu({
                     target="_blank"
                   >
                     <XIcon className="h-4 w-4" />
+                    @tryline_rugbyjp
+                  </a>
+                </li>
+                <li>
+                  <a
+                    aria-label="note @tryline_rugbyjp"
+                    className="flex min-h-[44px] items-center gap-2 px-2 py-3 text-sm font-medium text-slate-700"
+                    href="https://note.com/tryline_rugbyjp"
+                    onClick={closeMenu}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <NoteIcon className="h-4 w-12" />
                     @tryline_rugbyjp
                   </a>
                 </li>

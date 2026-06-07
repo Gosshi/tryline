@@ -4,6 +4,7 @@ import { getUser, getUserProfile } from "@/lib/auth/server";
 import { listAllTeams } from "@/lib/db/queries/teams";
 
 import { CompetitionNavDropdown } from "./competition-nav-dropdown";
+import { NoteIcon } from "./icons/note-icon";
 import { XIcon } from "./icons/x-icon";
 import { MobileHeaderMenu } from "./mobile-header-menu";
 import { UserMenu } from "./user-menu";
@@ -76,6 +77,15 @@ export async function SiteHeader() {
             target="_blank"
           >
             <XIcon className="h-4 w-4" />
+          </a>
+          <a
+            aria-label="note @tryline_rugbyjp"
+            className="flex items-center rounded p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            href="https://note.com/tryline_rugbyjp"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <NoteIcon className="h-4 w-12" />
           </a>
           <UserMenu
             allTeams={allTeams}
