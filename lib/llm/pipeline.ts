@@ -445,10 +445,13 @@ export async function generateMatchContent(
     throw upsertError;
   }
 
-  if (persistedStatus === "published" && contentType === "recap") {
+  if (persistedStatus === "published") {
     const urls = [`${SITE_URL}/matches/${matchId}`];
 
-    if (assembled.match.competition?.family === "league-one") {
+    if (
+      contentType === "recap" &&
+      assembled.match.competition?.family === "league-one"
+    ) {
       urls.push(`${SITE_URL}/matches/${matchId}/en`);
     }
 

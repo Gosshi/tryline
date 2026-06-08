@@ -57,7 +57,7 @@ describe("PricingPage", () => {
   it("exports pricing metadata for the root title template", () => {
     expect(metadata).toMatchObject({
       description:
-        "¥980/月で海外ラグビーの AI 日本語レビュー全文・AI チャットが読み放題。",
+        "¥980/月で海外ラグビーの日本語レビュー全文・AI チャットが読み放題。",
       title: "プランを選ぶ",
     });
   });
@@ -71,7 +71,7 @@ describe("PricingPage", () => {
     );
     expect(
       screen.getByRole("heading", {
-        name: "週10試合以上のAI戦術分析を、日本語で読み放題。",
+        name: "週10試合以上の戦術分析を、日本語で読み放題。",
       }),
     ).toBeInTheDocument();
     expect(
@@ -87,13 +87,13 @@ describe("PricingPage", () => {
     ).toHaveAttribute("href", `/matches/${PRIMARY_SAMPLE_MATCH_ID}`);
     expect(screen.getByText("8大会対応")).toBeInTheDocument();
     expect(screen.getByText("500試合以上")).toBeInTheDocument();
-    expect(screen.getByText("AI日本語解説")).toBeInTheDocument();
+    expect(screen.getByText("日本語解説")).toBeInTheDocument();
 
     for (const feature of [
       "試合スコア・順位表・得点推移グラフ",
       "大会アーカイブ閲覧",
-      "AI 日本語プレビュー全文",
-      "AI 日本語レビュー全文",
+      "日本語プレビュー全文",
+      "日本語レビュー全文",
       "試合 AI チャット",
       "Web プッシュ通知",
     ]) {
@@ -104,7 +104,7 @@ describe("PricingPage", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByText(
-        "試合スコア・順位表・ラインナップ・AI 日本語プレビュー全文・Web プッシュ通知は無料でご利用いただけます。AI 日本語レビュー全文・AI チャットは Premium 限定です。",
+        "試合スコア・順位表・ラインナップ・日本語プレビュー全文・Web プッシュ通知は無料でご利用いただけます。日本語レビュー全文・AI チャットは Premium 限定です。",
       ),
     ).toBeInTheDocument();
 
@@ -124,7 +124,7 @@ describe("PricingPage", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は AI 日本語レビュー全文・AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
+        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
       ),
     ).toBeInTheDocument();
     expect(
