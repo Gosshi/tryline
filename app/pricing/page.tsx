@@ -13,10 +13,10 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/pricing` },
   description:
-    "¥980/月で海外ラグビーの AI 日本語レビュー全文・AI チャットが読み放題。",
+    "¥980/月で海外ラグビーの日本語レビュー全文・AI チャットが読み放題。",
   openGraph: {
     description:
-      "¥980/月で海外ラグビーの AI 日本語レビュー全文・AI チャットが読み放題。",
+      "¥980/月で海外ラグビーの日本語レビュー全文・AI チャットが読み放題。",
     images: [{ height: 630, url: `${SITE_URL}/og-image.png`, width: 1200 }],
     locale: "ja_JP",
     title: "プランを選ぶ | Tryline",
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
 const features = [
   { free: true, name: "試合スコア・順位表・得点推移グラフ", premium: true },
   { free: true, name: "大会アーカイブ閲覧", premium: true },
-  { free: true, name: "AI 日本語プレビュー全文", premium: true },
-  { free: false, name: "AI 日本語レビュー全文", premium: true },
+  { free: true, name: "日本語プレビュー全文", premium: true },
+  { free: false, name: "日本語レビュー全文", premium: true },
   { free: false, name: "試合 AI チャット", premium: true },
   { free: true, name: "Web プッシュ通知", premium: true },
 ];
@@ -38,12 +38,12 @@ const features = [
 const faqs = [
   {
     answer:
-      "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は AI 日本語レビュー全文・AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
+      "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
     question: "無料トライアルはありますか？",
   },
   {
     answer:
-      "試合スコア・順位表・ラインナップ・AI 日本語プレビュー全文・Web プッシュ通知は無料でご利用いただけます。AI 日本語レビュー全文・AI チャットは Premium 限定です。",
+      "試合スコア・順位表・ラインナップ・日本語プレビュー全文・Web プッシュ通知は無料でご利用いただけます。日本語レビュー全文・AI チャットは Premium 限定です。",
     question: "無料でどこまで利用できますか？",
   },
   {
@@ -71,9 +71,9 @@ const pricingVideoJsonLd = {
   "@context": "https://schema.org",
   "@type": "VideoObject",
   description:
-    "海外ラグビーの試合を AI が日本語で解説。プレビュー・レビュー・AI チャットが使える Tryline の紹介動画です。",
+    "海外ラグビーの試合を日本語で解説。プレビュー・レビュー・AI チャットが使える Tryline の紹介動画です。",
   embedUrl: "https://www.youtube.com/embed/2kFHgiaI-NA",
-  name: "Tryline — AI ラグビー解説サービス紹介",
+  name: "Tryline — ラグビー解説サービス紹介",
   thumbnailUrl: "https://img.youtube.com/vi/2kFHgiaI-NA/maxresdefault.jpg",
   uploadDate: "2025-01-01",
 };
@@ -130,12 +130,12 @@ export default async function PricingPage() {
             Tryline Premium
           </p>
           <h1 className="mt-4 max-w-3xl text-balance font-serif text-4xl font-bold tracking-tight sm:text-6xl">
-            週10試合以上のAI戦術分析を、日本語で読み放題。
+            週10試合以上の戦術分析を、日本語で読み放題。
           </h1>
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/60">
             <span>8大会対応</span>
             <span>500試合以上</span>
-            <span>AI日本語解説</span>
+            <span>日本語解説</span>
           </div>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65">
             Six Nations・Premiership・URC ほか 8 大会対応。レビュー全文と試合 AI
@@ -237,7 +237,7 @@ export default async function PricingPage() {
                   試合直後に更新
                 </p>
                 <p className="leading-7">
-                  ノックアウト式の試合では、キックオフ後 30〜60 分で AI
+                  ノックアウト式の試合では、キックオフ後 30〜60 分で
                   日本語レビューが生成されます。プレビューは無料で読めます。レビュー全文と
                   AI チャットは Premium 限定です。
                 </p>
@@ -257,14 +257,13 @@ export default async function PricingPage() {
             Premium ではこんな画面が読めます
           </h2>
           <p className="mb-10 text-sm text-[var(--color-ink-muted)]">
-            AI が生成した詳細な日本語レビューと、試合について何でも聞ける AI
-            チャット。
+            詳細な日本語レビューと、試合について何でも聞ける AI チャット。
           </p>
 
           <div className="space-y-12">
             <div>
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                AI 日本語レビュー全文
+                日本語レビュー全文
               </p>
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <Image
