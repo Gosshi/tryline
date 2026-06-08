@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .slice(0, 3)
     .map((match) => `${match.homeTeam.name} vs ${match.awayTeam.name}`)
     .join("、");
-  const description = `${competitionTitle} ${roundLabel}の全試合の結果・スコア・AI日本語レビュー。${matchSummary}。`;
+  const description = `${competitionTitle} ${roundLabel}の全試合の結果・スコア・日本語レビュー。${matchSummary}。`;
   const url = `${SITE_URL}/c/${competition}/${season}/round/${roundNumber}`;
 
   return {

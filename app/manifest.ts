@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     background_color: "#ffffff",
-    description: "海外ラグビーの試合結果・AI日本語レビューをリアルタイムで。",
+    description: "海外ラグビーの試合結果・日本語レビューをリアルタイムで。",
     display: "standalone",
     icons: [
       {

@@ -66,7 +66,7 @@ export async function generateMetadata({
   }
 
   const title = `${data.teamA.name} vs ${data.teamB.name} 対戦成績`;
-  const description = `${data.teamA.name}と${data.teamB.name}の対戦成績（Tryline 収録分）。直近の対戦結果とスコア、AI日本語レビューへのリンク。`;
+  const description = `${data.teamA.name}と${data.teamB.name}の対戦成績（Tryline 収録分）。直近の対戦結果とスコア、日本語レビューへのリンク。`;
   const canonical = `${SITE_URL}/h2h/${data.canonicalSlug}`;
 
   return {

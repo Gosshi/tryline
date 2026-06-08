@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | Tryline",
   },
   description:
-    "Six Nations・Premiership・URC など海外ラグビーの試合結果・順位表・AI日本語レビューを提供するラグビーファン向けサービス。",
+    "Six Nations・Premiership・URC など海外ラグビーの試合結果・順位表・日本語レビュー・解説を提供するラグビーファン向けサービス。",
   verification: {
     google: "Kp99rUYc5K1sWD3DPDoAKEuV7doFt9k_y9JFZ_SLja4",
   },

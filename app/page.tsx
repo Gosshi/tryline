@@ -60,10 +60,10 @@ function getCompetitionLogoSrc(family: string): string {
 export const metadata: Metadata = {
   alternates: { canonical: SITE_URL },
   description:
-    "Six Nations・Premiership・URC・リーグワンなど海外ラグビーの試合結果・順位表・AI日本語レビューを毎節お届け。海外ラグビーを日本語で深く追いたいファンのための試合コンパニオン。",
+    "Six Nations・Premiership・URC・リーグワンなど海外ラグビーの試合結果・順位表・日本語レビューを毎節お届け。海外ラグビーを日本語で深く追いたいファンのための試合コンパニオン。",
   openGraph: {
     description:
-      "Six Nations・Premiership・URC・リーグワンなど海外ラグビーの試合結果・順位表・AI日本語レビューを毎節お届け。",
+      "Six Nations・Premiership・URC・リーグワンなど海外ラグビーの試合結果・順位表・日本語レビューを毎節お届け。",
     images: [
       {
         height: 630,
@@ -76,7 +76,7 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
   },
-  title: { absolute: "海外ラグビー 試合結果・順位・日本語AIレビュー | Tryline" },
+  title: { absolute: "海外ラグビー 試合結果・順位・日本語レビュー | Tryline" },
 };
 
 export default async function HomePage() {
@@ -182,7 +182,7 @@ export default async function HomePage() {
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
           <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
-            AI Rugby Analysis in Japanese
+            Rugby Analysis in Japanese
           </p>
           <h1 className="break-keep font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
             海外ラグビーを、
@@ -191,7 +191,7 @@ export default async function HomePage() {
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
             Six Nations、Premiership、URC、Top 14、Rugby Championship、
-            ジャパンラグビー リーグワンまで、世界のラグビーを AI
+            ジャパンラグビー リーグワンまで、世界のラグビーを
             日本語レビューと試合チャットで深く追えます。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -258,7 +258,7 @@ export default async function HomePage() {
                 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]"
                 id="sample-heading"
               >
-                AI レビューのサンプル
+                レビューのサンプル
               </p>
               <span className="bg-[var(--color-accent)]/10 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
                 Premium
