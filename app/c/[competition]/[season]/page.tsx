@@ -81,7 +81,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const title = formatCompetitionTitle(comp.name, comp.season);
-  const description = `${title} の試合結果・順位表・AI日本語レビュー一覧。`;
+  const description = `${title} の試合結果・順位表・日本語レビュー一覧。`;
 
   return {
     alternates: { canonical: `${SITE_URL}/c/${competition}/${season}` },

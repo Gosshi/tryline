@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Rugby World Cup 2027",
   description:
-    "RWC 2027 プール順位表・ノックアウトブラケット・AI日本語レビュー。",
+    "RWC 2027 プール順位表・ノックアウトブラケット・日本語レビュー。",
 };
 
 function PendingState() {
@@ -56,7 +56,7 @@ function ComingSoonState({ matchCount }: { matchCount: number }) {
         <br />
         全{matchCount}試合のスケジュールが確定しています。
         <br />
-        開幕後、試合結果・AI日本語レビューを随時公開予定。
+        開幕後、試合結果・日本語レビューを随時公開予定。
       </p>
       <div className="mt-8 flex flex-col items-center gap-3">
         <Link
