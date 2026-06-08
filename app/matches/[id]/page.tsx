@@ -84,10 +84,10 @@ export async function generateMetadata({
     match.status === "finished" && content.recap
       ? extractCoreSection(content.recap.contentMdJa)
       : match.status === "finished" && hasScore
-        ? `${match.homeTeam.name} ${match.homeScore}–${match.awayScore} ${match.awayTeam.name}（${competitionTitle}）の試合結果・AI日本語レビュー。`
+        ? `${match.homeTeam.name} ${match.homeScore}–${match.awayScore} ${match.awayTeam.name}（${competitionTitle}）の試合結果・日本語レビュー。`
         : content.preview
           ? extractDescription(content.preview.contentMdJa)
-          : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・AI日本語レビュー。`;
+          : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・日本語レビュー。`;
   const score =
     match.homeScore !== null && match.awayScore !== null
       ? `${match.homeScore}–${match.awayScore}`
@@ -163,10 +163,10 @@ export default async function MatchDetailPage({
       : match.status === "finished" &&
           match.homeScore !== null &&
           match.awayScore !== null
-        ? `${match.homeTeam.name} ${match.homeScore}–${match.awayScore} ${match.awayTeam.name}（${competitionTitle}）の試合結果・AI日本語レビュー。`
+        ? `${match.homeTeam.name} ${match.homeScore}–${match.awayScore} ${match.awayTeam.name}（${competitionTitle}）の試合結果・日本語レビュー。`
         : publishedContent.preview
           ? extractDescription(publishedContent.preview.contentMdJa)
-          : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・AI日本語レビュー。`;
+          : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・日本語レビュー。`;
   const ogImageUrl = createMatchOgImage({
     away: match.awayTeam.name,
     competition: competitionTitle,

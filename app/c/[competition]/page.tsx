@@ -69,7 +69,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = formatFamilyName(competition);
   const description =
     COMPETITION_DESCRIPTIONS[competition] ??
-    `${name} の全シーズン試合結果・順位表・AI日本語レビュー一覧。`;
+    `${name} の全シーズン試合結果・順位表・日本語レビュー一覧。`;
 
   return {
     description,

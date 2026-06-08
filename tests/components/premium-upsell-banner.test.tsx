@@ -26,12 +26,12 @@ describe("PremiumUpsellBanner", () => {
     render(<PremiumUpsellBanner />);
 
     expect(
-      screen.queryByText("AI 日本語レビューを全文読むには Premium が必要です"),
+      screen.queryByText("日本語レビュー全文は Premium でお読みいただけます"),
     ).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(
-        screen.getByText("AI 日本語レビューを全文読むには Premium が必要です"),
+        screen.getByText("日本語レビュー全文は Premium でお読みいただけます"),
       ).toBeInTheDocument();
     });
     expect(
@@ -55,7 +55,7 @@ describe("PremiumUpsellBanner", () => {
       expect(fetch).toHaveBeenCalledWith("/api/me/premium");
     });
     expect(
-      screen.queryByText("AI 日本語レビューを全文読むには Premium が必要です"),
+      screen.queryByText("日本語レビュー全文は Premium でお読みいただけます"),
     ).not.toBeInTheDocument();
   });
 });

@@ -10,7 +10,7 @@ export const revalidate = 60;
 
 export const metadata: Metadata = {
   description:
-    "AI-generated match previews & recaps for Japan Rugby League One, in English.",
+    "Match previews & recaps for Japan Rugby League One, in English.",
   title: "Japan Rugby League One — Tryline",
 };
 
@@ -35,7 +35,7 @@ export default async function EnglishLandingPage() {
             Japan Rugby League One
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/70">
-            AI-generated match previews and recaps for Japan Rugby League One,
+            Match previews and recaps for Japan Rugby League One,
             written in English for fans following the competition from abroad.
           </p>
         </div>

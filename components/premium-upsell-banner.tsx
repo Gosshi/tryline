@@ -22,7 +22,7 @@ export function PremiumUpsellBanner() {
   return (
     <div className="rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 px-5 py-4">
       <p className="text-sm font-semibold text-[var(--color-ink)]">
-        AI 日本語レビューを全文読むには Premium が必要です
+        日本語レビュー全文は Premium でお読みいただけます
       </p>
       <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
         各試合の詳細分析・プレビュー・AI チャットが月額 ¥980
