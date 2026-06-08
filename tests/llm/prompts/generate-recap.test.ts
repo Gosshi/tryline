@@ -52,8 +52,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.5.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.5.0");
+  it("uses recap prompt version 4.6.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.6.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -170,7 +170,7 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("# ターニングポイント` 末尾に統合済み");
   });
 
-  it("includes the MOM selection section when lineup data is available", () => {
+  it("includes the featured player section when lineup data is available", () => {
     const prompt = buildGenerateRecapPrompt(
       {
         ...assembled,
@@ -190,9 +190,12 @@ describe("buildGenerateRecapPrompt", () => {
       [],
     );
 
+    expect(prompt).toContain("# 注目選手");
     expect(prompt).toContain("# MOM");
     expect(prompt).not.toContain("# MOM（300-400字）");
-    expect(prompt).toContain("実名を使い、選出理由を具体化する");
+    expect(prompt).toContain(
+      "実名を使い、この試合での貢献・プレー内容を具体的に記述する",
+    );
     expect(prompt).toContain("全体で2,000字以上を目標とすること");
     expect(prompt).toContain(
       "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。",

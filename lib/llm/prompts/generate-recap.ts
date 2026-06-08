@@ -11,7 +11,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.5.0";
+export const PROMPT_VERSION = "recap@4.6.0";
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -31,18 +31,18 @@ export function buildGenerateRecapPrompt(
         "# この試合の核心",
         "# 試合全体像",
         "# ターニングポイント",
-        "# MOM",
+        "# 注目選手",
         "# 次戦への示唆",
         "",
         "各セクションの字数目標と内容指示:",
         "- この試合の核心: 200字以内。試合前の「何 対 何の争い」に対し実際の結果がどう答えたかを1〜2文で述べる",
         "- 試合全体像: 400-500字",
         "- ターニングポイント: 500-600字",
-        "- MOM: 300-400字。projected_lineups または match_events に存在する実名を使い、選出理由を具体化する",
+        "- 注目選手: 300-400字。projected_lineups または match_events に存在する実名を使い、この試合での貢献・プレー内容を具体的に記述する",
         "- 次戦への示唆: 300-400字",
         "",
         "見出し行には「# セクション名」のみを書くこと。字数指示・説明文を見出し行に含めてはならない。",
-        "**上記5つの見出し以外は絶対に追加してはならない。`# 試合概要`・`# 試合の流れ`・`# まとめ`・`# 総評` 等、リストに存在しない見出しの出力は禁止。**",
+        "**上記5つの見出し以外は絶対に追加してはならない。`# 試合概要`・`# 試合の流れ`・`# MOM`・`# マン・オブ・ザ・マッチ`・`# まとめ`・`# 総評` 等、リストに存在しない見出しの出力は禁止。**",
         `全体で2,000字以上を目標とすること。${sectionHeadingInstruction}`,
       ].join("\n")
     : isDataSparse
