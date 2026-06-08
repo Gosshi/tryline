@@ -15,6 +15,17 @@ import type {
 } from "@/lib/scrapers/wikipedia-club-match-details";
 
 const SCORE_PATTERN = /\b\d+\s*[–-]\s*\d+\b/;
+const KNOCKOUT_ROUND_IDS = [
+  "Quarter-finals",
+  "Semi-finals",
+  "URC_Grand_Final",
+  "Grand_Final",
+] as const;
+
+const ROUND_ANCHOR_ID_ALIASES: Record<string, string[]> = {
+  Grand_Final: ["Grand_Final", "URC_Grand_Final"],
+  URC_Grand_Final: ["URC_Grand_Final", "Grand_Final"],
+};
 
 type ParsedUrcEventId =
   | {
@@ -33,9 +44,12 @@ function findRoundTables(
   $: ReturnType<typeof load>,
   roundId: string,
 ) {
-  const heading = $(`h3#${roundId}`).first();
+  const anchorIds = ROUND_ANCHOR_ID_ALIASES[roundId] ?? [roundId];
+  const heading = anchorIds
+    .map((anchorId) => $(`h2#${anchorId}, h3#${anchorId}`).first())
+    .find((candidate) => candidate.length > 0);
 
-  if (!heading.length) {
+  if (!heading?.length) {
     return [];
   }
 
@@ -82,16 +96,29 @@ function parseEventId(eventId: string): ParsedUrcEventId | null {
 
   const teamMatch = eventId.match(/^(Round_\d+)_(.+)_v_(.+)$/);
 
-  if (!teamMatch) {
-    return null;
+  if (teamMatch) {
+    return {
+      awayTeamName: teamMatch[3]!.replace(/_/g, " "),
+      homeTeamName: teamMatch[2]!.replace(/_/g, " "),
+      roundId: teamMatch[1]!,
+      type: "teams",
+    };
   }
 
-  return {
-    awayTeamName: teamMatch[3]!.replace(/_/g, " "),
-    homeTeamName: teamMatch[2]!.replace(/_/g, " "),
-    roundId: teamMatch[1]!,
-    type: "teams",
-  };
+  const knockoutTeamMatch = eventId.match(
+    new RegExp(`^(${KNOCKOUT_ROUND_IDS.join("|")})_(.+)_v_(.+)$`, "i"),
+  );
+
+  if (knockoutTeamMatch) {
+    return {
+      awayTeamName: knockoutTeamMatch[3]!.replace(/_/g, " "),
+      homeTeamName: knockoutTeamMatch[2]!.replace(/_/g, " "),
+      roundId: knockoutTeamMatch[1]!,
+      type: "teams",
+    };
+  }
+
+  return null;
 }
 
 function comparableNameValues(name: string) {
