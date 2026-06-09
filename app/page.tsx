@@ -19,6 +19,7 @@ import {
   getFavoriteTeamMatches,
   getMatchesInRange,
   getRecentlyReviewedFamilies,
+  getRecentlyReviewedMatchById,
   getRecentlyReviewedMatches,
   getUpcomingMatches,
 } from "@/lib/db/queries/matches";
@@ -32,6 +33,7 @@ import {
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
 import { getCurrentJstWeekRangeUtc } from "@/lib/format/week";
+import { PRIMARY_SAMPLE_MATCH_ID } from "@/lib/sample-matches";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -88,7 +90,7 @@ export default async function HomePage() {
     families,
     reviewedFamilies,
     recentReviews,
-    sampleReviews,
+    sampleMatch,
     weeklyMatches,
     upcomingMatches,
     favoriteMatches,
@@ -96,7 +98,7 @@ export default async function HomePage() {
     listFamilies(),
     getRecentlyReviewedFamilies(4),
     getRecentlyReviewedMatches(3, "ja"),
-    getRecentlyReviewedMatches(1, "ja"),
+    getRecentlyReviewedMatchById(PRIMARY_SAMPLE_MATCH_ID, "ja"),
     getMatchesInRange(weekRange.startUtcIso, weekRange.endUtcIso),
     getUpcomingMatches(5),
     getFavoriteTeamMatches(favoriteTeamSlugs),
@@ -123,7 +125,6 @@ export default async function HomePage() {
       )
     ).filter((link) => link !== null),
   );
-  const sampleMatch = sampleReviews[0] ?? null;
   const nowIso = new Date().toISOString();
   const homepageWeekMatches = weeklyMatches
     .filter((match) => match.kickoffAt >= nowIso)
