@@ -20,6 +20,7 @@ vi.mock("twitter-api-v2", () => ({
 vi.mock("@/lib/x/media", () => mediaMock);
 
 import {
+  buildLinklessReplyText,
   buildReplyText,
   buildTweetText,
   postMatchRecapToX,
@@ -94,14 +95,26 @@ describe("buildTweetText", () => {
 
   it("builds a language-specific reply with the match URL", () => {
     expect(buildReplyText("match-1", "en")).toBe(
-      "Match flow and talking points 👇\nhttps://www.trylinerugby.com/matches/match-1/en",
+      "Match review 👇\nhttps://www.trylinerugby.com/matches/match-1/en",
     );
     expect(buildReplyText("match-1", "ja")).toBe(
-      "試合の流れと見どころを日本語でまとめています 👇\nhttps://www.trylinerugby.com/matches/match-1",
+      "試合レビューはこちら 👇\nhttps://www.trylinerugby.com/matches/match-1",
+    );
+    expect(buildReplyText("match-1", "ja", "preview")).toBe(
+      "試合プレビューはこちら 👇\nhttps://www.trylinerugby.com/matches/match-1",
     );
   });
 
-  it("posts the URL reply after the main tweet", async () => {
+  it("builds a URL-free reply draft", () => {
+    expect(buildLinklessReplyText("ja", "recap")).toBe(
+      "レビュー全文はTrylineで公開しています。\n記事URLまたはプロフィールのリンクからどうぞ。",
+    );
+    expect(buildLinklessReplyText("en", "preview")).toBe(
+      "Preview is available on Tryline.\nOpen it from the article URL or profile link.",
+    );
+  });
+
+  it("posts the URL-free reply after the main tweet", async () => {
     process.env.X_EN_ACCESS_TOKEN_SECRET = "secret";
     process.env.X_EN_ACCESS_TOKEN = "token";
     process.env.X_EN_API_KEY = "key";
@@ -130,7 +143,7 @@ describe("buildTweetText", () => {
     );
     expect(twitterMock.tweet).toHaveBeenNthCalledWith(
       2,
-      "Match flow and talking points 👇\nhttps://www.trylinerugby.com/matches/match-1/en",
+      "Review is available on Tryline.\nOpen it from the article URL or profile link.",
       { reply: { in_reply_to_tweet_id: "tweet-1" } },
     );
   });
