@@ -51,7 +51,7 @@ describe("generatePreviewThread", () => {
       tweet2:
         "- 接点の優位\n- キック裏の攻防\n- 終盤の規律 #SixNations #ラグビー",
       tweet3:
-        "AI 戦術分析の全文はこちら 👇\nhttps://www.trylinerugby.com/matches/match-1",
+        "試合の流れと見どころを日本語でまとめています 👇\nhttps://www.trylinerugby.com/matches/match-1",
     });
     expect(openAIMock.create).toHaveBeenCalledWith(
       expect.objectContaining({

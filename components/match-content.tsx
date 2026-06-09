@@ -321,7 +321,9 @@ function renderBlock(block: MarkdownBlock, index: number) {
 function XFollowCta() {
   return (
     <div className="mt-8 flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm text-slate-600">🏉 最新情報・更新通知は X / note で</p>
+      <p className="text-sm text-slate-600">
+        週末の注目試合と無料サンプルは X / note で更新中
+      </p>
       <div className="flex flex-wrap gap-2">
         <a
           className="flex w-fit items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
@@ -421,7 +423,7 @@ export function MatchContent({
                 ? `Read the full ${matchTitle} analysis with Premium`
                 : "The full article is available with Premium"
               : matchTitle
-                ? `${matchTitle} の続きを読む`
+                ? `${matchTitle} の勝負どころを最後まで読む`
                 : "続きは Premium でご覧いただけます"}
           </p>
           <a
@@ -431,7 +433,7 @@ export function MatchContent({
             {language === "en"
               ? "Read with Premium"
               : matchTitle
-                ? "Premium で全文を読む — ¥980/月"
+                ? "7日間無料でレビュー全文を読む"
                 : "Premium で全文を読む"}
           </a>
         </div>

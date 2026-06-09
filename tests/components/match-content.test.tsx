@@ -44,7 +44,7 @@ describe("MatchContent", () => {
     expect(screen.getByRole("link", { name: "Tryline" })).toBeInTheDocument();
     expect(screen.getByText("列1")).toBeInTheDocument();
     expect(
-      screen.getByText("🏉 最新情報・更新通知は X / note で"),
+      screen.getByText("週末の注目試合と無料サンプルは X / note で更新中"),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "フォローする" })).toHaveAttribute(
       "href",
@@ -129,11 +129,11 @@ describe("MatchContent", () => {
     );
 
     expect(
-      screen.getByText("Ireland vs France の続きを読む"),
+      screen.getByText("Ireland vs France の勝負どころを最後まで読む"),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", {
-        name: "Premium で全文を読む — ¥980/月",
+        name: "7日間無料でレビュー全文を読む",
       }),
     ).toHaveAttribute("href", "/pricing");
   });

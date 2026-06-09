@@ -29,7 +29,7 @@ export const HASHTAGS_BY_FAMILY: Record<string, { ja: string; en: string }> = {
     en: "#LeagueOne #Rugby #JapanRugby",
     ja: "#リーグワン #ラグビー",
   },
-  "premiership": {
+  premiership: {
     en: "#GallagherPremiership #Rugby",
     ja: "#プレミアシップ #ラグビー",
   },
@@ -148,7 +148,8 @@ export async function postTweetWithReply(params: {
   replyText: string;
   tweetText: string;
 }): Promise<{ replyId: string; tweetId: string }> {
-  const client = params.client ?? new TwitterApi(getXCredentials(params.language));
+  const client =
+    params.client ?? new TwitterApi(getXCredentials(params.language));
   const mediaOptions = params.mediaId
     ? { media: { media_ids: [params.mediaId] as [string] } }
     : undefined;
@@ -245,7 +246,9 @@ export function buildReplyText(matchId: string, language: "ja" | "en"): string {
     language === "en" ? "/en" : ""
   }`;
   const cta =
-    language === "en" ? "Full AI analysis 👇" : "AI 戦術分析の全文はこちら 👇";
+    language === "en"
+      ? "Match flow and talking points 👇"
+      : "試合の流れと見どころを日本語でまとめています 👇";
 
   return `${cta}\n${matchUrl}`;
 }

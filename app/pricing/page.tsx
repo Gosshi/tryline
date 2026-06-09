@@ -13,10 +13,10 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/pricing` },
   description:
-    "¥980/月で海外ラグビーの日本語レビュー全文・AI チャットが読み放題。",
+    "見逃した海外ラグビーの試合を日本語レビューと AI チャットで深く追える Tryline Premium。7日間無料、その後 ¥980/月。",
   openGraph: {
     description:
-      "¥980/月で海外ラグビーの日本語レビュー全文・AI チャットが読み放題。",
+      "見逃した海外ラグビーの試合を日本語レビューと AI チャットで深く追える Tryline Premium。7日間無料、その後 ¥980/月。",
     images: [{ height: 630, url: `${SITE_URL}/og-image.png`, width: 1200 }],
     locale: "ja_JP",
     title: "プランを選ぶ | Tryline",
@@ -32,18 +32,18 @@ const features = [
   { free: true, name: "日本語プレビュー全文", premium: true },
   { free: false, name: "日本語レビュー全文", premium: true },
   { free: false, name: "試合 AI チャット", premium: true },
-  { free: true, name: "Web プッシュ通知", premium: true },
+  { free: true, name: "試合更新・公開通知", premium: true },
 ];
 
 const faqs = [
   {
     answer:
-      "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
+      "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・試合 AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
     question: "無料トライアルはありますか？",
   },
   {
     answer:
-      "試合スコア・順位表・ラインナップ・日本語プレビュー全文・Web プッシュ通知は無料でご利用いただけます。日本語レビュー全文・AI チャットは Premium 限定です。",
+      "試合スコア・順位表・ラインナップ・日本語プレビュー全文・試合更新通知は無料でご利用いただけます。日本語レビュー全文・試合 AI チャットは Premium 限定です。",
     question: "無料でどこまで利用できますか？",
   },
   {
@@ -130,24 +130,25 @@ export default async function PricingPage() {
             Tryline Premium
           </p>
           <h1 className="mt-4 max-w-3xl text-balance font-serif text-4xl font-bold tracking-tight sm:text-6xl">
-            週10試合以上の戦術分析を、日本語で読み放題。
+            見逃した海外ラグビーを、日本語で深く追える。
           </h1>
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/60">
             <span>8大会対応</span>
             <span>500試合以上</span>
-            <span>日本語解説</span>
+            <span>7日間無料</span>
           </div>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65">
-            Six Nations・Premiership・URC ほか 8 大会対応。レビュー全文と試合 AI
-            チャットが ¥980/月で使い放題。
+            DAZN、J SPORTS、WOWOW
+            で追う試合が重なる週末でも、試合の流れ・勝負どころ・注目選手を
+            日本語レビューと試合 AI チャットで確認できます。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <PricingForm buttonLabel="7日間無料で試す" />
+            <PricingForm buttonLabel="7日間無料でレビュー全文を読む" />
             <Link
               className="rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               href={trialUrl}
             >
-              無料で記事を読む
+              無料サンプルを読む
             </Link>
           </div>
           <p className="mt-3 text-xs text-white/45">
@@ -211,7 +212,7 @@ export default async function PricingPage() {
               Sample
             </p>
             <h2 className="mt-2 font-serif text-3xl font-bold text-[var(--color-ink)]">
-              Premium のレビューはこんな内容です
+              まず無料サンプルで確認できます
             </h2>
           </div>
           <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -239,13 +240,13 @@ export default async function PricingPage() {
                 <p className="leading-7">
                   ノックアウト式の試合では、キックオフ後 30〜60 分で
                   日本語レビューが生成されます。プレビューは無料で読めます。レビュー全文と
-                  AI チャットは Premium 限定です。
+                  試合 AI チャットは Premium 限定です。
                 </p>
               </div>
             )}
             <div className="relative mt-8">
               <PricingForm
-                buttonLabel="Premium で全文を読む"
+                buttonLabel="7日間無料で全文を読む"
                 variant="inline"
               />
             </div>
