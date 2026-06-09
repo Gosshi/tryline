@@ -26,16 +26,16 @@ describe("PremiumUpsellBanner", () => {
     render(<PremiumUpsellBanner />);
 
     expect(
-      screen.queryByText("日本語レビュー全文は Premium でお読みいただけます"),
+      screen.queryByText("試合後の日本語レビュー全文は Premium で読めます"),
     ).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(
-        screen.getByText("日本語レビュー全文は Premium でお読みいただけます"),
+        screen.getByText("試合後の日本語レビュー全文は Premium で読めます"),
       ).toBeInTheDocument();
     });
     expect(
-      screen.getByRole("link", { name: "Premium を始める — ¥980/月" }),
+      screen.getByRole("link", { name: "7日間無料でレビュー全文を読む" }),
     ).toHaveAttribute("href", "/pricing");
   });
 
@@ -55,7 +55,7 @@ describe("PremiumUpsellBanner", () => {
       expect(fetch).toHaveBeenCalledWith("/api/me/premium");
     });
     expect(
-      screen.queryByText("日本語レビュー全文は Premium でお読みいただけます"),
+      screen.queryByText("試合後の日本語レビュー全文は Premium で読めます"),
     ).not.toBeInTheDocument();
   });
 });

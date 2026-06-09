@@ -88,7 +88,9 @@ describe("MatchContentSection", () => {
       />,
     );
 
-    expect(screen.queryByText("Ireland vs France の続きを読む")).toBeNull();
+    expect(
+      screen.queryByText("Ireland vs France の勝負どころを最後まで読む"),
+    ).toBeNull();
     expect(
       screen.queryByRole("link", { name: "Premium を始める - ¥980/月" }),
     ).toBeNull();
@@ -108,7 +110,7 @@ describe("MatchContentSection", () => {
     );
 
     expect(
-      screen.getByText("Ireland vs France の続きを読む"),
+      screen.getByText("Ireland vs France の勝負どころを最後まで読む"),
     ).toBeInTheDocument();
   });
 

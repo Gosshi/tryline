@@ -19,7 +19,11 @@ vi.mock("twitter-api-v2", () => ({
 
 vi.mock("@/lib/x/media", () => mediaMock);
 
-import { buildReplyText, buildTweetText, postMatchRecapToX } from "@/lib/x/post";
+import {
+  buildReplyText,
+  buildTweetText,
+  postMatchRecapToX,
+} from "@/lib/x/post";
 
 import type { XPostParams } from "@/lib/x/post";
 
@@ -90,10 +94,10 @@ describe("buildTweetText", () => {
 
   it("builds a language-specific reply with the match URL", () => {
     expect(buildReplyText("match-1", "en")).toBe(
-      "Full AI analysis 👇\nhttps://www.trylinerugby.com/matches/match-1/en",
+      "Match flow and talking points 👇\nhttps://www.trylinerugby.com/matches/match-1/en",
     );
     expect(buildReplyText("match-1", "ja")).toBe(
-      "AI 戦術分析の全文はこちら 👇\nhttps://www.trylinerugby.com/matches/match-1",
+      "試合の流れと見どころを日本語でまとめています 👇\nhttps://www.trylinerugby.com/matches/match-1",
     );
   });
 
@@ -126,7 +130,7 @@ describe("buildTweetText", () => {
     );
     expect(twitterMock.tweet).toHaveBeenNthCalledWith(
       2,
-      "Full AI analysis 👇\nhttps://www.trylinerugby.com/matches/match-1/en",
+      "Match flow and talking points 👇\nhttps://www.trylinerugby.com/matches/match-1/en",
       { reply: { in_reply_to_tweet_id: "tweet-1" } },
     );
   });

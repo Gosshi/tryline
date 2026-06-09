@@ -60,7 +60,7 @@ function getCompetitionLogoSrc(family: string): string {
 export const metadata: Metadata = {
   alternates: { canonical: SITE_URL },
   description:
-    "Six Nations・Premiership・URC・リーグワンなど海外ラグビーの試合結果・順位表・日本語レビューを毎節お届け。海外ラグビーを日本語で深く追いたいファンのための試合コンパニオン。",
+    "Six Nations・Premiership・URC・リーグワンなど海外ラグビーの試合結果・順位表・日本語レビューを毎節お届け。英語情報を追い切れない週末も、日本語で試合の流れを深く追える試合コンパニオン。",
   openGraph: {
     description:
       "Six Nations・Premiership・URC・リーグワンなど海外ラグビーの試合結果・順位表・日本語レビューを毎節お届け。",
@@ -190,9 +190,9 @@ export default async function HomePage() {
             日本語で深掘り。
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
-            Six Nations、Premiership、URC、Top 14、Rugby Championship、
-            ジャパンラグビー リーグワンまで、世界のラグビーを
-            日本語レビューと試合チャットで深く追えます。
+            DAZN、J SPORTS、WOWOW で見たい試合が重なる週末でも、 Six
+            Nations、Premiership、URC、Top 14 まで試合の流れと見どころを
+            日本語レビューと試合チャットで追えます。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             {profile?.subscription_status !== "premium" && (
@@ -200,7 +200,7 @@ export default async function HomePage() {
                 className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 href="/pricing"
               >
-                Premium を始める — ¥980/月
+                7日間無料でレビュー全文を読む
               </Link>
             )}
             <Link
@@ -211,7 +211,7 @@ export default async function HomePage() {
                   : "/"
               }
             >
-              試合を見る
+              今週の試合を見る
             </Link>
           </div>
           {sampleMatch?.recapExcerpt && (
@@ -238,7 +238,7 @@ export default async function HomePage() {
                 {sampleMatch.recapExcerpt}
               </p>
               <p className="mt-3 text-right text-xs font-semibold text-white">
-                プレビュー全文を読む →
+                無料サンプルを読む →
               </p>
             </Link>
           )}
@@ -258,10 +258,10 @@ export default async function HomePage() {
                 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]"
                 id="sample-heading"
               >
-                レビューのサンプル
+                無料で読めるレビュー
               </p>
               <span className="bg-[var(--color-accent)]/10 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
-                Premium
+                Sample
               </span>
             </div>
             <div className="border-b border-slate-100 px-5 py-3">
@@ -285,13 +285,13 @@ export default async function HomePage() {
                 className="text-xs font-semibold text-[var(--color-accent)] hover:underline"
                 href={`/matches/${sampleMatch.id}`}
               >
-                この試合を見る →
+                無料サンプルを読む →
               </Link>
               <Link
                 className="rounded-full bg-[var(--color-accent)] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90"
                 href="/pricing"
               >
-                Premium を登録 — ¥980/月
+                他のレビューも7日間無料で読む
               </Link>
             </div>
           </section>
