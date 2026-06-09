@@ -2,6 +2,7 @@ import { Fragment } from "react";
 
 import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
+import { TrackedLink } from "@/components/tracked-link";
 
 import type { PublishedMatchContent } from "@/lib/db/queries/match-content";
 
@@ -426,7 +427,20 @@ export function MatchContent({
                 ? `${matchTitle} の勝負どころを最後まで読む`
                 : "続きは Premium でご覧いただけます"}
           </p>
-          <a
+          <TrackedLink
+            analytics={{
+              content_type: contentType,
+              cta_id: "match_content_locked_pricing",
+              cta_location: "match_content_locked_blocks",
+              destination: "pricing",
+              label:
+                language === "en"
+                  ? "Read with Premium"
+                  : matchTitle
+                    ? "7日間無料でレビュー全文を読む"
+                    : "Premium で全文を読む",
+              language,
+            }}
             className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
             href="/pricing"
           >
@@ -435,7 +449,7 @@ export function MatchContent({
               : matchTitle
                 ? "7日間無料でレビュー全文を読む"
                 : "Premium で全文を読む"}
-          </a>
+          </TrackedLink>
         </div>
       )}
       <XFollowCta />

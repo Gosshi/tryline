@@ -1,3 +1,5 @@
+import { TrackedLink } from "./tracked-link";
+
 import type { ReactNode } from "react";
 
 type PaywallProps = {
@@ -17,12 +19,18 @@ export function Paywall({ children, isPremium }: PaywallProps) {
         <p className="text-sm font-semibold text-slate-800">
           試合後の深掘りは Premium で読めます
         </p>
-        <a
+        <TrackedLink
+          analytics={{
+            cta_id: "paywall_pricing",
+            cta_location: "paywall_overlay",
+            destination: "pricing",
+            label: "7日間無料でレビュー全文を読む",
+          }}
           className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
           href="/pricing"
         >
           7日間無料でレビュー全文を読む
-        </a>
+        </TrackedLink>
       </div>
     </div>
   );

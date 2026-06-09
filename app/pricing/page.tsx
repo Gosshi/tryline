@@ -1,8 +1,8 @@
 import Image from "next/image";
-import Link from "next/link";
 
 import { PricingForm } from "@/app/pricing/pricing-form";
 import { HeroTexture } from "@/components/hero-texture";
+import { TrackedLink } from "@/components/tracked-link";
 import { getRecentlyReviewedMatchById } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { PRIMARY_SAMPLE_MATCH_ID } from "@/lib/sample-matches";
@@ -143,13 +143,30 @@ export default async function PricingPage() {
             日本語レビューと試合 AI チャットで確認できます。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <PricingForm buttonLabel="7日間無料でレビュー全文を読む" />
-            <Link
+            <PricingForm
+              analytics={{
+                cta_id: "pricing_hero_checkout",
+                cta_location: "pricing_hero",
+                destination: "checkout",
+                label: "7日間無料でレビュー全文を読む",
+              }}
+              buttonLabel="7日間無料でレビュー全文を読む"
+            />
+            <TrackedLink
+              analytics={{
+                content_type: "recap",
+                cta_id: "pricing_hero_sample_recap",
+                cta_location: "pricing_hero",
+                destination: sample ? "sample_match" : "home",
+                is_sample: Boolean(sample),
+                label: "無料サンプルを読む",
+                match_id: sample ? PRIMARY_SAMPLE_MATCH_ID : undefined,
+              }}
               className="rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               href={trialUrl}
             >
               無料サンプルを読む
-            </Link>
+            </TrackedLink>
           </div>
           <p className="mt-3 text-xs text-white/45">
             7日間無料 · その後 ¥980/月 · いつでもキャンセル可能 · Stripe 決済
@@ -246,6 +263,12 @@ export default async function PricingPage() {
             )}
             <div className="relative mt-8">
               <PricingForm
+                analytics={{
+                  cta_id: "pricing_sample_section_checkout",
+                  cta_location: "pricing_sample_section",
+                  destination: "checkout",
+                  label: "7日間無料で全文を読む",
+                }}
                 buttonLabel="7日間無料で全文を読む"
                 variant="inline"
               />

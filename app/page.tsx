@@ -8,6 +8,7 @@ import { FavoriteTeamsBanner } from "@/components/favorite-teams-banner";
 import { HeroTexture } from "@/components/hero-texture";
 import { MatchCard } from "@/components/match-card";
 import { TeamBadge } from "@/components/team-badge";
+import { TrackedLink } from "@/components/tracked-link";
 import { getUser, getUserProfile } from "@/lib/auth/server";
 import {
   listFamilies,
@@ -197,12 +198,18 @@ export default async function HomePage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             {profile?.subscription_status !== "premium" && (
-              <Link
+              <TrackedLink
+                analytics={{
+                  cta_id: "home_hero_pricing",
+                  cta_location: "home_hero",
+                  destination: "pricing",
+                  label: "7日間無料でレビュー全文を読む",
+                }}
                 className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 href="/pricing"
               >
                 7日間無料でレビュー全文を読む
-              </Link>
+              </TrackedLink>
             )}
             <Link
               className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
@@ -216,7 +223,16 @@ export default async function HomePage() {
             </Link>
           </div>
           {sampleMatch?.recapExcerpt && (
-            <Link
+            <TrackedLink
+              analytics={{
+                content_type: "recap",
+                cta_id: "home_hero_sample_recap",
+                cta_location: "home_hero_sample_card",
+                destination: "sample_match",
+                is_sample: true,
+                label: "無料サンプルを読む",
+                match_id: sampleMatch.id,
+              }}
               className="mt-8 block max-w-xl rounded-xl border border-white/15 bg-white/10 p-4 text-white/90 shadow-lg shadow-black/10 backdrop-blur-sm transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               href={`/matches/${sampleMatch.id}`}
             >
@@ -241,7 +257,7 @@ export default async function HomePage() {
               <p className="mt-3 text-right text-xs font-semibold text-white">
                 無料サンプルを読む →
               </p>
-            </Link>
+            </TrackedLink>
           )}
         </div>
       </section>
@@ -282,18 +298,33 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-4">
-              <Link
+              <TrackedLink
+                analytics={{
+                  content_type: "recap",
+                  cta_id: "home_sample_section_sample_recap",
+                  cta_location: "home_sample_section",
+                  destination: "sample_match",
+                  is_sample: true,
+                  label: "無料サンプルを読む",
+                  match_id: sampleMatch.id,
+                }}
                 className="text-xs font-semibold text-[var(--color-accent)] hover:underline"
                 href={`/matches/${sampleMatch.id}`}
               >
                 無料サンプルを読む →
-              </Link>
-              <Link
+              </TrackedLink>
+              <TrackedLink
+                analytics={{
+                  cta_id: "home_sample_section_pricing",
+                  cta_location: "home_sample_section",
+                  destination: "pricing",
+                  label: "他のレビューも7日間無料で読む",
+                }}
                 className="rounded-full bg-[var(--color-accent)] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90"
                 href="/pricing"
               >
                 他のレビューも7日間無料で読む
-              </Link>
+              </TrackedLink>
             </div>
           </section>
         )}

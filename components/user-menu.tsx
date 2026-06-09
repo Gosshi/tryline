@@ -8,6 +8,7 @@ import { getSupabaseBrowserClient } from "@/lib/auth/client";
 import { AuthModal } from "./auth-modal";
 import { NotificationSettings } from "./notification-settings";
 import { TeamPicker, type TeamOption } from "./team-picker";
+import { TrackedLink } from "./tracked-link";
 
 import type { User } from "@supabase/supabase-js";
 
@@ -68,12 +69,18 @@ export function UserMenu({
       {open && (
         <div className="absolute right-0 mt-2 w-72 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
           {!isPremium && (
-            <a
+            <TrackedLink
+              analytics={{
+                cta_id: "user_menu_upgrade",
+                cta_location: "user_menu",
+                destination: "pricing",
+                label: "Premium にアップグレード",
+              }}
               className="block px-4 py-2.5 text-xs font-semibold text-[var(--color-accent)] hover:bg-slate-50"
               href="/pricing"
             >
               Premium にアップグレード
-            </a>
+            </TrackedLink>
           )}
           {isPremium && (
             <a

@@ -7,6 +7,7 @@ import { CompetitionNavDropdown } from "./competition-nav-dropdown";
 import { NoteIcon } from "./icons/note-icon";
 import { XIcon } from "./icons/x-icon";
 import { MobileHeaderMenu } from "./mobile-header-menu";
+import { TrackedLink } from "./tracked-link";
 import { UserMenu } from "./user-menu";
 
 export async function SiteHeader() {
@@ -60,12 +61,18 @@ export async function SiteHeader() {
             </li>
             {!user && (
               <li>
-                <Link
+                <TrackedLink
+                  analytics={{
+                    cta_id: "site_header_pricing",
+                    cta_location: "site_header_desktop",
+                    destination: "pricing",
+                    label: "料金",
+                  }}
                   className="-my-1.5 rounded px-3 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0 sm:py-1.5"
                   href="/pricing"
                 >
                   料金
-                </Link>
+                </TrackedLink>
               </li>
             )}
           </ul>
