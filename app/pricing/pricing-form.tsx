@@ -3,17 +3,20 @@
 import { useState } from "react";
 
 import { AuthModal } from "@/components/auth-modal";
+import { trackCtaClick, type CtaClickParams } from "@/lib/analytics";
 import { getSupabaseBrowserClient } from "@/lib/auth/client";
 
 import type { FormEvent } from "react";
 
 type PricingFormProps = {
+  analytics?: CtaClickParams;
   buttonLabel: string;
   intent?: "login" | "subscribe";
   variant?: "hero" | "inline";
 };
 
 export function PricingForm({
+  analytics,
   buttonLabel,
   intent = "subscribe",
   variant = "hero",
@@ -22,6 +25,10 @@ export function PricingForm({
 
   async function handlePremiumSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (analytics) {
+      trackCtaClick(analytics);
+    }
+
     const form = event.currentTarget;
     const supabase = getSupabaseBrowserClient();
     const {

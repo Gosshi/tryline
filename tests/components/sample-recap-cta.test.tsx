@@ -28,5 +28,15 @@ describe("SampleRecapCta", () => {
       language: "ja",
       match_id: "match-sample",
     });
+    expect(gtag).toHaveBeenCalledWith("event", "cta_click", {
+      content_type: "recap",
+      cta_id: "sample_recap_pricing",
+      cta_location: "sample_recap_cta",
+      destination: "pricing",
+      is_sample: true,
+      label: "7日間無料で試す",
+      language: "ja",
+      match_id: "match-sample",
+    });
   });
 });

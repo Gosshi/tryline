@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 
+import { trackCtaClick, trackEvent } from "@/lib/analytics";
+
 type SampleRecapCtaProps = {
   language?: "ja" | "en";
   matchId: string;
@@ -14,13 +16,21 @@ export function SampleRecapCta({
   const isEnglish = language === "en";
 
   function handleClick() {
-    if (typeof window.gtag === "function") {
-      window.gtag("event", "sample_recap_cta_click", {
-        destination: "pricing",
-        language,
-        match_id: matchId,
-      });
-    }
+    const params = {
+      destination: "pricing",
+      language,
+      match_id: matchId,
+    } as const;
+
+    trackEvent("sample_recap_cta_click", params);
+    trackCtaClick({
+      ...params,
+      content_type: "recap",
+      cta_id: "sample_recap_pricing",
+      cta_location: "sample_recap_cta",
+      is_sample: true,
+      label: isEnglish ? "View Premium" : "7日間無料で試す",
+    });
   }
 
   return (

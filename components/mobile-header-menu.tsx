@@ -7,6 +7,7 @@ import { AuthModal } from "@/components/auth-modal";
 import { HEADER_COMPETITIONS } from "@/components/competition-nav-dropdown";
 import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
+import { TrackedLink } from "@/components/tracked-link";
 import { UserMenu } from "@/components/user-menu";
 import { getCompetitionFamilyColor } from "@/lib/format/competition";
 
@@ -156,13 +157,19 @@ export function MobileHeaderMenu({
                 </li>
                 {!user && (
                   <li>
-                    <Link
+                    <TrackedLink
+                      analytics={{
+                        cta_id: "mobile_header_pricing",
+                        cta_location: "site_header_mobile",
+                        destination: "pricing",
+                        label: "料金",
+                      }}
                       className="block min-h-[44px] px-2 py-3 text-sm font-medium text-slate-700"
                       href="/pricing"
                       onClick={closeMenu}
                     >
                       料金
-                    </Link>
+                    </TrackedLink>
                   </li>
                 )}
                 <li>
