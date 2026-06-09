@@ -21,13 +21,14 @@ describe("buildOfficialReplyText", () => {
     ).toBe(
       [
         "コベルコ神戸スティーラーズ 24-17。",
+        "コベルコ神戸スティーラーズが終盤の勝負どころを押さえて接戦を締めました。",
         "山田太郎がトライ、佐藤次郎がトライ。",
         "#ブロディレタリック #アーディサベア #アントンリネルトブラウン #リーグワン #ラグビー",
       ].join("\n"),
     );
   });
 
-  it("returns only the score line when try scorers are missing", () => {
+  it("returns the score line and match read when try scorers are missing", () => {
     expect(
       buildOfficialReplyText({
         awayScore: 12,
@@ -38,7 +39,9 @@ describe("buildOfficialReplyText", () => {
         language: "en",
         tryScorers: [],
       }),
-    ).toBe("Home 10-12 Away.");
+    ).toBe(
+      "Home 10-12 Away.\nAway held their nerve late and closed out a tight match.",
+    );
   });
 
   it("uses N tries wording for players with multiple tries", () => {

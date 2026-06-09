@@ -41,6 +41,7 @@ const xMock = vi.hoisted(() => ({
       ja: "#シックスネーションズ #ラグビー",
     },
   },
+  buildLinklessReplyText: vi.fn(),
   buildReplyText: vi.fn(),
   buildTweetText: vi.fn(),
   postMatchRecapToX: vi.fn(),
@@ -215,11 +216,11 @@ describe("/api/cron/notify-discord", () => {
     dbMock.rowsByLanguage.en = [];
     dbMock.rowsByLanguage.ja = [];
     dbMock.updates = [];
-    xMock.buildReplyText.mockImplementation(
-      (matchId: string, language: "ja" | "en") =>
+    xMock.buildLinklessReplyText.mockImplementation(
+      (language: "ja" | "en", contentType: "preview" | "recap") =>
         language === "en"
-          ? `Full AI analysis 👇\nhttps://www.trylinerugby.com/matches/${matchId}/en`
-          : `AI 戦術分析の全文はこちら 👇\nhttps://www.trylinerugby.com/matches/${matchId}`,
+          ? `${contentType} is available on Tryline.\nOpen it from the article URL or profile link.`
+          : `${contentType === "preview" ? "プレビュー" : "レビュー全文"}はTrylineで公開しています。\n記事URLまたはプロフィールのリンクからどうぞ。`,
     );
     xMock.buildTweetText.mockReturnValue("draft tweet");
     xMock.postMatchRecapToX.mockResolvedValue("tweet-1");
@@ -230,7 +231,7 @@ describe("/api/cron/notify-discord", () => {
       tweet1: "ホームの接点支配はアウェイの速攻を止められるか？",
       tweet2: "- 接点の優位\n- キック裏の攻防\n- 終盤の規律 #ラグビー",
       tweet3:
-        "AI 戦術分析の全文はこちら 👇\nhttps://www.trylinerugby.com/matches/match-2",
+        "プレビューはTrylineで公開しています。\n記事URLまたはプロフィールのリンクからどうぞ。",
     });
     vi.stubGlobal(
       "fetch",
@@ -324,15 +325,15 @@ describe("/api/cron/notify-discord", () => {
     ) as { embeds: Array<{ fields: Array<{ name: string; value: string }> }> };
     expect(firstPayload.embeds[0]?.fields.map((field) => field.name)).toEqual([
       "① X に貼る（URLなし）",
-      "② リプライに貼る",
-      "③ 記事を開く",
+      "② リプライ案（URLなし）",
+      "③ 記事URL（必要なら本投稿に追加）",
       "⑤ プレビュースレッド案（手動投稿用）",
     ]);
     expect(firstPayload.embeds[0]?.fields[0]?.value).toContain(
       "```\ndraft tweet\n```",
     );
     expect(firstPayload.embeds[0]?.fields[1]?.value).toContain(
-      "```\nAI 戦術分析の全文はこちら 👇\nhttps://www.trylinerugby.com/matches/match-2\n```",
+      "```\nプレビューはTrylineで公開しています。\n記事URLまたはプロフィールのリンクからどうぞ。\n```",
     );
     expect(firstPayload.embeds[0]?.fields[2]?.value).toBe(
       "https://www.trylinerugby.com/matches/match-2",
@@ -342,10 +343,18 @@ describe("/api/cron/notify-discord", () => {
       "ホームの接点支配",
     );
     expect(firstPayload.embeds[0]?.fields[3]?.value).toContain(
-      "AI 戦術分析の全文はこちら",
+      "プレビューはTrylineで公開しています。",
     );
-    expect(xMock.buildReplyText).toHaveBeenNthCalledWith(1, "match-2", "ja");
-    expect(xMock.buildReplyText).toHaveBeenNthCalledWith(2, "match-3", "en");
+    expect(xMock.buildLinklessReplyText).toHaveBeenNthCalledWith(
+      1,
+      "ja",
+      "preview",
+    );
+    expect(xMock.buildLinklessReplyText).toHaveBeenNthCalledWith(
+      2,
+      "en",
+      "recap",
+    );
     expect(xMock.buildTweetText).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
@@ -425,7 +434,7 @@ describe("/api/cron/notify-discord", () => {
     expect(payload.embeds[0]?.fields[5]).toEqual(
       expect.objectContaining({
         inline: false,
-        name: "⑥ 感想ツイート案（手動投稿用）",
+        name: "⑥ 読みどころ投稿案（URLなし）",
         value: expect.stringContaining("最後まで目が離せない好ゲーム"),
       }),
     );
@@ -471,7 +480,7 @@ describe("/api/cron/notify-discord", () => {
       (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
     ) as { embeds: Array<{ fields: Array<{ name: string }> }> };
     expect(payload.embeds[0]?.fields.map((field) => field.name)).not.toContain(
-      "⑥ 感想ツイート案（手動投稿用）",
+      "⑥ 読みどころ投稿案（URLなし）",
     );
   });
 

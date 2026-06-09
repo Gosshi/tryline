@@ -4,7 +4,7 @@ import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
 import { generateImpressionTweet } from "@/lib/x/impression-tweet";
-import { buildReplyText, buildTweetText } from "@/lib/x/post";
+import { buildLinklessReplyText, buildTweetText } from "@/lib/x/post";
 import {
   generatePreviewThread,
   type PreviewThread,
@@ -190,7 +190,7 @@ function appendOfficialReplyFields(
   );
 }
 
-async function appendImpressionTweetField(
+async function appendReadingHookTweetField(
   embed: DiscordEmbed,
   params: {
     awayScore: number;
@@ -202,15 +202,15 @@ async function appendImpressionTweetField(
     tryScorers: TryScorer[];
   },
 ): Promise<void> {
-  const impressionTweet = await generateImpressionTweet(params);
-  if (!impressionTweet) {
+  const readingHookTweet = await generateImpressionTweet(params);
+  if (!readingHookTweet) {
     return;
   }
 
   embed.fields.push({
     inline: false,
-    name: "⑥ 感想ツイート案（手動投稿用）",
-    value: truncateDiscordCodeBlockValue(impressionTweet),
+    name: "⑥ 読みどころ投稿案（URLなし）",
+    value: truncateDiscordCodeBlockValue(readingHookTweet),
   });
 }
 
@@ -372,7 +372,10 @@ export async function POST(request: Request) {
         matchId: content.match_id,
         recapExcerpt: createRecapExcerpt(content.content_md),
       });
-      const replyText = buildReplyText(content.match_id, content.language);
+      const replyText = buildLinklessReplyText(
+        content.language,
+        content.content_type,
+      );
       const matchUrl = `https://www.trylinerugby.com/matches/${content.match_id}${
         content.language === "en" ? "/en" : ""
       }`;
@@ -400,12 +403,12 @@ export async function POST(request: Request) {
               },
               {
                 inline: false,
-                name: "② リプライに貼る",
+                name: "② リプライ案（URLなし）",
                 value: `\`\`\`\n${replyText}\n\`\`\``,
               },
               {
                 inline: false,
-                name: "③ 記事を開く",
+                name: "③ 記事URL（必要なら本投稿に追加）",
                 value: matchUrl,
               },
             ],
@@ -433,7 +436,7 @@ export async function POST(request: Request) {
           homeTeamNameJa: homeTeam?.name ?? "Home",
           tryScorers,
         });
-        await appendImpressionTweetField(embed, {
+        await appendReadingHookTweetField(embed, {
           awayScore: match.away_score ?? 0,
           awayTeamName: awayDisplayName,
           competitionLabel,

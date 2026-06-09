@@ -1,6 +1,6 @@
 import { getOpenAIClient } from "@/lib/llm/client";
 import { MODELS } from "@/lib/llm/models";
-import { buildReplyText } from "@/lib/x/post";
+import { buildLinklessReplyText } from "@/lib/x/post";
 
 export type PreviewThreadParams = {
   awayTeamName: string;
@@ -95,7 +95,7 @@ export async function generatePreviewThread(
     return {
       tweet1,
       tweet2,
-      tweet3: buildReplyText(params.matchId, "ja"),
+      tweet3: buildLinklessReplyText("ja", "preview"),
     };
   } catch {
     return null;

@@ -191,7 +191,7 @@ export async function postMatchRecapToX(params: XPostParams): Promise<string> {
     client,
     language: params.language,
     mediaId,
-    replyText: buildReplyText(params.matchId, params.language),
+    replyText: buildLinklessReplyText(params.language, params.contentType),
     tweetText: buildTweetText(params),
   });
 
@@ -241,14 +241,37 @@ export function buildTweetText(params: XPostParams): string {
   return text;
 }
 
-export function buildReplyText(matchId: string, language: "ja" | "en"): string {
+export function buildReplyText(
+  matchId: string,
+  language: "ja" | "en",
+  contentType: "preview" | "recap" = "recap",
+): string {
   const matchUrl = `https://www.trylinerugby.com/matches/${matchId}${
     language === "en" ? "/en" : ""
   }`;
   const cta =
     language === "en"
-      ? "Match flow and talking points 👇"
-      : "試合の流れと見どころを日本語でまとめています 👇";
+      ? contentType === "preview"
+        ? "Match preview 👇"
+        : "Match review 👇"
+      : contentType === "preview"
+        ? "試合プレビューはこちら 👇"
+        : "試合レビューはこちら 👇";
 
   return `${cta}\n${matchUrl}`;
+}
+
+export function buildLinklessReplyText(
+  language: "ja" | "en",
+  contentType: "preview" | "recap" = "recap",
+): string {
+  if (language === "en") {
+    return contentType === "preview"
+      ? "Preview is available on Tryline.\nOpen it from the article URL or profile link."
+      : "Review is available on Tryline.\nOpen it from the article URL or profile link.";
+  }
+
+  return contentType === "preview"
+    ? "プレビューはTrylineで公開しています。\n記事URLまたはプロフィールのリンクからどうぞ。"
+    : "レビュー全文はTrylineで公開しています。\n記事URLまたはプロフィールのリンクからどうぞ。";
 }

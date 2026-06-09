@@ -58,12 +58,12 @@ describe("generateImpressionTweet", () => {
     await expect(generateImpressionTweet(baseParams)).resolves.toBeNull();
   });
 
-  it("removes URLs and trims overlong tweets to 140 characters", async () => {
+  it("removes URLs and trims overlong tweets to 180 characters", async () => {
     openAIMock.create.mockResolvedValueOnce({
       choices: [
         {
           message: {
-            content: `${"すごい試合だった。".repeat(20)} https://example.com`,
+            content: `${"すごい試合だった。".repeat(30)} https://example.com`,
           },
         },
       ],
@@ -72,7 +72,7 @@ describe("generateImpressionTweet", () => {
     const result = await generateImpressionTweet(baseParams);
 
     expect(result).not.toContain("https://example.com");
-    expect([...(result ?? "")]).toHaveLength(140);
+    expect([...(result ?? "")]).toHaveLength(180);
     expect(result?.endsWith("…")).toBe(true);
   });
 });
