@@ -142,7 +142,7 @@ export default async function CompetitionHubPage({ params }: Props) {
             最新シーズン
           </p>
           <p className="mt-2 font-serif text-3xl font-bold text-[var(--color-ink)]">
-            {formatCompetitionTitle(latestSeason.name, latestSeason.season)}
+            {formatCompetitionTitle(latestSeason, latestSeason.season)}
           </p>
           <p className="mt-4 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
             試合一覧を見る →

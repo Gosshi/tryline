@@ -248,6 +248,7 @@ export type Database = {
           family: string;
           id: string;
           name: string;
+          name_ja: string | null;
           season: string;
           slug: string;
           start_date: string | null;
@@ -261,6 +262,7 @@ export type Database = {
           family: string;
           id?: string;
           name: string;
+          name_ja?: string | null;
           season: string;
           slug: string;
           start_date?: string | null;
@@ -274,6 +276,7 @@ export type Database = {
           family?: string;
           id?: string;
           name?: string;
+          name_ja?: string | null;
           season?: string;
           slug?: string;
           start_date?: string | null;
@@ -802,6 +805,7 @@ export type Database = {
           id: string;
           logo_url: string | null;
           name: string;
+          name_ja: string | null;
           short_code: string | null;
           slug: string;
           updated_at: string;
@@ -814,6 +818,7 @@ export type Database = {
           id?: string;
           logo_url?: string | null;
           name: string;
+          name_ja?: string | null;
           short_code?: string | null;
           slug: string;
           updated_at?: string;
@@ -826,6 +831,7 @@ export type Database = {
           id?: string;
           logo_url?: string | null;
           name?: string;
+          name_ja?: string | null;
           short_code?: string | null;
           slug?: string;
           updated_at?: string;

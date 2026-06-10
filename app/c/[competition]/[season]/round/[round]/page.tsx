@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Tryline" };
   }
 
-  const competitionTitle = formatCompetitionTitle(comp.name, comp.season);
+  const competitionTitle = formatCompetitionTitle(comp, comp.season);
   const roundLabel = formatRoundLabel(roundNumber, comp.family);
   const matches = await getRoundMatches(competition, season, roundNumber);
   const matchSummary = matches
@@ -111,7 +111,7 @@ export default async function RoundHubPage({ params }: Props) {
   const contentStatusMap = await getContentStatusForMatches(
     matches.map((match) => match.id),
   );
-  const competitionTitle = formatCompetitionTitle(comp.name, comp.season);
+  const competitionTitle = formatCompetitionTitle(comp, comp.season);
   const roundLabel = formatRoundLabel(roundNumber, comp.family);
   const pageUrl = `${SITE_URL}/c/${competition}/${season}/round/${roundNumber}`;
   const accentColor = getCompetitionFamilyColor(comp.family);

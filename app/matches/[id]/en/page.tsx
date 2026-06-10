@@ -67,6 +67,7 @@ export async function generateMetadata({
   const competition = formatCompetitionTitle(
     match.competition.name,
     match.competition.season,
+    "en",
   );
   const homeDisplayName = match.homeTeam.englishName ?? match.homeTeam.name;
   const awayDisplayName = match.awayTeam.englishName ?? match.awayTeam.name;
@@ -141,6 +142,7 @@ export default async function MatchEnglishPage({
                 {formatCompetitionTitle(
                   match.competition.name,
                   match.competition.season,
+                  "en",
                 )}
               </Link>
             </li>

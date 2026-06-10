@@ -277,7 +277,7 @@ function HeadToHeadMatchRow({
       <span className="min-w-0">
         <span className="block text-xs font-semibold text-slate-500">
           {formatCompetitionTitle(
-            match.competition.name,
+            match.competition,
             match.competition.season,
           )}
           {" · "}

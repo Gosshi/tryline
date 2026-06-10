@@ -8,6 +8,7 @@ export type CompetitionRow = {
   matchCount: number;
   publishedContentCount: number;
   name: string;
+  nameJa?: string | null;
   season: string;
   startDate: string | null;
   endDate: string | null;
@@ -17,6 +18,7 @@ export type HomepageCompetitionLink = {
   endDate: string | null;
   family: string;
   name: string;
+  name_ja?: string | null;
   season: string;
 };
 
@@ -27,6 +29,7 @@ type CompetitionDbRow = {
   family: string;
   matches: Array<{ count: number | null }> | null;
   name: string;
+  name_ja?: string | null;
   season: string;
   start_date: string | null;
   end_date: string | null;
@@ -44,6 +47,7 @@ function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
     id: row.id,
     matchCount: row.matches?.[0]?.count ?? 0,
     name: row.name,
+    nameJa: row.name_ja ?? null,
     publishedContentCount: 0,
     season: row.season,
     slug: row.slug,

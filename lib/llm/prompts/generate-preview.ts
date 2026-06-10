@@ -105,6 +105,14 @@ export function buildGeneratePreviewPrompt(
 
     return "";
   })();
+  const japaneseNameGlossary = assembled.japanese_name_glossary ?? [];
+  const japaneseNameGlossaryBlock =
+    japaneseNameGlossary.length === 0
+      ? ""
+      : [
+          "【日本語表記グロッサリ】チーム名・大会名は以下の日本語表記を必ず使うこと。source の英語表記は本文に出さないこと。",
+          JSON.stringify(japaneseNameGlossary),
+        ].join("\n");
   const nameStyleInstruction =
     assembled.match.competition?.family === "league-one"
       ? "選手名は日本語表記を使用すること。外国人選手は英語の人名をカタカナに変換し、姓名の間に中点（・）を入れること。チーム名は日本語または通称表記を使用すること。"
@@ -112,7 +120,7 @@ export function buildGeneratePreviewPrompt(
           "選手名は必ずカタカナで記載すること。アルファベット表記は禁止。",
           "英語の人名はカタカナに変換し、姓名の間に中点（・）を入れること。",
           "アポストロフィ、van/de などの小辞、複合姓は日本語として自然な読みを優先すること。",
-          "チーム名は英語表記のまま（例: Reds、Leinster、Springboks）。",
+          "チーム名・大会名は日本語表記グロッサリまたは試合データ内の日本語名を使うこと。英語表記のまま出力しないこと。",
         ].join("");
 
   return [
@@ -129,6 +137,7 @@ export function buildGeneratePreviewPrompt(
     lineupUsageBlock,
     "出力は日本語マークダウン本文のみ。",
     "強調記号（**、*、__、_）・コードブロック（```）・引用（>）は使用禁止。見出し(#)と箇条書き(-)のみ使用すること。",
+    japaneseNameGlossaryBlock,
     nameStyleInstruction,
     "試合結果はデータ内の home_score と away_score が正確な最終スコアである。スコアが高いチームが勝者。この事実を文章の根拠として使うこと。",
     `試合データ: ${JSON.stringify(assembled)}`,

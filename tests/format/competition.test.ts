@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatCompetitionTitle,
   formatFamilyName,
+  getCompetitionDisplayName,
   getCompetitionFamilyColor,
 } from "@/lib/format/competition";
 
@@ -30,6 +31,19 @@ describe("formatFamilyName", () => {
     expect(
       formatCompetitionTitle("Japan Rugby League One 2024-25", "2024-25"),
     ).toBe("ジャパンラグビー リーグワン 2024-25");
+  });
+
+  it("uses Japanese competition display names when available", () => {
+    const competition = {
+      name: "Six Nations",
+      nameJa: "シックスネイションズ",
+    };
+
+    expect(getCompetitionDisplayName(competition)).toBe("シックスネイションズ");
+    expect(getCompetitionDisplayName(competition, "en")).toBe("Six Nations");
+    expect(formatCompetitionTitle(competition, "2025")).toBe(
+      "シックスネイションズ 2025",
+    );
   });
 
   it("returns competition family colors with a fallback", () => {

@@ -80,7 +80,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Tryline" };
   }
 
-  const title = formatCompetitionTitle(comp.name, comp.season);
+  const title = formatCompetitionTitle(comp, comp.season);
   const description = `${title} の試合結果・順位表・日本語レビュー一覧。`;
 
   return {
@@ -153,7 +153,7 @@ export default async function SeasonPage({ params }: Props) {
       {
         "@type": "ListItem",
         item: pageUrl,
-        name: formatCompetitionTitle(comp.name, comp.season),
+        name: formatCompetitionTitle(comp, comp.season),
         position: 3,
       },
     ],
@@ -179,7 +179,7 @@ export default async function SeasonPage({ params }: Props) {
             {formatFamilyName(family)}
           </p>
           <h1 className="mt-1 font-heading text-4xl font-bold tracking-tight text-[var(--color-ink)] sm:text-5xl">
-            {formatCompetitionTitle(comp.name, comp.season)}
+            {formatCompetitionTitle(comp, comp.season)}
           </h1>
           {dateRange && (
             <p className="mt-3 text-sm text-[var(--color-ink-muted)]">
