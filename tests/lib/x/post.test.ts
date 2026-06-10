@@ -95,13 +95,13 @@ describe("buildTweetText", () => {
 
   it("builds a language-specific reply with the match URL", () => {
     expect(buildReplyText("match-1", "en")).toBe(
-      "Match review 👇\nhttps://www.trylinerugby.com/matches/match-1/en",
+      "Match review 👇\nhttps://www.trylinerugby.com/matches/match-1/en?utm_source=x&utm_medium=social&utm_campaign=recap&utm_content=match-1",
     );
     expect(buildReplyText("match-1", "ja")).toBe(
-      "試合レビューはこちら 👇\nhttps://www.trylinerugby.com/matches/match-1",
+      "試合レビューはこちら 👇\nhttps://www.trylinerugby.com/matches/match-1?utm_source=x&utm_medium=social&utm_campaign=recap&utm_content=match-1",
     );
     expect(buildReplyText("match-1", "ja", "preview")).toBe(
-      "試合プレビューはこちら 👇\nhttps://www.trylinerugby.com/matches/match-1",
+      "試合プレビューはこちら 👇\nhttps://www.trylinerugby.com/matches/match-1?utm_source=x&utm_medium=social&utm_campaign=preview&utm_content=match-1",
     );
   });
 
