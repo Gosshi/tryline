@@ -10,8 +10,9 @@ type Message = {
 };
 
 type MatchChatProps = {
-  hasFreeQuestion: boolean;
-  isPremium: boolean;
+  hasFreeQuestion: boolean | null;
+  isLoggedIn: boolean | null;
+  isPremium: boolean | null;
   matchId: string;
 };
 
@@ -265,10 +266,11 @@ function SampleQaList() {
 
 export function MatchChat({
   hasFreeQuestion: initialHasFreeQuestion,
+  isLoggedIn,
   isPremium,
   matchId,
 }: MatchChatProps) {
-  const [hasFreeQuestion, setHasFreeQuestion] = useState(
+  const [hasFreeQuestion, setHasFreeQuestion] = useState<boolean | null>(
     initialHasFreeQuestion,
   );
 
@@ -276,7 +278,7 @@ export function MatchChat({
     setHasFreeQuestion(initialHasFreeQuestion);
   }, [initialHasFreeQuestion]);
 
-  const showSamples = !isPremium;
+  const showSamples = isPremium !== true;
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
@@ -291,6 +293,21 @@ export function MatchChat({
 
       {isPremium ? (
         <MatchChatPanel matchId={matchId} />
+      ) : isPremium === null || hasFreeQuestion === null ? (
+        <div className="h-32 animate-pulse rounded-lg bg-slate-100" />
+      ) : !isLoggedIn ? (
+        <>
+          <p className="mb-3 text-sm text-slate-600">
+            ログインすると1問まで無料で試せます
+          </p>
+          <a
+            className="inline-block rounded-full bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-white hover:opacity-90"
+            href="/auth/login"
+          >
+            ログインして試す
+          </a>
+          {showSamples && <SampleQaList />}
+        </>
       ) : hasFreeQuestion ? (
         <>
           <div className="mb-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
