@@ -11,7 +11,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.3.0";
+export const PROMPT_VERSION = "preview@3.4.0";
 
 export function buildGeneratePreviewPrompt(
   assembled: AssembledContentInput,
@@ -44,7 +44,11 @@ export function buildGeneratePreviewPrompt(
   const signalsBlock = buildSignalsBlock(additionalSignals);
   const sourcedFactsBlock =
     assembled.sourced_facts.length === 0
-      ? ""
+      ? [
+          "【sourced_facts: なし】外部記事・モデル訓練データ由来の統計・負傷・欠場・選手コメント・発言を一切使用してはならない。",
+          "記述できるのは試合イベント・スコア・順位表・ラインアップなど入力データに存在するものだけ。",
+          "数値を伴う統計が入力にない場合は、統計に触れずスコアの流れと戦術描写のみで構成すること。",
+        ].join("\n")
       : [
           "【出典付き補強事実 sourced_facts】以下はallowlist済みの信頼ソースから抽出した事実です。本文の根拠として使ってよい。",
           "使う場合は必ず自分の日本語で言い換えること。原文の長い直接引用は禁止。同一ソースから複数引用しないこと。",

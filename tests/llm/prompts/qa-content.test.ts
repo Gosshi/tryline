@@ -116,6 +116,16 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).toContain("Malcolm Marx is expected to miss");
   });
 
+  it("adds a zero-facts grounding warning when sourced facts are empty", () => {
+    const prompt = buildQaContentPrompt("preview", "本文", "ja", {
+      ...matchContext,
+      sourcedFacts: [],
+    });
+
+    expect(prompt).toContain("sourced_facts はゼロです");
+    expect(prompt).toContain("factual_grounding を 2 以下に下げること");
+  });
+
   it("omits turning point section checks when events are absent", () => {
     const prompt = buildQaContentPrompt(
       "recap",

@@ -11,7 +11,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.7.0";
+export const PROMPT_VERSION = "recap@4.8.0";
 
 const CORE_SECTION_INSTRUCTION = [
   "- この試合の核心: 200字以内。定型句を使わず、この試合固有の事実（最終スコア・決勝点のシチュエーション・試合の転換点）から書き始めること。",
@@ -112,7 +112,11 @@ export function buildGenerateRecapPrompt(
   const signalsBlock = buildSignalsBlock(additionalSignals);
   const sourcedFactsBlock =
     assembled.sourced_facts.length === 0
-      ? ""
+      ? [
+          "【sourced_facts: なし】外部記事・モデル訓練データ由来の統計・負傷・欠場・選手コメント・発言を一切使用してはならない。",
+          "記述できるのは試合イベント・スコア・順位表・ラインアップなど入力データに存在するものだけ。",
+          "数値を伴う統計が入力にない場合は、統計に触れずスコアの流れと戦術描写のみで構成すること。",
+        ].join("\n")
       : [
           "【出典付き補強事実 sourced_facts】以下はallowlist済みの信頼ソースから抽出した事実です。本文の根拠として使ってよい。",
           "使う場合は必ず自分の日本語で言い換えること。原文の長い直接引用は禁止。同一ソースから複数引用しないこと。",

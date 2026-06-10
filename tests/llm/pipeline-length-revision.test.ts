@@ -139,14 +139,14 @@ describe("generateMatchContent length revision", () => {
     generateNarrativeMock.generateNarrative.mockResolvedValue({
       content: "# short",
       modelVersion: "gpt-4o",
-      promptVersion: "preview@3.3.0",
+      promptVersion: "preview@3.4.0",
       temperature: 0.7,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
     generateNarrativeMock.reviseNarrativeLength.mockResolvedValue({
       content: `# revised\n${"あ".repeat(1500)}`,
       modelVersion: "gpt-4o",
-      promptVersion: "preview@3.3.0+length-revision@1.0.0",
+      promptVersion: "preview@3.4.0+length-revision@1.0.0",
       temperature: 0.6,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
@@ -181,7 +181,7 @@ describe("generateMatchContent length revision", () => {
     expect(dbMock.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         content_md: expect.stringContaining("# revised"),
-        prompt_version: "preview@3.3.0+length-revision@1.0.0",
+        prompt_version: "preview@3.4.0+length-revision@1.0.0",
         status: "published",
       }),
       expect.any(Object),
@@ -193,7 +193,7 @@ describe("generateMatchContent length revision", () => {
     generateNarrativeMock.reviseNarrativeLength.mockResolvedValue({
       content: "# still short",
       modelVersion: "gpt-4o",
-      promptVersion: "preview@3.3.0+length-revision@1.0.0",
+      promptVersion: "preview@3.4.0+length-revision@1.0.0",
       temperature: 0.6,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
@@ -270,7 +270,7 @@ describe("generateMatchContent length revision", () => {
     expect(dbMock.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         content_md: "# short",
-        prompt_version: "preview@3.3.0",
+        prompt_version: "preview@3.4.0",
         status: "published",
       }),
       expect.any(Object),
@@ -341,7 +341,7 @@ describe("generateMatchContent length revision", () => {
     generateNarrativeMock.reviseNarrativeLength.mockResolvedValue({
       content: "# still short",
       modelVersion: "gpt-4o",
-      promptVersion: "preview@3.3.0+length-revision@1.0.0",
+      promptVersion: "preview@3.4.0+length-revision@1.0.0",
       temperature: 0.6,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
