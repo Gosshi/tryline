@@ -40,6 +40,8 @@ export type QaResult = {
 };
 
 export type ScoreTimeline = {
+  final_home: number;
+  final_away: number;
   ht_home: number;
   ht_away: number;
   lead_changes: Array<{

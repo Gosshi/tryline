@@ -3,7 +3,10 @@ import { createHash } from "node:crypto";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { notifyContentRejected, notifyCostAlert } from "@/lib/llm/notify";
 import { calculateCostUsd } from "@/lib/llm/pricing";
-import { assembleMatchContentInput } from "@/lib/llm/stages/assemble";
+import {
+  assembleMatchContentInput,
+  computeScoreTimeline,
+} from "@/lib/llm/stages/assemble";
 import { extractTacticalPoints } from "@/lib/llm/stages/extract-facts";
 import {
   generateNarrative,
@@ -93,6 +96,40 @@ export async function generateMatchContent(
     durationMs: Date.now() - stage1StartedAt,
     status: "success",
   });
+
+  if (contentType === "recap" && assembled.match_events.length > 0) {
+    const timeline = computeScoreTimeline(
+      assembled.match_events,
+      assembled.match.home_team?.name ?? "Home",
+      assembled.match.away_team?.name ?? "Away",
+    );
+
+    if (timeline) {
+      const homeDelta =
+        timeline.final_home - (assembled.match.home_score ?? 0);
+      const awayDelta =
+        timeline.final_away - (assembled.match.away_score ?? 0);
+
+      if (homeDelta !== 0 || awayDelta !== 0) {
+        console.warn("[score-integrity] event total mismatch", {
+          awayDelta,
+          homeDelta,
+          matchId,
+        });
+
+        await logPipelineRun({
+          matchId,
+          contentType,
+          stage: 0,
+          inputHash: "",
+          output: { awayDelta, homeDelta, type: "score_event_mismatch" },
+          costUsd: 0,
+          durationMs: 0,
+          status: "failed",
+        });
+      }
+    }
+  }
 
   if (contentType === "recap" && assembled.match_events.length === 0) {
     return {
