@@ -8,6 +8,18 @@ const authMocks = vi.hoisted(() => ({
 
 const updateMock = vi.hoisted(() => vi.fn());
 const eqMock = vi.hoisted(() => vi.fn());
+const freeQuestionMocks = vi.hoisted(() => {
+  const query = {
+    eq: vi.fn(() => query),
+    maybeSingle: vi.fn(),
+  };
+
+  return {
+    query,
+    select: vi.fn(() => query),
+    upsert: vi.fn(),
+  };
+});
 const contextMocks = vi.hoisted(() => ({
   assembleMatchContext: vi.fn(),
 }));
@@ -17,9 +29,15 @@ const llmMocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/auth/server", () => ({
   getSupabaseServerClientWithAuth: () => ({
-    from: () => ({
-      update: updateMock,
-    }),
+    from: (table: string) =>
+      table === "chat_free_questions"
+        ? {
+            select: freeQuestionMocks.select,
+            upsert: freeQuestionMocks.upsert,
+          }
+        : {
+            update: updateMock,
+          },
   }),
   getUser: authMocks.getUser,
   getUserProfile: authMocks.getUserProfile,
@@ -68,6 +86,13 @@ describe("chat daily rate limit", () => {
     });
     eqMock.mockResolvedValue({ error: null });
     updateMock.mockReturnValue({ eq: eqMock });
+    freeQuestionMocks.query.eq.mockClear();
+    freeQuestionMocks.query.maybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    freeQuestionMocks.select.mockClear();
+    freeQuestionMocks.upsert.mockResolvedValue({ error: null });
   });
 
   afterEach(() => {
@@ -161,5 +186,55 @@ describe("chat daily rate limit", () => {
       chat_daily_count: 1,
       updated_at: "2026-05-07T12:00:00.000Z",
     });
+  });
+
+  it("returns 403 when a non-premium user already used the free question", async () => {
+    authMocks.isPremium.mockResolvedValue(false);
+    freeQuestionMocks.query.maybeSingle.mockResolvedValue({
+      data: { user_id: "user-1" },
+      error: null,
+    });
+
+    const { POST } = await import("@/app/api/chat/[matchId]/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/chat/match-1", {
+        body: JSON.stringify({ message: "この試合を分析して" }),
+        method: "POST",
+      }),
+      { params: Promise.resolve({ matchId: "match-1" }) },
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      error: "free_question_used",
+    });
+    expect(response.status).toBe(403);
+    expect(contextMocks.assembleMatchContext).not.toHaveBeenCalled();
+    expect(llmMocks.create).not.toHaveBeenCalled();
+  });
+
+  it("allows one non-premium question and records usage after the stream completes", async () => {
+    authMocks.isPremium.mockResolvedValue(false);
+    authMocks.getUserProfile.mockClear();
+
+    const { POST } = await import("@/app/api/chat/[matchId]/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/chat/match-1", {
+        body: JSON.stringify({ message: "この試合を分析して" }),
+        method: "POST",
+      }),
+      { params: Promise.resolve({ matchId: "match-1" }) },
+    );
+    const text = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(text).toContain('"done":true');
+    expect(authMocks.getUserProfile).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(freeQuestionMocks.upsert).toHaveBeenCalledWith(
+      { match_id: "match-1", user_id: "user-1" },
+      { ignoreDuplicates: true },
+    );
   });
 });
