@@ -202,6 +202,7 @@ describe("/api/cron/notify-discord", () => {
     process.env.DISCORD_WEBHOOK_JA = "https://discord.com/api/webhooks/ja";
     process.env.NEXT_PUBLIC_SUPABASE_URL = "";
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "";
+    process.env.NEXT_PUBLIC_SITE_URL = "https://www.trylinerugby.com";
     process.env.OPENAI_API_KEY = "";
     process.env.SCRAPER_USER_AGENT = "Tryline Test Bot/1.0 (+test@example.com)";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "";
@@ -336,7 +337,7 @@ describe("/api/cron/notify-discord", () => {
       "```\nプレビューはTrylineで公開しています。\n記事URLまたはプロフィールのリンクからどうぞ。\n```",
     );
     expect(firstPayload.embeds[0]?.fields[2]?.value).toBe(
-      "https://www.trylinerugby.com/matches/match-2",
+      "https://www.trylinerugby.com/matches/match-2?utm_source=x&utm_medium=social&utm_campaign=preview&utm_content=match-2",
     );
     expect(firstPayload.embeds[0]?.fields[3]?.value).toContain("🐦 ツイート1");
     expect(firstPayload.embeds[0]?.fields[3]?.value).toContain(

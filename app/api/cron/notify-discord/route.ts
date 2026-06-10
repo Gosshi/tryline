@@ -4,6 +4,7 @@ import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
 import { generateImpressionTweet } from "@/lib/x/impression-tweet";
+import { buildMatchShareUrl } from "@/lib/x/match-url";
 import { buildLinklessReplyText, buildTweetText } from "@/lib/x/post";
 import {
   generatePreviewThread,
@@ -376,9 +377,11 @@ export async function POST(request: Request) {
         content.language,
         content.content_type,
       );
-      const matchUrl = `https://www.trylinerugby.com/matches/${content.match_id}${
-        content.language === "en" ? "/en" : ""
-      }`;
+      const matchUrl = buildMatchShareUrl(content.match_id, {
+        contentType: content.content_type,
+        language: content.language,
+        source: "x",
+      });
       const resultImageUrl = new URL("https://www.trylinerugby.com/api/og");
       resultImageUrl.searchParams.set("type", "result");
       resultImageUrl.searchParams.set("home", homeDisplayName);

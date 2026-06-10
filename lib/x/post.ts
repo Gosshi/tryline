@@ -1,5 +1,6 @@
 import { TwitterApi } from "twitter-api-v2";
 
+import { buildMatchShareUrl } from "@/lib/x/match-url";
 import { fetchOgImageBuffer, uploadMediaToX } from "@/lib/x/media";
 
 export type XPostParams = {
@@ -246,9 +247,11 @@ export function buildReplyText(
   language: "ja" | "en",
   contentType: "preview" | "recap" = "recap",
 ): string {
-  const matchUrl = `https://www.trylinerugby.com/matches/${matchId}${
-    language === "en" ? "/en" : ""
-  }`;
+  const matchUrl = buildMatchShareUrl(matchId, {
+    contentType,
+    language,
+    source: "x",
+  });
   const cta =
     language === "en"
       ? contentType === "preview"
