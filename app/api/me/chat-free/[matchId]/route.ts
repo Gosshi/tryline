@@ -14,13 +14,19 @@ export async function GET(
   const user = await getUser();
 
   if (!user) {
-    return NextResponse.json({ hasFreeQuestion: false });
+    return NextResponse.json({
+      hasFreeQuestion: false,
+      isLoggedIn: false,
+    });
   }
 
   const premium = await isPremium(user.id);
 
   if (premium) {
-    return NextResponse.json({ hasFreeQuestion: true });
+    return NextResponse.json({
+      hasFreeQuestion: true,
+      isLoggedIn: true,
+    });
   }
 
   const supabase = await getSupabaseServerClientWithAuth();
@@ -31,5 +37,8 @@ export async function GET(
     .eq("match_id", matchId)
     .maybeSingle();
 
-  return NextResponse.json({ hasFreeQuestion: !data });
+  return NextResponse.json({
+    hasFreeQuestion: !data,
+    isLoggedIn: true,
+  });
 }

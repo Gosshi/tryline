@@ -49,6 +49,7 @@ describe("GET /api/me/chat-free/[matchId]", () => {
 
     await expect(response.json()).resolves.toEqual({
       hasFreeQuestion: false,
+      isLoggedIn: false,
     });
   });
 
@@ -62,6 +63,7 @@ describe("GET /api/me/chat-free/[matchId]", () => {
 
     await expect(response.json()).resolves.toEqual({
       hasFreeQuestion: true,
+      isLoggedIn: true,
     });
     expect(freeQuestionMocks.select).not.toHaveBeenCalled();
   });
@@ -75,6 +77,7 @@ describe("GET /api/me/chat-free/[matchId]", () => {
 
     await expect(response.json()).resolves.toEqual({
       hasFreeQuestion: true,
+      isLoggedIn: true,
     });
   });
 
@@ -91,6 +94,7 @@ describe("GET /api/me/chat-free/[matchId]", () => {
 
     await expect(response.json()).resolves.toEqual({
       hasFreeQuestion: false,
+      isLoggedIn: true,
     });
   });
 });

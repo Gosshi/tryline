@@ -9,8 +9,9 @@ type Props = {
 };
 
 export function PremiumMatchChat({ matchId }: Props) {
-  const [isPremium, setIsPremium] = useState(false);
-  const [hasFreeQuestion, setHasFreeQuestion] = useState(false);
+  const [isPremium, setIsPremium] = useState<boolean | null>(null);
+  const [hasFreeQuestion, setHasFreeQuestion] = useState<boolean | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -21,21 +22,25 @@ export function PremiumMatchChat({ matchId }: Props) {
         .catch(() => ({})),
       fetch(`/api/me/chat-free/${matchId}`)
         .then((response) => response.json())
-        .catch(() => ({})),
+        .catch(() => ({
+          hasFreeQuestion: null as boolean | null,
+          isLoggedIn: null as boolean | null,
+        })),
     ]).then(
       ([
         premiumData,
         freeQuestionData,
       ]: [
         { isPremium?: boolean },
-        { hasFreeQuestion?: boolean },
+        { hasFreeQuestion?: boolean | null; isLoggedIn?: boolean | null },
       ]) => {
         if (cancelled) {
           return;
         }
 
         setIsPremium(premiumData.isPremium ?? false);
-        setHasFreeQuestion(freeQuestionData.hasFreeQuestion ?? false);
+        setHasFreeQuestion(freeQuestionData.hasFreeQuestion ?? null);
+        setIsLoggedIn(freeQuestionData.isLoggedIn ?? null);
       },
     );
 
@@ -47,6 +52,7 @@ export function PremiumMatchChat({ matchId }: Props) {
   return (
     <MatchChat
       hasFreeQuestion={hasFreeQuestion}
+      isLoggedIn={isLoggedIn}
       isPremium={isPremium}
       matchId={matchId}
     />
