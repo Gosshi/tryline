@@ -15,6 +15,7 @@ const generateNarrativeMock = vi.hoisted(() => ({
 }));
 
 const qaMock = vi.hoisted(() => ({
+  DENSITY_PUBLISH_MIN: 4,
   evaluateNarrativeQuality: vi.fn(),
 }));
 
@@ -185,5 +186,54 @@ describe("generateMatchContent recap event guard", () => {
       "https://www.trylinerugby.com/matches/match-2",
       "https://www.trylinerugby.com/matches/match-2/en",
     ]);
+  });
+
+  it("keeps low-density published recap QA as draft", async () => {
+    assembleMock.assembleMatchContentInput.mockResolvedValue({
+      ...assembledWithoutEvents,
+      match_events: [
+        {
+          minute: 12,
+          player_name: "Player One",
+          team_name: "Home",
+          type: "try",
+        },
+      ],
+    });
+    extractFactsMock.extractTacticalPoints.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: { tactical_points: [] },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    generateNarrativeMock.generateNarrative.mockResolvedValue({
+      content: "# recap",
+      modelVersion: "gpt-4o",
+      promptVersion: "1.0.0",
+      temperature: 0.7,
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    qaMock.evaluateNarrativeQuality.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: {
+        issues: [],
+        scores: {
+          factual_grounding: 4,
+          information_density: 3,
+          japanese_quality: 4,
+          tactical_depth: 4,
+        },
+        verdict: "publish",
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    const result = await generateMatchContent("match-3", "recap", "ja");
+
+    expect(result.status).toBe("draft");
+    expect(dbMock.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "draft" }),
+      expect.any(Object),
+    );
+    expect(indexNowMock.submitUrlsToIndexNow).not.toHaveBeenCalled();
   });
 });

@@ -213,11 +213,7 @@ export default async function HomePage() {
             )}
             <Link
               className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              href={
-                reviewedFamilies[0]
-                  ? `/c/${reviewedFamilies[0].family}/${reviewedFamilies[0].competitionSeason}`
-                  : "/"
-              }
+              href="/calendar"
             >
               今週の試合を見る
             </Link>
