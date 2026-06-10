@@ -11,7 +11,15 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.6.0";
+export const PROMPT_VERSION = "recap@4.7.0";
+
+const CORE_SECTION_INSTRUCTION = [
+  "- この試合の核心: 200字以内。定型句を使わず、この試合固有の事実（最終スコア・決勝点のシチュエーション・試合の転換点）から書き始めること。",
+  "  書き方の例（パターン名は出力しない）:",
+  "  ・逆転劇型: 「79分のトライで逆転——{チーム名}が3連敗から抜け出した必然」",
+  "  ・戦術型: 「前半のスクラム圧倒が後半のペナルティ量産につながった{チーム名}の勝利構造」",
+  "  ・スコア対比型: 「{点数}対{点数}という数字より、前半と後半で別々のチームになった試合だった」",
+].join("\n");
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -35,7 +43,7 @@ export function buildGenerateRecapPrompt(
         "# 次戦への示唆",
         "",
         "各セクションの字数目標と内容指示:",
-        "- この試合の核心: 200字以内。試合前の「何 対 何の争い」に対し実際の結果がどう答えたかを1〜2文で述べる",
+        CORE_SECTION_INSTRUCTION,
         "- 試合全体像: 400-500字",
         "- ターニングポイント: 500-600字",
         "- 注目選手: 300-400字。projected_lineups または match_events に存在する実名を使い、この試合での貢献・プレー内容を具体的に記述する",
@@ -55,7 +63,7 @@ export function buildGenerateRecapPrompt(
           "# 次戦への示唆",
           "",
           "各セクションの字数目標と内容指示:",
-          "- この試合の核心: 200字以内。試合前の「何 対 何の争い」に対し実際の結果がどう答えたかを1〜2文で述べる",
+          CORE_SECTION_INSTRUCTION,
           "- 試合全体像: 500-600字",
           "- 大会文脈と順位への影響: 400-500字",
           "- 両チームの近況と戦術傾向: 500-600字",
@@ -75,7 +83,7 @@ export function buildGenerateRecapPrompt(
           "【字数目標と記述内容（各セクションは下限を必ず満たすこと）】",
           "",
           "# この試合の核心（100-200字）",
-          "- 試合前の「何 対 何の争い」に対し実際の結果がどう答えたかを1〜2文で述べる",
+          CORE_SECTION_INSTRUCTION,
           "",
           "# 試合全体像（400-500字）— 以下の要素をすべて含めること:",
           "- プレーオフという文脈と一発勝負の重み（50字程度）",
@@ -165,7 +173,7 @@ export function buildGenerateRecapPrompt(
   const dataSparseBlock = isDataSparse
     ? [
         "【データスパースモード】スコアラー・ラインアップデータは存在しない。スコアと順位変動のみを記述し、試合展開の描写は行わないこと。",
-        "- recent_form の直近5試合から得点力・失点傾向・連勝/連敗ストリークを読み取り本文に反映すること",
+        "- recent_form の直近5試合から連勝/連敗ストリーク・平均得失点の傾向（攻撃型 or 守備型か）・直近の勝ち方の特徴を読み取り本文に反映すること。冒頭は「得点力」で始めず、直近の試合展開・プレースタイルの特徴・今節の文脈から書き始めること",
         "- competition_standings の順位変動（この試合結果による上昇/下降）を必ず計算して記述すること",
         "- h2h_last_5 の直近対戦スコアを引用し、今回の結果との比較を行うこと",
         "- key_stats の直近平均得点・失点と今回のスコアを対比して試合の特徴を示すこと",
