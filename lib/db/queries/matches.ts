@@ -324,6 +324,7 @@ const RECENTLY_REVIEWED_MATCH_SELECT = `
     competition:competitions!matches_competition_id_fkey (
       slug,
       name,
+      name_ja,
       season
     )
   )

@@ -130,6 +130,9 @@ export default async function HomePage() {
   const homepageWeekMatches = weeklyMatches
     .filter((match) => match.kickoffAt >= nowIso)
     .slice(0, 6);
+  const homepageUpcomingMatches = upcomingMatches.filter(
+    (match) => !homepageWeekMatches.some((weekMatch) => weekMatch.id === match.id),
+  );
   const favoriteTeamPageSlug =
     favoriteTeamSlugs.length === 1 ? (favoriteTeamSlugs[0] ?? null) : null;
   const jsonLd = [
@@ -192,8 +195,8 @@ export default async function HomePage() {
             日本語で深掘り。
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
-            DAZN、J SPORTS、WOWOW で見たい試合が重なる週末でも、 Six
-            Nations、Premiership、URC、Top 14 まで試合の流れと見どころを
+            DAZN、J SPORTS、WOWOW で見たい試合が重なる週末でも、Six
+            Nations・Premiership・URC をはじめとする主要大会の試合の流れと見どころを
             日本語レビューと試合チャットで追えます。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -234,7 +237,7 @@ export default async function HomePage() {
             >
               <p className="text-xs font-semibold text-white/55">
                 {formatCompetitionTitle(
-                  sampleMatch.competition.name,
+                  sampleMatch.competition,
                   sampleMatch.competition.season,
                 )}
               </p>
@@ -280,7 +283,7 @@ export default async function HomePage() {
             <div className="border-b border-slate-100 px-5 py-3">
               <p className="text-xs text-[var(--color-ink-muted)]">
                 {formatCompetitionTitle(
-                  sampleMatch.competition.name,
+                  sampleMatch.competition,
                   sampleMatch.competition.season,
                 )}
               </p>
@@ -381,13 +384,13 @@ export default async function HomePage() {
           />
         </section>
 
-        {upcomingMatches.length > 0 && (
+        {homepageUpcomingMatches.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               今後の試合
             </h2>
             <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
-              {upcomingMatches.map((match) => {
+              {homepageUpcomingMatches.map((match) => {
                 const family = match.competition.slug.replace(
                   /-\d{4}(-\d{2})?$/,
                   "",
@@ -458,7 +461,7 @@ export default async function HomePage() {
                     <div className="min-w-0">
                       <p className="text-xs text-[var(--color-ink-muted)]">
                         {formatCompetitionTitle(
-                          match.competition.name,
+                          match.competition,
                           match.competition.season,
                         )}
                       </p>
