@@ -34,6 +34,32 @@ export type Database = {
   };
   public: {
     Tables: {
+      chat_free_questions: {
+        Row: {
+          created_at: string;
+          match_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          match_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          match_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_free_questions_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       chat_messages: {
         Row: {
           content: string;

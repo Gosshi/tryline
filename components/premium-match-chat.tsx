@@ -10,15 +10,45 @@ type Props = {
 
 export function PremiumMatchChat({ matchId }: Props) {
   const [isPremium, setIsPremium] = useState(false);
+  const [hasFreeQuestion, setHasFreeQuestion] = useState(false);
 
   useEffect(() => {
-    fetch("/api/me/premium")
-      .then((response) => response.json())
-      .then((data: { isPremium?: boolean }) =>
-        setIsPremium(data.isPremium ?? false),
-      )
-      .catch(() => undefined);
-  }, []);
+    let cancelled = false;
 
-  return <MatchChat isPremium={isPremium} matchId={matchId} />;
+    Promise.all([
+      fetch("/api/me/premium")
+        .then((response) => response.json())
+        .catch(() => ({})),
+      fetch(`/api/me/chat-free/${matchId}`)
+        .then((response) => response.json())
+        .catch(() => ({})),
+    ]).then(
+      ([
+        premiumData,
+        freeQuestionData,
+      ]: [
+        { isPremium?: boolean },
+        { hasFreeQuestion?: boolean },
+      ]) => {
+        if (cancelled) {
+          return;
+        }
+
+        setIsPremium(premiumData.isPremium ?? false);
+        setHasFreeQuestion(freeQuestionData.hasFreeQuestion ?? false);
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [matchId]);
+
+  return (
+    <MatchChat
+      hasFreeQuestion={hasFreeQuestion}
+      isPremium={isPremium}
+      matchId={matchId}
+    />
+  );
 }

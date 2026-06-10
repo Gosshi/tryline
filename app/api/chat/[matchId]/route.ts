@@ -26,16 +26,28 @@ export async function POST(
     return Response.json({ error: "login_required" }, { status: 401 });
   }
 
-  if (!(await isPremium(user.id))) {
-    return Response.json({ error: "premium_required" }, { status: 403 });
+  const premium = await isPremium(user.id);
+  const supabase = await getSupabaseServerClientWithAuth();
+
+  if (!premium) {
+    const { data: freeUsage } = await supabase
+      .from("chat_free_questions")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .eq("match_id", matchId)
+      .maybeSingle();
+
+    if (freeUsage) {
+      return Response.json({ error: "free_question_used" }, { status: 403 });
+    }
   }
 
-  const profile = await getUserProfile(user.id);
-  const supabase = await getSupabaseServerClientWithAuth();
+  const profile = premium ? await getUserProfile(user.id) : null;
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
   const resetNeeded =
-    !profile?.chat_daily_reset_date || profile.chat_daily_reset_date < today;
+    premium &&
+    (!profile?.chat_daily_reset_date || profile.chat_daily_reset_date < today);
   const dailyCount = resetNeeded ? 0 : (profile?.chat_daily_count ?? 0);
 
   if (resetNeeded) {
@@ -49,7 +61,7 @@ export async function POST(
       .eq("id", user.id);
   }
 
-  if (dailyCount >= DAILY_MESSAGE_LIMIT) {
+  if (premium && dailyCount >= DAILY_MESSAGE_LIMIT) {
     return Response.json({ error: "daily_limit_exceeded" }, { status: 429 });
   }
 
@@ -94,13 +106,23 @@ export async function POST(
           }
         }
 
-        await supabase
-          .from("user_profiles")
-          .update({
-            chat_daily_count: dailyCount + 1,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", user.id);
+        if (premium) {
+          await supabase
+            .from("user_profiles")
+            .update({
+              chat_daily_count: dailyCount + 1,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", user.id);
+        } else {
+          await supabase
+            .from("chat_free_questions")
+            .upsert(
+              { match_id: matchId, user_id: user.id },
+              { ignoreDuplicates: true },
+            );
+        }
+
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`),
         );

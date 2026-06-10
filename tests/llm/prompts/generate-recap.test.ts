@@ -52,8 +52,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.6.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.6.0");
+  it("uses recap prompt version 4.7.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.7.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -62,7 +62,7 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("国際ラグビーを20年取材");
     expect(prompt).toContain("Number やRugby World誌");
     expect(prompt).toContain("# この試合の核心");
-    expect(prompt).toContain("試合前の「何 対 何の争い」に対し実際の結果");
+    expect(prompt).toContain("定型句を使わず");
     expect(prompt).not.toContain("セクション0");
     expect(prompt).toContain("【絶対禁止表現");
     expect(prompt).toContain("入力データに無い統計");

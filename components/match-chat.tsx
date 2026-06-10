@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Paywall } from "@/components/paywall";
 
@@ -10,16 +10,34 @@ type Message = {
 };
 
 type MatchChatProps = {
+  hasFreeQuestion: boolean;
   isPremium: boolean;
   matchId: string;
 };
 
+const SAMPLE_QA = [
+  {
+    a: "後半に生まれた逆転トライと、それを引き出した前半の戦術的な積み重ねを、スコアの流れと選手の動きを絡めて説明します。",
+    q: "この試合のターニングポイントになったプレーを教えて",
+  },
+  {
+    a: "スクラムとラインアウトそれぞれの優劣と、それが試合のどの局面でどう影響したかを具体的に解説します。",
+    q: "両チームのセットピース（スクラム・ラインアウト）の出来は？",
+  },
+  {
+    a: "今節の結果が順位争いやプレーオフレースに与える影響と、両チームが次に向けて修正すべき点をまとめます。",
+    q: "次節への示唆を踏まえて、この試合の意味を教えて",
+  },
+];
+
 function MatchChatPanel({
   disabled = false,
   matchId,
+  onFreeQuestionUsed,
 }: {
   disabled?: boolean;
   matchId: string;
+  onFreeQuestionUsed?: () => void;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -81,6 +99,12 @@ function MatchChatPanel({
 
       if (!response.ok) {
         const data = (await response.json()) as { error?: string };
+        if (data.error === "free_question_used") {
+          onFreeQuestionUsed?.();
+          setError("1問使用済みです。続きは Premium でご利用ください。");
+          return;
+        }
+
         setError(
           data.error === "daily_limit_exceeded"
             ? "1 日のメッセージ上限（30 件）に達しました。明日またご利用ください。"
@@ -135,6 +159,7 @@ function MatchChatPanel({
 
           if (data.done) {
             // Conversation history is intentionally kept only in React state.
+            onFreeQuestionUsed?.();
           }
         }
       }
@@ -218,7 +243,41 @@ function MatchChatPanel({
   );
 }
 
-export function MatchChat({ isPremium, matchId }: MatchChatProps) {
+function SampleQaList() {
+  return (
+    <div className="mt-5 space-y-3 rounded-lg border border-slate-100 bg-slate-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+        SAMPLE Q&A
+      </p>
+      <div className="space-y-4">
+        {SAMPLE_QA.map((sample) => (
+          <div className="space-y-1" key={sample.q}>
+            <p className="text-sm font-semibold text-slate-900">
+              Q. {sample.q}
+            </p>
+            <p className="text-sm leading-6 text-slate-600">A. {sample.a}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function MatchChat({
+  hasFreeQuestion: initialHasFreeQuestion,
+  isPremium,
+  matchId,
+}: MatchChatProps) {
+  const [hasFreeQuestion, setHasFreeQuestion] = useState(
+    initialHasFreeQuestion,
+  );
+
+  useEffect(() => {
+    setHasFreeQuestion(initialHasFreeQuestion);
+  }, [initialHasFreeQuestion]);
+
+  const showSamples = !isPremium;
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
       <div className="mb-4 border-b border-slate-100 pb-4">
@@ -232,10 +291,27 @@ export function MatchChat({ isPremium, matchId }: MatchChatProps) {
 
       {isPremium ? (
         <MatchChatPanel matchId={matchId} />
+      ) : hasFreeQuestion ? (
+        <>
+          <div className="mb-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            この試合1問まで無料
+          </div>
+          <MatchChatPanel
+            matchId={matchId}
+            onFreeQuestionUsed={() => setHasFreeQuestion(false)}
+          />
+          {showSamples && <SampleQaList />}
+        </>
       ) : (
-        <Paywall isPremium={false}>
-          <MatchChatPanel disabled matchId={matchId} />
-        </Paywall>
+        <>
+          <p className="mb-3 text-sm font-semibold text-slate-700">
+            1問使用済み。続きは Premium で
+          </p>
+          <Paywall isPremium={false}>
+            <MatchChatPanel disabled matchId={matchId} />
+          </Paywall>
+          {showSamples && <SampleQaList />}
+        </>
       )}
     </section>
   );
