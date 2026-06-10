@@ -154,5 +154,8 @@ describe("HomePage", () => {
     expect(
       screen.getAllByText("これは無料で読めるレビュー本文です。").length,
     ).toBe(2);
+    expect(
+      screen.getByRole("link", { name: "今週の試合を見る" }),
+    ).toHaveAttribute("href", "/calendar");
   });
 });
