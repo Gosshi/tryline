@@ -11,6 +11,7 @@ import {
   reviseNarrativeLength,
 } from "@/lib/llm/stages/generate-narrative";
 import {
+  DENSITY_PUBLISH_MIN,
   evaluateNarrativeQuality,
   isContentLengthIssue,
   isFactualGroundingHardBlock,
@@ -422,7 +423,12 @@ export async function generateMatchContent(
     throw new Error("pipeline failed to produce qa result");
   }
 
-  const persistedStatus = finalQa.verdict === "publish" ? "published" : "draft";
+  const densityBlocked =
+    contentType === "recap" &&
+    language === "ja" &&
+    finalQa.scores.information_density < DENSITY_PUBLISH_MIN;
+  const persistedStatus =
+    finalQa.verdict === "publish" && !densityBlocked ? "published" : "draft";
 
   const { error: upsertError } = await db.from("match_content").upsert(
     {

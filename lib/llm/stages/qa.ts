@@ -38,6 +38,8 @@ type ParsedQaResponse = {
   issues?: unknown;
 };
 
+export const DENSITY_PUBLISH_MIN = 4;
+
 function appendIssue(issues: string[], issue: string): string[] {
   return issues.includes(issue) ? issues : [...issues, issue];
 }
@@ -55,11 +57,12 @@ export function isFactualGroundingHardBlock(result: QaResult): boolean {
 
 // Single source of truth for QA verdicts. The LLM scores content only; code
 // applies the stable retry/reject thresholds used by the pipeline.
-function resolveVerdict(
+export function resolveVerdict(
   scores: QaResult["scores"],
   retryCount: number,
   factualHardBlock: boolean,
   lengthUnderMinimum: boolean,
+  contentType: ContentType,
 ): QaVerdict {
   if (factualHardBlock) {
     if (retryCount >= 2) {
@@ -87,8 +90,11 @@ function resolveVerdict(
     scores.factual_grounding,
     scores.tactical_depth,
   ];
+  const densityOk =
+    contentType !== "recap" ||
+    scores.information_density >= DENSITY_PUBLISH_MIN;
 
-  if (scoreValues.every((score) => score >= 3)) {
+  if (scoreValues.every((score) => score >= 3) && densityOk) {
     return "publish";
   }
 
@@ -199,6 +205,7 @@ function parseQaResponse(
       retryCount,
       factualHardBlock,
       lengthUnderMinimum,
+      options.contentType,
     ),
   };
 }
