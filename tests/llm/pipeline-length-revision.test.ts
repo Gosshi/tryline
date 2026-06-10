@@ -15,6 +15,7 @@ const generateNarrativeMock = vi.hoisted(() => ({
 }));
 
 const qaMock = vi.hoisted(() => ({
+  DENSITY_PUBLISH_MIN: 4,
   evaluateNarrativeQuality: vi.fn(),
   isContentLengthIssue: vi.fn((result: { issues: string[] }) =>
     result.issues.includes("本文が目標字数の下限未満です"),
@@ -100,6 +101,23 @@ const qaScores = {
   information_density: 5,
   japanese_quality: 5,
   tactical_depth: 5,
+};
+const assembledWithEvents: AssembledContentInput = {
+  ...assembled,
+  match: {
+    ...assembled.match,
+    away_score: 17,
+    home_score: 24,
+    status: "finished",
+  },
+  match_events: [
+    {
+      minute: 12,
+      player_name: "Player One",
+      team_name: "Home",
+      type: "try",
+    },
+  ],
 };
 
 describe("generateMatchContent length revision", () => {
@@ -264,6 +282,97 @@ describe("generateMatchContent length revision", () => {
         matchId: "match-1",
         revisionFactual: 1,
       }),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("keeps low-density recap factual fallback as draft", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    assembleMock.assembleMatchContentInput.mockResolvedValue(assembledWithEvents);
+    qaMock.evaluateNarrativeQuality
+      .mockResolvedValueOnce({
+        modelVersion: "gpt-4o-mini",
+        result: {
+          issues: ["本文が目標字数の下限未満です"],
+          scores: {
+            ...qaScores,
+            factual_grounding: 4,
+            information_density: 3,
+          },
+          verdict: "retry",
+        },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      })
+      .mockResolvedValueOnce({
+        modelVersion: "gpt-4o-mini",
+        result: {
+          issues: ["データに存在しない統計値を含む"],
+          scores: {
+            ...qaScores,
+            factual_grounding: 1,
+            information_density: 5,
+          },
+          verdict: "retry",
+        },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      });
+
+    const result = await generateMatchContent("match-1", "recap", "ja");
+
+    expect(result.status).toBe("draft");
+    expect(result.qa?.scores.information_density).toBe(3);
+    expect(result.qa?.issues).toContain(
+      "加筆リトライで事実根拠が低下したため短い正確な版を採用しました",
+    );
+    expect(dbMock.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content_md: "# short",
+        status: "draft",
+      }),
+      expect.any(Object),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("keeps low-density recap length fallback as draft", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    assembleMock.assembleMatchContentInput.mockResolvedValue(assembledWithEvents);
+    generateNarrativeMock.reviseNarrativeLength.mockResolvedValue({
+      content: "# still short",
+      modelVersion: "gpt-4o",
+      promptVersion: "preview@3.3.0+length-revision@1.0.0",
+      temperature: 0.6,
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    qaMock.evaluateNarrativeQuality
+      .mockResolvedValueOnce({
+        modelVersion: "gpt-4o-mini",
+        result: {
+          issues: ["本文が目標字数の下限未満です"],
+          scores: { ...qaScores, information_density: 3 },
+          verdict: "retry",
+        },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      })
+      .mockResolvedValueOnce({
+        modelVersion: "gpt-4o-mini",
+        result: {
+          issues: ["本文が目標字数の下限未満です"],
+          scores: { ...qaScores, information_density: 3 },
+          verdict: "retry",
+        },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      });
+
+    const result = await generateMatchContent("match-1", "recap", "ja");
+
+    expect(result.status).toBe("draft");
+    expect(result.qa?.issues).toContain(
+      "字数下限未達のまま加筆リトライ上限に到達しました",
+    );
+    expect(dbMock.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "draft" }),
+      expect.any(Object),
     );
     warnSpy.mockRestore();
   });

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { evaluateNarrativeQuality } from "@/lib/llm/stages/qa";
+import { evaluateNarrativeQuality, resolveVerdict } from "@/lib/llm/stages/qa";
 
 const openAIMock = vi.hoisted(() => ({
   createTextResponse: vi.fn(),
@@ -16,6 +16,44 @@ const matchContext = {
 };
 const longJaPreview = "あ".repeat(1500);
 const longJaRecap = "あ".repeat(2000);
+const passingScores = {
+  factual_grounding: 4,
+  information_density: 4,
+  japanese_quality: 4,
+  tactical_depth: 4,
+};
+
+describe("resolveVerdict", () => {
+  it("retries low-density recaps even when other scores pass", () => {
+    expect(
+      resolveVerdict(
+        { ...passingScores, information_density: 3 },
+        0,
+        false,
+        false,
+        "recap",
+      ),
+    ).toBe("retry");
+  });
+
+  it("publishes recaps when density is at least 4 and other scores pass", () => {
+    expect(resolveVerdict(passingScores, 0, false, false, "recap")).toBe(
+      "publish",
+    );
+  });
+
+  it("keeps preview publish behavior at density 3", () => {
+    expect(
+      resolveVerdict(
+        { ...passingScores, information_density: 3 },
+        0,
+        false,
+        false,
+        "preview",
+      ),
+    ).toBe("publish");
+  });
+});
 
 describe("evaluateNarrativeQuality", () => {
   it("returns publish when all scores are >= 3", async () => {
