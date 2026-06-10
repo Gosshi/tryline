@@ -1,5 +1,7 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
+import { getCompetitionDisplayName } from "@/lib/format/competition";
 import { type MatchStatus } from "@/lib/format/status";
+import { getTeamDisplayName } from "@/lib/format/team";
 import { truncateAtSentenceBoundary } from "@/lib/text";
 
 import type { Json } from "@/lib/db/types";
@@ -8,8 +10,18 @@ export type MatchListItem = {
   id: string;
   kickoffAt: string;
   status: MatchStatus;
-  homeTeam: { slug: string; name: string; shortCode: string };
-  awayTeam: { slug: string; name: string; shortCode: string };
+  homeTeam: {
+    slug: string;
+    name: string;
+    nameJa?: string | null;
+    shortCode: string;
+  };
+  awayTeam: {
+    slug: string;
+    name: string;
+    nameJa?: string | null;
+    shortCode: string;
+  };
   homeScore: number | null;
   awayScore: number | null;
   venue: string | null;
@@ -18,7 +30,13 @@ export type MatchListItem = {
 };
 
 export type MatchDetail = Omit<MatchListItem, "awayTeam" | "homeTeam"> & {
-  competition: { family: string; slug: string; name: string; season: string };
+  competition: {
+    family: string;
+    slug: string;
+    name: string;
+    nameJa?: string | null;
+    season: string;
+  };
   awayTeam: MatchListItem["awayTeam"] & { englishName: string | null };
   awayTeamId: string;
   homeTeam: MatchListItem["homeTeam"] & { englishName: string | null };
@@ -28,6 +46,7 @@ export type MatchDetail = Omit<MatchListItem, "awayTeam" | "homeTeam"> & {
 export type CompetitionSummary = {
   slug: string;
   name: string;
+  nameJa?: string | null;
   season: string;
   startDate: string | null;
   endDate: string | null;
@@ -42,13 +61,19 @@ export type ReviewedFamily = {
 };
 
 export type RecentlyReviewedMatch = MatchListItem & {
-  competition: { slug: string; name: string; season: string };
+  competition: { slug: string; name: string; nameJa?: string | null; season: string };
   recapGeneratedAt: string;
   recapExcerpt: string;
 };
 
 export type UpcomingMatch = MatchListItem & {
-  competition: { family: string; slug: string; name: string; season: string };
+  competition: {
+    family: string;
+    slug: string;
+    name: string;
+    nameJa?: string | null;
+    season: string;
+  };
 };
 
 export type CalendarMatch = UpcomingMatch & {
@@ -58,17 +83,18 @@ export type CalendarMatch = UpcomingMatch & {
 export type FavoriteTeamMatch = UpcomingMatch;
 
 export type TeamPageMatch = MatchListItem & {
-  competition: { slug: string; name: string; season: string };
+  competition: { slug: string; name: string; nameJa?: string | null; season: string };
 };
 
 export type HeadToHeadTeam = {
   slug: string;
   name: string;
+  nameJa?: string | null;
   shortCode: string;
 };
 
 export type HeadToHeadMatch = MatchListItem & {
-  competition: { slug: string; name: string; season: string };
+  competition: { slug: string; name: string; nameJa?: string | null; season: string };
 };
 
 export type HeadToHeadPageData = {
@@ -128,12 +154,14 @@ type BaseMatchRow = {
     english_name?: string | null;
     slug: string;
     name: string;
+    name_ja?: string | null;
     short_code: string | null;
   } | null;
   away_team: {
     english_name?: string | null;
     slug: string;
     name: string;
+    name_ja?: string | null;
     short_code: string | null;
   } | null;
 };
@@ -145,6 +173,7 @@ type MatchDetailRow = BaseMatchRow & {
     family?: string;
     slug: string;
     name: string;
+    name_ja?: string | null;
     season: string;
   } | null;
 };
@@ -153,6 +182,7 @@ type LatestCompetitionRow = {
   competition: {
     slug: string;
     name: string;
+    name_ja?: string | null;
     season: string;
     start_date: string | null;
     end_date: string | null;
@@ -164,6 +194,7 @@ type RecentlyReviewedMatchRow = BaseMatchRow & {
     family?: string;
     slug: string;
     name: string;
+    name_ja?: string | null;
     season: string;
   } | null;
 };
@@ -181,6 +212,7 @@ type RecentlyReviewedFamilyContentRow = {
       family: string;
       slug: string;
       name: string;
+      name_ja?: string | null;
       season: string;
     } | null;
   } | null;
@@ -191,6 +223,7 @@ type UpcomingMatchRow = BaseMatchRow & {
     family: string;
     slug: string;
     name: string;
+    name_ja?: string | null;
     season: string;
   } | null;
 };
@@ -199,6 +232,7 @@ type TeamPageMatchRow = BaseMatchRow & {
   competition: {
     slug: string;
     name: string;
+    name_ja?: string | null;
     season: string;
   } | null;
 };
@@ -246,6 +280,7 @@ type RoundHubQueryRow = {
 type HeadToHeadTeamRow = {
   id: string;
   name: string;
+  name_ja?: string | null;
   short_code: string | null;
   slug: string;
 };
@@ -253,6 +288,7 @@ type HeadToHeadTeamRow = {
 type HeadToHeadMatchRow = BaseMatchRow & {
   competition: {
     name: string;
+    name_ja?: string | null;
     season: string;
     slug: string;
   } | null;
@@ -306,7 +342,7 @@ function mapRecentlyReviewedContentRow(
 
   return {
     ...mapMatchRow(row.match),
-    competition: row.match.competition,
+    competition: mapCompetitionRow(row.match.competition),
     recapGeneratedAt: row.generated_at,
     recapExcerpt: truncateAtSentenceBoundary(
       stripMarkdown(row.content_md),
@@ -315,10 +351,29 @@ function mapRecentlyReviewedContentRow(
   };
 }
 
-function mapHeadToHeadTeam(row: HeadToHeadTeamRow): HeadToHeadTeam {
+function mapCompetitionRow<T extends { name: string; name_ja?: string | null }>(
+  row: T,
+): Omit<T, "name_ja"> & { nameJa: string | null } {
+  const { name_ja, ...competition } = row;
+
   return {
+    ...competition,
+    nameJa: name_ja ?? null,
+  };
+}
+
+function mapHeadToHeadTeam(row: HeadToHeadTeamRow): HeadToHeadTeam {
+  const nameJa = row.name_ja ?? null;
+  const displayName = getTeamDisplayName({
     name: row.name,
-    shortCode: row.short_code ?? row.name.slice(0, 3).toUpperCase(),
+    nameJa,
+    slug: row.slug,
+  });
+
+  return {
+    name: displayName,
+    nameJa,
+    shortCode: row.short_code ?? displayName.slice(0, 3).toUpperCase(),
     slug: row.slug,
   };
 }
@@ -379,21 +434,32 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     throw new Error(`Match ${row.id} has an unsupported status: ${row.status}`);
   }
 
+  const homeNameJa = row.home_team.name_ja ?? null;
+  const awayNameJa = row.away_team.name_ja ?? null;
+  const homeDisplayName = getTeamDisplayName({
+    name: row.home_team.name,
+    nameJa: homeNameJa,
+    slug: row.home_team.slug,
+  });
+  const awayDisplayName = getTeamDisplayName({
+    name: row.away_team.name,
+    nameJa: awayNameJa,
+    slug: row.away_team.slug,
+  });
+
   return {
     awayScore: row.away_score,
     awayTeam: {
-      name: row.away_team.name,
-      shortCode:
-        row.away_team.short_code ??
-        row.away_team.name.slice(0, 3).toUpperCase(),
+      name: awayDisplayName,
+      nameJa: awayNameJa,
+      shortCode: row.away_team.short_code ?? awayDisplayName.slice(0, 3).toUpperCase(),
       slug: row.away_team.slug,
     },
     homeScore: row.home_score,
     homeTeam: {
-      name: row.home_team.name,
-      shortCode:
-        row.home_team.short_code ??
-        row.home_team.name.slice(0, 3).toUpperCase(),
+      name: homeDisplayName,
+      nameJa: homeNameJa,
+      shortCode: row.home_team.short_code ?? homeDisplayName.slice(0, 3).toUpperCase(),
       slug: row.home_team.slug,
     },
     id: row.id,
@@ -500,6 +566,7 @@ export async function getLatestCompetitionWithMatches(): Promise<CompetitionSumm
   return {
     endDate: competition.end_date,
     name: competition.name,
+    nameJa: null,
     season: competition.season,
     slug: competition.slug,
     startDate: competition.start_date,
@@ -604,7 +671,12 @@ export async function getRecentlyReviewedFamilies(
 
     seen.add(comp.family);
     result.push({
-      competitionName: comp.name,
+      competitionName: getCompetitionDisplayName({
+        family: comp.family,
+        name: comp.name,
+        nameJa: null,
+        slug: comp.slug,
+      }),
       competitionSeason: comp.season,
       competitionSlug: comp.slug,
       family: comp.family,
@@ -802,7 +874,7 @@ export async function getUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
 
       return {
         ...mapMatchRow(row),
-        competition: row.competition,
+        competition: mapCompetitionRow(row.competition),
       };
     });
 }
@@ -902,7 +974,7 @@ export async function getMatchesInRange(
 
       return {
         ...mapMatchRow(row),
-        competition: row.competition,
+        competition: mapCompetitionRow(row.competition),
         hasContent: contentMatchIds.has(row.id),
       };
     }),
@@ -975,7 +1047,7 @@ export async function getFavoriteTeamMatches(
 
     return {
       ...mapMatchRow(row),
-      competition: row.competition,
+      competition: mapCompetitionRow(row.competition),
     };
   });
 }
@@ -1310,7 +1382,7 @@ export async function getHeadToHeadMatches(
 
       return {
         ...mapMatchRow(row),
-        competition: row.competition,
+        competition: mapCompetitionRow(row.competition),
       };
     });
 }
@@ -1411,11 +1483,11 @@ export async function getMatchContentEn(
 
 export async function getTeamBySlug(
   teamSlug: string,
-): Promise<{ slug: string; name: string; shortCode: string } | null> {
+): Promise<HeadToHeadTeam | null> {
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("teams")
-    .select("slug, name, short_code")
+    .select("id, slug, name, short_code")
     .eq("slug", teamSlug)
     .maybeSingle();
 
@@ -1427,11 +1499,7 @@ export async function getTeamBySlug(
     return null;
   }
 
-  return {
-    name: data.name,
-    shortCode: data.short_code ?? data.name.slice(0, 3).toUpperCase(),
-    slug: data.slug,
-  };
+  return mapHeadToHeadTeam(data satisfies HeadToHeadTeamRow);
 }
 
 export async function getMatchesByTeamSlug(
@@ -1499,7 +1567,7 @@ export async function getMatchesByTeamSlug(
 
       return {
         ...mapMatchRow(row),
-        competition: row.competition,
+        competition: mapCompetitionRow(row.competition),
       };
     });
 
@@ -1622,6 +1690,7 @@ export async function getMatchById(
         competition?.family ??
         competition!.slug.replace(/-\d{4}(-\d{2})?$/, ""),
       name: competition!.name,
+      nameJa: competition!.name_ja ?? null,
       season: competition!.season,
       slug: competition!.slug,
     },

@@ -186,7 +186,7 @@ describe("MatchHeader", () => {
     );
 
     expect(
-      screen.getByText(/Six Nations 2027 · プレーオフ予選/),
+      screen.getByText(/シックスネイションズ 2027 · プレーオフ予選/),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Round 0/)).not.toBeInTheDocument();
   });
@@ -195,7 +195,7 @@ describe("MatchHeader", () => {
     render(<MatchHeader match={match} />);
 
     expect(
-      screen.getAllByText(/Six Nations 2027 · 第1節/).length,
+      screen.getAllByText(/シックスネイションズ 2027 · 第1節/).length,
     ).toBeGreaterThan(0);
     expect(screen.queryByText(/Round 1/)).not.toBeInTheDocument();
   });

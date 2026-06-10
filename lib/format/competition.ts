@@ -1,12 +1,48 @@
-export function formatCompetitionTitle(name: string, season: string): string {
-  const displayName = formatCompetitionName(name);
+import {
+  inferCompetitionFamilyFromSlug,
+  JAPANESE_COMPETITION_NAMES_BY_FAMILY,
+} from "@/lib/format/japanese-names";
+
+export type CompetitionDisplayInput = {
+  family?: string | null;
+  name: string;
+  nameJa?: string | null;
+  slug?: string | null;
+};
+
+export function getCompetitionDisplayName(
+  competition: CompetitionDisplayInput,
+  language: "ja" | "en" = "ja",
+): string {
+  if (language === "en") {
+    return competition.name;
+  }
+
+  const family =
+    competition.family ?? inferCompetitionFamilyFromSlug(competition.slug);
+
+  return (
+    competition.nameJa ??
+    (family ? JAPANESE_COMPETITION_NAMES_BY_FAMILY[family] : undefined) ??
+    competition.name
+  );
+}
+
+export function formatCompetitionTitle(
+  name: string | CompetitionDisplayInput,
+  season: string,
+  language: "ja" | "en" = "ja",
+): string {
+  const rawName =
+    typeof name === "string" ? name : getCompetitionDisplayName(name, language);
+  const displayName = formatCompetitionName(rawName);
 
   return displayName.includes(season)
     ? displayName
     : `${displayName} ${season}`;
 }
 
-function formatCompetitionName(name: string): string {
+export function formatCompetitionName(name: string): string {
   return name
     .replace(/^Japan Rugby League One(?=\s|$)/, "ジャパンラグビー リーグワン")
     .replace(/^League One(?=\s|$)/, "ジャパンラグビー リーグワン");

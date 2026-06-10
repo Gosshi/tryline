@@ -1,4 +1,5 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
+import { getTeamDisplayName } from "@/lib/format/team";
 
 export type StandingRow = {
   position: number;
@@ -30,7 +31,7 @@ type CompetitionStandingRow = {
   points_against: number;
   points_for: number;
   position: number;
-  team: { name: string; short_code: string | null } | null;
+  team: { name: string; short_code: string | null; slug: string } | null;
   total_points: number;
   tries_for: number;
   won: number;
@@ -72,6 +73,7 @@ export async function getStandingsForCompetition(
         total_points,
         team:teams!competition_standings_team_id_fkey (
           name,
+          slug,
           short_code
         )
       `,
@@ -92,7 +94,12 @@ export async function getStandingsForCompetition(
     pointsAgainst: row.points_against,
     pointsFor: row.points_for,
     position: row.position,
-    teamName: row.team?.name ?? "-",
+    teamName: row.team
+      ? getTeamDisplayName({
+          name: row.team.name,
+          slug: row.team.slug,
+        })
+      : "-",
     teamShortCode: row.team?.short_code ?? "-",
     totalPoints: row.total_points,
     triesFor: row.tries_for,
@@ -142,6 +149,7 @@ export async function getPoolStandingsForCompetition(
           team_id,
           team:teams!competition_standings_team_id_fkey (
             name,
+            slug,
             short_code
           )
         `,
@@ -194,7 +202,12 @@ export async function getPoolStandingsForCompetition(
       pointsAgainst: row.points_against,
       pointsFor: row.points_for,
       position: row.position,
-      teamName: row.team?.name ?? "-",
+      teamName: row.team
+        ? getTeamDisplayName({
+            name: row.team.name,
+            slug: row.team.slug,
+          })
+        : "-",
       teamShortCode: row.team?.short_code ?? "-",
       totalPoints: row.total_points,
       triesFor: row.tries_for,

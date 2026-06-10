@@ -17,7 +17,7 @@ export async function assembleMatchContext(matchId: string): Promise<string> {
   }
 
   const competitionTitle = formatCompetitionTitle(
-    match.competition.name,
+    match.competition,
     match.competition.season,
   );
   const lines: string[] = [

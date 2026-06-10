@@ -88,7 +88,7 @@ describe("round hub page", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Six Nations 2025 第3節 の結果・日程",
+        name: "シックスネイションズ 2025 第3節 の結果・日程",
       }),
     ).toBeInTheDocument();
     expect(container.querySelector('a[href="/matches/match-1"]')).toBeTruthy();

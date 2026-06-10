@@ -79,9 +79,15 @@ describe("head-to-head match queries", () => {
       {
         matchCount: 2,
         slug: "leinster-vs-toulouse",
-        teamA: { name: "Leinster", shortCode: "LEI", slug: "leinster" },
+        teamA: {
+          name: "レンスター",
+          nameJa: null,
+          shortCode: "LEI",
+          slug: "leinster",
+        },
         teamB: {
-          name: "Stade Toulousain",
+          name: "トゥールーズ",
+          nameJa: null,
           shortCode: "TLS",
           slug: "toulouse",
         },
@@ -90,8 +96,18 @@ describe("head-to-head match queries", () => {
       {
         matchCount: 1,
         slug: "bath-vs-leinster",
-        teamA: { name: "Bath", shortCode: "BAT", slug: "bath" },
-        teamB: { name: "Leinster", shortCode: "LEI", slug: "leinster" },
+        teamA: {
+          name: "バース",
+          nameJa: null,
+          shortCode: "BAT",
+          slug: "bath",
+        },
+        teamB: {
+          name: "レンスター",
+          nameJa: null,
+          shortCode: "LEI",
+          slug: "leinster",
+        },
         updatedAt: "2026-01-01T12:00:00.000Z",
       },
     ]);

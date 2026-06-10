@@ -459,11 +459,39 @@ describe("buildGenerateRecapPrompt", () => {
     expect(overseasPrompt).toContain("小辞、複合姓は日本語として自然な読み");
     expect(overseasPrompt).not.toContain("Marcus Smith → マーカス・スミス");
     expect(overseasPrompt).toContain(
-      "チーム名は英語表記のまま（例: Reds、Leinster、Springboks）",
+      "チーム名・大会名は日本語表記グロッサリまたは試合データ内の日本語名を使うこと",
     );
+    expect(overseasPrompt).toContain("英語表記のまま出力しないこと");
     expect(leagueOnePrompt).toContain("選手名は日本語表記を使用すること");
     expect(leagueOnePrompt).toContain("外国人選手は英語の人名をカタカナに変換");
     expect(leagueOnePrompt).not.toContain("Brodie Retallick");
+  });
+
+  it("includes a Japanese team and competition glossary when available", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        japanese_name_glossary: [
+          {
+            japanese: "レンスター",
+            kind: "team",
+            source: "Leinster",
+          },
+          {
+            japanese: "ユナイテッド・ラグビー・チャンピオンシップ",
+            kind: "competition",
+            source: "URC",
+          },
+        ],
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("【日本語表記グロッサリ】");
+    expect(prompt).toContain("レンスター");
+    expect(prompt).toContain("ユナイテッド・ラグビー・チャンピオンシップ");
+    expect(prompt).toContain("source の英語表記は本文に出さないこと");
   });
 
   it("prevents player-name hallucination from missing lineup and event data", () => {

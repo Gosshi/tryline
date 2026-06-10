@@ -79,7 +79,7 @@ function MatchRow({
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium text-[var(--color-ink-muted)]">
             {formatCompetitionTitle(
-              match.competition.name,
+              match.competition,
               match.competition.season,
             )}
           </p>

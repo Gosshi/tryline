@@ -75,7 +75,7 @@ export async function generateMetadata({
   }
 
   const competitionTitle = formatCompetitionTitle(
-    match.competition.name,
+    match.competition,
     match.competition.season,
   );
   const title = `${match.homeTeam.name} vs ${match.awayTeam.name} — ${competitionTitle}`;
@@ -149,7 +149,7 @@ export default async function MatchDetailPage({
   const isFreeSampleRecap =
     isSampleMatch(id) && publishedContent.recap !== null;
   const competitionTitle = formatCompetitionTitle(
-    match.competition.name,
+    match.competition,
     match.competition.season,
   );
   const pageUrl = `${SITE_URL}/matches/${id}`;
@@ -255,7 +255,7 @@ export default async function MatchDetailPage({
                   href={`/c/${match.competition.family}/${match.competition.season}`}
                 >
                   {formatCompetitionTitle(
-                    match.competition.name,
+                    match.competition,
                     match.competition.season,
                   )}
                 </Link>

@@ -75,20 +75,26 @@ export type AssembledContentInput = {
       family: string | null;
       id: string;
       name: string;
+      name_ja?: string | null;
       season: string;
+      slug?: string | null;
     } | null;
     home_team: {
       id: string;
       name: string;
+      name_ja?: string | null;
       english_name: string | null;
       short_code: string | null;
+      slug?: string | null;
       country: string;
     } | null;
     away_team: {
       id: string;
       name: string;
+      name_ja?: string | null;
       english_name: string | null;
       short_code: string | null;
+      slug?: string | null;
       country: string;
     } | null;
   };
@@ -184,4 +190,9 @@ export type AssembledContentInput = {
   };
   score_timeline: ScoreTimeline | null;
   sourced_facts: SourcedFactInput[];
+  japanese_name_glossary?: Array<{
+    kind: "competition" | "team";
+    source: string;
+    japanese: string;
+  }>;
 };

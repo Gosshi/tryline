@@ -1,4 +1,10 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { getCompetitionDisplayName } from "@/lib/format/competition";
+import {
+  JAPANESE_COMPETITION_NAMES_BY_FAMILY,
+  JAPANESE_TEAM_NAMES_BY_SLUG,
+} from "@/lib/format/japanese-names";
+import { getTeamDisplayName } from "@/lib/format/team";
 import { loadSourcedFactsForMatch } from "@/lib/llm/sourced-facts/fetch";
 
 import type { Json } from "@/lib/db/types";
@@ -263,8 +269,14 @@ function resolveTeamName(
   name: string,
   englishName: string | null,
   language: ContentLanguage,
+  nameJa?: string | null,
+  slug?: string | null,
 ): string {
-  return language === "en" && englishName ? englishName : name;
+  if (language === "en" && englishName) {
+    return englishName;
+  }
+
+  return getTeamDisplayName({ name, nameJa: nameJa ?? null, slug }, language);
 }
 
 export function deriveMatchPhase(externalIds: unknown): MatchPhase | null {
@@ -377,7 +389,7 @@ async function loadCompetitionStandings(
         bonus_points_try,
         bonus_points_losing,
         total_points,
-        team:teams(name, english_name)
+        team:teams(slug, name, english_name)
       `,
     )
     .eq("competition_id", competitionId)
@@ -397,7 +409,13 @@ async function loadCompetitionStandings(
     points_for: row.points_for,
     position: row.position,
     team_name: row.team
-      ? resolveTeamName(row.team.name, row.team.english_name, language)
+      ? resolveTeamName(
+          row.team.name,
+          row.team.english_name,
+          language,
+          null,
+          row.team.slug,
+        )
       : "",
     total_points: row.total_points,
     tries_for: row.tries_for,
@@ -417,7 +435,7 @@ async function loadMatchEvents(
   const db = getSupabaseServerClient();
   const { data, error } = await db
     .from("match_events")
-    .select("type, minute, metadata, team:teams(name, english_name)")
+    .select("type, minute, metadata, team:teams(slug, name, english_name)")
     .eq("match_id", matchId)
     .order("minute", { ascending: true, nullsFirst: false });
 
@@ -435,7 +453,13 @@ async function loadMatchEvents(
       minute: event.minute,
       player_name: typeof playerName === "string" ? playerName : "",
       team_name: event.team
-        ? resolveTeamName(event.team.name, event.team.english_name, language)
+        ? resolveTeamName(
+            event.team.name,
+            event.team.english_name,
+            language,
+            null,
+            event.team.slug,
+          )
         : "",
       type: event.type,
     };
@@ -461,9 +485,9 @@ export async function assembleMatchContentInput(
         home_score,
         away_score,
         external_ids,
-        competition:competitions(id, name, season, family),
-        home_team:teams!matches_home_team_id_fkey(id, name, english_name, short_code, country),
-        away_team:teams!matches_away_team_id_fkey(id, name, english_name, short_code, country)
+        competition:competitions(id, slug, name, season, family),
+        home_team:teams!matches_home_team_id_fkey(id, slug, name, english_name, short_code, country),
+        away_team:teams!matches_away_team_id_fkey(id, slug, name, english_name, short_code, country)
       `,
     )
     .eq("id", matchId)
@@ -485,6 +509,8 @@ export async function assembleMatchContentInput(
         match.home_team.name,
         match.home_team.english_name,
         language,
+        null,
+        match.home_team.slug,
       )
     : "";
   const awayTeamName = match.away_team
@@ -492,6 +518,8 @@ export async function assembleMatchContentInput(
         match.away_team.name,
         match.away_team.english_name,
         language,
+        null,
+        match.away_team.slug,
       )
     : "";
 
@@ -504,8 +532,8 @@ export async function assembleMatchContentInput(
         status,
         home_score,
         away_score,
-        home_team:teams!matches_home_team_id_fkey(name, english_name),
-        away_team:teams!matches_away_team_id_fkey(name, english_name),
+        home_team:teams!matches_home_team_id_fkey(slug, name, english_name),
+        away_team:teams!matches_away_team_id_fkey(slug, name, english_name),
         home_team_id,
         away_team_id
       `,
@@ -536,6 +564,8 @@ export async function assembleMatchContentInput(
             item.home_team.name,
             item.home_team.english_name,
             language,
+            null,
+            item.home_team.slug,
           )
         : "",
       away_team_name: item.away_team
@@ -543,6 +573,8 @@ export async function assembleMatchContentInput(
             item.away_team.name,
             item.away_team.english_name,
             language,
+            null,
+            item.away_team.slug,
           )
         : "",
       home_score: item.home_score,
@@ -564,6 +596,8 @@ export async function assembleMatchContentInput(
             item.home_team.name,
             item.home_team.english_name,
             language,
+            null,
+            item.home_team.slug,
           )
         : "",
       away_team_name: item.away_team
@@ -571,6 +605,8 @@ export async function assembleMatchContentInput(
             item.away_team.name,
             item.away_team.english_name,
             language,
+            null,
+            item.away_team.slug,
           )
         : "",
       home_score: item.home_score,
@@ -594,6 +630,8 @@ export async function assembleMatchContentInput(
             item.home_team.name,
             item.home_team.english_name,
             language,
+            null,
+            item.home_team.slug,
           )
         : "",
       away_team_name: item.away_team
@@ -601,6 +639,8 @@ export async function assembleMatchContentInput(
             item.away_team.name,
             item.away_team.english_name,
             language,
+            null,
+            item.away_team.slug,
           )
         : "",
       home_score: item.home_score,
@@ -662,6 +702,57 @@ export async function assembleMatchContentInput(
     homeTeamName,
     awayTeamName,
   );
+  const competitionName = match.competition
+    ? getCompetitionDisplayName(
+        {
+          family: match.competition.family ?? null,
+          name: match.competition.name,
+          nameJa: null,
+          slug: match.competition.slug,
+        },
+        language,
+      )
+    : "";
+  const competitionNameJa = match.competition?.family
+    ? (JAPANESE_COMPETITION_NAMES_BY_FAMILY[match.competition.family] ?? null)
+    : null;
+  const homeNameJa = match.home_team?.slug
+    ? (JAPANESE_TEAM_NAMES_BY_SLUG[match.home_team.slug] ?? null)
+    : null;
+  const awayNameJa = match.away_team?.slug
+    ? (JAPANESE_TEAM_NAMES_BY_SLUG[match.away_team.slug] ?? null)
+    : null;
+  const japaneseNameGlossary: NonNullable<
+    AssembledContentInput["japanese_name_glossary"]
+  > = [
+      competitionNameJa && match.competition
+        ? {
+            japanese: competitionNameJa,
+            kind: "competition" as const,
+            source: match.competition.name,
+          }
+        : null,
+      homeNameJa && match.home_team
+        ? {
+            japanese: homeNameJa,
+            kind: "team" as const,
+            source: match.home_team.name,
+          }
+        : null,
+      awayNameJa && match.away_team
+        ? {
+            japanese: awayNameJa,
+            kind: "team" as const,
+            source: match.away_team.name,
+          }
+        : null,
+  ].filter(
+    (
+      item,
+    ): item is NonNullable<
+      AssembledContentInput["japanese_name_glossary"]
+    >[number] => item !== null,
+  );
 
   return {
     match: {
@@ -675,20 +766,24 @@ export async function assembleMatchContentInput(
         ? {
             family: match.competition.family ?? null,
             id: match.competition.id,
-            name: match.competition.name,
+            name: competitionName,
+            name_ja: competitionNameJa,
             season: match.competition.season,
+            slug: match.competition.slug,
           }
         : null,
       home_team: match.home_team
         ? {
             ...match.home_team,
             name: homeTeamName,
+            name_ja: homeNameJa,
           }
         : null,
       away_team: match.away_team
         ? {
             ...match.away_team,
             name: awayTeamName,
+            name_ja: awayNameJa,
           }
         : null,
     },
@@ -731,5 +826,6 @@ export async function assembleMatchContentInput(
       source_domain: fact.source_domain,
       source_url: fact.source_url,
     })),
+    japanese_name_glossary: language === "ja" ? japaneseNameGlossary : [],
   };
 }
