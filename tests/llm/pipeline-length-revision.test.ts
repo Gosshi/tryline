@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const assembleMock = vi.hoisted(() => ({
   assembleMatchContentInput: vi.fn(),
+  computeScoreTimeline: vi.fn().mockReturnValue(null),
 }));
 
 const extractFactsMock = vi.hoisted(() => ({
