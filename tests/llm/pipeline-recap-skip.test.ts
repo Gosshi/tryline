@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const assembleMock = vi.hoisted(() => ({
   assembleMatchContentInput: vi.fn(),
+  computeScoreTimeline: vi.fn(),
 }));
 
 const extractFactsMock = vi.hoisted(() => ({
@@ -112,6 +113,7 @@ describe("generateMatchContent recap event guard", () => {
     assembleMock.assembleMatchContentInput.mockResolvedValue(
       assembledWithoutEvents,
     );
+    assembleMock.computeScoreTimeline.mockReturnValue(null);
   });
 
   it("returns skipped before any LLM stages when recap events are missing", async () => {
@@ -128,6 +130,153 @@ describe("generateMatchContent recap event guard", () => {
     expect(extractFactsMock.extractTacticalPoints).not.toHaveBeenCalled();
     expect(generateNarrativeMock.generateNarrative).not.toHaveBeenCalled();
     expect(qaMock.evaluateNarrativeQuality).not.toHaveBeenCalled();
+  });
+
+  it("logs a score integrity warning when event totals differ from the final score", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    assembleMock.assembleMatchContentInput.mockResolvedValue({
+      ...assembledWithoutEvents,
+      match: {
+        ...assembledWithoutEvents.match,
+        away_score: 0,
+        home_score: 8,
+        away_team: { name: "Away" },
+        home_team: { name: "Home" },
+      },
+      match_events: [
+        {
+          minute: 12,
+          player_name: "Player One",
+          team_name: "Home",
+          type: "try",
+        },
+      ],
+    });
+    assembleMock.computeScoreTimeline.mockReturnValue({
+      final_away: 0,
+      final_home: 5,
+      ht_away: 0,
+      ht_home: 5,
+      lead_changes: [],
+      winning_score: null,
+    });
+    extractFactsMock.extractTacticalPoints.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: { tactical_points: [] },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    generateNarrativeMock.generateNarrative.mockResolvedValue({
+      content: "# recap",
+      modelVersion: "gpt-4o",
+      promptVersion: "1.0.0",
+      temperature: 0.7,
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    qaMock.evaluateNarrativeQuality.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: {
+        issues: [],
+        scores: {
+          factual_grounding: 4,
+          information_density: 4,
+          japanese_quality: 4,
+          tactical_depth: 4,
+        },
+        verdict: "publish",
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    await generateMatchContent("match-3", "recap");
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[score-integrity] event total mismatch",
+      {
+        awayDelta: 0,
+        homeDelta: -3,
+        matchId: "match-3",
+      },
+    );
+    expect(dbMock.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content_type: "recap",
+        match_id: "match-3",
+        output: {
+          awayDelta: 0,
+          homeDelta: -3,
+          type: "score_event_mismatch",
+        },
+        stage: 0,
+        status: "failed",
+      }),
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  it("does not warn when event totals match the final score", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    assembleMock.assembleMatchContentInput.mockResolvedValue({
+      ...assembledWithoutEvents,
+      match: {
+        ...assembledWithoutEvents.match,
+        away_score: 0,
+        home_score: 5,
+        away_team: { name: "Away" },
+        home_team: { name: "Home" },
+      },
+      match_events: [
+        {
+          minute: 12,
+          player_name: "Player One",
+          team_name: "Home",
+          type: "try",
+        },
+      ],
+    });
+    assembleMock.computeScoreTimeline.mockReturnValue({
+      final_away: 0,
+      final_home: 5,
+      ht_away: 0,
+      ht_home: 5,
+      lead_changes: [],
+      winning_score: null,
+    });
+    extractFactsMock.extractTacticalPoints.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: { tactical_points: [] },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    generateNarrativeMock.generateNarrative.mockResolvedValue({
+      content: "# recap",
+      modelVersion: "gpt-4o",
+      promptVersion: "1.0.0",
+      temperature: 0.7,
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    qaMock.evaluateNarrativeQuality.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: {
+        issues: [],
+        scores: {
+          factual_grounding: 4,
+          information_density: 4,
+          japanese_quality: 4,
+          tactical_depth: 4,
+        },
+        verdict: "publish",
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    await generateMatchContent("match-4", "recap");
+
+    expect(warnSpy).not.toHaveBeenCalledWith(
+      "[score-integrity] event total mismatch",
+      expect.anything(),
+    );
+
+    warnSpy.mockRestore();
   });
 
   it("submits published league-one recap urls to IndexNow after persistence", async () => {

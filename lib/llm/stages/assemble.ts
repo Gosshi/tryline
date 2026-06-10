@@ -250,6 +250,8 @@ export function computeScoreTimeline(
   }
 
   return {
+    final_away: awayScore,
+    final_home: homeScore,
     ht_away: htAway,
     ht_home: htHome,
     lead_changes: leadChanges,

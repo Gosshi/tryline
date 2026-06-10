@@ -144,6 +144,8 @@ describe("computeScoreTimeline", () => {
     );
 
     expect(result).toMatchObject({
+      final_away: 35,
+      final_home: 40,
       ht_away: 10,
       ht_home: 27,
       winning_score: {

@@ -373,6 +373,8 @@ describe("buildGenerateRecapPrompt", () => {
           },
         ],
         score_timeline: {
+          final_away: 35,
+          final_home: 40,
           ht_away: 10,
           ht_home: 27,
           lead_changes: [
