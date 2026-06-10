@@ -58,7 +58,7 @@ const faqs = [
   },
   {
     answer:
-      "Six Nations、Premiership、URC、Top 14、Super Rugby Pacific、Rugby Championship、Autumn Nations Series に対応しています。",
+      "Six Nations、Premiership、URC、Top 14、Super Rugby Pacific、Rugby Championship、Autumn Nations Series、リーグワン、Pacific Nations Cup、RWC 2027 に対応しています。",
     question: "どの大会のコンテンツが読めますか？",
   },
   {
@@ -133,7 +133,7 @@ export default async function PricingPage() {
             見逃した海外ラグビーを、日本語で深く追える。
           </h1>
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/60">
-            <span>8大会対応</span>
+            <span>10大会対応</span>
             <span>500試合以上</span>
             <span>7日間無料</span>
           </div>

@@ -15,6 +15,9 @@ import PricingPage, { metadata } from "@/app/pricing/page";
 import { PricingForm } from "@/app/pricing/pricing-form";
 import { PRIMARY_SAMPLE_MATCH_ID } from "@/lib/sample-matches";
 
+const competitionFaqAnswer =
+  "Six Nations、Premiership、URC、Top 14、Super Rugby Pacific、Rugby Championship、Autumn Nations Series、リーグワン、Pacific Nations Cup、RWC 2027 に対応しています。";
+
 const authMocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   signInWithOtp: vi.fn(),
@@ -85,7 +88,7 @@ describe("PricingPage", () => {
     expect(
       screen.getByRole("link", { name: "無料サンプルを読む" }),
     ).toHaveAttribute("href", `/matches/${PRIMARY_SAMPLE_MATCH_ID}`);
-    expect(screen.getByText("8大会対応")).toBeInTheDocument();
+    expect(screen.getByText("10大会対応")).toBeInTheDocument();
     expect(screen.getByText("500試合以上")).toBeInTheDocument();
     expect(screen.getByText("7日間無料")).toBeInTheDocument();
 
@@ -136,6 +139,12 @@ describe("PricingPage", () => {
     expect(
       screen.getByText("どの大会のコンテンツが読めますか？"),
     ).toBeInTheDocument();
+    expect(screen.getByText(competitionFaqAnswer)).toBeInTheDocument();
+    expect(
+      [...document.querySelectorAll('script[type="application/ld+json"]')].some(
+        (script) => script.textContent?.includes(competitionFaqAnswer),
+      ),
+    ).toBe(true);
     expect(screen.getByText("支払い方法は？")).toBeInTheDocument();
   });
 
