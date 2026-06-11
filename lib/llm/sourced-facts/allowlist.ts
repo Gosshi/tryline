@@ -21,6 +21,8 @@ const MEDIA_DOMAINS = [
   "rugbypass.com",
   "planetrugby.com",
   "rugbyasia247.com",
+  "bbc.com",
+  "bbc.co.uk",
 ] as const;
 
 export const SOURCED_FACT_ALLOWED_DOMAINS = [

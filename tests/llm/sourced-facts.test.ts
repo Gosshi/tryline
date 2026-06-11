@@ -6,6 +6,8 @@ import {
   isAllowedSourcedFactDomain,
 } from "@/lib/llm/sourced-facts/allowlist";
 import {
+  SEARCH_PROMPT_VERSION,
+  buildSearchPrompt,
   fetchSourcedFactsForMatch,
   parseSourcedFactsResponse,
 } from "@/lib/llm/sourced-facts/fetch";
@@ -68,6 +70,8 @@ describe("sourced facts allowlist", () => {
   it("allows configured domains and subdomains only", () => {
     expect(isAllowedSourcedFactDomain("www.rugbypass.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("news.world.rugby")).toBe(true);
+    expect(isAllowedSourcedFactDomain("bbc.com")).toBe(true);
+    expect(isAllowedSourcedFactDomain("www.bbc.co.uk")).toBe(true);
     expect(isAllowedSourcedFactDomain("sportytrader.com")).toBe(false);
   });
 
@@ -163,6 +167,42 @@ describe("sourced facts allowlist", () => {
       "Player X is out with a hamstring injury.",
       "Kobe lineup features Retallick, Savea.",
     ]);
+  });
+});
+
+describe("buildSearchPrompt", () => {
+  it("uses sourced facts prompt version 1.1.0", () => {
+    expect(SEARCH_PROMPT_VERSION).toBe("sourced-facts@1.1.0");
+  });
+
+  it("targets post-match statistics and official awards for recaps", () => {
+    const prompt = buildSearchPrompt(leagueOneMatch, "recap");
+
+    expect(prompt).toContain("Search intent (post-match):");
+    expect(prompt).toContain("post-match statistics");
+    expect(prompt).toContain("Player of the Match");
+    expect(prompt).toContain("both teams' values exactly as reported");
+    expect(prompt).not.toContain("latest lineup changes");
+    expect(prompt).not.toContain("Search intent:\n- latest team news");
+  });
+
+  it("keeps the preview search intent unchanged", () => {
+    const prompt = buildSearchPrompt(leagueOneMatch, "preview");
+
+    expect(prompt).toContain(
+      [
+        "Search intent:",
+        "- latest team news",
+        "- injuries",
+        "- latest lineup changes",
+        "- player news such as retirements, transfers, and availability",
+        "- key players",
+        "- stakes and knockout/final context",
+      ].join("\n"),
+    );
+    expect(prompt).not.toContain("Search intent (post-match):");
+    expect(prompt).not.toContain("post-match statistics");
+    expect(prompt).not.toContain("both teams' values exactly as reported");
   });
 });
 

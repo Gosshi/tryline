@@ -13,7 +13,7 @@ import type {
 } from "@/lib/llm/sourced-facts/types";
 import type { ContentType } from "@/lib/llm/types";
 
-const SEARCH_PROMPT_VERSION = "sourced-facts@1.0.0";
+export const SEARCH_PROMPT_VERSION = "sourced-facts@1.1.0";
 const PREVIEW_REFRESH_WINDOW_HOURS = 72;
 const PREVIEW_FRESHNESS_HOURS = 24;
 const MAX_STORED_FACTS = 8;
@@ -116,7 +116,10 @@ function shouldUseCachedFacts(params: {
   return true;
 }
 
-function buildSearchPrompt(match: MatchForSourcedFacts, contentType: ContentType) {
+export function buildSearchPrompt(
+  match: MatchForSourcedFacts,
+  contentType: ContentType,
+) {
   const homeTeam = resolveDisplayName(match.home_team);
   const awayTeam = resolveDisplayName(match.away_team);
   const competitionLabel = [
@@ -126,6 +129,31 @@ function buildSearchPrompt(match: MatchForSourcedFacts, contentType: ContentType
     .filter(Boolean)
     .join(" ");
   const kickoffDate = match.kickoff_at.slice(0, 10);
+  const searchIntent =
+    contentType === "recap"
+      ? [
+          "Search intent (post-match):",
+          "- official post-match statistics: possession %, territory %, tackle counts, carries, metres gained, lineout/scrum success, turnovers, penalty counts",
+          "- the official Player of the Match / Man of the Match award (only if officially announced; include the awarding body)",
+          "- notable records or milestones set in this match (e.g., career try record, debut)",
+          "- significant injuries sustained during the match",
+          "- brief post-match comments from head coaches or captains (paraphrased, max 15 words per quote)",
+        ].join("\n")
+      : [
+          "Search intent:",
+          "- latest team news",
+          "- injuries",
+          "- latest lineup changes",
+          "- player news such as retirements, transfers, and availability",
+          "- key players",
+          "- stakes and knockout/final context",
+        ].join("\n");
+  const contentTypeRules =
+    contentType === "recap"
+      ? [
+          "- For numeric statistics, state the stat name and both teams' values exactly as reported (e.g., \"Possession: Glasgow 54% - Bulls 46%\"). Never estimate or round.",
+        ]
+      : [];
 
   return [
     "Find reliable rugby facts for Tryline match content using web search.",
@@ -133,15 +161,7 @@ function buildSearchPrompt(match: MatchForSourcedFacts, contentType: ContentType
     `match: ${homeTeam} vs ${awayTeam}`,
     `competition: ${competitionLabel}`,
     `kickoff_date: ${kickoffDate}`,
-    [
-      "Search intent:",
-      "- latest team news",
-      "- injuries",
-      "- latest lineup changes",
-      "- player news such as retirements, transfers, and availability",
-      "- key players",
-      "- stakes and knockout/final context",
-    ].join("\n"),
+    searchIntent,
     [
       "Rules:",
       "- Return facts only. Do not invent, infer, or summarize unsupported claims.",
@@ -154,6 +174,7 @@ function buildSearchPrompt(match: MatchForSourcedFacts, contentType: ContentType
       "- When referencing any past match, include the exact date. Never use relative recency phrasing such as 'most recent', 'previous meeting', or 'last time they met'.",
       "- Do not include quotes longer than 15 words. Prefer paraphrased facts.",
       "- Do not return article text or copyrighted prose.",
+      ...contentTypeRules,
     ].join("\n"),
     'Return JSON only: {"facts":[{"fact":"...","source_url":"https://...","confidence":"high|medium|low"}]}',
   ].join("\n\n");
