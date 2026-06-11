@@ -11,7 +11,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.8.0";
+export const PROMPT_VERSION = "recap@4.9.0";
 
 const CORE_SECTION_INSTRUCTION = [
   "- この試合の核心: 200字以内。定型句を使わず、この試合固有の事実（最終スコア・決勝点のシチュエーション・試合の転換点）から書き始めること。",
@@ -174,6 +174,14 @@ export function buildGenerateRecapPrompt(
 
     return lines.join("\n");
   })();
+  const derivedStatsBlock = !assembled.derived_stats
+    ? ""
+    : [
+        "【派生スタッツ derived_stats】以下は得点イベントから機械的に算出した実数値です。本文の根拠として自由に使ってよい。",
+        "連続得点・逆転幅・シンビン中の失点・得点手段の内訳・トライスコアラーのポジションは、戦術描写の具体化に積極的に使うこと。",
+        "キック成功は「ゴール4/5」のような分数表記のみ。「成功率」「○%」のようなパーセント表記は使用禁止。",
+        JSON.stringify(assembled.derived_stats),
+      ].join("\n");
   const dataSparseBlock = isDataSparse
     ? [
         "【データスパースモード】スコアラー・ラインアップデータは存在しない。スコアと順位変動のみを記述し、試合展開の描写は行わないこと。",
@@ -275,6 +283,7 @@ export function buildGenerateRecapPrompt(
     `試合データ: ${JSON.stringify(assembled)}`,
     matchEventsBlock,
     scoreTimelineBlock,
+    derivedStatsBlock,
     dataSparseBlock,
     standingsBlock,
     sourcedFactsBlock,

@@ -6,6 +6,7 @@ import {
 } from "@/lib/format/japanese-names";
 import { getTeamDisplayName } from "@/lib/format/team";
 import { loadSourcedFactsForMatch } from "@/lib/llm/sourced-facts/fetch";
+import { computeDerivedMatchStats } from "@/lib/llm/stages/derived-stats";
 
 import type { Json } from "@/lib/db/types";
 import type {
@@ -144,7 +145,7 @@ function computeMatchStats(
   };
 }
 
-function pointsForEventType(type: string): number {
+export function pointsForEventType(type: string): number {
   if (type === "try") return 5;
   if (type === "conversion") return 2;
   if (type === "penalty" || type === "penalty_goal" || type === "drop_goal") {
@@ -704,6 +705,16 @@ export async function assembleMatchContentInput(
     homeTeamName,
     awayTeamName,
   );
+  const projectedLineups = {
+    away: awayProjectedLineups,
+    home: homeProjectedLineups,
+  };
+  const derivedStats = computeDerivedMatchStats(
+    matchEvents,
+    projectedLineups,
+    homeTeamName,
+    awayTeamName,
+  );
   const competitionName = match.competition
     ? getCompetitionDisplayName(
         {
@@ -797,10 +808,7 @@ export async function assembleMatchContentInput(
     h2h_last_5: h2hLast5,
     match_events: matchEvents,
     competition_standings: competitionStandings,
-    projected_lineups: {
-      home: homeProjectedLineups,
-      away: awayProjectedLineups,
-    },
+    projected_lineups: projectedLineups,
     injuries: {
       home: [],
       away: [],
@@ -819,6 +827,7 @@ export async function assembleMatchContentInput(
       match: matchStats,
     },
     score_timeline: scoreTimeline,
+    derived_stats: derivedStats,
     sourced_facts: sourcedFacts.map((fact) => ({
       confidence:
         fact.confidence === "high" || fact.confidence === "medium"

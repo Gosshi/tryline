@@ -94,6 +94,7 @@ const assembled: AssembledContentInput = {
   projected_lineups: { away: [], home: [] },
   recent_form: { away: [], home: [] },
   score_timeline: null,
+  derived_stats: null,
   sourced_facts: [],
 };
 

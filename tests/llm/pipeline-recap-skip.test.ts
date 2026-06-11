@@ -98,6 +98,7 @@ const assembledWithoutEvents: AssembledContentInput = {
     home: [],
   },
   score_timeline: null,
+  derived_stats: null,
   sourced_facts: [],
 };
 
