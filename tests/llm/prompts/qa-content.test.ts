@@ -14,8 +14,8 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.1.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.1.0");
+  it("uses qa prompt version 2.2.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.2.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -124,6 +124,50 @@ describe("buildQaContentPrompt", () => {
 
     expect(prompt).toContain("sourced_facts はゼロです");
     expect(prompt).toContain("factual_grounding を 2 以下に下げること");
+  });
+
+  it("adds derived stats as allowed grounding context", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      derivedStats: {
+        cards: [],
+        comeback: { deficit_overcome: 12, team: "home" },
+        conversions: {
+          away: { attempts: 2, made: 1 },
+          home: { attempts: 5, made: 4 },
+        },
+        max_lead: { minute: 70, points: 8, team: "home" },
+        points_breakdown: {
+          away: {
+            conversions: 2,
+            drop_goals: 0,
+            penalties: 3,
+            tries: 10,
+          },
+          home: {
+            conversions: 8,
+            drop_goals: 0,
+            penalties: 6,
+            tries: 25,
+          },
+        },
+        scoreless_periods: [],
+        scoring_runs: [
+          {
+            end_minute: 20,
+            points: 17,
+            start_minute: 10,
+            team: "home",
+          },
+        ],
+        second_half: { away_points: 7, home_points: 20 },
+        try_scorers: [],
+      },
+    });
+
+    expect(prompt).toContain("## derived_stats grounding");
+    expect(prompt).toContain("入力データに基づく正当な記述");
+    expect(prompt).toContain('"deficit_overcome":12');
   });
 
   it("omits turning point section checks when events are absent", () => {

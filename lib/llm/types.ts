@@ -58,6 +58,52 @@ export type ScoreTimeline = {
   } | null;
 };
 
+export type DerivedMatchStats = {
+  scoring_runs: Array<{
+    team: "home" | "away";
+    points: number;
+    start_minute: number;
+    end_minute: number;
+  }>;
+  max_lead: { team: "home" | "away"; points: number; minute: number } | null;
+  comeback: { team: "home" | "away"; deficit_overcome: number } | null;
+  scoreless_periods: Array<{ from_minute: number; to_minute: number }>;
+  conversions: {
+    home: { made: number; attempts: number };
+    away: { made: number; attempts: number };
+  };
+  points_breakdown: {
+    home: {
+      tries: number;
+      conversions: number;
+      penalties: number;
+      drop_goals: number;
+    };
+    away: {
+      tries: number;
+      conversions: number;
+      penalties: number;
+      drop_goals: number;
+    };
+  };
+  cards: Array<{
+    team: "home" | "away";
+    player: string;
+    type: "yellow_card" | "red_card";
+    minute: number;
+    opponent_points_during: number;
+  }>;
+  try_scorers: Array<{
+    player: string;
+    team: "home" | "away";
+    minute: number | null;
+    position: string | null;
+    jersey_number: number | null;
+    is_starter: boolean | null;
+  }>;
+  second_half: { home_points: number; away_points: number } | null;
+};
+
 export type SourcedFactInput = {
   fact: string;
   source_url: string;
@@ -191,6 +237,7 @@ export type AssembledContentInput = {
     };
   };
   score_timeline: ScoreTimeline | null;
+  derived_stats: DerivedMatchStats | null;
   sourced_facts: SourcedFactInput[];
   japanese_name_glossary?: Array<{
     kind: "competition" | "team";

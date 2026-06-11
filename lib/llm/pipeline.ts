@@ -240,6 +240,7 @@ export async function generateMatchContent(
         matchContext: {
           awayScore: assembled.match.away_score,
           awayTeam: assembled.match.away_team?.name ?? "Away",
+          derivedStats: assembled.derived_stats,
           homeScore: assembled.match.home_score,
           homeTeam: assembled.match.home_team?.name ?? "Home",
           sourcedFacts: assembled.sourced_facts,
@@ -363,6 +364,7 @@ export async function generateMatchContent(
         matchContext: {
           awayScore: assembled.match.away_score,
           awayTeam: assembled.match.away_team?.name ?? "Away",
+          derivedStats: assembled.derived_stats,
           homeScore: assembled.match.home_score,
           homeTeam: assembled.match.home_team?.name ?? "Home",
           sourcedFacts: assembled.sourced_facts,

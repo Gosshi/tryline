@@ -3,14 +3,16 @@ import { getContentLengthRequirement } from "@/lib/llm/content-length";
 import type {
   ContentLanguage,
   ContentType,
+  DerivedMatchStats,
   SourcedFactInput,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.1.0";
+export const PROMPT_VERSION = "qa@2.2.0";
 
 export type QaMatchContext = {
   awayScore: number | null;
   awayTeam: string;
+  derivedStats?: DerivedMatchStats | null;
   homeScore: number | null;
   homeTeam: string;
   sourcedFacts?: SourcedFactInput[];
@@ -78,6 +80,13 @@ export function buildQaContentPrompt(
           "## sourced_facts grounding",
           "sourced_facts はゼロです。本文がWeb由来の統計・負傷・欠場・選手コメント・発言（入力データにない内容）を含む場合は factual_grounding を 2 以下に下げること。",
         ].join("\n");
+  const derivedStatsBlock = !matchContext.derivedStats
+    ? ""
+    : [
+        "## derived_stats grounding",
+        "以下は得点イベントから機械的に算出された実数値です。本文がこれらの数値（連続得点・コンバージョン成否・シンビン中の失点等）に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+        JSON.stringify(matchContext.derivedStats),
+      ].join("\n");
 
   return [
     `あなたは編集デスクです。以下の${languageLabel}コンテンツを品質評価してください。`,
@@ -115,6 +124,7 @@ export function buildQaContentPrompt(
     winnerCheckBlock,
     turningPointCheckBlock,
     sourcedFactsBlock,
+    derivedStatsBlock,
     'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[]}',
     `本文: ${narrative}`,
   ].join("\n\n");

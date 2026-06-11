@@ -48,12 +48,13 @@ const assembled: AssembledContentInput = {
     },
   },
   score_timeline: null,
+  derived_stats: null,
   sourced_facts: [],
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.7.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.8.0");
+  it("uses recap prompt version 4.9.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.9.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -413,6 +414,81 @@ describe("buildGenerateRecapPrompt", () => {
       "勝利を決めた得点: 84分 サントリー 森川由起乙（try）",
     );
     expect(prompt).toContain("# ターニングポイントでは");
+  });
+
+  it("includes derived stats guidance when derived_stats are present", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        derived_stats: {
+          cards: [
+            {
+              minute: 50,
+              opponent_points_during: 10,
+              player: "Home Flanker",
+              team: "home",
+              type: "yellow_card",
+            },
+          ],
+          comeback: { deficit_overcome: 12, team: "home" },
+          conversions: {
+            away: { attempts: 2, made: 1 },
+            home: { attempts: 5, made: 4 },
+          },
+          max_lead: { minute: 70, points: 8, team: "home" },
+          points_breakdown: {
+            away: {
+              conversions: 2,
+              drop_goals: 0,
+              penalties: 3,
+              tries: 10,
+            },
+            home: {
+              conversions: 8,
+              drop_goals: 0,
+              penalties: 6,
+              tries: 25,
+            },
+          },
+          scoreless_periods: [{ from_minute: 20, to_minute: 40 }],
+          scoring_runs: [
+            {
+              end_minute: 20,
+              points: 17,
+              start_minute: 10,
+              team: "home",
+            },
+          ],
+          second_half: { away_points: 7, home_points: 20 },
+          try_scorers: [
+            {
+              is_starter: true,
+              jersey_number: 14,
+              minute: 10,
+              player: "Home Wing",
+              position: "WTB",
+              team: "home",
+            },
+          ],
+        },
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("派生スタッツ derived_stats");
+    expect(prompt).toContain("分数表記のみ");
+    expect(prompt).toContain('"scoring_runs"');
+  });
+
+  it("omits derived stats guidance when derived_stats is null", () => {
+    const prompt = buildGenerateRecapPrompt(
+      { ...assembled, derived_stats: null },
+      [],
+      [],
+    );
+
+    expect(prompt).not.toContain("派生スタッツ derived_stats");
   });
 
   it("includes competition standings only when present", () => {
