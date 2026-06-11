@@ -55,6 +55,39 @@ const DUPLICATE_TEAMS_HTML = `
   </html>
 `;
 
+const NATIONAL_TEAM_LINK_HTML = `
+  <html>
+    <body>
+      <div class="vevent summary">
+        <div>22 November 2025</div>
+        <a title="England national rugby union team">England</a>
+        <a title="Fiji national rugby union team">Fiji</a>
+        <div>Referee: Example Official (Australia)</div>
+        <table><tr><td>England v Fiji events</td></tr></table>
+      </div>
+      <div class="vevent summary">
+        <div>22 November 2025</div>
+        <a title="Australia national rugby union team">Australia</a>
+        <a title="France national rugby union team">France</a>
+        <table><tr><td>Australia v France events</td></tr></table>
+      </div>
+    </body>
+  </html>
+`;
+
+const CLUB_TEAM_HTML = `
+  <html>
+    <body>
+      <div class="vevent summary">
+        <div>1 June 2026</div>
+        <span>Kobe Steelers</span>
+        <span>Kubota Spears</span>
+        <table><tr><td>Kobe v Kubota events</td></tr></table>
+      </div>
+    </body>
+  </html>
+`;
+
 describe("fill-event-gaps safeguards", () => {
   it("extracts the matching event anchor html", () => {
     const html = extractEventHtml(HTML, "target");
@@ -134,6 +167,40 @@ describe("fill-event-gaps safeguards", () => {
 
     expect(html).toContain("England v Australia events");
     expect(html).not.toContain("France v Australia events");
+  });
+
+  it("matches national team link titles before loose text matching", () => {
+    const html = findEventBlockByTeams(
+      NATIONAL_TEAM_LINK_HTML,
+      "England",
+      "Fiji",
+      "2025-11-22",
+    );
+
+    expect(html).toContain("England v Fiji events");
+    expect(html).not.toContain("Australia v France events");
+  });
+
+  it("does not treat a referee nationality as a team matchup", () => {
+    const html = findEventBlockByTeams(
+      NATIONAL_TEAM_LINK_HTML,
+      "Australia",
+      "Fiji",
+      "2025-11-22",
+    );
+
+    expect(html).toBeNull();
+  });
+
+  it("falls back to loose matching for club team blocks", () => {
+    const html = findEventBlockByTeams(
+      CLUB_TEAM_HTML,
+      "Kobe Steelers",
+      "Kubota Spears",
+      "2026-06-01",
+    );
+
+    expect(html).toContain("Kobe v Kubota events");
   });
 
   it("returns null when no vevent contains both team names", () => {
