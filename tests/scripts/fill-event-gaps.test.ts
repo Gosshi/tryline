@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildLeagueOneEnglishUrl,
   eventTotalsExceedFinalScore,
   extractEventHtml,
   findEventBlockByTeams,
@@ -230,5 +231,17 @@ describe("fill-event-gaps safeguards", () => {
         "2025-11-04",
       ),
     ).toBeNull();
+  });
+});
+
+describe("buildLeagueOneEnglishUrl", () => {
+  it("encodes the season range with an en dash", () => {
+    expect(buildLeagueOneEnglishUrl("2024-25")).toBe(
+      "https://en.wikipedia.org/wiki/2024%E2%80%9325_Japan_Rugby_League_One_%E2%80%93_Division_1",
+    );
+  });
+
+  it("returns null for unexpected season formats", () => {
+    expect(buildLeagueOneEnglishUrl("2024")).toBeNull();
   });
 });

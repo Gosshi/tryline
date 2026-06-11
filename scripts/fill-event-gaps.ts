@@ -91,12 +91,16 @@ function buildSuperRugbyPacificListUrl(season: string): string | null {
   return `https://en.wikipedia.org/wiki/List_of_${season}_Super_Rugby_Pacific_matches`;
 }
 
-function buildLeagueOneEnglishUrl(season: string): string | null {
+export function buildLeagueOneEnglishUrl(season: string): string | null {
   if (!/^\d{4}-\d{2}$/.test(season)) {
     return null;
   }
 
-  return `https://en.wikipedia.org/wiki/${season}_Japan_Rugby_League_One_%E2%80%93_Division_1`;
+  // Wikipedia titles use an en dash in the season range ("2024–25"), so a
+  // hyphenated season string 404s if embedded as-is.
+  const enDashSeason = season.replace("-", "%E2%80%93");
+
+  return `https://en.wikipedia.org/wiki/${enDashSeason}_Japan_Rugby_League_One_%E2%80%93_Division_1`;
 }
 
 function normalizeWikipediaUrl(match: MatchGapRow, url: string | null) {
