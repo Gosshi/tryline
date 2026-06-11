@@ -35,7 +35,15 @@ require.extensions[".ts"] = function compileTypeScript(module, filename) {
     },
   }).outputText;
 
-  module._compile(output, filename);
+  // `import.meta` survives the CommonJS transpile as-is, which makes Node's
+  // CJS loader reclassify the compiled output as ESM and crash on `exports`.
+  // Rewrite it to the CJS equivalent so direct-run guards keep working.
+  const patched = output.replace(
+    /\bimport\.meta\.url\b/g,
+    "require('node:url').pathToFileURL(__filename).href",
+  );
+
+  module._compile(patched, filename);
 };
 
 process.argv = [process.argv[0], target, ...process.argv.slice(3)];
