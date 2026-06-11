@@ -24,13 +24,14 @@ type CliOptions = {
 type MatchGapRow = {
   away_score: number | null;
   away_team_id: string;
-  away_team: { name: string } | null;
+  away_team: { english_name: string | null; name: string } | null;
   competition: { family: string; season: string } | null;
   external_ids: Json;
   home_score: number | null;
   home_team_id: string;
-  home_team: { name: string } | null;
+  home_team: { english_name: string | null; name: string } | null;
   id: string;
+  kickoff_at: string | null;
   match_events: Array<{ id: string }>;
 };
 
@@ -176,6 +177,112 @@ export function extractEventHtml(
   return eventBlock.length ? $.html(eventBlock) : null;
 }
 
+const MONTH_INDEX_BY_NAME = new Map(
+  [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+  ].map((month, index) => [month, index]),
+);
+
+function toUtcDay(value: Date) {
+  return Date.UTC(
+    value.getUTCFullYear(),
+    value.getUTCMonth(),
+    value.getUTCDate(),
+  );
+}
+
+function parseEnglishDateToUtcDay(
+  day: string,
+  month: string,
+  year: string,
+): number | null {
+  const monthIndex = MONTH_INDEX_BY_NAME.get(month.toLowerCase());
+  if (monthIndex === undefined) {
+    return null;
+  }
+
+  return Date.UTC(Number(year), monthIndex, Number(day));
+}
+
+function extractEnglishDateDays(text: string): number[] {
+  const days = new Set<number>();
+  const dayMonthYear =
+    /\b(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b/gi;
+  const monthDayYear =
+    /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})\b/gi;
+
+  for (const match of text.matchAll(dayMonthYear)) {
+    const day = parseEnglishDateToUtcDay(match[1]!, match[2]!, match[3]!);
+    if (day !== null) {
+      days.add(day);
+    }
+  }
+
+  for (const match of text.matchAll(monthDayYear)) {
+    const day = parseEnglishDateToUtcDay(match[2]!, match[1]!, match[3]!);
+    if (day !== null) {
+      days.add(day);
+    }
+  }
+
+  return Array.from(days);
+}
+
+function blockContainsDate(blockHtml: string, kickoffDate: string): boolean {
+  const kickoffDay = toUtcDay(new Date(`${kickoffDate}T00:00:00Z`));
+  if (!Number.isFinite(kickoffDay)) {
+    return false;
+  }
+
+  const $ = load(blockHtml);
+  const blockDays = extractEnglishDateDays($.text());
+  const oneDay = 24 * 60 * 60 * 1000;
+
+  return blockDays.some((blockDay) => Math.abs(blockDay - kickoffDay) <= oneDay);
+}
+
+export function findEventBlockByTeams(
+  html: string,
+  homeTeamName: string,
+  awayTeamName: string,
+  kickoffDate: string,
+): string | null {
+  const $ = load(html);
+  const candidates: string[] = [];
+
+  $(".vevent").each((_, element) => {
+    const block = $.html(element);
+    if (
+      block &&
+      block.includes(homeTeamName) &&
+      block.includes(awayTeamName)
+    ) {
+      candidates.push(block);
+    }
+  });
+
+  if (candidates.length === 1) {
+    return candidates[0] ?? null;
+  }
+
+  const dateMatches = candidates.filter((block) =>
+    blockContainsDate(block, kickoffDate),
+  );
+
+  return dateMatches.length === 1 ? (dateMatches[0] ?? null) : null;
+}
+
 export function eventTotalsExceedFinalScore(
   events: ParsedMatchEvent[],
   match: Pick<MatchGapRow, "away_score" | "home_score">,
@@ -203,14 +310,15 @@ async function loadGapMatches(limit: number): Promise<MatchGapRow[]> {
     .select(
       `
         id,
+        kickoff_at,
         home_score,
         away_score,
         home_team_id,
         away_team_id,
         external_ids,
         competition:competitions!matches_competition_id_fkey(family, season),
-        home_team:teams!matches_home_team_id_fkey(name),
-        away_team:teams!matches_away_team_id_fkey(name),
+        home_team:teams!matches_home_team_id_fkey(name, english_name),
+        away_team:teams!matches_away_team_id_fkey(name, english_name),
         match_events(id)
       `,
     )
@@ -237,10 +345,27 @@ async function fillMatch(match: MatchGapRow): Promise<number> {
 
   const response = await fetchWithPolicy(source.url);
   const html = await response.text();
-  const eventHtml = extractEventHtml(html, source.eventId);
+  let eventHtml = extractEventHtml(html, source.eventId);
   if (eventHtml === null) {
-    console.log("  -> event anchor not found, skipping");
-    return 0;
+    const homeTeamName = match.home_team?.english_name ?? match.home_team?.name;
+    const awayTeamName = match.away_team?.english_name ?? match.away_team?.name;
+    const kickoffDate = match.kickoff_at?.slice(0, 10);
+
+    if (homeTeamName && awayTeamName && kickoffDate) {
+      eventHtml = findEventBlockByTeams(
+        html,
+        homeTeamName,
+        awayTeamName,
+        kickoffDate,
+      );
+    }
+
+    if (eventHtml === null) {
+      console.log("  -> no unique event block found, skipping");
+      return 0;
+    }
+
+    console.log("  -> resolved by team-name block selection");
   }
 
   const events = parseMatchEventsFromVeventHtml(eventHtml);
