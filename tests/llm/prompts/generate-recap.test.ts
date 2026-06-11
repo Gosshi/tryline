@@ -53,7 +53,7 @@ const assembled: AssembledContentInput = {
 
 describe("buildGenerateRecapPrompt", () => {
   it("uses recap prompt version 4.7.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.7.0");
+    expect(PROMPT_VERSION).toBe("recap@4.8.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -77,6 +77,18 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("スコアが高いチームが勝者");
     expect(prompt).toContain('"home_score":31');
     expect(prompt).toContain('"away_score":24');
+  });
+
+  it("includes a zero-facts warning when sourced_facts is empty", () => {
+    const prompt = buildGenerateRecapPrompt(
+      { ...assembled, sourced_facts: [] },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("sourced_facts: なし");
+    expect(prompt).toContain("外部記事・モデル訓練データ由来");
+    expect(prompt).toContain("統計・負傷・欠場・選手コメント・発言");
   });
 
   it("uses data-sparse structure when lineup and event data are unavailable", () => {

@@ -267,12 +267,12 @@ describe("generateNarrative", () => {
       contentType: "preview",
       currentContent: "# short",
       language: "ja",
-      promptVersion: "preview@3.3.0",
+      promptVersion: "preview@3.4.0",
       tacticalPoints: [],
     });
 
     expect(result.promptVersion).toBe(
-      "preview@3.3.0+length-revision@1.0.0",
+      "preview@3.4.0+length-revision@1.0.0",
     );
     expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -305,7 +305,7 @@ describe("generateNarrative", () => {
       contentType: "preview",
       currentContent: "# short",
       language: "ja",
-      promptVersion: "preview@3.3.0",
+      promptVersion: "preview@3.4.0",
       tacticalPoints: [],
     });
 

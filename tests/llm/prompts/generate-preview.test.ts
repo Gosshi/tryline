@@ -53,7 +53,7 @@ const assembled: AssembledContentInput = {
 
 describe("buildGeneratePreviewPrompt", () => {
   it("uses preview prompt version 3.3.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.3.0");
+    expect(PROMPT_VERSION).toBe("preview@3.4.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -81,6 +81,17 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("スコアが高いチームが勝者");
     expect(prompt).toContain('"home_score":null');
     expect(prompt).toContain('"away_score":null');
+  });
+
+  it("includes a zero-facts warning when sourced_facts is empty", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      { ...assembled, sourced_facts: [] },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("sourced_facts: なし");
+    expect(prompt).toContain("外部記事・モデル訓練データ由来");
   });
 
   it("includes the minimum length instruction", () => {

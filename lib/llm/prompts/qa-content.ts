@@ -74,7 +74,10 @@ export function buildQaContentPrompt(
           "ただし、本文がこの一覧に無いWeb由来の統計・欠場・負傷・発言・カード情報を述べている場合は factual_grounding を下げること。",
           JSON.stringify(matchContext.sourcedFacts),
         ].join("\n")
-      : "";
+      : [
+          "## sourced_facts grounding",
+          "sourced_facts はゼロです。本文がWeb由来の統計・負傷・欠場・選手コメント・発言（入力データにない内容）を含む場合は factual_grounding を 2 以下に下げること。",
+        ].join("\n");
 
   return [
     `あなたは編集デスクです。以下の${languageLabel}コンテンツを品質評価してください。`,
