@@ -274,6 +274,20 @@ export function computeScoreTimeline(
   };
 }
 
+export function eventTotalsMatchFinalScore(
+  scoreTimeline: ScoreTimeline | null,
+  homeScore: number | null,
+  awayScore: number | null,
+): boolean {
+  return (
+    scoreTimeline !== null &&
+    homeScore !== null &&
+    awayScore !== null &&
+    scoreTimeline.final_home === homeScore &&
+    scoreTimeline.final_away === awayScore
+  );
+}
+
 function asJsonObject(value: Json): Record<string, Json> {
   if (!value || Array.isArray(value) || typeof value !== "object") {
     return {};
@@ -723,12 +737,20 @@ export async function assembleMatchContentInput(
     away: awayProjectedLineups,
     home: homeProjectedLineups,
   };
-  const derivedStats = computeDerivedMatchStats(
-    matchEvents,
-    projectedLineups,
-    homeTeamName,
-    awayTeamName,
-  );
+  // Derived stats assert exact figures (e.g. "ゴール4/5"), so only compute
+  // them when the event log provably reconstructs the final score.
+  const derivedStats = eventTotalsMatchFinalScore(
+    scoreTimeline,
+    match.home_score,
+    match.away_score,
+  )
+    ? computeDerivedMatchStats(
+        matchEvents,
+        projectedLineups,
+        homeTeamName,
+        awayTeamName,
+      )
+    : null;
   const competitionName = match.competition
     ? getCompetitionDisplayName(
         {

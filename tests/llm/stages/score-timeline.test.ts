@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   computeMatchStats,
   computeScoreTimeline,
+  eventTotalsMatchFinalScore,
 } from "@/lib/llm/stages/assemble";
 
 describe("computeScoreTimeline", () => {
@@ -222,5 +223,47 @@ describe("computeScoreTimeline", () => {
     );
 
     expect(result.penalty_count).toEqual({ away: 1, home: 1 });
+  });
+});
+
+describe("eventTotalsMatchFinalScore", () => {
+  const timeline = computeScoreTimeline(
+    [
+      {
+        minute: 10,
+        player_name: "Scorer",
+        team_name: "Home",
+        type: "try",
+      },
+      {
+        minute: 11,
+        player_name: "Kicker",
+        team_name: "Home",
+        type: "conversion",
+      },
+      {
+        minute: 50,
+        player_name: "Away Kicker",
+        team_name: "Away",
+        type: "penalty_goal",
+      },
+    ],
+    "Home",
+    "Away",
+  );
+
+  it("returns true when event totals equal the final score", () => {
+    expect(eventTotalsMatchFinalScore(timeline, 7, 3)).toBe(true);
+  });
+
+  it("returns false when either side mismatches", () => {
+    expect(eventTotalsMatchFinalScore(timeline, 10, 3)).toBe(false);
+    expect(eventTotalsMatchFinalScore(timeline, 7, 6)).toBe(false);
+  });
+
+  it("returns false for null timeline or null scores", () => {
+    expect(eventTotalsMatchFinalScore(null, 7, 3)).toBe(false);
+    expect(eventTotalsMatchFinalScore(timeline, null, 3)).toBe(false);
+    expect(eventTotalsMatchFinalScore(timeline, 7, null)).toBe(false);
   });
 });
