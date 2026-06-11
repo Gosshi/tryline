@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { computeScoreTimeline } from "@/lib/llm/stages/assemble";
+import {
+  computeMatchStats,
+  computeScoreTimeline,
+} from "@/lib/llm/stages/assemble";
 
 describe("computeScoreTimeline", () => {
   it("computes halftime score, lead changes, and the winning score", () => {
@@ -161,5 +164,63 @@ describe("computeScoreTimeline", () => {
         { away: 35, home: 38, minute: 84, new_leader: "home" },
       ]),
     );
+  });
+
+  it("scores penalty tries as seven points without changing normal tries", () => {
+    const result = computeScoreTimeline(
+      [
+        {
+          is_penalty_try: true,
+          minute: 12,
+          player_name: "Penalty try",
+          team_name: "Home",
+          type: "try",
+        },
+        {
+          minute: 20,
+          player_name: "Normal try",
+          team_name: "Away",
+          type: "try",
+        },
+      ],
+      "Home",
+      "Away",
+    );
+
+    expect(result).toMatchObject({
+      final_away: 5,
+      final_home: 7,
+      ht_away: 5,
+      ht_home: 7,
+    });
+  });
+
+  it("counts penalty_goal events in match penalty stats", () => {
+    const result = computeMatchStats(
+      [
+        {
+          minute: 10,
+          player_name: "Home penalty",
+          team_name: "Home",
+          type: "penalty_goal",
+        },
+        {
+          minute: 20,
+          player_name: "Away penalty",
+          team_name: "Away",
+          type: "penalty_goal",
+        },
+        {
+          minute: 30,
+          player_name: "Legacy penalty",
+          team_name: "Home",
+          type: "penalty",
+        },
+      ],
+      "Home",
+      "Away",
+    );
+
+    expect(result.penalty_count).toEqual({ away: 1, home: 1 });
   });
 });

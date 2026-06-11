@@ -1,4 +1,4 @@
-import { pointsForEventType } from "@/lib/llm/stages/assemble";
+import { pointsForEvent } from "@/lib/llm/stages/assemble";
 
 import type { AssembledContentInput, DerivedMatchStats } from "@/lib/llm/types";
 
@@ -86,7 +86,7 @@ export function computeDerivedMatchStats(
 
   for (const event of knownEvents) {
     if (event.type === "try") {
-      pointsBreakdown[event.team].tries += pointsForEventType(event.type);
+      pointsBreakdown[event.team].tries += pointsForEvent(event);
       if (!event.is_penalty_try) {
         conversions[event.team].attempts += 1;
       }
@@ -101,18 +101,18 @@ export function computeDerivedMatchStats(
       });
     } else if (event.type === "conversion") {
       conversions[event.team].made += 1;
-      pointsBreakdown[event.team].conversions += pointsForEventType(event.type);
+      pointsBreakdown[event.team].conversions += pointsForEvent(event);
     } else if (event.type === "penalty" || event.type === "penalty_goal") {
-      pointsBreakdown[event.team].penalties += pointsForEventType(event.type);
+      pointsBreakdown[event.team].penalties += pointsForEvent(event);
     } else if (event.type === "drop_goal") {
-      pointsBreakdown[event.team].drop_goals += pointsForEventType(event.type);
+      pointsBreakdown[event.team].drop_goals += pointsForEvent(event);
     }
   }
 
   const scoringEvents: ScoringEvent[] = knownEvents
     .map((event) => ({
       ...event,
-      points: pointsForEventType(event.type),
+      points: pointsForEvent(event),
     }))
     .filter(
       (event): event is ScoringEvent =>
