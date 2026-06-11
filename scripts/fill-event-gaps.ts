@@ -259,24 +259,46 @@ export function findEventBlockByTeams(
   kickoffDate: string,
 ): string | null {
   const $ = load(html);
-  const candidates: string[] = [];
+  const blocks: string[] = [];
 
   $(".vevent").each((_, element) => {
     const block = $.html(element);
-    if (
-      block &&
-      block.includes(homeTeamName) &&
-      block.includes(awayTeamName)
-    ) {
-      candidates.push(block);
+    if (block) {
+      blocks.push(block);
     }
   });
 
-  if (candidates.length === 1) {
-    return candidates[0] ?? null;
+  const strictCandidates = blocks.filter(
+    (block) =>
+      block.includes(`${homeTeamName} national rugby union team`) &&
+      block.includes(`${awayTeamName} national rugby union team`),
+  );
+
+  if (strictCandidates.length === 1) {
+    return strictCandidates[0] ?? null;
   }
 
-  const dateMatches = candidates.filter((block) =>
+  if (strictCandidates.length > 1) {
+    const strictDateMatches = strictCandidates.filter((block) =>
+      blockContainsDate(block, kickoffDate),
+    );
+    return strictDateMatches.length === 1
+      ? (strictDateMatches[0] ?? null)
+      : null;
+  }
+
+  const looseCandidateBlocks = blocks.filter(
+    (block) => !block.includes(" national rugby union team"),
+  );
+  const looseCandidates = looseCandidateBlocks.filter(
+    (block) => block.includes(homeTeamName) && block.includes(awayTeamName),
+  );
+
+  if (looseCandidates.length === 1) {
+    return looseCandidates[0] ?? null;
+  }
+
+  const dateMatches = looseCandidates.filter((block) =>
     blockContainsDate(block, kickoffDate),
   );
 
