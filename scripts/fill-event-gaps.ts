@@ -6,6 +6,7 @@
  */
 
 import { load } from "cheerio";
+import { pathToFileURL } from "node:url";
 
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { upsertMatchEvents } from "@/lib/ingestion/events";
@@ -13,6 +14,7 @@ import { fetchWithPolicy } from "@/lib/scrapers";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 
 import type { Json } from "@/lib/db/types";
+import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
 
 type CliOptions = {
   dryRun: boolean;
@@ -20,10 +22,12 @@ type CliOptions = {
 };
 
 type MatchGapRow = {
+  away_score: number | null;
   away_team_id: string;
   away_team: { name: string } | null;
   competition: { family: string; season: string } | null;
   external_ids: Json;
+  home_score: number | null;
   home_team_id: string;
   home_team: { name: string } | null;
   id: string;
@@ -36,7 +40,14 @@ type WikipediaExternalIds = {
   wikipedia_url?: unknown;
 };
 
-function parseOptions(argv: string[]): CliOptions {
+const EVENT_POINTS: Record<string, number> = {
+  conversion: 2,
+  drop_goal: 3,
+  penalty_goal: 3,
+  try: 5,
+};
+
+export function parseOptions(argv: string[]): CliOptions {
   let dryRun = false;
   let limit = 50;
 
@@ -149,9 +160,12 @@ function getWikipediaSource(match: MatchGapRow) {
   };
 }
 
-function extractEventHtml(html: string, eventId: string | null): string {
-  if (!eventId) {
-    return html;
+export function extractEventHtml(
+  html: string,
+  eventId: string | null,
+): string | null {
+  if (!eventId || eventId === "mw-content-text") {
+    return null;
   }
 
   const $ = load(html);
@@ -159,7 +173,27 @@ function extractEventHtml(html: string, eventId: string | null): string {
     .filter((_, element) => $(element).attr("id") === eventId)
     .first();
 
-  return eventBlock.length ? $.html(eventBlock) : html;
+  return eventBlock.length ? $.html(eventBlock) : null;
+}
+
+export function eventTotalsExceedFinalScore(
+  events: ParsedMatchEvent[],
+  match: Pick<MatchGapRow, "away_score" | "home_score">,
+): { awayTotal: number; homeTotal: number; exceeds: boolean } {
+  const homeTotal = events
+    .filter((event) => event.teamSide === "home")
+    .reduce((sum, event) => sum + (EVENT_POINTS[event.type] ?? 0), 0);
+  const awayTotal = events
+    .filter((event) => event.teamSide === "away")
+    .reduce((sum, event) => sum + (EVENT_POINTS[event.type] ?? 0), 0);
+
+  return {
+    awayTotal,
+    exceeds:
+      (match.home_score !== null && homeTotal > match.home_score) ||
+      (match.away_score !== null && awayTotal > match.away_score),
+    homeTotal,
+  };
 }
 
 async function loadGapMatches(limit: number): Promise<MatchGapRow[]> {
@@ -169,6 +203,8 @@ async function loadGapMatches(limit: number): Promise<MatchGapRow[]> {
     .select(
       `
         id,
+        home_score,
+        away_score,
         home_team_id,
         away_team_id,
         external_ids,
@@ -202,9 +238,22 @@ async function fillMatch(match: MatchGapRow): Promise<number> {
   const response = await fetchWithPolicy(source.url);
   const html = await response.text();
   const eventHtml = extractEventHtml(html, source.eventId);
+  if (eventHtml === null) {
+    console.log("  -> event anchor not found, skipping");
+    return 0;
+  }
+
   const events = parseMatchEventsFromVeventHtml(eventHtml);
 
   if (events.length === 0) {
+    return 0;
+  }
+
+  const totals = eventTotalsExceedFinalScore(events, match);
+  if (totals.exceeds) {
+    console.warn(
+      `  -> event totals exceed final score (${totals.homeTotal}-${totals.awayTotal} vs ${match.home_score}-${match.away_score}), skipping`,
+    );
     return 0;
   }
 
@@ -259,7 +308,9 @@ async function main() {
   console.log(`Done. Filled ${filled}/${gaps.length} matches.`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
