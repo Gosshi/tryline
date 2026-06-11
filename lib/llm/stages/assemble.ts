@@ -102,7 +102,7 @@ function computeTeamFormStats(
   };
 }
 
-function computeMatchStats(
+export function computeMatchStats(
   events: AssembledContentInput["match_events"],
   homeTeamName: string,
   awayTeamName: string,
@@ -117,7 +117,7 @@ function computeMatchStats(
     const isHome = event.team_name === homeTeamName;
     const isAway = event.team_name === awayTeamName;
 
-    if (event.type === "penalty") {
+    if (event.type === "penalty_goal") {
       if (isHome) {
         homePenalties += 1;
       } else if (isAway) {
@@ -145,10 +145,24 @@ function computeMatchStats(
   };
 }
 
-export function pointsForEventType(type: string): number {
-  if (type === "try") return 5;
-  if (type === "conversion") return 2;
-  if (type === "penalty" || type === "penalty_goal" || type === "drop_goal") {
+const PENALTY_TRY_POINTS = 7;
+const TRY_POINTS = 5;
+
+export function pointsForEvent(
+  event: Pick<
+    AssembledContentInput["match_events"][number],
+    "is_penalty_try" | "type"
+  >,
+): number {
+  if (event.type === "try") {
+    return event.is_penalty_try === true ? PENALTY_TRY_POINTS : TRY_POINTS;
+  }
+  if (event.type === "conversion") return 2;
+  if (
+    event.type === "penalty" ||
+    event.type === "penalty_goal" ||
+    event.type === "drop_goal"
+  ) {
     return 3;
   }
   return 0;
@@ -180,7 +194,7 @@ export function computeScoreTimeline(
 
   for (const event of events) {
     const minute = event.minute ?? 0;
-    const points = pointsForEventType(event.type);
+    const points = pointsForEvent(event);
 
     if (points === 0) {
       continue;
