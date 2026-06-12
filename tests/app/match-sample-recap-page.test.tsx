@@ -32,6 +32,32 @@ const navigationMocks = vi.hoisted(() => ({
   }),
 }));
 
+const premiumRecapMocks = vi.hoisted(() => ({
+  PremiumRecapSection: vi.fn(
+    ({
+      content,
+      hasLockedContent,
+      nextLockedHeading,
+    }: {
+      content: { contentMdJa: string } | null;
+      hasLockedContent: boolean;
+      nextLockedHeading: string | null;
+    }) => (
+      <div data-testid="premium-recap-section">
+        <span data-testid="premium-recap-content">
+          {content?.contentMdJa ?? ""}
+        </span>
+        <span data-testid="premium-recap-has-locked">
+          {String(hasLockedContent)}
+        </span>
+        <span data-testid="premium-recap-next-heading">
+          {nextLockedHeading}
+        </span>
+      </div>
+    ),
+  ),
+}));
+
 vi.mock("@/components/lang-toggle", () => ({
   LangToggle: () => <div data-testid="lang-toggle" />,
 }));
@@ -52,9 +78,7 @@ vi.mock("@/components/premium-match-chat", () => ({
   PremiumMatchChat: () => <div data-testid="premium-match-chat" />,
 }));
 
-vi.mock("@/components/premium-recap-section", () => ({
-  PremiumRecapSection: () => <div data-testid="premium-recap-section" />,
-}));
+vi.mock("@/components/premium-recap-section", () => premiumRecapMocks);
 
 vi.mock("@/lib/db/queries/match-content", () => matchContentMocks);
 vi.mock("@/lib/db/queries/match-events", () => matchEventMocks);
@@ -184,9 +208,24 @@ describe("match sample recap page", () => {
     render(element);
 
     expect(screen.getByTestId("premium-recap-section")).toBeInTheDocument();
+    expect(screen.getByTestId("premium-recap-has-locked")).toHaveTextContent(
+      "true",
+    );
+    expect(screen.getByTestId("premium-recap-next-heading")).toHaveTextContent(
+      "ターニングポイント",
+    );
+    expect(screen.getByTestId("premium-recap-content")).toHaveTextContent(
+      "無料で見える冒頭。",
+    );
+    expect(screen.getByTestId("premium-recap-content")).toHaveTextContent(
+      "全体像。",
+    );
     expect(
       screen.queryByText("サンプル全文だけに含まれる終盤分析。"),
     ).toBeNull();
+    expect(screen.getByTestId("premium-recap-content")).not.toHaveTextContent(
+      "サンプル全文だけに含まれる終盤分析。",
+    );
   });
 
   it("server-renders English sample recaps when English content exists", async () => {

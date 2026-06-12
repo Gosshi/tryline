@@ -25,6 +25,7 @@ import {
   extractCoreSection,
   extractDescription,
 } from "@/lib/match-content/description";
+import { splitRecapForPaywall } from "@/lib/match-content/markdown";
 import { isSampleMatch } from "@/lib/sample-matches";
 import { createMatchOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
@@ -148,6 +149,13 @@ export default async function MatchDetailPage({
     englishContent.preview !== null || englishContent.recap !== null;
   const isFreeSampleRecap =
     isSampleMatch(id) && publishedContent.recap !== null;
+  const recapSplit = publishedContent.recap
+    ? splitRecapForPaywall(publishedContent.recap.contentMdJa)
+    : null;
+  const freeRecapContent =
+    publishedContent.recap && recapSplit
+      ? { ...publishedContent.recap, contentMdJa: recapSplit.freeMd }
+      : publishedContent.recap;
   const competitionTitle = formatCompetitionTitle(
     match.competition,
     match.competition.season,
@@ -323,8 +331,10 @@ export default async function MatchDetailPage({
               </>
             ) : (
               <PremiumRecapSection
-                content={publishedContent.recap}
+                content={freeRecapContent}
+                hasLockedContent={recapSplit?.hasLocked ?? false}
                 match={match}
+                nextLockedHeading={recapSplit?.nextHeadingText ?? null}
               />
             )}
           </section>

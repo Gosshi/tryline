@@ -3,27 +3,27 @@ import { Fragment } from "react";
 import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { TrackedLink } from "@/components/tracked-link";
+import { parseMarkdown } from "@/lib/match-content/markdown";
 
 import type { PublishedMatchContent } from "@/lib/db/queries/match-content";
+import type { MarkdownBlock } from "@/lib/match-content/markdown";
 
 type MatchContentProps = {
   content: PublishedMatchContent;
   contentType: "preview" | "recap";
+  hasLockedContent?: boolean;
   isPremium: boolean;
   language?: "ja" | "en";
+  lockedContentMd?: string | null;
+  lockedLoading?: boolean;
   matchTitle?: string;
+  nextLockedHeading?: string | null;
   showCta?: boolean;
 };
 
 type InlineChunk =
   | { type: "text"; value: string }
   | { type: "link"; href: string; text: string };
-
-export type MarkdownBlock =
-  | { type: "heading"; level: number; text: string }
-  | { type: "list"; items: string[] }
-  | { type: "table"; rows: string[][] }
-  | { type: "paragraph"; text: string };
 
 function formatGeneratedAt(generatedAt: string, language: "ja" | "en"): string {
   const formatter = new Intl.DateTimeFormat(
@@ -89,82 +89,6 @@ function parseInline(text: string): InlineChunk[] {
   );
 }
 
-function parseMarkdown(markdown: string): MarkdownBlock[] {
-  const lines = markdown.split(/\r?\n/);
-  const blocks: MarkdownBlock[] = [];
-
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i]?.trim() ?? "";
-
-    if (!line) {
-      continue;
-    }
-
-    if (line.startsWith("#")) {
-      const level = line.match(/^#+/)?.[0].length ?? 1;
-      blocks.push({ level, text: line.replace(/^#+\s*/, ""), type: "heading" });
-      continue;
-    }
-
-    if (line.startsWith("- ")) {
-      const items: string[] = [line.slice(2)];
-
-      while ((lines[i + 1] ?? "").trim().startsWith("- ")) {
-        i += 1;
-        items.push((lines[i] ?? "").trim().slice(2));
-      }
-
-      blocks.push({ items, type: "list" });
-      continue;
-    }
-
-    if (line.startsWith("|") && (lines[i + 1] ?? "").trim().startsWith("|")) {
-      const header = line
-        .split("|")
-        .map((cell) => cell.trim())
-        .filter(Boolean);
-      const rows: string[][] = [header];
-
-      i += 1;
-
-      while ((lines[i + 1] ?? "").trim().startsWith("|")) {
-        i += 1;
-        const row = (lines[i] ?? "")
-          .trim()
-          .split("|")
-          .map((cell) => cell.trim())
-          .filter(Boolean);
-
-        if (row.every((cell) => /^:?-{3,}:?$/.test(cell))) {
-          continue;
-        }
-
-        rows.push(row);
-      }
-
-      blocks.push({ rows, type: "table" });
-      continue;
-    }
-
-    const paragraphLines = [line];
-
-    while (
-      lines[i + 1] &&
-      (lines[i + 1] ?? "").trim() &&
-      !(lines[i + 1] ?? "").trim().startsWith("#") &&
-      !(lines[i + 1] ?? "").trim().startsWith("- ") &&
-      !(lines[i + 1] ?? "").trim().startsWith("|")
-    ) {
-      i += 1;
-      paragraphLines.push((lines[i] ?? "").trim());
-    }
-
-    blocks.push({ text: paragraphLines.join(" "), type: "paragraph" });
-  }
-
-  return blocks;
-}
-
 function splitAtSecondHeading(blocks: MarkdownBlock[]): {
   free: MarkdownBlock[];
   locked: MarkdownBlock[];
@@ -192,27 +116,6 @@ function splitAtSecondHeading(blocks: MarkdownBlock[]): {
       h2Count += 1;
 
       if (h2Count === 2) {
-        return { free: blocks.slice(0, i), locked: blocks.slice(i) };
-      }
-    }
-  }
-
-  return { free: blocks, locked: [] };
-}
-
-export function splitRecapAtThirdHeading(blocks: MarkdownBlock[]): {
-  free: MarkdownBlock[];
-  locked: MarkdownBlock[];
-} {
-  let h1Count = 0;
-
-  for (let i = 0; i < blocks.length; i += 1) {
-    const block = blocks[i];
-
-    if (block?.type === "heading" && block.level === 1) {
-      h1Count += 1;
-
-      if (h1Count === 3) {
         return { free: blocks.slice(0, i), locked: blocks.slice(i) };
       }
     }
@@ -353,26 +256,49 @@ function XFollowCta() {
 export function MatchContent({
   content,
   contentType,
+  hasLockedContent = false,
   isPremium,
   language = "ja",
+  lockedContentMd = null,
+  lockedLoading = false,
   matchTitle,
+  nextLockedHeading = null,
   showCta = true,
 }: MatchContentProps) {
   const isLocked = !isPremium;
-  const allBlocks = parseMarkdown(content.contentMdJa);
-  const { free: freeBlocks, locked: lockedBlocks } = isLocked
-    ? contentType === "recap"
-      ? splitRecapAtThirdHeading(allBlocks)
-      : splitAtSecondHeading(allBlocks)
-    : { free: allBlocks, locked: [] };
-  const blocks = isLocked ? freeBlocks : allBlocks;
+  const combinedMarkdown =
+    isPremium && lockedContentMd
+      ? `${content.contentMdJa.trim()}\n\n${lockedContentMd.trim()}`
+      : content.contentMdJa;
+  const allBlocks = parseMarkdown(combinedMarkdown);
+  const freeBlocks = parseMarkdown(content.contentMdJa);
+  const previewSplit =
+    isLocked && contentType === "preview"
+      ? splitAtSecondHeading(allBlocks)
+      : { free: allBlocks, locked: [] };
+  const blocks =
+    isLocked && contentType === "recap"
+      ? freeBlocks
+      : isLocked
+        ? previewSplit.free
+        : allBlocks;
+  const lockedBlocks =
+    isLocked && contentType === "recap"
+      ? []
+      : isLocked
+        ? previewSplit.locked
+        : [];
   const nextHeading = isLocked
-    ? (lockedBlocks.find(
-        (block): block is Extract<MarkdownBlock, { type: "heading" }> =>
-          block.type === "heading",
-      ) ?? undefined)
+    ? contentType === "recap" && nextLockedHeading
+      ? ({ level: 1, text: nextLockedHeading, type: "heading" } as const)
+      : (lockedBlocks.find(
+          (block): block is Extract<MarkdownBlock, { type: "heading" }> =>
+            block.type === "heading",
+        ) ?? undefined)
     : undefined;
-  const hasLockedBlocks = isLocked && lockedBlocks.length > 0;
+  const hasLockedBlocks =
+    isLocked &&
+    (contentType === "recap" ? hasLockedContent : lockedBlocks.length > 0);
   const headings = blocks.filter(
     (block): block is Extract<MarkdownBlock, { type: "heading" }> =>
       block.type === "heading" && block.level <= 1,
@@ -416,7 +342,17 @@ export function MatchContent({
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
         )}
       </div>
-      {hasLockedBlocks && showCta && (
+      {hasLockedBlocks && lockedLoading && (
+        <div
+          aria-live="polite"
+          className="mt-4 space-y-2 rounded-lg border border-slate-100 bg-slate-50 p-4"
+        >
+          <div className="h-3 w-28 animate-pulse rounded bg-slate-200" />
+          <div className="h-3 w-full animate-pulse rounded bg-slate-200" />
+          <div className="h-3 w-2/3 animate-pulse rounded bg-slate-200" />
+        </div>
+      )}
+      {hasLockedBlocks && showCta && !lockedLoading && (
         <div className="mt-4 flex flex-col items-center gap-3 text-center">
           <p className="text-sm font-semibold text-slate-800">
             {language === "en"
