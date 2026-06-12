@@ -187,10 +187,18 @@ function parseQaResponse(
     throw new Error("qa response missing scores");
   }
 
+  // The QA model frequently miscounts Japanese characters and self-reports
+  // the length issue on content that actually meets the minimum. The
+  // deterministic guard below re-adds the issue from a real measurement, so
+  // it is the single source of truth for content length.
+  const llmIssues = (Array.isArray(parsed.issues) ? parsed.issues : []).filter(
+    (issue) => issue !== CONTENT_LENGTH_ISSUE,
+  );
+
   const guarded = applyDeterministicQaGuards(
     {
       scores: parsed.scores,
-      issues: Array.isArray(parsed.issues) ? parsed.issues : [],
+      issues: llmIssues,
       verdict: "retry",
     },
     options,

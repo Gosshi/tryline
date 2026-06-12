@@ -527,3 +527,59 @@ describe("evaluateNarrativeQuality", () => {
     );
   });
 });
+
+describe("LLM-reported length issue stripping", () => {
+  it("ignores a self-reported length issue when the measured length meets the minimum", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      model: "gpt-4o-mini",
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 4,
+          japanese_quality: 4,
+          tactical_depth: 4,
+        },
+        issues: ["本文が目標字数の下限未満です"],
+      }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const response = await evaluateNarrativeQuality({
+      contentType: "recap",
+      language: "ja",
+      matchContext,
+      narrative: longJaRecap,
+      retryCount: 0,
+    });
+
+    expect(response.result.issues).not.toContain("本文が目標字数の下限未満です");
+    expect(response.result.verdict).toBe("publish");
+  });
+
+  it("re-adds the length issue from real measurement when content is genuinely short", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      model: "gpt-4o-mini",
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 4,
+          japanese_quality: 4,
+          tactical_depth: 4,
+        },
+        issues: [],
+      }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const response = await evaluateNarrativeQuality({
+      contentType: "recap",
+      language: "ja",
+      matchContext,
+      narrative: "あ".repeat(800),
+      retryCount: 0,
+    });
+
+    expect(response.result.issues).toContain("本文が目標字数の下限未満です");
+    expect(response.result.verdict).toBe("retry");
+  });
+});
