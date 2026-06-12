@@ -47,16 +47,16 @@ describe("buildQaContentPrompt", () => {
 
     expect(prompt).toContain("- 5: 600 words以上");
     expect(prompt).toContain("本文が600 words未満の場合");
-    expect(prompt).not.toContain("- 5: 1500字以上");
+    expect(prompt).not.toContain("- 5: 1200字以上");
   });
 
   it("uses recap length thresholds in the information density rubric", () => {
     const prompt = buildQaContentPrompt("recap", "本文", "ja", matchContext);
 
-    expect(prompt).toContain("- 5: 1500字以上");
-    expect(prompt).toContain("- 4: 1500字以上");
-    expect(prompt).toContain("- 3: 1125字以上");
-    expect(prompt).toContain("- 2: 750字未満");
+    expect(prompt).toContain("- 5: 1200字以上");
+    expect(prompt).toContain("- 4: 1200字以上");
+    expect(prompt).toContain("- 3: 900字以上");
+    expect(prompt).toContain("- 2: 600字未満");
   });
 
   it("adds winner consistency checks only for recaps", () => {
