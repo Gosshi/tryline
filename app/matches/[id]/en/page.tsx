@@ -20,6 +20,7 @@ import {
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { extractDescription } from "@/lib/match-content/description";
+import { splitRecapForPaywall } from "@/lib/match-content/markdown";
 import { isSampleMatch } from "@/lib/sample-matches";
 import { createMatchOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
@@ -128,6 +129,13 @@ export default async function MatchEnglishPage({
   const awayDisplayName = match.awayTeam.englishName ?? match.awayTeam.name;
   const isFreeSampleRecap =
     isSampleMatch(id) && englishContent.recap !== null;
+  const recapSplit = englishContent.recap
+    ? splitRecapForPaywall(englishContent.recap.contentMdJa)
+    : null;
+  const freeRecapContent =
+    englishContent.recap && recapSplit
+      ? { ...englishContent.recap, contentMdJa: recapSplit.freeMd }
+      : englishContent.recap;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -214,9 +222,11 @@ export default async function MatchEnglishPage({
               </>
             ) : (
               <PremiumRecapSection
-                content={englishContent.recap}
+                content={freeRecapContent}
+                hasLockedContent={recapSplit?.hasLocked ?? false}
                 language="en"
                 match={match}
+                nextLockedHeading={recapSplit?.nextHeadingText ?? null}
               />
             )
           )}

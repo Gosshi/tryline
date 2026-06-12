@@ -5,11 +5,8 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import {
-  MatchContent,
-  splitRecapAtThirdHeading,
-  type MarkdownBlock,
-} from "@/components/match-content";
+import { MatchContent } from "@/components/match-content";
+import { splitRecapForPaywall } from "@/lib/match-content/markdown";
 
 import type { PublishedMatchContent } from "@/lib/db/queries/match-content";
 
@@ -169,10 +166,12 @@ describe("MatchContent", () => {
       <MatchContent
         content={{
           ...baseContent,
-          contentMdJa: `# この試合の核心\n\n${visibleText}\n\n# 試合全体像\n\n${secondSectionText}\n\n# ターニングポイント\n\nロック本文`,
+          contentMdJa: `# この試合の核心\n\n${visibleText}\n\n# 試合全体像\n\n${secondSectionText}`,
         }}
         contentType="recap"
+        hasLockedContent
         isPremium={false}
+        nextLockedHeading="ターニングポイント"
       />,
     );
 
@@ -214,10 +213,12 @@ describe("MatchContent", () => {
         content={{
           ...baseContent,
           contentMdJa:
-            "# この試合の核心\n\n無料本文\n\n## 無料内の小見出し\n\n小見出し本文\n\n# 試合全体像\n\n全体像本文\n\n# 有料セクション\n\nロック本文",
+            "# この試合の核心\n\n無料本文\n\n## 無料内の小見出し\n\n小見出し本文\n\n# 試合全体像\n\n全体像本文",
         }}
         contentType="recap"
+        hasLockedContent
         isPremium={false}
+        nextLockedHeading="有料セクション"
       />,
     );
 
@@ -245,45 +246,52 @@ describe("MatchContent", () => {
     expect(screen.queryByText(/続きは Premium/)).toBeNull();
   });
 
-  it("splits recap blocks from the third h1 heading", () => {
-    const blocks: MarkdownBlock[] = [
-      { level: 1, text: "この試合の核心", type: "heading" },
-      { text: "核心本文", type: "paragraph" },
-      { level: 1, text: "試合全体像", type: "heading" },
-      { text: "全体像本文", type: "paragraph" },
-      { level: 1, text: "ターニングポイント", type: "heading" },
-      { text: "有料本文", type: "paragraph" },
-    ];
-
-    expect(splitRecapAtThirdHeading(blocks)).toEqual({
-      free: blocks.slice(0, 4),
-      locked: blocks.slice(4),
+  it("splits recap markdown from the third h1 heading", () => {
+    expect(
+      splitRecapForPaywall(
+        "# この試合の核心\n\n核心本文\n\n# 試合全体像\n\n全体像本文\n\n# ターニングポイント\n\n有料本文",
+      ),
+    ).toEqual({
+      freeMd: "# この試合の核心\n\n核心本文\n\n# 試合全体像\n\n全体像本文",
+      hasLocked: true,
+      lockedMd: "# ターニングポイント\n\n有料本文",
+      nextHeadingText: "ターニングポイント",
     });
   });
 
-  it("does not lock recap blocks with only two h1 headings", () => {
-    const blocks: MarkdownBlock[] = [
-      { level: 1, text: "この試合の核心", type: "heading" },
-      { text: "核心本文", type: "paragraph" },
-      { level: 1, text: "試合全体像", type: "heading" },
-      { text: "全体像本文", type: "paragraph" },
-    ];
+  it("does not lock recap markdown with only two h1 headings", () => {
+    const markdown = "# この試合の核心\n\n核心本文\n\n# 試合全体像\n\n全体像本文";
 
-    expect(splitRecapAtThirdHeading(blocks)).toEqual({
-      free: blocks,
-      locked: [],
+    expect(splitRecapForPaywall(markdown)).toEqual({
+      freeMd: markdown,
+      hasLocked: false,
+      lockedMd: null,
+      nextHeadingText: null,
     });
   });
 
-  it("does not lock recap paragraph-only blocks", () => {
-    const blocks: MarkdownBlock[] = [
-      { text: "段落1", type: "paragraph" },
-      { text: "段落2", type: "paragraph" },
-    ];
+  it("falls back to h2 headings when recap has no repeated h1 sections", () => {
+    expect(
+      splitRecapForPaywall(
+        "# レビュー\n\n## この試合の核心\n\n核心本文\n\n## 試合全体像\n\n全体像本文\n\n## ターニングポイント\n\n有料本文",
+      ),
+    ).toEqual({
+      freeMd:
+        "# レビュー\n\n## この試合の核心\n\n核心本文\n\n## 試合全体像\n\n全体像本文",
+      hasLocked: true,
+      lockedMd: "## ターニングポイント\n\n有料本文",
+      nextHeadingText: "ターニングポイント",
+    });
+  });
 
-    expect(splitRecapAtThirdHeading(blocks)).toEqual({
-      free: blocks,
-      locked: [],
+  it("does not lock recap paragraph-only markdown", () => {
+    const markdown = "段落1\n\n段落2";
+
+    expect(splitRecapForPaywall(markdown)).toEqual({
+      freeMd: markdown,
+      hasLocked: false,
+      lockedMd: null,
+      nextHeadingText: null,
     });
   });
 

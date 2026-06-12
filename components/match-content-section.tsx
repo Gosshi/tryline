@@ -8,9 +8,13 @@ import type { MatchDetail } from "@/lib/db/queries/matches";
 type MatchContentSectionProps = {
   contentType: "preview" | "recap";
   content: PublishedMatchContent | null;
+  hasLockedContent?: boolean;
   isPremium: boolean;
   language?: "ja" | "en";
+  lockedContentMd?: string | null;
+  lockedLoading?: boolean;
   match: MatchDetail;
+  nextLockedHeading?: string | null;
   showCta?: boolean;
 };
 
@@ -28,9 +32,13 @@ const TITLES = {
 export function MatchContentSection({
   content,
   contentType,
+  hasLockedContent,
   isPremium,
   language = "ja",
+  lockedContentMd,
+  lockedLoading,
   match,
+  nextLockedHeading,
   showCta,
 }: MatchContentSectionProps) {
   const state = deriveContentState({
@@ -56,9 +64,13 @@ export function MatchContentSection({
         <MatchContent
           content={content}
           contentType={contentType}
+          hasLockedContent={hasLockedContent}
           isPremium={isPremium}
           language={language}
+          lockedContentMd={lockedContentMd}
+          lockedLoading={lockedLoading}
           matchTitle={matchTitle}
+          nextLockedHeading={nextLockedHeading}
           showCta={showCta}
         />
       ) : (

@@ -6,29 +6,63 @@ import { MatchContentSection } from "@/components/match-content-section";
 
 type Props = {
   content: React.ComponentProps<typeof MatchContentSection>["content"];
+  hasLockedContent: boolean;
   language?: React.ComponentProps<typeof MatchContentSection>["language"];
   match: React.ComponentProps<typeof MatchContentSection>["match"];
+  nextLockedHeading: string | null;
 };
 
-export function PremiumRecapSection({ content, language, match }: Props) {
-  const [isPremium, setIsPremium] = useState(false);
+export function PremiumRecapSection({
+  content,
+  hasLockedContent,
+  language = "ja",
+  match,
+  nextLockedHeading,
+}: Props) {
+  const [state, setState] = useState<{
+    isPremium: boolean;
+    loaded: boolean;
+    lockedMd: string | null;
+  }>({
+    isPremium: false,
+    loaded: !hasLockedContent,
+    lockedMd: null,
+  });
 
   useEffect(() => {
-    fetch("/api/me/premium")
+    if (!hasLockedContent) {
+      setState({ isPremium: false, loaded: true, lockedMd: null });
+      return;
+    }
+
+    setState({ isPremium: false, loaded: false, lockedMd: null });
+
+    const params = new URLSearchParams({ lang: language });
+    fetch(`/api/matches/${match.id}/recap-locked?${params.toString()}`)
       .then((response) => response.json())
-      .then((data: { isPremium?: boolean }) =>
-        setIsPremium(data.isPremium ?? false),
+      .then((data: { isPremium?: boolean; lockedMd?: string | null }) =>
+        setState({
+          isPremium: data.isPremium === true && Boolean(data.lockedMd),
+          loaded: true,
+          lockedMd: data.lockedMd ?? null,
+        }),
       )
-      .catch(() => undefined);
-  }, []);
+      .catch(() =>
+        setState({ isPremium: false, loaded: true, lockedMd: null }),
+      );
+  }, [hasLockedContent, language, match.id]);
 
   return (
     <MatchContentSection
       content={content}
       contentType="recap"
-      isPremium={isPremium}
+      hasLockedContent={hasLockedContent}
+      isPremium={state.isPremium}
       language={language}
+      lockedContentMd={state.lockedMd}
+      lockedLoading={hasLockedContent && !state.loaded}
       match={match}
+      nextLockedHeading={nextLockedHeading}
     />
   );
 }
