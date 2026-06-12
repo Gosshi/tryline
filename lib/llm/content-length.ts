@@ -17,11 +17,13 @@ const CONTENT_LENGTH_REQUIREMENTS: Record<
   },
   ja: {
     preview: { min: 1500, unit: "characters" },
-    // GPT-4o reliably produces ~1,500-1,650 chars for recaps even when the
-    // prompt budgets sum well past 2,000; the prompt keeps asking for 2,000+
-    // as an aspirational target, while this enforced minimum matches what
-    // the model actually delivers (Owner decision, 2026-06-12).
-    recap: { min: 1500, unit: "characters" },
+    // Recap output length varies with available match data; data-sparse
+    // competitions stall around 1,200-1,400 chars no matter how often they
+    // are regenerated, and pressuring the model toward a higher floor
+    // invites padding and fabrication. A dense short recap beats an
+    // inflated long one (Owner decision, 2026-06-12). The prompt still
+    // asks for 2,000+ as the aspirational target.
+    recap: { min: 1200, unit: "characters" },
   },
 };
 
