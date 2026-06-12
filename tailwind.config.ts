@@ -35,8 +35,18 @@ const config: Config = {
       fontFamily: {
         body: ["var(--font-body)", "sans-serif"],
         display: ["var(--font-heading)", "sans-serif"],
-        heading: ["var(--font-heading)", "sans-serif"],
-        serif: ["var(--font-heading)", "sans-serif"],
+        heading: [
+          "var(--font-serif-jp)",
+          "Hiragino Mincho ProN",
+          "Yu Mincho",
+          "serif",
+        ],
+        serif: [
+          "var(--font-serif-jp)",
+          "Hiragino Mincho ProN",
+          "Yu Mincho",
+          "serif",
+        ],
       },
     },
   },

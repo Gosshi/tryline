@@ -58,6 +58,7 @@
   h1,
   h2,
   h3 {
-    font-family: var(--font-heading);
+    font-family: var(--font-serif-jp), "Hiragino Mincho ProN", "Yu Mincho",
+      serif;
   }
 }
