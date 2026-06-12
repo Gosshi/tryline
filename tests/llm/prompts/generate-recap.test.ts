@@ -96,19 +96,19 @@ describe("buildGenerateRecapPrompt", () => {
     const prompt = buildGenerateRecapPrompt(assembled, [], []);
 
     expect(prompt).toContain("# 試合全体像");
-    expect(prompt).not.toContain("# 試合全体像（500-600字）");
+    expect(prompt).not.toContain("# 試合全体像（550-700字）");
     expect(prompt).not.toContain("試合全体像とスコア分析");
     expect(prompt).toContain("# 大会文脈と順位への影響");
-    expect(prompt).not.toContain("# 大会文脈と順位への影響（400-500字）");
+    expect(prompt).not.toContain("# 大会文脈と順位への影響（450-550字）");
     expect(prompt).toContain("# 両チームの近況と戦術傾向");
-    expect(prompt).not.toContain("# 両チームの近況と戦術傾向（500-600字）");
+    expect(prompt).not.toContain("# 両チームの近況と戦術傾向（550-700字）");
     expect(prompt).toContain("# 次戦への示唆");
-    expect(prompt).not.toContain("# 次戦への示唆（300-400字）");
+    expect(prompt).not.toContain("# 次戦への示唆（400-500字）");
     expect(prompt).toContain("見出し行には「# セクション名」のみを書くこと");
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain("MOM セクションは省略すること");
     expect(prompt).not.toContain("【ラインアップ実名活用】");
-    expect(prompt).toContain("全体で2,000字以上を目標とすること");
+    expect(prompt).toContain("全体で2,000字以上を必ず満たすこと");
     expect(prompt).toContain("変更・追加・省略は禁止");
     expect(prompt).toContain("上記5つの見出し以外は絶対に追加してはならない");
     expect(prompt).toContain("# 試合概要");
@@ -154,24 +154,24 @@ describe("buildGenerateRecapPrompt", () => {
 
     expect(prompt).toContain("# 試合全体像");
     expect(prompt).toContain(
-      "# 試合全体像（400-500字）— 以下の要素をすべて含めること:",
+      "# 試合全体像（550-700字）— 以下の要素をすべて含めること:",
     );
     expect(prompt).toContain("# ターニングポイント");
     expect(prompt).toContain(
-      "# ターニングポイント（700-850字）— 以下の要素をすべて含めること:",
+      "# ターニングポイント（900-1,100字）— 以下の要素をすべて含めること:",
     );
     expect(prompt).toContain("# 次戦への示唆");
     expect(prompt).toContain(
-      "# 次戦への示唆（300-400字）— 以下の要素をすべて含めること:",
+      "# 次戦への示唆（400-500字）— 以下の要素をすべて含めること:",
     );
     expect(prompt).toContain("# この試合の核心");
-    expect(prompt).toContain("# この試合の核心（100-200字）");
+    expect(prompt).toContain("# この試合の核心（150-250字）");
     expect(prompt).toContain("上記4つの見出し以外は絶対に追加してはならない");
     expect(prompt).not.toContain("MOM選出と根拠");
     expect(prompt).toContain(
       "`# MOM` は `# ターニングポイント` 末尾に統合済み",
     );
-    expect(prompt).toContain("全体で1,600字以上を目標とすること");
+    expect(prompt).toContain("全体で2,000字以上を必ず満たすこと");
     expect(prompt).toContain("【字数目標と記述内容");
     expect(prompt).toContain("リード変化が起きた時点");
     expect(prompt).toContain("逆転を許した側の守備・戦術的崩壊");
@@ -209,7 +209,7 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain(
       "実名を使い、この試合での貢献・プレー内容を具体的に記述する",
     );
-    expect(prompt).toContain("全体で2,000字以上を目標とすること");
+    expect(prompt).toContain("全体で2,000字以上を必ず満たすこと");
     expect(prompt).toContain(
       "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。",
     );

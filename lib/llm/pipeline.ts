@@ -430,6 +430,31 @@ export async function generateMatchContent(
       }
 
       if (isContentLengthIssue(revisionQaResponse.result)) {
+        // The ja-recap density gate demotes below-minimum content to draft
+        // regardless of verdict, so a publish override would only mask the
+        // failure. Keep the honest verdict there and let it land as draft,
+        // retaining the fallback issue marker for observability.
+        if (contentType === "recap" && language === "ja") {
+          finalQa = {
+            ...revisionQaResponse.result,
+            issues: [
+              ...new Set([
+                ...revisionQaResponse.result.issues,
+                LENGTH_REVISION_FALLBACK_ISSUE,
+              ]),
+            ],
+          };
+          console.warn(
+            "[content-pipeline] length revision still below minimum",
+            {
+              contentType,
+              language,
+              matchId,
+            },
+          );
+          break;
+        }
+
         finalQa = {
           ...revisionQaResponse.result,
           issues: [
