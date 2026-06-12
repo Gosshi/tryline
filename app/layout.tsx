@@ -1,5 +1,5 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
-import { Noto_Sans_JP, Oswald } from "next/font/google";
+import { Noto_Sans_JP, Noto_Serif_JP, Oswald } from "next/font/google";
 
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -21,6 +21,14 @@ const body = Noto_Sans_JP({
   variable: "--font-body",
   weight: ["400", "500", "700"],
   display: "swap",
+});
+
+const serifJp = Noto_Serif_JP({
+  subsets: ["latin"],
+  variable: "--font-serif-jp",
+  weight: ["600", "700"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -60,7 +68,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className={`${heading.variable} ${body.variable}`} lang="ja">
+    <html
+      className={`${heading.variable} ${body.variable} ${serifJp.variable}`}
+      lang="ja"
+    >
       <body className="min-h-screen">
         <SiteHeader />
         {children}
