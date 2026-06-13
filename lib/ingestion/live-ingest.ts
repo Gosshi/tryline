@@ -1,11 +1,13 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { upsertMatchEvents } from "@/lib/ingestion/events";
+import { reconcilePhantomNullMinuteScoringEvents } from "@/lib/ingestion/reconcile-phantom-events";
 import { upsertMatches } from "@/lib/ingestion/upsert";
 import { saveRawData } from "@/lib/scrapers";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 
 import type { Json } from "@/lib/db/types";
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
+import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
 
 export type LiveCompetitionSource = {
   competitionName: string;
@@ -141,6 +143,54 @@ function toExternalIds(
   return externalIds;
 }
 
+function dropReconciledPhantomEventsForTeam(params: {
+  actualScore: number | null;
+  events: ParsedMatchEvent[];
+  matchId: string;
+  teamSide: "away" | "home";
+}): ParsedMatchEvent[] {
+  const teamEvents = params.events.filter(
+    (event) => event.teamSide === params.teamSide,
+  );
+  const reconciliation = reconcilePhantomNullMinuteScoringEvents(
+    teamEvents,
+    params.actualScore,
+  );
+
+  if (reconciliation.status !== "reconciled") {
+    return params.events;
+  }
+
+  const remove = new Set<ParsedMatchEvent>(reconciliation.remove);
+  console.warn("[phantom-events] dropped", {
+    count: remove.size,
+    matchId: params.matchId,
+  });
+
+  return params.events.filter((event) => !remove.has(event));
+}
+
+export function dropReconciledPhantomEvents(params: {
+  awayScore: number | null;
+  events: ParsedMatchEvent[];
+  homeScore: number | null;
+  matchId: string;
+}): ParsedMatchEvent[] {
+  const withoutHomePhantoms = dropReconciledPhantomEventsForTeam({
+    actualScore: params.homeScore,
+    events: params.events,
+    matchId: params.matchId,
+    teamSide: "home",
+  });
+
+  return dropReconciledPhantomEventsForTeam({
+    actualScore: params.awayScore,
+    events: withoutHomePhantoms,
+    matchId: params.matchId,
+    teamSide: "away",
+  });
+}
+
 export async function ingestLiveCompetition(
   source: LiveCompetitionSource,
 ): Promise<LiveIngestResult> {
@@ -216,7 +266,13 @@ export async function ingestLiveCompetition(
     }
 
     try {
-      const events = parseMatchEventsFromVeventHtml(match.rawHtml);
+      const parsedEvents = parseMatchEventsFromVeventHtml(match.rawHtml);
+      const events = dropReconciledPhantomEvents({
+        awayScore: match.awayScore,
+        events: parsedEvents,
+        homeScore: match.homeScore,
+        matchId: record.id,
+      });
 
       if (events.length > 0) {
         const upserted = await upsertMatchEvents({
