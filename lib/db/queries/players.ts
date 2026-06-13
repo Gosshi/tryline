@@ -98,12 +98,22 @@ function isResolvedPlayerSlug(slug: string | null): slug is string {
   return Boolean(slug) && !UNRESOLVED_PLAYER_SLUG_PATTERN.test(slug ?? "");
 }
 
+// 選手ページにスタッツ等の固有コンテンツが無い間は、実名選手であっても
+// 検索インデックスに載せない（薄いページがクロールバジェットを食い、recap の
+// インデックスを妨げるため）。feat-player-stats 実装後に true へ戻すと、
+// 下の定義(b)（実名 AND published 出場 AND canonical）が復活する。
+const PLAYER_PAGES_INDEXABLE = false;
+
 export function isIndexablePlayer(
   player: Pick<
     PlayerDetail,
     "canonicalSlug" | "hasPublishedContentMatch" | "slug"
   >,
 ): boolean {
+  if (!PLAYER_PAGES_INDEXABLE) {
+    return false;
+  }
+
   return (
     player.canonicalSlug === null &&
     player.hasPublishedContentMatch &&

@@ -113,10 +113,9 @@ describe("indexable player queries", () => {
       throw new Error(`Unexpected table: ${table}`);
     });
 
-    await expect(listIndexablePlayerSlugs()).resolves.toEqual([
-      "finn-russell",
-      "maro-itoje",
-    ]);
+    // PLAYER_PAGES_INDEXABLE が false の間は、実名・出場ありの選手も
+    // 含めて全件が index 対象外になる（sitemap から全選手が消える）。
+    await expect(listIndexablePlayerSlugs()).resolves.toEqual([]);
     expect(matchLineups.select).toHaveBeenCalledWith("player_id");
   });
 
@@ -149,22 +148,22 @@ describe("indexable player queries", () => {
       throw new Error(`Unexpected table: ${table}`);
     });
 
-    await expect(listIndexablePlayerSlugs()).resolves.toEqual([
-      "finn-russell",
-      "maro-itoje",
-    ]);
+    // ページング自体は実行されるが、全選手 noindex のため結果は空になる。
+    await expect(listIndexablePlayerSlugs()).resolves.toEqual([]);
     expect(matchLineups.range).toHaveBeenNthCalledWith(1, 0, 999);
     expect(matchLineups.range).toHaveBeenNthCalledWith(2, 1000, 1999);
   });
 
-  it("identifies indexable player details in one helper", () => {
+  it("treats all players as non-indexable while PLAYER_PAGES_INDEXABLE is off", () => {
+    // 本来 index 対象（実名・published 出場・canonical）の選手でも false。
     expect(
       isIndexablePlayer({
         canonicalSlug: null,
         hasPublishedContentMatch: true,
         slug: "finn-russell",
       }),
-    ).toBe(true);
+    ).toBe(false);
+    // もともと非対象だったケースも引き続き false。
     expect(
       isIndexablePlayer({
         canonicalSlug: null,
