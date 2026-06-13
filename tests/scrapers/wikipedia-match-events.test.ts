@@ -38,6 +38,39 @@ const MATCH_EVENTS_HTML = `
   </div>
 `;
 
+const URC_HOME_CELL_HTML = `
+  <b>Try:</b> <a>le Roux</a> 3' c<br>
+  <a>Moodie</a> 14' c<br>
+  <a>Jooste</a> 23' m<br>
+  <a>Petersen</a> 30' c<br>
+  <a>Papier</a> 49' c<br>
+  <a>Smith</a> 62' c<br>
+  <a>Grobbler</a> 69' c<br>
+  <a>Rudolph</a> 77' c<br>
+  <b>Con:</b> le Roux (7/8) 4', 15', 31', 50', 63', 70', 78'
+`;
+
+const URC_AWAY_CELL_HTML = `
+  <b>Try:</b> <a>Fischetti</a> 20' c<br>
+  <a>Volpi</a> 58' c<br>
+  <a>Di Bartolomeo</a> 73' m<br>
+  <b>Con:</b> Roger (2/3) 21', 60'
+`;
+
+function impliedScore(events: Array<{ type: string }>) {
+  const pointsByType: Record<string, number> = {
+    conversion: 2,
+    drop_goal: 3,
+    penalty_goal: 3,
+    try: 5,
+  };
+
+  return events.reduce(
+    (sum, event) => sum + (pointsByType[event.type] ?? 0),
+    0,
+  );
+}
+
 describe("wikipedia match events scraper", () => {
   it("parses scoring rows and expands multiple minutes", async () => {
     const { parseMatchEventsFromVeventHtml } = await import(
@@ -116,6 +149,89 @@ describe("wikipedia match events scraper", () => {
         type: "conversion",
       },
     ]);
+  });
+
+  it("parses URC aggregated kicker sections from td[1] and td[3]", async () => {
+    const { parseMatchEventsFromUrcDetailRowHtml } = await import(
+      "@/lib/scrapers/wikipedia-match-events"
+    );
+
+    const result = parseMatchEventsFromUrcDetailRowHtml(`
+      <tr style="font-size:85%">
+        <td>18:00</td>
+        <td>${URC_HOME_CELL_HTML}</td>
+        <td>Report</td>
+        <td>${URC_AWAY_CELL_HTML}</td>
+        <td>Attendance</td>
+      </tr>
+    `);
+    const homeEvents = result.filter((event) => event.teamSide === "home");
+    const awayEvents = result.filter((event) => event.teamSide === "away");
+    const homeConversions = homeEvents.filter(
+      (event) => event.type === "conversion",
+    );
+    const homeSuccessfulTrySuffixes = [
+      ...URC_HOME_CELL_HTML.matchAll(/\d+'\s*c\b/g),
+    ];
+
+    expect(homeEvents.filter((event) => event.type === "try")).toHaveLength(8);
+    expect(homeConversions).toHaveLength(7);
+    expect(homeConversions.map((event) => event.minute)).toEqual([
+      4, 15, 31, 50, 63, 70, 78,
+    ]);
+    expect(homeConversions).toHaveLength(homeSuccessfulTrySuffixes.length);
+    expect(impliedScore(homeEvents)).toBe(54);
+
+    expect(awayEvents.filter((event) => event.type === "try")).toHaveLength(3);
+    expect(awayEvents.filter((event) => event.type === "conversion")).toEqual([
+      {
+        isPenaltyTry: false,
+        minute: 21,
+        playerName: "Roger",
+        teamSide: "away",
+        type: "conversion",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 60,
+        playerName: "Roger",
+        teamSide: "away",
+        type: "conversion",
+      },
+    ]);
+    expect(impliedScore(awayEvents)).toBe(19);
+  });
+
+  it("parses URC live raw tables with detail scoring in td[1] and td[3]", async () => {
+    const { parseMatchEventsFromUrcDetailRowHtml } = await import(
+      "@/lib/scrapers/wikipedia-match-events"
+    );
+
+    const result = parseMatchEventsFromUrcDetailRowHtml(`
+      <table class="wikitable mw-collapsible mw-collapsed">
+        <tbody>
+          <tr>
+            <td>21 February 2026</td>
+            <td><a>Bulls</a></td>
+            <td>54–19</td>
+            <td><a>Zebre Parma</a></td>
+            <td>Loftus Versfeld</td>
+          </tr>
+          <tr style="font-size:85%">
+            <td>16:00</td>
+            <td>${URC_HOME_CELL_HTML}</td>
+            <td>Report</td>
+            <td>${URC_AWAY_CELL_HTML}</td>
+            <td>12,000</td>
+          </tr>
+        </tbody>
+      </table>
+    `);
+
+    expect(result.filter((event) => event.teamSide === "home")).toHaveLength(
+      15,
+    );
+    expect(result.filter((event) => event.teamSide === "away")).toHaveLength(5);
   });
 
   it("parses Top 14 season vevent scoring rows", async () => {

@@ -69,6 +69,40 @@ function parseMinutes(value: string): Array<number | null> {
   return minutes.length > 0 ? minutes : [null];
 }
 
+function isAggregatedKickerType(type: MatchEventType | null) {
+  return (
+    type === "conversion" || type === "drop_goal" || type === "penalty_goal"
+  );
+}
+
+function parseAggregatedKickerText(value: string) {
+  const trimmed = normalizeWhitespace(value);
+  const matched = trimmed.match(
+    /^(.+?)\s*\(\s*(\d+)\s*\/\s*\d+\s*\)\s*(.*)$/i,
+  );
+
+  if (!matched) {
+    return null;
+  }
+
+  const playerName = normalizeWhitespace(matched[1] ?? "");
+  const madeCount = Number(matched[2]);
+  const minuteText = matched[3] ?? "";
+  const minutes = [...minuteText.matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g)].map(
+    (minuteMatch) => Number(minuteMatch[1]),
+  );
+
+  if (!playerName || minutes.length === 0) {
+    return null;
+  }
+
+  return {
+    madeCount,
+    minutes,
+    playerName,
+  };
+}
+
 // Parses the outer HTML of a single scoring <td> cell.
 // Players appear as <a> links; "Penalty try" appears as plain text.
 // Bold labels separate event type sections; <br> terminates each player entry.
@@ -85,6 +119,32 @@ function parseScoringCell(
   let currentPlayer: string | null = null;
   let minutesBuffer = "";
 
+  function pushPlayerEvents(params: {
+    minutes: Array<number | null>;
+    playerName: string;
+    type: MatchEventType;
+  }) {
+    const isPenaltyTry =
+      params.type === "try" && /penalty try/i.test(params.playerName);
+    const playerName = isPenaltyTry
+      ? "Penalty try"
+      : normalizeWhitespace(params.playerName);
+
+    if (!playerName) {
+      return;
+    }
+
+    for (const minute of params.minutes) {
+      events.push({
+        isPenaltyTry,
+        minute,
+        playerName,
+        teamSide,
+        type: params.type,
+      });
+    }
+  }
+
   function flush() {
     if (!currentType || !currentPlayer) {
       minutesBuffer = "";
@@ -92,26 +152,42 @@ function parseScoringCell(
       return;
     }
 
-    const isPenaltyTry =
-      currentType === "try" && /penalty try/i.test(currentPlayer);
-    const playerName = isPenaltyTry
-      ? "Penalty try"
-      : normalizeWhitespace(currentPlayer);
-
-    if (playerName) {
-      for (const minute of parseMinutes(minutesBuffer)) {
-        events.push({
-          isPenaltyTry,
-          minute,
-          playerName,
-          teamSide,
-          type: currentType,
-        });
-      }
-    }
+    pushPlayerEvents({
+      minutes: parseMinutes(minutesBuffer),
+      playerName: currentPlayer,
+      type: currentType,
+    });
 
     minutesBuffer = "";
     currentPlayer = null;
+  }
+
+  function flushAggregatedKickerText(text: string) {
+    if (!isAggregatedKickerType(currentType)) {
+      return false;
+    }
+
+    const aggregate = parseAggregatedKickerText(text);
+
+    if (!aggregate || !currentType) {
+      return false;
+    }
+
+    if (aggregate.madeCount !== aggregate.minutes.length) {
+      console.warn(
+        `[wikipedia-match-events] ${currentType} made count (${aggregate.madeCount}) does not match minute count (${aggregate.minutes.length}) for ${aggregate.playerName}`,
+      );
+    }
+
+    pushPlayerEvents({
+      minutes: aggregate.minutes,
+      playerName: aggregate.playerName,
+      type: currentType,
+    });
+
+    minutesBuffer = "";
+    currentPlayer = null;
+    return true;
   }
 
   $("body")
@@ -136,6 +212,10 @@ function parseScoringCell(
         if (currentPlayer !== null) {
           minutesBuffer += text;
         } else if (currentType !== null) {
+          if (flushAggregatedKickerText(text)) {
+            return;
+          }
+
           // "Penalty try" appears as plain text (no <a> tag)
           const trimmed = normalizeWhitespace(text);
 
@@ -186,8 +266,15 @@ export function parseMatchEventsFromVeventHtml(
 export function parseMatchEventsFromUrcDetailRowHtml(
   rowHtml: string,
 ): ParsedMatchEvent[] {
-  const $ = load(`<table><tbody>${rowHtml}</tbody></table>`);
-  const cells = $("tr").first().children("td");
+  const html = /<table[\s>]/i.test(rowHtml)
+    ? rowHtml
+    : `<table><tbody>${rowHtml}</tbody></table>`;
+  const $ = load(html);
+  const scoringRow = $("tr")
+    .filter((_, el) => ($(el).attr("style") ?? "").includes("font-size:85%"))
+    .first();
+  const row = scoringRow.length ? scoringRow : $("tr").first();
+  const cells = row.children("td");
 
   if (cells.length < 4) {
     return [];

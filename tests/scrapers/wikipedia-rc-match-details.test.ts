@@ -60,7 +60,7 @@ const swappedColumnsHtml = `
   <tr>
     <td></td>
     <td></td>
-    <td>Con: Noah Lolesio (2/3)</td>
+    <td>Con: Noah Lolesio (2/3) 31', 65'</td>
   </tr>
 </table>
 `;
@@ -197,18 +197,98 @@ describe("Wikipedia Rugby Championship match details scraper", () => {
     ]);
   });
 
-  it("preserves conversion ratio notation as minute-null events", () => {
+  it("parses conversion ratio notation with aggregated minute lists", () => {
     const result = parseWikipediaRcMatchDetailsHtml(swappedColumnsHtml, {
       eventId: "Round_1_0",
       url: "https://en.wikipedia.org/wiki/2025_Rugby_Championship",
     });
 
-    expect(result.events).toContainEqual({
-      isPenaltyTry: false,
-      minute: null,
-      playerName: "Noah Lolesio",
-      teamSide: "away",
-      type: "conversion",
-    });
+    expect(
+      result.events.filter((event) => event.type === "conversion"),
+    ).toEqual([
+      {
+        isPenaltyTry: false,
+        minute: 31,
+        playerName: "Noah Lolesio",
+        teamSide: "away",
+        type: "conversion",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 65,
+        playerName: "Noah Lolesio",
+        teamSide: "away",
+        type: "conversion",
+      },
+    ]);
+  });
+
+  it("parses Rugby Championship aggregate Con and Pen scorer sections", () => {
+    const result = parseWikipediaRcMatchDetailsHtml(
+      `
+      <div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
+      <table>
+        <tr>
+          <td><a>South Africa</a></td>
+          <td>43–10</td>
+          <td><a>Argentina</a></td>
+        </tr>
+        <tr>
+          <td>Con: Libbok (5/6) 25', 43', 61', 73', 79' Pen: Libbok (1/1) 46'</td>
+          <td></td>
+          <td></td>
+        </tr>
+      </table>
+      `,
+      {
+        eventId: "Round_1_0",
+        url: "https://en.wikipedia.org/wiki/2025_Rugby_Championship",
+      },
+    );
+
+    expect(result.events).toEqual([
+      {
+        isPenaltyTry: false,
+        minute: 25,
+        playerName: "Libbok",
+        teamSide: "home",
+        type: "conversion",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 43,
+        playerName: "Libbok",
+        teamSide: "home",
+        type: "conversion",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 61,
+        playerName: "Libbok",
+        teamSide: "home",
+        type: "conversion",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 73,
+        playerName: "Libbok",
+        teamSide: "home",
+        type: "conversion",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 79,
+        playerName: "Libbok",
+        teamSide: "home",
+        type: "conversion",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 46,
+        playerName: "Libbok",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+    ]);
   });
 });

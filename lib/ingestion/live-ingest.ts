@@ -3,7 +3,10 @@ import { upsertMatchEvents } from "@/lib/ingestion/events";
 import { reconcilePhantomNullMinuteScoringEvents } from "@/lib/ingestion/reconcile-phantom-events";
 import { upsertMatches } from "@/lib/ingestion/upsert";
 import { saveRawData } from "@/lib/scrapers";
-import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
+import {
+  parseMatchEventsFromUrcDetailRowHtml,
+  parseMatchEventsFromVeventHtml,
+} from "@/lib/scrapers/wikipedia-match-events";
 
 import type { Json } from "@/lib/db/types";
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
@@ -191,6 +194,17 @@ export function dropReconciledPhantomEvents(params: {
   });
 }
 
+function parseLiveMatchEvents(
+  source: LiveCompetitionSource,
+  rawHtml: string,
+): ParsedMatchEvent[] {
+  if (source.family === "urc") {
+    return parseMatchEventsFromUrcDetailRowHtml(rawHtml);
+  }
+
+  return parseMatchEventsFromVeventHtml(rawHtml);
+}
+
 export async function ingestLiveCompetition(
   source: LiveCompetitionSource,
 ): Promise<LiveIngestResult> {
@@ -266,7 +280,7 @@ export async function ingestLiveCompetition(
     }
 
     try {
-      const parsedEvents = parseMatchEventsFromVeventHtml(match.rawHtml);
+      const parsedEvents = parseLiveMatchEvents(source, match.rawHtml);
       const events = dropReconciledPhantomEvents({
         awayScore: match.awayScore,
         events: parsedEvents,

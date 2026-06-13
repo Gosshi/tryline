@@ -51,6 +51,69 @@ function cleanText(text: string): string {
     .trim();
 }
 
+function parseMinuteList(text: string) {
+  return [...text.matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g)].map((match) =>
+    Number(match[1]),
+  );
+}
+
+function parseScoringEntry(params: {
+  entry: string;
+  teamSide: TeamSide;
+  type: MatchEventType;
+}): ParsedMatchEvent[] {
+  const aggregated = params.entry.match(
+    /(.+?)\s*\(\s*(\d+)\s*\/\s*\d+\s*\)\s*(.*)/,
+  );
+
+  if (aggregated) {
+    const playerName = cleanText(aggregated[1] ?? "");
+    const madeCount = Number(aggregated[2]);
+    const minutes = parseMinuteList(aggregated[3] ?? "");
+
+    if (!playerName || minutes.length === 0) {
+      return [];
+    }
+
+    if (madeCount !== minutes.length) {
+      console.warn(
+        `[wikipedia-rc-match-details] ${params.type} made count (${madeCount}) does not match minute count (${minutes.length}) for ${playerName}`,
+      );
+    }
+
+    return minutes.map((minute) => ({
+      isPenaltyTry: false,
+      minute,
+      playerName,
+      teamSide: params.teamSide,
+      type: params.type,
+    }));
+  }
+
+  const matched = params.entry.match(/(.+?)\s*\(([^)]*)\)\s*(.*)/);
+
+  if (!matched) {
+    return [];
+  }
+
+  const playerName = cleanText(matched[1] ?? "");
+  const parsedMinutes = parseMinuteList(`${matched[2] ?? ""} ${matched[3] ?? ""}`);
+  const resolvedMinutes: Array<number | null> =
+    parsedMinutes.length > 0 ? parsedMinutes : [null];
+
+  if (!playerName) {
+    return [];
+  }
+
+  return resolvedMinutes.map((minute) => ({
+    isPenaltyTry: false,
+    minute,
+    playerName,
+    teamSide: params.teamSide,
+    type: params.type,
+  }));
+}
+
 function parseScoringText(
   text: string,
   teamSide: TeamSide,
@@ -75,32 +138,7 @@ function parseScoringText(
     );
 
     for (const entry of segment.split(/,\s*(?=[^,()]+?\()/)) {
-      const matched = entry.match(/(.+?)\s*\(([^)]*)\)/);
-
-      if (!matched) {
-        continue;
-      }
-
-      const playerName = cleanText(matched[1] ?? "");
-      const parsedMinutes = [
-        ...(matched[2] ?? "").matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g),
-      ].map((minuteMatch) => Number(minuteMatch[1]));
-      const resolvedMinutes: Array<number | null> =
-        parsedMinutes.length > 0 ? parsedMinutes : [null];
-
-      if (!playerName) {
-        continue;
-      }
-
-      for (const minute of resolvedMinutes) {
-        events.push({
-          isPenaltyTry: false,
-          minute,
-          playerName,
-          teamSide,
-          type,
-        });
-      }
+      events.push(...parseScoringEntry({ entry, teamSide, type }));
     }
   }
 
