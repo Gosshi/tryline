@@ -202,6 +202,79 @@ describe("wikipedia match events scraper", () => {
     expect(impliedScore(awayEvents)).toBe(19);
   });
 
+  it("parses aggregated penalty goal minute variants without requiring made-attempt ratios", async () => {
+    const { parseMatchEventsFromUrcDetailRowHtml } = await import(
+      "@/lib/scrapers/wikipedia-match-events"
+    );
+
+    const result = parseMatchEventsFromUrcDetailRowHtml(`
+      <tr style="font-size:85%">
+        <td>18:00</td>
+        <td>
+          <b>Pen:</b> Feinberg-Mngomezulu 5', 43'<br>
+          <b>Pen:</b> Doak (3) 5', 25', 43'<br>
+          <b>Pen:</b> Naughton (74')<br>
+          <b>Pen:</b> Sheedy 70'
+        </td>
+        <td>Report</td>
+        <td></td>
+        <td>Attendance</td>
+      </tr>
+    `);
+
+    expect(result).toEqual([
+      {
+        isPenaltyTry: false,
+        minute: 5,
+        playerName: "Feinberg-Mngomezulu",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 43,
+        playerName: "Feinberg-Mngomezulu",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 5,
+        playerName: "Doak",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 25,
+        playerName: "Doak",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 43,
+        playerName: "Doak",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 74,
+        playerName: "Naughton",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 70,
+        playerName: "Sheedy",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+    ]);
+  });
+
   it("parses URC live raw tables with detail scoring in td[1] and td[3]", async () => {
     const { parseMatchEventsFromUrcDetailRowHtml } = await import(
       "@/lib/scrapers/wikipedia-match-events"
