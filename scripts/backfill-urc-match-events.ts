@@ -2,7 +2,7 @@
  * Backfill URC match_events from Wikipedia season-page collapsible tables.
  *
  * Usage:
- *   pnpm tsx scripts/backfill-urc-match-events.ts [--season=2025-26] [--dry-run] [--confirm-owner-approved]
+ *   pnpm tsx scripts/backfill-urc-match-events.ts [--season=2025-26] [--dry-run] [--reparse-existing] [--confirm-owner-approved]
  */
 
 import { getSupabaseServerClient } from "@/lib/db/server";
@@ -16,6 +16,7 @@ import type { WikipediaClubMatchDetailSource } from "@/lib/scrapers/wikipedia-cl
 type CliOptions = {
   dryRun: boolean;
   ownerApproved: boolean;
+  reparseExisting: boolean;
   season: string | null;
 };
 
@@ -43,7 +44,7 @@ type WikipediaExternalIds = {
 };
 
 const USAGE =
-  "Usage: pnpm tsx scripts/backfill-urc-match-events.ts [--season=2025-26] [--dry-run] [--confirm-owner-approved]";
+  "Usage: pnpm tsx scripts/backfill-urc-match-events.ts [--season=2025-26] [--dry-run] [--reparse-existing] [--confirm-owner-approved]";
 
 function sleep(ms: number) {
   return new Promise<void>((resolve) => {
@@ -54,6 +55,7 @@ function sleep(ms: number) {
 export function parseOptions(argv: string[]): CliOptions {
   let dryRun = false;
   let ownerApproved = false;
+  let reparseExisting = false;
   let season: string | null = null;
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -66,6 +68,11 @@ export function parseOptions(argv: string[]): CliOptions {
 
     if (arg === "--confirm-owner-approved") {
       ownerApproved = true;
+      continue;
+    }
+
+    if (arg === "--reparse-existing") {
+      reparseExisting = true;
       continue;
     }
 
@@ -87,7 +94,7 @@ export function parseOptions(argv: string[]): CliOptions {
     throw new Error(`Invalid --season value: ${season}`);
   }
 
-  return { dryRun, ownerApproved, season };
+  return { dryRun, ownerApproved, reparseExisting, season };
 }
 
 function isUrcSeasonUrl(url: string): boolean {
@@ -126,6 +133,17 @@ function getWikipediaSource(
   return { eventId, url };
 }
 
+export function shouldBackfillUrcMatch(
+  match: Pick<MatchRow, "external_ids" | "match_events">,
+  reparseExisting: boolean,
+) {
+  if (getWikipediaSource(match.external_ids) === null) {
+    return false;
+  }
+
+  return reparseExisting || match.match_events.length === 0;
+}
+
 async function loadCompetitions(season: string | null) {
   const db = getSupabaseServerClient();
   let query = db
@@ -147,7 +165,10 @@ async function loadCompetitions(season: string | null) {
   return (data ?? []) as CompetitionRow[];
 }
 
-async function loadTargetMatches(competitions: CompetitionRow[]) {
+async function loadTargetMatches(
+  competitions: CompetitionRow[],
+  reparseExisting: boolean,
+) {
   if (competitions.length === 0) {
     return [];
   }
@@ -178,10 +199,8 @@ async function loadTargetMatches(competitions: CompetitionRow[]) {
     throw error;
   }
 
-  return ((data ?? []) as unknown as MatchRow[]).filter(
-    (match) =>
-      match.match_events.length === 0 &&
-      getWikipediaSource(match.external_ids) !== null,
+  return ((data ?? []) as unknown as MatchRow[]).filter((match) =>
+    shouldBackfillUrcMatch(match, reparseExisting),
   );
 }
 
@@ -216,13 +235,20 @@ export async function main() {
   }
 
   const competitions = await loadCompetitions(options.season);
-  const matches = await loadTargetMatches(competitions);
+  const matches = await loadTargetMatches(
+    competitions,
+    options.reparseExisting,
+  );
   const competitionById = new Map(
     competitions.map((competition) => [competition.id, competition]),
   );
   const htmlCache = new Map<string, string>();
 
-  console.log(`Target finished URC matches without events: ${matches.length}`);
+  console.log(
+    options.reparseExisting
+      ? `Target finished URC matches (reparse-existing): ${matches.length}`
+      : `Target finished URC matches without events: ${matches.length}`,
+  );
 
   let eventsFound = 0;
   let eventsInserted = 0;
