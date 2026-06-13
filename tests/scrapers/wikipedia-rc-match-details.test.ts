@@ -291,4 +291,45 @@ describe("Wikipedia Rugby Championship match details scraper", () => {
       },
     ]);
   });
+
+  it("parses Rugby Championship naked aggregate penalty sections", () => {
+    const result = parseWikipediaRcMatchDetailsHtml(
+      `
+      <div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
+      <table>
+        <tr>
+          <td><a>South Africa</a></td>
+          <td>6–0</td>
+          <td><a>Argentina</a></td>
+        </tr>
+        <tr>
+          <td>Pen: Feinberg-Mngomezulu 5', 43'</td>
+          <td></td>
+          <td></td>
+        </tr>
+      </table>
+      `,
+      {
+        eventId: "Round_1_0",
+        url: "https://en.wikipedia.org/wiki/2025_Rugby_Championship",
+      },
+    );
+
+    expect(result.events).toEqual([
+      {
+        isPenaltyTry: false,
+        minute: 5,
+        playerName: "Feinberg-Mngomezulu",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+      {
+        isPenaltyTry: false,
+        minute: 43,
+        playerName: "Feinberg-Mngomezulu",
+        teamSide: "home",
+        type: "penalty_goal",
+      },
+    ]);
+  });
 });

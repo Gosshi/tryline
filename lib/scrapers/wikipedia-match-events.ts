@@ -69,6 +69,13 @@ function parseMinutes(value: string): Array<number | null> {
   return minutes.length > 0 ? minutes : [null];
 }
 
+function parseMinuteMarkers(value: string) {
+  return [...value.matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g)].map((match) => ({
+    index: match.index ?? 0,
+    minute: Number(match[1]),
+  }));
+}
+
 function isAggregatedKickerType(type: MatchEventType | null) {
   return (
     type === "conversion" || type === "drop_goal" || type === "penalty_goal"
@@ -77,28 +84,26 @@ function isAggregatedKickerType(type: MatchEventType | null) {
 
 function parseAggregatedKickerText(value: string) {
   const trimmed = normalizeWhitespace(value);
-  const matched = trimmed.match(
-    /^(.+?)\s*\(\s*(\d+)\s*\/\s*\d+\s*\)\s*(.*)$/i,
-  );
+  const minuteMarkers = parseMinuteMarkers(trimmed);
 
-  if (!matched) {
+  if (minuteMarkers.length === 0) {
     return null;
   }
 
-  const playerName = normalizeWhitespace(matched[1] ?? "");
-  const madeCount = Number(matched[2]);
-  const minuteText = matched[3] ?? "";
-  const minutes = [...minuteText.matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g)].map(
-    (minuteMatch) => Number(minuteMatch[1]),
+  const firstParenIndex = trimmed.indexOf("(");
+  const nameEndIndex =
+    firstParenIndex >= 0
+      ? Math.min(firstParenIndex, minuteMarkers[0]!.index)
+      : minuteMarkers[0]!.index;
+  const ratioMatch = trimmed.match(/\(\s*(\d+)\s*\/\s*\d+\s*\)/);
+  const madeCount = ratioMatch ? Number(ratioMatch[1]) : null;
+  const playerName = normalizeWhitespace(
+    nameEndIndex > 0 ? trimmed.slice(0, nameEndIndex) : "",
   );
-
-  if (!playerName || minutes.length === 0) {
-    return null;
-  }
 
   return {
     madeCount,
-    minutes,
+    minutes: minuteMarkers.map((marker) => marker.minute),
     playerName,
   };
 }
@@ -120,6 +125,7 @@ function parseScoringCell(
   let minutesBuffer = "";
 
   function pushPlayerEvents(params: {
+    allowEmptyPlayerName?: boolean;
     minutes: Array<number | null>;
     playerName: string;
     type: MatchEventType;
@@ -130,7 +136,7 @@ function parseScoringCell(
       ? "Penalty try"
       : normalizeWhitespace(params.playerName);
 
-    if (!playerName) {
+    if (!playerName && !params.allowEmptyPlayerName) {
       return;
     }
 
@@ -173,13 +179,17 @@ function parseScoringCell(
       return false;
     }
 
-    if (aggregate.madeCount !== aggregate.minutes.length) {
+    if (
+      aggregate.madeCount !== null &&
+      aggregate.madeCount !== aggregate.minutes.length
+    ) {
       console.warn(
         `[wikipedia-match-events] ${currentType} made count (${aggregate.madeCount}) does not match minute count (${aggregate.minutes.length}) for ${aggregate.playerName}`,
       );
     }
 
     pushPlayerEvents({
+      allowEmptyPlayerName: true,
       minutes: aggregate.minutes,
       playerName: aggregate.playerName,
       type: currentType,

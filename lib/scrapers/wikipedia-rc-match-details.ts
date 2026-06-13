@@ -57,40 +57,49 @@ function parseMinuteList(text: string) {
   );
 }
 
+function parseMinuteMarkers(text: string) {
+  return [...text.matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g)].map((match) => ({
+    index: match.index ?? 0,
+    minute: Number(match[1]),
+  }));
+}
+
 function parseScoringEntry(params: {
   entry: string;
   teamSide: TeamSide;
   type: MatchEventType;
 }): ParsedMatchEvent[] {
-  const aggregated = params.entry.match(
-    /(.+?)\s*\(\s*(\d+)\s*\/\s*\d+\s*\)\s*(.*)/,
-  );
+  const text = cleanText(params.entry);
+  const minuteMarkers = parseMinuteMarkers(text);
 
-  if (aggregated) {
-    const playerName = cleanText(aggregated[1] ?? "");
-    const madeCount = Number(aggregated[2]);
-    const minutes = parseMinuteList(aggregated[3] ?? "");
+  if (minuteMarkers.length > 0) {
+    const firstParenIndex = text.indexOf("(");
+    const nameEndIndex =
+      firstParenIndex >= 0
+        ? Math.min(firstParenIndex, minuteMarkers[0]!.index)
+        : minuteMarkers[0]!.index;
+    const playerName = cleanText(
+      nameEndIndex > 0 ? text.slice(0, nameEndIndex) : "",
+    );
+    const ratioMatch = text.match(/\(\s*(\d+)\s*\/\s*\d+\s*\)/);
+    const madeCount = ratioMatch ? Number(ratioMatch[1]) : null;
 
-    if (!playerName || minutes.length === 0) {
-      return [];
-    }
-
-    if (madeCount !== minutes.length) {
+    if (madeCount !== null && madeCount !== minuteMarkers.length) {
       console.warn(
-        `[wikipedia-rc-match-details] ${params.type} made count (${madeCount}) does not match minute count (${minutes.length}) for ${playerName}`,
+        `[wikipedia-rc-match-details] ${params.type} made count (${madeCount}) does not match minute count (${minuteMarkers.length}) for ${playerName}`,
       );
     }
 
-    return minutes.map((minute) => ({
+    return minuteMarkers.map((minuteMarker) => ({
       isPenaltyTry: false,
-      minute,
+      minute: minuteMarker.minute,
       playerName,
       teamSide: params.teamSide,
       type: params.type,
     }));
   }
 
-  const matched = params.entry.match(/(.+?)\s*\(([^)]*)\)\s*(.*)/);
+  const matched = text.match(/(.+?)\s*\(([^)]*)\)\s*(.*)/);
 
   if (!matched) {
     return [];
