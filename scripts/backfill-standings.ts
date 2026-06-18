@@ -211,6 +211,87 @@ export function collectCompetitionTeamIds(matches: MatchTeamIdsDbRow[]) {
   return [...teamIds];
 }
 
+export function selectStandingsTeamCandidates(
+  rows: ParsedStandingsRow[],
+  teams: StandingsTeamRow[],
+  competitionTeamIds: string[],
+) {
+  const competitionTeamIdSet = new Set(competitionTeamIds);
+  const selectedTeams = new Map<string, StandingsTeamRow>();
+
+  for (const row of rows) {
+    const rawKey = comparisonKey(row.teamName);
+    const mappedKey = comparisonKey(mapWikipediaTeamName(row.teamName));
+    const rawCandidates: StandingsTeamRow[] = [];
+    const mappedCandidates: StandingsTeamRow[] = [];
+
+    for (const team of teams) {
+      const aliasKeys = [
+        team.name,
+        team.englishName,
+        team.slug.replace(/-/g, " "),
+      ]
+        .filter((value): value is string => Boolean(value))
+        .map(comparisonKey);
+
+      if (aliasKeys.includes(rawKey)) {
+        rawCandidates.push(team);
+      }
+
+      if (mappedKey !== rawKey && aliasKeys.includes(mappedKey)) {
+        mappedCandidates.push(team);
+      }
+    }
+
+    const candidates =
+      rawCandidates.length > 0 ? rawCandidates : mappedCandidates;
+    const competitionCandidates = candidates.filter((team) =>
+      competitionTeamIdSet.has(team.id),
+    );
+    const selected =
+      candidates.length === 1
+        ? candidates[0]
+        : competitionCandidates.length === 1
+          ? competitionCandidates[0]
+          : null;
+
+    if (selected) {
+      selectedTeams.set(selected.id, selected);
+    }
+  }
+
+  return [...selectedTeams.values()];
+}
+
+export function buildResolvedStandingsTeamLookup(
+  rows: ParsedStandingsRow[],
+  teams: StandingsTeamRow[],
+  competitionTeamIds: string[],
+) {
+  return Object.assign(
+    {},
+    ...rows.map((row) =>
+      buildStandingsTeamLookup(
+        [row],
+        selectStandingsTeamCandidates([row], teams, competitionTeamIds),
+      ),
+    ),
+  ) as Record<string, string>;
+}
+
+export function warnUnmatchedStandingsTeams(
+  rows: ParsedStandingsRow[],
+  teamLookup: Record<string, string>,
+) {
+  for (const row of rows) {
+    if (!teamLookup[row.teamName]) {
+      console.warn("[standings] unmatched team", {
+        name: row.teamName,
+      });
+    }
+  }
+}
+
 async function loadCompetition(
   family: SupportedFamily,
   season: string,
@@ -234,42 +315,40 @@ async function loadCompetition(
   return data;
 }
 
-async function loadCompetitionTeams(
+async function loadStandingsTeamResolutionData(
   competitionId: string,
-): Promise<StandingsTeamRow[]> {
+) {
   const db = getSupabaseServerClient();
-  const { data: matches, error: matchesError } = await db
-    .from("matches")
-    .select("home_team_id, away_team_id")
-    .eq("competition_id", competitionId);
+  const [
+    { data: matches, error: matchesError },
+    { data: teams, error: teamsError },
+  ] = await Promise.all([
+    db
+      .from("matches")
+      .select("home_team_id, away_team_id")
+      .eq("competition_id", competitionId),
+    db.from("teams").select("id, name, english_name, slug"),
+  ]);
 
   if (matchesError) {
     throw matchesError;
   }
 
-  const teamIds = collectCompetitionTeamIds(
-    (matches ?? []) as MatchTeamIdsDbRow[],
-  );
-
-  if (teamIds.length === 0) {
-    return [];
-  }
-
-  const { data: teams, error: teamsError } = await db
-    .from("teams")
-    .select("id, name, english_name, slug")
-    .in("id", teamIds);
-
   if (teamsError) {
     throw teamsError;
   }
 
-  return ((teams ?? []) as TeamDbRow[]).map((team) => ({
-    englishName: team.english_name,
-    id: team.id,
-    name: team.name,
-    slug: team.slug,
-  }));
+  return {
+    competitionTeamIds: collectCompetitionTeamIds(
+      (matches ?? []) as MatchTeamIdsDbRow[],
+    ),
+    teams: ((teams ?? []) as TeamDbRow[]).map((team) => ({
+      englishName: team.english_name,
+      id: team.id,
+      name: team.name,
+      slug: team.slug,
+    })),
+  };
 }
 
 export async function main() {
@@ -289,22 +368,20 @@ export async function main() {
     loadCompetition(options.family, options.season),
     scrapeCompetitionStandings(sourceUrl),
   ]);
-  const teams = await loadCompetitionTeams(competition.id);
-  const teamLookup = buildStandingsTeamLookup(rows, teams);
+  const { competitionTeamIds, teams } =
+    await loadStandingsTeamResolutionData(competition.id);
+  const teamLookup = buildResolvedStandingsTeamLookup(
+    rows,
+    teams,
+    competitionTeamIds,
+  );
   const matchedRows = rows.filter((row) => teamLookup[row.teamName]);
-  const unmatchedTeamNames = rows
-    .filter((row) => !teamLookup[row.teamName])
-    .map((row) => row.teamName);
 
   console.log(
     `Standings target: family=${options.family} season=${options.season} parsed=${rows.length} matched=${matchedRows.length} source=${sourceUrl} dry_run=${options.dryRun}`,
   );
 
-  if (unmatchedTeamNames.length > 0) {
-    console.warn(
-      `Unmatched standings teams: ${unmatchedTeamNames.join(", ")}`,
-    );
-  }
+  warnUnmatchedStandingsTeams(rows, teamLookup);
 
   if (options.dryRun) {
     return;
