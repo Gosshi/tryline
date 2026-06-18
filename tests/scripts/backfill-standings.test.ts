@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildStandingsTeamLookup,
+  collectCompetitionTeamIds,
   parseOptions,
   resolveWikipediaStandingsUrl,
 } from "@/scripts/backfill-standings";
@@ -72,5 +73,24 @@ describe("backfill-standings", () => {
     expect(lookup).toEqual({
       "Newcastle Red Bulls": "newcastle-id",
     });
+  });
+
+  it("collects distinct team ids from competition matches", () => {
+    expect(
+      collectCompetitionTeamIds([
+        {
+          away_team_id: "team-b",
+          home_team_id: "team-a",
+        },
+        {
+          away_team_id: "team-c",
+          home_team_id: "team-b",
+        },
+        {
+          away_team_id: "team-a",
+          home_team_id: "team-c",
+        },
+      ]),
+    ).toEqual(["team-a", "team-b", "team-c"]);
   });
 });
