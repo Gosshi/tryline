@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
 import { MatchCard } from "@/components/match-card";
 import {
   listSeasonsByFamily,
@@ -67,9 +68,11 @@ const COMPETITION_DESCRIPTIONS: Record<string, string> = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { competition } = await params;
   const name = formatFamilyName(competition);
-  const description =
+  const overview =
     COMPETITION_DESCRIPTIONS[competition] ??
     `${name} の全シーズン試合結果・順位表・日本語レビュー一覧。`;
+  const description = `${overview} 最新シーズンの順位表・日程・試合結果と、日本での視聴方法を掲載。`;
+  const title = `${name} 順位表・日程・日本での視聴方法`;
 
   return {
     description,
@@ -82,11 +85,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           width: 1200,
         },
       ],
-      title: `${name} — 全シーズン一覧 | Tryline`,
+      title: `${title} | Tryline`,
       type: "website",
       url: `${SITE_URL}/c/${competition}`,
     },
-    title: `${name} — 全シーズン一覧`,
+    title,
   };
 }
 
@@ -148,6 +151,8 @@ export default async function CompetitionHubPage({ params }: Props) {
             試合一覧を見る →
           </p>
         </Link>
+
+        <CompetitionViewingGuide markdown={latestSeason.viewingGuideJa} />
 
         {recentReviews.length > 0 && (
           <section className="space-y-3">

@@ -279,6 +279,7 @@ export type Database = {
           slug: string;
           start_date: string | null;
           updated_at: string;
+          viewing_guide_ja: string | null;
         };
         Insert: {
           champion?: string | null;
@@ -293,6 +294,7 @@ export type Database = {
           slug: string;
           start_date?: string | null;
           updated_at?: string;
+          viewing_guide_ja?: string | null;
         };
         Update: {
           champion?: string | null;
@@ -307,6 +309,7 @@ export type Database = {
           slug?: string;
           start_date?: string | null;
           updated_at?: string;
+          viewing_guide_ja?: string | null;
         };
         Relationships: [];
       };

@@ -77,4 +77,86 @@ describe("wikipedia standings scraper", () => {
 
     expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledTimes(1);
   });
+
+  it("parses variable-size tables without separate try and losing bonus columns", async () => {
+    const { parseCompetitionStandingsHtml } =
+      await import("@/lib/scrapers/wikipedia-standings");
+    const result = parseCompetitionStandingsHtml(`
+      <table class="wikitable">
+        <tr>
+          <th>Pos</th><th>Club</th><th>Pld</th><th>W</th><th>D</th><th>L</th>
+          <th>PF</th><th>PA</th><th>Pts</th>
+        </tr>
+        ${Array.from(
+          { length: 10 },
+          (_, index) => `
+            <tr>
+              <td>${index + 1}</td><th>Club ${index + 1}</th><td>9</td>
+              <td>${9 - index}</td><td>0</td><td>${index}</td>
+              <td>${200 - index}</td><td>${100 + index}</td><td>${40 - index}</td>
+            </tr>
+          `,
+        ).join("")}
+      </table>
+    `);
+
+    expect(result).toHaveLength(10);
+    expect(result[0]).toMatchObject({
+      bonusPointsLosing: 0,
+      bonusPointsTry: 0,
+      teamName: "Club 1",
+      triesFor: 0,
+    });
+  });
+
+  it("parses Spanish League One-style standings headers", async () => {
+    const { parseCompetitionStandingsHtml } =
+      await import("@/lib/scrapers/wikipedia-standings");
+    const result = parseCompetitionStandingsHtml(`
+      <table class="wikitable">
+        <tr>
+          <th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>PP</th>
+          <th>PF</th><th>PC</th><th>Pts</th>
+        </tr>
+        <tr>
+          <td>1</td><th>Wild Knights</th><td>12</td><td>10</td><td>1</td><td>1</td>
+          <td>420</td><td>210</td><td>49</td>
+        </tr>
+      </table>
+    `);
+
+    expect(result).toEqual([
+      {
+        bonusPointsLosing: 0,
+        bonusPointsTry: 0,
+        drawn: 1,
+        lost: 1,
+        played: 12,
+        pointsAgainst: 210,
+        pointsFor: 420,
+        position: 1,
+        teamName: "Wild Knights",
+        totalPoints: 49,
+        triesFor: 0,
+        won: 10,
+      },
+    ]);
+  });
+
+  it("uses row order when the standings table has no position header", async () => {
+    const { parseCompetitionStandingsHtml } =
+      await import("@/lib/scrapers/wikipedia-standings");
+    const result = parseCompetitionStandingsHtml(`
+      <table class="wikitable">
+        <tr>
+          <th>Team</th><th>Pld</th><th>W</th><th>D</th><th>L</th>
+          <th>PF</th><th>PA</th><th>Pts</th>
+        </tr>
+        <tr><th>Fiji</th><td>4</td><td>4</td><td>0</td><td>0</td><td>157</td><td>62</td><td>22</td></tr>
+        <tr><th>Japan</th><td>4</td><td>3</td><td>0</td><td>1</td><td>193</td><td>93</td><td>14</td></tr>
+      </table>
+    `);
+
+    expect(result.map((row) => row.position)).toEqual([1, 2]);
+  });
 });

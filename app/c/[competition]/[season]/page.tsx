@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
 import { PremiumUpsellBanner } from "@/components/premium-upsell-banner";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
@@ -80,8 +81,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Tryline" };
   }
 
-  const title = formatCompetitionTitle(comp, comp.season);
-  const description = `${title} の試合結果・順位表・日本語レビュー一覧。`;
+  const competitionTitle = formatCompetitionTitle(comp, comp.season);
+  const title = `${competitionTitle} 順位表・試合結果・日本語レビュー`;
+  const description = `${competitionTitle} の順位表・日程・試合結果・日本語レビューと、日本での視聴方法を掲載。`;
 
   return {
     alternates: { canonical: `${SITE_URL}/c/${competition}/${season}` },
@@ -244,6 +246,8 @@ export default async function SeasonPage({ params }: Props) {
         <div id="standings">
           <StandingsTable standings={standings} />
         </div>
+
+        <CompetitionViewingGuide markdown={comp.viewingGuideJa} />
       </div>
     </main>
   );
