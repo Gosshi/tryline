@@ -34,7 +34,6 @@ type ColumnKey =
 type ColumnIndexes = Partial<Record<ColumnKey, number>>;
 
 const REQUIRED_COLUMNS: ColumnKey[] = [
-  "position",
   "team",
   "played",
   "won",
@@ -42,8 +41,6 @@ const REQUIRED_COLUMNS: ColumnKey[] = [
   "lost",
   "pointsFor",
   "pointsAgainst",
-  "bonusPointsTry",
-  "bonusPointsLosing",
   "totalPoints",
 ];
 
@@ -58,16 +55,16 @@ const COLUMN_ALIASES: Record<Exclude<ColumnKey, "triesFor">, string[]> & {
     "losingbonuspoints",
   ],
   bonusPointsTry: ["trybp", "tb", "tbp", "trybonuspoint", "trybonuspoints"],
-  drawn: ["d", "drawn", "draw"],
-  lost: ["l", "lost"],
-  played: ["pld", "p", "played"],
-  pointsAgainst: ["pa", "pointsagainst"],
+  drawn: ["d", "drawn", "draw", "e", "je"],
+  lost: ["l", "lost", "jp", "perdidos", "pp"],
+  played: ["pld", "p", "played", "jj", "pj"],
+  pointsAgainst: ["pa", "pc", "pointsagainst", "puntoscontra"],
   pointsFor: ["pf", "pointsfor"],
   position: ["pos", "position", "rank"],
-  team: ["team", "nation"],
-  totalPoints: ["pts", "points", "totalpoints"],
+  team: ["club", "equipo", "nation", "team"],
+  totalPoints: ["pts", "points", "puntos", "totalpoints"],
   triesFor: ["tf", "triesfor", "tries"],
-  won: ["w", "won"],
+  won: ["g", "jg", "w", "won"],
 };
 
 function normalizeWhitespace(value: string) {
@@ -141,6 +138,20 @@ function getCellText(
   return normalizeWhitespace(cells.eq(index).text());
 }
 
+function parseOptionalInteger(
+  $: ReturnType<typeof load>,
+  cells: ReturnType<ReturnType<typeof load>>,
+  indexes: ColumnIndexes,
+  key: ColumnKey,
+  context: string,
+) {
+  if (indexes[key] === undefined) {
+    return 0;
+  }
+
+  return parseInteger(getCellText($, cells, indexes, key), context);
+}
+
 function parseTeamName(
   $: ReturnType<typeof load>,
   cells: ReturnType<ReturnType<typeof load>>,
@@ -168,6 +179,7 @@ function parseRow(
   $: ReturnType<typeof load>,
   row: Parameters<ReturnType<typeof load>>[0],
   indexes: ColumnIndexes,
+  fallbackPosition: number,
 ): ParsedStandingsRow | null {
   const cells = $(row).find("th, td");
 
@@ -182,12 +194,18 @@ function parseRow(
   }
 
   const parsed = {
-    bonusPointsLosing: parseInteger(
-      getCellText($, cells, indexes, "bonusPointsLosing"),
+    bonusPointsLosing: parseOptionalInteger(
+      $,
+      cells,
+      indexes,
+      "bonusPointsLosing",
       `${teamName} losing bonus points`,
     ),
-    bonusPointsTry: parseInteger(
-      getCellText($, cells, indexes, "bonusPointsTry"),
+    bonusPointsTry: parseOptionalInteger(
+      $,
+      cells,
+      indexes,
+      "bonusPointsTry",
       `${teamName} try bonus points`,
     ),
     drawn: parseInteger(
@@ -210,21 +228,24 @@ function parseRow(
       getCellText($, cells, indexes, "pointsFor"),
       `${teamName} points for`,
     ),
-    position: parseInteger(
-      getCellText($, cells, indexes, "position"),
-      `${teamName} position`,
-    ),
+    position:
+      indexes.position === undefined
+        ? fallbackPosition
+        : parseInteger(
+            getCellText($, cells, indexes, "position"),
+            `${teamName} position`,
+          ),
     totalPoints: parseInteger(
       getCellText($, cells, indexes, "totalPoints"),
       `${teamName} total points`,
     ),
-    triesFor:
-      indexes.triesFor === undefined
-        ? 0
-        : parseInteger(
-            getCellText($, cells, indexes, "triesFor"),
-            `${teamName} tries for`,
-          ),
+    triesFor: parseOptionalInteger(
+      $,
+      cells,
+      indexes,
+      "triesFor",
+      `${teamName} tries for`,
+    ),
     won: parseInteger(getCellText($, cells, indexes, "won"), `${teamName} won`),
   };
 
@@ -269,24 +290,18 @@ export function parseCompetitionStandingsHtml(
 
       const parsedRows = rows
         .slice(headerRowIndex + 1)
-        .map((dataRow) => parseRow($, dataRow, indexes))
+        .map((dataRow, index) => parseRow($, dataRow, indexes, index + 1))
         .filter(
           (parsedRow): parsedRow is ParsedStandingsRow => parsedRow !== null,
         );
 
       if (parsedRows.length > 0) {
-        if (parsedRows.length !== 6) {
-          console.warn(
-            `Expected 6 competition standings rows, parsed ${parsedRows.length}.`,
-          );
-        }
-
         return parsedRows;
       }
     }
   }
 
-  console.warn("Expected 6 competition standings rows, parsed 0.");
+  console.warn("No compatible competition standings rows were found.");
 
   return [];
 }

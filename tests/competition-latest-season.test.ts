@@ -21,6 +21,7 @@ function buildSeason(
     season,
     slug: `autumn-nations-${season}`,
     startDate: null,
+    viewingGuideJa: null,
   };
 }
 
