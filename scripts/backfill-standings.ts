@@ -46,21 +46,16 @@ export type StandingsTeamRow = {
   slug: string;
 };
 
-type CompetitionTeamDbRow = {
-  team:
-    | {
-        english_name: string | null;
-        id: string;
-        name: string;
-        slug: string;
-      }
-    | Array<{
-        english_name: string | null;
-        id: string;
-        name: string;
-        slug: string;
-      }>
-    | null;
+type MatchTeamIdsDbRow = {
+  away_team_id: string;
+  home_team_id: string;
+};
+
+type TeamDbRow = {
+  english_name: string | null;
+  id: string;
+  name: string;
+  slug: string;
 };
 
 const SUPPORTED_FAMILIES = new Set<SupportedFamily>([
@@ -77,10 +72,6 @@ const SUPPORTED_FAMILIES = new Set<SupportedFamily>([
 
 const USAGE =
   "Usage: pnpm tsx scripts/backfill-standings.ts --family=<family> --season=<season> [--dry-run] [--confirm-owner-approved]";
-
-function firstRelation<T>(value: T | T[] | null): T | null {
-  return Array.isArray(value) ? (value[0] ?? null) : value;
-}
 
 function comparisonKey(value: string) {
   return normalizeWikipediaTeamName(value)
@@ -209,6 +200,17 @@ export function buildStandingsTeamLookup(
   );
 }
 
+export function collectCompetitionTeamIds(matches: MatchTeamIdsDbRow[]) {
+  const teamIds = new Set<string>();
+
+  for (const match of matches) {
+    teamIds.add(match.home_team_id);
+    teamIds.add(match.away_team_id);
+  }
+
+  return [...teamIds];
+}
+
 async function loadCompetition(
   family: SupportedFamily,
   season: string,
@@ -236,38 +238,38 @@ async function loadCompetitionTeams(
   competitionId: string,
 ): Promise<StandingsTeamRow[]> {
   const db = getSupabaseServerClient();
-  const { data, error } = await db
-    .from("competition_teams")
-    .select(
-      `
-        team:teams!competition_teams_team_id_fkey (
-          id,
-          name,
-          english_name,
-          slug
-        )
-      `,
-    )
+  const { data: matches, error: matchesError } = await db
+    .from("matches")
+    .select("home_team_id, away_team_id")
     .eq("competition_id", competitionId);
 
-  if (error) {
-    throw error;
+  if (matchesError) {
+    throw matchesError;
   }
 
-  return ((data ?? []) as CompetitionTeamDbRow[]).flatMap((row) => {
-    const team = firstRelation(row.team);
+  const teamIds = collectCompetitionTeamIds(
+    (matches ?? []) as MatchTeamIdsDbRow[],
+  );
 
-    return team
-      ? [
-          {
-            englishName: team.english_name,
-            id: team.id,
-            name: team.name,
-            slug: team.slug,
-          },
-        ]
-      : [];
-  });
+  if (teamIds.length === 0) {
+    return [];
+  }
+
+  const { data: teams, error: teamsError } = await db
+    .from("teams")
+    .select("id, name, english_name, slug")
+    .in("id", teamIds);
+
+  if (teamsError) {
+    throw teamsError;
+  }
+
+  return ((teams ?? []) as TeamDbRow[]).map((team) => ({
+    englishName: team.english_name,
+    id: team.id,
+    name: team.name,
+    slug: team.slug,
+  }));
 }
 
 export async function main() {
@@ -290,10 +292,19 @@ export async function main() {
   const teams = await loadCompetitionTeams(competition.id);
   const teamLookup = buildStandingsTeamLookup(rows, teams);
   const matchedRows = rows.filter((row) => teamLookup[row.teamName]);
+  const unmatchedTeamNames = rows
+    .filter((row) => !teamLookup[row.teamName])
+    .map((row) => row.teamName);
 
   console.log(
     `Standings target: family=${options.family} season=${options.season} parsed=${rows.length} matched=${matchedRows.length} source=${sourceUrl} dry_run=${options.dryRun}`,
   );
+
+  if (unmatchedTeamNames.length > 0) {
+    console.warn(
+      `Unmatched standings teams: ${unmatchedTeamNames.join(", ")}`,
+    );
+  }
 
   if (options.dryRun) {
     return;
