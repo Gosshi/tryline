@@ -1,8 +1,6 @@
 name: Cron - Fill League One Playoff Events
 
 on:
-  schedule:
-    - cron: "0 3 * * *"
   workflow_dispatch:
 
 jobs:
