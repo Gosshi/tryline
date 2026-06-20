@@ -8,11 +8,20 @@ import { fetchAutumnNations2026 } from "@/lib/ingestion/sources/wikipedia-autumn
 import { fetchPnc2026 } from "@/lib/ingestion/sources/wikipedia-pnc";
 import { fetchPremiership202526 } from "@/lib/ingestion/sources/wikipedia-premiership";
 import { fetchRugbyChampionship2026 } from "@/lib/ingestion/sources/wikipedia-rugby-championship";
+import { fetchSixNations2027 } from "@/lib/ingestion/sources/wikipedia-six-nations-2027-live";
 import { fetchSuperRugbyPacific2026 } from "@/lib/ingestion/sources/wikipedia-super-rugby-pacific";
 import { fetchTop14202526 } from "@/lib/ingestion/sources/wikipedia-top-14";
 import { fetchUrc202526 } from "@/lib/ingestion/sources/wikipedia-urc";
 
 export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
+  {
+    competitionName: "Six Nations 2027",
+    competitionSlug: "six-nations-2027",
+    family: "six-nations",
+    fetch: fetchSixNations2027,
+    season: "2027",
+    sourceLabel: "wikipedia",
+  },
   {
     competitionName: "Super Rugby Pacific 2026",
     competitionSlug: "super-rugby-pacific-2026",
