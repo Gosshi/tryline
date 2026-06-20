@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+import { LIVE_COMPETITION_SOURCES } from "@/lib/ingestion/live-competitions";
 import { parseLeagueOneLiveHtml } from "@/lib/ingestion/sources/league-one-live";
 import { parsePncLiveHtml } from "@/lib/ingestion/sources/wikipedia-pnc";
 import { parsePremiershipLiveHtml } from "@/lib/ingestion/sources/wikipedia-premiership";
+import {
+  fetchSixNations2027,
+  parseSixNations2027LiveHtml,
+} from "@/lib/ingestion/sources/wikipedia-six-nations-2027-live";
 import { parseSuperRugbyPacificLiveHtml } from "@/lib/ingestion/sources/wikipedia-super-rugby-pacific";
 import { parseTop14LiveHtml } from "@/lib/ingestion/sources/wikipedia-top-14";
 import { parseUrcLiveHtml } from "@/lib/ingestion/sources/wikipedia-urc";
@@ -38,6 +43,29 @@ const PREMIERSHIP_HTML = `
     <td class="vcard"><span class="fn org"><a>Saracens</a></span></td>
   </tr></tbody></table>
   <table><tbody><tr><td><span class="location">Twickenham Stadium</span></td></tr></tbody></table>
+</div>
+`;
+
+const SIX_NATIONS_2027_HTML = `
+<div class="mw-heading mw-heading2"><h2 id="Fixtures">Fixtures</h2></div>
+<div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
+<div class="vevent summary" id="Ireland_v_England">
+  <table><tbody><tr><td>5 February 2027<br />20:10 GMT</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Ireland</a></span></td>
+    <td>v</td>
+    <td class="vcard"><span class="fn org"><a>England</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Aviva Stadium</span></td></tr></tbody></table>
+</div>
+<div class="vevent summary" id="France_v_Wales">
+  <table><tbody><tr><td>6 February 2027<br />17:40 CET</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>France</a></span></td>
+    <td>27–13</td>
+    <td class="vcard"><span class="fn org"><a>Wales</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Stade de France</span></td></tr></tbody></table>
 </div>
 `;
 
@@ -189,6 +217,41 @@ const TOP_14_HTML = `
 `;
 
 describe("live competition source adapters", () => {
+  it("registers Six Nations 2027 with the established family and slug", () => {
+    expect(
+      LIVE_COMPETITION_SOURCES.find(
+        (source) => source.competitionSlug === "six-nations-2027",
+      ),
+    ).toMatchObject({
+      competitionName: "Six Nations 2027",
+      family: "six-nations",
+      fetch: fetchSixNations2027,
+      season: "2027",
+      sourceLabel: "wikipedia",
+    });
+  });
+
+  it("keeps Six Nations 2027 scheduled and finished matches with per-match HTML", () => {
+    const matches = parseSixNations2027LiveHtml(SIX_NATIONS_2027_HTML);
+
+    expect(matches).toHaveLength(2);
+    expect(matches[0]).toMatchObject({
+      awayTeamName: "England",
+      homeTeamName: "Ireland",
+      round: 1,
+      status: "scheduled",
+    });
+    expect(matches[1]).toMatchObject({
+      awayScore: 13,
+      awayTeamName: "Wales",
+      homeScore: 27,
+      homeTeamName: "France",
+      status: "finished",
+    });
+    expect(matches[0]?.rawHtml).toContain('id="Ireland_v_England"');
+    expect(matches[0]?.rawHtml).not.toContain('id="France_v_Wales"');
+  });
+
   it("parses Super Rugby Pacific kickoff text with timezone abbreviation", () => {
     const matches = parseSuperRugbyPacificLiveHtml({
       regularHtml: SUPER_RUGBY_PACIFIC_HTML,
