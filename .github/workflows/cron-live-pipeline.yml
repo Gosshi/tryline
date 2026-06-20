@@ -1,0 +1,32 @@
+name: Cron — Live Pipeline
+
+on:
+  schedule:
+    # Every 6 hours: 00/06/12/18 UTC = 09/15/21/03 JST
+    - cron: "0 0,6,12,18 * * *"
+  workflow_dispatch:
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Ingest live competitions (results + events)
+        run: |
+          curl -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://tryline-six.vercel.app/api/cron/ingest-live-competitions
+
+      - name: Fill League One playoff events
+        if: ${{ always() }}
+        run: |
+          curl -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://tryline-six.vercel.app/api/cron/fill-league-one-playoff-events
+
+      - name: Orchestrate (preview/recap generation)
+        if: ${{ always() }}
+        run: |
+          curl -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://tryline-six.vercel.app/api/cron/orchestrate
