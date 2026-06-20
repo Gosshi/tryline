@@ -212,6 +212,12 @@ export async function POST(request: Request) {
   }
 
   if (!competition) {
+    if (!body.season) {
+      return NextResponse.json({
+        skipped: "no_active_league_one_competition",
+      });
+    }
+
     return NextResponse.json(
       { error: "league_one_competition_not_found" },
       { status: 404 },
