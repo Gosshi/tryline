@@ -10,43 +10,38 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 export const HEADER_COMPETITIONS = [
   {
     family: "six-nations",
-    href: "/c/six-nations/2025",
-    label: "Six Nations 2025",
+    href: "/c/six-nations",
+    label: "シックスネイションズ",
   },
   {
     family: "premiership",
-    href: "/c/premiership/2025-26",
-    label: "Premiership 2025-26",
+    href: "/c/premiership",
+    label: "プレミアシップ",
   },
   {
     family: "urc",
-    href: "/c/urc/2025-26",
-    label: "URC 2025-26",
+    href: "/c/urc",
+    label: "ユナイテッド・ラグビー・チャンピオンシップ",
   },
   {
     family: "top-14",
-    href: "/c/top-14/2024-25",
-    label: "Top 14 2024-25",
+    href: "/c/top-14",
+    label: "トップ14",
   },
   {
     family: "super-rugby-pacific",
-    href: "/c/super-rugby-pacific/2026",
-    label: "Super Rugby Pacific 2026",
+    href: "/c/super-rugby-pacific",
+    label: "スーパーラグビー・パシフィック",
   },
   {
     family: "rugby-championship",
-    href: "/c/rugby-championship/2025",
-    label: "Rugby Championship 2025",
+    href: "/c/rugby-championship",
+    label: "ザ・ラグビーチャンピオンシップ",
   },
   {
     family: "rwc",
-    href: "/c/rwc/2023",
-    label: "RWC 2023",
-  },
-  {
-    family: "rwc",
-    href: "/c/rwc/2027",
-    label: "RWC 2027",
+    href: "/c/rwc",
+    label: "ラグビーワールドカップ",
   },
   {
     family: "league-one",
@@ -56,7 +51,12 @@ export const HEADER_COMPETITIONS = [
   {
     family: "autumn-nations",
     href: "/c/autumn-nations",
-    label: "Autumn Nations",
+    label: "オータムネーションズシリーズ",
+  },
+  {
+    family: "pnc",
+    href: "/c/pnc",
+    label: "パシフィック・ネーションズカップ",
   },
 ] as const;
 
