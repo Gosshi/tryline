@@ -4,10 +4,7 @@ import { notFound } from "next/navigation";
 
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
 import { MatchCard } from "@/components/match-card";
-import {
-  listSeasonsByFamily,
-  selectLatestSeasonWithMatches,
-} from "@/lib/db/queries/competitions";
+import { listSeasonsByFamily } from "@/lib/db/queries/competitions";
 import { getRecentlyReviewedMatchesForFamily } from "@/lib/db/queries/matches";
 import {
   formatCompetitionTitle,
@@ -26,8 +23,7 @@ const COMPETITION_HERO_IMAGES: Record<string, string> = {
     "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80",
   premiership:
     "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1280&q=80",
-  "urc":
-    "https://images.unsplash.com/photo-1480099225005-2513c8947aec?w=1200&q=80",
+  urc: "https://images.unsplash.com/photo-1480099225005-2513c8947aec?w=1200&q=80",
   "top-14":
     "https://images.unsplash.com/photo-1529663297269-6d349ec39b57?w=1200&q=80",
   "super-rugby-pacific":
@@ -104,7 +100,8 @@ export default async function CompetitionHubPage({ params }: Props) {
     notFound();
   }
 
-  const latestSeason = selectLatestSeasonWithMatches(seasons);
+  const latestSeason =
+    seasons.find((season) => season.matchCount > 0) ?? seasons[0];
 
   if (!latestSeason) {
     notFound();

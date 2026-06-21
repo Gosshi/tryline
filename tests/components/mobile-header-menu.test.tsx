@@ -92,4 +92,30 @@ describe("MobileHeaderMenu", () => {
       await screen.findByRole("heading", { name: "ログイン" }),
     ).toBeInTheDocument();
   });
+
+  it("shows evergreen Japanese competition hub links", () => {
+    render(
+      <MobileHeaderMenu
+        allTeams={[]}
+        favoriteTeamSlugs={[]}
+        isPremium={false}
+        user={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "メニューを開く" }));
+    fireEvent.click(screen.getByRole("button", { name: "大会" }));
+
+    expect(
+      screen.getByRole("link", { name: "シックスネイションズ" }),
+    ).toHaveAttribute("href", "/c/six-nations");
+    expect(
+      screen.getByRole("link", { name: "ラグビーワールドカップ" }),
+    ).toHaveAttribute("href", "/c/rwc");
+    expect(
+      screen.getByRole("link", {
+        name: "パシフィック・ネーションズカップ",
+      }),
+    ).toHaveAttribute("href", "/c/pnc");
+  });
 });

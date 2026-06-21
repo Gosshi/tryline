@@ -11,9 +11,9 @@ import { groupMatchesByRound } from "@/lib/format/match-groups";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Rugby World Cup 2027",
+  title: "ラグビーワールドカップ2027 日程・出場国・日本語ガイド",
   description:
-    "RWC 2027 プール順位表・ノックアウトブラケット・日本語レビュー。",
+    "ラグビーワールドカップ2027の試合日程、出場国、プール順位表、放送・視聴情報、ノックアウトブラケット、日本語レビューを掲載。",
 };
 
 function PendingState() {
@@ -53,8 +53,7 @@ function ComingSoonState({ matchCount }: { matchCount: number }) {
       </h1>
       <p className="mt-6 text-base leading-relaxed text-[var(--color-ink-muted)]">
         2027年10〜11月、オーストラリア開催。
-        <br />
-        全{matchCount}試合のスケジュールが確定しています。
+        <br />全{matchCount}試合のスケジュールが確定しています。
         <br />
         開幕後、試合結果・日本語レビューを随時公開予定。
       </p>

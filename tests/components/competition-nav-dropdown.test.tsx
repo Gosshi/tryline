@@ -39,6 +39,69 @@ describe("CompetitionNavDropdown", () => {
     }
   });
 
+  it("links each competition family to its evergreen Japanese hub", () => {
+    expect(HEADER_COMPETITIONS).toEqual([
+      {
+        family: "six-nations",
+        href: "/c/six-nations",
+        label: "シックスネイションズ",
+      },
+      {
+        family: "premiership",
+        href: "/c/premiership",
+        label: "プレミアシップ",
+      },
+      {
+        family: "urc",
+        href: "/c/urc",
+        label: "ユナイテッド・ラグビー・チャンピオンシップ",
+      },
+      {
+        family: "top-14",
+        href: "/c/top-14",
+        label: "トップ14",
+      },
+      {
+        family: "super-rugby-pacific",
+        href: "/c/super-rugby-pacific",
+        label: "スーパーラグビー・パシフィック",
+      },
+      {
+        family: "rugby-championship",
+        href: "/c/rugby-championship",
+        label: "ザ・ラグビーチャンピオンシップ",
+      },
+      {
+        family: "rwc",
+        href: "/c/rwc",
+        label: "ラグビーワールドカップ",
+      },
+      {
+        family: "league-one",
+        href: "/c/league-one",
+        label: "ジャパンラグビー リーグワン",
+      },
+      {
+        family: "autumn-nations",
+        href: "/c/autumn-nations",
+        label: "オータムネーションズシリーズ",
+      },
+      {
+        family: "pnc",
+        href: "/c/pnc",
+        label: "パシフィック・ネーションズカップ",
+      },
+    ]);
+    expect(
+      HEADER_COMPETITIONS.every(
+        (competition) => competition.href === `/c/${competition.family}`,
+      ),
+    ).toBe(true);
+    expect(
+      HEADER_COMPETITIONS.some((competition) => /\d{4}/.test(competition.href)),
+    ).toBe(false);
+  });
+
   it("toggles with Enter and closes with Escape", () => {
     render(<CompetitionNavDropdown />);
 
@@ -72,7 +135,7 @@ describe("CompetitionNavDropdown", () => {
     render(<CompetitionNavDropdown />);
 
     fireEvent.click(screen.getByRole("button", { name: "大会" }));
-    fireEvent.click(screen.getByRole("link", { name: "Six Nations 2025" }));
+    fireEvent.click(screen.getByRole("link", { name: "シックスネイションズ" }));
 
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
