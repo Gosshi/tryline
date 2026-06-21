@@ -30,6 +30,7 @@ pnpm-debug.log*
 # ローカル環境変数
 .env
 .env.local
+.env.gsc.local
 .env.development.local
 .env.test.local
 .env.production.local
@@ -59,3 +60,6 @@ tsconfig.tsbuildinfo
 .claude/
 .codex/
 .playwright-mcp/
+
+# GSC analysis output
+/tmp/gsc/
