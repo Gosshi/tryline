@@ -39,10 +39,10 @@ node --env-file=<env> tools/run-ts.cjs tools/gsc-pull.ts [options]
 ```
 
 必要 env:
-- `GSC_SITE_URL`: GSC プロパティ識別子。**`sc-domain:trylinerugby.com`**（推奨・ドメインプロパティ）。Search Analytics / URL Inspection API の `siteUrl` パラメータに使う。
+- `GSC_SITE_URL`: GSC プロパティ識別子。**`https://www.trylinerugby.com/`**（実プロパティは URL-prefix 型。末尾スラッシュ込み）。Search Analytics / URL Inspection API の `siteUrl` パラメータに使う。
 - `GOOGLE_APPLICATION_CREDENTIALS`（または `GSC_SA_KEY_PATH`）: サービスアカウント JSON キーのパス。**リポジトリ外**に置く
 
-サイトオリジン（sitemap 取得と URL Inspection の完全 URL 組み立てに使用）は **`@/lib/site` の `SITE_URL`（既定 `https://www.trylinerugby.com`）** を流用する。`sc-domain:` プロパティは単一 URL prefix を持たないため、API の `siteUrl`（プロパティ識別子）と、実 URL を作るオリジンは別物として扱うこと。
+サイトオリジン（sitemap 取得と URL Inspection の完全 URL 組み立てに使用）は **`@/lib/site` の `SITE_URL`（既定 `https://www.trylinerugby.com`）** を流用する。URL-prefix プロパティなので `GSC_SITE_URL`（末尾スラッシュ付き）と実 URL のオリジンは一致するが、コード上は API の `siteUrl` とオリジンを別変数として扱う（将来 sc-domain プロパティに切替えても壊れないように）。
 
 options:
 - `--range <28d|7d|YYYY-MM-DD:YYYY-MM-DD>`（default `28d`）
@@ -79,12 +79,12 @@ Codex が検証可能な粒度:
 4. `--range` のパース（`28d` / `7d` / `YYYY-MM-DD:YYYY-MM-DD`）が正しく、`--dims` が API に反映される。
 5. 認証情報・取得データが一切コミットされない: `tmp/gsc/` が `.gitignore` に追加され、SA キーは env パス参照のみ。
 6. 書込 API 呼び出しが存在しない（read-only）。
-7. スクリプト冒頭コメント or `tools/README` に実行例・env 要件・必要権限（GSC に SA を制限付き追加）を記載。
+7. スクリプト冒頭コメント or `tools/README` に実行例・env 要件・必要権限（GSC に SA を**フル**追加＝URL Inspection 要件）を記載。
 8. ユニットテスト: `--range`/`--dims` パース、sitemap のグルーピング、出力整形（Search Console API はモック）。実 API は叩かない。
 
 ## 確定事項（Owner が推奨採用、2026-06-21・実ルート確認済み）
 
-1. **GSC プロパティ形式**: **`sc-domain:trylinerugby.com`**（ドメインプロパティ。www/non-www・http/https を包含）。正規ドメインは `lib/site.ts` の `https://www.trylinerugby.com`。
+1. **GSC プロパティ形式**: **`https://www.trylinerugby.com/`**（実プロパティは URL-prefix 型・末尾スラッシュ込み）。正規ドメインは `lib/site.ts` の `https://www.trylinerugby.com`。※当初 `sc-domain:` を想定したが、実際の GSC プロパティは URL-prefix だった（sites.list で確認）。
 2. **URL グループ定義**: 実ルートに合わせ、グループ名→接頭辞マップを**スクリプト内定数**（変更容易な形）で定義:
    - `players` → `/players/`
    - `teams` → `/teams/`, `/t/`
@@ -101,4 +101,4 @@ Codex が検証可能な粒度:
 - Google Cloud で SA 作成 → JSON キー発行（リポジトリ外に保存）。
 - Search Console（`trylinerugby.com` プロパティ）の「設定 > ユーザーと権限」で SA メールを **"フル(Full)"** で追加（URL Inspection に必要。readonly スコープで操作は読み取りに限定される）。
 - Search Console API（および URL Inspection）を Google Cloud プロジェクトで有効化。Indexing API は有効化しない。
-- `.env.gsc.local` に `GSC_SITE_URL=sc-domain:trylinerugby.com` とキーパスを設定。
+- `.env.gsc.local` に `GSC_SITE_URL=https://www.trylinerugby.com/` とキーパスを設定。
