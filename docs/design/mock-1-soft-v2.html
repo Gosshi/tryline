@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tryline mock 案1 やわらかモダン v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Outfit:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --ink: #1f2530;
+    --soft: #767d8b;
+    --hair: #eceef2;
+    --tonga: #c93a40;
+    --tonga-soft: #f9ecec;
+    --samoa: #38589f;
+    --samoa-soft: #ebeff8;
+    --maru: "Zen Maru Gothic", sans-serif;
+    --num: "Outfit", sans-serif;
+    --r-lg: 30px;
+    --r-md: 22px;
+    --r-sm: 16px;
+    --shadow: 0 20px 44px -24px rgba(28, 38, 64, 0.4);
+    --shadow-soft: 0 12px 28px -20px rgba(28, 38, 64, 0.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #dadee5;
+    font-family: var(--maru);
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 28px 0 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .phone {
+    width: 412px;
+    max-width: 100%;
+    background: var(--bg);
+    box-shadow: 0 40px 90px -30px rgba(20, 28, 50, 0.6);
+    overflow: hidden;
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px 14px;
+  }
+  .brand { font-weight: 900; font-size: 20px; letter-spacing: -0.01em; }
+  .brand b { color: var(--tonga); }
+  .menu {
+    font-size: 12px;
+    color: var(--soft);
+    background: var(--card);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+  main { padding: 4px 22px 44px; }
+
+  /* score hero — calmer gradient, gentle depth */
+  .hero {
+    position: relative;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    padding: 24px 24px 26px;
+    color: #fff;
+    background:
+      linear-gradient(180deg, rgba(12, 16, 28, 0.16), rgba(12, 16, 28, 0.30)),
+      radial-gradient(135% 100% at 8% 0%, rgba(184, 52, 58, 0.92), transparent 60%),
+      radial-gradient(135% 100% at 96% 100%, rgba(45, 78, 150, 0.92), transparent 60%),
+      linear-gradient(135deg, #a8333a, #2f4f92);
+    box-shadow: var(--shadow);
+  }
+  .hero .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11.5px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(4px);
+    padding: 6px 13px;
+    border-radius: 999px;
+  }
+  .hero .tag::before { content: "●"; font-size: 6px; opacity: 0.85; }
+  .score {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    margin-top: 24px;
+  }
+  .side { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .badge {
+    width: 54px; height: 54px; border-radius: 17px;
+    display: grid; place-items: center;
+    font-weight: 900; font-size: 20px;
+    background: rgba(255, 255, 255, 0.94);
+  }
+  .badge.t { color: var(--tonga); }
+  .badge.s { color: var(--samoa); }
+  .side .name { font-weight: 700; font-size: 15px; }
+  .nums { display: flex; align-items: center; gap: 12px; }
+  .n { font-family: var(--num); font-weight: 700; font-size: 60px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .n.win { position: relative; }
+  .n.win::after {
+    content: "WIN"; position: absolute; top: -4px; right: -8px;
+    font-family: var(--num); font-size: 9px; font-weight: 700;
+    background: #fff; color: var(--tonga); padding: 2px 5px; border-radius: 6px;
+  }
+  .vs { font-family: var(--num); font-weight: 500; opacity: 0.55; font-size: 22px; }
+  .hero .when {
+    margin-top: 22px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+    font-size: 12px; opacity: 0.94;
+  }
+  .hero .when span { background: rgba(255, 255, 255, 0.15); padding: 6px 12px; border-radius: 999px; }
+
+  /* headline card — more breathing room */
+  .lead-card {
+    background: var(--card);
+    border-radius: var(--r-md);
+    padding: 28px 24px;
+    margin-top: 20px;
+    box-shadow: var(--shadow-soft);
+  }
+  .lead-card h1 {
+    font-size: 26px; font-weight: 900; line-height: 1.46;
+    letter-spacing: -0.01em;
+  }
+  .lead-card h1 em { font-style: normal; color: var(--tonga); }
+  .lead-card .sub { margin-top: 16px; font-size: 14.5px; line-height: 1.95; color: #434b59; font-weight: 500; }
+
+  /* section label */
+  .sec-h {
+    margin: 36px 4px 16px;
+    font-size: 13px; font-weight: 700; color: var(--soft);
+    display: flex; align-items: center; gap: 9px;
+  }
+  .sec-h::before { content: ""; width: 5px; height: 18px; border-radius: 3px; background: var(--tonga); }
+
+  /* key points — one hero point + two small */
+  .keypoint {
+    background: var(--card); border-radius: var(--r-md);
+    padding: 22px 22px; box-shadow: var(--shadow-soft);
+    display: flex; align-items: center; gap: 18px;
+  }
+  .keypoint .mark {
+    flex: none; width: 56px; height: 56px; border-radius: 18px;
+    background: var(--tonga-soft); color: var(--tonga);
+    display: grid; place-items: center;
+    font-family: var(--num); font-weight: 700; font-size: 22px; line-height: 1;
+  }
+  .keypoint .mark small { display: block; font-family: var(--maru); font-size: 10px; font-weight: 700; margin-top: 2px; }
+  .keypoint .body .k { font-size: 11.5px; color: var(--soft); font-weight: 700; }
+  .keypoint .body .v { margin-top: 5px; font-size: 16.5px; font-weight: 900; line-height: 1.4; }
+
+  .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .chip {
+    background: var(--card); border-radius: var(--r-sm);
+    padding: 16px 16px; box-shadow: var(--shadow-soft);
+  }
+  .chip .k { font-size: 11.5px; color: var(--soft); font-weight: 700; }
+  .chip .v { margin-top: 7px; font-size: 14px; font-weight: 700; line-height: 1.5; }
+  .chip.blue { background: var(--samoa-soft); }
+  .chip.blue .v { color: var(--samoa); }
+
+  /* standings */
+  .standings {
+    background: var(--card); border-radius: var(--r-md);
+    padding: 20px 20px 10px; margin-top: 16px;
+    box-shadow: var(--shadow-soft);
+  }
+  .standings .cap { font-size: 12.5px; font-weight: 700; color: var(--soft); margin-bottom: 6px; }
+  .row {
+    display: grid; grid-template-columns: 24px 1fr auto;
+    align-items: center; padding: 12px 6px; border-bottom: 1px solid var(--hair);
+    font-size: 14px;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row .pos { color: var(--soft); font-family: var(--num); font-weight: 700; }
+  .row .pts { font-family: var(--num); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .row.me { background: var(--tonga-soft); border-radius: 13px; border-bottom: 0; font-weight: 700; }
+  .row.me .pos, .row.me .pts { color: var(--tonga); }
+
+  /* cta */
+  .cta { margin-top: 28px; text-align: center; }
+  .cta a {
+    display: block; text-decoration: none; color: #fff;
+    background: linear-gradient(135deg, #c93a40, #a83464);
+    border-radius: 19px; padding: 18px; font-weight: 700; font-size: 15px;
+    box-shadow: var(--shadow);
+  }
+  .cta .note { margin-top: 12px; font-size: 12px; color: var(--soft); }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <header class="bar">
+      <div class="brand">Try<b>line</b></div>
+      <div class="menu">大会・日程</div>
+    </header>
+    <main>
+      <section class="hero">
+        <span class="tag">Pacific Nations Cup ・ 第3節</span>
+        <div class="score">
+          <div class="side">
+            <div class="badge t">TON</div>
+            <div class="name">トンガ</div>
+          </div>
+          <div class="nums">
+            <span class="n win">30</span>
+            <span class="vs">–</span>
+            <span class="n">16</span>
+          </div>
+          <div class="side">
+            <div class="badge s">SAM</div>
+            <div class="name">サモア</div>
+          </div>
+        </div>
+        <div class="when">
+          <span>2025.9.6</span>
+          <span>FMG スタジアム</span>
+          <span>試合終了</span>
+        </div>
+      </section>
+
+      <section class="lead-card">
+        <h1>終盤の規律が、<em>トンガ</em>を救った。</h1>
+        <p class="sub">前半の11点リードを二度詰め寄られながら、トンガは最後まで反則を与えなかった。勝敗を分けたのは得点力ではなく、規律だった。</p>
+      </section>
+
+      <div class="sec-h">この試合の要点</div>
+
+      <section class="keypoint">
+        <div class="mark">63<small>分</small></div>
+        <div class="body">
+          <div class="k">勝敗を分けた瞬間</div>
+          <div class="v">ラインアウト・モールでトライ</div>
+        </div>
+      </section>
+
+      <div class="chips">
+        <div class="chip">
+          <div class="k">前半リード</div>
+          <div class="v">11点差を維持</div>
+        </div>
+        <div class="chip blue">
+          <div class="k">サモアの誤算</div>
+          <div class="v">後半の連続ペナルティ</div>
+        </div>
+      </div>
+
+      <section class="standings">
+        <div class="cap">順位への影響</div>
+        <div class="row me"><span class="pos">1</span><span>トンガ</span><span class="pts">13</span></div>
+        <div class="row"><span class="pos">2</span><span>フィジー</span><span class="pts">10</span></div>
+        <div class="row"><span class="pos">3</span><span>日本</span><span class="pts">9</span></div>
+        <div class="row"><span class="pos">4</span><span>サモア</span><span class="pts">5</span></div>
+      </section>
+
+      <div class="cta">
+        <a href="#">この試合について質問する →</a>
+        <div class="note">Premium ・ 試合ごとの解説に質問できます</div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

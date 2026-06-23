@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tryline mock 案3 余白プレミアム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;500;700&family=Cormorant:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fbfbf9;
+    --ink: #20211e;
+    --soft: #8a8b85;
+    --hair: #ebebe6;
+    --accent: #9a6b3f;       /* くすんだ1アクセント（テラコッタ・ブロンズ寄り） */
+    --tonga: #b04a44;
+    --samoa: #4a5e86;
+    --g: "Zen Kaku Gothic New", sans-serif;
+    --serif: "Cormorant", serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #e8e7e2;
+    font-family: var(--g);
+    color: var(--ink);
+    font-weight: 400;
+    display: flex;
+    justify-content: center;
+    padding: 28px 0 70px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .phone {
+    width: 412px;
+    max-width: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    box-shadow: 0 40px 100px -36px rgba(40, 38, 32, 0.5);
+  }
+  .bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 28px 18px;
+  }
+  .brand { font-family: var(--serif); font-weight: 600; font-size: 24px; letter-spacing: 0.02em; }
+  .brand b { color: var(--accent); font-style: italic; }
+  .menu { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--soft); }
+
+  main { padding: 0 28px 48px; }
+
+  .eyebrow {
+    margin-top: 26px;
+    font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--accent); display: flex; align-items: center; gap: 12px;
+  }
+  .eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--accent); }
+
+  /* score — quiet, lots of air */
+  .score {
+    margin-top: 30px;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  }
+  .team { display: flex; flex-direction: column; gap: 10px; }
+  .team.away { align-items: flex-end; text-align: right; }
+  .team .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .team.home .dot { background: var(--tonga); }
+  .team.away .dot { background: var(--samoa); align-self: flex-end; }
+  .team .nm { font-size: 16px; font-weight: 500; letter-spacing: 0.02em; }
+  .team .sub { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--soft); }
+  .figures { display: flex; align-items: baseline; gap: 16px; padding: 0 18px; }
+  .figures .num { font-family: var(--serif); font-weight: 500; font-size: 72px; line-height: 0.8; font-variant-numeric: tabular-nums; }
+  .figures .sep { width: 26px; height: 1px; background: var(--hair); align-self: center; }
+  .ftline { margin-top: 16px; text-align: center; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--soft); }
+  .ftline span { color: var(--accent); }
+
+  .rule { height: 1px; background: var(--hair); margin: 34px 0; }
+
+  /* headline */
+  h1 {
+    font-family: var(--serif); font-weight: 600; font-size: 40px; line-height: 1.2;
+    letter-spacing: 0.01em;
+  }
+  h1 .jp { display: block; font-family: var(--g); font-weight: 700; font-size: 27px; line-height: 1.45; margin-top: 4px; }
+  .standfirst {
+    margin-top: 20px; font-size: 15px; line-height: 2; color: #45463f; font-weight: 400;
+    max-width: 36ch;
+  }
+
+  /* stats as the "key points" — premium numeric treatment */
+  .stats { margin-top: 40px; display: grid; gap: 28px; }
+  .stat { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 18px; }
+  .stat .val { font-family: var(--serif); font-weight: 600; font-size: 46px; line-height: 0.85; color: var(--accent); font-variant-numeric: tabular-nums; min-width: 96px; }
+  .stat .val small { font-family: var(--g); font-weight: 700; font-size: 13px; margin-left: 3px; color: var(--ink); }
+  .stat .txt .h { font-size: 13.5px; font-weight: 700; }
+  .stat .txt .d { margin-top: 6px; font-size: 12.5px; line-height: 1.7; color: var(--soft); }
+
+  /* pull quote */
+  .pull {
+    margin: 40px 0; padding-left: 20px; border-left: 2px solid var(--accent);
+    font-family: var(--serif); font-weight: 500; font-size: 23px; line-height: 1.6; color: #2c2a24;
+  }
+  .pull .jp { font-family: var(--g); font-weight: 500; font-size: 17px; line-height: 1.8; }
+
+  /* standings — minimal */
+  .standings { margin-top: 14px; }
+  .standings .cap { font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--soft); margin-bottom: 14px; }
+  .tr {
+    display: grid; grid-template-columns: 28px 1fr auto; align-items: center;
+    padding: 13px 0; border-bottom: 1px solid var(--hair); font-size: 14px;
+  }
+  .tr .p { font-family: var(--serif); font-size: 17px; color: var(--soft); }
+  .tr .pt { font-variant-numeric: tabular-nums; font-weight: 500; }
+  .tr.me { color: var(--accent); font-weight: 700; }
+  .tr.me .p { color: var(--accent); }
+
+  /* cta */
+  .cta { margin-top: 44px; text-align: center; }
+  .cta a {
+    display: inline-block; text-decoration: none; color: var(--ink);
+    border: 1px solid var(--ink); border-radius: 999px;
+    padding: 15px 34px; font-size: 13px; letter-spacing: 0.08em; font-weight: 500;
+    transition: background 0.2s, color 0.2s;
+  }
+  .cta a:hover { background: var(--ink); color: var(--bg); }
+  .cta .note { margin-top: 14px; font-size: 11px; letter-spacing: 0.06em; color: var(--soft); }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <header class="bar">
+      <div class="brand">Try<b>line</b></div>
+      <div class="menu">Matches</div>
+    </header>
+    <main>
+      <div class="eyebrow">Pacific Nations Cup · Round 3</div>
+
+      <section class="score">
+        <div class="team home">
+          <span class="dot"></span>
+          <span class="nm">トンガ</span>
+          <span class="sub">Tonga</span>
+        </div>
+        <div class="figures">
+          <span class="num">30</span>
+          <span class="sep"></span>
+          <span class="num">16</span>
+        </div>
+        <div class="team away">
+          <span class="dot"></span>
+          <span class="nm">サモア</span>
+          <span class="sub">Samoa</span>
+        </div>
+      </section>
+      <div class="ftline">Full Time &nbsp;·&nbsp; 2025.9.6 &nbsp;·&nbsp; <span>FMG スタジアム</span></div>
+
+      <div class="rule"></div>
+
+      <h1>Discipline.<span class="jp">終盤の規律が、トンガを救った。</span></h1>
+      <p class="standfirst">前半に築いた11点のリードを、サモアは二度引き剥がしかけた。だがトンガは最後まで反則を与えず、静かに試合を閉じた。</p>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="val">11<small>点</small></div>
+          <div class="txt">
+            <div class="h">前半に築いたリード</div>
+            <div class="d">二度詰め寄られながらも、先行の優位を手放さなかった。</div>
+          </div>
+        </div>
+        <div class="stat">
+          <div class="val">63<small>分</small></div>
+          <div class="txt">
+            <div class="h">勝敗を分けたラインアウト</div>
+            <div class="d">モールでトライを奪い、試合を決定づけた瞬間。</div>
+          </div>
+        </div>
+        <div class="stat">
+          <div class="val">0<small>反則</small></div>
+          <div class="txt">
+            <div class="h">終盤10分の規律</div>
+            <div class="d">最後までペナルティを与えず、ボールを手放さなかった。</div>
+          </div>
+        </div>
+      </div>
+
+      <blockquote class="pull">
+        <span class="jp">最も規律あるチームが勝った——それだけのことだった。</span>
+      </blockquote>
+
+      <section class="standings">
+        <div class="cap">順位への影響</div>
+        <div class="tr me"><span class="p">1</span><span>トンガ</span><span class="pt">13</span></div>
+        <div class="tr"><span class="p">2</span><span>フィジー</span><span class="pt">10</span></div>
+        <div class="tr"><span class="p">3</span><span>日本</span><span class="pt">9</span></div>
+        <div class="tr"><span class="p">4</span><span>サモア</span><span class="pt">5</span></div>
+      </section>
+
+      <div class="cta">
+        <a href="#">この試合について質問する</a>
+        <div class="note">Premium ・ 試合ごとの解説に質問できます</div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

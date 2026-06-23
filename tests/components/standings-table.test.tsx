@@ -42,9 +42,19 @@ describe("StandingsTable", () => {
       "font-display",
       "text-[var(--color-ink)]",
     );
-    expect(container.querySelector("section")).toHaveClass("shadow-sm");
+    expect(container.querySelector("section")).toHaveClass(
+      "shadow-[var(--shadow-soft)]",
+    );
+    expect(container.querySelector("tbody tr")).toHaveClass("bg-emerald-50/60");
+  });
+
+  it("highlights the teams involved in the current match", () => {
+    const { container } = render(
+      <StandingsTable highlightedTeams={["Ireland"]} standings={[standing]} />,
+    );
+
     expect(container.querySelector("tbody tr")).toHaveClass(
-      "bg-emerald-50/60",
+      "bg-[var(--color-accent-subtle)]",
     );
   });
 });

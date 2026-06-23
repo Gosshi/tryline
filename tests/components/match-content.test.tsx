@@ -77,6 +77,22 @@ describe("MatchContent", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders markdown blockquotes as safe pull quotes", () => {
+    const { container } = render(
+      <MatchContent
+        content={{
+          ...baseContent,
+          contentMdJa: "> 最も重要な一文です",
+        }}
+        contentType="preview"
+        isPremium
+      />,
+    );
+
+    expect(screen.getByText("最も重要な一文です").tagName).toBe("BLOCKQUOTE");
+    expect(container.querySelector("script")).toBeNull();
+  });
+
   it("shows generatedAt in JST", () => {
     render(
       <MatchContent content={baseContent} contentType="preview" isPremium />,
@@ -260,7 +276,8 @@ describe("MatchContent", () => {
   });
 
   it("does not lock recap markdown with only two h1 headings", () => {
-    const markdown = "# この試合の核心\n\n核心本文\n\n# 試合全体像\n\n全体像本文";
+    const markdown =
+      "# この試合の核心\n\n核心本文\n\n# 試合全体像\n\n全体像本文";
 
     expect(splitRecapForPaywall(markdown)).toEqual({
       freeMd: markdown,

@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tryline mock 案1 やわらかモダン</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Outfit:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f4f6f9;
+    --card: #ffffff;
+    --ink: #1d2330;
+    --soft: #6b7384;
+    --hair: #eef1f5;
+    --tonga: #d12b34;
+    --tonga-soft: #fbe9ea;
+    --samoa: #1b58c4;
+    --samoa-soft: #e7eefb;
+    --maru: "Zen Maru Gothic", sans-serif;
+    --num: "Outfit", sans-serif;
+    --r-lg: 28px;
+    --r-md: 20px;
+    --r-sm: 14px;
+    --shadow: 0 18px 40px -22px rgba(30, 41, 70, 0.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #d9dee6;
+    font-family: var(--maru);
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 28px 0 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .phone {
+    width: 412px;
+    max-width: 100%;
+    background: var(--bg);
+    box-shadow: 0 40px 90px -30px rgba(20, 28, 50, 0.65);
+    overflow: hidden;
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+  }
+  .brand { font-weight: 900; font-size: 20px; letter-spacing: -0.01em; }
+  .brand b { color: var(--tonga); }
+  .menu {
+    font-size: 12px;
+    color: var(--soft);
+    background: var(--card);
+    padding: 7px 13px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+  main { padding: 4px 18px 40px; }
+
+  /* score hero */
+  .hero {
+    position: relative;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    padding: 22px 22px 24px;
+    color: #fff;
+    background:
+      radial-gradient(120% 90% at 12% 0%, rgba(209, 43, 52, 0.95), transparent 58%),
+      radial-gradient(120% 90% at 92% 100%, rgba(27, 88, 196, 0.95), transparent 58%),
+      linear-gradient(135deg, #c9242d, #1b4fb0);
+    box-shadow: var(--shadow);
+  }
+  .hero .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11.5px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(4px);
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+  .hero .tag::before { content: "●"; font-size: 7px; opacity: 0.9; }
+  .score {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    margin-top: 20px;
+    gap: 6px;
+  }
+  .side { display: flex; flex-direction: column; align-items: center; gap: 9px; }
+  .badge {
+    width: 52px; height: 52px; border-radius: 16px;
+    display: grid; place-items: center;
+    font-weight: 900; font-size: 20px;
+    background: rgba(255, 255, 255, 0.92);
+  }
+  .badge.t { color: var(--tonga); }
+  .badge.s { color: var(--samoa); }
+  .side .name { font-weight: 700; font-size: 15px; }
+  .nums { display: flex; align-items: center; gap: 10px; }
+  .n { font-family: var(--num); font-weight: 700; font-size: 58px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .n.win { position: relative; }
+  .n.win::after {
+    content: "WIN"; position: absolute; top: -6px; right: -6px;
+    font-family: var(--num); font-size: 9px; font-weight: 700;
+    background: #fff; color: var(--tonga); padding: 2px 5px; border-radius: 6px;
+  }
+  .vs { font-family: var(--num); font-weight: 500; opacity: 0.6; font-size: 22px; }
+  .hero .when {
+    margin-top: 18px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+    font-size: 12px; opacity: 0.92;
+  }
+  .hero .when span { background: rgba(255, 255, 255, 0.16); padding: 5px 11px; border-radius: 999px; }
+
+  /* headline card */
+  .lead-card {
+    background: var(--card);
+    border-radius: var(--r-md);
+    padding: 22px 20px;
+    margin-top: 16px;
+    box-shadow: var(--shadow);
+  }
+  .lead-card h1 {
+    font-size: 25px; font-weight: 900; line-height: 1.4;
+    letter-spacing: -0.01em;
+  }
+  .lead-card h1 em { font-style: normal; color: var(--tonga); }
+  .lead-card .sub { margin-top: 12px; font-size: 14.5px; line-height: 1.85; color: #3c4456; font-weight: 500; }
+
+  /* chips row */
+  .chips-h {
+    margin: 26px 4px 12px;
+    font-size: 13px; font-weight: 700; color: var(--soft);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .chips-h::before { content: ""; width: 6px; height: 18px; border-radius: 3px; background: var(--tonga); }
+  .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .chip {
+    background: var(--card); border-radius: var(--r-sm);
+    padding: 14px 14px; box-shadow: 0 10px 24px -18px rgba(30, 41, 70, 0.5);
+  }
+  .chip .k { font-size: 11.5px; color: var(--soft); font-weight: 700; }
+  .chip .v { margin-top: 6px; font-size: 14px; font-weight: 700; line-height: 1.5; }
+  .chip.accent { background: var(--tonga-soft); }
+  .chip.accent .v { color: var(--tonga); }
+  .chip.blue { background: var(--samoa-soft); }
+  .chip.blue .v { color: var(--samoa); }
+
+  /* mini momentum */
+  .momentum {
+    background: var(--card); border-radius: var(--r-md);
+    padding: 18px 18px 14px; margin-top: 16px;
+    box-shadow: 0 10px 24px -18px rgba(30, 41, 70, 0.5);
+  }
+  .momentum .cap { font-size: 12.5px; font-weight: 700; color: var(--soft); margin-bottom: 10px; display: flex; justify-content: space-between; }
+  .momentum svg { display: block; width: 100%; height: 92px; }
+  .legend { display: flex; gap: 14px; margin-top: 8px; font-size: 11px; color: var(--soft); }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
+
+  /* standings */
+  .standings {
+    background: var(--card); border-radius: var(--r-md);
+    padding: 18px 18px 8px; margin-top: 16px;
+    box-shadow: 0 10px 24px -18px rgba(30, 41, 70, 0.5);
+  }
+  .standings .cap { font-size: 12.5px; font-weight: 700; color: var(--soft); margin-bottom: 6px; }
+  .row {
+    display: grid; grid-template-columns: 24px 1fr auto;
+    align-items: center; padding: 11px 6px; border-bottom: 1px solid var(--hair);
+    font-size: 14px;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row .pos { color: var(--soft); font-family: var(--num); font-weight: 700; }
+  .row .pts { font-family: var(--num); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .row.me { background: var(--tonga-soft); border-radius: 12px; border-bottom: 0; font-weight: 700; }
+  .row.me .pos, .row.me .pts { color: var(--tonga); }
+
+  /* cta */
+  .cta { margin-top: 22px; text-align: center; }
+  .cta a {
+    display: block; text-decoration: none; color: #fff;
+    background: linear-gradient(135deg, #d12b34, #b21f6b);
+    border-radius: 18px; padding: 17px; font-weight: 700; font-size: 15px;
+    box-shadow: var(--shadow);
+  }
+  .cta .note { margin-top: 10px; font-size: 12px; color: var(--soft); }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <header class="bar">
+      <div class="brand">Try<b>line</b></div>
+      <div class="menu">大会・日程</div>
+    </header>
+    <main>
+      <section class="hero">
+        <span class="tag">Pacific Nations Cup ・ 第3節</span>
+        <div class="score">
+          <div class="side">
+            <div class="badge t">TON</div>
+            <div class="name">トンガ</div>
+          </div>
+          <div class="nums">
+            <span class="n win">30</span>
+            <span class="vs">–</span>
+            <span class="n">16</span>
+          </div>
+          <div class="side">
+            <div class="badge s">SAM</div>
+            <div class="name">サモア</div>
+          </div>
+        </div>
+        <div class="when">
+          <span>2025.9.6</span>
+          <span>FMG スタジアム</span>
+          <span>試合終了</span>
+        </div>
+      </section>
+
+      <section class="lead-card">
+        <h1>終盤の規律が、<em>トンガ</em>を救った。</h1>
+        <p class="sub">前半の11点リードを二度詰め寄られながら、トンガは最後まで反則を与えなかった。勝敗を分けたのは得点力ではなく、規律だった。</p>
+      </section>
+
+      <div class="chips-h">この試合の要点</div>
+      <div class="chips">
+        <div class="chip accent">
+          <div class="k">勝因</div>
+          <div class="v">63分のラインアウト・モール</div>
+        </div>
+        <div class="chip">
+          <div class="k">前半リード</div>
+          <div class="v">11点差を維持</div>
+        </div>
+        <div class="chip blue">
+          <div class="k">サモアの誤算</div>
+          <div class="v">後半の連続ペナルティ</div>
+        </div>
+        <div class="chip">
+          <div class="k">MOM</div>
+          <div class="v">トンガ SH</div>
+        </div>
+      </div>
+
+      <section class="momentum">
+        <div class="cap"><span>得点の流れ</span><span>TON 30 – 16 SAM</span></div>
+        <svg viewBox="0 0 300 92" preserveAspectRatio="none">
+          <polyline points="0,88 40,74 80,60 120,60 160,42 200,32 240,22 300,8" fill="none" stroke="#d12b34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+          <polyline points="0,88 40,88 80,80 120,68 160,68 200,56 240,46 300,46" fill="none" stroke="#1b58c4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <div class="legend">
+          <span><i style="background:#d12b34"></i>トンガ</span>
+          <span><i style="background:#1b58c4"></i>サモア</span>
+        </div>
+      </section>
+
+      <section class="standings">
+        <div class="cap">順位への影響</div>
+        <div class="row me"><span class="pos">1</span><span>トンガ</span><span class="pts">13</span></div>
+        <div class="row"><span class="pos">2</span><span>フィジー</span><span class="pts">10</span></div>
+        <div class="row"><span class="pos">3</span><span>日本</span><span class="pts">9</span></div>
+        <div class="row"><span class="pos">4</span><span>サモア</span><span class="pts">5</span></div>
+      </section>
+
+      <div class="cta">
+        <a href="#">この試合について質問する →</a>
+        <div class="note">Premium ・ 試合ごとの解説に質問できます</div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

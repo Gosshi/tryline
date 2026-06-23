@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tryline mock 案2 大胆グラフィック</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0d0d10;
+    --paper: #f2f0ea;
+    --tonga: #e2231a;
+    --samoa: #0b2fb0;
+    --anton: "Anton", sans-serif;
+    --g: "Zen Kaku Gothic New", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #1a1a1d;
+    font-family: var(--g);
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 28px 0 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .phone {
+    width: 412px;
+    max-width: 100%;
+    background: var(--paper);
+    overflow: hidden;
+    box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.8);
+  }
+  .bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; background: var(--ink); color: var(--paper);
+  }
+  .brand { font-family: var(--anton); font-size: 22px; letter-spacing: 0.02em; text-transform: uppercase; }
+  .brand b { color: var(--tonga); }
+  .menu { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.7; }
+
+  /* big color blocks */
+  .blocks { display: grid; grid-template-columns: 1fr 1fr; position: relative; }
+  .block { padding: 22px 18px 26px; color: #fff; min-height: 230px; display: flex; flex-direction: column; }
+  .block.t { background: var(--tonga); }
+  .block.s { background: var(--samoa); align-items: flex-end; text-align: right; }
+  .block .abbr { font-family: var(--anton); font-size: 15px; letter-spacing: 0.14em; opacity: 0.85; }
+  .block .team { font-family: var(--anton); font-size: 30px; line-height: 0.96; margin-top: 4px; text-transform: uppercase; }
+  .block .jp { font-weight: 900; font-size: 19px; margin-top: 2px; }
+  .block .big { font-family: var(--anton); font-size: 108px; line-height: 0.8; margin-top: auto; font-variant-numeric: tabular-nums; }
+  .block.s .big { color: rgba(255,255,255,0.82); }
+  .winflag {
+    align-self: flex-start; margin-top: 8px;
+    font-family: var(--anton); font-size: 13px; letter-spacing: 0.12em;
+    background: #fff; color: var(--tonga); padding: 3px 9px;
+  }
+  .seam {
+    position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 62px; display: grid; place-items: center; pointer-events: none;
+  }
+  .seam span {
+    font-family: var(--anton); font-size: 17px; color: var(--ink);
+    background: var(--paper); width: 44px; height: 44px; border-radius: 50%;
+    display: grid; place-items: center; box-shadow: 0 6px 0 rgba(0,0,0,0.12);
+  }
+
+  /* meta strip */
+  .strip {
+    background: var(--ink); color: var(--paper);
+    display: flex; gap: 16px; flex-wrap: wrap;
+    padding: 12px 18px; font-size: 11.5px; letter-spacing: 0.06em;
+  }
+  .strip b { font-family: var(--anton); letter-spacing: 0.1em; color: #fff; }
+
+  main { padding: 26px 20px 40px; }
+
+  /* giant headline, minimal text */
+  .kicker { font-family: var(--anton); font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--tonga); }
+  h1 {
+    font-weight: 900; font-size: 38px; line-height: 1.18; margin-top: 10px;
+    letter-spacing: -0.02em;
+  }
+  h1 mark { background: var(--ink); color: var(--paper); padding: 0 8px; }
+  .one-liner { margin-top: 16px; font-size: 15px; line-height: 1.8; font-weight: 500; max-width: 34ch; }
+
+  /* stat slabs */
+  .slabs { margin-top: 28px; display: grid; gap: 3px; background: var(--ink); }
+  .slab {
+    background: var(--paper); padding: 16px 16px;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  }
+  .slab .lab { font-weight: 700; font-size: 13.5px; }
+  .slab .fig { font-family: var(--anton); font-size: 30px; color: var(--tonga); font-variant-numeric: tabular-nums; }
+  .slab.blue .fig { color: var(--samoa); }
+  .slab small { display: block; font-family: var(--g); font-weight: 700; font-size: 10px; letter-spacing: 0.1em; color: #888; text-align: right; }
+
+  /* key moment band */
+  .band {
+    margin-top: 26px; background: var(--tonga); color: #fff;
+    padding: 20px 18px;
+  }
+  .band .t { font-family: var(--anton); font-size: 13px; letter-spacing: 0.16em; opacity: 0.85; }
+  .band .m { font-weight: 900; font-size: 22px; line-height: 1.4; margin-top: 6px; }
+
+  /* standings as bars */
+  .table { margin-top: 26px; }
+  .table .h { font-family: var(--anton); font-size: 15px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+  .tr { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .tr .p { font-family: var(--anton); font-size: 16px; width: 22px; color: var(--ink); }
+  .tr .nm { font-weight: 700; font-size: 14px; width: 78px; }
+  .tr .barwrap { flex: 1; height: 18px; background: #e0ddd4; }
+  .tr .barfill { height: 100%; background: var(--ink); }
+  .tr.me .barfill { background: var(--tonga); }
+  .tr .pt { font-family: var(--anton); font-size: 16px; width: 26px; text-align: right; }
+
+  /* cta */
+  .cta { margin-top: 30px; }
+  .cta a {
+    display: block; text-align: center; text-decoration: none;
+    background: var(--ink); color: var(--paper);
+    font-family: var(--anton); font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 18px;
+  }
+  .cta .note { margin-top: 9px; font-size: 11.5px; color: #888; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <header class="bar">
+      <div class="brand">TRY<b>LINE</b></div>
+      <div class="menu">大会 / 日程</div>
+    </header>
+
+    <section class="blocks">
+      <div class="block t">
+        <div class="abbr">TON</div>
+        <div class="team">Tonga</div>
+        <div class="jp">トンガ</div>
+        <div class="winflag">WIN</div>
+        <div class="big">30</div>
+      </div>
+      <div class="block s">
+        <div class="abbr">SAM</div>
+        <div class="team">Samoa</div>
+        <div class="jp">サモア</div>
+        <div class="big">16</div>
+      </div>
+      <div class="seam"><span>FT</span></div>
+    </section>
+
+    <div class="strip">
+      <span><b>PNC 2025</b> 第3節</span>
+      <span>2025.9.6</span>
+      <span>FMG スタジアム</span>
+    </div>
+
+    <main>
+      <div class="kicker">Match Review</div>
+      <h1>規律が、<br><mark>トンガ</mark>を救った。</h1>
+      <p class="one-liner">11点リードを二度詰め寄られても、最後まで反則を与えなかった。</p>
+
+      <div class="slabs">
+        <div class="slab">
+          <div class="lab">前半の最大リード</div>
+          <div class="fig">11<small>点差</small></div>
+        </div>
+        <div class="slab blue">
+          <div class="lab">サモア 後半の被ペナルティ</div>
+          <div class="fig">9<small>回</small></div>
+        </div>
+        <div class="slab">
+          <div class="lab">トンガ ラインアウト成功</div>
+          <div class="fig">92<small>%</small></div>
+        </div>
+      </div>
+
+      <div class="band">
+        <div class="t">THE TURNING POINT</div>
+        <div class="m">63分、ラインアウト・モールでトンガが試合を引き寄せた。</div>
+      </div>
+
+      <div class="table">
+        <div class="h">Standings</div>
+        <div class="tr me"><span class="p">1</span><span class="nm">トンガ</span><span class="barwrap"><span class="barfill" style="width:100%"></span></span><span class="pt">13</span></div>
+        <div class="tr"><span class="p">2</span><span class="nm">フィジー</span><span class="barwrap"><span class="barfill" style="width:77%"></span></span><span class="pt">10</span></div>
+        <div class="tr"><span class="p">3</span><span class="nm">日本</span><span class="barwrap"><span class="barfill" style="width:69%"></span></span><span class="pt">9</span></div>
+        <div class="tr"><span class="p">4</span><span class="nm">サモア</span><span class="barwrap"><span class="barfill" style="width:38%"></span></span><span class="pt">5</span></div>
+      </div>
+
+      <div class="cta">
+        <a href="#">Ask about this match</a>
+        <div class="note">Premium ・ 試合ごとの解説に質問できます</div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

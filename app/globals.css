@@ -4,35 +4,45 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 47.4% 11.2%;
+    --background: 220 13% 97%;
+    --foreground: 219 22% 15%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
-    --primary: 208 90% 45%;
-    --primary-foreground: 210 40% 98%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 208 90% 45%;
-    --radius: 0.75rem;
+    --card-foreground: 219 22% 15%;
+    --primary: 357 57% 51%;
+    --primary-foreground: 0 0% 100%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 7% 50%;
+    --border: 220 16% 94%;
+    --input: 220 16% 94%;
+    --ring: 357 57% 51%;
+    --radius: 1rem;
 
     /* Tryline design tokens */
-    --color-paper: oklch(98.5% 0.005 95);
-    --color-ink: oklch(18% 0.02 260);
-    --color-ink-muted: oklch(45% 0.02 260);
-    --color-rule: oklch(90% 0.01 260);
-    --color-accent: oklch(58% 0.18 145);
+    --color-paper: #f5f6f8;
+    --color-ink: #1f2530;
+    --color-ink-muted: #767d8b;
+    --color-rule: #eceef2;
+    --color-accent: #c93a40;
     --color-accent-dim: color-mix(
-      in oklch,
+      in srgb,
       var(--color-accent) 15%,
       transparent
     );
     --color-accent-subtle: color-mix(
-      in oklch,
+      in srgb,
       var(--color-accent) 10%,
       transparent
     );
+    --team-home: #667085;
+    --team-away: #475467;
+    --radius-lg: 1.875rem;
+    --radius-md: 1.375rem;
+    --radius-sm: 1rem;
+    --shadow: 0 20px 44px -24px rgb(28 38 64 / 40%);
+    --shadow-soft: 0 12px 28px -20px rgb(28 38 64 / 45%);
+    --font-body: var(--font-zen-maru);
+    --font-heading: var(--font-zen-maru);
+    --font-serif-jp: var(--font-zen-maru);
 
     /* type scale */
     --text-xs: 0.75rem;
@@ -50,15 +60,22 @@
   }
 
   body {
-    background-color: oklch(98.5% 0.005 95);
-    color: oklch(18% 0.02 260);
+    background-color: var(--color-paper);
+    color: var(--color-ink);
     font-family: var(--font-body);
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
   }
 
   h1,
   h2,
   h3 {
-    font-family: var(--font-serif-jp), "Hiragino Mincho ProN", "Yu Mincho",
-      serif;
+    font-family: var(--font-heading), sans-serif;
+    font-weight: 900;
+  }
+
+  .tabular-nums {
+    font-family: var(--font-number), sans-serif;
+    font-variant-numeric: tabular-nums;
   }
 }

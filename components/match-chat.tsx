@@ -18,12 +18,12 @@ type MatchChatProps = {
 
 const SAMPLE_QA = [
   {
-    a: "後半に生まれた逆転トライと、それを引き出した前半の戦術的な積み重ねを、スコアの流れと選手の動きを絡めて説明します。",
-    q: "この試合のターニングポイントになったプレーを教えて",
+    a: "記録された得点経過をもとに、リードが動いた時間帯と両チームのスコア推移を整理します。",
+    q: "この試合の得点の流れを教えて",
   },
   {
-    a: "スクラムとラインアウトそれぞれの優劣と、それが試合のどの局面でどう影響したかを具体的に解説します。",
-    q: "両チームのセットピース（スクラム・ラインアウト）の出来は？",
+    a: "公開済みのレビューと試合データをもとに、両チームの違いを確認できる範囲で説明します。",
+    q: "両チームの試合内容の違いは？",
   },
   {
     a: "今節の結果が順位争いやプレーオフレースに与える影響と、両チームが次に向けて修正すべき点をまとめます。",
@@ -281,13 +281,13 @@ export function MatchChat({
   const showSamples = isPremium !== true;
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+    <section className="rounded-[var(--radius-md)] bg-white p-5 text-center shadow-[var(--shadow-soft)] sm:p-7">
       <div className="mb-4 border-b border-slate-100 pb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
           AI CHAT
         </p>
-        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
-          AI チャット
+        <h2 className="mt-1 text-lg font-black text-[var(--color-ink)]">
+          この試合について質問する
         </h2>
       </div>
 
@@ -301,7 +301,7 @@ export function MatchChat({
             ログインすると1問まで無料で試せます
           </p>
           <a
-            className="inline-block rounded-full bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-white hover:opacity-90"
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-[19px] bg-gradient-to-br from-[#c93a40] to-[#a83464] px-5 py-3 text-sm font-bold text-white shadow-[var(--shadow)] transition-transform hover:-translate-y-0.5 sm:w-auto"
             href="/auth/login"
           >
             ログインして試す

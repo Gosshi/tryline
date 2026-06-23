@@ -9,6 +9,7 @@ import { MatchLineupsSection } from "@/components/match-lineups-section";
 import { PremiumMatchChat } from "@/components/premium-match-chat";
 import { PremiumRecapSection } from "@/components/premium-recap-section";
 import { SampleRecapCta } from "@/components/sample-recap-cta";
+import { StandingsTable } from "@/components/standings-table";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
@@ -19,6 +20,7 @@ import {
   listMatchIdsWithContent,
   normalizeHeadToHeadSlug,
 } from "@/lib/db/queries/matches";
+import { getStandingsForCompetition } from "@/lib/db/queries/standings";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import {
@@ -131,10 +133,11 @@ export default async function MatchDetailPage({
     notFound();
   }
 
-  const headToHeadCount = await countHeadToHeadMatches(
-    match.homeTeam.slug,
-    match.awayTeam.slug,
-  );
+  const [headToHeadCount, englishContent, standings] = await Promise.all([
+    countHeadToHeadMatches(match.homeTeam.slug, match.awayTeam.slug),
+    getMatchContentEn(id),
+    getStandingsForCompetition(match.competition.slug),
+  ]);
   const headToHeadHref =
     headToHeadCount >= 2
       ? `/h2h/${normalizeHeadToHeadSlug(
@@ -142,9 +145,6 @@ export default async function MatchDetailPage({
           match.awayTeam.slug,
         )}`
       : null;
-  const shouldShowPreviewSection =
-    match.status !== "finished" || publishedContent.preview !== null;
-  const englishContent = await getMatchContentEn(id);
   const hasEnglishContent =
     englishContent.preview !== null || englishContent.recap !== null;
   const isFreeSampleRecap =
@@ -253,8 +253,8 @@ export default async function MatchDetailPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         type="application/ld+json"
       />
-      <main className="min-h-screen bg-slate-50">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
+      <main className="min-h-screen bg-[var(--color-paper)]">
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 overflow-hidden px-3 py-6 sm:px-6 sm:py-8 md:px-8">
           <nav aria-label="パンくずリスト">
             <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
               <li>
@@ -283,34 +283,14 @@ export default async function MatchDetailPage({
 
           <MatchHeader headToHeadHref={headToHeadHref} match={match} />
 
-          <PremiumMatchChat matchId={id} />
-
           {hasEnglishContent && (
             <div className="flex items-center justify-end">
               <LangToggle currentLang="ja" matchId={match.id} />
             </div>
           )}
 
-          <MatchEventsSection
-            awayTeamName={match.awayTeam.name}
-            awayTeamSlug={match.awayTeam.slug}
-            events={events}
-            finalAwayScore={match.awayScore ?? 0}
-            finalHomeScore={match.homeScore ?? 0}
-            homeTeamId={match.homeTeamId}
-            homeTeamName={match.homeTeam.name}
-            homeTeamSlug={match.homeTeam.slug}
-          />
-
-          <MatchLineupsSection
-            awayTeamName={match.awayTeam.name}
-            homeTeamId={match.homeTeamId}
-            homeTeamName={match.homeTeam.name}
-            players={lineups}
-          />
-
           <section className="space-y-4">
-            {shouldShowPreviewSection && (
+            {match.status !== "finished" && (
               <MatchContentSection
                 content={publishedContent.preview}
                 contentType="preview"
@@ -322,6 +302,31 @@ export default async function MatchDetailPage({
             {isFreeSampleRecap ? (
               <>
                 <MatchContentSection
+                  afterBody={
+                    <MatchEventsSection
+                      awayTeamName={match.awayTeam.name}
+                      awayTeamSlug={match.awayTeam.slug}
+                      events={events}
+                      finalAwayScore={match.awayScore ?? 0}
+                      finalHomeScore={match.homeScore ?? 0}
+                      homeTeamId={match.homeTeamId}
+                      homeTeamName={match.homeTeam.name}
+                      homeTeamSlug={match.homeTeam.slug}
+                      variant="timeline"
+                    />
+                  }
+                  betweenLeadAndBody={
+                    <MatchEventsSection
+                      awayTeamName={match.awayTeam.name}
+                      awayTeamSlug={match.awayTeam.slug}
+                      events={events}
+                      finalAwayScore={match.awayScore ?? 0}
+                      finalHomeScore={match.homeScore ?? 0}
+                      homeTeamId={match.homeTeamId}
+                      homeTeamName={match.homeTeam.name}
+                      homeTeamSlug={match.homeTeam.slug}
+                    />
+                  }
                   content={publishedContent.recap}
                   contentType="recap"
                   isPremium={true}
@@ -331,13 +336,82 @@ export default async function MatchDetailPage({
               </>
             ) : (
               <PremiumRecapSection
+                afterBody={
+                  <MatchEventsSection
+                    awayTeamName={match.awayTeam.name}
+                    awayTeamSlug={match.awayTeam.slug}
+                    events={events}
+                    finalAwayScore={match.awayScore ?? 0}
+                    finalHomeScore={match.homeScore ?? 0}
+                    homeTeamId={match.homeTeamId}
+                    homeTeamName={match.homeTeam.name}
+                    homeTeamSlug={match.homeTeam.slug}
+                    variant="timeline"
+                  />
+                }
+                betweenLeadAndBody={
+                  publishedContent.recap ? (
+                    <MatchEventsSection
+                      awayTeamName={match.awayTeam.name}
+                      awayTeamSlug={match.awayTeam.slug}
+                      events={events}
+                      finalAwayScore={match.awayScore ?? 0}
+                      finalHomeScore={match.homeScore ?? 0}
+                      homeTeamId={match.homeTeamId}
+                      homeTeamName={match.homeTeam.name}
+                      homeTeamSlug={match.homeTeam.slug}
+                    />
+                  ) : null
+                }
                 content={freeRecapContent}
                 hasLockedContent={recapSplit?.hasLocked ?? false}
                 match={match}
                 nextLockedHeading={recapSplit?.nextHeadingText ?? null}
               />
             )}
+            {match.status === "finished" && publishedContent.preview && (
+              <details className="group rounded-[var(--radius-md)] bg-white shadow-[var(--shadow-soft)]">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-bold text-[var(--color-ink)] marker:content-none sm:px-7">
+                  試合前のプレビューを表示
+                  <span
+                    aria-hidden
+                    className="text-lg text-[var(--color-ink-muted)] transition-transform group-open:rotate-45"
+                  >
+                    +
+                  </span>
+                </summary>
+                <div className="space-y-4 border-t border-[var(--color-rule)] bg-[var(--color-paper)] p-3 sm:p-4">
+                  <MatchContentSection
+                    content={publishedContent.preview}
+                    contentType="preview"
+                    isPremium
+                    match={match}
+                    showCta={false}
+                  />
+                </div>
+              </details>
+            )}
           </section>
+
+          <MatchLineupsSection
+            awayTeamName={match.awayTeam.name}
+            homeTeamId={match.homeTeamId}
+            homeTeamName={match.homeTeam.name}
+            players={lineups}
+          />
+
+          <StandingsTable
+            highlightedTeams={[
+              match.homeTeam.name,
+              match.homeTeam.shortCode,
+              match.awayTeam.name,
+              match.awayTeam.shortCode,
+            ]}
+            standings={standings}
+            title="順位への影響"
+          />
+
+          <PremiumMatchChat matchId={id} />
         </div>
       </main>
     </>

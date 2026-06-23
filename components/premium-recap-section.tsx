@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 import { MatchContentSection } from "@/components/match-content-section";
 
 type Props = {
+  afterBody?: React.ComponentProps<typeof MatchContentSection>["afterBody"];
+  betweenLeadAndBody?: React.ComponentProps<
+    typeof MatchContentSection
+  >["betweenLeadAndBody"];
   content: React.ComponentProps<typeof MatchContentSection>["content"];
   hasLockedContent: boolean;
   language?: React.ComponentProps<typeof MatchContentSection>["language"];
@@ -13,6 +17,8 @@ type Props = {
 };
 
 export function PremiumRecapSection({
+  afterBody,
+  betweenLeadAndBody,
   content,
   hasLockedContent,
   language = "ja",
@@ -54,6 +60,8 @@ export function PremiumRecapSection({
 
   return (
     <MatchContentSection
+      afterBody={afterBody}
+      betweenLeadAndBody={betweenLeadAndBody}
       content={content}
       contentType="recap"
       hasLockedContent={hasLockedContent}
