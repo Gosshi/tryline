@@ -12,6 +12,7 @@ type MatchContentProps = {
   content: PublishedMatchContent;
   contentType: "preview" | "recap";
   hasLockedContent?: boolean;
+  hideLead?: boolean;
   isPremium: boolean;
   language?: "ja" | "en";
   lockedContentMd?: string | null;
@@ -145,11 +146,22 @@ function renderInline(text: string) {
 }
 
 function renderBlock(block: MarkdownBlock, index: number) {
+  if (block.type === "blockquote") {
+    return (
+      <blockquote
+        className="rounded-[var(--radius-sm)] bg-[var(--color-accent-subtle)] px-5 py-4 text-base font-black leading-7 text-[#8f2329]"
+        key={index}
+      >
+        {renderInline(block.text)}
+      </blockquote>
+    );
+  }
+
   if (block.type === "heading") {
     if (block.level <= 1) {
       return (
         <h3
-          className="scroll-mt-6 border-l-2 border-[var(--color-accent)] pl-3 font-serif text-lg font-bold text-[var(--color-ink)]"
+          className="flex scroll-mt-6 items-center gap-2.5 text-lg font-black text-[var(--color-ink)] before:h-1 before:w-5 before:shrink-0 before:rounded-full before:bg-[var(--color-accent)]"
           id={toHeadingId(block.text)}
           key={index}
         >
@@ -160,7 +172,7 @@ function renderBlock(block: MarkdownBlock, index: number) {
 
     return (
       <h4
-        className="text-sm font-bold uppercase tracking-[0.12em] text-[var(--color-ink-muted)]"
+        className="text-sm font-black text-[var(--color-ink-muted)]"
         key={index}
       >
         {renderInline(block.text)}
@@ -216,7 +228,10 @@ function renderBlock(block: MarkdownBlock, index: number) {
   }
 
   return (
-    <p className="leading-[1.9] text-[var(--color-ink)]" key={index}>
+    <p
+      className="text-[15px] font-medium leading-[2.05] text-[#353c49]"
+      key={index}
+    >
       {renderInline(block.text)}
     </p>
   );
@@ -257,6 +272,7 @@ export function MatchContent({
   content,
   contentType,
   hasLockedContent = false,
+  hideLead = false,
   isPremium,
   language = "ja",
   lockedContentMd = null,
@@ -270,18 +286,33 @@ export function MatchContent({
     isPremium && lockedContentMd
       ? `${content.contentMdJa.trim()}\n\n${lockedContentMd.trim()}`
       : content.contentMdJa;
+  const removeLead = (input: MarkdownBlock[]) => {
+    if (!hideLead) {
+      return input;
+    }
+
+    const headingIndex = input.findIndex((block) => block.type === "heading");
+    const paragraphIndex = input.findIndex(
+      (block, index) => block.type === "paragraph" && index > headingIndex,
+    );
+
+    return input.filter(
+      (_, index) => index !== headingIndex && index !== paragraphIndex,
+    );
+  };
   const allBlocks = parseMarkdown(combinedMarkdown);
   const freeBlocks = parseMarkdown(content.contentMdJa);
   const previewSplit =
     isLocked && contentType === "preview"
       ? splitAtSecondHeading(allBlocks)
       : { free: allBlocks, locked: [] };
-  const blocks =
+  const visibleBlocks =
     isLocked && contentType === "recap"
       ? freeBlocks
       : isLocked
         ? previewSplit.free
         : allBlocks;
+  const blocks = removeLead(visibleBlocks);
   const lockedBlocks =
     isLocked && contentType === "recap"
       ? []
@@ -377,7 +408,7 @@ export function MatchContent({
                     : "Premium で全文を読む",
               language,
             }}
-            className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+            className="rounded-full bg-gradient-to-br from-[#c93a40] to-[#a83464] px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-soft)] hover:opacity-90"
             href="/pricing"
           >
             {language === "en"

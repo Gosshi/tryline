@@ -17,6 +17,10 @@ const matchLineupMocks = vi.hoisted(() => ({
   getMatchLineupsForMatch: vi.fn(),
 }));
 
+const standingsMocks = vi.hoisted(() => ({
+  getStandingsForCompetition: vi.fn(),
+}));
+
 const matchMocks = vi.hoisted(() => ({
   countHeadToHeadMatches: vi.fn(),
   getMatchById: vi.fn(),
@@ -84,6 +88,7 @@ vi.mock("@/lib/db/queries/match-content", () => matchContentMocks);
 vi.mock("@/lib/db/queries/match-events", () => matchEventMocks);
 vi.mock("@/lib/db/queries/match-lineups", () => matchLineupMocks);
 vi.mock("@/lib/db/queries/matches", () => matchMocks);
+vi.mock("@/lib/db/queries/standings", () => standingsMocks);
 vi.mock("next/navigation", () => navigationMocks);
 
 import MatchEnglishPage from "@/app/matches/[id]/en/page";
@@ -169,6 +174,7 @@ function setCommonMocks(params: {
   );
   matchEventMocks.getMatchEventsForMatch.mockResolvedValue([]);
   matchLineupMocks.getMatchLineupsForMatch.mockResolvedValue([]);
+  standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
   matchMocks.countHeadToHeadMatches.mockResolvedValue(0);
 }
 

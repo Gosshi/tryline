@@ -1,5 +1,5 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
-import { Noto_Sans_JP, Noto_Serif_JP, Oswald } from "next/font/google";
+import { Outfit, Zen_Maru_Gothic } from "next/font/google";
 
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -9,26 +9,18 @@ import type { Metadata, Viewport } from "next";
 
 import "./globals.css";
 
-const heading = Oswald({
-  subsets: ["latin"],
-  variable: "--font-heading",
-  weight: ["400", "600", "700"],
+const body = Zen_Maru_Gothic({
   display: "swap",
+  subsets: ["latin"],
+  variable: "--font-zen-maru",
+  weight: ["500", "700", "900"],
 });
 
-const body = Noto_Sans_JP({
-  subsets: ["latin"],
-  variable: "--font-body",
-  weight: ["400", "500", "700"],
+const numbers = Outfit({
   display: "swap",
-});
-
-const serifJp = Noto_Serif_JP({
   subsets: ["latin"],
-  variable: "--font-serif-jp",
-  weight: ["600", "700"],
-  display: "swap",
-  preload: false,
+  variable: "--font-number",
+  weight: ["500", "700"],
 });
 
 export const metadata: Metadata = {
@@ -59,7 +51,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#16a34a",
+  themeColor: "#c93a40",
 };
 
 export default function RootLayout({
@@ -68,10 +60,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      className={`${heading.variable} ${body.variable} ${serifJp.variable}`}
-      lang="ja"
-    >
+    <html className={`${body.variable} ${numbers.variable}`} lang="ja">
       <body className="min-h-screen">
         <SiteHeader />
         {children}

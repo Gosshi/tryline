@@ -276,7 +276,7 @@ export function buildGenerateRecapPrompt(
     "選手名は入力データ（projected_lineups・match_events・sourced_facts）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。",
     lineupUsageBlock,
     "出力は日本語マークダウン本文のみ。",
-    "強調記号（**、*、__、_）・コードブロック（```）・引用（>）は使用禁止。見出し(#)と箇条書き(-)のみ使用すること。",
+    "強調記号（**、*、__、_）・コードブロック（```）は禁止。本文中で最も重要な一文だけを Markdown の引用（>）として1回使用し、それ以外の引用は禁止。見出し(#)と箇条書き(-)のみ使用すること。",
     japaneseNameGlossaryBlock,
     nameStyleInstruction,
     "試合結果はデータ内の home_score と away_score が正確な最終スコアである。スコアが高いチームが勝者。この事実を文章の根拠として使うこと。",

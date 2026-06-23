@@ -1,4 +1,5 @@
 export type MarkdownBlock =
+  | { type: "blockquote"; text: string }
   | { type: "heading"; level: number; text: string }
   | { type: "list"; items: string[] }
   | { type: "table"; rows: string[][] }
@@ -25,6 +26,18 @@ export function parseMarkdown(markdown: string): MarkdownBlock[] {
     if (line.startsWith("#")) {
       const level = line.match(/^#+/)?.[0].length ?? 1;
       blocks.push({ level, text: line.replace(/^#+\s*/, ""), type: "heading" });
+      continue;
+    }
+
+    if (line.startsWith(">")) {
+      const quoteLines = [line.replace(/^>\s?/, "")];
+
+      while ((lines[i + 1] ?? "").trim().startsWith(">")) {
+        i += 1;
+        quoteLines.push((lines[i] ?? "").trim().replace(/^>\s?/, ""));
+      }
+
+      blocks.push({ text: quoteLines.join(" "), type: "blockquote" });
       continue;
     }
 
@@ -74,6 +87,7 @@ export function parseMarkdown(markdown: string): MarkdownBlock[] {
       lines[i + 1] &&
       (lines[i + 1] ?? "").trim() &&
       !(lines[i + 1] ?? "").trim().startsWith("#") &&
+      !(lines[i + 1] ?? "").trim().startsWith(">") &&
       !(lines[i + 1] ?? "").trim().startsWith("- ") &&
       !(lines[i + 1] ?? "").trim().startsWith("|")
     ) {

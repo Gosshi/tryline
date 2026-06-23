@@ -57,14 +57,14 @@ describe("MatchHeader", () => {
     ).toHaveClass("sr-only", "font-heading");
   });
 
-  it("uses a sharp home-away color bar at the top", () => {
+  it("uses both team colors in the score hero background", () => {
     const { container } = render(<MatchHeader match={match} />);
-    const colorBar = container.querySelector("[aria-hidden='true']");
+    const hero = container.querySelector("section");
 
-    expect(colorBar).toHaveClass("absolute", "inset-x-0", "top-0", "h-[4px]");
-    expect(colorBar).toHaveStyle({
-      background: "linear-gradient(to right, #009A44 50%, #002395 50%)",
-    });
+    expect(hero).toHaveStyle("--team-home: #009A44");
+    expect(hero).toHaveStyle("--team-away: #002395");
+    expect(hero?.getAttribute("style")).toContain("#009A44");
+    expect(hero?.getAttribute("style")).toContain("#002395");
   });
 
   it("renders SVG flags with the team short codes", () => {
@@ -73,32 +73,41 @@ describe("MatchHeader", () => {
     const homeCode = header.getByText("IRL");
     const awayCode = header.getByText("FRA");
 
-    expect(homeCode).toHaveClass("shrink-0");
-    expect(homeCode.parentElement).toHaveClass(
-      "inline-flex",
-      "shrink-0",
-      "items-center",
-      "flex-row-reverse",
-    );
-    expect(homeCode.closest("p")).toHaveClass(
-      "flex",
-      "min-w-0",
-      "items-center",
-      "justify-end",
-    );
-    expect(awayCode).toHaveClass("shrink-0");
-    expect(awayCode.parentElement).toHaveClass(
-      "inline-flex",
-      "shrink-0",
-      "items-center",
-      "flex-row",
-    );
-    expect(awayCode.closest("p")).toHaveClass(
-      "flex",
-      "min-w-0",
-      "items-center",
-    );
+    expect(homeCode).toHaveClass("font-number");
+    expect(awayCode).toHaveClass("font-number");
     expect(container.querySelectorAll("svg")).toHaveLength(2);
+  });
+
+  it("shows live scores for an in-progress match", () => {
+    render(
+      <MatchHeader
+        match={{
+          ...match,
+          awayScore: 10,
+          homeScore: 12,
+          status: "in_progress",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("12")).toBeInTheDocument();
+    expect(screen.getByText("10")).toBeInTheDocument();
+    expect(screen.getByText("LIVE")).toBeInTheDocument();
+  });
+
+  it("shows a WIN badge beside the finished-match winner", () => {
+    render(
+      <MatchHeader
+        match={{
+          ...match,
+          awayScore: 18,
+          homeScore: 24,
+          status: "finished",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("WIN")).toBeInTheDocument();
   });
 
   it("shows a YouTube highlight search link only for finished matches", () => {

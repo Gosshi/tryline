@@ -2,8 +2,14 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { MatchEventsSection } from "@/components/match-events-section";
 
@@ -18,6 +24,10 @@ const event: MatchEventRow = {
   teamId: "home-team",
   type: "try",
 };
+
+afterEach(() => {
+  cleanup();
+});
 
 describe("MatchEventsSection", () => {
   it("renders nothing when no events are available", () => {
@@ -58,10 +68,11 @@ describe("MatchEventsSection", () => {
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
+        variant="timeline"
       />,
     );
 
-    expect(screen.getByText("得点経過")).toBeInTheDocument();
+    expect(screen.getByText("得点推移")).toBeInTheDocument();
     expect(screen.queryByText("Scoring Timeline")).not.toBeInTheDocument();
     expect(screen.getByText("Home Scorer トライ")).toBeInTheDocument();
     expect(
@@ -82,6 +93,7 @@ describe("MatchEventsSection", () => {
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
+        variant="timeline"
       />,
     );
 
@@ -109,6 +121,7 @@ describe("MatchEventsSection", () => {
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
+        variant="timeline"
       />,
     );
     const section = within(container);
@@ -137,10 +150,13 @@ describe("MatchEventsSection", () => {
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
+        variant="timeline"
       />,
     );
 
-    const rows = container.querySelectorAll(".grid-cols-\\[1fr_2\\.5rem_1fr\\]");
+    const rows = container.querySelectorAll(
+      ".grid-cols-\\[1fr_2\\.5rem_1fr\\]",
+    );
 
     expect(rows[1]).not.toHaveStyle({
       paddingLeft: "8px",
@@ -179,6 +195,7 @@ describe("MatchEventsSection", () => {
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
+        variant="timeline"
       />,
     );
     const section = within(container);
@@ -209,6 +226,7 @@ describe("MatchEventsSection", () => {
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
+        variant="timeline"
       />,
     );
     const section = within(container);
@@ -216,5 +234,53 @@ describe("MatchEventsSection", () => {
     expect(
       section.queryByRole("img", { name: "スコア推移グラフ" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders the deterministic key moment and event-derived chips", () => {
+    render(
+      <MatchEventsSection
+        awayTeamName="France"
+        awayTeamSlug="france"
+        events={[
+          event,
+          {
+            ...event,
+            id: "away-yellow",
+            minute: 26,
+            playerName: "Away Player",
+            teamId: "away-team",
+            type: "yellow_card",
+          },
+        ]}
+        finalAwayScore={0}
+        finalHomeScore={5}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        homeTeamSlug="ireland"
+      />,
+    );
+
+    expect(screen.getByText("この試合の要点")).toBeInTheDocument();
+    expect(screen.getByText("リードを奪った得点")).toBeInTheDocument();
+    expect(screen.getByText("前半の最大リード")).toBeInTheDocument();
+    expect(screen.getByText("イエローカード")).toBeInTheDocument();
+  });
+
+  it("hides the primary key moment when event scores are incomplete", () => {
+    render(
+      <MatchEventsSection
+        awayTeamName="France"
+        awayTeamSlug="france"
+        events={[event]}
+        finalAwayScore={0}
+        finalHomeScore={12}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        homeTeamSlug="ireland"
+      />,
+    );
+
+    expect(screen.queryByText("リードを奪った得点")).not.toBeInTheDocument();
+    expect(screen.getByText("前半の最大リード")).toBeInTheDocument();
   });
 });

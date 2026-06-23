@@ -54,7 +54,7 @@ export function ScoreGraph({
     .join(" ");
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-paper)] px-2 pt-2">
       <svg
         aria-label="スコア推移グラフ"
         className="w-full"
@@ -65,7 +65,7 @@ export function ScoreGraph({
         {[0, Math.round(maxScore / 2), maxScore].map((score) => (
           <g key={score}>
             <line
-              stroke="oklch(90% 0.01 260)"
+              stroke="#dfe2e8"
               strokeWidth={0.5}
               x1={PADDING.left}
               x2={WIDTH - PADDING.right}
@@ -73,7 +73,7 @@ export function ScoreGraph({
               y2={toY(score)}
             />
             <text
-              fill="oklch(45% 0.02 260)"
+              fill="#767d8b"
               fontSize={11}
               textAnchor="end"
               x={PADDING.left - 4}
@@ -84,7 +84,7 @@ export function ScoreGraph({
           </g>
         ))}
         <line
-          stroke="oklch(90% 0.01 260)"
+          stroke="#dfe2e8"
           strokeDasharray="3,3"
           strokeWidth={0.5}
           x1={toX(80)}
@@ -136,7 +136,7 @@ export function ScoreGraph({
           })}
         {[0, 20, 40, 60, 80].map((minute) => (
           <text
-            fill="oklch(45% 0.02 260)"
+            fill="#767d8b"
             fontSize={11}
             key={minute}
             textAnchor="middle"
@@ -149,7 +149,7 @@ export function ScoreGraph({
         {tooltip && (
           <g>
             <rect
-              fill="oklch(18% 0.02 260)"
+              fill="#1f2530"
               height={18}
               opacity={0.85}
               rx={3}
@@ -157,7 +157,12 @@ export function ScoreGraph({
               x={tooltip.x + 6}
               y={tooltip.y - 20}
             />
-            <text fill="white" fontSize={10} x={tooltip.x + 10} y={tooltip.y - 7}>
+            <text
+              fill="white"
+              fontSize={10}
+              x={tooltip.x + 10}
+              y={tooltip.y - 7}
+            >
               {tooltip.text}
             </text>
           </g>
