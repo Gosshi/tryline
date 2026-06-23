@@ -369,6 +369,28 @@ export default async function MatchDetailPage({
                 nextLockedHeading={recapSplit?.nextHeadingText ?? null}
               />
             )}
+            {match.status === "finished" && publishedContent.preview && (
+              <details className="group rounded-[var(--radius-md)] bg-white shadow-[var(--shadow-soft)]">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-bold text-[var(--color-ink)] marker:content-none sm:px-7">
+                  試合前のプレビューを表示
+                  <span
+                    aria-hidden
+                    className="text-lg text-[var(--color-ink-muted)] transition-transform group-open:rotate-45"
+                  >
+                    +
+                  </span>
+                </summary>
+                <div className="space-y-4 border-t border-[var(--color-rule)] bg-[var(--color-paper)] p-3 sm:p-4">
+                  <MatchContentSection
+                    content={publishedContent.preview}
+                    contentType="preview"
+                    isPremium
+                    match={match}
+                    showCta={false}
+                  />
+                </div>
+              </details>
+            )}
           </section>
 
           <MatchLineupsSection

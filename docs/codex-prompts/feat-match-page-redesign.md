@@ -24,6 +24,7 @@
    - 本文: Markdown の `blockquote` を引用ブロック（モック `.pull`＝薄赤強調）としてスタイル。`rehype-raw` 不使用・XSS 防止維持（`fix-markdown-renderer.md` の方針踏襲）。
    - 「続きを読む」を使う場合も**全文を初期 DOM に残す**（折りたたみは CSS/詳細表示で、HTML には全文）。
    - 未公開時は既存 `ContentPlaceholder` ＋ `deriveContentState`（`p1-match-content-display`）を踏襲。
+   - **試合終了後もプレビューは消さない**: recap の下に **折りたたみ（`<details>`・既定閉じ）「試合前のプレビューを表示」** で残す。全文は初期 DOM に出す。`<meta description>`／構造化データの主ソースは**レビュー優先**を維持（終了後にプレビューが上書きしないこと）。現状の `match.status !== "finished"` 出し分けに、終了時はプレビューを折りたたみで再掲する分岐を足す。
 4. **要点（キーモーメント）** … `components/match-events-section.tsx`
    - 主役 1（キーモーメント）＋小チップ 2。**`match_events` 由来の得点事実のみ**。
    - 主役は **lead-clinching score の決定的導出関数**で選ぶ（UI 側、`match-events` クエリ結果に対する純関数、**単体テスト必須**）。ルール/エッジケースは仕様「要点キーモーメントの主役選定」を厳守。
