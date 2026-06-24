@@ -51,6 +51,7 @@ export function formatCompetitionName(name: string): string {
 export const COMPETITION_FAMILY_COLORS: Record<string, string> = {
   "autumn-nations": "#2D2D2D",
   "league-one": "#FF6B00",
+  "nations-championship": "#1A3A5C",
   pnc: "#00539B",
   premiership: "#1C2C6B",
   "rugby-championship": "#C8102E",
@@ -63,6 +64,7 @@ export const COMPETITION_FAMILY_COLORS: Record<string, string> = {
 const FAMILY_DISPLAY_NAMES: Record<string, string> = {
   "autumn-nations": "Autumn Nations",
   "league-one": "ジャパンラグビー リーグワン",
+  "nations-championship": "Nations Championship",
   "pacific-nations-cup": "Pacific Nations Cup",
   pnc: "Pacific Nations Cup",
   premiership: "Premiership",

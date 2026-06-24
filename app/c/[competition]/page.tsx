@@ -30,6 +30,8 @@ const COMPETITION_HERO_IMAGES: Record<string, string> = {
     "https://images.unsplash.com/photo-1595432973730-d07ba6b406c2?w=1200&q=80",
   "rugby-championship":
     "https://images.unsplash.com/photo-1570878786170-0723365bdf35?w=1200&q=80",
+  "nations-championship":
+    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80",
   "autumn-nations":
     "https://images.unsplash.com/photo-1763854413165-1713bc5a7f4a?w=1200&q=80",
   pnc: "https://images.unsplash.com/photo-1730946450226-d15e3bca7877?w=1200&q=80",
@@ -53,6 +55,8 @@ const COMPETITION_DESCRIPTIONS: Record<string, string> = {
     "スーパーラグビー・パシフィックはニュージーランド・オーストラリア・フィジー・日本のクラブが争うアジア太平洋最高峰のクラブラグビー大会です。",
   "rugby-championship":
     "ラグビーチャンピオンシップは南半球強豪国ニュージーランド・南アフリカ・アルゼンチン・オーストラリアが争う国際ラグビー大会。毎年7〜9月に開催されます。",
+  "nations-championship":
+    "ネーションズチャンピオンシップは World Rugby が 2026 年に創設した国際ラグビー大会。シックスネイションズ 6 か国と南半球・アジア 6 か国（NZ・南アフリカ・オーストラリア・アルゼンチン・日本・フィジー）が 7 月と 11 月の 2 フェーズで対戦し、11 月末のファイナルズウィークエンドで王者を決めます。",
   rwc: "ラグビーワールドカップは4年に1度開催されるラグビーユニオン最大の国際大会。世界各国がプール戦からノックアウトを経て世界一を決めます。",
   "autumn-nations":
     "オータムネーションズシリーズは毎年11月に開催される秋の国際マッチシリーズ。ヨーロッパのティア1国が南半球・太平洋諸国を迎えてホームゲームを行います。",

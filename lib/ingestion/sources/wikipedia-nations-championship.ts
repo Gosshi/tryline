@@ -1,0 +1,152 @@
+import { load } from "cheerio";
+
+import {
+  buildUtcIsoString,
+  isMissingWikipediaPage,
+  mapWithTeamSlugs,
+  normalizeWhitespace,
+  parseScoreText,
+  toEmptyWhenMissingOrUnstructured,
+} from "@/lib/ingestion/sources/live-source-utils";
+import { parseWikipediaSixNationsHtml } from "@/lib/ingestion/sources/wikipedia-six-nations";
+import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
+
+import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
+import type { ParsedWikipediaMatch } from "@/lib/ingestion/sources/wikipedia-six-nations";
+
+const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
+  Argentina: "argentina",
+  Australia: "australia",
+  England: "england",
+  Fiji: "fiji",
+  France: "france",
+  Ireland: "ireland",
+  Italy: "italy",
+  Japan: "japan",
+  "New Zealand": "new-zealand",
+  Scotland: "scotland",
+  "South Africa": "south-africa",
+  Wales: "wales",
+};
+
+function buildWikipediaUrl(season: string) {
+  return `https://en.wikipedia.org/wiki/${season}_Nations_Championship`;
+}
+
+function slugifyEventPart(value: string) {
+  return normalizeWhitespace(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function parseRoundNumber(value: string) {
+  const matched = normalizeWhitespace(value).match(/^Round\s+(\d+)$/i);
+
+  return matched?.[1] ? Number(matched[1]) : null;
+}
+
+function parseRoundTableMatches(html: string): ParsedWikipediaMatch[] {
+  const $ = load(html);
+  const matches: ParsedWikipediaMatch[] = [];
+
+  for (const heading of $("div.mw-heading").toArray()) {
+    const roundName = normalizeWhitespace($(heading).text()).replace(
+      /\[edit\]$/i,
+      "",
+    );
+    const round = parseRoundNumber(roundName);
+
+    if (!round) {
+      continue;
+    }
+
+    let cursor = $(heading).next();
+
+    while (cursor.length > 0 && !cursor.is("div.mw-heading")) {
+      if (cursor.is("table")) {
+        cursor.find("tr").each((index, row) => {
+          if (index === 0) {
+            return;
+          }
+
+          const cells = $(row).find("th, td");
+
+          if (cells.length < 5) {
+            return;
+          }
+
+          const dateText = normalizeWhitespace(cells.eq(0).text());
+          const homeTeamName = normalizeWhitespace(cells.eq(1).text());
+          const score = parseScoreText(cells.eq(2).text());
+          const awayTeamName = normalizeWhitespace(cells.eq(3).text());
+          const venue = normalizeWhitespace(cells.eq(4).text()) || null;
+
+          if (!dateText || !homeTeamName || !awayTeamName) {
+            return;
+          }
+
+          matches.push({
+            awayScore: score.awayScore,
+            awayTeamName,
+            eventId: [
+              `round_${round}`,
+              slugifyEventPart(homeTeamName),
+              "v",
+              slugifyEventPart(awayTeamName),
+            ].join("_"),
+            homeScore: score.homeScore,
+            homeTeamName,
+            kickoffAt: buildUtcIsoString({ dateText }),
+            lineupTableHtml: null,
+            rawHtml: $.html(row),
+            round,
+            roundName: null,
+            status: score.status,
+            venue,
+          });
+        });
+      }
+
+      cursor = cursor.next();
+    }
+  }
+
+  return matches;
+}
+
+function parseFinalsMatches(html: string): ParsedWikipediaMatch[] {
+  return toEmptyWhenMissingOrUnstructured(
+    () => parseWikipediaSixNationsHtml(html),
+    ["Unable to locate the Wikipedia fixtures section", "No fixture vevent"],
+  );
+}
+
+export function parseNationsChampionshipLiveHtml(
+  html: string,
+): ParsedLiveMatch[] {
+  const parsedMatches = [
+    ...parseRoundTableMatches(html),
+    ...parseFinalsMatches(html),
+  ];
+
+  return mapWithTeamSlugs(parsedMatches, TEAM_SLUG_BY_WIKIPEDIA_NAME);
+}
+
+export async function fetchNationsChampionship2026(): Promise<
+  ParsedLiveMatch[]
+> {
+  const sourceUrl = buildWikipediaUrl("2026");
+
+  try {
+    const response = await fetchWithPolicy(sourceUrl);
+
+    return parseNationsChampionshipLiveHtml(await response.text());
+  } catch (error) {
+    if (isMissingWikipediaPage(error)) {
+      return [];
+    }
+
+    throw error;
+  }
+}
