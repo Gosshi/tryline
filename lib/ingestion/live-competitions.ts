@@ -5,6 +5,7 @@ import {
 } from "@/lib/ingestion/live-ingest";
 import { fetchLeagueOne202526 } from "@/lib/ingestion/sources/league-one-live";
 import { fetchAutumnNations2026 } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
+import { fetchNationsChampionship2026 } from "@/lib/ingestion/sources/wikipedia-nations-championship";
 import { fetchPnc2026 } from "@/lib/ingestion/sources/wikipedia-pnc";
 import { fetchPremiership202526 } from "@/lib/ingestion/sources/wikipedia-premiership";
 import { fetchRugbyChampionship2026 } from "@/lib/ingestion/sources/wikipedia-rugby-championship";
@@ -43,6 +44,14 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
     competitionSlug: "rugby-championship-2026",
     family: "rugby-championship",
     fetch: fetchRugbyChampionship2026,
+    season: "2026",
+    sourceLabel: "wikipedia",
+  },
+  {
+    competitionName: "Nations Championship 2026",
+    competitionSlug: "nations-championship-2026",
+    family: "nations-championship",
+    fetch: fetchNationsChampionship2026,
     season: "2026",
     sourceLabel: "wikipedia",
   },

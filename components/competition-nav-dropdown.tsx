@@ -39,6 +39,11 @@ export const HEADER_COMPETITIONS = [
     label: "ザ・ラグビーチャンピオンシップ",
   },
   {
+    family: "nations-championship",
+    href: "/c/nations-championship",
+    label: "ネーションズチャンピオンシップ",
+  },
+  {
     family: "rwc",
     href: "/c/rwc",
     label: "ラグビーワールドカップ",

@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { LIVE_COMPETITION_SOURCES } from "@/lib/ingestion/live-competitions";
 import { parseLeagueOneLiveHtml } from "@/lib/ingestion/sources/league-one-live";
+import {
+  fetchNationsChampionship2026,
+  parseNationsChampionshipLiveHtml,
+} from "@/lib/ingestion/sources/wikipedia-nations-championship";
 import { parsePncLiveHtml } from "@/lib/ingestion/sources/wikipedia-pnc";
 import { parsePremiershipLiveHtml } from "@/lib/ingestion/sources/wikipedia-premiership";
 import {
@@ -79,6 +83,54 @@ const PNC_HTML = `
     <td class="vcard"><span class="fn org"><a>Fiji</a></span></td>
   </tr></tbody></table>
   <table><tbody><tr><td><span class="location">Tokyo</span></td></tr></tbody></table>
+</div>
+`;
+
+const NATIONS_CHAMPIONSHIP_HTML = `
+<div class="mw-heading mw-heading2"><h2 id="Fixtures">Fixtures</h2></div>
+<div class="mw-heading mw-heading3"><h3 id="Southern_Hemisphere_Series">Southern Hemisphere Series</h3></div>
+<div class="mw-heading mw-heading4"><h4 id="Round_1">Round 1</h4></div>
+<table>
+  <tbody>
+    <tr><th></th><th></th><th></th><th></th><th></th></tr>
+    <tr>
+      <td>4 July 2026</td>
+      <td>Japan</td>
+      <td>v</td>
+      <td>Italy</td>
+      <td>Chichibunomiya Rugby Stadium, Tokyo</td>
+    </tr>
+    <tr>
+      <td>4 July 2026</td>
+      <td>New Zealand</td>
+      <td>31-20</td>
+      <td>France</td>
+      <td>Te Kaha, Christchurch</td>
+    </tr>
+  </tbody>
+</table>
+<div class="mw-heading mw-heading4"><h4 id="Round_2">Round 2</h4></div>
+<table>
+  <tbody>
+    <tr><th></th><th></th><th></th><th></th><th></th></tr>
+    <tr>
+      <td>11 July 2026</td>
+      <td>Japan</td>
+      <td>v</td>
+      <td>Ireland</td>
+      <td>Newcastle International Sports Centre, Newcastle, Australia</td>
+    </tr>
+  </tbody>
+</table>
+<div class="mw-heading mw-heading3"><h3 id="Finals">Finals</h3></div>
+<div class="vevent summary" id="Northern_6_v_Southern_6">
+  <table><tbody><tr><td>27 November 2026<br />16:40 GMT</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org">Northern 6</span></td>
+    <td>v</td>
+    <td class="vcard"><span class="fn org">Southern 6</span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Twickenham Stadium, London</span></td></tr></tbody></table>
 </div>
 `;
 
@@ -231,6 +283,24 @@ describe("live competition source adapters", () => {
     });
   });
 
+  it("registers Nations Championship 2026 after Rugby Championship", () => {
+    const rugbyChampionshipIndex = LIVE_COMPETITION_SOURCES.findIndex(
+      (source) => source.competitionSlug === "rugby-championship-2026",
+    );
+    const nationsChampionshipIndex = LIVE_COMPETITION_SOURCES.findIndex(
+      (source) => source.competitionSlug === "nations-championship-2026",
+    );
+
+    expect(nationsChampionshipIndex).toBe(rugbyChampionshipIndex + 1);
+    expect(LIVE_COMPETITION_SOURCES[nationsChampionshipIndex]).toMatchObject({
+      competitionName: "Nations Championship 2026",
+      family: "nations-championship",
+      fetch: fetchNationsChampionship2026,
+      season: "2026",
+      sourceLabel: "wikipedia",
+    });
+  });
+
   it("keeps Six Nations 2027 scheduled and finished matches with per-match HTML", () => {
     const matches = parseSixNations2027LiveHtml(SIX_NATIONS_2027_HTML);
 
@@ -303,6 +373,44 @@ describe("live competition source adapters", () => {
       round: 1,
       status: "scheduled",
     });
+  });
+
+  it("parses Nations Championship round tables and skips unresolved finals placeholders", () => {
+    const matches = parseNationsChampionshipLiveHtml(
+      NATIONS_CHAMPIONSHIP_HTML,
+    );
+
+    expect(matches).toHaveLength(3);
+    expect(matches[0]).toMatchObject({
+      awayScore: null,
+      awayTeamSlug: "italy",
+      homeScore: null,
+      homeTeamSlug: "japan",
+      kickoffAt: "2026-07-04T00:00:00.000Z",
+      round: 1,
+      status: "scheduled",
+      venue: "Chichibunomiya Rugby Stadium, Tokyo",
+    });
+    expect(matches[1]).toMatchObject({
+      awayScore: 20,
+      awayTeamSlug: "france",
+      homeScore: 31,
+      homeTeamSlug: "new-zealand",
+      round: 1,
+      status: "finished",
+    });
+    expect(matches[2]).toMatchObject({
+      awayTeamSlug: "ireland",
+      homeTeamSlug: "japan",
+      round: 2,
+    });
+    expect(
+      matches.some(
+        (match) =>
+          match.homeTeamName === "Northern 6" ||
+          match.awayTeamName === "Southern 6",
+      ),
+    ).toBe(false);
   });
 
   it("keeps URC regular season scheduled vevents", () => {

@@ -14,6 +14,9 @@ describe("formatFamilyName", () => {
   });
 
   it("formats formal competition family names", () => {
+    expect(formatFamilyName("nations-championship")).toBe(
+      "Nations Championship",
+    );
     expect(formatFamilyName("rugby-championship")).toBe(
       "The Rugby Championship",
     );
@@ -53,6 +56,7 @@ describe("formatFamilyName", () => {
     expect(getCompetitionFamilyColor("top-14")).toBe("#D62B31");
     expect(getCompetitionFamilyColor("super-rugby-pacific")).toBe("#0057B8");
     expect(getCompetitionFamilyColor("rugby-championship")).toBe("#C8102E");
+    expect(getCompetitionFamilyColor("nations-championship")).toBe("#1A3A5C");
     expect(getCompetitionFamilyColor("unknown-family")).toBe("#1e293b");
   });
 });
