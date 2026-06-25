@@ -18,7 +18,7 @@ describe("CompetitionViewingGuide", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "日本での視聴方法" }),
+      screen.getByRole("heading", { name: "大会ガイド" }),
     ).toBeInTheDocument();
     expect(screen.getByText("見逃し配信あり")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "公式サイト" })).toHaveAttribute(

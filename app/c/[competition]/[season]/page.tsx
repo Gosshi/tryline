@@ -9,6 +9,7 @@ import { SeasonSwitcher } from "@/components/season-switcher";
 import { StandingsTable } from "@/components/standings-table";
 import {
   getCompetitionBySlug,
+  getCompetitionGuide,
   listFamilies,
   listSeasonsByFamily,
 } from "@/lib/db/queries/competitions";
@@ -120,10 +121,11 @@ export default async function SeasonPage({ params }: Props) {
     notFound();
   }
 
-  const [matches, standings, seasons] = await Promise.all([
+  const [matches, standings, seasons, guide] = await Promise.all([
     listMatchesForCompetition(comp.slug),
     getStandingsForCompetition(comp.slug),
     listSeasonsByFamily(comp.family),
+    getCompetitionGuide(comp.family),
   ]);
   const contentStatusMap = await getContentStatusForMatches(
     matches.map((match) => match.id),
@@ -247,7 +249,7 @@ export default async function SeasonPage({ params }: Props) {
           <StandingsTable standings={standings} />
         </div>
 
-        <CompetitionViewingGuide markdown={comp.viewingGuideJa} />
+        <CompetitionViewingGuide markdown={guide} />
       </div>
     </main>
   );

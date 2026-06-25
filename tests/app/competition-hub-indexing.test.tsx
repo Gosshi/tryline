@@ -9,6 +9,7 @@ import CompetitionHubPage from "@/app/c/[competition]/page";
 import { metadata as rwc2027Metadata } from "@/app/c/rwc/2027/page";
 
 const competitionMocks = vi.hoisted(() => ({
+  getCompetitionGuide: vi.fn(),
   listSeasonsByFamily: vi.fn(),
 }));
 
@@ -29,6 +30,7 @@ vi.mock("@/components/match-card", () => ({
 }));
 
 vi.mock("@/lib/db/queries/competitions", () => ({
+  getCompetitionGuide: competitionMocks.getCompetitionGuide,
   listSeasonsByFamily: competitionMocks.listSeasonsByFamily,
 }));
 
@@ -52,7 +54,6 @@ describe("competition hub indexing", () => {
         season: "2027",
         slug: "rwc-2027",
         startDate: "2027-10-01",
-        viewingGuideJa: null,
       },
       {
         champion: "South Africa",
@@ -66,9 +67,9 @@ describe("competition hub indexing", () => {
         season: "2023",
         slug: "rwc-2023",
         startDate: "2023-09-08",
-        viewingGuideJa: null,
       },
     ]);
+    competitionMocks.getCompetitionGuide.mockResolvedValue(null);
     matchMocks.getRecentlyReviewedMatchesForFamily.mockResolvedValue([]);
   });
 
