@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { MatchCard } from "@/components/match-card";
 import { RoundHeading } from "@/components/round-heading";
@@ -130,6 +130,12 @@ export function SeasonMatchGroups({
     () => getDefaultOpenGroupIndexes(visibleGroups),
     [visibleGroups],
   );
+  const defaultScrollIndex = useMemo(() => {
+    const indexes = [...defaultOpenIndexes].sort((left, right) => left - right);
+
+    return indexes[Math.floor(indexes.length / 2)] ?? -1;
+  }, [defaultOpenIndexes]);
+  const didAutoScroll = useRef(false);
   const [openIndexes, setOpenIndexes] = useState<Set<number>>(() =>
     collapsible
       ? defaultOpenIndexes
@@ -143,6 +149,19 @@ export function SeasonMatchGroups({
         : new Set(visibleGroups.map((_, index) => index)),
     );
   }, [collapsible, defaultOpenIndexes, visibleGroups]);
+
+  useEffect(() => {
+    if (!collapsible || didAutoScroll.current || defaultScrollIndex < 0) {
+      return;
+    }
+
+    const target = document.querySelector<HTMLElement>(
+      `[data-round-index="${defaultScrollIndex}"]`,
+    );
+
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    didAutoScroll.current = true;
+  }, [collapsible, defaultScrollIndex]);
 
   return (
     <>
@@ -204,6 +223,7 @@ export function SeasonMatchGroups({
                 <button
                   aria-expanded={isOpen}
                   className="flex w-full items-center justify-between gap-4 py-1 text-left"
+                  data-round-index={index}
                   onClick={() =>
                     setOpenIndexes((current) => {
                       const next = new Set(current);

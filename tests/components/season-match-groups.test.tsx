@@ -2,8 +2,8 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   SeasonMatchGroups,
@@ -32,6 +32,14 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+
+const scrollIntoViewMock = vi.fn();
+
+beforeEach(() => {
+  cleanup();
+  scrollIntoViewMock.mockClear();
+  Element.prototype.scrollIntoView = scrollIntoViewMock;
+});
 
 function buildMatch(
   id: string,
@@ -164,6 +172,49 @@ describe("season match groups", () => {
     expect(roundNineButton).toHaveAttribute("aria-expanded", "true");
     fireEvent.click(roundNineButton);
     expect(roundNineButton).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("scrolls to the center default-open round when groups are collapsible", () => {
+    const groupedMatches = Array.from({ length: 10 }, (_, index) =>
+      buildGroup(
+        index + 1,
+        `2026-01-${String(index + 1).padStart(2, "0")}T00:00:00.000Z`,
+      ),
+    );
+
+    render(
+      <SeasonMatchGroups
+        contentStatusMap={{}}
+        groupedMatches={groupedMatches}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "第10節" })).toHaveAttribute(
+      "data-round-index",
+      "9",
+    );
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "start",
+    });
+  });
+
+  it("does not auto-scroll when groups are not collapsible", () => {
+    const groupedMatches = Array.from({ length: 5 }, (_, index) =>
+      buildGroup(
+        index + 1,
+        `2026-01-${String(index + 1).padStart(2, "0")}T00:00:00.000Z`,
+      ),
+    );
+
+    render(
+      <SeasonMatchGroups
+        contentStatusMap={{}}
+        groupedMatches={groupedMatches}
+      />,
+    );
+
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
   });
 
   it("links numeric round headings to round hub pages", () => {
