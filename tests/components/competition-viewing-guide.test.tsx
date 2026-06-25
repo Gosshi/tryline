@@ -27,6 +27,19 @@ describe("CompetitionViewingGuide", () => {
     );
   });
 
+  it("renders ordered lists and bold text", () => {
+    const { container } = render(
+      <CompetitionViewingGuide markdown={"1. **優勝候補**を確認\n2. 日程を見る"} />,
+    );
+
+    const list = container.querySelector("ol");
+
+    expect(list).not.toBeNull();
+    expect(list).toHaveClass("list-decimal");
+    expect(screen.getByText("優勝候補")).toHaveProperty("tagName", "STRONG");
+    expect(screen.getByText("日程を見る")).toBeInTheDocument();
+  });
+
   it("renders nothing when the guide is empty", () => {
     const { container } = render(
       <CompetitionViewingGuide markdown="   " />,
