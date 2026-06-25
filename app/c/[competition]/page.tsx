@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
 import { MatchCard } from "@/components/match-card";
-import { listSeasonsByFamily } from "@/lib/db/queries/competitions";
+import {
+  getCompetitionGuide,
+  listSeasonsByFamily,
+} from "@/lib/db/queries/competitions";
 import { getRecentlyReviewedMatchesForFamily } from "@/lib/db/queries/matches";
 import {
   formatCompetitionTitle,
@@ -95,9 +98,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CompetitionHubPage({ params }: Props) {
   const { competition } = await params;
-  const [seasons, recentReviews] = await Promise.all([
+  const [seasons, recentReviews, guide] = await Promise.all([
     listSeasonsByFamily(competition),
     getRecentlyReviewedMatchesForFamily(competition, 3),
+    getCompetitionGuide(competition),
   ]);
 
   if (seasons.length === 0) {
@@ -153,7 +157,7 @@ export default async function CompetitionHubPage({ params }: Props) {
           </p>
         </Link>
 
-        <CompetitionViewingGuide markdown={latestSeason.viewingGuideJa} />
+        <CompetitionViewingGuide markdown={guide} />
 
         {recentReviews.length > 0 && (
           <section className="space-y-3">

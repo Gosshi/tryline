@@ -145,7 +145,7 @@ export function CompetitionViewingGuide({
         className="font-heading text-2xl font-bold text-[var(--color-ink)]"
         id="viewing-guide-heading"
       >
-        日本での視聴方法
+        大会ガイド
       </h2>
       <div className="space-y-4 text-sm sm:text-base">
         {parseMarkdown(content).map(renderBlock)}

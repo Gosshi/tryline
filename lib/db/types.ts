@@ -265,6 +265,24 @@ export type Database = {
           },
         ];
       };
+      competition_guides: {
+        Row: {
+          family: string;
+          guide_ja: string;
+          updated_at: string;
+        };
+        Insert: {
+          family: string;
+          guide_ja: string;
+          updated_at?: string;
+        };
+        Update: {
+          family?: string;
+          guide_ja?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       competitions: {
         Row: {
           champion: string | null;
@@ -279,7 +297,6 @@ export type Database = {
           slug: string;
           start_date: string | null;
           updated_at: string;
-          viewing_guide_ja: string | null;
         };
         Insert: {
           champion?: string | null;
@@ -294,7 +311,6 @@ export type Database = {
           slug: string;
           start_date?: string | null;
           updated_at?: string;
-          viewing_guide_ja?: string | null;
         };
         Update: {
           champion?: string | null;
@@ -309,7 +325,6 @@ export type Database = {
           slug?: string;
           start_date?: string | null;
           updated_at?: string;
-          viewing_guide_ja?: string | null;
         };
         Relationships: [];
       };

@@ -12,7 +12,6 @@ export type CompetitionRow = {
   season: string;
   startDate: string | null;
   endDate: string | null;
-  viewingGuideJa: string | null;
 };
 
 export type HomepageCompetitionLink = {
@@ -34,7 +33,6 @@ type CompetitionDbRow = {
   season: string;
   start_date: string | null;
   end_date: string | null;
-  viewing_guide_ja?: string | null;
 };
 
 type MatchContentCompetitionRow = {
@@ -54,7 +52,6 @@ function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
     season: row.season,
     slug: row.slug,
     startDate: row.start_date,
-    viewingGuideJa: row.viewing_guide_ja ?? null,
   };
 }
 
@@ -165,6 +162,23 @@ export async function getCompetitionBySlug(
   }
 
   return data ? mapCompetitionRow(data as CompetitionDbRow) : null;
+}
+
+export async function getCompetitionGuide(
+  family: string,
+): Promise<string | null> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("competition_guides")
+    .select("guide_ja")
+    .eq("family", family)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.guide_ja ?? null;
 }
 
 export async function listFamilies(): Promise<string[]> {

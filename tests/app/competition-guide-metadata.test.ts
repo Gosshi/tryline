@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const competitionsMock = vi.hoisted(() => ({
   getCompetitionBySlug: vi.fn(),
+  getCompetitionGuide: vi.fn(),
   listFamilies: vi.fn(),
   listSeasonsByFamily: vi.fn(),
   selectLatestSeasonWithMatches: vi.fn(),
@@ -40,7 +41,6 @@ describe("competition guide metadata", () => {
       season: "2025-26",
       slug: "urc-2025-26",
       startDate: "2025-09-26",
-      viewingGuideJa: null,
     });
 
     const metadata = await generateSeasonMetadata({
