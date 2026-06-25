@@ -9,6 +9,7 @@ type CompetitionViewingGuideProps = {
 };
 
 type InlineChunk =
+  | { type: "bold"; value: string }
   | { type: "link"; href: string; text: string }
   | { type: "text"; value: string };
 
@@ -18,7 +19,7 @@ function isSafeHref(href: string) {
 
 function parseInline(text: string): InlineChunk[] {
   const chunks: InlineChunk[] = [];
-  const pattern = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const pattern = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*/g;
   let cursor = 0;
 
   for (const match of text.matchAll(pattern)) {
@@ -28,9 +29,14 @@ function parseInline(text: string): InlineChunk[] {
       chunks.push({ type: "text", value: text.slice(cursor, index) });
     }
 
+    if (match[3]) {
+      chunks.push({ type: "bold", value: match[3] });
+      cursor = index + match[0].length;
+      continue;
+    }
+
     const href = match[2] ?? "";
     const linkText = match[1] ?? "";
-
     chunks.push(
       isSafeHref(href)
         ? { href, text: linkText, type: "link" }
@@ -47,21 +53,27 @@ function parseInline(text: string): InlineChunk[] {
 }
 
 function renderInline(text: string) {
-  return parseInline(text).map((chunk, index) =>
-    chunk.type === "link" ? (
-      <a
-        className="font-medium text-[var(--color-accent)] underline underline-offset-4"
-        href={chunk.href}
-        key={`${chunk.href}-${index}`}
-        rel="noopener noreferrer"
-        target="_blank"
-      >
-        {chunk.text}
-      </a>
-    ) : (
-      <Fragment key={`text-${index}`}>{chunk.value}</Fragment>
-    ),
-  );
+  return parseInline(text).map((chunk, index) => {
+    if (chunk.type === "bold") {
+      return <strong key={`bold-${index}`}>{chunk.value}</strong>;
+    }
+
+    if (chunk.type === "link") {
+      return (
+        <a
+          className="font-medium text-[var(--color-accent)] underline underline-offset-4"
+          href={chunk.href}
+          key={`${chunk.href}-${index}`}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          {chunk.text}
+        </a>
+      );
+    }
+
+    return <Fragment key={`text-${index}`}>{chunk.value}</Fragment>;
+  });
 }
 
 function renderBlock(block: MarkdownBlock, index: number) {
@@ -83,6 +95,16 @@ function renderBlock(block: MarkdownBlock, index: number) {
           <li key={`${index}-${itemIndex}`}>{renderInline(item)}</li>
         ))}
       </ul>
+    );
+  }
+
+  if (block.type === "ordered-list") {
+    return (
+      <ol className="list-decimal space-y-2 pl-5" key={index}>
+        {block.items.map((item, itemIndex) => (
+          <li key={`${index}-${itemIndex}`}>{renderInline(item)}</li>
+        ))}
+      </ol>
     );
   }
 

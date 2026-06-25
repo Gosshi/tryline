@@ -190,6 +190,16 @@ function renderBlock(block: MarkdownBlock, index: number) {
     );
   }
 
+  if (block.type === "ordered-list") {
+    return (
+      <ol className="list-decimal space-y-1 pl-6" key={index}>
+        {block.items.map((item, itemIndex) => (
+          <li key={`${index}-${itemIndex}`}>{renderInline(item)}</li>
+        ))}
+      </ol>
+    );
+  }
+
   if (block.type === "table") {
     const [header = [], ...body] = block.rows;
 

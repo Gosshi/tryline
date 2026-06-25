@@ -2,6 +2,7 @@ export type MarkdownBlock =
   | { type: "blockquote"; text: string }
   | { type: "heading"; level: number; text: string }
   | { type: "list"; items: string[] }
+  | { type: "ordered-list"; items: string[] }
   | { type: "table"; rows: string[][] }
   | { type: "paragraph"; text: string };
 
@@ -15,6 +16,7 @@ export type RecapPaywallSplit = {
 export function parseMarkdown(markdown: string): MarkdownBlock[] {
   const lines = markdown.split(/\r?\n/);
   const blocks: MarkdownBlock[] = [];
+  const orderedListPattern = /^\d+\.\s+/;
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i]?.trim() ?? "";
@@ -50,6 +52,18 @@ export function parseMarkdown(markdown: string): MarkdownBlock[] {
       }
 
       blocks.push({ items, type: "list" });
+      continue;
+    }
+
+    if (orderedListPattern.test(line)) {
+      const items: string[] = [line.replace(orderedListPattern, "")];
+
+      while (orderedListPattern.test((lines[i + 1] ?? "").trim())) {
+        i += 1;
+        items.push((lines[i] ?? "").trim().replace(orderedListPattern, ""));
+      }
+
+      blocks.push({ items, type: "ordered-list" });
       continue;
     }
 
@@ -89,6 +103,7 @@ export function parseMarkdown(markdown: string): MarkdownBlock[] {
       !(lines[i + 1] ?? "").trim().startsWith("#") &&
       !(lines[i + 1] ?? "").trim().startsWith(">") &&
       !(lines[i + 1] ?? "").trim().startsWith("- ") &&
+      !orderedListPattern.test((lines[i + 1] ?? "").trim()) &&
       !(lines[i + 1] ?? "").trim().startsWith("|")
     ) {
       i += 1;
