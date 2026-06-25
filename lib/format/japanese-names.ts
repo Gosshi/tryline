@@ -81,6 +81,7 @@ export const JAPANESE_TEAM_NAMES_BY_SLUG: Record<string, string> = {
 
 export const JAPANESE_COMPETITION_NAMES_BY_FAMILY: Record<string, string> = {
   "autumn-nations": "オータムネーションズシリーズ",
+  "nations-championship": "ネーションズチャンピオンシップ",
   "league-one": "ジャパンラグビー リーグワン",
   "pacific-nations-cup": "パシフィック・ネーションズカップ",
   pnc: "パシフィック・ネーションズカップ",
