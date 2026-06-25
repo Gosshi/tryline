@@ -233,7 +233,7 @@ export default async function SeasonPage({ params }: Props) {
           </div>
         ) : (
           <>
-            <CompetitionViewingGuide collapsible markdown={guide} />
+            <CompetitionViewingGuide markdown={guide} />
             {hasAnyContent && <PremiumUpsellBanner />}
             <Suspense>
               <SeasonMatchGroups

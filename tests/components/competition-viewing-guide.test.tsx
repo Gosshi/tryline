@@ -40,18 +40,6 @@ describe("CompetitionViewingGuide", () => {
     expect(screen.getByText("日程を見る")).toBeInTheDocument();
   });
 
-  it("renders a closed details summary when collapsible", () => {
-    const { container } = render(
-      <CompetitionViewingGuide collapsible markdown="ガイド本文" />,
-    );
-
-    const details = container.querySelector("details");
-
-    expect(details).not.toHaveAttribute("open");
-    expect(screen.getByText("大会ガイドを見る")).toBeInTheDocument();
-    expect(details).toHaveTextContent("ガイド本文");
-  });
-
   it("renders nothing when the guide is empty", () => {
     const { container } = render(
       <CompetitionViewingGuide markdown="   " />,

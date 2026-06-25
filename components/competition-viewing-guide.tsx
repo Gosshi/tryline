@@ -5,7 +5,6 @@ import { parseMarkdown } from "@/lib/match-content/markdown";
 import type { MarkdownBlock } from "@/lib/match-content/markdown";
 
 type CompetitionViewingGuideProps = {
-  collapsible?: boolean;
   markdown: string | null;
 };
 
@@ -154,49 +153,12 @@ function renderBlock(block: MarkdownBlock, index: number) {
 }
 
 export function CompetitionViewingGuide({
-  collapsible = false,
   markdown,
 }: CompetitionViewingGuideProps) {
   const content = markdown?.trim();
 
   if (!content) {
     return null;
-  }
-
-  const body = (
-    <div className="space-y-4 text-sm sm:text-base">
-      {parseMarkdown(content).map(renderBlock)}
-    </div>
-  );
-
-  if (collapsible) {
-    return (
-      <details className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left marker:content-none">
-          <span className="font-heading text-xl font-bold text-[var(--color-ink)] sm:text-2xl">
-            大会ガイドを見る
-          </span>
-          <span
-            aria-hidden
-            className="text-lg font-bold text-[var(--color-ink-muted)] transition-transform group-open:rotate-45"
-          >
-            +
-          </span>
-        </summary>
-        <section
-          aria-labelledby="viewing-guide-heading"
-          className="mt-5 space-y-4 border-t border-slate-200 pt-5"
-        >
-          <h2
-            className="font-heading text-2xl font-bold text-[var(--color-ink)]"
-            id="viewing-guide-heading"
-          >
-            大会ガイド
-          </h2>
-          {body}
-        </section>
-      </details>
-    );
   }
 
   return (
@@ -207,7 +169,9 @@ export function CompetitionViewingGuide({
       >
         大会ガイド
       </h2>
-      {body}
+      <div className="space-y-4 text-sm sm:text-base">
+        {parseMarkdown(content).map(renderBlock)}
+      </div>
     </section>
   );
 }
