@@ -1,6 +1,6 @@
+import Exa from "exa-js";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import Exa from "exa-js";
 import OpenAI from "openai";
 
 const FAMILIES: Array<{ family: string; nameJa: string; context?: string }> = [
