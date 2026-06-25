@@ -35,6 +35,7 @@ const match: MatchDetail = {
   homeTeamId: "00000000-0000-0000-0000-000000000002",
   id: "00000000-0000-0000-0000-000000000001",
   kickoffAt: "2027-02-06T15:00:00.000Z",
+  poolName: null,
   round: 1,
   roundName: null,
   status: "scheduled",

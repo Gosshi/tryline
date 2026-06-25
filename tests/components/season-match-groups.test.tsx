@@ -45,6 +45,7 @@ function buildMatch(
     homeTeam: { name: `Home ${id}`, shortCode: `H${id}`, slug: `home-${id}` },
     id,
     kickoffAt,
+    poolName: null,
     round,
     roundName: null,
     status: "scheduled",
