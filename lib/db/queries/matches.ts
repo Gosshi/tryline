@@ -27,6 +27,7 @@ export type MatchListItem = {
   venue: string | null;
   round: number | null;
   roundName: string | null;
+  poolName: string | null;
 };
 
 export type MatchDetail = Omit<MatchListItem, "awayTeam" | "homeTeam"> & {
@@ -140,6 +141,12 @@ export type EnglishMatchContent = {
 export type EnglishMatchContentBundle = {
   preview: EnglishMatchContent | null;
   recap: EnglishMatchContent | null;
+};
+
+export type PoolTeam = {
+  name: string;
+  slug: string;
+  nameJa: string | null;
 };
 
 type BaseMatchRow = {
@@ -426,6 +433,20 @@ function getRoundNameFromExternalIds(externalIds: Json): string | null {
   return typeof roundName === "string" ? roundName : null;
 }
 
+function getPoolNameFromExternalIds(externalIds: Json): string | null {
+  if (
+    !externalIds ||
+    typeof externalIds !== "object" ||
+    Array.isArray(externalIds)
+  ) {
+    return null;
+  }
+
+  const poolName = externalIds.pool_name;
+
+  return typeof poolName === "string" ? poolName : null;
+}
+
 function mapMatchRow(row: BaseMatchRow): MatchListItem {
   if (!row.home_team || !row.away_team) {
     throw new Error(`Match ${row.id} is missing team relations.`);
@@ -465,6 +486,7 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     },
     id: row.id,
     kickoffAt: row.kickoff_at,
+    poolName: getPoolNameFromExternalIds(row.external_ids),
     round: getRoundFromExternalIds(row.external_ids),
     roundName: getRoundNameFromExternalIds(row.external_ids),
     status: row.status,
@@ -1621,6 +1643,69 @@ export async function listMatchesForCompetition(
   }
 
   return (data satisfies BaseMatchRow[]).map(mapMatchRow);
+}
+
+export async function getPoolTeamsForMatch(
+  competitionSlug: string,
+  poolName: string,
+): Promise<PoolTeam[]> {
+  const competition = await getCompetitionBySlug(competitionSlug);
+
+  if (!competition) {
+    return [];
+  }
+
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        home_team:teams!matches_home_team_id_fkey (
+          slug,
+          name,
+          name_ja
+        ),
+        away_team:teams!matches_away_team_id_fkey (
+          slug,
+          name,
+          name_ja
+        )
+      `,
+    )
+    .eq("competition_id", competition.id)
+    .filter("external_ids->>pool_name", "eq", poolName);
+
+  if (error) {
+    throw error;
+  }
+
+  const seen = new Set<string>();
+  const teams: PoolTeam[] = [];
+
+  for (const row of (data ?? []) as unknown as Array<{
+    away_team: { slug: string; name: string; name_ja: string | null } | null;
+    home_team: { slug: string; name: string; name_ja: string | null } | null;
+  }>) {
+    for (const team of [row.home_team, row.away_team]) {
+      if (!team || seen.has(team.slug)) {
+        continue;
+      }
+
+      const nameJa = team.name_ja ?? null;
+      seen.add(team.slug);
+      teams.push({
+        name: getTeamDisplayName({
+          name: team.name,
+          nameJa,
+          slug: team.slug,
+        }),
+        nameJa,
+        slug: team.slug,
+      });
+    }
+  }
+
+  return teams.sort((left, right) => left.name.localeCompare(right.name));
 }
 
 export async function getMatchById(

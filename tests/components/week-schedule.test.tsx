@@ -43,6 +43,7 @@ const baseMatch: CalendarMatch = {
   },
   id: "match-1",
   kickoffAt: "2026-06-07T15:30:00.000Z",
+  poolName: null,
   round: null,
   roundName: null,
   status: "scheduled",

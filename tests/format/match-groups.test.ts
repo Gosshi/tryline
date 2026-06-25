@@ -11,6 +11,7 @@ const baseMatch: MatchListItem = {
   homeTeam: { name: "Ireland", shortCode: "IRL", slug: "ireland" },
   id: "match-1",
   kickoffAt: "2025-11-02T12:00:00.000Z",
+  poolName: null,
   round: null,
   roundName: null,
   status: "scheduled",

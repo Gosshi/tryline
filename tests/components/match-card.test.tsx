@@ -36,6 +36,7 @@ const baseMatch: MatchListItem = {
   },
   id: "00000000-0000-0000-0000-000000000001",
   kickoffAt: "2027-02-05T20:15:00.000Z",
+  poolName: null,
   round: 1,
   roundName: null,
   status: "scheduled",

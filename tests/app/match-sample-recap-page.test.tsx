@@ -25,6 +25,7 @@ const matchMocks = vi.hoisted(() => ({
   countHeadToHeadMatches: vi.fn(),
   getMatchById: vi.fn(),
   getMatchContentEn: vi.fn(),
+  getPoolTeamsForMatch: vi.fn(),
   listAllMatchIds: vi.fn(),
   listMatchIdsWithContent: vi.fn(),
   normalizeHeadToHeadSlug: vi.fn(() => "sample-home-vs-sample-away"),
@@ -92,7 +93,9 @@ vi.mock("@/lib/db/queries/standings", () => standingsMocks);
 vi.mock("next/navigation", () => navigationMocks);
 
 import MatchEnglishPage from "@/app/matches/[id]/en/page";
-import MatchDetailPage from "@/app/matches/[id]/page";
+import MatchDetailPage, {
+  generateMetadata,
+} from "@/app/matches/[id]/page";
 
 import type { PublishedMatchContentBundle } from "@/lib/db/queries/match-content";
 import type {
@@ -128,6 +131,7 @@ const match: MatchDetail = {
   homeTeamId: "home-team",
   id: sampleMatchId,
   kickoffAt: "2026-05-30T14:00:00.000Z",
+  poolName: null,
   round: 18,
   roundName: null,
   status: "finished",
@@ -154,11 +158,13 @@ const preview = {
 function setCommonMocks(params: {
   englishContent?: EnglishMatchContentBundle;
   id?: string;
+  match?: Partial<MatchDetail>;
   publishedContent?: PublishedMatchContentBundle;
 }) {
   matchMocks.getMatchById.mockResolvedValue({
     ...match,
     id: params.id ?? sampleMatchId,
+    ...params.match,
   });
   matchContentMocks.getPublishedContentForMatch.mockResolvedValue(
     params.publishedContent ?? {
@@ -176,6 +182,7 @@ function setCommonMocks(params: {
   matchLineupMocks.getMatchLineupsForMatch.mockResolvedValue([]);
   standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
   matchMocks.countHeadToHeadMatches.mockResolvedValue(0);
+  matchMocks.getPoolTeamsForMatch.mockResolvedValue([]);
 }
 
 describe("match sample recap page", () => {
@@ -268,5 +275,109 @@ describe("match sample recap page", () => {
       screen.getByText("This full review is a free sample."),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("premium-recap-section")).toBeNull();
+  });
+
+  it("shows RWC 2027 pool teams for scheduled pool matches", async () => {
+    setCommonMocks({
+      match: {
+        awayScore: null,
+        awayTeam: {
+          englishName: "Portugal",
+          name: "ポルトガル",
+          shortCode: "POR",
+          slug: "portugal",
+        },
+        competition: {
+          family: "rwc",
+          name: "Rugby World Cup 2027",
+          season: "2027",
+          slug: "rwc-2027",
+        },
+        homeScore: null,
+        homeTeam: {
+          englishName: "Scotland",
+          name: "スコットランド",
+          shortCode: "SCO",
+          slug: "scotland",
+        },
+        poolName: "Pool D",
+        status: "scheduled",
+      },
+      publishedContent: {
+        preview: null,
+        recap: null,
+      },
+    });
+    matchMocks.getPoolTeamsForMatch.mockResolvedValue([
+      { name: "スコットランド", nameJa: "スコットランド", slug: "scotland" },
+      { name: "アイルランド", nameJa: "アイルランド", slug: "ireland" },
+      { name: "ウルグアイ", nameJa: "ウルグアイ", slug: "uruguay" },
+      { name: "ポルトガル", nameJa: "ポルトガル", slug: "portugal" },
+    ]);
+
+    const element = await MatchDetailPage({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    render(element);
+
+    expect(
+      screen.getByRole("heading", { name: "Pool D 参加チーム" }),
+    ).toBeInTheDocument();
+    for (const teamName of [
+      "スコットランド",
+      "アイルランド",
+      "ウルグアイ",
+      "ポルトガル",
+    ]) {
+      expect(screen.getByRole("link", { name: teamName })).toBeInTheDocument();
+    }
+  });
+
+  it("adds pool context to metadata description for empty scheduled RWC matches", async () => {
+    setCommonMocks({
+      match: {
+        awayScore: null,
+        awayTeam: {
+          englishName: "Portugal",
+          name: "ポルトガル",
+          shortCode: "POR",
+          slug: "portugal",
+        },
+        competition: {
+          family: "rwc",
+          name: "Rugby World Cup 2027",
+          season: "2027",
+          slug: "rwc-2027",
+        },
+        homeScore: null,
+        homeTeam: {
+          englishName: "Scotland",
+          name: "スコットランド",
+          shortCode: "SCO",
+          slug: "scotland",
+        },
+        poolName: "Pool D",
+        status: "scheduled",
+      },
+      publishedContent: {
+        preview: null,
+        recap: null,
+      },
+    });
+    matchMocks.getPoolTeamsForMatch.mockResolvedValue([
+      { name: "スコットランド", nameJa: "スコットランド", slug: "scotland" },
+      { name: "アイルランド", nameJa: "アイルランド", slug: "ireland" },
+      { name: "ウルグアイ", nameJa: "ウルグアイ", slug: "uruguay" },
+      { name: "ポルトガル", nameJa: "ポルトガル", slug: "portugal" },
+    ]);
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    expect(metadata.description).toContain("Rugby World Cup 2027 Pool D");
+    expect(metadata.description).toContain("スコットランド");
+    expect(metadata.description).toContain("ポルトガル");
   });
 });

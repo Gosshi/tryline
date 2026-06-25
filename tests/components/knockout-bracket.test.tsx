@@ -21,6 +21,7 @@ function buildMatch(
     homeTeam: { name: `Home ${id}`, shortCode: `H${id}`, slug: `home-${id}` },
     id,
     kickoffAt: `2027-10-${String(round).padStart(2, "0")}T08:00:00.000Z`,
+    poolName: null,
     round,
     roundName: null,
     status,

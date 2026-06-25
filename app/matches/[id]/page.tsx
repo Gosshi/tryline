@@ -17,6 +17,7 @@ import {
   countHeadToHeadMatches,
   getMatchById,
   getMatchContentEn,
+  getPoolTeamsForMatch,
   listMatchIdsWithContent,
   normalizeHeadToHeadSlug,
 } from "@/lib/db/queries/matches";
@@ -83,6 +84,17 @@ export async function generateMetadata({
   );
   const title = `${match.homeTeam.name} vs ${match.awayTeam.name} — ${competitionTitle}`;
   const hasScore = match.homeScore !== null && match.awayScore !== null;
+  const isScheduledPoolMatch =
+    match.status === "scheduled" &&
+    match.competition.family === "rwc" &&
+    match.poolName !== null;
+  const poolTeams = isScheduledPoolMatch
+    ? await getPoolTeamsForMatch(match.competition.slug, match.poolName!)
+    : [];
+  const poolContextTitle =
+    isScheduledPoolMatch && match.poolName
+      ? `${match.competition.name} ${match.poolName}`
+      : null;
   const description =
     match.status === "finished" && content.recap
       ? extractCoreSection(content.recap.contentMdJa)
@@ -90,7 +102,9 @@ export async function generateMetadata({
         ? `${match.homeTeam.name} ${match.homeScore}–${match.awayScore} ${match.awayTeam.name}（${competitionTitle}）の試合結果・日本語レビュー。`
         : content.preview
           ? extractDescription(content.preview.contentMdJa)
-          : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・日本語レビュー。`;
+          : isScheduledPoolMatch && poolTeams.length > 0
+            ? `${match.homeTeam.name} vs ${match.awayTeam.name}（${poolContextTitle}）の試合情報。同プール: ${poolTeams.map((team) => team.name).join("、")}。`
+            : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合情報。${competitionTitle}。`;
   const score =
     match.homeScore !== null && match.awayScore !== null
       ? `${match.homeScore}–${match.awayScore}`
@@ -138,6 +152,17 @@ export default async function MatchDetailPage({
     getMatchContentEn(id),
     getStandingsForCompetition(match.competition.slug),
   ]);
+  const isScheduledPoolMatch =
+    match.status === "scheduled" &&
+    match.competition.family === "rwc" &&
+    match.poolName !== null;
+  const poolTeams = isScheduledPoolMatch
+    ? await getPoolTeamsForMatch(match.competition.slug, match.poolName!)
+    : [];
+  const poolContextTitle =
+    isScheduledPoolMatch && match.poolName
+      ? `${match.competition.name} ${match.poolName}`
+      : null;
   const headToHeadHref =
     headToHeadCount >= 2
       ? `/h2h/${normalizeHeadToHeadSlug(
@@ -174,7 +199,9 @@ export default async function MatchDetailPage({
         ? `${match.homeTeam.name} ${match.homeScore}–${match.awayScore} ${match.awayTeam.name}（${competitionTitle}）の試合結果・日本語レビュー。`
         : publishedContent.preview
           ? extractDescription(publishedContent.preview.contentMdJa)
-          : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合結果・日本語レビュー。`;
+          : isScheduledPoolMatch && poolTeams.length > 0
+            ? `${match.homeTeam.name} vs ${match.awayTeam.name}（${poolContextTitle}）の試合情報。同プール: ${poolTeams.map((team) => team.name).join("、")}。`
+            : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合情報。${competitionTitle}。`;
   const ogImageUrl = createMatchOgImage({
     away: match.awayTeam.name,
     competition: competitionTitle,
@@ -298,6 +325,31 @@ export default async function MatchDetailPage({
                 match={match}
                 showCta={false}
               />
+            )}
+            {isScheduledPoolMatch && poolTeams.length > 0 && (
+              <section
+                aria-labelledby="pool-info-heading"
+                className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)]"
+              >
+                <h2
+                  className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--color-ink-muted)]"
+                  id="pool-info-heading"
+                >
+                  {match.poolName} 参加チーム
+                </h2>
+                <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {poolTeams.map((team) => (
+                    <li key={team.slug}>
+                      <Link
+                        className="block rounded-lg border border-[var(--color-border)] px-3 py-2 text-center text-sm font-medium transition-colors hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                        href={`/teams/${team.slug}`}
+                      >
+                        {team.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )}
             {isFreeSampleRecap ? (
               <>

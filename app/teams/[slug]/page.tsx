@@ -36,6 +36,7 @@ function toMatchCardItem(match: TeamMatchItem): MatchListItem {
         match.homeTeam.shortCode ??
         match.homeTeam.name.slice(0, 3).toUpperCase(),
     },
+    poolName: null,
     roundName: null,
   };
 }
