@@ -140,14 +140,14 @@ describe("generateMatchContent length revision", () => {
     generateNarrativeMock.generateNarrative.mockResolvedValue({
       content: "# short",
       modelVersion: "gpt-4o",
-      promptVersion: "preview@3.4.0",
+      promptVersion: "preview@3.5.0",
       temperature: 0.7,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
     generateNarrativeMock.reviseNarrativeLength.mockResolvedValue({
       content: `# revised\n${"あ".repeat(1500)}`,
       modelVersion: "gpt-4o",
-      promptVersion: "preview@3.4.0+length-revision@1.0.0",
+      promptVersion: "preview@3.5.0+length-revision@1.0.0",
       temperature: 0.6,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
@@ -177,12 +177,14 @@ describe("generateMatchContent length revision", () => {
     const result = await generateMatchContent("match-1", "preview", "ja");
 
     expect(result.status).toBe("published");
-    expect(generateNarrativeMock.reviseNarrativeLength).toHaveBeenCalledTimes(1);
+    expect(generateNarrativeMock.reviseNarrativeLength).toHaveBeenCalledTimes(
+      1,
+    );
     expect(qaMock.evaluateNarrativeQuality).toHaveBeenCalledTimes(2);
     expect(dbMock.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         content_md: expect.stringContaining("# revised"),
-        prompt_version: "preview@3.4.0+length-revision@1.0.0",
+        prompt_version: "preview@3.5.0+length-revision@1.0.0",
         status: "published",
       }),
       expect.any(Object),
@@ -194,7 +196,7 @@ describe("generateMatchContent length revision", () => {
     generateNarrativeMock.reviseNarrativeLength.mockResolvedValue({
       content: "# still short",
       modelVersion: "gpt-4o",
-      promptVersion: "preview@3.4.0+length-revision@1.0.0",
+      promptVersion: "preview@3.5.0+length-revision@1.0.0",
       temperature: 0.6,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
@@ -224,7 +226,9 @@ describe("generateMatchContent length revision", () => {
     expect(result.qa?.issues).toContain(
       "字数下限未達のまま加筆リトライ上限に到達しました",
     );
-    expect(generateNarrativeMock.reviseNarrativeLength).toHaveBeenCalledTimes(1);
+    expect(generateNarrativeMock.reviseNarrativeLength).toHaveBeenCalledTimes(
+      1,
+    );
     expect(warnSpy).toHaveBeenCalledWith(
       "[content-pipeline] publishing below length minimum",
       expect.objectContaining({ language: "ja", matchId: "match-1" }),
@@ -271,7 +275,7 @@ describe("generateMatchContent length revision", () => {
     expect(dbMock.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         content_md: "# short",
-        prompt_version: "preview@3.4.0",
+        prompt_version: "preview@3.5.0",
         status: "published",
       }),
       expect.any(Object),
@@ -290,7 +294,9 @@ describe("generateMatchContent length revision", () => {
 
   it("keeps low-density recap factual fallback as draft", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    assembleMock.assembleMatchContentInput.mockResolvedValue(assembledWithEvents);
+    assembleMock.assembleMatchContentInput.mockResolvedValue(
+      assembledWithEvents,
+    );
     qaMock.evaluateNarrativeQuality
       .mockResolvedValueOnce({
         modelVersion: "gpt-4o-mini",
@@ -338,11 +344,13 @@ describe("generateMatchContent length revision", () => {
 
   it("keeps low-density recap length fallback as draft", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    assembleMock.assembleMatchContentInput.mockResolvedValue(assembledWithEvents);
+    assembleMock.assembleMatchContentInput.mockResolvedValue(
+      assembledWithEvents,
+    );
     generateNarrativeMock.reviseNarrativeLength.mockResolvedValue({
       content: "# still short",
       modelVersion: "gpt-4o",
-      promptVersion: "preview@3.4.0+length-revision@1.0.0",
+      promptVersion: "preview@3.5.0+length-revision@1.0.0",
       temperature: 0.6,
       usage: { inputTokens: 1, outputTokens: 1 },
     });

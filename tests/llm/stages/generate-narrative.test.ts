@@ -59,9 +59,9 @@ const assembled = {
 
 describe("stripWrappingCodeFence", () => {
   it("removes a wrapping markdown code fence", () => {
-    expect(
-      stripWrappingCodeFence("```markdown\n# 見出し\n本文\n```"),
-    ).toBe("# 見出し\n本文");
+    expect(stripWrappingCodeFence("```markdown\n# 見出し\n本文\n```")).toBe(
+      "# 見出し\n本文",
+    );
   });
 
   it("removes a wrapping unlabeled code fence", () => {
@@ -268,13 +268,11 @@ describe("generateNarrative", () => {
       contentType: "preview",
       currentContent: "# short",
       language: "ja",
-      promptVersion: "preview@3.4.0",
+      promptVersion: "preview@3.5.0",
       tacticalPoints: [],
     });
 
-    expect(result.promptVersion).toBe(
-      "preview@3.4.0+length-revision@1.0.0",
-    );
+    expect(result.promptVersion).toBe("preview@3.5.0+length-revision@1.0.0");
     expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
       expect.objectContaining({
         input: expect.stringContaining("字数下限未満です"),
@@ -306,7 +304,7 @@ describe("generateNarrative", () => {
       contentType: "preview",
       currentContent: "# short",
       language: "ja",
-      promptVersion: "preview@3.4.0",
+      promptVersion: "preview@3.5.0",
       tacticalPoints: [],
     });
 

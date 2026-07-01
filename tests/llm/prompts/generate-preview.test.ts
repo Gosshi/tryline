@@ -53,8 +53,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.3.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.4.0");
+  it("uses preview prompt version 3.5.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.5.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -65,14 +65,64 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("# この試合の核心");
     expect(prompt).toContain("本質的な争点");
     expect(prompt).toContain("数値・実績・文脈");
-    expect(prompt).toContain("【数値対決型】");
-    expect(prompt).toContain("【フォーム型】");
-    expect(prompt).toContain("【大会文脈型】");
+    expect(prompt).toContain("以下の指定パターンだけを使うこと");
+    expect(prompt).toContain("【数値対決型で書くこと】");
+    expect(prompt).not.toContain("【フォーム型で書くこと】");
+    expect(prompt).not.toContain("【大会文脈型で書くこと】");
     expect(prompt).toContain("パターン名は出力しない");
     expect(prompt).toContain("【絶対禁止表現");
     expect(prompt).toContain("入力データに無い統計");
     expect(prompt).toContain("「好調」");
     expect(prompt).toContain("「鍵となります」");
+  });
+
+  it("selects the form core pattern when recent streak data exists", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        key_stats: {
+          ...assembled.key_stats,
+          home: {
+            ...assembled.key_stats.home,
+            result_streak: "winning",
+          },
+        },
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("【フォーム型で書くこと】");
+    expect(prompt).not.toContain("【数値対決型で書くこと】");
+    expect(prompt).not.toContain("【大会文脈型で書くこと】");
+  });
+
+  it("selects the competition-context core pattern for playoff matches", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        match_phase: "playoff_final",
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("【大会文脈型で書くこと】");
+    expect(prompt).not.toContain("【数値対決型で書くこと】");
+    expect(prompt).not.toContain("【フォーム型で書くこと】");
+  });
+
+  it("keeps numeric core pattern prompts to one deterministic axis", () => {
+    const prompt = buildGeneratePreviewPrompt(assembled, [], []);
+    const numericAxes = [
+      "攻撃力（平均得点）と守備力（平均失点）の対比",
+      "得失点差（avg_score_diff_last_5）の対比",
+      "直近5試合の勝率（win_rate_last_5）の対比",
+    ];
+    const includedAxes = numericAxes.filter((axis) => prompt.includes(axis));
+
+    expect(prompt).not.toContain("以下の3パターン");
+    expect(includedAxes).toHaveLength(1);
   });
 
   it("instructs the model to use final scores as the winner source", () => {
@@ -98,13 +148,13 @@ describe("buildGeneratePreviewPrompt", () => {
   it("includes the minimum length instruction", () => {
     const prompt = buildGeneratePreviewPrompt(assembled, [], []);
 
-    expect(prompt).toContain(
-      "全体で1,500字以上を下限とし、下回ってはならない",
-    );
+    expect(prompt).toContain("全体で1,500字以上を下限とし、下回ってはならない");
     expect(prompt).toContain(
       "各セクションが指定範囲の下限を下回った場合は、入力データにある",
     );
-    expect(prompt).toContain("全体が1,500字未満の場合は出力前に薄いセクションを加筆");
+    expect(prompt).toContain(
+      "全体が1,500字未満の場合は出力前に薄いセクションを加筆",
+    );
     expect(prompt).toContain("水増し、同義反復、一般論");
   });
 
