@@ -9,10 +9,25 @@ type ContentFixture = {
   match_id: string;
   matches: {
     away_score: number | null;
-    away_team: { english_name: string | null; name: string };
-    competition: { family: string | null; name: string; season: string };
+    away_team: {
+      english_name: string | null;
+      name: string;
+      name_ja: string | null;
+      slug: string | null;
+    };
+    competition: {
+      family: string | null;
+      name: string;
+      name_ja: string | null;
+      season: string;
+    };
     home_score: number | null;
-    home_team: { english_name: string | null; name: string };
+    home_team: {
+      english_name: string | null;
+      name: string;
+      name_ja: string | null;
+      slug: string | null;
+    };
     kickoff_at: string;
   };
   x_tweet_id: string | null;
@@ -176,14 +191,25 @@ function buildContent(
     match_id: overrides.match_id,
     matches: {
       away_score: 17,
-      away_team: { english_name: "Away", name: "アウェイ" },
+      away_team: {
+        english_name: "Away",
+        name: "Away",
+        name_ja: "アウェイ",
+        slug: "away",
+      },
       competition: {
         family: "six-nations",
         name: "Test League",
+        name_ja: "テストリーグ",
         season: "2026",
       },
       home_score: 24,
-      home_team: { english_name: "Home", name: "ホーム" },
+      home_team: {
+        english_name: "Home",
+        name: "Home",
+        name_ja: "ホーム",
+        slug: "home",
+      },
       kickoff_at: overrides.kickoff_at,
     },
     x_tweet_id: overrides.x_tweet_id ?? null,
@@ -360,6 +386,9 @@ describe("/api/cron/notify-discord", () => {
       1,
       expect.objectContaining({
         competitionFamily: "six-nations",
+        competitionLabel: "テストリーグ 2026",
+        awayTeamName: "アウェイ",
+        homeTeamName: "ホーム",
         language: "ja",
       }),
     );
@@ -367,6 +396,9 @@ describe("/api/cron/notify-discord", () => {
       2,
       expect.objectContaining({
         competitionFamily: "six-nations",
+        competitionLabel: "Test League",
+        awayTeamName: "Away",
+        homeTeamName: "Home",
         language: "en",
       }),
     );
@@ -376,7 +408,7 @@ describe("/api/cron/notify-discord", () => {
       expect.objectContaining({
         awayTeamName: "アウェイ",
         competitionFamily: "six-nations",
-        competitionLabel: "Test League",
+        competitionLabel: "テストリーグ 2026",
         homeTeamName: "ホーム",
         matchId: "match-2",
         previewMarkdown: "## 見出し\n投稿本文の抜粋です。",
@@ -424,6 +456,7 @@ describe("/api/cron/notify-discord", () => {
         value: expect.stringContaining("山田太郎が2トライ"),
       }),
     );
+    expect(payload.embeds[0]?.fields[3]?.value).toContain("ホーム 24-17。");
     expect(payload.embeds[0]?.fields[3]?.value).toContain("佐藤次郎がトライ");
     expect(payload.embeds[0]?.fields[4]).toEqual(
       expect.objectContaining({
@@ -442,8 +475,10 @@ describe("/api/cron/notify-discord", () => {
     expect(impressionMock.generateImpressionTweet).toHaveBeenCalledWith(
       expect.objectContaining({
         awayScore: 17,
-        competitionLabel: "Test League",
+        competitionLabel: "テストリーグ 2026",
+        awayTeamName: "アウェイ",
         homeScore: 24,
+        homeTeamName: "ホーム",
         tryScorers: [
           { count: 2, playerName: "山田太郎" },
           { count: 1, playerName: "佐藤次郎" },
@@ -455,6 +490,112 @@ describe("/api/cron/notify-discord", () => {
     expect(dbMock.updates[0]?.payload).toEqual({
       discord_notified_at: "2026-05-21T12:00:00.000Z",
     });
+  });
+
+  it("falls back to canonical names when Japanese display names are missing", async () => {
+    const fallbackContent = buildContent({
+      content_type: "preview",
+      id: "future-preview-fallback",
+      kickoff_at: "2026-05-21T12:01:00.000Z",
+      match_id: "match-fallback",
+    });
+    fallbackContent.matches.home_team = {
+      english_name: null,
+      name: "Home Fallback",
+      name_ja: null,
+      slug: null,
+    };
+    fallbackContent.matches.away_team = {
+      english_name: null,
+      name: "Away Fallback",
+      name_ja: null,
+      slug: null,
+    };
+    fallbackContent.matches.competition = {
+      family: null,
+      name: "Fallback League",
+      name_ja: null,
+      season: "2026",
+    };
+    dbMock.rowsByLanguage.ja = [fallbackContent];
+
+    const { POST } = await import("@/app/api/cron/notify-discord/route");
+    const response = await POST(
+      new Request("http://localhost/api/cron/notify-discord", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(xMock.buildTweetText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        awayTeamName: "Away Fallback",
+        competitionLabel: "Fallback League 2026",
+        homeTeamName: "Home Fallback",
+        language: "ja",
+      }),
+    );
+    expect(previewThreadMock.generatePreviewThread).toHaveBeenCalledWith(
+      expect.objectContaining({
+        awayTeamName: "Away Fallback",
+        competitionLabel: "Fallback League 2026",
+        homeTeamName: "Home Fallback",
+      }),
+    );
+  });
+
+  it("uses formatters for season labels and dictionary fallback when name_ja is missing", async () => {
+    const nationsContent = buildContent({
+      content_type: "preview",
+      id: "future-preview-nations",
+      kickoff_at: "2026-05-21T12:01:00.000Z",
+      match_id: "match-nations",
+    });
+    nationsContent.matches.home_team = {
+      english_name: "Australia",
+      name: "Australia",
+      name_ja: null,
+      slug: "australia",
+    };
+    nationsContent.matches.away_team = {
+      english_name: "Ireland",
+      name: "Ireland",
+      name_ja: null,
+      slug: "ireland",
+    };
+    nationsContent.matches.competition = {
+      family: "nations-championship",
+      name: "Nations Championship 2026",
+      name_ja: null,
+      season: "2026",
+    };
+    dbMock.rowsByLanguage.ja = [nationsContent];
+
+    const { POST } = await import("@/app/api/cron/notify-discord/route");
+    const response = await POST(
+      new Request("http://localhost/api/cron/notify-discord", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(xMock.buildTweetText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        awayTeamName: "アイルランド",
+        competitionLabel: "ネーションズチャンピオンシップ 2026",
+        homeTeamName: "オーストラリア",
+        language: "ja",
+      }),
+    );
+    expect(previewThreadMock.generatePreviewThread).toHaveBeenCalledWith(
+      expect.objectContaining({
+        awayTeamName: "アイルランド",
+        competitionLabel: "ネーションズチャンピオンシップ 2026",
+        homeTeamName: "オーストラリア",
+      }),
+    );
   });
 
   it("omits the impression tweet field when generation fails", async () => {

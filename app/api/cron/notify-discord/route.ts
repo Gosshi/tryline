@@ -3,6 +3,11 @@ import { NextResponse } from "next/server";
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
+import {
+  formatCompetitionTitle,
+  getCompetitionDisplayName,
+} from "@/lib/format/competition";
+import { getTeamDisplayName } from "@/lib/format/team";
 import { generateImpressionTweet } from "@/lib/x/impression-tweet";
 import { buildMatchShareUrl } from "@/lib/x/match-url";
 import { buildLinklessReplyText, buildTweetText } from "@/lib/x/post";
@@ -19,11 +24,14 @@ type Relation<T> = T | T[] | null;
 type TeamRow = {
   english_name: string | null;
   name: string | null;
+  name_ja: string | null;
+  slug: string | null;
 };
 
 type CompetitionRow = {
   family: string | null;
   name: string | null;
+  name_ja: string | null;
   season: string | null;
 };
 
@@ -74,6 +82,35 @@ function firstRelation<T>(relation: Relation<T>): T | null {
     return relation[0] ?? null;
   }
   return relation;
+}
+
+function formatJapaneseCompetitionLabel(
+  competition: CompetitionRow | null,
+): string {
+  const displayName = getCompetitionDisplayName(
+    {
+      family: competition?.family ?? null,
+      name: competition?.name ?? "",
+      nameJa: competition?.name_ja ?? null,
+    },
+    "ja",
+  );
+
+  return formatCompetitionTitle(displayName, competition?.season ?? "", "ja");
+}
+
+function formatJapaneseTeamName(
+  team: TeamRow | null,
+  fallbackName: "Away" | "Home",
+): string {
+  return getTeamDisplayName(
+    {
+      name: team?.name ?? fallbackName,
+      nameJa: team?.name_ja ?? null,
+      slug: team?.slug ?? null,
+    },
+    "ja",
+  );
 }
 
 function createRecapExcerpt(markdown: string): string {
@@ -251,9 +288,9 @@ export async function POST(request: Request) {
           kickoff_at,
           home_score,
           away_score,
-          home_team:teams!matches_home_team_id_fkey ( name, english_name ),
-          away_team:teams!matches_away_team_id_fkey ( name, english_name ),
-          competition:competitions!matches_competition_id_fkey ( name, season, family )
+          home_team:teams!matches_home_team_id_fkey ( name, name_ja, english_name, slug ),
+          away_team:teams!matches_away_team_id_fkey ( name, name_ja, english_name, slug ),
+          competition:competitions!matches_competition_id_fkey ( name, name_ja, season, family )
         )
       `;
 
@@ -313,15 +350,18 @@ export async function POST(request: Request) {
       const homeTeam = firstRelation(match.home_team);
       const awayTeam = firstRelation(match.away_team);
       const competition = firstRelation(match.competition);
-      const competitionLabel = competition?.name ?? "";
+      const competitionLabel =
+        content.language === "en"
+          ? (competition?.name ?? "")
+          : formatJapaneseCompetitionLabel(competition);
       const homeDisplayName =
         content.language === "en"
           ? (homeTeam?.english_name ?? homeTeam?.name ?? "Home")
-          : (homeTeam?.name ?? "Home");
+          : formatJapaneseTeamName(homeTeam, "Home");
       const awayDisplayName =
         content.language === "en"
           ? (awayTeam?.english_name ?? awayTeam?.name ?? "Away")
-          : (awayTeam?.name ?? "Away");
+          : formatJapaneseTeamName(awayTeam, "Away");
       let tryScorers: TryScorer[] = [];
 
       if (content.content_type === "recap") {
@@ -432,11 +472,11 @@ export async function POST(request: Request) {
         appendOfficialReplyFields(embed, {
           awayScore: match.away_score ?? 0,
           awayTeamNameEn: awayTeam?.english_name ?? awayTeam?.name ?? "Away",
-          awayTeamNameJa: awayTeam?.name ?? "Away",
+          awayTeamNameJa: formatJapaneseTeamName(awayTeam, "Away"),
           competitionFamily: competition?.family ?? null,
           homeScore: match.home_score ?? 0,
           homeTeamNameEn: homeTeam?.english_name ?? homeTeam?.name ?? "Home",
-          homeTeamNameJa: homeTeam?.name ?? "Home",
+          homeTeamNameJa: formatJapaneseTeamName(homeTeam, "Home"),
           tryScorers,
         });
         await appendReadingHookTweetField(embed, {

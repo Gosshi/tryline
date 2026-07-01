@@ -11,7 +11,83 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.4.0";
+export const PROMPT_VERSION = "preview@3.5.0";
+
+type CorePatternType = "context" | "form" | "numeric";
+
+const NUMERIC_AXES = [
+  "攻撃力（平均得点）と守備力（平均失点）の対比",
+  "得失点差（avg_score_diff_last_5）の対比",
+  "直近5試合の勝率（win_rate_last_5）の対比",
+] as const;
+
+function selectCorePattern(assembled: AssembledContentInput): CorePatternType {
+  const phase = assembled.match_phase;
+  if (
+    phase === "playoff_final" ||
+    phase === "playoff_semifinal" ||
+    phase === "playoff_third_place" ||
+    phase === "playoff_other"
+  ) {
+    return "context";
+  }
+
+  const homeStreak = assembled.key_stats.home.result_streak;
+  const awayStreak = assembled.key_stats.away.result_streak;
+  if (
+    homeStreak === "winning" ||
+    homeStreak === "losing" ||
+    awayStreak === "winning" ||
+    awayStreak === "losing"
+  ) {
+    return "form";
+  }
+
+  return "numeric";
+}
+
+function selectNumericAxis(matchId: string): (typeof NUMERIC_AXES)[number] {
+  const charCodeSum = [...matchId].reduce(
+    (sum, char) => sum + char.charCodeAt(0),
+    0,
+  );
+
+  return NUMERIC_AXES[charCodeSum % NUMERIC_AXES.length] ?? NUMERIC_AXES[0];
+}
+
+function buildCoreQuestionBlock(
+  assembled: AssembledContentInput,
+  matchId: string,
+): string {
+  const pattern = selectCorePattern(assembled);
+  const lines = [
+    "## セクション0（必須、200字以内）: # この試合の核心",
+    "この試合の本質的な争点を1文で表す問いを設定し、その根拠を数値・実績・文脈で示すこと。",
+    "以下の指定パターンだけを使うこと（パターン名は出力しない）:",
+  ];
+
+  if (pattern === "form") {
+    lines.push(
+      "【フォーム型で書くこと】連勝/連敗ストリークや直近の状態変化を軸にする",
+      "例: 「5連勝中のBullsに、プレーオフ圏ギリギリのMunsterが土をつけられるか——フォームの差は数字ほど大きいか」",
+    );
+  } else if (pattern === "context") {
+    lines.push(
+      "【大会文脈型で書くこと】プレーオフ進出・降格・Grand Slamなど大会的意味を軸にする",
+      "例: 「この一戦に勝てば自力でプレーオフ進出が決まるUlster——Glasgowの守備はその夢を断てるか」",
+    );
+  } else {
+    const axis = selectNumericAxis(matchId);
+    lines.push(
+      `【数値対決型で書くこと】${axis}を軸にする`,
+      "例: 「Leinsterの平均31得点アタック対Saracensの平均14失点ディフェンス——どちらの実力値が本物か」",
+    );
+  }
+
+  lines.push("このセクションを最初に必ず出力すること。");
+
+  return lines.join("\n");
+}
 
 export function buildGeneratePreviewPrompt(
   assembled: AssembledContentInput,
@@ -28,18 +104,10 @@ export function buildGeneratePreviewPrompt(
       ? "構成: 3セクション構成（セクション0を除く）。1)500-600字 2)400-500字 3)400-500字。全体で1,500字以上を下限とし、下回ってはならない。各セクションの見出し名はこの試合の特性に応じて自由に設定すること。キープレイヤーセクションは省略すること（ラインアップデータなし）。"
       : "構成: 3セクション構成（セクション0を除く）。1)400-500字 2)600-700字 3)300-400字。全体で1,500字以上を下限とし、下回ってはならない。各セクションの見出し名はこの試合の特性に応じて自由に設定すること。キープレイヤーセクションは省略すること（ラインアップデータなし）。";
   const persona = buildPersona("preview");
-  const coreQuestionBlock = [
-    "## セクション0（必須、200字以内）: # この試合の核心",
-    "この試合の本質的な争点を1文で表す問いを設定し、その根拠を数値・実績・文脈で示すこと。",
-    "以下の3パターンのうち、この試合に最も合うものを選ぶこと（パターン名は出力しない）:",
-    "【数値対決型】攻撃力・守備力・スクラム勝率など対照的な指標を対比する",
-    "  例: 「Leinsterの平均31得点アタック対Saracensの平均14失点ディフェンス——どちらの実力値が本物か」",
-    "【フォーム型】連勝/連敗ストリークや直近の状態変化を軸にする",
-    "  例: 「5連勝中のBullsに、プレーオフ圏ギリギリのMunsterが土をつけられるか——フォームの差は数字ほど大きいか」",
-    "【大会文脈型】プレーオフ進出・降格・Grand Slamなど大会的意味を軸にする",
-    "  例: 「この一戦に勝てば自力でプレーオフ進出が決まるUlster——Glasgowの守備はその夢を断てるか」",
-    "このセクションを最初に必ず出力すること。",
-  ].join("\n");
+  const coreQuestionBlock = buildCoreQuestionBlock(
+    assembled,
+    assembled.match.id,
+  );
   const prohibitionsBlock = PROHIBITIONS_BLOCK;
   const signalsBlock = buildSignalsBlock(additionalSignals);
   const sourcedFactsBlock =
