@@ -82,15 +82,25 @@ awayTeamNameJa: awayTeam?.name ?? "Away",   // ← "Ja" という名前なのに
 homeTeamNameJa: homeTeam?.name ?? "Home",   // ← 同上
 ```
 
-### 実装詳細
+### 実装後レビューで判明した不具合（2026-07-01, v1実装は差し戻し）
 
-**1) 型定義に `name_ja` を追加（L19-28）**
+最初の実装（`competition?.name_ja ?? competition?.name` / `homeTeam?.name_ja ?? homeTeam?.name`）は以下2件の理由で不十分と判明した。Supabase実データで確認済み:
+
+1. **season が消える**: `competitions.name_ja` は season を含まない表記（例: `"シックスネイションズ"`）で保存されている。修正前は英語 `name`（`"Six Nations 2026"`のようにseason込み）を使っていたため気づかなかったが、`name_ja` に切り替えると **32大会中31大会で season が投稿から消える**退行になる。
+2. **`name_ja` が null の大会は直らない**: `competitions.name_ja` は32件中1件（`"Nations Championship 2026"` — まさに本specの発端になった大会）が `null`。`name_ja ?? name` の2段フォールバックだと family ベースの補完に届かず、英語のまま出力される元のバグが再現する。
+
+一方、サイト本体・LLM生成パイプラインは既に `lib/format/competition.ts` の `getCompetitionDisplayName()` / `formatCompetitionTitle()` と `lib/format/team.ts` の `getTeamDisplayName()` を使っており、これらは `nameJa → family/slugベースの辞書（lib/format/japanese-names.ts） → 英語name` の3段フォールバック＋season自動付加を既に正しく行っている。**DBカラムを直接見るのではなく、この既存ユーティリティを再利用する**方針に修正する。
+
+### 実装詳細（修正版）
+
+**1) 型定義に `name_ja` と `slug` を追加（L19-28）**
 
 ```typescript
 type TeamRow = {
   english_name: string | null;
   name: string | null;
   name_ja: string | null;
+  slug: string | null;
 };
 
 type CompetitionRow = {
@@ -101,30 +111,65 @@ type CompetitionRow = {
 };
 ```
 
-**2) select句に `name_ja` を追加（L254-256）**
+**2) select句に `name_ja` / `slug` を追加（L254-256）**
 
 ```typescript
-home_team:teams!matches_home_team_id_fkey ( name, name_ja, english_name ),
-away_team:teams!matches_away_team_id_fkey ( name, name_ja, english_name ),
+home_team:teams!matches_home_team_id_fkey ( name, name_ja, english_name, slug ),
+away_team:teams!matches_away_team_id_fkey ( name, name_ja, english_name, slug ),
 competition:competitions!matches_competition_id_fkey ( name, name_ja, season, family )
 ```
 
-**3) 表示名ロジックを修正（L316-324）**
+（`slug` はチーム側のみ必要。`getCompetitionDisplayName` は既に select 済みの `family` で家族ベースのフォールバックができるため、competition 側に `slug` の追加は不要）
+
+**3) 既存ユーティリティを import し、表示名ロジックを差し替え（L316-324）**
+
+ファイル冒頭に import を追加:
+
+```typescript
+import { getCompetitionDisplayName, formatCompetitionTitle } from "@/lib/format/competition";
+import { getTeamDisplayName } from "@/lib/format/team";
+```
+
+表示名ロジック:
 
 ```typescript
 const competitionLabel =
   content.language === "en"
     ? (competition?.name ?? "")
-    : (competition?.name_ja ?? competition?.name ?? "");
+    : formatCompetitionTitle(
+        {
+          family: competition?.family ?? null,
+          name: competition?.name ?? "",
+          nameJa: competition?.name_ja ?? null,
+        },
+        competition?.season ?? "",
+        "ja",
+      );
 const homeDisplayName =
   content.language === "en"
     ? (homeTeam?.english_name ?? homeTeam?.name ?? "Home")
-    : (homeTeam?.name_ja ?? homeTeam?.name ?? "Home");
+    : getTeamDisplayName(
+        {
+          name: homeTeam?.name ?? "Home",
+          nameJa: homeTeam?.name_ja ?? null,
+          slug: homeTeam?.slug ?? null,
+        },
+        "ja",
+      );
 const awayDisplayName =
   content.language === "en"
     ? (awayTeam?.english_name ?? awayTeam?.name ?? "Away")
-    : (awayTeam?.name_ja ?? awayTeam?.name ?? "Away");
+    : getTeamDisplayName(
+        {
+          name: awayTeam?.name ?? "Away",
+          nameJa: awayTeam?.name_ja ?? null,
+          slug: awayTeam?.slug ?? null,
+        },
+        "ja",
+      );
 ```
+
+`formatCompetitionTitle` は既に「season が含まれていなければ末尾に付加する」処理を持っているため、season の重複や欠落を個別に気にする必要はない。`getCompetitionDisplayName` はこの内部で呼ばれる。
 
 **4) `appendOfficialReplyFields` 呼び出しを修正（L432-438）**
 
@@ -132,23 +177,38 @@ const awayDisplayName =
 appendOfficialReplyFields(embed, {
   awayScore: match.away_score ?? 0,
   awayTeamNameEn: awayTeam?.english_name ?? awayTeam?.name ?? "Away",
-  awayTeamNameJa: awayTeam?.name_ja ?? awayTeam?.name ?? "Away",
+  awayTeamNameJa: getTeamDisplayName(
+    {
+      name: awayTeam?.name ?? "Away",
+      nameJa: awayTeam?.name_ja ?? null,
+      slug: awayTeam?.slug ?? null,
+    },
+    "ja",
+  ),
   competitionFamily: competition?.family ?? null,
   homeScore: match.home_score ?? 0,
   homeTeamNameEn: homeTeam?.english_name ?? homeTeam?.name ?? "Home",
-  homeTeamNameJa: homeTeam?.name_ja ?? homeTeam?.name ?? "Home",
+  homeTeamNameJa: getTeamDisplayName(
+    {
+      name: homeTeam?.name ?? "Home",
+      nameJa: homeTeam?.name_ja ?? null,
+      slug: homeTeam?.slug ?? null,
+    },
+    "ja",
+  ),
   tryScorers,
 });
 ```
 
-`competitionLabel` が `name_ja` を使うようになるため、`ネーションズチャンピオンシップ 2026` のような season 付き表記が必要な場合は既存の season 結合ロジック（あれば）と整合させること。season をラベルに含める処理が別途あるか確認し、なければ `${competition?.name_ja ?? competition?.name} ${competition?.season ?? ""}`.trim() の形に揃える。
-
-### 受け入れ条件（Part 1）
+### 受け入れ条件（Part 1・修正版）
 
 1. TypeScript ビルドが通る
-2. 日本語プレビュー/レビューのDiscordドラフトで、チーム名・大会名が `name_ja` を優先して表示される（`name_ja` が null のチーム・大会は既存通り `name` にフォールバック）
-3. 英語投稿（`content.language === "en"`）の挙動は変更しない（`english_name` 優先のまま）
-4. `appendOfficialReplyFields` に渡す `*TeamNameJa` が実際に日本語表記になる
+2. 日本語プレビュー/レビューのDiscordドラフトで、チーム名・大会名が `getTeamDisplayName` / `formatCompetitionTitle` 経由で表示される
+3. **`competitionLabel` に season が含まれる**（例: `ネーションズチャンピオンシップ 2026`、`シックスネイションズ 2026`）— これが今回の差し戻しの核心
+4. **`name_ja` が null の大会（`Nations Championship 2026` など）でも family ベースの辞書経由でカタカナ表記になる**（英語のまま出力されない）
+5. 英語投稿（`content.language === "en"`）の挙動は変更しない（`english_name` 優先のまま）
+6. `appendOfficialReplyFields` に渡す `*TeamNameJa` が実際に日本語表記になる
+7. 既存テスト（`tests/api/notify-discord.test.ts`）を更新し、season 込みの `competitionLabel` と `name_ja` が null の大会ケースの両方をアサートすること
 
 ---
 
