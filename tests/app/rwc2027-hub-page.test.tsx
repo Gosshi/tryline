@@ -5,6 +5,8 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import RWC2027Page from "@/app/c/rwc/2027/page";
+
 import type { MatchContentStatus } from "@/lib/db/queries/match-content";
 import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { PoolStanding, StandingRow } from "@/lib/db/queries/standings";
@@ -70,8 +72,6 @@ vi.mock("@/lib/db/queries/competitions", () => competitionsMock);
 vi.mock("@/lib/db/queries/match-content", () => contentStatusMock);
 vi.mock("@/lib/db/queries/matches", () => matchesMock);
 vi.mock("@/lib/db/queries/standings", () => standingsMock);
-
-import RWC2027Page from "@/app/c/rwc/2027/page";
 
 const competition = {
   family: "rwc",
