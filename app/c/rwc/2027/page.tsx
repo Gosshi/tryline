@@ -42,35 +42,11 @@ function PendingState() {
   );
 }
 
-function ComingSoonState({ matchCount }: { matchCount: number }) {
+function PreTournamentBanner({ matchCount }: { matchCount: number }) {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-24 text-center">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-accent)]">
-        Coming Soon
-      </p>
-      <h1 className="mt-4 font-serif text-4xl font-bold text-[var(--color-ink)]">
-        Rugby World Cup 2027
-      </h1>
-      <p className="mt-6 text-base leading-relaxed text-[var(--color-ink-muted)]">
-        2027年10〜11月、オーストラリア開催。
-        <br />全{matchCount}試合のスケジュールが確定しています。
-        <br />
-        開幕後、試合結果・日本語レビューを随時公開予定。
-      </p>
-      <div className="mt-8 flex flex-col items-center gap-3">
-        <Link
-          className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
-          href="/c/rwc/2027/bracket"
-        >
-          ノックアウトブラケットを見る →
-        </Link>
-        <Link
-          className="text-sm text-[var(--color-ink-muted)] underline underline-offset-4"
-          href="/"
-        >
-          トップへ戻る
-        </Link>
-      </div>
+    <div className="rounded-lg border border-[var(--color-rule)] bg-white px-6 py-4 text-sm text-[var(--color-ink-muted)]">
+      2027年10〜11月、オーストラリア開催。全{matchCount}
+      試合のスケジュールが確定しています。開幕後、試合結果・日本語レビューを順次公開します。
     </div>
   );
 }
@@ -91,17 +67,17 @@ export default async function RWC2027Page() {
     listMatchesForCompetition("rwc-2027"),
   ]);
 
-  const allScheduled =
-    matches.length > 0 && matches.every((match) => match.status !== "finished");
-
-  if (allScheduled) {
+  if (matches.length === 0) {
     return (
       <main className="min-h-screen bg-slate-50">
-        <ComingSoonState matchCount={matches.length} />
+        <PendingState />
       </main>
     );
   }
 
+  const tournamentStarted = matches.some(
+    (match) => match.status === "finished" || match.status === "in_progress",
+  );
   const contentStatusMap = await getContentStatusMap(
     matches.map((match) => match.id),
   );
@@ -127,6 +103,10 @@ export default async function RWC2027Page() {
           </div>
         </header>
 
+        {!tournamentStarted && (
+          <PreTournamentBanner matchCount={matches.length} />
+        )}
+
         {poolStandings.length > 0 && (
           <section className="space-y-4">
             {poolStandings.map((pool) => (
@@ -140,22 +120,11 @@ export default async function RWC2027Page() {
           </section>
         )}
 
-        {matches.length === 0 ? (
-          <div className="rounded-lg border border-[var(--color-rule)] bg-slate-50 px-6 py-10 text-center">
-            <p className="text-sm font-medium text-[var(--color-ink)]">
-              試合データを準備中です
-            </p>
-            <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
-              この大会の試合情報はまもなく公開予定です。
-            </p>
-          </div>
-        ) : (
-          <SeasonMatchGroups
-            contentStatusMap={Object.fromEntries(contentStatusMap)}
-            family="rwc"
-            groupedMatches={groupedMatches}
-          />
-        )}
+        <SeasonMatchGroups
+          contentStatusMap={Object.fromEntries(contentStatusMap)}
+          family="rwc"
+          groupedMatches={groupedMatches}
+        />
       </div>
     </main>
   );
