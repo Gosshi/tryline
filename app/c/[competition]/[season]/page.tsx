@@ -249,14 +249,9 @@ export default async function SeasonPage({ params }: Props) {
           </>
         )}
 
-        <details className="group rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
-          <summary className="cursor-pointer list-none font-heading text-lg font-bold text-[var(--color-ink)]">
-            大会ガイドを見る
-          </summary>
-          <div className="mt-4">
-            <CompetitionViewingGuide markdown={guide} />
-          </div>
-        </details>
+        <div className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
+          <CompetitionViewingGuide markdown={guide} />
+        </div>
       </div>
     </main>
   );
