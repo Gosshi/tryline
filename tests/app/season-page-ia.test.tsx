@@ -146,7 +146,7 @@ describe("season page information architecture", () => {
     cleanup();
   });
 
-  it("places standings before the match list and keeps the guide collapsed at the bottom", async () => {
+  it("places standings before the match list and keeps the guide expanded at the bottom", async () => {
     const { container } = render(
       await SeasonPage({
         params: Promise.resolve({
@@ -159,15 +159,19 @@ describe("season page information architecture", () => {
     const standings = container.querySelector("#standings");
     const matchGroups = screen.getByTestId("season-match-groups");
     const guide = screen.getByTestId("competition-guide");
-    const details = guide.closest("details");
+    const guideFrame = guide.parentElement;
 
     expect(standings).not.toBeNull();
-    expect(details).not.toBeNull();
-    expect(details).not.toHaveAttribute("open");
-    expect(screen.getByText("大会ガイドを見る")).toBeInTheDocument();
+    expect(guide.closest("details")).toBeNull();
+    expect(screen.queryByText("大会ガイドを見る")).not.toBeInTheDocument();
+    expect(guideFrame).toHaveClass(
+      "rounded-[var(--radius-md)]",
+      "bg-white",
+      "shadow-[var(--shadow-soft)]",
+    );
     expect(guide).toHaveTextContent("観戦ガイド全文");
     expect(follows(standings!, matchGroups)).toBe(true);
-    expect(follows(matchGroups, details!)).toBe(true);
+    expect(follows(matchGroups, guideFrame!)).toBe(true);
   });
 
   it("keeps standings above the empty state when no matches are available", async () => {
