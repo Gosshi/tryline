@@ -173,16 +173,14 @@ export default async function HomePage() {
       <section className="relative overflow-hidden bg-[var(--color-ink)] py-16 sm:py-24">
         <HeroTexture />
         <div aria-hidden className="absolute inset-0 z-0">
-          <video
-            autoPlay
-            className="absolute inset-0 h-full w-full object-cover object-center opacity-25"
-            loop
-            muted
-            playsInline
-            preload="none"
-          >
-            <source src="/hero-bg.mp4" type="video/mp4" />
-          </video>
+          <Image
+            alt=""
+            className="object-cover object-center opacity-25"
+            fill
+            priority
+            sizes="100vw"
+            src="/visuals/home-hero.jpg"
+          />
           <div className="bg-[var(--color-ink)]/60 absolute inset-0" />
         </div>
 
