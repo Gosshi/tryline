@@ -51,6 +51,10 @@ vi.mock("@/components/match-card", () => ({
   MatchCard: () => <div>Match card</div>,
 }));
 
+vi.mock("next/image", () => ({
+  default: ({ alt }: { alt: string }) => <span>{alt}</span>,
+}));
+
 vi.mock("@/components/team-badge", () => ({
   TeamBadge: ({ shortCode }: { shortCode?: string | null }) => (
     <span>{shortCode}</span>
@@ -148,7 +152,10 @@ describe("HomePage", () => {
     for (const link of screen.getAllByRole("link", {
       name: /無料サンプルを読む/,
     })) {
-      expect(link).toHaveAttribute("href", `/matches/${PRIMARY_SAMPLE_MATCH_ID}`);
+      expect(link).toHaveAttribute(
+        "href",
+        `/matches/${PRIMARY_SAMPLE_MATCH_ID}`,
+      );
     }
     expect(screen.getAllByText("Northampton vs Gloucester").length).toBe(2);
     expect(
@@ -157,5 +164,51 @@ describe("HomePage", () => {
     expect(
       screen.getByRole("link", { name: "今週の試合を見る" }),
     ).toHaveAttribute("href", "/calendar");
+  });
+
+  it("keeps the RWC archive card on 2023 while adding the 2027 schedule link", async () => {
+    competitionMocks.listFamilies.mockResolvedValue(["rwc", "six-nations"]);
+    competitionMocks.listSeasonsByFamily.mockImplementation(
+      (family: string) => {
+        if (family === "rwc") {
+          return Promise.resolve([
+            {
+              endDate: "2023-10-28",
+              matchCount: 48,
+              name: "Rugby World Cup 2023",
+              season: "2023",
+            },
+          ]);
+        }
+
+        return Promise.resolve([
+          {
+            endDate: "2026-03-14",
+            matchCount: 15,
+            name: "Six Nations 2026",
+            season: "2026",
+          },
+        ]);
+      },
+    );
+    competitionMocks.selectLatestSeasonWithMatches.mockImplementation(
+      (seasons) => seasons[0] ?? null,
+    );
+
+    render(await HomePage());
+
+    expect(
+      screen.getByRole("link", { name: /Rugby World Cup 2023 最新シーズン/ }),
+    ).toHaveAttribute("href", "/c/rwc/2023");
+    expect(
+      screen.getByRole("link", {
+        name: "2027年大会（オーストラリア開催）の日程はこちら →",
+      }),
+    ).toHaveAttribute("href", "/c/rwc/2027");
+    expect(
+      screen.getAllByRole("link", {
+        name: "2027年大会（オーストラリア開催）の日程はこちら →",
+      }),
+    ).toHaveLength(1);
   });
 });
