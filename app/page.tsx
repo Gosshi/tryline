@@ -131,7 +131,8 @@ export default async function HomePage() {
     .filter((match) => match.kickoffAt >= nowIso)
     .slice(0, 6);
   const homepageUpcomingMatches = upcomingMatches.filter(
-    (match) => !homepageWeekMatches.some((weekMatch) => weekMatch.id === match.id),
+    (match) =>
+      !homepageWeekMatches.some((weekMatch) => weekMatch.id === match.id),
   );
   const favoriteTeamPageSlug =
     favoriteTeamSlugs.length === 1 ? (favoriteTeamSlugs[0] ?? null) : null;
@@ -196,7 +197,8 @@ export default async function HomePage() {
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
             DAZN、J SPORTS、WOWOW で見たい試合が重なる週末でも、Six
-            Nations・Premiership・URC をはじめとする主要大会の試合の流れと見どころを
+            Nations・Premiership・URC
+            をはじめとする主要大会の試合の流れと見どころを
             日本語レビューと試合チャットで追えます。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -587,6 +589,14 @@ export default async function HomePage() {
                       最新シーズン →
                     </span>
                   </Link>
+                  {competition.family === "rwc" && (
+                    <Link
+                      className="mt-2 block rounded-lg px-2 py-2 text-xs font-medium text-[var(--color-accent)] underline underline-offset-4 transition-colors hover:text-[var(--color-accent-strong)]"
+                      href="/c/rwc/2027"
+                    >
+                      2027年大会（オーストラリア開催）の日程はこちら →
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
