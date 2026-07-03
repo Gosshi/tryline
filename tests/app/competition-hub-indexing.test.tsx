@@ -123,15 +123,60 @@ describe("competition hub indexing", () => {
     );
   });
 
-  it("falls back to the default key visual when no image is available", async () => {
+  it("uses batch two local key visuals when available", async () => {
+    competitionMocks.listSeasonsByFamily.mockResolvedValue([
+      {
+        champion: null,
+        endDate: "2026-06-20",
+        family: "urc",
+        id: "urc-2025-26",
+        matchCount: 151,
+        name: "United Rugby Championship 2025-26",
+        nameJa: "URC 2025-26",
+        publishedContentCount: 10,
+        season: "2025-26",
+        slug: "urc-2025-26",
+        startDate: "2025-09-26",
+      },
+    ]);
+
     render(
       await CompetitionHubPage({
-        params: Promise.resolve({ competition: "rwc" }),
+        params: Promise.resolve({ competition: "urc" }),
+      }),
+    );
+
+    expect(screen.getByRole("img", { name: "URC" })).toHaveAttribute(
+      "data-src",
+      "/visuals/urc.jpg",
+    );
+  });
+
+  it("falls back to the default key visual when no image is available", async () => {
+    competitionMocks.listSeasonsByFamily.mockResolvedValue([
+      {
+        champion: null,
+        endDate: "2027-12-01",
+        family: "nations-championship",
+        id: "nations-championship-2026",
+        matchCount: 36,
+        name: "Nations Championship 2026",
+        nameJa: "ネーションズチャンピオンシップ2026",
+        publishedContentCount: 0,
+        season: "2026",
+        slug: "nations-championship-2026",
+        startDate: "2026-07-01",
+      },
+    ]);
+
+    render(
+      await CompetitionHubPage({
+        params: Promise.resolve({ competition: "nations-championship" }),
       }),
     );
 
     expect(
-      screen.getByRole("img", { name: "Rugby World Cup" }),
+      screen.getByRole("img", { name: "Nations Championship" }),
     ).toHaveAttribute("data-src", "/visuals/default.jpg");
   });
 
