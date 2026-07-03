@@ -268,11 +268,11 @@ describe("generateNarrative", () => {
       contentType: "preview",
       currentContent: "# short",
       language: "ja",
-      promptVersion: "preview@3.5.0",
+      promptVersion: "preview@3.6.0",
       tacticalPoints: [],
     });
 
-    expect(result.promptVersion).toBe("preview@3.5.0+length-revision@1.0.0");
+    expect(result.promptVersion).toBe("preview@3.6.0+length-revision@1.0.0");
     expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
       expect.objectContaining({
         input: expect.stringContaining("字数下限未満です"),
@@ -304,7 +304,7 @@ describe("generateNarrative", () => {
       contentType: "preview",
       currentContent: "# short",
       language: "ja",
-      promptVersion: "preview@3.5.0",
+      promptVersion: "preview@3.6.0",
       tacticalPoints: [],
     });
 

@@ -53,8 +53,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.5.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.5.0");
+  it("uses preview prompt version 3.6.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.6.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -161,11 +161,22 @@ describe("buildGeneratePreviewPrompt", () => {
   it("uses data-sparse structure when lineup and event data are unavailable", () => {
     const prompt = buildGeneratePreviewPrompt(assembled, [], []);
 
-    expect(prompt).toContain("3セクション構成（セクション0を除く）");
-    expect(prompt).toContain("1)500-600字 2)400-500字 3)400-500字");
+    expect(prompt).toContain(
+      "構成: セクション0（この試合の核心）に続けて3セクション構成。",
+    );
+    expect(prompt).toContain(
+      "文字数目安: 1セクション目500-600字、2セクション目400-500字、3セクション目400-500字。",
+    );
     expect(prompt).toContain(
       "各セクションの見出し名はこの試合の特性に応じて自由に設定すること",
     );
+    expect(prompt).toContain(
+      "見出し行には内容を要約した具体的なタイトルのみを書くこと。",
+    );
+    expect(prompt).toContain(
+      "「セクション1」「セクション2」「Section 1」等の連番ラベルや「セクション0」を見出しに含めてはならない。",
+    );
+    expect(prompt).not.toContain("1)500-600字 2)400-500字 3)400-500字");
     expect(prompt).not.toContain("両チーム現状と近況(500-600字)");
     expect(prompt).not.toContain("大会文脈・この試合の意味(400-500字)");
     expect(prompt).not.toContain("戦術傾向と注目ポイント(400-500字)");
@@ -180,6 +191,74 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("key_stats.home/away の avg_score_diff_last_5");
     expect(prompt).toContain("key_stats.home/away の result_streak");
     expect(prompt).toContain("逃げ表現は一切禁止");
+  });
+
+  it("uses section heading guardrails when lineup data is available", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        projected_lineups: {
+          away: [
+            {
+              is_starter: true,
+              jersey_number: 9,
+              name: "Away Nine",
+              position: "Scrum-half",
+            },
+          ],
+          home: [
+            {
+              is_starter: true,
+              jersey_number: 10,
+              name: "Home Ten",
+              position: "Fly-half",
+            },
+          ],
+        },
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain(
+      "文字数目安: 1セクション目400-500字、2セクション目600-700字、3セクション目300-400字。",
+    );
+    expect(prompt).toContain(
+      "3セクションのうち1つはキープレイヤー/注目マッチアップを扱うセクションにすること。",
+    );
+    expect(prompt).toContain(
+      "連番ラベルや「セクション0」を見出しに含めてはならない",
+    );
+    expect(prompt).not.toContain("1)400-500字 2)600-700字 3)300-400字");
+  });
+
+  it("uses section heading guardrails for event-only previews", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        match_events: [
+          {
+            minute: 12,
+            player_name: "Home Ten",
+            team_name: "Home",
+            type: "penalty",
+          },
+        ],
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain(
+      "文字数目安: 1セクション目400-500字、2セクション目600-700字、3セクション目300-400字。",
+    );
+    expect(prompt).toContain(
+      "キープレイヤーセクションは省略すること（ラインアップデータなし）。",
+    );
+    expect(prompt).toContain(
+      "連番ラベルや「セクション0」を見出しに含めてはならない",
+    );
+    expect(prompt).not.toContain("1)400-500字 2)600-700字 3)300-400字");
   });
 
   it("requires real lineup names and matchups when lineup data is available", () => {
