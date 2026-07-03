@@ -92,7 +92,10 @@ function buildStanding(poolIndex: number, teamIndex: number): StandingRow {
     pointsAgainst: 0,
     pointsFor: 0,
     position: teamIndex + 1,
-    teamName: `Pool ${poolIndex + 1} Team ${teamIndex + 1}`,
+    teamName:
+      poolIndex === 0 && teamIndex === 3
+        ? "-"
+        : `Pool ${poolIndex + 1} Team ${teamIndex + 1}`,
     teamShortCode: `T${String(teamNumber).padStart(2, "0")}`,
     totalPoints: 0,
     triesFor: 0,
@@ -154,7 +157,7 @@ describe("RWC 2027 hub page", () => {
     cleanup();
   });
 
-  it("renders pool standings and the full schedule when every match is scheduled", async () => {
+  it("prioritizes the schedule and renders compact pool teams before the tournament starts", async () => {
     matchesMock.listMatchesForCompetition.mockResolvedValue(
       Array.from({ length: 36 }, (_, index) =>
         buildMatch(index + 1, "scheduled"),
@@ -165,23 +168,29 @@ describe("RWC 2027 hub page", () => {
 
     expect(screen.queryByText("Coming Soon")).not.toBeInTheDocument();
     expect(
+      screen.getByRole("heading", {
+        name: "ラグビーワールドカップ2027",
+      }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByText(
         "2027年10〜11月、オーストラリア開催。全36試合のスケジュールが確定しています。開幕後、試合結果・日本語レビューを順次公開します。",
       ),
     ).toBeInTheDocument();
-    for (const poolName of [
-      "Pool A",
-      "Pool B",
-      "Pool C",
-      "Pool D",
-      "Pool E",
-      "Pool F",
-    ]) {
-      expect(screen.getByText(`${poolName} 順位表`)).toBeInTheDocument();
-    }
-    expect(screen.getByLabelText("RWC 2027 全日程")).toHaveTextContent(
-      "全36試合の日程",
-    );
+    expect(screen.queryByText("Pool A 順位表")).not.toBeInTheDocument();
+
+    const schedule = screen.getByLabelText("RWC 2027 全日程");
+    const poolGrid = screen.getByLabelText("RWC 2027 プール分け");
+
+    expect(schedule).toHaveTextContent("全36試合の日程");
+    expect(poolGrid).toHaveTextContent("Pool A");
+    expect(poolGrid).toHaveTextContent("Pool 1 Team 1");
+    expect(poolGrid).toHaveTextContent("未確定");
+    expect(poolGrid).not.toHaveTextContent("-");
+    expect(
+      schedule.compareDocumentPosition(poolGrid) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(contentStatusMock.getContentStatusMap).toHaveBeenCalledWith(
       expect.arrayContaining(["rwc-match-1", "rwc-match-36"]),
     );
@@ -211,6 +220,31 @@ describe("RWC 2027 hub page", () => {
     expect(
       screen.queryByText(/全36試合のスケジュールが確定しています/),
     ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("RWC 2027 プール分け")).not.toBeInTheDocument();
+    expect(screen.getByText("Pool A 順位表")).toBeInTheDocument();
+
+    const standingsHeading = screen.getByText("Pool A 順位表");
+    const schedule = screen.getByLabelText("RWC 2027 全日程");
+
+    expect(schedule).toHaveTextContent("全36試合の日程");
+    expect(
+      standingsHeading.compareDocumentPosition(schedule) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("keeps real standings above the schedule after a match has finished", async () => {
+    matchesMock.listMatchesForCompetition.mockResolvedValue([
+      buildMatch(1, "finished"),
+      ...Array.from({ length: 35 }, (_, index) =>
+        buildMatch(index + 2, "scheduled"),
+      ),
+    ]);
+
+    render(await RWC2027Page());
+
+    expect(screen.queryByLabelText("RWC 2027 プール分け")).not.toBeInTheDocument();
+    expect(screen.getByText("Pool A 順位表")).toBeInTheDocument();
     expect(screen.getByLabelText("RWC 2027 全日程")).toHaveTextContent(
       "全36試合の日程",
     );
