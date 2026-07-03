@@ -22,29 +22,13 @@ type Props = {
 };
 
 const COMPETITION_HERO_IMAGES: Record<string, string> = {
-  "six-nations":
-    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80",
-  premiership:
-    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1280&q=80",
-  urc: "https://images.unsplash.com/photo-1480099225005-2513c8947aec?w=1200&q=80",
-  "top-14":
-    "https://images.unsplash.com/photo-1529663297269-6d349ec39b57?w=1200&q=80",
-  "super-rugby-pacific":
-    "https://images.unsplash.com/photo-1595432973730-d07ba6b406c2?w=1200&q=80",
-  "rugby-championship":
-    "https://images.unsplash.com/photo-1570878786170-0723365bdf35?w=1200&q=80",
-  "nations-championship":
-    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80",
-  "autumn-nations":
-    "https://images.unsplash.com/photo-1763854413165-1713bc5a7f4a?w=1200&q=80",
-  pnc: "https://images.unsplash.com/photo-1730946450226-d15e3bca7877?w=1200&q=80",
-  "league-one":
-    "https://images.unsplash.com/photo-1747200582045-ac3830336aaa?w=1200&q=80",
-  rwc: "https://images.unsplash.com/photo-1759760300494-7378d88180f9?w=1200&q=80",
+  premiership: "/visuals/premiership.jpg",
+  "rugby-championship": "/visuals/rugby-championship.jpg",
+  "six-nations": "/visuals/six-nations.jpg",
+  "super-rugby-pacific": "/visuals/super-rugby-pacific.jpg",
 };
 
-const DEFAULT_COMPETITION_HERO =
-  "https://images.unsplash.com/photo-1767190937750-d6aaf8ea99d0?w=1200&q=80";
+const DEFAULT_COMPETITION_HERO = "/visuals/default.jpg";
 
 const COMPETITION_DESCRIPTIONS: Record<string, string> = {
   "six-nations":

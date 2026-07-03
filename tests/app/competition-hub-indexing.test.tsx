@@ -18,7 +18,9 @@ const matchMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("next/image", () => ({
-  default: (props: { alt: string }) => <div aria-label={props.alt} />,
+  default: (props: { alt: string; src: string }) => (
+    <div aria-label={props.alt} data-src={props.src} role="img" />
+  ),
 }));
 
 vi.mock("@/components/competition-viewing-guide", () => ({
@@ -90,6 +92,47 @@ describe("competition hub indexing", () => {
         name: /最新シーズン ラグビーワールドカップ2027/,
       }),
     ).toHaveAttribute("href", "/c/rwc/2027");
+  });
+
+  it("uses local key visuals when an image is available", async () => {
+    competitionMocks.listSeasonsByFamily.mockResolvedValue([
+      {
+        champion: null,
+        endDate: "2026-06-20",
+        family: "premiership",
+        id: "premiership-2025-26",
+        matchCount: 93,
+        name: "Premiership Rugby 2025-26",
+        nameJa: "プレミアシップ 2025-26",
+        publishedContentCount: 10,
+        season: "2025-26",
+        slug: "premiership-2025-26",
+        startDate: "2025-09-26",
+      },
+    ]);
+
+    render(
+      await CompetitionHubPage({
+        params: Promise.resolve({ competition: "premiership" }),
+      }),
+    );
+
+    expect(screen.getByRole("img", { name: "Premiership" })).toHaveAttribute(
+      "data-src",
+      "/visuals/premiership.jpg",
+    );
+  });
+
+  it("falls back to the default key visual when no image is available", async () => {
+    render(
+      await CompetitionHubPage({
+        params: Promise.resolve({ competition: "rwc" }),
+      }),
+    );
+
+    expect(
+      screen.getByRole("img", { name: "Rugby World Cup" }),
+    ).toHaveAttribute("data-src", "/visuals/default.jpg");
   });
 
   it("uses Japanese RWC 2027 metadata for schedule and viewing queries", () => {
