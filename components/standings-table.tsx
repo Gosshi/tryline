@@ -69,7 +69,10 @@ export function StandingsTable({
                     {row.position}
                   </td>
                   <td className="py-2 pr-4 font-semibold text-slate-900">
-                    <span title={row.teamName}>{row.teamShortCode}</span>
+                    <span className="hidden sm:inline">{row.teamName}</span>
+                    <span className="sm:hidden" title={row.teamName}>
+                      {row.teamShortCode}
+                    </span>
                   </td>
                   <td className="py-2 text-right tabular-nums text-slate-600">
                     {row.played}

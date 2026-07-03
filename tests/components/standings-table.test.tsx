@@ -36,7 +36,10 @@ describe("StandingsTable", () => {
     const { container } = render(<StandingsTable standings={[standing]} />);
 
     expect(screen.getByText("順位表")).toBeInTheDocument();
+    expect(screen.getByText("Ireland")).toHaveClass("hidden", "sm:inline");
     expect(screen.getByText("IRE")).toBeInTheDocument();
+    expect(screen.getByText("IRE")).toHaveClass("sm:hidden");
+    expect(screen.getByText("IRE")).toHaveAttribute("title", "Ireland");
     expect(screen.getByText("82-54")).toBeInTheDocument();
     expect(screen.getByText("13")).toHaveClass(
       "font-display",

@@ -205,6 +205,10 @@ export default async function SeasonPage({ params }: Props) {
           </p>
         )}
 
+        <div id="standings">
+          <StandingsTable standings={standings} />
+        </div>
+
         {matches.length === 0 ? (
           <div className="rounded-lg border border-[var(--color-rule)] bg-slate-50 px-6 py-10 text-center">
             <p className="text-sm font-medium text-[var(--color-ink)]">
@@ -233,7 +237,6 @@ export default async function SeasonPage({ params }: Props) {
           </div>
         ) : (
           <>
-            <CompetitionViewingGuide markdown={guide} />
             {hasAnyContent && <PremiumUpsellBanner />}
             <Suspense>
               <SeasonMatchGroups
@@ -246,9 +249,14 @@ export default async function SeasonPage({ params }: Props) {
           </>
         )}
 
-        <div id="standings">
-          <StandingsTable standings={standings} />
-        </div>
+        <details className="group rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
+          <summary className="cursor-pointer list-none font-heading text-lg font-bold text-[var(--color-ink)]">
+            大会ガイドを見る
+          </summary>
+          <div className="mt-4">
+            <CompetitionViewingGuide markdown={guide} />
+          </div>
+        </details>
       </div>
     </main>
   );
