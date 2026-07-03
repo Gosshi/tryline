@@ -23,6 +23,7 @@ describe("ContentPlaceholder", () => {
     render(<ContentPlaceholder state={state} type={type} />);
 
     expect(screen.getByText(expectedText)).toBeInTheDocument();
+    expect(screen.queryByText(/自動生成/)).not.toBeInTheDocument();
     expect(screen.getByRole("img", { hidden: true })).toBeInTheDocument();
   });
 });
