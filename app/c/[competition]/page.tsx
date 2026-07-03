@@ -22,10 +22,15 @@ type Props = {
 };
 
 const COMPETITION_HERO_IMAGES: Record<string, string> = {
+  "autumn-nations": "/visuals/autumn-nations.jpg",
+  "league-one": "/visuals/league-one.jpg",
+  pnc: "/visuals/pnc.jpg",
   premiership: "/visuals/premiership.jpg",
   "rugby-championship": "/visuals/rugby-championship.jpg",
   "six-nations": "/visuals/six-nations.jpg",
   "super-rugby-pacific": "/visuals/super-rugby-pacific.jpg",
+  "top-14": "/visuals/top-14.jpg",
+  urc: "/visuals/urc.jpg",
 };
 
 const DEFAULT_COMPETITION_HERO = "/visuals/default.jpg";
