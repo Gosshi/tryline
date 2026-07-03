@@ -36,11 +36,6 @@ export function ContentPlaceholder({ state, type }: ContentPlaceholderProps) {
           {COPY[type][state]}
         </p>
       </div>
-      {state !== "unavailable" && (
-        <p className="mt-2 text-xs text-[var(--color-ink-muted)]">
-          コンテンツは自動生成されます。しばらくお待ちください。
-        </p>
-      )}
     </div>
   );
 }
