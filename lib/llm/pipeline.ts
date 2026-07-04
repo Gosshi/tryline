@@ -141,6 +141,9 @@ export async function generateMatchContent(
   }
 
   const hasEvents = assembled.match_events.length > 0;
+  const hasLineups =
+    assembled.projected_lineups.home.length > 0 ||
+    assembled.projected_lineups.away.length > 0;
   let totalCostUsd = 0;
 
   const stage2StartedAt = Date.now();
@@ -246,6 +249,7 @@ export async function generateMatchContent(
           sourcedFacts: assembled.sourced_facts,
         },
         hasEvents,
+        hasLineups,
         narrative: narrative.content,
         retryCount: attempt,
       });
@@ -370,6 +374,7 @@ export async function generateMatchContent(
           sourcedFacts: assembled.sourced_facts,
         },
         hasEvents,
+        hasLineups,
         narrative: revised.content,
         retryCount: attempt + 1,
       });
