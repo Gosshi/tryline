@@ -262,6 +262,135 @@ describe("evaluateNarrativeQuality", () => {
     expect(result.result.verdict).not.toBe("publish");
   });
 
+  it("forces factual grounding failure when player references are ungrounded", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      hasEvents: false,
+      hasLineups: false,
+      matchContext,
+      narrative: `# 見どころ\n${"あ".repeat(
+        1500,
+      )}\n# セクション2: キープレイヤーとマッチアップ\n山澤拓也（フライハーフ）、中野将伍（センター）、藤原信（スクラムハーフ）が焦点になる。`,
+      retryCount: 0,
+    });
+
+    expect(result.result.scores.factual_grounding).toBe(1);
+    expect(result.result.issues).toContain(
+      "ラインアップ不在にもかかわらず選手個別言及を含む",
+    );
+    expect(result.result.verdict).toBe("retry");
+  });
+
+  it("rejects ungrounded player references after the final retry", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      hasEvents: false,
+      hasLineups: false,
+      matchContext,
+      narrative: `# 見どころ\n${"あ".repeat(
+        1500,
+      )}\n# キープレイヤー\n山澤拓也（フライハーフ）が試合を動かす。`,
+      retryCount: 2,
+    });
+
+    expect(result.result.scores.factual_grounding).toBe(1);
+    expect(result.result.verdict).toBe("reject");
+  });
+
+  it("allows the same player-reference pattern when lineups are present", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      hasEvents: false,
+      hasLineups: true,
+      matchContext,
+      narrative: `# 見どころ\n${"あ".repeat(
+        1500,
+      )}\n# キープレイヤー\n山澤拓也（フライハーフ）が試合を動かす。`,
+      retryCount: 0,
+    });
+
+    expect(result.result.scores.factual_grounding).toBe(5);
+    expect(result.result.issues).not.toContain(
+      "ラインアップ不在にもかかわらず選手個別言及を含む",
+    );
+    expect(result.result.verdict).toBe("publish");
+  });
+
+  it("allows the same player-reference pattern when events are present", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      hasEvents: true,
+      hasLineups: false,
+      matchContext,
+      narrative: `# 見どころ\n${"あ".repeat(
+        1500,
+      )}\n# キープレイヤー\n山澤拓也（フライハーフ）が試合を動かす。`,
+      retryCount: 0,
+    });
+
+    expect(result.result.scores.factual_grounding).toBe(5);
+    expect(result.result.issues).not.toContain(
+      "ラインアップ不在にもかかわらず選手個別言及を含む",
+    );
+    expect(result.result.verdict).toBe("publish");
+  });
+
   it("blocks publishing when factual grounding is <= 2 even if length passes", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       text: JSON.stringify({

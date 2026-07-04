@@ -1,5 +1,7 @@
 import {
+  containsUngroundedPlayerReference,
   containsUnsupportedStatistic,
+  UNGROUNDED_PLAYER_REFERENCE_ISSUE,
   UNSUPPORTED_STATISTIC_ISSUE,
 } from "@/lib/content/fabrication-guard";
 import {
@@ -51,6 +53,7 @@ export function isContentLengthIssue(result: QaResult): boolean {
 export function isFactualGroundingHardBlock(result: QaResult): boolean {
   return (
     result.scores.factual_grounding <= 2 ||
+    result.issues.includes(UNGROUNDED_PLAYER_REFERENCE_ISSUE) ||
     result.issues.includes(UNSUPPORTED_STATISTIC_ISSUE)
   );
 }
@@ -110,6 +113,7 @@ function applyDeterministicQaGuards(
   options: {
     contentType: ContentType;
     hasEvents: boolean;
+    hasLineups: boolean;
     language: ContentLanguage;
     matchContext: QaMatchContext;
     narrative: string;
@@ -126,6 +130,23 @@ function applyDeterministicQaGuards(
     guarded = {
       ...guarded,
       issues: appendIssue(guarded.issues, UNSUPPORTED_STATISTIC_ISSUE),
+      scores: {
+        ...guarded.scores,
+        factual_grounding: 1,
+      },
+    };
+  }
+
+  if (
+    containsUngroundedPlayerReference(
+      options.narrative,
+      options.hasLineups,
+      options.hasEvents,
+    )
+  ) {
+    guarded = {
+      ...guarded,
+      issues: appendIssue(guarded.issues, UNGROUNDED_PLAYER_REFERENCE_ISSUE),
       scores: {
         ...guarded.scores,
         factual_grounding: 1,
@@ -176,6 +197,7 @@ function parseQaResponse(
   options: {
     contentType: ContentType;
     hasEvents: boolean;
+    hasLineups: boolean;
     language: ContentLanguage;
     matchContext: QaMatchContext;
     narrative: string;
@@ -221,12 +243,14 @@ function parseQaResponse(
 export async function evaluateNarrativeQuality(options: {
   contentType: ContentType;
   hasEvents?: boolean;
+  hasLineups?: boolean;
   language?: ContentLanguage;
   matchContext: QaMatchContext;
   narrative: string;
   retryCount: number;
 }): Promise<QaStageResponse> {
   const hasEvents = options.hasEvents ?? false;
+  const hasLineups = options.hasLineups ?? false;
   const prompt = buildQaContentPrompt(
     options.contentType,
     options.narrative,
@@ -250,6 +274,7 @@ export async function evaluateNarrativeQuality(options: {
       const result = parseQaResponse(response.text, options.retryCount, {
         contentType: options.contentType,
         hasEvents,
+        hasLineups,
         language: options.language ?? "ja",
         matchContext: options.matchContext,
         narrative: options.narrative,
