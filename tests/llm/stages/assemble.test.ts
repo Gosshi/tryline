@@ -81,6 +81,10 @@ describe("assembleMatchContentInput", () => {
       jersey_number: 16,
       is_starter: false,
     });
+    expect(result.projected_lineups.confirmed).toEqual({
+      away: true,
+      home: true,
+    });
   });
 
   it("falls back to players when match_lineups are empty", async () => {
@@ -111,6 +115,10 @@ describe("assembleMatchContentInput", () => {
       jersey_number: null,
       is_starter: null,
     });
+    expect(result.projected_lineups.confirmed).toEqual({
+      away: false,
+      home: false,
+    });
   });
 
   it("returns empty arrays when both match_lineups and players are empty", async () => {
@@ -123,6 +131,10 @@ describe("assembleMatchContentInput", () => {
     expect(result.match_events).toEqual([]);
     expect(result.projected_lineups.home).toEqual([]);
     expect(result.projected_lineups.away).toEqual([]);
+    expect(result.projected_lineups.confirmed).toEqual({
+      away: false,
+      home: false,
+    });
     expect(result.competition_standings).toEqual([]);
   });
 

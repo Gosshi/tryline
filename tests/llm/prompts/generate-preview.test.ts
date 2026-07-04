@@ -53,8 +53,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.6.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.6.0");
+  it("uses preview prompt version 3.7.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.7.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -198,6 +198,10 @@ describe("buildGeneratePreviewPrompt", () => {
       {
         ...assembled,
         projected_lineups: {
+          confirmed: {
+            away: true,
+            home: true,
+          },
           away: [
             {
               is_starter: true,
@@ -266,6 +270,10 @@ describe("buildGeneratePreviewPrompt", () => {
       {
         ...assembled,
         projected_lineups: {
+          confirmed: {
+            away: true,
+            home: true,
+          },
           away: [
             {
               is_starter: true,
@@ -323,6 +331,49 @@ describe("buildGeneratePreviewPrompt", () => {
       "projected_lineups・match_events に存在しない選手名",
     );
     expect(prompt).not.toContain("マーカス・スミス");
+  });
+
+  it("treats roster fallback lineups as lineup-missing for preview structure", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        projected_lineups: {
+          away: [
+            {
+              is_starter: null,
+              jersey_number: null,
+              name: "Ange Capuozzo",
+              position: "Fullback",
+            },
+          ],
+          confirmed: {
+            away: false,
+            home: false,
+          },
+          home: [
+            {
+              is_starter: null,
+              jersey_number: null,
+              name: "Harumichi Tatekawa",
+              position: null,
+            },
+            {
+              is_starter: null,
+              jersey_number: null,
+              name: "Michael Leitch",
+              position: null,
+            },
+          ],
+        },
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("キープレイヤーセクションは省略すること");
+    expect(prompt).toContain("【データスパースモード】");
+    expect(prompt).not.toContain("【ラインアップ実名活用】");
+    expect(prompt).not.toContain("projected_lineups.home から最低3名");
   });
 
   it("includes competition standings only when present", () => {

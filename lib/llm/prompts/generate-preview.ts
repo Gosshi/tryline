@@ -1,3 +1,5 @@
+import { hasConfirmedProjectedLineups } from "@/lib/llm/lineups";
+
 import {
   buildPersona,
   buildSignalsBlock,
@@ -11,7 +13,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.6.0";
+export const PROMPT_VERSION = "preview@3.7.0";
 
 type CorePatternType = "context" | "form" | "numeric";
 
@@ -94,9 +96,7 @@ export function buildGeneratePreviewPrompt(
   tacticalPoints: TacticalPoint[],
   additionalSignals: AdditionalSignal[],
 ): string {
-  const hasLineups =
-    assembled.projected_lineups.home.length > 0 ||
-    assembled.projected_lineups.away.length > 0;
+  const hasLineups = hasConfirmedProjectedLineups(assembled.projected_lineups);
   const isDataSparse = assembled.match_events.length === 0 && !hasLineups;
   const structureInstruction = hasLineups
     ? [

@@ -210,6 +210,10 @@ export type AssembledContentInput = {
       jersey_number: number | null;
       is_starter: boolean | null;
     }>;
+    confirmed?: {
+      home: boolean;
+      away: boolean;
+    };
   };
   injuries: {
     home: string[];
