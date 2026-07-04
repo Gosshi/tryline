@@ -149,6 +149,85 @@ describe("verifyNarrativeEntities", () => {
     expect(response.result.ungroundedSurfaces).toEqual([]);
   });
 
+  it("treats sourced_facts-only matched entities as grounded", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      model: "gpt-4o-mini-2024-07-18",
+      text: JSON.stringify({
+        mentions: [
+          { surface: "選手X", matched_entity: "選手X" },
+          { surface: "未確認選手", matched_entity: null },
+        ],
+      }),
+      usage: { inputTokens: 900, outputTokens: 90 },
+    });
+
+    const response = await verifyNarrativeEntities({
+      allowedEntities: [],
+      narrative: "選手Xは負傷離脱。未確認選手の状態は不明。",
+      sourcedFacts: [
+        {
+          confidence: "high",
+          fact: "選手Xが負傷離脱",
+          source_domain: "example.com",
+          source_url: "https://example.com/injury",
+        },
+      ],
+    });
+
+    expect(response.result.ungroundedSurfaces).toEqual(["未確認選手"]);
+    expect(response.promptVersion).toBe("entity-verification@1.0.1");
+  });
+
+  it("keeps sourced_facts absent entities ungrounded", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      model: "gpt-4o-mini-2024-07-18",
+      text: JSON.stringify({
+        mentions: [{ surface: "選手Y", matched_entity: "選手Y" }],
+      }),
+      usage: { inputTokens: 900, outputTokens: 90 },
+    });
+
+    const response = await verifyNarrativeEntities({
+      allowedEntities: [],
+      narrative: "選手Yが先発する。",
+      sourcedFacts: [
+        {
+          confidence: "high",
+          fact: "選手Xが負傷離脱",
+          source_domain: "example.com",
+          source_url: "https://example.com/injury",
+        },
+      ],
+    });
+
+    expect(response.result.ungroundedSurfaces).toEqual(["選手Y"]);
+  });
+
+  it("does not ground very short matched_entity values by accidental fact substring", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      model: "gpt-4o-mini-2024-07-18",
+      text: JSON.stringify({
+        mentions: [{ surface: "Aki", matched_entity: "Aki" }],
+      }),
+      usage: { inputTokens: 900, outputTokens: 90 },
+    });
+
+    const response = await verifyNarrativeEntities({
+      allowedEntities: [],
+      narrative: "Akiが鍵になる。",
+      sourcedFacts: [
+        {
+          confidence: "medium",
+          fact: "Takizawa is unavailable",
+          source_domain: "example.com",
+          source_url: "https://example.com/team-news",
+        },
+      ],
+    });
+
+    expect(response.result.ungroundedSurfaces).toEqual(["Aki"]);
+  });
+
   it("fails closed when the verifier cannot return valid JSON", async () => {
     openAIMock.createTextResponse
       .mockResolvedValueOnce({
