@@ -56,9 +56,10 @@ tsconfig.tsbuildinfo
 *.swp
 *.swo
 
-# AI ツール状態（.claude はプロジェクトスキルのみ追跡）
+# AI ツール状態（.claude はプロジェクトスキルとサブエージェントのみ追跡）
 .claude/*
 !.claude/skills/
+!.claude/agents/
 .codex/
 .playwright-mcp/
 
