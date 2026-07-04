@@ -17,6 +17,7 @@ export type LiveCompetitionSource = {
   competitionSlug: string;
   family: string;
   fetch: () => Promise<ParsedLiveMatch[]>;
+  fetchEventMatches?: () => Promise<ParsedLiveMatch[]>;
   season: string;
   sourceLabel: string;
 };
@@ -205,10 +206,35 @@ function parseLiveMatchEvents(
   return parseMatchEventsFromVeventHtml(rawHtml);
 }
 
+function buildParsedMatchKey(match: ParsedLiveMatch | undefined) {
+  if (!match) {
+    return null;
+  }
+
+  const homeKey = match.homeTeamSlug ?? match.homeTeamName;
+  const awayKey = match.awayTeamSlug ?? match.awayTeamName;
+
+  return `${homeKey}:${awayKey}`;
+}
+
 export async function ingestLiveCompetition(
   source: LiveCompetitionSource,
 ): Promise<LiveIngestResult> {
   const parsedMatches = await source.fetch();
+  const eventMatchByKey = new Map<string, ParsedLiveMatch>();
+
+  if (source.fetchEventMatches) {
+    const eventMatches = await source.fetchEventMatches();
+
+    for (const eventMatch of eventMatches) {
+      const key = buildParsedMatchKey(eventMatch);
+
+      if (key) {
+        eventMatchByKey.set(key, eventMatch);
+      }
+    }
+  }
+
   const competitionId = await upsertCompetition(source, parsedMatches);
 
   if (parsedMatches.length === 0) {
@@ -274,13 +300,17 @@ export async function ingestLiveCompetition(
 
   for (const record of newlyFinishedMatches) {
     const match = resolvedMatches[record.candidateIndex];
+    const parsedMatch = parsedMatches[record.candidateIndex];
+    const eventMatch =
+      eventMatchByKey.get(buildParsedMatchKey(parsedMatch) ?? "") ?? null;
+    const rawHtml = eventMatch?.rawHtml ?? match?.rawHtml;
 
-    if (!match?.rawHtml) {
+    if (!match || !rawHtml) {
       continue;
     }
 
     try {
-      const parsedEvents = parseLiveMatchEvents(source, match.rawHtml);
+      const parsedEvents = parseLiveMatchEvents(source, rawHtml);
       const events = dropReconciledPhantomEvents({
         awayScore: match.awayScore,
         events: parsedEvents,

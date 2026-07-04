@@ -6,6 +6,7 @@ import {
   fetchNationsChampionship2026,
   parseNationsChampionshipLiveHtml,
 } from "@/lib/ingestion/sources/wikipedia-nations-championship";
+import { fetchNationsChampionship2026EventMatches } from "@/lib/ingestion/sources/wikipedia-nations-championship-events";
 import { parsePncLiveHtml } from "@/lib/ingestion/sources/wikipedia-pnc";
 import { parsePremiershipLiveHtml } from "@/lib/ingestion/sources/wikipedia-premiership";
 import {
@@ -375,6 +376,7 @@ describe("live competition source adapters", () => {
       competitionName: "Nations Championship 2026",
       family: "nations-championship",
       fetch: fetchNationsChampionship2026,
+      fetchEventMatches: fetchNationsChampionship2026EventMatches,
       season: "2026",
       sourceLabel: "wikipedia",
     });
