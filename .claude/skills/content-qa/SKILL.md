@@ -12,6 +12,7 @@ description: 公開済みコンテンツ（recap/preview）の品質を監査す
 | 観点 | 何を見るか | 過去の事例 |
 |------|-----------|-----------|
 | 統計捏造 | sourced facts に無い数値・固有名詞（成功率%・ポゼッション等） | 捏造 live 統計（#344 でガード実装済み）。旧 preview 約20件に残存疑い |
+| **人名捏造（グラウンディング）** | 確定ラインアップ・イベント・sourced facts に無い選手名を断定的役割付きで記載。**データを隠しても LLM の事前学習知識（parametric knowledge）から実在有名選手を持ち出すため、hasLineups=false だけでは防げない** | 2026-07-04 Nations Championship 開幕日、日本含む6試合全てで実在選手（デュポン・モウンガ・サヴェア等）の断定的捏造。`specs/feat-entity-grounding-gate.md`（PR #467）で決定的ゲート実装、`tools/audit-entity-grounding.ts` で公開済み全件監査可能に |
 | イベント汚染 | 別試合の match_events を参照した recap | Autumn 31試合+SRP 6試合が同一イベント共有（fix-contaminated-match-events） |
 | 密度後退 | recap density（具体的事実の出現率）の月次推移 | 2026-06 に 3.72→2.96 へ後退（PMF監査） |
 | 冒頭の紋切り型 | 冒頭表現の多様性（「得点力」開始が37%だった事例） | fix-recap-opening-variety で対応済み。再発監視 |
@@ -21,10 +22,13 @@ description: 公開済みコンテンツ（recap/preview）の品質を監査す
 
 ## 手順
 
-1. **サンプリング**: 直近公開分から大会横断で 10〜20件抽出（1大会に偏らせない）
-2. **機械チェック**: 字数・見出し形式・禁止パターン（「セクション」「自動生成」等）を grep 相当で
-3. **目視チェック**: 冒頭多様性・密度・捏造疑いは本文を読んで判定
-4. **基準との比較**: `docs/pmf-audit-2026-06-10.md` の density 測定方法を踏襲し、時系列で比較可能にする
+1. **人名捏造は全件機械監査が可能**（他の観点と違いサンプリング不要）: `node --env-file=.env.production.local tools/run-ts.cjs tools/audit-entity-grounding.ts --confirm-owner-approved`。公開済み全件（899件時点で$0.45〜$0.90）を照合し `tmp/entity-audit/entity-grounding-audit-*.json` にレポート出力
+   - 結果は `allowedEntityCount` で層別すること: **0件＝ほぼ確実に本物の捏造**（最優先で確認）。**1件以上＝実データはある状態での違反**で、チーム名・大会名の誤検出（照合精度の偽陽性）や、事件性の低い言及の可能性も高いため個別に本文を読んで判断する
+   - 違反（特に allowedEntityCount=0）が見つかった記事は、`content-regen` の draft戻し手順で即座に unpublish し、原因を確認してから再生成する
+2. **他の観点はサンプリング**: 直近公開分から大会横断で 10〜20件抽出（1大会に偏らせない）
+3. **機械チェック**: 字数・見出し形式・禁止パターン（「セクション」「自動生成」等）を grep 相当で
+4. **目視チェック**: 冒頭多様性・密度は本文を読んで判定
+5. **基準との比較**: `docs/pmf-audit-2026-06-10.md` の density 測定方法を踏襲し、時系列で比較可能にする
 
 ## 問題を見つけたら
 
