@@ -9,10 +9,12 @@ import {
   toEmptyWhenMissingOrUnstructured,
 } from "@/lib/ingestion/sources/live-source-utils";
 import { parseWikipediaSixNationsHtml } from "@/lib/ingestion/sources/wikipedia-six-nations";
+import { fetchNationsChampionship2026KickoffTimes } from "@/lib/ingestion/sources/world-rugby-nations-championship-times";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
 import type { ParsedWikipediaMatch } from "@/lib/ingestion/sources/wikipedia-six-nations";
+import type { WorldRugbyNationsChampionshipTime } from "@/lib/ingestion/sources/world-rugby-nations-championship-times";
 
 const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
   Argentina: "argentina",
@@ -124,13 +126,39 @@ function parseFinalsMatches(html: string): ParsedWikipediaMatch[] {
 
 export function parseNationsChampionshipLiveHtml(
   html: string,
+  kickoffTimes: WorldRugbyNationsChampionshipTime[] = [],
 ): ParsedLiveMatch[] {
   const parsedMatches = [
     ...parseRoundTableMatches(html),
     ...parseFinalsMatches(html),
   ];
+  const kickoffTimeByTeams = new Map(
+    kickoffTimes.map((match) => [
+      `${match.homeTeamSlug}:${match.awayTeamSlug}`,
+      match,
+    ]),
+  );
+  const resolvedMatches = mapWithTeamSlugs(
+    parsedMatches,
+    TEAM_SLUG_BY_WIKIPEDIA_NAME,
+  );
 
-  return mapWithTeamSlugs(parsedMatches, TEAM_SLUG_BY_WIKIPEDIA_NAME);
+  return resolvedMatches.map((match) => {
+    const kickoffTime = kickoffTimeByTeams.get(
+      `${match.homeTeamSlug}:${match.awayTeamSlug}`,
+    );
+
+    if (!kickoffTime) {
+      return match;
+    }
+
+    return {
+      ...match,
+      kickoffAt: kickoffTime.kickoffAt,
+      round: kickoffTime.round,
+      venue: kickoffTime.venue ?? match.venue,
+    };
+  });
 }
 
 export async function fetchNationsChampionship2026(): Promise<
@@ -139,9 +167,15 @@ export async function fetchNationsChampionship2026(): Promise<
   const sourceUrl = buildWikipediaUrl("2026");
 
   try {
-    const response = await fetchWithPolicy(sourceUrl);
+    const [response, kickoffTimes] = await Promise.all([
+      fetchWithPolicy(sourceUrl),
+      fetchNationsChampionship2026KickoffTimes(),
+    ]);
 
-    return parseNationsChampionshipLiveHtml(await response.text());
+    return parseNationsChampionshipLiveHtml(
+      await response.text(),
+      kickoffTimes,
+    );
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
       return [];
