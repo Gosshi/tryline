@@ -223,6 +223,36 @@ export function parseWikipediaSixNationsHtml(
     });
   }
 
+  function headingHasLevel(
+    element: ReturnType<ReturnType<typeof load>>,
+    level: "h2" | "h3",
+  ) {
+    return (
+      element.is(level) ||
+      (element.is("div.mw-heading") && element.find(level).length > 0)
+    );
+  }
+
+  function processFixtureElement(
+    element: ReturnType<ReturnType<typeof load>>,
+  ) {
+    if (headingHasLevel(element, "h3")) {
+      currentRound = parseRoundFromId(element.find("h3").attr("id"));
+      return;
+    }
+
+    if (element.is("div.vevent.summary")) {
+      parseVeventBlock(element, currentRound);
+      return;
+    }
+
+    if (element.is("section")) {
+      element.children().each((_, child) => {
+        processFixtureElement($(child));
+      });
+    }
+  }
+
   if (fixturesSection.length === 0) {
     for (const element of $("div.vevent.summary").toArray()) {
       parseVeventBlock($(element), null);
@@ -231,19 +261,15 @@ export function parseWikipediaSixNationsHtml(
     let cursor = fixturesSection.next();
 
     while (cursor.length > 0) {
-      if (cursor.is("div.mw-heading") && cursor.find("h2").length > 0) {
+      if (
+        headingHasLevel(cursor, "h2") ||
+        (cursor.is("section") &&
+          cursor.children("div.mw-heading").find("h2").length > 0)
+      ) {
         break;
       }
 
-      if (cursor.is("div.mw-heading") && cursor.find("h3").length > 0) {
-        currentRound = parseRoundFromId(cursor.find("h3").attr("id"));
-        cursor = cursor.next();
-        continue;
-      }
-
-      if (cursor.is("div.vevent.summary")) {
-        parseVeventBlock(cursor, currentRound);
-      }
+      processFixtureElement(cursor);
 
       cursor = cursor.next();
     }

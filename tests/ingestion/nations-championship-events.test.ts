@@ -35,6 +35,36 @@ const NATIONS_CHAMPIONSHIP_EVENT_HTML = `
 </div>
 `;
 
+const NATIONS_CHAMPIONSHIP_PARSOID_EVENT_HTML = `
+<div class="mw-heading mw-heading2"><h2 id="Fixtures">Fixtures</h2></div>
+<section data-mw-section-id="5" aria-labelledby="Round_1">
+  <div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
+  <div class="vevent summary" id="Japan_v_Italy">
+    <table><tbody><tr><td>4 July 2026<br />17:40 JST</td></tr></tbody></table>
+    <table><tbody>
+      <tr>
+        <td class="vcard"><span class="fn org"><a>Japan</a></span></td>
+        <td>24–19</td>
+        <td class="vcard"><span class="fn org"><a>Italy</a></span></td>
+      </tr>
+      <tr style="font-size:85%">
+        <td>
+          <b>Try:</b> <a>Dearns</a> 10' c<br />
+          <a>Matsunaga</a> 16' c<br />
+          <b>Con:</b> <a>Matsunaga</a> 11', 17'
+        </td>
+        <td></td>
+        <td>
+          <b>Try:</b> <a>Brex</a> 22' c<br />
+          <b>Con:</b> <a>Garbisi</a> 23'
+        </td>
+      </tr>
+    </tbody></table>
+    <table><tbody><tr><td><span class="location">Chichibunomiya Rugby Stadium, Tokyo</span></td></tr></tbody></table>
+  </div>
+</section>
+`;
+
 describe("Nations Championship event source", () => {
   it("parses sub-article vevent blocks and keeps per-match scoring HTML", () => {
     const matches = parseNationsChampionshipEventHtml(
@@ -72,6 +102,32 @@ describe("Nations Championship event source", () => {
           minute: 22,
           playerName: "Brex",
           teamSide: "away",
+          type: "try",
+        }),
+      ]),
+    );
+  });
+
+  it("extracts match events from Parsoid section-wrapped event pages", () => {
+    const matches = parseNationsChampionshipEventHtml(
+      NATIONS_CHAMPIONSHIP_PARSOID_EVENT_HTML,
+    );
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      awayTeamSlug: "italy",
+      homeTeamSlug: "japan",
+      round: 1,
+    });
+
+    const events = parseMatchEventsFromVeventHtml(matches[0]!.rawHtml);
+
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          minute: 10,
+          playerName: "Dearns",
+          teamSide: "home",
           type: "try",
         }),
       ]),

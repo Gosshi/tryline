@@ -88,6 +88,22 @@ const PNC_HTML = `
 </div>
 `;
 
+const PNC_PARSOID_HTML = `
+<div class="mw-heading mw-heading2"><h2 id="Pool_A">Pool A</h2></div>
+<section data-mw-section-id="3" aria-labelledby="Japan_v_Fiji">
+  <div class="vevent summary" id="Japan_v_Fiji">
+    <table><tbody><tr><td>1 September 2026<br />19:00 JST</td></tr></tbody></table>
+    <table><tbody><tr>
+      <td class="vcard"><span class="fn org"><a>Japan</a></span></td>
+      <td>v</td>
+      <td class="vcard"><span class="fn org"><a>Fiji</a></span></td>
+    </tr></tbody></table>
+    <table><tbody><tr><td><span class="location">Tokyo</span></td></tr></tbody></table>
+  </div>
+</section>
+<div class="mw-heading mw-heading2"><h2 id="References">References</h2></div>
+`;
+
 const NATIONS_CHAMPIONSHIP_HTML = `
 <div class="mw-heading mw-heading2"><h2 id="Fixtures">Fixtures</h2></div>
 <div class="mw-heading mw-heading3"><h3 id="Southern_Hemisphere_Series">Southern Hemisphere Series</h3></div>
@@ -446,6 +462,18 @@ describe("live competition source adapters", () => {
 
   it("returns Nations Cup scheduled matches without filtering to finished only", () => {
     const matches = parsePncLiveHtml(PNC_HTML);
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      awayTeamSlug: "fiji",
+      homeTeamSlug: "japan",
+      round: 1,
+      status: "scheduled",
+    });
+  });
+
+  it("returns Nations Cup matches wrapped in Parsoid section elements", () => {
+    const matches = parsePncLiveHtml(PNC_PARSOID_HTML);
 
     expect(matches).toHaveLength(1);
     expect(matches[0]).toMatchObject({

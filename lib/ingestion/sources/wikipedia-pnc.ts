@@ -66,20 +66,42 @@ function collectSectionVevents(
   }
 
   const blocks: SectionVevent[] = [];
+  function isBoundary(element: ReturnType<ReturnType<typeof load>>) {
+    return (
+      (element.is("div.mw-heading") && element.find("h2, h3").length > 0) ||
+      (element.is("section") &&
+        element.children("div.mw-heading").find("h2, h3").length > 0)
+    );
+  }
+
+  function collectFromElement(element: ReturnType<ReturnType<typeof load>>) {
+    if (element.is("div.vevent.summary")) {
+      blocks.push({
+        html: $.html(element),
+        kickoffTime: parseKickoffTime(element.find("table").eq(0).text()),
+      });
+      return;
+    }
+
+    if (element.is("section")) {
+      element.children().each((_, child) => {
+        const childElement = $(child);
+
+        if (!isBoundary(childElement)) {
+          collectFromElement(childElement);
+        }
+      });
+    }
+  }
+
   let cursor = heading.next();
 
   while (cursor.length > 0) {
-    if (cursor.is("div.mw-heading") && cursor.find("h2, h3").length > 0) {
+    if (isBoundary(cursor)) {
       break;
     }
 
-    if (cursor.is("div.vevent.summary")) {
-      blocks.push({
-        html: $.html(cursor),
-        kickoffTime: parseKickoffTime(cursor.find("table").eq(0).text()),
-      });
-    }
-
+    collectFromElement(cursor);
     cursor = cursor.next();
   }
 
