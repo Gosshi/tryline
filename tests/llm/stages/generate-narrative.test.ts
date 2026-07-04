@@ -177,6 +177,32 @@ describe("generateNarrative", () => {
     );
   });
 
+  it("injects ungrounded entity feedback on narrative retries", async () => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: "# preview",
+      model: "gpt-4o-2024-11-20",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    await generateNarrative({
+      additionalSignals: [],
+      assembled,
+      attempt: 1,
+      contentType: "preview",
+      entityViolationSurfaces: ["アレッサンドロ・ガルビジ"],
+      language: "ja",
+      tacticalPoints: [],
+    });
+
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining(
+          "入力データに存在しない人名（アレッサンドロ・ガルビジ）",
+        ),
+      }),
+    );
+  });
+
   it("strips wrapping code fences from generated content", async () => {
     openAIMock.createTextResponse.mockResolvedValue({
       text: "```markdown\n# preview\n本文\n```",
@@ -287,6 +313,33 @@ describe("generateNarrative", () => {
     expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
       expect.objectContaining({
         input: expect.stringContaining("最終出力は1500字以上"),
+      }),
+    );
+  });
+
+  it("injects ungrounded entity feedback on length revision", async () => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: "# revised",
+      model: "gpt-4o-2024-11-20",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    await reviseNarrativeLength({
+      additionalSignals: [],
+      assembled,
+      contentType: "preview",
+      currentContent: "# short",
+      entityViolationSurfaces: ["レオナルド・マリン"],
+      language: "ja",
+      promptVersion: "preview@3.6.0",
+      tacticalPoints: [],
+    });
+
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining(
+          "入力データに存在しない人名（レオナルド・マリン）",
+        ),
       }),
     );
   });

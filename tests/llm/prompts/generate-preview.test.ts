@@ -53,8 +53,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.8.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.8.0");
+  it("uses preview prompt version 3.9.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.9.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {

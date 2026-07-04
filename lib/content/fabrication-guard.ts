@@ -2,6 +2,8 @@ export const UNSUPPORTED_STATISTIC_ISSUE =
   "データに存在しない統計値を含む";
 export const UNGROUNDED_PLAYER_REFERENCE_ISSUE =
   "ラインアップ不在にもかかわらず選手個別言及を含む";
+export const UNGROUNDED_ENTITY_ISSUE =
+  "入力データに存在しない人名を含む";
 
 const UNSUPPORTED_STATISTIC_PATTERN =
   /\d+\s*%|成功率|テリトリー|支配率|ポゼッション|ランメートル|ラインブレイク|獲得率|スティール率|22m進入/;

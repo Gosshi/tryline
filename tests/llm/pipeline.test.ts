@@ -9,8 +9,13 @@ const notifyMock = vi.hoisted(() => ({
   notifyCostAlert: vi.fn(),
 }));
 
+const verifyEntitiesMock = vi.hoisted(() => ({
+  verifyNarrativeEntities: vi.fn(),
+}));
+
 vi.mock("@/lib/llm/openai", () => openAIMock);
 vi.mock("@/lib/llm/notify", () => notifyMock);
+vi.mock("@/lib/llm/stages/verify-entities", () => verifyEntitiesMock);
 
 import { generateMatchContent } from "@/lib/llm/pipeline";
 import { ensureSupabaseTestEnvironment, insertMatchFixture } from "@/tests/db/helpers";
@@ -60,6 +65,14 @@ describe("generateMatchContent", () => {
     openAIMock.createTextResponse.mockReset();
     notifyMock.notifyContentRejected.mockReset();
     notifyMock.notifyCostAlert.mockReset();
+    verifyEntitiesMock.verifyNarrativeEntities.mockReset();
+    verifyEntitiesMock.verifyNarrativeEntities.mockResolvedValue({
+      attempts: 1,
+      modelVersion: "gpt-4o-mini-2024-07-18",
+      promptVersion: "entity-verification@1.0.0",
+      result: { mentions: [], ungroundedSurfaces: [] },
+      usage: { inputTokens: 100, outputTokens: 20 },
+    });
   });
 
   it("writes published content when QA passes", async () => {

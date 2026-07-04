@@ -16,6 +16,38 @@ const generateNarrativeMock = vi.hoisted(() => ({
 }));
 
 const qaMock = vi.hoisted(() => ({
+  applyEntityGroundingQaGuard: vi.fn(
+    (
+      result: {
+        issues: string[];
+        scores: {
+          factual_grounding: number;
+          information_density: number;
+          japanese_quality: number;
+          tactical_depth: number;
+        };
+        verdict: string;
+      },
+      options: {
+        entityViolations: string[];
+        retryCount: number;
+        contentType: string;
+      },
+    ) =>
+      options.entityViolations.length === 0
+        ? result
+        : {
+            ...result,
+            issues: [
+              ...new Set([
+                ...result.issues,
+                "入力データに存在しない人名を含む",
+              ]),
+            ],
+            scores: { ...result.scores, factual_grounding: 1 },
+            verdict: options.retryCount >= 2 ? "reject" : "retry",
+          },
+  ),
   DENSITY_PUBLISH_MIN: 4,
   evaluateNarrativeQuality: vi.fn(),
   isContentLengthIssue: vi.fn((result: { issues: string[] }) =>
@@ -24,8 +56,13 @@ const qaMock = vi.hoisted(() => ({
   isFactualGroundingHardBlock: vi.fn(
     (result: { issues: string[]; scores: { factual_grounding: number } }) =>
       result.scores.factual_grounding <= 2 ||
-      result.issues.includes("データに存在しない統計値を含む"),
+      result.issues.includes("データに存在しない統計値を含む") ||
+      result.issues.includes("入力データに存在しない人名を含む"),
   ),
+}));
+
+const verifyEntitiesMock = vi.hoisted(() => ({
+  verifyNarrativeEntities: vi.fn(),
 }));
 
 const dbMock = vi.hoisted(() => ({
@@ -41,6 +78,7 @@ vi.mock("@/lib/llm/stages/assemble", () => assembleMock);
 vi.mock("@/lib/llm/stages/extract-facts", () => extractFactsMock);
 vi.mock("@/lib/llm/stages/generate-narrative", () => generateNarrativeMock);
 vi.mock("@/lib/llm/stages/qa", () => qaMock);
+vi.mock("@/lib/llm/stages/verify-entities", () => verifyEntitiesMock);
 vi.mock("@/lib/llm/notify", () => ({
   notifyContentRejected: vi.fn(),
   notifyCostAlert: vi.fn(),
@@ -137,6 +175,13 @@ describe("generateMatchContent length revision", () => {
       result: { tactical_points: [] },
       usage: { inputTokens: 1, outputTokens: 1 },
     });
+    verifyEntitiesMock.verifyNarrativeEntities.mockResolvedValue({
+      attempts: 1,
+      modelVersion: "gpt-4o-mini",
+      promptVersion: "entity-verification@1.0.0",
+      result: { mentions: [], ungroundedSurfaces: [] },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
     generateNarrativeMock.generateNarrative.mockResolvedValue({
       content: "# short",
       modelVersion: "gpt-4o",
@@ -186,6 +231,67 @@ describe("generateMatchContent length revision", () => {
         content_md: expect.stringContaining("# revised"),
         prompt_version: "preview@3.6.0+length-revision@1.0.0",
         status: "published",
+      }),
+      expect.any(Object),
+    );
+    expect(verifyEntitiesMock.verifyNarrativeEntities).toHaveBeenCalledTimes(2);
+  });
+
+  it("blocks publishing when entity verification finds ungrounded names", async () => {
+    verifyEntitiesMock.verifyNarrativeEntities.mockResolvedValue({
+      attempts: 1,
+      modelVersion: "gpt-4o-mini",
+      promptVersion: "entity-verification@1.0.0",
+      result: {
+        mentions: [
+          { matched_entity: null, surface: "アレッサンドロ・ガルビジ" },
+        ],
+        ungroundedSurfaces: ["アレッサンドロ・ガルビジ"],
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    qaMock.evaluateNarrativeQuality.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: {
+        issues: [],
+        scores: qaScores,
+        verdict: "publish",
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    const result = await generateMatchContent("match-1", "preview", "ja");
+
+    expect(result.status).toBe("draft");
+    expect(result.qa?.issues).toContain("入力データに存在しない人名を含む");
+    expect(generateNarrativeMock.generateNarrative).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityViolationSurfaces: ["アレッサンドロ・ガルビジ"],
+      }),
+    );
+  });
+
+  it("fails closed when entity verification fails", async () => {
+    verifyEntitiesMock.verifyNarrativeEntities.mockRejectedValue(
+      new Error("entity verification failed: upstream unavailable"),
+    );
+    qaMock.evaluateNarrativeQuality.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: {
+        issues: [],
+        scores: qaScores,
+        verdict: "publish",
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    const result = await generateMatchContent("match-1", "preview", "ja");
+
+    expect(result.status).toBe("draft");
+    expect(result.qa?.issues).toContain("entity_verification_failed");
+    expect(dbMock.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "draft",
       }),
       expect.any(Object),
     );

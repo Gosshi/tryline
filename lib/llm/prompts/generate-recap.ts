@@ -16,7 +16,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.10.0";
+export const PROMPT_VERSION = "recap@4.11.0";
 
 const CORE_SECTION_INSTRUCTION = [
   "- この試合の核心: 150-250字。定型句を使わず、この試合固有の事実（最終スコア・決勝点のシチュエーション・試合の転換点）から書き始めること。",

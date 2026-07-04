@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { UNGROUNDED_ENTITY_ISSUE } from "@/lib/content/fabrication-guard";
 import { evaluateNarrativeQuality, resolveVerdict } from "@/lib/llm/stages/qa";
 
 const openAIMock = vi.hoisted(() => ({
@@ -115,6 +116,35 @@ describe("evaluateNarrativeQuality", () => {
         jsonMode: true,
       }),
     );
+  });
+
+  it("treats ungrounded entity violations as a factual hard block", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+        verdict: "publish",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      entityViolations: ["アレッサンドロ・ガルビジ"],
+      matchContext,
+      narrative: longJaPreview,
+      retryCount: 0,
+    });
+
+    expect(result.result.issues).toContain(UNGROUNDED_ENTITY_ISSUE);
+    expect(result.result.scores.factual_grounding).toBe(1);
+    expect(result.result.verdict).toBe("retry");
   });
 
   it("returns retry when tactical depth is <= 2 even if other scores pass", async () => {

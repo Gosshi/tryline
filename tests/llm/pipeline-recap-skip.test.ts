@@ -16,8 +16,20 @@ const generateNarrativeMock = vi.hoisted(() => ({
 }));
 
 const qaMock = vi.hoisted(() => ({
+  applyEntityGroundingQaGuard: vi.fn(
+    (result: { verdict: string }, options: { entityViolations: string[] }) =>
+      options.entityViolations.length === 0
+        ? result
+        : { ...result, verdict: "retry" },
+  ),
   DENSITY_PUBLISH_MIN: 4,
   evaluateNarrativeQuality: vi.fn(),
+  isContentLengthIssue: vi.fn(() => false),
+  isFactualGroundingHardBlock: vi.fn(() => false),
+}));
+
+const verifyEntitiesMock = vi.hoisted(() => ({
+  verifyNarrativeEntities: vi.fn(),
 }));
 
 const dbMock = vi.hoisted(() => ({
@@ -38,6 +50,7 @@ vi.mock("@/lib/llm/stages/assemble", () => assembleMock);
 vi.mock("@/lib/llm/stages/extract-facts", () => extractFactsMock);
 vi.mock("@/lib/llm/stages/generate-narrative", () => generateNarrativeMock);
 vi.mock("@/lib/llm/stages/qa", () => qaMock);
+vi.mock("@/lib/llm/stages/verify-entities", () => verifyEntitiesMock);
 vi.mock("@/lib/llm/notify", () => ({
   notifyContentRejected: vi.fn(),
   notifyCostAlert: vi.fn(),
@@ -115,6 +128,13 @@ describe("generateMatchContent recap event guard", () => {
       assembledWithoutEvents,
     );
     assembleMock.computeScoreTimeline.mockReturnValue(null);
+    verifyEntitiesMock.verifyNarrativeEntities.mockResolvedValue({
+      attempts: 1,
+      modelVersion: "gpt-4o-mini",
+      promptVersion: "entity-verification@1.0.0",
+      result: { mentions: [], ungroundedSurfaces: [] },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
   });
 
   it("returns skipped before any LLM stages when recap events are missing", async () => {

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 
+import { buildAllowedPersonEntities } from "@/lib/content/allowed-entities";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { hasConfirmedProjectedLineups } from "@/lib/llm/lineups";
 import { notifyContentRejected, notifyCostAlert } from "@/lib/llm/notify";
@@ -15,11 +16,13 @@ import {
   reviseNarrativeLength,
 } from "@/lib/llm/stages/generate-narrative";
 import {
+  applyEntityGroundingQaGuard,
   DENSITY_PUBLISH_MIN,
   evaluateNarrativeQuality,
   isContentLengthIssue,
   isFactualGroundingHardBlock,
 } from "@/lib/llm/stages/qa";
+import { verifyNarrativeEntities } from "@/lib/llm/stages/verify-entities";
 import { submitUrlsToIndexNow } from "@/lib/seo/indexnow";
 import { SITE_URL } from "@/lib/site";
 
@@ -32,6 +35,7 @@ const LENGTH_REVISION_FALLBACK_ISSUE =
   "字数下限未達のまま加筆リトライ上限に到達しました";
 const FACTUAL_REVISION_FALLBACK_ISSUE =
   "加筆リトライで事実根拠が低下したため短い正確な版を採用しました";
+const ENTITY_VERIFICATION_FAILED_ISSUE = "entity_verification_failed";
 
 export type PipelineResult = {
   matchId: string;
@@ -143,6 +147,7 @@ export async function generateMatchContent(
 
   const hasEvents = assembled.match_events.length > 0;
   const hasLineups = hasConfirmedProjectedLineups(assembled.projected_lineups);
+  const allowedEntities = buildAllowedPersonEntities(assembled);
   let totalCostUsd = 0;
 
   const stage2StartedAt = Date.now();
@@ -185,6 +190,49 @@ export async function generateMatchContent(
   let modelVersion = "";
   let promptVersion = "";
   let lengthRevisionAttempts = 0;
+  let entityViolationFeedback: string[] = [];
+
+  async function runQualityGate(options: {
+    narrative: string;
+    retryCount: number;
+  }) {
+    const [entityVerification, qaResponse] = await Promise.all([
+      verifyNarrativeEntities({
+        allowedEntities,
+        narrative: options.narrative,
+        sourcedFacts: assembled.sourced_facts,
+      }),
+      evaluateNarrativeQuality({
+        contentType,
+        language,
+        matchContext: {
+          awayScore: assembled.match.away_score,
+          awayTeam: assembled.match.away_team?.name ?? "Away",
+          derivedStats: assembled.derived_stats,
+          homeScore: assembled.match.home_score,
+          homeTeam: assembled.match.home_team?.name ?? "Home",
+          sourcedFacts: assembled.sourced_facts,
+        },
+        hasEvents,
+        hasLineups,
+        narrative: options.narrative,
+        retryCount: options.retryCount,
+      }),
+    ]);
+    const entityViolations = entityVerification.result.ungroundedSurfaces;
+
+    return {
+      entityVerification,
+      qaResponse: {
+        ...qaResponse,
+        result: applyEntityGroundingQaGuard(qaResponse.result, {
+          contentType,
+          entityViolations,
+          retryCount: options.retryCount,
+        }),
+      },
+    };
+  }
 
   for (
     let attempt = 0;
@@ -199,6 +247,7 @@ export async function generateMatchContent(
       // TODO(D009): Reddit/SNS シグナルが実装されたらここに渡す。現在は常に空配列。
       additionalSignals: [],
       attempt,
+      entityViolationSurfaces: entityViolationFeedback,
       language,
     });
 
@@ -234,24 +283,15 @@ export async function generateMatchContent(
 
     const stage4StartedAt = Date.now();
     let qaResponse;
+    let entityVerification;
 
     try {
-      qaResponse = await evaluateNarrativeQuality({
-        contentType,
-        language,
-        matchContext: {
-          awayScore: assembled.match.away_score,
-          awayTeam: assembled.match.away_team?.name ?? "Away",
-          derivedStats: assembled.derived_stats,
-          homeScore: assembled.match.home_score,
-          homeTeam: assembled.match.home_team?.name ?? "Home",
-          sourcedFacts: assembled.sourced_facts,
-        },
-        hasEvents,
-        hasLineups,
+      const result = await runQualityGate({
         narrative: narrative.content,
         retryCount: attempt,
       });
+      qaResponse = result.qaResponse;
+      entityVerification = result.entityVerification;
     } catch (error) {
       await logPipelineRun({
         matchId,
@@ -273,7 +313,12 @@ export async function generateMatchContent(
           factual_grounding: 1,
           tactical_depth: 1,
         },
-        issues: ["qa_json_parse_failed"],
+        issues: [
+          error instanceof Error &&
+          error.message.startsWith("entity verification failed")
+            ? ENTITY_VERIFICATION_FAILED_ISSUE
+            : "qa_json_parse_failed",
+        ],
         verdict: "reject",
       };
 
@@ -281,21 +326,33 @@ export async function generateMatchContent(
     }
 
     finalQa = qaResponse.result;
+    entityViolationFeedback =
+      entityVerification?.result.ungroundedSurfaces ?? [];
 
     const stage4CostUsd = calculateCostUsd({
       modelVersion: qaResponse.modelVersion,
       inputTokens: qaResponse.usage.inputTokens,
       outputTokens: qaResponse.usage.outputTokens,
     });
-    totalCostUsd += stage4CostUsd;
+    const entityVerificationCostUsd = entityVerification
+      ? calculateCostUsd({
+          modelVersion: entityVerification.modelVersion,
+          inputTokens: entityVerification.usage.inputTokens,
+          outputTokens: entityVerification.usage.outputTokens,
+        })
+      : 0;
+    totalCostUsd += stage4CostUsd + entityVerificationCostUsd;
 
     await logPipelineRun({
       matchId,
       contentType,
       stage: 4,
       inputHash: hashInput({ narrative: narrative.content }),
-      output: qaResponse.result,
-      costUsd: stage4CostUsd,
+      output: {
+        qa: qaResponse.result,
+        entityVerification: entityVerification?.result ?? null,
+      },
+      costUsd: stage4CostUsd + entityVerificationCostUsd,
       durationMs: Date.now() - stage4StartedAt,
       status: qaResponse.result.verdict === "retry" ? "retry" : "success",
     });
@@ -322,6 +379,7 @@ export async function generateMatchContent(
         assembled,
         contentType,
         currentContent: finalNarrative,
+        entityViolationSurfaces: entityViolationFeedback,
         language,
         promptVersion,
         tacticalPoints: tactical.result.tactical_points,
@@ -361,38 +419,74 @@ export async function generateMatchContent(
       });
 
       const revisionQaStartedAt = Date.now();
-      const revisionQaResponse = await evaluateNarrativeQuality({
-        contentType,
-        language,
-        matchContext: {
-          awayScore: assembled.match.away_score,
-          awayTeam: assembled.match.away_team?.name ?? "Away",
-          derivedStats: assembled.derived_stats,
-          homeScore: assembled.match.home_score,
-          homeTeam: assembled.match.home_team?.name ?? "Home",
-          sourcedFacts: assembled.sourced_facts,
-        },
-        hasEvents,
-        hasLineups,
-        narrative: revised.content,
-        retryCount: attempt + 1,
-      });
+      let revisionEntityVerification;
+      let revisionQaResponse;
+      try {
+        const result = await runQualityGate({
+          narrative: revised.content,
+          retryCount: attempt + 1,
+        });
+        revisionEntityVerification = result.entityVerification;
+        revisionQaResponse = result.qaResponse;
+      } catch (error) {
+        await logPipelineRun({
+          matchId,
+          contentType,
+          stage: 4,
+          inputHash: hashInput({ narrative: revised.content }),
+          output: {
+            narrative: revised.content,
+          },
+          durationMs: Date.now() - revisionQaStartedAt,
+          status: "failed",
+          errorMessage:
+            error instanceof Error ? error.message : "revision qa failed",
+        });
+
+        finalQa = {
+          scores: {
+            information_density: 1,
+            japanese_quality: 1,
+            factual_grounding: 1,
+            tactical_depth: 1,
+          },
+          issues: [
+            error instanceof Error &&
+            error.message.startsWith("entity verification failed")
+              ? ENTITY_VERIFICATION_FAILED_ISSUE
+              : "qa_json_parse_failed",
+          ],
+          verdict: "reject",
+        };
+        break;
+      }
       finalQa = revisionQaResponse.result;
+      entityViolationFeedback =
+        revisionEntityVerification.result.ungroundedSurfaces;
 
       const revisionQaCostUsd = calculateCostUsd({
         modelVersion: revisionQaResponse.modelVersion,
         inputTokens: revisionQaResponse.usage.inputTokens,
         outputTokens: revisionQaResponse.usage.outputTokens,
       });
-      totalCostUsd += revisionQaCostUsd;
+      const revisionEntityVerificationCostUsd = calculateCostUsd({
+        modelVersion: revisionEntityVerification.modelVersion,
+        inputTokens: revisionEntityVerification.usage.inputTokens,
+        outputTokens: revisionEntityVerification.usage.outputTokens,
+      });
+      totalCostUsd +=
+        revisionQaCostUsd + revisionEntityVerificationCostUsd;
 
       await logPipelineRun({
         matchId,
         contentType,
         stage: 4,
         inputHash: hashInput({ narrative: revised.content }),
-        output: revisionQaResponse.result,
-        costUsd: revisionQaCostUsd,
+        output: {
+          qa: revisionQaResponse.result,
+          entityVerification: revisionEntityVerification.result,
+        },
+        costUsd: revisionQaCostUsd + revisionEntityVerificationCostUsd,
         durationMs: Date.now() - revisionQaStartedAt,
         status:
           revisionQaResponse.result.verdict === "retry" ? "retry" : "success",

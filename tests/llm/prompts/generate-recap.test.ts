@@ -53,8 +53,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.10.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.10.0");
+  it("uses recap prompt version 4.11.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.11.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
