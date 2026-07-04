@@ -53,8 +53,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.9.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.9.0");
+  it("uses recap prompt version 4.10.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.10.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -276,6 +276,40 @@ describe("buildGenerateRecapPrompt", () => {
       "projected_lineups・match_events に存在しない選手名",
     );
     expect(prompt).not.toContain("マーカス・スミス");
+  });
+
+  it("removes unconfirmed fallback lineup names from the raw match data dump", () => {
+    const promptInput: AssembledContentInput = {
+      ...assembled,
+      projected_lineups: {
+        away: [
+          {
+            is_starter: null,
+            jersey_number: null,
+            name: "Alessandro Garbisi",
+            position: "Scrum-half",
+          },
+        ],
+        confirmed: {
+          away: false,
+          home: true,
+        },
+        home: [
+          {
+            is_starter: true,
+            jersey_number: 10,
+            name: "Home Ten",
+            position: "Fly-half",
+          },
+        ],
+      },
+    };
+
+    const prompt = buildGenerateRecapPrompt(promptInput, [], []);
+
+    expect(prompt).toContain("Home Ten");
+    expect(prompt).not.toContain("Alessandro Garbisi");
+    expect(promptInput.projected_lineups.away).toHaveLength(1);
   });
 
   it("includes playoff final context with the champion team", () => {

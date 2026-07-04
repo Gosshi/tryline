@@ -1,4 +1,9 @@
 import {
+  hasConfirmedProjectedLineups,
+  sanitizeUnconfirmedProjectedLineups,
+} from "@/lib/llm/lineups";
+
+import {
   buildPersona,
   buildSignalsBlock,
   buildStandingsBlock,
@@ -11,7 +16,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.9.0";
+export const PROMPT_VERSION = "recap@4.10.0";
 
 const CORE_SECTION_INSTRUCTION = [
   "- この試合の核心: 150-250字。定型句を使わず、この試合固有の事実（最終スコア・決勝点のシチュエーション・試合の転換点）から書き始めること。",
@@ -27,9 +32,7 @@ export function buildGenerateRecapPrompt(
   additionalSignals: AdditionalSignal[],
 ): string {
   const hasEvents = assembled.match_events.length > 0;
-  const hasLineups =
-    assembled.projected_lineups.home.length > 0 ||
-    assembled.projected_lineups.away.length > 0;
+  const hasLineups = hasConfirmedProjectedLineups(assembled.projected_lineups);
   const isDataSparse = !hasEvents && !hasLineups;
   const sectionHeadingInstruction =
     "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。";
@@ -248,6 +251,7 @@ export function buildGenerateRecapPrompt(
     return "";
   })();
   const japaneseNameGlossary = assembled.japanese_name_glossary ?? [];
+  const sanitizedAssembled = sanitizeUnconfirmedProjectedLineups(assembled);
   const japaneseNameGlossaryBlock =
     japaneseNameGlossary.length === 0
       ? ""
@@ -280,7 +284,7 @@ export function buildGenerateRecapPrompt(
     japaneseNameGlossaryBlock,
     nameStyleInstruction,
     "試合結果はデータ内の home_score と away_score が正確な最終スコアである。スコアが高いチームが勝者。この事実を文章の根拠として使うこと。",
-    `試合データ: ${JSON.stringify(assembled)}`,
+    `試合データ: ${JSON.stringify(sanitizedAssembled)}`,
     matchEventsBlock,
     scoreTimelineBlock,
     derivedStatsBlock,
