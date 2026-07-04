@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { hasConfirmedProjectedLineups } from "@/lib/llm/lineups";
 import { notifyContentRejected, notifyCostAlert } from "@/lib/llm/notify";
 import { calculateCostUsd } from "@/lib/llm/pricing";
 import {
@@ -141,9 +142,7 @@ export async function generateMatchContent(
   }
 
   const hasEvents = assembled.match_events.length > 0;
-  const hasLineups =
-    assembled.projected_lineups.home.length > 0 ||
-    assembled.projected_lineups.away.length > 0;
+  const hasLineups = hasConfirmedProjectedLineups(assembled.projected_lineups);
   let totalCostUsd = 0;
 
   const stage2StartedAt = Date.now();

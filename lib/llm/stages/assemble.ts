@@ -355,7 +355,10 @@ export function deriveMatchPhase(externalIds: unknown): MatchPhase | null {
 async function loadProjectedLineup(
   matchId: string,
   teamId: string,
-): Promise<AssembledContentInput["projected_lineups"]["home"]> {
+): Promise<{
+  confirmed: boolean;
+  entries: AssembledContentInput["projected_lineups"]["home"];
+}> {
   const db = getSupabaseServerClient();
 
   const { data: matchLineups, error: lineupsError } = await db
@@ -370,12 +373,15 @@ async function loadProjectedLineup(
   }
 
   if ((matchLineups ?? []).length > 0) {
-    return matchLineups.map((item) => ({
-      name: item.player?.name ?? "",
-      position: item.player?.position ?? null,
-      jersey_number: item.jersey_number,
-      is_starter: item.is_starter,
-    }));
+    return {
+      confirmed: true,
+      entries: matchLineups.map((item) => ({
+        name: item.player?.name ?? "",
+        position: item.player?.position ?? null,
+        jersey_number: item.jersey_number,
+        is_starter: item.is_starter,
+      })),
+    };
   }
 
   const { data: players, error: playersError } = await db
@@ -388,12 +394,15 @@ async function loadProjectedLineup(
     throw playersError;
   }
 
-  return (players ?? []).map((player) => ({
-    name: player.name,
-    position: player.position,
-    jersey_number: null,
-    is_starter: null,
-  }));
+  return {
+    confirmed: false,
+    entries: (players ?? []).map((player) => ({
+      name: player.name,
+      position: player.position,
+      jersey_number: null,
+      is_starter: null,
+    })),
+  };
 }
 
 async function loadCompetitionStandings(
@@ -734,8 +743,12 @@ export async function assembleMatchContentInput(
     awayTeamName,
   );
   const projectedLineups = {
-    away: awayProjectedLineups,
-    home: homeProjectedLineups,
+    away: awayProjectedLineups.entries,
+    confirmed: {
+      away: awayProjectedLineups.confirmed,
+      home: homeProjectedLineups.confirmed,
+    },
+    home: homeProjectedLineups.entries,
   };
   // Derived stats assert exact figures (e.g. "ゴール4/5"), so only compute
   // them when the event log provably reconstructs the final score.

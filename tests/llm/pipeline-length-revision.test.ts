@@ -191,6 +191,52 @@ describe("generateMatchContent length revision", () => {
     );
   });
 
+  it("passes roster fallback lineups to QA as unconfirmed", async () => {
+    assembleMock.assembleMatchContentInput.mockResolvedValue({
+      ...assembled,
+      projected_lineups: {
+        away: [
+          {
+            is_starter: null,
+            jersey_number: null,
+            name: "Ange Capuozzo",
+            position: "Fullback",
+          },
+        ],
+        confirmed: {
+          away: false,
+          home: false,
+        },
+        home: [
+          {
+            is_starter: null,
+            jersey_number: null,
+            name: "Harumichi Tatekawa",
+            position: null,
+          },
+        ],
+      },
+    });
+    qaMock.evaluateNarrativeQuality.mockResolvedValueOnce({
+      modelVersion: "gpt-4o-mini",
+      result: {
+        issues: [],
+        scores: qaScores,
+        verdict: "publish",
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    await generateMatchContent("match-1", "preview", "ja");
+
+    expect(qaMock.evaluateNarrativeQuality).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hasEvents: false,
+        hasLineups: false,
+      }),
+    );
+  });
+
   it("publishes with warning after the single length revision remains short", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     generateNarrativeMock.reviseNarrativeLength.mockResolvedValue({

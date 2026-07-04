@@ -162,7 +162,7 @@ describe("regenerate-overseas-content", () => {
   });
 
   it("exposes current prompt versions", () => {
-    expect(getCurrentPromptVersion("preview")).toBe("preview@3.6.0");
+    expect(getCurrentPromptVersion("preview")).toBe("preview@3.7.0");
     expect(getCurrentPromptVersion("recap")).toBe("recap@4.9.0");
   });
 
