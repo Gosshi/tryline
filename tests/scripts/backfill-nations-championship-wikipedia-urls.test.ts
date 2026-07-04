@@ -46,12 +46,32 @@ describe("backfill-nations-championship-wikipedia-urls", () => {
         wikipedia_round: "6",
       } as Json),
     ).toBe(NATIONS_CHAMPIONSHIP_NORTHERN_URL);
+    expect(
+      getNationsChampionshipWikipediaUrl({
+        wikipedia_round: 1,
+      } as Json),
+    ).toBe(NATIONS_CHAMPIONSHIP_SOUTHERN_URL);
+    expect(
+      getNationsChampionshipWikipediaUrl({
+        wikipedia_round: 4,
+      } as Json),
+    ).toBe(NATIONS_CHAMPIONSHIP_NORTHERN_URL);
   });
 
   it("does not assign a URL for Finals Weekend or unknown rounds", () => {
     expect(
       getNationsChampionshipWikipediaUrl({
         wikipedia_round: "7",
+      } as Json),
+    ).toBeNull();
+    expect(
+      getNationsChampionshipWikipediaUrl({
+        wikipedia_round: Number.POSITIVE_INFINITY,
+      } as Json),
+    ).toBeNull();
+    expect(
+      getNationsChampionshipWikipediaUrl({
+        wikipedia_round: { value: 1 },
       } as Json),
     ).toBeNull();
     expect(getNationsChampionshipWikipediaUrl({} as Json)).toBeNull();
@@ -63,14 +83,14 @@ describe("backfill-nations-championship-wikipedia-urls", () => {
         {
           source: "wikipedia",
           wikipedia_event_id: "Japan_v_Italy",
-          wikipedia_round: "1",
+          wikipedia_round: 1,
         } as Json,
         NATIONS_CHAMPIONSHIP_SOUTHERN_URL,
       ),
     ).toEqual({
       source: "wikipedia",
       wikipedia_event_id: "Japan_v_Italy",
-      wikipedia_round: "1",
+      wikipedia_round: 1,
       wikipedia_url: NATIONS_CHAMPIONSHIP_SOUTHERN_URL,
     });
   });
@@ -95,7 +115,7 @@ describe("backfill-nations-championship-wikipedia-urls", () => {
         external_ids: {
           source: "wikipedia",
           wikipedia_event_id: "England_v_Ireland",
-          wikipedia_round: "6",
+          wikipedia_round: 6,
         } as Json,
         home_team: { name: "England" },
         id: "nc-round-6",
