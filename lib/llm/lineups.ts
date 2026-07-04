@@ -2,7 +2,7 @@ import type { AssembledContentInput } from "@/lib/llm/types";
 
 type ProjectedLineups = AssembledContentInput["projected_lineups"];
 
-function hasConfirmedEntry(entries: ProjectedLineups["home"]) {
+export function hasConfirmedEntry(entries: ProjectedLineups["home"]) {
   return entries.some(
     (entry) => entry.jersey_number !== null || entry.is_starter !== null,
   );

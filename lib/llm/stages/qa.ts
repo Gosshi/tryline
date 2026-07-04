@@ -1,6 +1,7 @@
 import {
   containsUngroundedPlayerReference,
   containsUnsupportedStatistic,
+  UNGROUNDED_ENTITY_ISSUE,
   UNGROUNDED_PLAYER_REFERENCE_ISSUE,
   UNSUPPORTED_STATISTIC_ISSUE,
 } from "@/lib/content/fabrication-guard";
@@ -53,6 +54,7 @@ export function isContentLengthIssue(result: QaResult): boolean {
 export function isFactualGroundingHardBlock(result: QaResult): boolean {
   return (
     result.scores.factual_grounding <= 2 ||
+    result.issues.includes(UNGROUNDED_ENTITY_ISSUE) ||
     result.issues.includes(UNGROUNDED_PLAYER_REFERENCE_ISSUE) ||
     result.issues.includes(UNSUPPORTED_STATISTIC_ISSUE)
   );
@@ -117,9 +119,21 @@ function applyDeterministicQaGuards(
     language: ContentLanguage;
     matchContext: QaMatchContext;
     narrative: string;
+    entityViolations?: string[];
   },
 ): QaResult {
   let guarded = result;
+
+  if ((options.entityViolations ?? []).length > 0) {
+    guarded = {
+      ...guarded,
+      issues: appendIssue(guarded.issues, UNGROUNDED_ENTITY_ISSUE),
+      scores: {
+        ...guarded.scores,
+        factual_grounding: 1,
+      },
+    };
+  }
 
   if (
     containsUnsupportedStatistic(
@@ -191,6 +205,40 @@ function applyDeterministicQaGuards(
   };
 }
 
+export function applyEntityGroundingQaGuard(
+  result: QaResult,
+  options: {
+    contentType: ContentType;
+    entityViolations: string[];
+    retryCount: number;
+  },
+): QaResult {
+  if (options.entityViolations.length === 0) {
+    return result;
+  }
+
+  const guarded = {
+    ...result,
+    issues: appendIssue(result.issues, UNGROUNDED_ENTITY_ISSUE),
+    scores: {
+      ...result.scores,
+      factual_grounding: 1,
+    },
+  };
+  const lengthUnderMinimum = isContentLengthIssue(guarded);
+
+  return {
+    ...guarded,
+    verdict: resolveVerdict(
+      guarded.scores,
+      options.retryCount,
+      true,
+      lengthUnderMinimum,
+      options.contentType,
+    ),
+  };
+}
+
 function parseQaResponse(
   jsonText: string,
   retryCount: number,
@@ -201,6 +249,7 @@ function parseQaResponse(
     language: ContentLanguage;
     matchContext: QaMatchContext;
     narrative: string;
+    entityViolations?: string[];
   },
 ): QaResult {
   const parsed = JSON.parse(jsonText) as ParsedQaResponse;
@@ -242,6 +291,7 @@ function parseQaResponse(
 
 export async function evaluateNarrativeQuality(options: {
   contentType: ContentType;
+  entityViolations?: string[];
   hasEvents?: boolean;
   hasLineups?: boolean;
   language?: ContentLanguage;
@@ -278,6 +328,7 @@ export async function evaluateNarrativeQuality(options: {
         language: options.language ?? "ja",
         matchContext: options.matchContext,
         narrative: options.narrative,
+        entityViolations: options.entityViolations,
       });
 
       return {

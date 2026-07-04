@@ -54,6 +54,7 @@ export async function generateNarrative(options: {
   contentType: ContentType;
   additionalSignals: AdditionalSignal[];
   attempt: number;
+  entityViolationSurfaces?: string[];
   language?: ContentLanguage;
 }): Promise<NarrativeResponse> {
   const temperature =
@@ -94,6 +95,7 @@ export async function reviseNarrativeLength(options: {
   assembled: AssembledContentInput;
   contentType: ContentType;
   currentContent: string;
+  entityViolationSurfaces?: string[];
   language?: ContentLanguage;
   promptVersion: string;
   tacticalPoints: TacticalPoint[];
@@ -133,6 +135,7 @@ function buildJapaneseNarrativePrompt(options: {
   tacticalPoints: TacticalPoint[];
   contentType: ContentType;
   additionalSignals: AdditionalSignal[];
+  entityViolationSurfaces?: string[];
 }) {
   const basePrompt =
     options.contentType === "preview"
@@ -159,7 +162,30 @@ function buildJapaneseNarrativePrompt(options: {
           "試合の結論（勝敗・スコア・最大のポイント）を簡潔にまとめる。",
         ].join("\n");
 
-  return [firstSectionInstruction, basePrompt].join("\n\n");
+  return [
+    firstSectionInstruction,
+    buildEntityViolationFeedbackBlock(options.entityViolationSurfaces, "ja"),
+    basePrompt,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function buildEntityViolationFeedbackBlock(
+  surfaces: string[] | undefined,
+  language: ContentLanguage,
+) {
+  const uniqueSurfaces = [...new Set(surfaces ?? [])].filter(Boolean);
+  if (uniqueSurfaces.length === 0) {
+    return "";
+  }
+
+  const surfaceList = uniqueSurfaces.join("、");
+  if (language === "en") {
+    return `The previous draft contained person names that were not present in the input data (${surfaceList}). Do not mention these names or any other person name unless it appears in the input match data, match events, confirmed lineups, or sourced facts.`;
+  }
+
+  return `前回の出力には入力データに存在しない人名（${surfaceList}）が含まれていました。これらを含め、入力データにない人名は一切書かないこと。`;
 }
 
 function buildJapaneseLengthRevisionPrompt(
@@ -168,6 +194,7 @@ function buildJapaneseLengthRevisionPrompt(
     assembled: AssembledContentInput;
     contentType: ContentType;
     currentContent: string;
+    entityViolationSurfaces?: string[];
     tacticalPoints: TacticalPoint[];
   },
   minLength: number,
@@ -190,6 +217,7 @@ function buildJapaneseLengthRevisionPrompt(
       "「加筆しました」「字数確認済み」などのメタコメントは出力しないでください。",
       `最終出力は${minLength}字以上の日本語マークダウン本文のみです。`,
     ].join("\n"),
+    buildEntityViolationFeedbackBlock(options.entityViolationSurfaces, "ja"),
     `現在の本文:\n${options.currentContent}`,
     `試合データ: ${JSON.stringify(options.assembled)}`,
     `戦術ポイント: ${JSON.stringify(options.tacticalPoints)}`,
@@ -204,6 +232,7 @@ function buildEnglishNarrativePrompt(options: {
   tacticalPoints: TacticalPoint[];
   contentType: ContentType;
   additionalSignals: AdditionalSignal[];
+  entityViolationSurfaces?: string[];
 }) {
   const hasEvents = options.assembled.match_events.length > 0;
   const hasLineups =
@@ -266,6 +295,7 @@ function buildEnglishNarrativePrompt(options: {
     "Examples: チェスリン・コルビ -> Cheslin Kolbe, 流大 -> Yutaka Nagare, ケイレブ・トラスク -> Caleb Trask.",
     "If uncertain, produce a reasonable romanization rather than leaving any Japanese characters in the output.",
     "Keep facts consistent with the input data. Do not invent player names or events.",
+    buildEntityViolationFeedbackBlock(options.entityViolationSurfaces, "en"),
     "If player lineups or events are missing, focus on team tactics, recent form, standings, head-to-head history, and match context.",
     "Direct quotations must be 15 words or fewer.",
     "The home_score and away_score fields are the authoritative final score when present. The higher score is the winner.",
@@ -290,6 +320,7 @@ function buildEnglishLengthRevisionPrompt(
     assembled: AssembledContentInput;
     contentType: ContentType;
     currentContent: string;
+    entityViolationSurfaces?: string[];
     tacticalPoints: TacticalPoint[];
   },
   minLength: number,
@@ -312,6 +343,7 @@ function buildEnglishLengthRevisionPrompt(
       "Never use Japanese characters. Use headings (#) and bullet lists (-) only. Do not use bold, italics, blockquotes, or code fences.",
       `Return only the revised English Markdown body with at least ${minLength} words.`,
     ].join("\n"),
+    buildEntityViolationFeedbackBlock(options.entityViolationSurfaces, "en"),
     `Current body:\n${options.currentContent}`,
     `Match data: ${JSON.stringify(options.assembled)}`,
     `Tactical points: ${JSON.stringify(options.tacticalPoints)}`,
