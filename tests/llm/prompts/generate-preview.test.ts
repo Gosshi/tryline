@@ -53,8 +53,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.7.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.7.0");
+  it("uses preview prompt version 3.8.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.8.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -374,6 +374,47 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("【データスパースモード】");
     expect(prompt).not.toContain("【ラインアップ実名活用】");
     expect(prompt).not.toContain("projected_lineups.home から最低3名");
+  });
+
+  it("removes unconfirmed fallback lineup names from the raw match data dump", () => {
+    const promptInput: AssembledContentInput = {
+      ...assembled,
+      projected_lineups: {
+        away: [
+          {
+            is_starter: null,
+            jersey_number: null,
+            name: "Alessandro Garbisi",
+            position: "Scrum-half",
+          },
+          {
+            is_starter: null,
+            jersey_number: null,
+            name: "アレッサンドロ・ガルビジ",
+            position: "Scrum-half",
+          },
+        ],
+        confirmed: {
+          away: false,
+          home: true,
+        },
+        home: [
+          {
+            is_starter: true,
+            jersey_number: 10,
+            name: "Home Ten",
+            position: "Fly-half",
+          },
+        ],
+      },
+    };
+
+    const prompt = buildGeneratePreviewPrompt(promptInput, [], []);
+
+    expect(prompt).toContain("Home Ten");
+    expect(prompt).not.toContain("Alessandro Garbisi");
+    expect(prompt).not.toContain("アレッサンドロ・ガルビジ");
+    expect(promptInput.projected_lineups.away).toHaveLength(2);
   });
 
   it("includes competition standings only when present", () => {

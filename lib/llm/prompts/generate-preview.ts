@@ -1,4 +1,7 @@
-import { hasConfirmedProjectedLineups } from "@/lib/llm/lineups";
+import {
+  hasConfirmedProjectedLineups,
+  sanitizeUnconfirmedProjectedLineups,
+} from "@/lib/llm/lineups";
 
 import {
   buildPersona,
@@ -13,7 +16,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.7.0";
+export const PROMPT_VERSION = "preview@3.8.0";
 
 type CorePatternType = "context" | "form" | "numeric";
 
@@ -193,6 +196,7 @@ export function buildGeneratePreviewPrompt(
     return "";
   })();
   const japaneseNameGlossary = assembled.japanese_name_glossary ?? [];
+  const sanitizedAssembled = sanitizeUnconfirmedProjectedLineups(assembled);
   const japaneseNameGlossaryBlock =
     japaneseNameGlossary.length === 0
       ? ""
@@ -227,7 +231,7 @@ export function buildGeneratePreviewPrompt(
     japaneseNameGlossaryBlock,
     nameStyleInstruction,
     "試合結果はデータ内の home_score と away_score が正確な最終スコアである。スコアが高いチームが勝者。この事実を文章の根拠として使うこと。",
-    `試合データ: ${JSON.stringify(assembled)}`,
+    `試合データ: ${JSON.stringify(sanitizedAssembled)}`,
     dataSparseBlock,
     standingsBlock,
     sourcedFactsBlock,

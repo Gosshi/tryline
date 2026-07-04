@@ -15,3 +15,24 @@ export function hasConfirmedProjectedLineups(lineups: ProjectedLineups) {
 
   return hasConfirmedEntry(lineups.home) || hasConfirmedEntry(lineups.away);
 }
+
+export function sanitizeUnconfirmedProjectedLineups(
+  assembled: AssembledContentInput,
+): AssembledContentInput {
+  const lineups = assembled.projected_lineups;
+  const homeConfirmed = lineups.confirmed
+    ? lineups.confirmed.home
+    : hasConfirmedEntry(lineups.home);
+  const awayConfirmed = lineups.confirmed
+    ? lineups.confirmed.away
+    : hasConfirmedEntry(lineups.away);
+
+  return {
+    ...assembled,
+    projected_lineups: {
+      ...lineups,
+      away: awayConfirmed ? lineups.away : [],
+      home: homeConfirmed ? lineups.home : [],
+    },
+  };
+}
