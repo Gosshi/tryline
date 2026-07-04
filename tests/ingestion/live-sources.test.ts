@@ -15,6 +15,7 @@ import {
 import { parseSuperRugbyPacificLiveHtml } from "@/lib/ingestion/sources/wikipedia-super-rugby-pacific";
 import { parseTop14LiveHtml } from "@/lib/ingestion/sources/wikipedia-top-14";
 import { parseUrcLiveHtml } from "@/lib/ingestion/sources/wikipedia-urc";
+import { parseWorldRugbyNationsChampionshipSchedulePayload } from "@/lib/ingestion/sources/world-rugby-nations-championship-times";
 
 const PREMIERSHIP_HTML = `
 <div class="mw-heading mw-heading2"><h2 id="Regular_season">Regular season</h2></div>
@@ -133,6 +134,84 @@ const NATIONS_CHAMPIONSHIP_HTML = `
   <table><tbody><tr><td><span class="location">Twickenham Stadium, London</span></td></tr></tbody></table>
 </div>
 `;
+
+const NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD = {
+  event: {
+    label: "Nations Championship 2026",
+  },
+  matches: [
+    {
+      matchId: "wr-nz-france",
+      teams: [{ name: "New Zealand" }, { name: "France" }],
+      time: { millis: Date.parse("2026-07-04T07:10:00.000Z") },
+      venue: {
+        city: "Christchurch",
+        country: "New Zealand",
+        name: "One New Zealand Stadium",
+      },
+    },
+    {
+      matchId: "wr-japan-italy",
+      teams: [{ name: "Japan" }, { name: "Italy" }],
+      time: { millis: Date.parse("2026-07-04T08:40:00.000Z") },
+      venue: {
+        city: "Tokyo",
+        country: "Japan",
+        name: "Prince Chichibu Memorial Stadium",
+      },
+    },
+    {
+      matchId: "wr-australia-ireland",
+      teams: [{ name: "Australia" }, { name: "Ireland" }],
+      time: { millis: Date.parse("2026-07-04T10:10:00.000Z") },
+      venue: {
+        city: "Sydney | Gadigal",
+        country: "Australia",
+        name: "Sydney Football Stadium",
+      },
+    },
+    {
+      matchId: "wr-fiji-wales",
+      teams: [{ name: "Fiji" }, { name: "Wales" }],
+      time: { millis: Date.parse("2026-07-04T13:10:00.000Z") },
+      venue: {
+        city: "Cardiff",
+        country: "Wales",
+        name: "Cardiff City Stadium",
+      },
+    },
+    {
+      matchId: "wr-south-africa-england",
+      teams: [{ name: "South Africa" }, { name: "England" }],
+      time: { millis: Date.parse("2026-07-04T15:40:00.000Z") },
+      venue: {
+        city: "Johannesburg",
+        country: "South Africa",
+        name: "Emirates Airline Park",
+      },
+    },
+    {
+      matchId: "wr-argentina-scotland",
+      teams: [{ name: "Argentina" }, { name: "Scotland" }],
+      time: { millis: Date.parse("2026-07-04T19:10:00.000Z") },
+      venue: {
+        city: "Cordoba",
+        country: "Argentina",
+        name: "Estadio Mario Alberto Kempes",
+      },
+    },
+    {
+      matchId: "wr-japan-ireland",
+      teams: [{ name: "Japan" }, { name: "Ireland" }],
+      time: { millis: Date.parse("2026-07-11T10:10:00.000Z") },
+      venue: {
+        city: "Newcastle | Awabakal-Worimi",
+        country: "Australia",
+        name: "Newcastle Stadium",
+      },
+    },
+  ],
+};
 
 const LEAGUE_ONE_HTML = `
 <div class="c-schedule">
@@ -411,6 +490,37 @@ describe("live competition source adapters", () => {
           match.awayTeamName === "Southern 6",
       ),
     ).toBe(false);
+  });
+
+  it("overlays Nations Championship kickoff times from World Rugby by team pairing", () => {
+    const kickoffTimes = parseWorldRugbyNationsChampionshipSchedulePayload(
+      NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD,
+    );
+    const matches = parseNationsChampionshipLiveHtml(
+      NATIONS_CHAMPIONSHIP_HTML,
+      kickoffTimes,
+    );
+
+    expect(kickoffTimes).toHaveLength(7);
+    expect(matches[0]).toMatchObject({
+      awayTeamSlug: "italy",
+      homeTeamSlug: "japan",
+      kickoffAt: "2026-07-04T08:40:00.000Z",
+      round: 1,
+      venue: "Prince Chichibu Memorial Stadium, Tokyo, Japan",
+    });
+    expect(matches[1]).toMatchObject({
+      awayTeamSlug: "france",
+      homeTeamSlug: "new-zealand",
+      kickoffAt: "2026-07-04T07:10:00.000Z",
+      round: 1,
+    });
+    expect(matches[2]).toMatchObject({
+      awayTeamSlug: "ireland",
+      homeTeamSlug: "japan",
+      kickoffAt: "2026-07-11T10:10:00.000Z",
+      round: 2,
+    });
   });
 
   it("keeps URC regular season scheduled vevents", () => {
