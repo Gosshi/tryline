@@ -37,9 +37,34 @@ function normalizeName(name: string) {
   return name.replace(/\s+/g, " ").trim().toLocaleLowerCase();
 }
 
+function normalizeForFactMatch(value: string) {
+  return value.toLocaleLowerCase().replace(/\s+/g, "");
+}
+
+function factSupportsMatchedEntity(
+  matchedEntity: string,
+  sourcedFacts: SourcedFactInput[],
+) {
+  const normalizedEntity = normalizeForFactMatch(matchedEntity);
+  const minLength = /[^\x00-\x7F]/.test(normalizedEntity) ? 3 : 4;
+
+  if (normalizedEntity.length < minLength) {
+    return false;
+  }
+
+  const normalizedFacts = sourcedFacts
+    .map((fact) => fact.fact)
+    .join(" ")
+    .toLocaleLowerCase()
+    .replace(/\s+/g, "");
+
+  return normalizedFacts.includes(normalizedEntity);
+}
+
 function parseEntityVerificationResponse(
   jsonText: string,
   allowedEntities: AllowedPersonEntity[],
+  sourcedFacts: SourcedFactInput[],
 ): EntityVerificationResult {
   const parsed = JSON.parse(jsonText) as ParsedEntityVerificationResponse;
   if (!Array.isArray(parsed.mentions)) {
@@ -88,7 +113,12 @@ function parseEntityVerificationResponse(
         return true;
       }
 
-      return !allowed.has(normalizeName(mention.matched_entity));
+      const normalizedMatchedEntity = normalizeName(mention.matched_entity);
+
+      return (
+        !allowed.has(normalizedMatchedEntity) &&
+        !factSupportsMatchedEntity(mention.matched_entity, sourcedFacts)
+      );
     })
     .map((mention) => mention.surface);
 
@@ -121,6 +151,7 @@ export async function verifyNarrativeEntities(options: {
         result: parseEntityVerificationResponse(
           response.text,
           options.allowedEntities,
+          options.sourcedFacts,
         ),
         modelVersion: response.model,
         promptVersion: PROMPT_VERSION,
