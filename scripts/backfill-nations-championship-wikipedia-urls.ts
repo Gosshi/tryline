@@ -96,8 +96,17 @@ function getStringValue(value: unknown): string | null {
 
 export function getWikipediaRound(externalIds: Json): string | null {
   const ids = asJsonObject(externalIds);
+  const round = ids.wikipedia_round;
 
-  return getStringValue(ids.wikipedia_round);
+  if (typeof round === "string" && round.trim() !== "") {
+    return round;
+  }
+
+  if (typeof round === "number" && Number.isFinite(round)) {
+    return String(round);
+  }
+
+  return null;
 }
 
 export function getNationsChampionshipWikipediaUrl(
