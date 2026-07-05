@@ -1,6 +1,8 @@
 import * as cheerio from "cheerio";
 
+import { parseWikipediaSixNationsHtml } from "@/lib/ingestion/sources/wikipedia-six-nations";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
+import { mapWikipediaTeamName } from "@/lib/scrapers/wikipedia-team-name-map";
 
 export type WikipediaLineupPlayer = {
   jersey_number: number;
@@ -16,6 +18,18 @@ export type WikipediaMatchLineup = {
 
 function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim();
+}
+
+function normalizeComparableName(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function teamNamesMatch(wikipediaName: string, dbName: string) {
+  const mapped = normalizeComparableName(mapWikipediaTeamName(wikipediaName));
+  const raw = normalizeComparableName(wikipediaName);
+  const db = normalizeComparableName(dbName);
+
+  return db === mapped || db === raw || db.includes(mapped) || db.includes(raw);
 }
 
 function parseLineupTable(
@@ -165,11 +179,87 @@ export function parseLineupFromTableHtml(
   };
 }
 
+export function parseSeasonPageLineupHtml(params: {
+  awayTeamName: string;
+  homeTeamName: string;
+  html: string;
+  kickoffAt?: string | null;
+  sourceUrl: string;
+}): WikipediaMatchLineup | null {
+  const parsedMatches = parseWikipediaSixNationsHtml(params.html);
+  const candidates = parsedMatches.filter((match) => {
+    if (
+      !teamNamesMatch(match.homeTeamName, params.homeTeamName) ||
+      !teamNamesMatch(match.awayTeamName, params.awayTeamName)
+    ) {
+      return false;
+    }
+
+    return (
+      !params.kickoffAt ||
+      match.kickoffAt.slice(0, 10) === params.kickoffAt.slice(0, 10)
+    );
+  });
+
+  if (candidates.length !== 1) {
+    return null;
+  }
+
+  const lineupTableHtml = candidates[0]?.lineupTableHtml;
+
+  if (!lineupTableHtml) {
+    return null;
+  }
+
+  return parseLineupFromTableHtml(lineupTableHtml, params.sourceUrl);
+}
+
+export function parseMatchLineupFromHtml(params: {
+  awayTeamName?: string | null;
+  homeTeamName?: string | null;
+  html: string;
+  kickoffAt?: string | null;
+  sourceUrl: string;
+}): WikipediaMatchLineup | null {
+  const directLineup = parseWikipediaLineupHtml(params.html, params.sourceUrl);
+
+  if (directLineup) {
+    return directLineup;
+  }
+
+  if (!params.homeTeamName || !params.awayTeamName) {
+    return null;
+  }
+
+  try {
+    return parseSeasonPageLineupHtml({
+      awayTeamName: params.awayTeamName,
+      homeTeamName: params.homeTeamName,
+      html: params.html,
+      kickoffAt: params.kickoffAt,
+      sourceUrl: params.sourceUrl,
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message.includes("Unable to locate the Wikipedia fixtures section") ||
+        error.message.includes("No fixture vevent"))
+    ) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
 export async function scrapeMatchLineup(
   matchPageUrl: string,
 ): Promise<WikipediaMatchLineup | null> {
   const response = await fetchWithPolicy(matchPageUrl);
   const html = await response.text();
 
-  return parseWikipediaLineupHtml(html, matchPageUrl);
+  return parseMatchLineupFromHtml({
+    html,
+    sourceUrl: matchPageUrl,
+  });
 }
