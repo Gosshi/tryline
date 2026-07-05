@@ -178,6 +178,60 @@ describe("verifyNarrativeEntities", () => {
     expect(response.promptVersion).toBe("entity-verification@1.0.1");
   });
 
+  it("excludes known team and competition names from ungrounded surfaces while keeping mentions", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      model: "gpt-4o-mini-2024-07-18",
+      text: JSON.stringify({
+        mentions: [
+          { surface: "日本", matched_entity: null },
+          { surface: "イタリア", matched_entity: null },
+          { surface: "フランス", matched_entity: null },
+          { surface: "アイルランド", matched_entity: null },
+          { surface: "URC", matched_entity: "URC" },
+        ],
+      }),
+      usage: { inputTokens: 900, outputTokens: 90 },
+    });
+
+    const response = await verifyNarrativeEntities({
+      allowedEntities: [],
+      knownNonPersonNames: ["日本", "イタリア", "フランス", "アイルランド", "URC"],
+      narrative: "日本とイタリアに加え、フランスとアイルランドの近況も見る。URCも対象。",
+      sourcedFacts: [],
+    });
+
+    expect(response.result.mentions).toEqual([
+      { surface: "日本", matched_entity: null },
+      { surface: "イタリア", matched_entity: null },
+      { surface: "フランス", matched_entity: null },
+      { surface: "アイルランド", matched_entity: null },
+      { surface: "URC", matched_entity: "URC" },
+    ]);
+    expect(response.result.ungroundedSurfaces).toEqual([]);
+  });
+
+  it("keeps unknown person mentions ungrounded when they are not known non-person names", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      model: "gpt-4o-mini-2024-07-18",
+      text: JSON.stringify({
+        mentions: [
+          { surface: "日本", matched_entity: null },
+          { surface: "アティソグベ", matched_entity: null },
+        ],
+      }),
+      usage: { inputTokens: 900, outputTokens: 90 },
+    });
+
+    const response = await verifyNarrativeEntities({
+      allowedEntities: [],
+      knownNonPersonNames: ["日本"],
+      narrative: "日本のアティソグベに注目する。",
+      sourcedFacts: [],
+    });
+
+    expect(response.result.ungroundedSurfaces).toEqual(["アティソグベ"]);
+  });
+
   it("keeps sourced_facts absent entities ungrounded", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       model: "gpt-4o-mini-2024-07-18",

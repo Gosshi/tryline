@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
 
-import { buildAllowedPersonEntities } from "@/lib/content/allowed-entities";
+import {
+  buildAllowedPersonEntities,
+  buildKnownNonPersonNames,
+} from "@/lib/content/allowed-entities";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { hasConfirmedProjectedLineups } from "@/lib/llm/lineups";
 import { notifyContentRejected, notifyCostAlert } from "@/lib/llm/notify";
@@ -148,6 +151,7 @@ export async function generateMatchContent(
   const hasEvents = assembled.match_events.length > 0;
   const hasLineups = hasConfirmedProjectedLineups(assembled.projected_lineups);
   const allowedEntities = buildAllowedPersonEntities(assembled);
+  const knownNonPersonNames = buildKnownNonPersonNames(assembled);
   let totalCostUsd = 0;
 
   const stage2StartedAt = Date.now();
@@ -199,6 +203,7 @@ export async function generateMatchContent(
     const [entityVerification, qaResponse] = await Promise.all([
       verifyNarrativeEntities({
         allowedEntities,
+        knownNonPersonNames,
         narrative: options.narrative,
         sourcedFacts: assembled.sourced_facts,
       }),
