@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { scrapeMatchLineup } from "@/lib/scrapers/wikipedia-lineups";
+import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
+import { parseMatchLineupFromHtml } from "@/lib/scrapers/wikipedia-lineups";
 
 import type { Json } from "@/lib/db/types";
 
@@ -34,7 +35,17 @@ export async function POST(request: Request) {
     const db = getSupabaseServerClient();
     const { data: match, error: matchError } = await db
       .from("matches")
-      .select("id, home_team_id, away_team_id, external_ids")
+      .select(
+        `
+          id,
+          home_team_id,
+          away_team_id,
+          kickoff_at,
+          external_ids,
+          home_team:teams!matches_home_team_id_fkey(name),
+          away_team:teams!matches_away_team_id_fkey(name)
+        `,
+      )
       .eq("id", matchId)
       .maybeSingle();
 
@@ -59,7 +70,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const lineup = await scrapeMatchLineup(wikipediaUrl);
+    const response = await fetchWithPolicy(wikipediaUrl);
+    const html = await response.text();
+    const lineup = parseMatchLineupFromHtml({
+      awayTeamName: match.away_team?.name ?? null,
+      homeTeamName: match.home_team?.name ?? null,
+      html,
+      kickoffAt: match.kickoff_at,
+      sourceUrl: wikipediaUrl,
+    });
 
     if (!lineup) {
       return NextResponse.json({ announced: false });
