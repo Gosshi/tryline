@@ -11,7 +11,10 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { buildAllowedPersonEntities } from "@/lib/content/allowed-entities";
+import {
+  buildAllowedPersonEntities,
+  buildKnownNonPersonNames,
+} from "@/lib/content/allowed-entities";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { assembleMatchContentInput } from "@/lib/llm/stages/assemble";
 import { verifyNarrativeEntities } from "@/lib/llm/stages/verify-entities";
@@ -119,6 +122,7 @@ type RunDeps = {
   verify: (options: {
     narrative: string;
     allowedEntities: ReturnType<typeof buildAllowedPersonEntities>;
+    knownNonPersonNames?: ReturnType<typeof buildKnownNonPersonNames>;
     sourcedFacts: AssembledContentInput["sourced_facts"];
   }) => Promise<EntityVerificationStageResponse>;
   writeReport?: (
@@ -328,8 +332,10 @@ async function auditOneTarget(
       target.contentType,
     );
     const allowedEntities = buildAllowedPersonEntities(assembled);
+    const knownNonPersonNames = buildKnownNonPersonNames(assembled);
     const verification = await deps.verify({
       allowedEntities,
+      knownNonPersonNames,
       narrative: target.contentMd,
       sourcedFacts: assembled.sourced_facts,
     });

@@ -353,6 +353,80 @@ describe("audit-entity-grounding", () => {
     expect(verify).toHaveBeenCalledTimes(2);
   });
 
+  it("passes known non-person names to the verifier for audit consistency", async () => {
+    const assembled = createAssembled();
+    assembled.match.home_team = {
+      country: "IE",
+      english_name: "Ireland",
+      id: "team-1",
+      name: "Ireland",
+      name_ja: "アイルランド",
+      short_code: "IRE",
+      slug: "ireland",
+    };
+    assembled.match.away_team = {
+      country: "FR",
+      english_name: "France",
+      id: "team-2",
+      name: "France",
+      name_ja: "フランス",
+      short_code: "FRA",
+      slug: "france",
+    };
+    assembled.match.competition = {
+      family: "urc",
+      id: "competition-1",
+      name: "URC",
+      name_ja: null,
+      season: "2026",
+      slug: "urc-2026",
+    };
+    const db = createMockDb([
+      {
+        contentId: "content-1",
+        contentMd: "Ireland and URC are mentioned.",
+        contentType: "preview",
+        matchId: "match-1",
+      },
+    ]);
+    const verify = vi.fn().mockResolvedValue({
+      attempts: 1,
+      modelVersion: "gpt-4o-mini",
+      promptVersion: "entity-verification@1.0.1",
+      result: {
+        mentions: [
+          { matched_entity: null, surface: "Ireland" },
+          { matched_entity: "URC", surface: "URC" },
+        ],
+        ungroundedSurfaces: [],
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    const result = await runEntityGroundingAudit({
+      assemble: vi.fn().mockResolvedValue(assembled),
+      db,
+      logger: console,
+      options: parseArgs(["--confirm-owner-approved"]),
+      verify,
+      writeReport: vi.fn().mockResolvedValue("tmp/report.json"),
+    });
+
+    expect(result.violations).toEqual([]);
+    expect(verify).toHaveBeenCalledWith(
+      expect.objectContaining({
+        knownNonPersonNames: expect.arrayContaining([
+          "Ireland",
+          "アイルランド",
+          "France",
+          "フランス",
+          "URC",
+          "2026",
+        ]),
+      }),
+    );
+  });
+
   it("requires Owner approval for non-dry-run execution", async () => {
     await expect(
       runEntityGroundingAudit({

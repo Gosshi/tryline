@@ -65,6 +65,7 @@ function parseEntityVerificationResponse(
   jsonText: string,
   allowedEntities: AllowedPersonEntity[],
   sourcedFacts: SourcedFactInput[],
+  knownNonPersonNames: string[] = [],
 ): EntityVerificationResult {
   const parsed = JSON.parse(jsonText) as ParsedEntityVerificationResponse;
   if (!Array.isArray(parsed.mentions)) {
@@ -73,6 +74,9 @@ function parseEntityVerificationResponse(
 
   const allowed = new Set(
     allowedEntities.map((entity) => normalizeName(entity.name)),
+  );
+  const knownNonPersons = new Set(
+    knownNonPersonNames.map((name) => normalizeName(name)),
   );
   const mentions: EntityMentionVerification[] = parsed.mentions.map(
     (mention) => {
@@ -109,11 +113,18 @@ function parseEntityVerificationResponse(
       if (!mention.surface) {
         return false;
       }
+      if (knownNonPersons.has(normalizeName(mention.surface))) {
+        return false;
+      }
       if (!mention.matched_entity) {
         return true;
       }
 
       const normalizedMatchedEntity = normalizeName(mention.matched_entity);
+
+      if (knownNonPersons.has(normalizedMatchedEntity)) {
+        return false;
+      }
 
       return (
         !allowed.has(normalizedMatchedEntity) &&
@@ -131,6 +142,7 @@ function parseEntityVerificationResponse(
 export async function verifyNarrativeEntities(options: {
   narrative: string;
   allowedEntities: AllowedPersonEntity[];
+  knownNonPersonNames?: string[];
   sourcedFacts: SourcedFactInput[];
 }): Promise<EntityVerificationStageResponse> {
   const prompt = buildVerifyEntitiesPrompt(options);
@@ -152,6 +164,7 @@ export async function verifyNarrativeEntities(options: {
           response.text,
           options.allowedEntities,
           options.sourcedFacts,
+          options.knownNonPersonNames,
         ),
         modelVersion: response.model,
         promptVersion: PROMPT_VERSION,
