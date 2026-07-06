@@ -455,7 +455,7 @@ export default async function HomePage() {
               {recentReviews.map((match) => (
                 <li key={match.id}>
                   <Link
-                    className="group flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                    className="group flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                     href={`/matches/${match.id}`}
                   >
                     <div className="min-w-0">
@@ -510,7 +510,7 @@ export default async function HomePage() {
               {reviewedFamilies.map((item) => (
                 <li key={item.family}>
                   <Link
-                    className="group flex h-full items-center justify-between rounded-xl border border-slate-200 bg-white py-4 pl-4 pr-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm"
+                    className="group flex h-full items-center justify-between rounded-xl border border-slate-200 bg-white py-4 pl-4 pr-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm active:scale-[0.98]"
                     href={`/c/${item.family}/${item.competitionSeason}`}
                     style={{
                       borderLeftColor: getCompetitionFamilyColor(item.family),
@@ -548,7 +548,7 @@ export default async function HomePage() {
               {homepageCompetitionLinks.map((competition) => (
                 <li key={`${competition.family}-${competition.season}`}>
                   <Link
-                    className="group flex h-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white py-4 pl-4 pr-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm"
+                    className="group flex h-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white py-4 pl-4 pr-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm active:scale-[0.98]"
                     href={`/c/${competition.family}/${competition.season}`}
                     style={{
                       borderLeftColor: getCompetitionFamilyColor(

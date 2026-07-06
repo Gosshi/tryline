@@ -132,7 +132,7 @@ export default async function CompetitionHubPage({ params }: Props) {
       </div>
       <div className="mx-auto flex max-w-4xl flex-col gap-10 px-4 py-12 sm:px-6 md:px-8">
         <Link
-          className="group block rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-slate-300"
+          className="group block rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-slate-300 active:scale-[0.98]"
           href={`/c/${competition}/${latestSeason.season}`}
         >
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">

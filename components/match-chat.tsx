@@ -301,7 +301,7 @@ export function MatchChat({
             ログインすると1問まで無料で試せます
           </p>
           <a
-            className="inline-flex min-h-12 w-full items-center justify-center rounded-[19px] bg-gradient-to-br from-[#c93a40] to-[#a83464] px-5 py-3 text-sm font-bold text-white shadow-[var(--shadow)] transition-transform hover:-translate-y-0.5 sm:w-auto"
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-[19px] bg-gradient-to-br from-[#c93a40] to-[#a83464] px-5 py-3 text-sm font-bold text-white shadow-[var(--shadow)] transition-transform hover:-translate-y-0.5 active:scale-[0.98] sm:w-auto"
             href="/auth/login"
           >
             ログインして試す
