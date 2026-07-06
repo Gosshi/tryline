@@ -4,6 +4,7 @@ import {
   UNGROUNDED_ENTITY_ISSUE,
   UNGROUNDED_PLAYER_REFERENCE_ISSUE,
   UNSUPPORTED_STATISTIC_ISSUE,
+  WINNER_MISMATCH_ISSUE,
 } from "@/lib/content/fabrication-guard";
 import {
   CONTENT_LENGTH_ISSUE,
@@ -40,9 +41,12 @@ export type QaStageResponse = {
 type ParsedQaResponse = {
   scores?: QaResult["scores"];
   issues?: unknown;
+  statedWinner?: unknown;
 };
 
 export const DENSITY_PUBLISH_MIN = 4;
+export type ActualWinner = "away" | "draw" | "home" | null;
+type StatedWinner = "away" | "home" | "unclear";
 
 function appendIssue(issues: string[], issue: string): string[] {
   return issues.includes(issue) ? issues : [...issues, issue];
@@ -57,7 +61,8 @@ export function isFactualGroundingHardBlock(result: QaResult): boolean {
     result.scores.factual_grounding <= 2 ||
     result.issues.includes(UNGROUNDED_ENTITY_ISSUE) ||
     result.issues.includes(UNGROUNDED_PLAYER_REFERENCE_ISSUE) ||
-    result.issues.includes(UNSUPPORTED_STATISTIC_ISSUE)
+    result.issues.includes(UNSUPPORTED_STATISTIC_ISSUE) ||
+    result.issues.includes(WINNER_MISMATCH_ISSUE)
   );
 }
 
@@ -143,6 +148,27 @@ export function buildTeamStatsFactStrings(
   ];
 }
 
+export function computeActualWinner(
+  homeScore: number | null,
+  awayScore: number | null,
+): ActualWinner {
+  if (homeScore === null || awayScore === null) {
+    return null;
+  }
+
+  if (homeScore === awayScore) {
+    return "draw";
+  }
+
+  return homeScore > awayScore ? "home" : "away";
+}
+
+function parseStatedWinner(value: unknown): StatedWinner | null {
+  return value === "home" || value === "away" || value === "unclear"
+    ? value
+    : null;
+}
+
 // Single source of truth for QA verdicts. The LLM scores content only; code
 // applies the stable retry/reject thresholds used by the pipeline.
 export function resolveVerdict(
@@ -203,9 +229,30 @@ function applyDeterministicQaGuards(
     matchContext: QaMatchContext;
     narrative: string;
     entityViolations?: string[];
+    statedWinner?: StatedWinner | null;
   },
 ): QaResult {
   let guarded = result;
+  const actualWinner = computeActualWinner(
+    options.matchContext.homeScore,
+    options.matchContext.awayScore,
+  );
+
+  if (
+    options.contentType === "recap" &&
+    (actualWinner === "home" || actualWinner === "away") &&
+    (options.statedWinner === "home" || options.statedWinner === "away") &&
+    actualWinner !== options.statedWinner
+  ) {
+    guarded = {
+      ...guarded,
+      issues: appendIssue(guarded.issues, WINNER_MISMATCH_ISSUE),
+      scores: {
+        ...guarded.scores,
+        factual_grounding: 1,
+      },
+    };
+  }
 
   if ((options.entityViolations ?? []).length > 0) {
     guarded = {
@@ -348,6 +395,7 @@ function parseQaResponse(
   const llmIssues = (Array.isArray(parsed.issues) ? parsed.issues : []).filter(
     (issue) => issue !== CONTENT_LENGTH_ISSUE,
   );
+  const statedWinner = parseStatedWinner(parsed.statedWinner);
 
   const guarded = applyDeterministicQaGuards(
     {
@@ -355,7 +403,10 @@ function parseQaResponse(
       issues: llmIssues,
       verdict: "retry",
     },
-    options,
+    {
+      ...options,
+      statedWinner,
+    },
   );
   const lengthUnderMinimum = isContentLengthIssue(guarded);
   const factualHardBlock = isFactualGroundingHardBlock(guarded);

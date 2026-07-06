@@ -75,7 +75,10 @@ describe("buildQaContentPrompt", () => {
 
     expect(recapPrompt).toContain("## 勝者整合性チェック");
     expect(recapPrompt).toContain("Ireland 24 — France 17");
-    expect(recapPrompt).toContain("factual_grounding を 1");
+    expect(recapPrompt).toContain("statedWinner");
+    expect(recapPrompt).toContain("正誤判定をしない");
+    expect(recapPrompt).toContain("スコアとの照合はプログラム側で行う");
+    expect(recapPrompt).toContain('"statedWinner":"home"|"away"|"unclear"');
     expect(previewPrompt).not.toContain("## 勝者整合性チェック");
   });
 
