@@ -25,6 +25,7 @@ description: 公開済みコンテンツ（recap/preview）の品質を監査す
 1. **人名捏造は全件機械監査が可能**（他の観点と違いサンプリング不要）: `node --env-file=.env.production.local tools/run-ts.cjs tools/audit-entity-grounding.ts --confirm-owner-approved`。公開済み全件（899件時点で$0.45〜$0.90）を照合し `tmp/entity-audit/entity-grounding-audit-*.json` にレポート出力
    - 結果は `allowedEntityCount` で層別すること: **0件＝ほぼ確実に本物の捏造**（最優先で確認）。**1件以上＝実データはある状態での違反**で、チーム名・大会名の誤検出（照合精度の偽陽性）や、事件性の低い言及の可能性も高いため個別に本文を読んで判断する
    - 違反（特に allowedEntityCount=0）が見つかった記事は、`content-regen` の draft戻し手順で即座に unpublish し、原因を確認してから再生成する
+   - **手動で match_events と突き合わせる場合の必須注意（2026-07-05 の誤検知事故から）**: 得点者名の真実は `match_events.metadata->>'player_name'` にある。`player_id` は players テーブルへのリンク解決結果にすぎず、**`player_id IS NULL` は「得点者不明」を意味しない**（リンク未解決でも metadata に名前は入っている）。assemble・許可リスト・プロンプトはすべて metadata 側を使う。player_id だけを見て「LLM が名前を補完した」と断定すると、正確な記事を捏造と誤判定する
 2. **他の観点はサンプリング**: 直近公開分から大会横断で 10〜20件抽出（1大会に偏らせない）
 3. **機械チェック**: 字数・見出し形式・禁止パターン（「セクション」「自動生成」等）を grep 相当で
 4. **目視チェック**: 冒頭多様性・密度は本文を読んで判定

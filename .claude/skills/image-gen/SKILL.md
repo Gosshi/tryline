@@ -47,7 +47,8 @@ CLAUDE.md の権利方針（実在ロゴ・公式ユニフォーム・実在選�
 採用が決まったら sips で JPEG 変換し配置（品質90）:
 
 ```bash
-sips -s format jpeg -s formatOptions 90 <入力.png> --out public/visuals/<名前>.jpg
+sips -s format jpeg -s formatOptions 90 <入力.png> --out <保存先>/<名前>.jpg
 ```
 
-大会ヒーロー用は `{family}.jpg`。それ以外（サムネ・背景等）は用途がわかる名前で。コードから参照されない画像を置きっぱなしにしない（配置したら使い道の spec 化とセットで）。
+- **サイト（コード参照）用**（大会ヒーロー等）: `public/visuals/{family}.jpg`。family スラッグは `COMPETITION_HERO_IMAGES` のキーと一致させる。配置したら使い道の spec 化とセットで（コードから参照されない画像を置きっぱなしにしない）
+- **note 記事の見出し画像用**（`note-weekly` スキル経由）: `docs/notes/assets/<下書きファイル名と同じ日付>-thumbnail.jpg`。コードから参照されないため `public/visuals/` には置かない
