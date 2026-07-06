@@ -28,6 +28,7 @@ function createAssembled(): AssembledContentInput {
   return {
     competition_standings: [],
     derived_stats: null,
+    team_stats: null,
     h2h_last_5: [],
     injuries: { away: [], home: [] },
     key_stats: {
@@ -290,7 +291,9 @@ describe("audit-entity-grounding", () => {
       ],
     });
     expect(result.reportPath).toEqual(expect.stringContaining(outputDir));
-    const report = JSON.parse(readFileSync(result.reportPath ?? "", "utf8")) as {
+    const report = JSON.parse(
+      readFileSync(result.reportPath ?? "", "utf8"),
+    ) as {
       summary: { audited: number; failures: number; violations: number };
       violations: Array<{ matchId: string }>;
     };

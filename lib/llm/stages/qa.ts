@@ -21,6 +21,7 @@ import {
 import type {
   ContentLanguage,
   ContentType,
+  MatchTeamStats,
   QaResult,
   QaVerdict,
 } from "@/lib/llm/types";
@@ -58,6 +59,88 @@ export function isFactualGroundingHardBlock(result: QaResult): boolean {
     result.issues.includes(UNGROUNDED_PLAYER_REFERENCE_ISSUE) ||
     result.issues.includes(UNSUPPORTED_STATISTIC_ISSUE)
   );
+}
+
+function formatPercent(value: number) {
+  return Number.isInteger(value) ? `${value}%` : `${value.toFixed(1)}%`;
+}
+
+function buildFactsForSide(
+  label: string,
+  stats: NonNullable<MatchTeamStats>["home"],
+): string[] {
+  if (!stats) {
+    return [];
+  }
+
+  const facts: string[] = [];
+
+  if (typeof stats.possession_pct === "number") {
+    facts.push(
+      `${label}チームのポゼッション率${formatPercent(stats.possession_pct)}`,
+    );
+  }
+  if (typeof stats.territory_pct === "number") {
+    facts.push(
+      `${label}チームのテリトリー率${formatPercent(stats.territory_pct)}`,
+    );
+  }
+  if (
+    typeof stats.lineouts_won === "number" &&
+    typeof stats.lineouts_total === "number"
+  ) {
+    facts.push(
+      `${label}チームのラインアウト${stats.lineouts_won}/${stats.lineouts_total}`,
+    );
+  } else if (typeof stats.lineouts_won === "number") {
+    facts.push(`${label}チームのラインアウト獲得${stats.lineouts_won}`);
+  }
+  if (
+    typeof stats.scrums_won === "number" &&
+    typeof stats.scrums_total === "number"
+  ) {
+    facts.push(
+      `${label}チームのスクラム${stats.scrums_won}/${stats.scrums_total}`,
+    );
+  } else if (typeof stats.scrums_won === "number") {
+    facts.push(`${label}チームのスクラム獲得${stats.scrums_won}`);
+  }
+  if (typeof stats.tackles_made === "number") {
+    facts.push(`${label}チームのタックル成功${stats.tackles_made}`);
+  }
+  if (typeof stats.tackles_missed === "number") {
+    facts.push(`${label}チームのタックルミス${stats.tackles_missed}`);
+  }
+  if (typeof stats.carries === "number") {
+    facts.push(`${label}チームのキャリー${stats.carries}`);
+  }
+  if (typeof stats.penalties_conceded === "number") {
+    facts.push(`${label}チームのペナルティ${stats.penalties_conceded}`);
+  }
+  if (typeof stats.yellow_cards === "number") {
+    facts.push(`${label}チームのイエローカード${stats.yellow_cards}`);
+  }
+  if (typeof stats.red_cards === "number") {
+    facts.push(`${label}チームのレッドカード${stats.red_cards}`);
+  }
+  if (typeof stats.errors === "number") {
+    facts.push(`${label}チームのエラー${stats.errors}`);
+  }
+
+  return facts;
+}
+
+export function buildTeamStatsFactStrings(
+  teamStats?: MatchTeamStats,
+): string[] {
+  if (!teamStats) {
+    return [];
+  }
+
+  return [
+    ...buildFactsForSide("ホーム", teamStats.home),
+    ...buildFactsForSide("アウェイ", teamStats.away),
+  ];
 }
 
 // Single source of truth for QA verdicts. The LLM scores content only; code
@@ -136,10 +219,10 @@ function applyDeterministicQaGuards(
   }
 
   if (
-    containsUnsupportedStatistic(
-      options.narrative,
-      options.matchContext.sourcedFacts?.map((fact) => fact.fact) ?? [],
-    )
+    containsUnsupportedStatistic(options.narrative, [
+      ...(options.matchContext.sourcedFacts?.map((fact) => fact.fact) ?? []),
+      ...buildTeamStatsFactStrings(options.matchContext.teamStats),
+    ])
   ) {
     guarded = {
       ...guarded,

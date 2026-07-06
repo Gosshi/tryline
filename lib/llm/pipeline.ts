@@ -113,10 +113,8 @@ export async function generateMatchContent(
     );
 
     if (timeline) {
-      const homeDelta =
-        timeline.final_home - (assembled.match.home_score ?? 0);
-      const awayDelta =
-        timeline.final_away - (assembled.match.away_score ?? 0);
+      const homeDelta = timeline.final_home - (assembled.match.home_score ?? 0);
+      const awayDelta = timeline.final_away - (assembled.match.away_score ?? 0);
 
       if (homeDelta !== 0 || awayDelta !== 0) {
         console.warn("[score-integrity] event total mismatch", {
@@ -217,6 +215,7 @@ export async function generateMatchContent(
           homeScore: assembled.match.home_score,
           homeTeam: assembled.match.home_team?.name ?? "Home",
           sourcedFacts: assembled.sourced_facts,
+          teamStats: assembled.team_stats,
         },
         hasEvents,
         hasLineups,
@@ -479,8 +478,7 @@ export async function generateMatchContent(
         inputTokens: revisionEntityVerification.usage.inputTokens,
         outputTokens: revisionEntityVerification.usage.outputTokens,
       });
-      totalCostUsd +=
-        revisionQaCostUsd + revisionEntityVerificationCostUsd;
+      totalCostUsd += revisionQaCostUsd + revisionEntityVerificationCostUsd;
 
       await logPipelineRun({
         matchId,
@@ -508,10 +506,7 @@ export async function generateMatchContent(
         finalQa = {
           ...baselineQa,
           issues: [
-            ...new Set([
-              ...baselineQa.issues,
-              FACTUAL_REVISION_FALLBACK_ISSUE,
-            ]),
+            ...new Set([...baselineQa.issues, FACTUAL_REVISION_FALLBACK_ISSUE]),
           ],
           verdict: "publish",
         };

@@ -473,6 +473,87 @@ export type Database = {
           },
         ];
       };
+      match_team_stats: {
+        Row: {
+          carries: number | null;
+          created_at: string;
+          errors: number | null;
+          id: string;
+          lineouts_total: number | null;
+          lineouts_won: number | null;
+          match_id: string;
+          penalties_conceded: number | null;
+          possession_pct: number | null;
+          red_cards: number | null;
+          scrums_total: number | null;
+          scrums_won: number | null;
+          source: string;
+          source_url: string;
+          tackles_made: number | null;
+          tackles_missed: number | null;
+          team_id: string;
+          territory_pct: number | null;
+          yellow_cards: number | null;
+        };
+        Insert: {
+          carries?: number | null;
+          created_at?: string;
+          errors?: number | null;
+          id?: string;
+          lineouts_total?: number | null;
+          lineouts_won?: number | null;
+          match_id: string;
+          penalties_conceded?: number | null;
+          possession_pct?: number | null;
+          red_cards?: number | null;
+          scrums_total?: number | null;
+          scrums_won?: number | null;
+          source?: string;
+          source_url: string;
+          tackles_made?: number | null;
+          tackles_missed?: number | null;
+          team_id: string;
+          territory_pct?: number | null;
+          yellow_cards?: number | null;
+        };
+        Update: {
+          carries?: number | null;
+          created_at?: string;
+          errors?: number | null;
+          id?: string;
+          lineouts_total?: number | null;
+          lineouts_won?: number | null;
+          match_id?: string;
+          penalties_conceded?: number | null;
+          possession_pct?: number | null;
+          red_cards?: number | null;
+          scrums_total?: number | null;
+          scrums_won?: number | null;
+          source?: string;
+          source_url?: string;
+          tackles_made?: number | null;
+          tackles_missed?: number | null;
+          team_id?: string;
+          territory_pct?: number | null;
+          yellow_cards?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_team_stats_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "match_team_stats_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       match_events: {
         Row: {
           created_at: string;

@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { UNGROUNDED_ENTITY_ISSUE } from "@/lib/content/fabrication-guard";
-import { evaluateNarrativeQuality, resolveVerdict } from "@/lib/llm/stages/qa";
+import {
+  containsUnsupportedStatistic,
+  UNGROUNDED_ENTITY_ISSUE,
+} from "@/lib/content/fabrication-guard";
+import {
+  buildTeamStatsFactStrings,
+  evaluateNarrativeQuality,
+  resolveVerdict,
+} from "@/lib/llm/stages/qa";
 
 const openAIMock = vi.hoisted(() => ({
   createTextResponse: vi.fn(),
@@ -53,6 +60,23 @@ describe("resolveVerdict", () => {
         "preview",
       ),
     ).toBe("publish");
+  });
+});
+
+describe("buildTeamStatsFactStrings", () => {
+  it("allows official team stat percentages through the statistic guard", () => {
+    const facts = buildTeamStatsFactStrings({
+      away: { lineouts_total: 12, lineouts_won: 10, possession_pct: 42 },
+      home: { lineouts_total: 11, lineouts_won: 11, possession_pct: 58 },
+    });
+
+    expect(facts).toContain("ホームチームのポゼッション率58%");
+    expect(
+      containsUnsupportedStatistic(
+        "ホームはポゼッション58%で試合を支配した。",
+        facts,
+      ),
+    ).toBe(false);
   });
 });
 
@@ -590,9 +614,7 @@ describe("evaluateNarrativeQuality", () => {
     });
 
     expect(result.result.verdict).toBe("publish");
-    expect(result.result.issues).not.toContain(
-      "本文が目標字数の下限未満です",
-    );
+    expect(result.result.issues).not.toContain("本文が目標字数の下限未満です");
   });
 
   it("publishes a 650-word English recap without triggering the length gate", async () => {
@@ -619,9 +641,7 @@ describe("evaluateNarrativeQuality", () => {
     });
 
     expect(result.result.verdict).toBe("publish");
-    expect(result.result.issues).not.toContain(
-      "本文が目標字数の下限未満です",
-    );
+    expect(result.result.issues).not.toContain("本文が目標字数の下限未満です");
   });
 
   it("does not penalize real score, try, and ranking numbers", async () => {
@@ -711,7 +731,9 @@ describe("LLM-reported length issue stripping", () => {
       retryCount: 0,
     });
 
-    expect(response.result.issues).not.toContain("本文が目標字数の下限未満です");
+    expect(response.result.issues).not.toContain(
+      "本文が目標字数の下限未満です",
+    );
     expect(response.result.verdict).toBe("publish");
   });
 

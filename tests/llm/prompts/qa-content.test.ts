@@ -14,8 +14,8 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.2.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.2.0");
+  it("uses qa prompt version 2.3.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.3.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -60,7 +60,12 @@ describe("buildQaContentPrompt", () => {
   });
 
   it("adds winner consistency checks only for recaps", () => {
-    const recapPrompt = buildQaContentPrompt("recap", "本文", "ja", matchContext);
+    const recapPrompt = buildQaContentPrompt(
+      "recap",
+      "本文",
+      "ja",
+      matchContext,
+    );
     const previewPrompt = buildQaContentPrompt(
       "preview",
       "本文",
@@ -168,6 +173,28 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).toContain("## derived_stats grounding");
     expect(prompt).toContain("入力データに基づく正当な記述");
     expect(prompt).toContain('"deficit_overcome":12');
+  });
+
+  it("adds official team stats as allowed grounding context", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      teamStats: {
+        away: {
+          possession_pct: 42,
+          scrums_total: 6,
+          scrums_won: 4,
+        },
+        home: {
+          possession_pct: 58,
+          scrums_total: 7,
+          scrums_won: 7,
+        },
+      },
+    });
+
+    expect(prompt).toContain("## team_stats grounding");
+    expect(prompt).toContain("公式サイトから取得した実データ");
+    expect(prompt).toContain('"possession_pct":58');
   });
 
   it("omits turning point section checks when events are absent", () => {

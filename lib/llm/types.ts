@@ -104,6 +104,27 @@ export type DerivedMatchStats = {
   second_half: { home_points: number; away_points: number } | null;
 };
 
+export type Top14TeamStats = {
+  carries?: number;
+  errors?: number;
+  lineouts_total?: number;
+  lineouts_won?: number;
+  penalties_conceded?: number;
+  possession_pct?: number;
+  red_cards?: number;
+  scrums_total?: number;
+  scrums_won?: number;
+  tackles_made?: number;
+  tackles_missed?: number;
+  territory_pct?: number;
+  yellow_cards?: number;
+};
+
+export type MatchTeamStats = {
+  away: Top14TeamStats | null;
+  home: Top14TeamStats | null;
+} | null;
+
 export type SourcedFactInput = {
   fact: string;
   source_url: string;
@@ -242,6 +263,7 @@ export type AssembledContentInput = {
   };
   score_timeline: ScoreTimeline | null;
   derived_stats: DerivedMatchStats | null;
+  team_stats: MatchTeamStats;
   sourced_facts: SourcedFactInput[];
   japanese_name_glossary?: Array<{
     kind: "competition" | "team";

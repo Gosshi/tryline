@@ -133,6 +133,7 @@ const assembled: AssembledContentInput = {
   recent_form: { away: [], home: [] },
   score_timeline: null,
   derived_stats: null,
+  team_stats: null,
   sourced_facts: [],
 };
 
