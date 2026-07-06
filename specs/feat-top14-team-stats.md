@@ -54,6 +54,7 @@ recap の tactical_depth が伸びない根本原因は「試合中のチーム�
 - 当初例示の `/calendrier-resultats/{season}/j{round}` は 404。実際の一覧URLは `https://top14.lnr.fr/calendrier-et-resultats/{season}/{roundSlug}`。`https://top14.lnr.fr/calendrier-et-resultats/2025-2026/j24` は 200 で、J24 の7試合すべての `feuille-de-match` リンク（例: `11469-lyon-bayonne`）をSSR HTMLから取得できる。
 - LNR公式サイトのVueルーティングでも `route/{season}/{week.slug}` が確認でき、レギュラーシーズンは `j1`〜`j26`、プレーオフは `demi-finales` / `finale` などの slug で機械的に列挙可能。
 - Tryline側の `matches.external_ids.wikipedia_round` または `round_name` から `roundSlug` を導出し、ラウンド一覧ページの `feuille-de-match` リンクをチームslugで照合して `top14_lnr_id` を `matches.external_ids` に保存する方式で確定する。スタッツURLは照合済み `matchPath + "/statistiques-du-match"` で生成する。
+- レビュー対応の再確認として、`fetchWithPolicy` 経由で `https://top14.lnr.fr/feuille-de-match/2025-2026/j24/11469-lyon-bayonne/statistiques-du-match` を取得し、`parseTop14MatchStatsHtml` が実HTMLから値を抽出できることを確認した。抽出例: Bayonne 側 `possession_pct=62`, `territory_pct=69`, `scrums_total=10`, `scrums_won=6`, `lineouts_total=14`, `lineouts_won=9`, `tackles_made=84`, `tackles_missed=21`, `carries=15`; Lyon 側 `possession_pct=38`, `territory_pct=31`, `tackles_made=181`, `yellow_cards=2`。
 
 ## データモデル変更
 

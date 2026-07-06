@@ -169,7 +169,7 @@ function validateValue(
       return null;
     }
 
-    return Number(value.toFixed(2));
+    return Math.round(value);
   }
 
   if (!Number.isInteger(value) || value < 0) {

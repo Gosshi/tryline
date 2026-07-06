@@ -92,6 +92,22 @@ describe("parseTop14MatchStatsHtml", () => {
     );
   });
 
+  it("rounds official decimal percentages before exposing team stats", () => {
+    const result = parseTop14MatchStatsHtml(
+      `
+        <div data-stat="possession_pct" data-home="57.5%" data-away="42.5%"></div>
+        <div data-stat="territory_pct" data-home="61.4%" data-away="38.6%"></div>
+      `,
+      "https://example.com/stats",
+    );
+
+    expect(result).toEqual({
+      sourceUrl: "https://example.com/stats",
+      home: { possession_pct: 58, territory_pct: 61 },
+      away: { possession_pct: 43, territory_pct: 39 },
+    });
+  });
+
   it("returns null when no supported stat rows exist", () => {
     expect(
       parseTop14MatchStatsHtml("<p>No stats</p>", "https://example.com"),

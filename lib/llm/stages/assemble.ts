@@ -865,27 +865,27 @@ export async function assembleMatchContentInput(
   const japaneseNameGlossary: NonNullable<
     AssembledContentInput["japanese_name_glossary"]
   > = [
-    competitionNameJa && match.competition
-      ? {
-          japanese: competitionNameJa,
-          kind: "competition" as const,
-          source: match.competition.name,
-        }
-      : null,
-    homeNameJa && match.home_team
-      ? {
-          japanese: homeNameJa,
-          kind: "team" as const,
-          source: match.home_team.name,
-        }
-      : null,
-    awayNameJa && match.away_team
-      ? {
-          japanese: awayNameJa,
-          kind: "team" as const,
-          source: match.away_team.name,
-        }
-      : null,
+      competitionNameJa && match.competition
+        ? {
+            japanese: competitionNameJa,
+            kind: "competition" as const,
+            source: match.competition.name,
+          }
+        : null,
+      homeNameJa && match.home_team
+        ? {
+            japanese: homeNameJa,
+            kind: "team" as const,
+            source: match.home_team.name,
+          }
+        : null,
+      awayNameJa && match.away_team
+        ? {
+            japanese: awayNameJa,
+            kind: "team" as const,
+            source: match.away_team.name,
+          }
+        : null,
   ].filter(
     (
       item,

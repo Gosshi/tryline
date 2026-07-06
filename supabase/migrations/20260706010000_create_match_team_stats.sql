@@ -1,7 +1,7 @@
-create table if not exists match_team_stats (
+create table if not exists public.match_team_stats (
   id uuid primary key default gen_random_uuid(),
-  match_id uuid not null references matches(id),
-  team_id uuid not null references teams(id),
+  match_id uuid not null references public.matches(id),
+  team_id uuid not null references public.teams(id),
   possession_pct numeric,
   territory_pct numeric,
   lineouts_won integer,
@@ -20,3 +20,11 @@ create table if not exists match_team_stats (
   created_at timestamptz not null default now(),
   unique (match_id, team_id)
 );
+
+alter table public.match_team_stats enable row level security;
+
+create policy "match team stats are publicly readable"
+  on public.match_team_stats
+  for select
+  to anon, authenticated
+  using (true);

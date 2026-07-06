@@ -78,6 +78,21 @@ describe("buildTeamStatsFactStrings", () => {
       ),
     ).toBe(false);
   });
+
+  it("allows rounded official team stat percentages through the statistic guard", () => {
+    const facts = buildTeamStatsFactStrings({
+      away: { possession_pct: 43 },
+      home: { possession_pct: 58 },
+    });
+
+    expect(facts).toContain("ホームチームのポゼッション率58%");
+    expect(
+      containsUnsupportedStatistic(
+        "ホームはポゼッション58%で試合を支配した。",
+        facts,
+      ),
+    ).toBe(false);
+  });
 });
 
 describe("evaluateNarrativeQuality", () => {
