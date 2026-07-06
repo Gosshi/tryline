@@ -159,7 +159,7 @@ export function MatchHeader({
         <div className="mt-4 flex flex-wrap gap-2 border-t border-white/15 pt-4">
           {match.status === "finished" && (
             <a
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-[#b4232a] transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-[#b4232a] transition-transform hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               href={buildYouTubeSearchUrl(homeName, awayName, match.kickoffAt)}
               rel="noreferrer noopener"
               target="_blank"
