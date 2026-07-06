@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Nations Championship">
+  <rect width="64" height="64" rx="14" fill="#1A3A5C"/>
+  <path d="M16 18h32v10c0 14-7 22-16 27-9-5-16-13-16-27V18Z" fill="none" stroke="#ffffff" stroke-width="4"/>
+  <path d="M20 28h24" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+  <text x="32" y="43" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="800" fill="#ffffff">NC</text>
+</svg>

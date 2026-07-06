@@ -44,6 +44,7 @@ export const revalidate = 60;
 const COMPETITION_LOGO_FAMILIES = new Set([
   "autumn-nations",
   "league-one",
+  "nations-championship",
   "pnc",
   "premiership",
   "rugby-championship",
