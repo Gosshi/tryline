@@ -178,6 +178,28 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).toContain('"deficit_overcome":12');
   });
 
+  it("adds official team stats as allowed grounding context", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      teamStats: {
+        away: {
+          possession_pct: 42,
+          scrums_total: 6,
+          scrums_won: 4,
+        },
+        home: {
+          possession_pct: 58,
+          scrums_total: 7,
+          scrums_won: 7,
+        },
+      },
+    });
+
+    expect(prompt).toContain("## team_stats grounding");
+    expect(prompt).toContain("公式サイトから取得した実データ");
+    expect(prompt).toContain('"possession_pct":58');
+  });
+
   it("omits turning point section checks when events are absent", () => {
     const prompt = buildQaContentPrompt(
       "recap",

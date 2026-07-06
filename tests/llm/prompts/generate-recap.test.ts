@@ -49,12 +49,13 @@ const assembled: AssembledContentInput = {
   },
   score_timeline: null,
   derived_stats: null,
+  team_stats: null,
   sourced_facts: [],
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.11.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.11.0");
+  it("uses recap prompt version 4.12.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.12.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -90,6 +91,43 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("sourced_facts: なし");
     expect(prompt).toContain("外部記事・モデル訓練データ由来");
     expect(prompt).toContain("統計・負傷・欠場・選手コメント・発言");
+  });
+
+  it("adds official team stats when available", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        team_stats: {
+          away: {
+            lineouts_total: 12,
+            lineouts_won: 10,
+            possession_pct: 42,
+          },
+          home: {
+            lineouts_total: 11,
+            lineouts_won: 11,
+            possession_pct: 58,
+          },
+        },
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("【チームスタッツ team_stats】");
+    expect(prompt).toContain("公式サイトから取得した実際のチームスタッツ");
+    expect(prompt).toContain('"possession_pct":58');
+    expect(prompt).toContain("ポゼッション率・成功率等の数値表現");
+  });
+
+  it("omits official team stats when unavailable", () => {
+    const prompt = buildGenerateRecapPrompt(
+      { ...assembled, team_stats: null },
+      [],
+      [],
+    );
+
+    expect(prompt).not.toContain("【チームスタッツ team_stats】");
   });
 
   it("uses data-sparse structure when lineup and event data are unavailable", () => {

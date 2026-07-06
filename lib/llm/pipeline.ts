@@ -217,6 +217,7 @@ export async function generateMatchContent(
           homeScore: assembled.match.home_score,
           homeTeam: assembled.match.home_team?.name ?? "Home",
           sourcedFacts: assembled.sourced_facts,
+          teamStats: assembled.team_stats,
         },
         hasEvents,
         hasLineups,

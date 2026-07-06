@@ -50,6 +50,7 @@ const assembled = {
   },
   score_timeline: null,
   derived_stats: null,
+  team_stats: null,
   sourced_facts: [],
 };
 

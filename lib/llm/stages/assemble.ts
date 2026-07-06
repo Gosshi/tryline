@@ -13,8 +13,10 @@ import type {
   AssembledContentInput,
   ContentType,
   ContentLanguage,
+  MatchTeamStats,
   MatchPhase,
   ScoreTimeline,
+  Top14TeamStats,
 } from "@/lib/llm/types";
 
 function average(values: number[]) {
@@ -506,6 +508,75 @@ async function loadMatchEvents(
   });
 }
 
+function mapTeamStatsRow(row: {
+  carries: number | null;
+  errors: number | null;
+  lineouts_total: number | null;
+  lineouts_won: number | null;
+  penalties_conceded: number | null;
+  possession_pct: number | null;
+  red_cards: number | null;
+  scrums_total: number | null;
+  scrums_won: number | null;
+  tackles_made: number | null;
+  tackles_missed: number | null;
+  territory_pct: number | null;
+  yellow_cards: number | null;
+}): Top14TeamStats {
+  return Object.fromEntries(
+    Object.entries(row).filter(([, value]) => value !== null),
+  ) as Top14TeamStats;
+}
+
+async function loadTeamStats(args: {
+  awayTeamId: string;
+  competitionFamily: string | null | undefined;
+  homeTeamId: string;
+  matchId: string;
+}): Promise<MatchTeamStats> {
+  if (args.competitionFamily !== "top-14") {
+    return null;
+  }
+
+  const db = getSupabaseServerClient();
+  const { data, error } = await db
+    .from("match_team_stats")
+    .select(
+      `
+        team_id,
+        possession_pct,
+        territory_pct,
+        lineouts_won,
+        lineouts_total,
+        scrums_won,
+        scrums_total,
+        tackles_made,
+        tackles_missed,
+        carries,
+        penalties_conceded,
+        yellow_cards,
+        red_cards,
+        errors
+      `,
+    )
+    .eq("match_id", args.matchId);
+
+  if (error) {
+    throw error;
+  }
+
+  const homeRow = (data ?? []).find((row) => row.team_id === args.homeTeamId);
+  const awayRow = (data ?? []).find((row) => row.team_id === args.awayTeamId);
+  const home = homeRow ? mapTeamStatsRow(homeRow) : null;
+  const away = awayRow ? mapTeamStatsRow(awayRow) : null;
+
+  if (!home && !away) {
+    return null;
+  }
+
+  return { away, home };
+}
+
 export async function assembleMatchContentInput(
   matchId: string,
   language: ContentLanguage = "ja",
@@ -726,12 +797,19 @@ export async function assembleMatchContentInput(
     competitionStandings,
     matchEvents,
     sourcedFacts,
+    teamStats,
   ] = await Promise.all([
     loadProjectedLineup(matchId, homeTeamId),
     loadProjectedLineup(matchId, awayTeamId),
     loadCompetitionStandings(match.competition_id, language),
     loadMatchEvents(matchId, match.status, language),
     loadSourcedFactsForMatch(matchId, contentType),
+    loadTeamStats({
+      awayTeamId,
+      competitionFamily: match.competition?.family,
+      homeTeamId,
+      matchId,
+    }),
   ]);
 
   const homeFormStats = computeTeamFormStats(homeRecent, homeTeamName);
@@ -877,6 +955,7 @@ export async function assembleMatchContentInput(
     },
     score_timeline: scoreTimeline,
     derived_stats: derivedStats,
+    team_stats: teamStats,
     sourced_facts: sourcedFacts.map((fact) => ({
       confidence:
         fact.confidence === "high" || fact.confidence === "medium"

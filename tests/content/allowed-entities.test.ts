@@ -10,6 +10,7 @@ import type { AssembledContentInput } from "@/lib/llm/types";
 const baseAssembled: AssembledContentInput = {
   competition_standings: [],
   derived_stats: null,
+  team_stats: null,
   h2h_last_5: [],
   injuries: { away: [], home: [] },
   japanese_name_glossary: [],

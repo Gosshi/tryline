@@ -49,6 +49,7 @@ const assembled: AssembledContentInput = {
   recent_form: { away: [], home: [] },
   score_timeline: null,
   derived_stats: null,
+  team_stats: null,
   sourced_facts: [],
 };
 
@@ -78,7 +79,8 @@ describe("buildExtractTacticalPointsPrompt", () => {
 
   it("keeps tactical examples limited to available input fields", () => {
     const prompt = buildExtractTacticalPointsPrompt(assembled);
-    const examples = prompt.split("【戦術次元の例")[1]?.split("入力JSON")[0] ?? "";
+    const examples =
+      prompt.split("【戦術次元の例")[1]?.split("入力JSON")[0] ?? "";
 
     expect(examples).toContain("key_stats.avg_points_for_last_5");
     expect(examples).toContain("recent_form");

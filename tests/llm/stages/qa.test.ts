@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  containsUnsupportedStatistic,
   UNGROUNDED_ENTITY_ISSUE,
   WINNER_MISMATCH_ISSUE,
 } from "@/lib/content/fabrication-guard";
 import {
+  buildTeamStatsFactStrings,
   computeActualWinner,
   evaluateNarrativeQuality,
   isFactualGroundingHardBlock,
@@ -71,6 +73,38 @@ describe("resolveVerdict", () => {
         "preview",
       ),
     ).toBe("publish");
+  });
+});
+
+describe("buildTeamStatsFactStrings", () => {
+  it("allows official team stat percentages through the statistic guard", () => {
+    const facts = buildTeamStatsFactStrings({
+      away: { lineouts_total: 12, lineouts_won: 10, possession_pct: 42 },
+      home: { lineouts_total: 11, lineouts_won: 11, possession_pct: 58 },
+    });
+
+    expect(facts).toContain("ホームチームのポゼッション率58%");
+    expect(
+      containsUnsupportedStatistic(
+        "ホームはポゼッション58%で試合を支配した。",
+        facts,
+      ),
+    ).toBe(false);
+  });
+
+  it("allows rounded official team stat percentages through the statistic guard", () => {
+    const facts = buildTeamStatsFactStrings({
+      away: { possession_pct: 43 },
+      home: { possession_pct: 58 },
+    });
+
+    expect(facts).toContain("ホームチームのポゼッション率58%");
+    expect(
+      containsUnsupportedStatistic(
+        "ホームはポゼッション58%で試合を支配した。",
+        facts,
+      ),
+    ).toBe(false);
   });
 });
 
