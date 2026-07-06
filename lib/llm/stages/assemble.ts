@@ -4,6 +4,7 @@ import {
   JAPANESE_COMPETITION_NAMES_BY_FAMILY,
   JAPANESE_TEAM_NAMES_BY_SLUG,
 } from "@/lib/format/japanese-names";
+import { pointsForMatchEvent } from "@/lib/format/match-event-points";
 import { getTeamDisplayName } from "@/lib/format/team";
 import { loadSourcedFactsForMatch } from "@/lib/llm/sourced-facts/fetch";
 import { computeDerivedMatchStats } from "@/lib/llm/stages/derived-stats";
@@ -147,27 +148,13 @@ export function computeMatchStats(
   };
 }
 
-const PENALTY_TRY_POINTS = 7;
-const TRY_POINTS = 5;
-
 export function pointsForEvent(
   event: Pick<
     AssembledContentInput["match_events"][number],
     "is_penalty_try" | "type"
   >,
 ): number {
-  if (event.type === "try") {
-    return event.is_penalty_try === true ? PENALTY_TRY_POINTS : TRY_POINTS;
-  }
-  if (event.type === "conversion") return 2;
-  if (
-    event.type === "penalty" ||
-    event.type === "penalty_goal" ||
-    event.type === "drop_goal"
-  ) {
-    return 3;
-  }
-  return 0;
+  return pointsForMatchEvent(event);
 }
 
 export function computeScoreTimeline(
