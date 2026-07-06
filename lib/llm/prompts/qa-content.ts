@@ -7,7 +7,7 @@ import type {
   SourcedFactInput,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.2.0";
+export const PROMPT_VERSION = "qa@2.3.0";
 
 export type QaMatchContext = {
   awayScore: number | null;
@@ -54,9 +54,9 @@ export function buildQaContentPrompt(
       ? [
           "## 勝者整合性チェック",
           `この試合のスコア: ${matchContext.homeTeam} ${matchContext.homeScore} — ${matchContext.awayTeam} ${matchContext.awayScore}`,
-          "スコアが高い方のチームが実際の勝者である。",
-          "本文中で敗者チームが勝利したかのように書かれていれば factual_grounding を 1 にすること。",
-          "引き分け（同点）の場合はこのチェックを無視する。",
+          "本文の結論部分が最終的にどちらのチームを勝者として述べているかだけを分類し、JSONの statedWinner に入れること。",
+          `statedWinner は "${matchContext.homeTeam} が勝者として述べられている" なら "home"、"${matchContext.awayTeam} が勝者として述べられている" なら "away"、勝者記述がない・曖昧・引き分けとして扱っている場合は "unclear" にすること。`,
+          "ここでは正誤判定をしない。スコアとの照合はプログラム側で行う。",
         ].join("\n")
       : "";
   const turningPointCheckBlock =
@@ -125,7 +125,7 @@ export function buildQaContentPrompt(
     turningPointCheckBlock,
     sourcedFactsBlock,
     derivedStatsBlock,
-    'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[]}',
+    'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[],"statedWinner":"home"|"away"|"unclear"}',
     `本文: ${narrative}`,
   ].join("\n\n");
 }
