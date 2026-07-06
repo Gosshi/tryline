@@ -14,8 +14,8 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.2.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.2.0");
+  it("uses qa prompt version 2.3.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.3.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -60,7 +60,12 @@ describe("buildQaContentPrompt", () => {
   });
 
   it("adds winner consistency checks only for recaps", () => {
-    const recapPrompt = buildQaContentPrompt("recap", "本文", "ja", matchContext);
+    const recapPrompt = buildQaContentPrompt(
+      "recap",
+      "本文",
+      "ja",
+      matchContext,
+    );
     const previewPrompt = buildQaContentPrompt(
       "preview",
       "本文",
@@ -70,7 +75,10 @@ describe("buildQaContentPrompt", () => {
 
     expect(recapPrompt).toContain("## 勝者整合性チェック");
     expect(recapPrompt).toContain("Ireland 24 — France 17");
-    expect(recapPrompt).toContain("factual_grounding を 1");
+    expect(recapPrompt).toContain("statedWinner");
+    expect(recapPrompt).toContain("正誤判定をしない");
+    expect(recapPrompt).toContain("スコアとの照合はプログラム側で行う");
+    expect(recapPrompt).toContain('"statedWinner":"home"|"away"|"unclear"');
     expect(previewPrompt).not.toContain("## 勝者整合性チェック");
   });
 

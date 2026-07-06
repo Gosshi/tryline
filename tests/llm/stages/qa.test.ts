@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { UNGROUNDED_ENTITY_ISSUE } from "@/lib/content/fabrication-guard";
-import { evaluateNarrativeQuality, resolveVerdict } from "@/lib/llm/stages/qa";
+import {
+  UNGROUNDED_ENTITY_ISSUE,
+  WINNER_MISMATCH_ISSUE,
+} from "@/lib/content/fabrication-guard";
+import {
+  computeActualWinner,
+  evaluateNarrativeQuality,
+  isFactualGroundingHardBlock,
+  resolveVerdict,
+} from "@/lib/llm/stages/qa";
 
 const openAIMock = vi.hoisted(() => ({
   createTextResponse: vi.fn(),
@@ -23,6 +31,16 @@ const passingScores = {
   japanese_quality: 4,
   tactical_depth: 4,
 };
+
+describe("computeActualWinner", () => {
+  it("returns the winner side, draw, or null from final scores", () => {
+    expect(computeActualWinner(24, 17)).toBe("home");
+    expect(computeActualWinner(17, 24)).toBe("away");
+    expect(computeActualWinner(20, 20)).toBe("draw");
+    expect(computeActualWinner(null, 20)).toBeNull();
+    expect(computeActualWinner(20, null)).toBeNull();
+  });
+});
 
 describe("resolveVerdict", () => {
   it("retries low-density recaps even when other scores pass", () => {
@@ -53,6 +71,18 @@ describe("resolveVerdict", () => {
         "preview",
       ),
     ).toBe("publish");
+  });
+});
+
+describe("isFactualGroundingHardBlock", () => {
+  it("treats winner mismatches as factual hard blocks", () => {
+    expect(
+      isFactualGroundingHardBlock({
+        issues: [WINNER_MISMATCH_ISSUE],
+        scores: passingScores,
+        verdict: "retry",
+      }),
+    ).toBe(true);
   });
 });
 
@@ -145,6 +175,154 @@ describe("evaluateNarrativeQuality", () => {
     expect(result.result.issues).toContain(UNGROUNDED_ENTITY_ISSUE);
     expect(result.result.scores.factual_grounding).toBe(1);
     expect(result.result.verdict).toBe("retry");
+  });
+
+  it("forces factual grounding failure when stated winner contradicts the score", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+        statedWinner: "home",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      matchContext: {
+        awayScore: 47,
+        awayTeam: "Scotland",
+        homeScore: 38,
+        homeTeam: "Argentina",
+      },
+      narrative: `# 試合全体像\n38対47というスコアで進んだ一戦は、結論部分でアルゼンチンが勝利を決定づけたと記述され、最終的に47対38で試合を制したとまとめてしまっている。\n${"あ".repeat(1600)}`,
+      retryCount: 0,
+    });
+
+    expect(result.result.issues).toContain(WINNER_MISMATCH_ISSUE);
+    expect(result.result.scores.factual_grounding).toBe(1);
+    expect(result.result.verdict).toBe("retry");
+  });
+
+  it("does not penalize when stated winner matches the actual winner", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+        statedWinner: "home",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      matchContext,
+      narrative: longJaRecap,
+      retryCount: 0,
+    });
+
+    expect(result.result.issues).not.toContain(WINNER_MISMATCH_ISSUE);
+    expect(result.result.scores.factual_grounding).toBe(5);
+    expect(result.result.verdict).toBe("publish");
+  });
+
+  it("does not penalize unclear stated winners", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+        statedWinner: "unclear",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      matchContext: { ...matchContext, awayScore: 30, homeScore: 20 },
+      narrative: longJaRecap,
+      retryCount: 0,
+    });
+
+    expect(result.result.issues).not.toContain(WINNER_MISMATCH_ISSUE);
+    expect(result.result.scores.factual_grounding).toBe(5);
+    expect(result.result.verdict).toBe("publish");
+  });
+
+  it("does not penalize draw or missing-score matches", async () => {
+    for (const context of [
+      { ...matchContext, awayScore: 24, homeScore: 24 },
+      { ...matchContext, awayScore: null, homeScore: 24 },
+    ]) {
+      openAIMock.createTextResponse.mockResolvedValueOnce({
+        text: JSON.stringify({
+          scores: {
+            factual_grounding: 5,
+            information_density: 5,
+            japanese_quality: 5,
+            tactical_depth: 5,
+          },
+          issues: [],
+          statedWinner: "away",
+        }),
+        model: "gpt-4o-mini-2024-07-18",
+        usage: { inputTokens: 10, outputTokens: 10 },
+      });
+
+      const result = await evaluateNarrativeQuality({
+        contentType: "recap",
+        matchContext: context,
+        narrative: longJaRecap,
+        retryCount: 0,
+      });
+
+      expect(result.result.issues).not.toContain(WINNER_MISMATCH_ISSUE);
+      expect(result.result.scores.factual_grounding).toBe(5);
+    }
+  });
+
+  it("does not apply the winner mismatch guard to previews", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+        statedWinner: "away",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      matchContext,
+      narrative: longJaPreview,
+      retryCount: 0,
+    });
+
+    expect(result.result.issues).not.toContain(WINNER_MISMATCH_ISSUE);
+    expect(result.result.scores.factual_grounding).toBe(5);
   });
 
   it("returns retry when tactical depth is <= 2 even if other scores pass", async () => {
@@ -590,9 +768,7 @@ describe("evaluateNarrativeQuality", () => {
     });
 
     expect(result.result.verdict).toBe("publish");
-    expect(result.result.issues).not.toContain(
-      "本文が目標字数の下限未満です",
-    );
+    expect(result.result.issues).not.toContain("本文が目標字数の下限未満です");
   });
 
   it("publishes a 650-word English recap without triggering the length gate", async () => {
@@ -619,9 +795,7 @@ describe("evaluateNarrativeQuality", () => {
     });
 
     expect(result.result.verdict).toBe("publish");
-    expect(result.result.issues).not.toContain(
-      "本文が目標字数の下限未満です",
-    );
+    expect(result.result.issues).not.toContain("本文が目標字数の下限未満です");
   });
 
   it("does not penalize real score, try, and ranking numbers", async () => {
@@ -711,7 +885,9 @@ describe("LLM-reported length issue stripping", () => {
       retryCount: 0,
     });
 
-    expect(response.result.issues).not.toContain("本文が目標字数の下限未満です");
+    expect(response.result.issues).not.toContain(
+      "本文が目標字数の下限未満です",
+    );
     expect(response.result.verdict).toBe("publish");
   });
 
