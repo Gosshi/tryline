@@ -934,6 +934,8 @@ export type Database = {
           short_code: string | null;
           slug: string;
           updated_at: string;
+          world_ranking: number | null;
+          world_ranking_updated_at: string | null;
         };
         Insert: {
           country: string;
@@ -947,6 +949,8 @@ export type Database = {
           short_code?: string | null;
           slug: string;
           updated_at?: string;
+          world_ranking?: number | null;
+          world_ranking_updated_at?: string | null;
         };
         Update: {
           country?: string;
@@ -960,6 +964,8 @@ export type Database = {
           short_code?: string | null;
           slug?: string;
           updated_at?: string;
+          world_ranking?: number | null;
+          world_ranking_updated_at?: string | null;
         };
         Relationships: [];
       };
