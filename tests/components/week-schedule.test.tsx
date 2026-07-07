@@ -79,13 +79,19 @@ describe("WeekSchedule", () => {
       />,
     );
 
-    expect(screen.getByText("2026-06-08 (月)")).toBeInTheDocument();
-    expect(screen.getByText("2026-06-08 (月)").closest("section")).toHaveTextContent(
-      "1試合",
-    );
-    expect(screen.getByText("2026-06-09 (火)").closest("section")).toHaveTextContent(
-      "2試合",
-    );
+    const june8Section = screen
+      .getByRole("heading", { name: "8" })
+      .closest("section");
+    expect(june8Section).toHaveTextContent("月");
+    expect(june8Section).toHaveTextContent("6月");
+    expect(june8Section).toHaveTextContent("1試合");
+
+    const june9Section = screen
+      .getByRole("heading", { name: "9" })
+      .closest("section");
+    expect(june9Section).toHaveTextContent("火");
+    expect(june9Section).toHaveTextContent("6月");
+    expect(june9Section).toHaveTextContent("2試合");
     expect(screen.getByRole("link", { name: /00:30 JST/ })).toHaveAttribute(
       "href",
       "/matches/match-1",

@@ -40,6 +40,24 @@ function groupMatchesByJstDay(matches: CalendarMatch[]): DayGroup[] {
   return [...groups.values()];
 }
 
+function getDayLabelParts(dateLabel: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2}) \((.+)\)$/.exec(dateLabel);
+
+  if (!match) {
+    return {
+      day: dateLabel,
+      month: "JST",
+      weekday: "",
+    };
+  }
+
+  return {
+    day: String(Number(match[3])),
+    month: `${Number(match[2])}月`,
+    weekday: match[4],
+  };
+}
+
 function getMatchStateLabel(match: CalendarMatch): string {
   if (
     match.status === "finished" &&
@@ -147,28 +165,48 @@ export function WeekSchedule({
 
   return (
     <div className={compact ? "space-y-4" : "space-y-6"}>
-      {groupMatchesByJstDay(matches).map((group) => (
-        <section key={group.key} aria-labelledby={`calendar-${group.key}`}>
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <h3
-              className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]"
-              id={`calendar-${group.key}`}
+      {groupMatchesByJstDay(matches).map((group) => {
+        const dayParts = getDayLabelParts(group.dateLabel);
+
+        return (
+          <section
+            className="flex items-stretch gap-3 sm:gap-4"
+            key={group.key}
+            aria-labelledby={`calendar-${group.key}`}
+          >
+            <div
+              className={`flex shrink-0 flex-col items-center justify-center rounded-2xl bg-[var(--color-ink)] text-white shadow-sm ${
+                compact ? "w-14 px-2 py-3" : "w-16 px-2 py-4"
+              }`}
             >
-              {group.dateLabel}
-            </h3>
-            <span className="text-xs text-slate-400">
-              {group.matches.length}試合
-            </span>
-          </div>
-          <ul className="space-y-2">
-            {group.matches.map((match) => (
-              <li key={match.id}>
-                <MatchRow compact={compact} match={match} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/65">
+                {dayParts.weekday}
+              </span>
+              <h3
+                className={`font-number font-black leading-none ${
+                  compact ? "mt-1 text-2xl" : "mt-1 text-3xl"
+                }`}
+                id={`calendar-${group.key}`}
+              >
+                {dayParts.day}
+              </h3>
+              <span className="mt-1 text-[10px] font-bold text-white/70">
+                {dayParts.month}
+              </span>
+              <span className="mt-3 rounded-full bg-white/12 px-2 py-0.5 text-[10px] font-bold text-white/75">
+                {group.matches.length}試合
+              </span>
+            </div>
+            <ul className="min-w-0 flex-1 space-y-2">
+              {group.matches.map((match) => (
+                <li key={match.id}>
+                  <MatchRow compact={compact} match={match} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }
