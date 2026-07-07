@@ -176,4 +176,22 @@ describe("backfill-standings", () => {
     });
     warn.mockRestore();
   });
+
+  it("matches Montauban to the seeded US Montauban team", () => {
+    const lookup = buildStandingsTeamLookup(
+      [standingsRow("Montauban")],
+      [
+        {
+          englishName: "US Montauban",
+          id: "montauban-id",
+          name: "US Montauban",
+          slug: "us-montauban",
+        },
+      ],
+    );
+
+    expect(lookup).toEqual({
+      Montauban: "montauban-id",
+    });
+  });
 });

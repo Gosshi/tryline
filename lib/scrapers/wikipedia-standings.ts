@@ -73,8 +73,9 @@ function normalizeWhitespace(value: string) {
 
 function normalizeHeader(value: string) {
   return normalizeWhitespace(value)
-    .toLowerCase()
     .replace(/\[[^\]]+\]/g, "")
+    .replace(/\b(?:v\s+t\s+e|vte)\b/gi, "")
+    .toLowerCase()
     .replace(/[^a-z0-9]+/g, "");
 }
 
@@ -111,7 +112,9 @@ function hasRequiredColumns(indexes: ColumnIndexes) {
 }
 
 function parseInteger(value: string, context: string) {
-  const normalized = normalizeWhitespace(value).replace(/[+,]/g, "");
+  const normalized = normalizeWhitespace(value)
+    .replace(/\[[^\]]+\]/g, "")
+    .replace(/[+,]/g, "");
 
   if (!/^-?\d+$/.test(normalized)) {
     console.warn(
