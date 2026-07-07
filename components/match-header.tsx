@@ -74,6 +74,7 @@ export function MatchHeader({
             linear-gradient(135deg, color-mix(in srgb, ${homeColor} 88%, transparent), color-mix(in srgb, ${awayColor} 88%, transparent)),
             url(/visuals/match-detail-bg.jpg)
           `,
+          backgroundBlendMode: "normal, normal, normal, screen, normal",
           backgroundPosition: "center, center, center, center, center",
           backgroundSize: "cover, cover, cover, cover, cover",
         } as React.CSSProperties
