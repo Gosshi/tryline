@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tryline mock カード差別化 案C（エディトリアル・ミニマル）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Outfit:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --color-paper: #f5f6f8;
+    --color-ink: #1f2530;
+    --color-ink-muted: #767d8b;
+    --color-rule: #eceef2;
+    --color-accent: #c93a40;
+    --maru: "Zen Maru Gothic", sans-serif;
+    --num: "Outfit", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #dadee5;
+    font-family: var(--maru);
+    color: var(--color-ink);
+    display: flex;
+    justify-content: center;
+    padding: 28px 0 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .phone {
+    width: 412px;
+    max-width: 100%;
+    background: var(--color-paper);
+    box-shadow: 0 40px 90px -30px rgba(20, 28, 50, 0.6);
+    overflow: hidden;
+  }
+  .intro { padding: 20px 24px 8px; border-bottom: 1px solid var(--color-rule); background: #fff; }
+  .intro .label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--color-accent); text-transform: uppercase; }
+  .intro h1 { font-size: 18px; margin-top: 4px; }
+  .intro p { font-size: 12px; color: var(--color-ink-muted); margin-top: 6px; line-height: 1.6; }
+  main { padding: 20px 22px 44px; display: flex; flex-direction: column; gap: 30px; }
+  section h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--color-ink-muted); margin-bottom: 12px; }
+
+  .ed-list { display: flex; flex-direction: column; }
+  .ed-row {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    padding: 16px 2px; border-bottom: 1px solid var(--color-rule);
+  }
+  .ed-row:first-child { padding-top: 0; }
+  .ed-row:last-child { border-bottom: none; }
+  .ed-row .left { min-width: 0; }
+  .ed-row .comp { font-size: 10.5px; color: var(--color-accent); font-weight: 700; letter-spacing: 0.04em; }
+  .ed-row .teams { margin-top: 4px; font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+  .ed-row .score { font-family: var(--num); font-weight: 700; color: var(--color-ink-muted); font-size: 14px; }
+  .ed-row .arrow { flex-shrink: 0; font-size: 18px; color: var(--color-rule); transition: color 0.15s; }
+
+  .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .comp-card {
+    background: #fff; border-radius: 22px; overflow: hidden;
+    box-shadow: 0 14px 28px -20px rgba(28,38,64,0.35);
+    transition: transform 0.15s ease-out;
+  }
+  .comp-card:active { transform: scale(0.98); }
+  .comp-card .top-bar { height: 6px; }
+  .comp-card .body { padding: 16px 14px; }
+  .comp-card .mark {
+    width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; font-size: 13px; margin-bottom: 10px;
+  }
+  .comp-card .name { font-size: 13px; font-weight: 800; }
+  .comp-card .season { font-size: 10.5px; color: var(--color-ink-muted); margin-top: 2px; }
+
+  .cal-editorial { display: flex; flex-direction: column; }
+  .cal-e-row { display: flex; align-items: baseline; gap: 14px; padding: 13px 2px; border-bottom: 1px solid var(--color-rule); }
+  .cal-e-row:last-child { border-bottom: none; }
+  .cal-e-row .d { flex-shrink: 0; width: 46px; font-family: var(--num); font-weight: 700; font-size: 13px; color: var(--color-ink-muted); }
+  .cal-e-row .match { font-size: 13.5px; font-weight: 700; flex: 1; }
+  .cal-e-row .meta { font-size: 10.5px; color: var(--color-accent); font-weight: 700; }
+
+  .faq-ed { border-top: 1px solid var(--color-rule); }
+  .faq-e-row { padding: 15px 2px; border-bottom: 1px solid var(--color-rule); }
+  .faq-e-row .q { display: flex; align-items: center; justify-content: space-between; font-size: 13.5px; font-weight: 700; }
+  .faq-e-row .q .plus { color: var(--color-accent); font-family: var(--num); font-size: 16px; }
+  .faq-e-row .a { margin-top: 8px; font-size: 12px; color: var(--color-ink-muted); line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="intro">
+    <p class="label">Card Differentiation — 案C</p>
+    <h1>エディトリアル・ミニマル</h1>
+    <p>リスト系（レビュー・カレンダー・FAQ）は「箱」をやめて罫線区切り＋大きなタイポグラフィに寄せる。「カード」らしい面・影・角丸は大会アーカイブだけに使い、役割を明確に分ける。情報密度は上がり、視覚的なノイズ（同じ枠の繰り返し）は減る。</p>
+  </div>
+  <main>
+    <section>
+      <h2>最近のレビュー</h2>
+      <div class="ed-list">
+        <div class="ed-row">
+          <div class="left">
+            <p class="comp">NATIONS CHAMPIONSHIP 2026</p>
+            <p class="teams">日本 <span class="score">24-19</span> イタリア</p>
+          </div>
+          <span class="arrow">›</span>
+        </div>
+        <div class="ed-row">
+          <div class="left">
+            <p class="comp">THE RUGBY CHAMPIONSHIP</p>
+            <p class="teams">NZ <span class="score">32-14</span> 豪州</p>
+          </div>
+          <span class="arrow">›</span>
+        </div>
+        <div class="ed-row">
+          <div class="left">
+            <p class="comp">URC</p>
+            <p class="teams">レンスター <span class="score">21-21</span> グラスゴー</p>
+          </div>
+          <span class="arrow">›</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>大会アーカイブ</h2>
+      <div class="comp-grid">
+        <div class="comp-card">
+          <div class="top-bar" style="background:#001489;"></div>
+          <div class="body">
+            <div class="mark" style="background:#001489;">6N</div>
+            <p class="name">Six Nations</p>
+            <p class="season">2026</p>
+          </div>
+        </div>
+        <div class="comp-card">
+          <div class="top-bar" style="background:#00823E;"></div>
+          <div class="body">
+            <div class="mark" style="background:#00823E;">URC</div>
+            <p class="name">URC</p>
+            <p class="season">2025-26</p>
+          </div>
+        </div>
+        <div class="comp-card">
+          <div class="top-bar" style="background:#1A3A5C;"></div>
+          <div class="body">
+            <div class="mark" style="background:#1A3A5C;">NC</div>
+            <p class="name">Nations Championship</p>
+            <p class="season">2026</p>
+          </div>
+        </div>
+        <div class="comp-card">
+          <div class="top-bar" style="background:#D62B31;"></div>
+          <div class="body">
+            <div class="mark" style="background:#D62B31;">14</div>
+            <p class="name">Top 14</p>
+            <p class="season">2025-26</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>今週の試合カレンダー</h2>
+      <div class="cal-editorial">
+        <div class="cal-e-row">
+          <span class="d">7/11 土</span>
+          <span class="match">南アフリカ vs アルゼンチン</span>
+          <span class="meta">18:05</span>
+        </div>
+        <div class="cal-e-row">
+          <span class="d">7/11 土</span>
+          <span class="match">マンスター vs アルスター</span>
+          <span class="meta">23:35</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>よくある質問</h2>
+      <div class="faq-ed">
+        <div class="faq-e-row">
+          <div class="q">無料トライアルはありますか？ <span class="plus">−</span></div>
+          <p class="a">はい。初回登録時に7日間の無料トライアルをご利用いただけます。</p>
+        </div>
+        <div class="faq-e-row">
+          <div class="q">解約はいつでもできますか？ <span class="plus">+</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

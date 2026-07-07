@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tryline mock カード差別化 案B（非対称モジュール）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Outfit:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --color-paper: #f5f6f8;
+    --color-ink: #1f2530;
+    --color-ink-muted: #767d8b;
+    --color-rule: #eceef2;
+    --color-accent: #c93a40;
+    --maru: "Zen Maru Gothic", sans-serif;
+    --num: "Outfit", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #dadee5;
+    font-family: var(--maru);
+    color: var(--color-ink);
+    display: flex;
+    justify-content: center;
+    padding: 28px 0 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .phone {
+    width: 412px;
+    max-width: 100%;
+    background: var(--color-paper);
+    box-shadow: 0 40px 90px -30px rgba(20, 28, 50, 0.6);
+    overflow: hidden;
+  }
+  .intro { padding: 20px 24px 8px; border-bottom: 1px solid var(--color-rule); background: #fff; }
+  .intro .label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--color-accent); text-transform: uppercase; }
+  .intro h1 { font-size: 18px; margin-top: 4px; }
+  .intro p { font-size: 12px; color: var(--color-ink-muted); margin-top: 6px; line-height: 1.6; }
+  main { padding: 20px 22px 44px; display: flex; flex-direction: column; gap: 28px; }
+  section h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--color-ink-muted); margin-bottom: 10px; }
+
+  .review-hero {
+    position: relative; border-radius: 20px; padding: 18px 20px; color: #fff; overflow: hidden;
+    background:
+      linear-gradient(180deg, rgba(12,16,28,0.1), rgba(12,16,28,0.24)),
+      linear-gradient(120deg, #1A3A5C, #35618f);
+    transition: transform 0.15s ease-out;
+  }
+  .review-hero:active { transform: scale(0.98); }
+  .review-hero .tag { font-size: 10px; font-weight: 700; background: rgba(255,255,255,0.18); padding: 4px 10px; border-radius: 999px; display: inline-block; }
+  .review-hero .teams { margin-top: 10px; font-size: 17px; font-weight: 800; }
+  .review-hero .score { font-family: var(--num); font-size: 26px; font-weight: 700; margin-top: 4px; }
+  .review-compact { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .review-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 9px 4px; border-bottom: 1px solid var(--color-rule);
+    font-size: 12.5px;
+  }
+  .review-row:last-child { border-bottom: none; }
+  .review-row .teams-sm { font-weight: 700; }
+  .review-row .comp-sm { color: var(--color-ink-muted); font-size: 10.5px; }
+
+  .comp-scroll {
+    display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .comp-scroll::-webkit-scrollbar { display: none; }
+  .comp-chip {
+    flex-shrink: 0; border-radius: 16px; padding: 12px 16px; color: #fff;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    transition: transform 0.15s ease-out;
+  }
+  .comp-chip:active { transform: scale(0.98); }
+  .comp-chip.lg { width: 160px; height: 88px; font-size: 14px; }
+  .comp-chip.md { width: 118px; height: 88px; font-size: 12px; }
+  .comp-chip .season { font-size: 10px; opacity: 0.8; }
+
+  .cal-block { display: flex; gap: 14px; }
+  .cal-date-col {
+    flex-shrink: 0; width: 56px; text-align: center; background: var(--color-ink); color: #fff;
+    border-radius: 14px; padding: 12px 0; display: flex; flex-direction: column; justify-content: center;
+  }
+  .cal-date-col .dow { font-size: 10px; opacity: 0.75; }
+  .cal-date-col .num { font-family: var(--num); font-size: 22px; font-weight: 700; line-height: 1.1; }
+  .cal-rows { flex: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+  .cal-row-b { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; }
+  .cal-row-b .match { font-weight: 700; }
+  .cal-row-b .meta { color: var(--color-ink-muted); font-size: 10.5px; }
+  .cal-row-b .time { font-family: var(--num); font-weight: 700; color: var(--color-accent); }
+
+  .faq-hero { background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 10px 24px -18px rgba(28,38,64,0.35); }
+  .faq-hero .q { font-size: 14px; font-weight: 800; }
+  .faq-hero .a { margin-top: 8px; font-size: 12.5px; color: var(--color-ink-muted); line-height: 1.7; }
+  .faq-list { margin-top: 8px; display: flex; flex-direction: column; }
+  .faq-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--color-rule); font-size: 12.5px; font-weight: 600; }
+  .faq-row:last-child { border-bottom: none; }
+  .faq-row span { color: var(--color-ink-muted); font-weight: 400; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="intro">
+    <p class="label">Card Differentiation — 案B</p>
+    <h1>非対称モジュール</h1>
+    <p>「同じ大きさのカードを並べる」をやめる。直近1件は大きく主役として見せ、残りは密度の高いコンパクト行に落とす。大会アーカイブは均等グリッドでなく横スクロールの不均等チップに。カレンダーは日付を大きな縦ブロックにして行と非対称に組む。</p>
+  </div>
+  <main>
+    <section>
+      <h2>最近のレビュー</h2>
+      <div class="review-hero">
+        <span class="tag">Nations Championship 2026</span>
+        <p class="teams">日本 vs イタリア</p>
+        <p class="score">24 – 19</p>
+      </div>
+      <div class="review-compact">
+        <div class="review-row">
+          <div><span class="teams-sm">NZ 32-14 豪州</span><br /><span class="comp-sm">Rugby Championship</span></div>
+          <span>→</span>
+        </div>
+        <div class="review-row">
+          <div><span class="teams-sm">レンスター 21-21 グラスゴー</span><br /><span class="comp-sm">URC</span></div>
+          <span>→</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>大会アーカイブ</h2>
+      <div class="comp-scroll">
+        <div class="comp-chip lg" style="background:#1A3A5C;">
+          <p>Nations Championship</p><p class="season">2026・進行中</p>
+        </div>
+        <div class="comp-chip md" style="background:#001489;">
+          <p>Six Nations</p><p class="season">2026</p>
+        </div>
+        <div class="comp-chip md" style="background:#00823E;">
+          <p>URC</p><p class="season">2025-26</p>
+        </div>
+        <div class="comp-chip md" style="background:#D62B31;">
+          <p>Top 14</p><p class="season">2025-26</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>今週の試合カレンダー</h2>
+      <div class="cal-block">
+        <div class="cal-date-col">
+          <span class="dow">土</span>
+          <span class="num">11</span>
+        </div>
+        <div class="cal-rows">
+          <div class="cal-row-b">
+            <div><p class="match">南アフリカ vs アルゼンチン</p><p class="meta">Rugby Championship</p></div>
+            <span class="time">18:05</span>
+          </div>
+          <div class="cal-row-b">
+            <div><p class="match">マンスター vs アルスター</p><p class="meta">URC</p></div>
+            <span class="time">23:35</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>よくある質問</h2>
+      <div class="faq-hero">
+        <p class="q">無料トライアルはありますか？</p>
+        <p class="a">はい。初回登録時に7日間の無料トライアルをご利用いただけます。トライアル期間中はPremium機能をすべてお使いいただけます。</p>
+      </div>
+      <div class="faq-list">
+        <div class="faq-row">解約はいつでもできますか？ <span>→</span></div>
+        <div class="faq-row">対応大会は？ <span>→</span></div>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>
