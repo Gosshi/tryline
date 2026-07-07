@@ -591,6 +591,7 @@ export default async function HomePage() {
                     key={`${competition.family}-${competition.season}`}
                   >
                     <Link
+                      aria-label={`${formatFamilyName(competition.family)} ${competition.season} 最新シーズン`}
                       className="group flex h-24 flex-col justify-between overflow-hidden rounded-2xl px-4 py-3 text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                       href={`/c/${competition.family}/${competition.season}`}
                       style={{
@@ -599,7 +600,8 @@ export default async function HomePage() {
                     >
                       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 shadow-sm ring-1 ring-white/40">
                         <Image
-                          alt={formatFamilyName(competition.family)}
+                          alt=""
+                          aria-hidden="true"
                           className="h-7 w-7 object-contain"
                           height={28}
                           src={getCompetitionLogoSrc(competition.family)}
@@ -612,6 +614,7 @@ export default async function HomePage() {
                         </span>
                         <span className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-white/75">
                           {competition.season}
+                          <span className="sr-only"> 最新シーズン</span>
                           {competition.family === "league-one" && (
                             <span className="rounded-full bg-white/18 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/85">
                               EN
@@ -625,7 +628,7 @@ export default async function HomePage() {
                         className="mt-2 block rounded-lg px-1 text-xs font-medium text-[var(--color-accent)] underline underline-offset-4 transition-colors hover:text-[var(--color-accent-strong)]"
                         href="/c/rwc/2027"
                       >
-                        2027年大会はこちら →
+                        2027年大会（オーストラリア開催）の日程はこちら →
                       </Link>
                     )}
                   </li>
