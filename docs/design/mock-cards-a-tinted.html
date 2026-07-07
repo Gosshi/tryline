@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tryline mock カード差別化 案A（カラーウォッシュ）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Outfit:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --color-paper: #f5f6f8;
+    --color-ink: #1f2530;
+    --color-ink-muted: #767d8b;
+    --color-rule: #eceef2;
+    --color-accent: #c93a40;
+    --maru: "Zen Maru Gothic", sans-serif;
+    --num: "Outfit", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #dadee5;
+    font-family: var(--maru);
+    color: var(--color-ink);
+    display: flex;
+    justify-content: center;
+    padding: 28px 0 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .phone {
+    width: 412px;
+    max-width: 100%;
+    background: var(--color-paper);
+    box-shadow: 0 40px 90px -30px rgba(20, 28, 50, 0.6);
+    overflow: hidden;
+  }
+  .intro {
+    padding: 20px 24px 8px;
+    border-bottom: 1px solid var(--color-rule);
+    background: #fff;
+  }
+  .intro .label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--color-accent); text-transform: uppercase; }
+  .intro h1 { font-size: 18px; margin-top: 4px; }
+  .intro p { font-size: 12px; color: var(--color-ink-muted); margin-top: 6px; line-height: 1.6; }
+  main { padding: 20px 22px 44px; display: flex; flex-direction: column; gap: 28px; }
+  section h2 {
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--color-ink-muted); margin-bottom: 10px;
+  }
+  ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+  /* 最近のレビュー: 帯タイントの背景ウォッシュ + アクセント色の縦バー */
+  .review-item {
+    position: relative;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 16px 14px 20px;
+    border-radius: 14px;
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  }
+  .review-item::before {
+    content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 4px;
+    border-radius: 2px; background: var(--accent, var(--color-accent));
+  }
+  .review-item:active { transform: scale(0.98); }
+  .review-item .comp { font-size: 11px; color: var(--color-ink-muted); }
+  .review-item .teams { margin-top: 2px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .review-item .score { font-family: var(--num); color: var(--color-ink-muted); font-weight: 600; }
+  .review-item .cta { font-size: 12px; color: var(--color-ink-muted); flex-shrink: 0; }
+
+  /* 大会アーカイブ: ブランドカラーで背景を強く塗る（10%ではなく本気の飽和） */
+  .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .comp-card {
+    position: relative; border-radius: 18px; padding: 16px 14px; overflow: hidden;
+    color: #fff; min-height: 92px; display: flex; flex-direction: column; justify-content: space-between;
+    transition: transform 0.15s ease-out;
+  }
+  .comp-card:active { transform: scale(0.98); }
+  .comp-card::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(160deg, rgba(255,255,255,0.14), rgba(0,0,0,0.12));
+    pointer-events: none;
+  }
+  .comp-card .name { font-size: 13px; font-weight: 800; }
+  .comp-card .season { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+  .comp-card .badge {
+    align-self: flex-start; font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
+    background: rgba(255,255,255,0.22); backdrop-filter: blur(2px);
+  }
+
+  /* カレンダー行: タイント背景＋左バー、日付をアクセント色のカプセルに */
+  .cal-day { margin-bottom: 14px; }
+  .cal-day .date {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
+    color: #fff; background: var(--color-ink); padding: 4px 10px; border-radius: 999px; margin-bottom: 8px;
+  }
+  .cal-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 14px; border-radius: 12px;
+    background: color-mix(in srgb, var(--accent, var(--color-accent)) 8%, #fff);
+  }
+  .cal-row .time { font-family: var(--num); font-size: 12px; font-weight: 700; color: var(--accent, var(--color-accent)); }
+  .cal-row .match { font-size: 13px; font-weight: 700; }
+  .cal-row .comp-tag { font-size: 10px; color: var(--color-ink-muted); }
+
+  /* FAQ: アクセント色のQマークで質問を強調 */
+  .faq-item { background: #fff; border-radius: 16px; padding: 16px 18px; border: 1px solid var(--color-rule); }
+  .faq-item .q { display: flex; gap: 8px; font-size: 13px; font-weight: 700; }
+  .faq-item .q::before { content: "Q"; color: var(--color-accent); font-family: var(--num); font-weight: 800; }
+  .faq-item .a { margin-top: 6px; font-size: 12px; color: var(--color-ink-muted); line-height: 1.7; padding-left: 18px; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="intro">
+    <p class="label">Card Differentiation — 案A</p>
+    <h1>カラーウォッシュ</h1>
+    <p>細い border-left(4px) をやめ、大会/チームのブランドカラーを背景の面として大胆に使う。レビューリストとカレンダー行は淡いタイント背景＋アクセントの縦バー、大会アーカイブは彩度の高いカラーカードそのものに。角丸は14〜18pxで統一しつつ、要素ごとに濃淡で階層をつける。</p>
+  </div>
+  <main>
+    <section>
+      <h2>最近のレビュー</h2>
+      <ul>
+        <li class="review-item" style="--accent:#1A3A5C; background: color-mix(in srgb, #1A3A5C 6%, #fff);">
+          <div>
+            <p class="comp">Nations Championship 2026</p>
+            <p class="teams">日本 <span class="score">24 - 19</span> イタリア</p>
+          </div>
+          <span class="cta">読む →</span>
+        </li>
+        <li class="review-item" style="--accent:#C8102E; background: color-mix(in srgb, #C8102E 6%, #fff);">
+          <div>
+            <p class="comp">The Rugby Championship</p>
+            <p class="teams">NZ <span class="score">32 - 14</span> 豪州</p>
+          </div>
+          <span class="cta">読む →</span>
+        </li>
+        <li class="review-item" style="--accent:#00823E; background: color-mix(in srgb, #00823E 6%, #fff);">
+          <div>
+            <p class="comp">URC</p>
+            <p class="teams">レンスター <span class="score">21 - 21</span> グラスゴー</p>
+          </div>
+          <span class="cta">読む →</span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>大会アーカイブ</h2>
+      <div class="comp-grid">
+        <div class="comp-card" style="background:#001489;">
+          <span class="badge">6N</span>
+          <div><p class="name">Six Nations</p><p class="season">2026</p></div>
+        </div>
+        <div class="comp-card" style="background:#00823E;">
+          <span class="badge">URC</span>
+          <div><p class="name">URC</p><p class="season">2025-26</p></div>
+        </div>
+        <div class="comp-card" style="background:#1A3A5C;">
+          <span class="badge">NC</span>
+          <div><p class="name">Nations Championship</p><p class="season">2026</p></div>
+        </div>
+        <div class="comp-card" style="background:#D62B31;">
+          <span class="badge">14</span>
+          <div><p class="name">Top 14</p><p class="season">2025-26</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>今週の試合カレンダー</h2>
+      <div class="cal-day">
+        <span class="date">7/11(土)</span>
+        <ul>
+          <li class="cal-row" style="--accent:#C8102E;">
+            <div><p class="match">南アフリカ vs アルゼンチン</p><p class="comp-tag">Rugby Championship</p></div>
+            <span class="time">18:05</span>
+          </li>
+          <li class="cal-row" style="--accent:#00823E;">
+            <div><p class="match">マンスター vs アルスター</p><p class="comp-tag">URC</p></div>
+            <span class="time">23:35</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>よくある質問</h2>
+      <ul>
+        <li class="faq-item">
+          <p class="q">無料トライアルはありますか？</p>
+          <p class="a">はい。初回登録時に7日間の無料トライアルをご利用いただけます。</p>
+        </li>
+      </ul>
+    </section>
+  </main>
+</div>
+</body>
+</html>
