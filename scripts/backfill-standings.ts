@@ -16,7 +16,7 @@ import {
   normalizeWikipediaTeamName,
 } from "@/lib/scrapers/wikipedia-team-name-map";
 
-type SupportedFamily =
+export type SupportedFamily =
   | "autumn-nations"
   | "league-one"
   | "pnc"
@@ -58,7 +58,7 @@ type TeamDbRow = {
   slug: string;
 };
 
-const SUPPORTED_FAMILIES = new Set<SupportedFamily>([
+export const SUPPORTED_FAMILIES = new Set<SupportedFamily>([
   "autumn-nations",
   "league-one",
   "pnc",

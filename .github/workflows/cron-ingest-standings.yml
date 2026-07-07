@@ -1,0 +1,18 @@
+name: Cron ingest standings
+
+on:
+  schedule:
+    - cron: "30 3 * * 1"
+  workflow_dispatch:
+
+jobs:
+  ingest-standings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ingest latest competition standings
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://tryline-six.vercel.app/api/cron/ingest-standings
