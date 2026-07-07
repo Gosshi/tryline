@@ -71,12 +71,19 @@ function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
+function getCleanSelectionText(selection: ReturnType<ReturnType<typeof load>>) {
+  return normalizeWhitespace(
+    selection.clone().find("style, script").remove().end().text(),
+  );
+}
+
 function normalizeHeader(value: string) {
   return normalizeWhitespace(value)
     .replace(/\[[^\]]+\]/g, "")
     .replace(/\b(?:v\s+t\s+e|vte)\b/gi, "")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "");
+    .replace(/[^a-z0-9]+/g, "")
+    .replace(/vte$/, "");
 }
 
 function resolveColumnKey(headerText: string): ColumnKey | null {
@@ -138,7 +145,7 @@ function getCellText(
     return "";
   }
 
-  return normalizeWhitespace(cells.eq(index).text());
+  return getCleanSelectionText(cells.eq(index));
 }
 
 function parseOptionalInteger(
@@ -169,7 +176,7 @@ function parseTeamName(
   const cell = cells.eq(index);
   const linkedName = normalizeWhitespace(cell.find("a").last().text());
   const textName = normalizeWhitespace(
-    cell.clone().children("sup").remove().end().text(),
+    cell.clone().find("style, script, sup").remove().end().text(),
   )
     .replace(/\[[^\]]+\]/g, "")
     .replace(/\s*\([^)]*\)\s*$/g, "")
@@ -284,7 +291,7 @@ export function parseCompetitionStandingsHtml(
       const headers = $(row)
         .find("th")
         .toArray()
-        .map((header) => normalizeWhitespace($(header).text()));
+        .map((header) => getCleanSelectionText($(header)));
       const indexes = resolveColumnIndexes(headers);
 
       if (!hasRequiredColumns(indexes)) {

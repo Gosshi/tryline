@@ -189,11 +189,11 @@ describe("wikipedia standings scraper", () => {
     const result = parseCompetitionStandingsHtml(`
       <table class="wikitable">
         <tr>
-          <th>Pos</th><th>Team v t e</th><th>Pld</th><th>W</th><th>D</th><th>L</th>
+          <th>Pos</th><th>Team<style data-mw-deduplicate="TemplateStyles:r123456789">.mw-parser-output .hlist dl,.mw-parser-output .hlist ol,.mw-parser-output .hlist ul{margin:0;padding:0}.mw-parser-output .navbar{display:inline;font-size:88%;font-weight:normal}</style>vte</th><th>Pld</th><th>W</th><th>D</th><th>L</th>
           <th>PF</th><th>PA</th><th>PD</th><th>TF</th><th>TA</th><th>TB</th><th>LB</th><th>Pts</th><th>Qualification</th>
         </tr>
         <tr>
-          <td>1</td><th><a href="/wiki/Hurricanes_(rugby_union)">Hurricanes</a> (C)</th>
+          <td>1</td><th><style data-mw-deduplicate="TemplateStyles:r987654321">.mw-parser-output .sports-table-notes{font-size:90%}</style><a href="/wiki/Hurricanes_(rugby_union)">Hurricanes</a> (C)</th>
           <td>14</td><td>11</td><td>0</td><td>3</td><td>562</td><td>298</td><td>+264</td>
           <td>86</td><td>44</td><td>9</td><td>2</td><td>55</td><td>Qualifying finals</td>
         </tr>
