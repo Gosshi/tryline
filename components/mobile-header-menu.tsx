@@ -93,7 +93,10 @@ export function MobileHeaderMenu({
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" onClick={closeMenu}>
+        <div
+          className="fixed inset-0 z-50 bg-black/50 transition-opacity md:hidden"
+          onClick={closeMenu}
+        >
           <div
             className="absolute inset-x-0 top-14 border-t border-slate-200 bg-white shadow-lg"
             onClick={(event) => event.stopPropagation()}
