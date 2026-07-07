@@ -22,6 +22,7 @@ Tryline の競合・代替手段を調査し、差別化と「真似るべき点
 
 ## 過去の調査資産（重複調査を避ける）
 
+- `docs/marketing-strategy-2026-07-06.md` §3（ラグリパ / Just RUGBY / J SPORTS / Number Web / RugbyPass 等7媒体の比較表と「差別化4領域」。2026-07-06）
 - `docs/site-audit-report-2026-05.md` の「競合比較メモ」（ESPN / BBC / RugbyPass の機能分解）
 - `docs/pmf-audit-2026-06-10.md`（ターゲットと提供価値の整理）
 - メモリ `project_target_audience`（DAZN/J SPORTS 限定ではなく「日本語で海外ラグビーを追いたいファン」全般）
