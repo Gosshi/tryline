@@ -100,7 +100,7 @@ export default async function HomePage() {
   ] = await Promise.all([
     listFamilies(),
     getRecentlyReviewedFamilies(4),
-    getRecentlyReviewedMatches(3, "ja"),
+    getRecentlyReviewedMatches("ja"),
     getRecentlyReviewedMatchById(PRIMARY_SAMPLE_MATCH_ID, "ja"),
     getMatchesInRange(weekRange.startUtcIso, weekRange.endUtcIso),
     getUpcomingMatches(5),

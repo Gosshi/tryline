@@ -146,7 +146,7 @@ describe("HomePage", () => {
       PRIMARY_SAMPLE_MATCH_ID,
       "ja",
     );
-    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenCalledWith(3, "ja");
+    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenCalledWith("ja");
     expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenCalledTimes(1);
 
     for (const link of screen.getAllByRole("link", {
