@@ -106,12 +106,6 @@ describe("PricingPage", () => {
       screen.queryByText("AI 日本語レビュー（冒頭 300 文字）"),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText(
-        "試合スコア・順位表・ラインナップ・日本語プレビュー全文・試合更新通知は無料でご利用いただけます。日本語レビュー全文・試合 AI チャットは Premium 限定です。",
-      ),
-    ).toBeInTheDocument();
-
-    expect(
       screen.getByRole("heading", {
         name: "まず無料サンプルで確認できます",
       }),
@@ -130,6 +124,15 @@ describe("PricingPage", () => {
         "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・試合 AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
       ),
     ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /無料でどこまで利用できますか？/ }),
+    );
+    expect(
+      screen.getByText(
+        "試合スコア・順位表・ラインナップ・日本語プレビュー全文・試合更新通知は無料でご利用いただけます。日本語レビュー全文・試合 AI チャットは Premium 限定です。",
+      ),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("返金ポリシーを教えてください。"),
     ).toBeInTheDocument();
@@ -139,6 +142,9 @@ describe("PricingPage", () => {
     expect(
       screen.getByText("どの大会のコンテンツが読めますか？"),
     ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /どの大会のコンテンツが読めますか？/ }),
+    );
     expect(screen.getByText(competitionFaqAnswer)).toBeInTheDocument();
     expect(
       [...document.querySelectorAll('script[type="application/ld+json"]')].some(

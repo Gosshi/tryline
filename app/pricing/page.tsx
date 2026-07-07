@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { PricingForm } from "@/app/pricing/pricing-form";
 import { HeroTexture } from "@/components/hero-texture";
+import { PricingFaq } from "@/components/pricing-faq";
 import { TrackedLink } from "@/components/tracked-link";
 import { getRecentlyReviewedMatchById } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
@@ -321,21 +322,7 @@ export default async function PricingPage() {
           <h2 className="font-serif text-3xl font-bold text-[var(--color-ink)]">
             FAQ
           </h2>
-          <div className="grid gap-3">
-            {faqs.map((faq) => (
-              <article
-                className="rounded-xl border border-slate-200 bg-white p-5"
-                key={faq.question}
-              >
-                <h3 className="text-sm font-semibold text-[var(--color-ink)]">
-                  {faq.question}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-[var(--color-ink-muted)]">
-                  {faq.answer}
-                </p>
-              </article>
-            ))}
-          </div>
+          <PricingFaq faqs={faqs} />
         </section>
       </div>
     </main>
