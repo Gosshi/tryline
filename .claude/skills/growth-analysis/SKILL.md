@@ -25,10 +25,10 @@ node --env-file=.env.production.local tools/run-ts.cjs tools/gsc-pull.ts
 ## 分析時に前提とする既知の診断（2026-07 時点）
 
 - **実測はゼロ近傍**: GA4 で約 4.1 セッション/日。小さい変動を「成長」と誤読しない
-- **index bloat が第一ボトルネック**: GSC 登録済の大半が薄い選手ページ。spec: `specs/fix-index-bloat-players-teams.md`
-- **日本語クエリ流入ゼロの根因は英語名**: チーム・大会名のカタカナ化。spec: `specs/feat-japanese-team-competition-names.md`
-- **チャネル戦略**: SEO（B案）+ X 運用（@tryline_rugbyjp、毎日 10 分の reply 運用）。note・海外向け英語化はやらない
-- 過去の監査レポート: `docs/growth-audit-2026-07-01.md`、`docs/growth-playbook-2026-06.md`
+- **技術衛生はほぼ完了**: index bloat（選手ページ noindex 済み・GSC 在庫は自然消化を監視のみ）、カタカナ命名、title/meta、IndexNow はすべて対策済み。再提案しない
+- **チャネル戦略**: SEO（大会ハブ集中）+ X 運用（毎日10分 reply + データ画像）+ note（週次まとめ + 月1エバーグリーン。note 8 > X 3 セッション/28日で唯一機能している referral）。海外リーグの英語化はやらない
+- **GSC で需要実証済みの領域は大会ページのみ**: PNC 2026 順位10位・クリック発生、RWC 系クエリ29〜58位（→ `rwc2027` スキル）。選手ページ・英語名クエリは在庫消化中で追わない
+- 過去の監査レポート: `docs/marketing-strategy-2026-07-06.md`（**現行戦略。90日 KPI 表は §9**）、`docs/growth-audit-2026-07-01.md`、`docs/growth-playbook-2026-06.md`
 
 ## 出力
 
