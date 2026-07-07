@@ -164,7 +164,7 @@ export default async function HomePage() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-paper">
       <script
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         type="application/ld+json"
@@ -271,7 +271,7 @@ export default async function HomePage() {
             aria-labelledby="sample-heading"
             className="mx-4 my-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:mx-6 md:mx-8 lg:mx-auto lg:max-w-6xl"
           >
-            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-[#f8fafc] px-5 py-3">
               <p
                 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]"
                 id="sample-heading"
@@ -362,7 +362,7 @@ export default async function HomePage() {
       )}
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <section className="space-y-3">
+        <section className="-m-3.5 space-y-3 rounded-[20px] bg-[radial-gradient(140%_100%_at_0%_0%,rgb(201_58_58/5%),transparent_65%)] p-3.5">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
@@ -401,7 +401,7 @@ export default async function HomePage() {
                 return (
                   <li key={match.id}>
                     <Link
-                      className="flex flex-col gap-1.5 px-5 py-3.5 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:flex-row sm:items-center sm:gap-3"
+                      className="flex flex-col gap-1.5 px-5 py-3.5 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:flex-row sm:items-center sm:gap-3"
                       href={`/matches/${match.id}`}
                     >
                       <div className="shrink-0 sm:w-36">
@@ -503,7 +503,7 @@ export default async function HomePage() {
                   {recentReviews.slice(1).map((match) => (
                     <li key={match.id}>
                       <Link
-                        className="group flex items-center justify-between gap-3 px-3 py-3 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
+                        className="group flex items-center justify-between gap-3 px-3 py-3 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
                         href={`/matches/${match.id}`}
                       >
                         <div className="min-w-0">

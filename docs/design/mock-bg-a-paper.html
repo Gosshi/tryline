@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tryline mock 背景処理 案A（ペーパー質感）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Outfit:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --color-ink: #1f2530;
+    --color-ink-muted: #767d8b;
+    --color-rule: #eceef2;
+    --color-accent: #c93a40;
+    --maru: "Zen Maru Gothic", sans-serif;
+    --num: "Outfit", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #dadee5;
+    font-family: var(--maru);
+    color: var(--color-ink);
+    display: flex;
+    justify-content: center;
+    padding: 28px 0 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .phone {
+    width: 412px;
+    max-width: 100%;
+    box-shadow: 0 40px 90px -30px rgba(20, 28, 50, 0.6);
+    overflow: hidden;
+    /* 現行の flat #f5f6f8 の代わりに、微妙な暖色グラデーション + グレインで「紙」の質感を出す */
+    background:
+      radial-gradient(120% 60% at 20% 0%, rgba(201,58,58,0.05), transparent 60%),
+      radial-gradient(120% 60% at 100% 40%, rgba(26,58,92,0.05), transparent 55%),
+      linear-gradient(180deg, #f8f7f4 0%, #f1efe9 45%, #eceae3 100%);
+  }
+  .phone::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.02 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .intro { position: relative; z-index: 1; padding: 20px 24px 8px; border-bottom: 1px solid var(--color-rule); background: rgba(255,255,255,0.5); backdrop-filter: blur(2px); }
+  .intro .label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--color-accent); text-transform: uppercase; }
+  .intro h1 { font-size: 18px; margin-top: 4px; }
+  .intro p { font-size: 12px; color: var(--color-ink-muted); margin-top: 6px; line-height: 1.6; }
+  main { position: relative; z-index: 1; padding: 20px 22px 44px; display: flex; flex-direction: column; gap: 26px; }
+  section h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--color-ink-muted); margin-bottom: 10px; }
+
+  /* セクションごとに薄いアンビエントの色みを敷いて「紙の上のインク」感を出す */
+  .section-week { background: radial-gradient(140% 100% at 0% 0%, rgba(201,58,58,0.05), transparent 65%); border-radius: 20px; padding: 14px; margin: -14px; }
+  .week-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 11px 14px; border-radius: 12px; background: rgba(255,255,255,0.75);
+    border: 1px solid var(--color-rule); margin-bottom: 8px;
+  }
+  .week-row .comp { font-size: 10.5px; color: var(--color-ink-muted); }
+  .week-row .match { font-size: 13px; font-weight: 700; margin-top: 2px; }
+  .week-row .time { font-family: var(--num); font-size: 12px; font-weight: 700; color: var(--color-accent); }
+
+  .review-hero {
+    border-radius: 20px; padding: 18px 20px; color: #fff; overflow: hidden;
+    background:
+      linear-gradient(180deg, rgba(12,16,28,0.1), rgba(12,16,28,0.24)),
+      linear-gradient(120deg, #1A3A5C, #a83464);
+    box-shadow: 0 16px 34px -18px rgba(28,38,64,0.4);
+  }
+  .review-hero .tag { font-size: 10px; font-weight: 700; background: rgba(255,255,255,0.18); padding: 4px 10px; border-radius: 999px; display: inline-block; }
+  .review-hero .teams { margin-top: 10px; font-size: 17px; font-weight: 800; }
+  .review-hero .score { font-family: var(--num); font-size: 26px; font-weight: 700; margin-top: 4px; }
+
+  .comp-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 8px; margin-top: 10px; }
+  .comp-chip { flex-shrink: 0; width: 118px; height: 88px; border-radius: 16px; padding: 12px; color: #fff; display: flex; flex-direction: column; justify-content: flex-end; font-size: 12px; box-shadow: 0 10px 20px -14px rgba(0,0,0,0.35); }
+  .comp-chip .season { font-size: 10px; opacity: 0.8; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="intro">
+    <p class="label">Background Treatment — 案A</p>
+    <h1>ペーパー質感</h1>
+    <p>ページ背景をフラットな#f5f6f8から、暖色寄りのグラデーション＋微細グレインに変更。セクションごとにアクセントカラーの薄いアンビエント（放射状の色み）を敷き、カードが「白い空白」でなく「紙の上」に乗っている感じにする。既存のライトテーマ・白カードは維持。</p>
+  </div>
+  <main>
+    <section class="section-week">
+      <h2>今週の試合</h2>
+      <div class="week-row">
+        <div><p class="comp">Nations Championship 2026</p><p class="match">南アフリカ vs アルゼンチン</p></div>
+        <span class="time">18:05</span>
+      </div>
+      <div class="week-row">
+        <div><p class="comp">URC</p><p class="match">マンスター vs アルスター</p></div>
+        <span class="time">23:35</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>最近のレビュー</h2>
+      <div class="review-hero">
+        <span class="tag">Nations Championship 2026</span>
+        <p class="teams">日本 vs イタリア</p>
+        <p class="score">27 – 10</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>大会アーカイブ</h2>
+      <div class="comp-scroll">
+        <div class="comp-chip" style="background:#D62B31;"><p>Top 14</p><p class="season">2025-26</p></div>
+        <div class="comp-chip" style="background:#1A3A5C;"><p>Nations Championship</p><p class="season">2026</p></div>
+        <div class="comp-chip" style="background:#00823E;"><p>URC</p><p class="season">2025-26</p></div>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

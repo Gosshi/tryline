@@ -105,7 +105,7 @@ export default async function CompetitionHubPage({ params }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-paper">
       <div className="relative h-48 w-full overflow-hidden sm:h-56">
         <Image
           alt={formatFamilyName(competition)}
@@ -183,7 +183,7 @@ export default async function CompetitionHubPage({ params }: Props) {
                 <li key={season.slug}>
                   {hasContent ? (
                     <Link
-                      className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-slate-400 hover:bg-slate-50"
+                      className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-slate-400 hover:bg-[#f8fafc]"
                       href={`/c/${competition}/${season.season}`}
                     >
                       <div>
@@ -200,7 +200,7 @@ export default async function CompetitionHubPage({ params }: Props) {
                       )}
                     </Link>
                   ) : (
-                    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 opacity-60">
+                    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-[#f8fafc] px-5 py-4 opacity-60">
                       <div>
                         <span className="text-lg font-semibold text-slate-500">
                           {season.season}

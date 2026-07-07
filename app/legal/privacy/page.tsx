@@ -100,7 +100,7 @@ export default function PrivacyPage() {
         </p>
         <div className="overflow-hidden rounded-lg border border-[var(--color-rule)] bg-white">
           <table className="w-full border-collapse text-left text-sm">
-            <thead className="bg-slate-50 text-[var(--color-ink)]">
+            <thead className="bg-[#f8fafc] text-[var(--color-ink)]">
               <tr>
                 <th className="px-4 py-3 font-semibold">サービス</th>
                 <th className="px-4 py-3 font-semibold">提供する情報</th>

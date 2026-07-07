@@ -82,7 +82,7 @@ export default async function PlayerPage({ params }: Props) {
   const matches = await getMatchesForPlayer(player.id);
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-paper">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         <nav aria-label="パンくずリスト">
           <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
@@ -158,7 +158,7 @@ export default async function PlayerPage({ params }: Props) {
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
               {matches.map((match) => (
                 <Link
-                  className="grid gap-2 border-b border-slate-100 px-4 py-4 text-sm transition-colors last:border-b-0 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[7rem_minmax(0,1fr)_5rem_5rem] sm:items-center sm:gap-4"
+                  className="grid gap-2 border-b border-slate-100 px-4 py-4 text-sm transition-colors last:border-b-0 hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[7rem_minmax(0,1fr)_5rem_5rem] sm:items-center sm:gap-4"
                   href={`/matches/${match.matchId}`}
                   key={`${match.matchId}-${match.jerseyNumber}`}
                 >

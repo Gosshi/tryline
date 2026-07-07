@@ -101,7 +101,7 @@ export default async function RWC2027Page() {
 
   if (!competition) {
     return (
-      <main className="min-h-screen bg-slate-50">
+      <main className="min-h-screen bg-paper">
         <PendingState />
       </main>
     );
@@ -114,7 +114,7 @@ export default async function RWC2027Page() {
 
   if (matches.length === 0) {
     return (
-      <main className="min-h-screen bg-slate-50">
+      <main className="min-h-screen bg-paper">
         <PendingState />
       </main>
     );
@@ -129,7 +129,7 @@ export default async function RWC2027Page() {
   const groupedMatches = groupMatchesByRound(matches);
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-paper">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 md:px-8">
         <header className="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-slate-200">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">

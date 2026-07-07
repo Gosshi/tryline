@@ -164,7 +164,7 @@ export default async function SeasonPage({ params }: Props) {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-paper">
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbJsonLd),
@@ -210,7 +210,7 @@ export default async function SeasonPage({ params }: Props) {
         </div>
 
         {matches.length === 0 ? (
-          <div className="rounded-lg border border-[var(--color-rule)] bg-slate-50 px-6 py-10 text-center">
+          <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
             <p className="text-sm font-medium text-[var(--color-ink)]">
               試合データを準備中です
             </p>
