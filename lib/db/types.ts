@@ -270,16 +270,22 @@ export type Database = {
           family: string;
           guide_ja: string;
           updated_at: string;
+          world_ranking: number | null;
+          world_ranking_updated_at: string | null;
         };
         Insert: {
           family: string;
           guide_ja: string;
           updated_at?: string;
+          world_ranking?: number | null;
+          world_ranking_updated_at?: string | null;
         };
         Update: {
           family?: string;
           guide_ja?: string;
           updated_at?: string;
+          world_ranking?: number | null;
+          world_ranking_updated_at?: string | null;
         };
         Relationships: [];
       };
@@ -934,6 +940,8 @@ export type Database = {
           short_code: string | null;
           slug: string;
           updated_at: string;
+          world_ranking: number | null;
+          world_ranking_updated_at: string | null;
         };
         Insert: {
           country: string;
@@ -947,6 +955,8 @@ export type Database = {
           short_code?: string | null;
           slug: string;
           updated_at?: string;
+          world_ranking?: number | null;
+          world_ranking_updated_at?: string | null;
         };
         Update: {
           country?: string;
@@ -960,6 +970,8 @@ export type Database = {
           short_code?: string | null;
           slug?: string;
           updated_at?: string;
+          world_ranking?: number | null;
+          world_ranking_updated_at?: string | null;
         };
         Relationships: [];
       };

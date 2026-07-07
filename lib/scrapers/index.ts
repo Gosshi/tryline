@@ -102,3 +102,9 @@ export type {
   CompetitionResultScraper,
   HistoricalMatchResult,
 } from "@/lib/scrapers/wikipedia-rugby-championship-results";
+export {
+  parseWorldRugbyRankingsHtml,
+  scrapeWorldRugbyRankings,
+  WORLD_RUGBY_RANKINGS_URL,
+} from "@/lib/scrapers/wikipedia-world-rankings";
+export type { ParsedRankingRow } from "@/lib/scrapers/wikipedia-world-rankings";

@@ -1,0 +1,18 @@
+name: Cron ingest World Rugby rankings
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+jobs:
+  ingest-world-rankings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ingest World Rugby rankings
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://tryline-six.vercel.app/api/cron/ingest-world-rankings
