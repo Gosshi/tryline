@@ -9,6 +9,7 @@ import { getContentStatusMap } from "@/lib/db/queries/match-content";
 import { getPlayersByTeamSlug } from "@/lib/db/queries/players";
 import { getTeamStatsDataBySlug } from "@/lib/db/queries/team-stats";
 import { getTeamPageDataBySlug } from "@/lib/db/queries/teams";
+import { getTeamColor } from "@/lib/format/team-identity";
 import { SITE_URL } from "@/lib/site";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
@@ -75,6 +76,7 @@ export default async function TeamPage({ params }: Props) {
     allMatches.map((match) => match.id),
   );
   const emptyStatus = { hasPreview: false, hasRecap: false };
+  const teamColor = getTeamColor(data.team.slug);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -96,7 +98,12 @@ export default async function TeamPage({ params }: Props) {
           </ol>
         </nav>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 sm:p-6">
+        <section
+          className="relative overflow-hidden rounded-xl border border-slate-200 p-5 shadow-sm shadow-slate-200/50 sm:p-6"
+          style={{
+            background: `linear-gradient(135deg, color-mix(in srgb, ${teamColor} 12%, #fff), #fff 70%)`,
+          }}
+        >
           <div className="flex items-center gap-4">
             <TeamBadge
               shortCode={

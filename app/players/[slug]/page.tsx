@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Fragment } from "react";
 
+import { PlayerAvatar } from "@/components/player-avatar";
 import {
   getMatchesForPlayer,
   getPlayerBySlug,
@@ -101,12 +102,17 @@ export default async function PlayerPage({ params }: Props) {
         </nav>
 
         <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-            Player
-          </p>
-          <h1 className="mt-2 font-serif text-3xl font-bold tracking-tight text-[var(--color-ink)] sm:text-4xl">
-            {player.name}
-          </h1>
+          <div className="flex items-start gap-4">
+            <PlayerAvatar position={player.position} size={48} />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                Player
+              </p>
+              <h1 className="mt-2 font-serif text-3xl font-bold tracking-tight text-[var(--color-ink)] sm:text-4xl">
+                {player.name}
+              </h1>
+            </div>
+          </div>
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--color-ink-muted)]">
             {player.position && <span>{player.position}</span>}
             {player.position && <span aria-hidden>·</span>}
