@@ -103,7 +103,7 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
         }}
         type="application/ld+json"
       />
-      <main className="min-h-screen bg-slate-50">
+      <main className="min-h-screen bg-paper">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
           <nav aria-label="パンくずリスト">
             <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
@@ -146,7 +146,7 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
               <TeamSummary align="left" team={data.teamB} />
             </div>
 
-            <div className="grid gap-3 bg-slate-50/70 px-5 py-4 sm:grid-cols-3 sm:px-6">
+            <div className="grid gap-3 bg-[#f8fafc]/70 px-5 py-4 sm:grid-cols-3 sm:px-6">
               <Metric label="収録対戦" value={`${data.matches.length}試合`} />
               <Metric
                 label="直近の対戦"
@@ -271,7 +271,7 @@ function HeadToHeadMatchRow({
 
   return (
     <Link
-      className="grid gap-3 px-4 py-4 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-5"
+      className="grid gap-3 px-4 py-4 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-5"
       href={`/matches/${match.id}`}
     >
       <span className="min-w-0">
@@ -305,7 +305,7 @@ function HeadToHeadMatchRow({
 function TeamPageLink({ team }: { team: HeadToHeadTeam }) {
   return (
     <Link
-      className="rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-950 transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+      className="rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-950 transition-colors hover:border-slate-300 hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
       href={`/teams/${team.slug}`}
     >
       {team.name}のページへ

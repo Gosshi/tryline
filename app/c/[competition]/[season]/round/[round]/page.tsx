@@ -154,7 +154,7 @@ export default async function RoundHubPage({ params }: Props) {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-paper">
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbJsonLd),

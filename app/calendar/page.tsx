@@ -23,7 +23,7 @@ export default async function CalendarPage() {
   const matches = await getMatchesInRange(range.startUtcIso, range.endUtcIso);
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-paper">
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:px-8">
           <nav className="mb-4 text-xs text-[var(--color-ink-muted)]">

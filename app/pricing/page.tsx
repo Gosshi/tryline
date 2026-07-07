@@ -111,7 +111,7 @@ export default async function PricingPage() {
   const trialUrl = sample ? `/matches/${PRIMARY_SAMPLE_MATCH_ID}` : "/";
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-paper">
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(pricingVideoJsonLd),
@@ -197,7 +197,7 @@ export default async function PricingPage() {
         </section>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="grid grid-cols-[1.4fr_0.8fr_0.8fr] border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div className="grid grid-cols-[1.4fr_0.8fr_0.8fr] border-b border-slate-200 bg-[#f8fafc] px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
             <span>機能</span>
             <span className="text-center">Free</span>
             <span className="text-center text-[var(--color-accent)]">

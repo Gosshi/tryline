@@ -25,7 +25,7 @@ export default async function EnglishLandingPage() {
   const hasContent = upcomingMatches.length > 0 || recentRecaps.length > 0;
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-paper">
       <section className="border-b border-slate-200 bg-[var(--color-ink)]">
         <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20 md:px-8">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
