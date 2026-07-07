@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { PlayerAvatar } from "@/components/player-avatar";
 import {
   getPositionGroup,
   POSITION_GROUP_LABEL,
@@ -41,18 +42,21 @@ export function TeamPlayersSection({ players }: TeamPlayersSectionProps) {
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
             {groupPlayers.map((player) => (
               <Link
-                className="flex min-w-0 flex-col gap-0.5 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                className="flex min-w-0 items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                 href={`/players/${player.slug}`}
                 key={player.slug}
               >
-                <span className="truncate font-medium text-[var(--color-ink)]">
-                  {player.name}
-                </span>
-                {player.position && (
-                  <span className="truncate text-xs text-[var(--color-ink-muted)]">
-                    {player.position}
+                <PlayerAvatar position={player.position} size={32} />
+                <span className="min-w-0">
+                  <span className="block truncate font-medium text-[var(--color-ink)]">
+                    {player.name}
                   </span>
-                )}
+                  {player.position && (
+                    <span className="block truncate text-xs text-[var(--color-ink-muted)]">
+                      {player.position}
+                    </span>
+                  )}
+                </span>
               </Link>
             ))}
           </div>
