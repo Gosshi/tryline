@@ -62,7 +62,13 @@ export type ReviewedFamily = {
 };
 
 export type RecentlyReviewedMatch = MatchListItem & {
-  competition: { slug: string; name: string; nameJa?: string | null; season: string };
+  competition: {
+    family: string;
+    slug: string;
+    name: string;
+    nameJa?: string | null;
+    season: string;
+  };
   recapGeneratedAt: string;
   recapExcerpt: string;
 };
@@ -198,13 +204,16 @@ type LatestCompetitionRow = {
 
 type RecentlyReviewedMatchRow = BaseMatchRow & {
   competition: {
-    family?: string;
+    family: string;
     slug: string;
     name: string;
     name_ja?: string | null;
     season: string;
   } | null;
 };
+
+const RECENTLY_REVIEWED_CANDIDATE_LIMIT = 40;
+const RECENTLY_REVIEWED_ROUND_CAP = 8;
 
 type RecentlyReviewedContentRow = {
   content_md: string;
@@ -329,6 +338,7 @@ const RECENTLY_REVIEWED_MATCH_SELECT = `
       short_code
     ),
     competition:competitions!matches_competition_id_fkey (
+      family,
       slug,
       name,
       name_ja,
@@ -416,7 +426,15 @@ function getRoundFromExternalIds(externalIds: Json): number | null {
 
   const round = externalIds.round ?? externalIds.wikipedia_round;
 
-  return typeof round === "number" ? round : null;
+  if (typeof round === "number" && Number.isInteger(round)) {
+    return round;
+  }
+
+  if (typeof round === "string" && /^\d+$/.test(round.trim())) {
+    return Number.parseInt(round, 10);
+  }
+
+  return null;
 }
 
 function getRoundNameFromExternalIds(externalIds: Json): string | null {
@@ -597,7 +615,6 @@ export async function getLatestCompetitionWithMatches(): Promise<CompetitionSumm
 }
 
 export async function getRecentlyReviewedMatches(
-  limit = 3,
   language?: "ja" | "en",
 ): Promise<RecentlyReviewedMatch[]> {
   const client = getSupabasePublicServerClient();
@@ -612,15 +629,56 @@ export async function getRecentlyReviewedMatches(
     query = query.eq("language", language);
   }
 
-  const { data, error } = await query.limit(limit);
+  const { data, error } = await query.limit(RECENTLY_REVIEWED_CANDIDATE_LIMIT);
 
   if (error) {
     throw error;
   }
 
-  return (data satisfies RecentlyReviewedContentRow[])
-    .map(mapRecentlyReviewedContentRow)
-    .filter((match): match is RecentlyReviewedMatch => match !== null);
+  const reviewedMatches = ((data ?? []) as RecentlyReviewedContentRow[])
+    .map((row) => ({ match: mapRecentlyReviewedContentRow(row), row }))
+    .filter(
+      (
+        entry,
+      ): entry is {
+        match: RecentlyReviewedMatch;
+        row: RecentlyReviewedContentRow;
+      } => entry.match !== null,
+    );
+
+  const latestEntry = reviewedMatches[0];
+
+  if (!latestEntry) {
+    return [];
+  }
+
+  const latestMatchRow = latestEntry.row.match;
+  const latestCompetition = latestMatchRow?.competition;
+  const latestRound = latestMatchRow
+    ? getRoundFromExternalIds(latestMatchRow.external_ids)
+    : null;
+
+  if (!latestCompetition || latestRound === null) {
+    return [latestEntry.match];
+  }
+
+  return reviewedMatches
+    .filter(({ row }) => {
+      const match = row.match;
+      const competition = match?.competition;
+
+      if (!match || !competition) {
+        return false;
+      }
+
+      return (
+        competition.family === latestCompetition.family &&
+        competition.season === latestCompetition.season &&
+        getRoundFromExternalIds(match.external_ids) === latestRound
+      );
+    })
+    .map(({ match }) => match)
+    .slice(0, RECENTLY_REVIEWED_ROUND_CAP);
 }
 
 export async function getRecentlyReviewedMatchById(
