@@ -33,6 +33,7 @@ import {
   formatKickoffJstDate,
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
+import { getTeamColor } from "@/lib/format/team-identity";
 import { getCurrentJstWeekRangeUtc } from "@/lib/format/week";
 import { PRIMARY_SAMPLE_MATCH_ID } from "@/lib/sample-matches";
 import { SITE_URL } from "@/lib/site";
@@ -452,53 +453,87 @@ export default async function HomePage() {
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               最近のレビュー
             </h2>
-            <ul className="space-y-3">
-              {recentReviews.map((match) => (
-                <li key={match.id}>
-                  <Link
-                    className="group flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                    href={`/matches/${match.id}`}
-                  >
+            <div className="space-y-2">
+              {recentReviews.slice(0, 1).map((match) => (
+                <Link
+                  className="group block overflow-hidden rounded-2xl px-5 py-5 text-white shadow-[0_18px_36px_rgb(15_23_42/0.18)] transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                  href={`/matches/${match.id}`}
+                  key={match.id}
+                  style={{
+                    background: `linear-gradient(180deg, rgb(12 16 28 / 12%), rgb(12 16 28 / 34%)), linear-gradient(120deg, ${getTeamColor(match.homeTeam.slug)}, ${getTeamColor(match.awayTeam.slug)})`,
+                  }}
+                >
+                  <p className="inline-flex rounded-full bg-white/18 px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur-sm">
+                    {formatCompetitionTitle(
+                      match.competition,
+                      match.competition.season,
+                    )}
+                  </p>
+                  <div className="mt-4 flex min-w-0 items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="text-xs text-[var(--color-ink-muted)]">
-                        {formatCompetitionTitle(
-                          match.competition,
-                          match.competition.season,
-                        )}
+                      <p className="flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
+                        <TeamBadge
+                          shortCode={match.homeTeam.shortCode}
+                          size={24}
+                          slug={match.homeTeam.slug}
+                        />
+                        <span className="truncate">{match.homeTeam.name}</span>
                       </p>
-                      <p className="mt-0.5 flex min-w-0 items-center gap-2 overflow-hidden text-sm font-semibold text-[var(--color-ink)]">
-                        <span className="inline-flex min-w-0 items-center gap-1.5">
-                          <TeamBadge
-                            shortCode={match.homeTeam.shortCode}
-                            size={20}
-                            slug={match.homeTeam.slug}
-                          />
-                          <span className="truncate">
-                            {match.homeTeam.name}
-                          </span>
-                        </span>
-                        <span className="shrink-0 font-normal tabular-nums text-slate-400">
-                          {match.homeScore} - {match.awayScore}
-                        </span>
-                        <span className="inline-flex min-w-0 items-center gap-1.5">
-                          <TeamBadge
-                            shortCode={match.awayTeam.shortCode}
-                            size={20}
-                            slug={match.awayTeam.slug}
-                          />
-                          <span className="truncate">
-                            {match.awayTeam.name}
-                          </span>
-                        </span>
+                      <p className="mt-2 flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
+                        <TeamBadge
+                          shortCode={match.awayTeam.shortCode}
+                          size={24}
+                          slug={match.awayTeam.slug}
+                        />
+                        <span className="truncate">{match.awayTeam.name}</span>
                       </p>
                     </div>
-                    <span className="shrink-0 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
-                      レビューを読む →
-                    </span>
-                  </Link>
-                </li>
+                    <p className="shrink-0 font-number text-3xl font-black tabular-nums sm:text-4xl">
+                      {match.homeScore}–{match.awayScore}
+                    </p>
+                  </div>
+                  <span className="mt-4 inline-flex text-sm font-bold text-white/90 transition-transform group-hover:translate-x-1">
+                    レビューを読む →
+                  </span>
+                </Link>
               ))}
-            </ul>
+
+              {recentReviews.length > 1 && (
+                <ul className="divide-y divide-slate-200 rounded-xl bg-white px-1 shadow-sm shadow-slate-200/40 ring-1 ring-slate-200">
+                  {recentReviews.slice(1).map((match) => (
+                    <li key={match.id}>
+                      <Link
+                        className="group flex items-center justify-between gap-3 px-3 py-3 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
+                        href={`/matches/${match.id}`}
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-[11px] font-medium text-[var(--color-ink-muted)]">
+                            {formatCompetitionTitle(
+                              match.competition,
+                              match.competition.season,
+                            )}
+                          </p>
+                          <p className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden text-sm font-semibold text-[var(--color-ink)]">
+                            <span className="truncate">
+                              {match.homeTeam.shortCode}
+                            </span>
+                            <span className="shrink-0 font-number tabular-nums text-slate-500">
+                              {match.homeScore}–{match.awayScore}
+                            </span>
+                            <span className="truncate">
+                              {match.awayTeam.shortCode}
+                            </span>
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
+                          →
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </section>
         )}
 
@@ -545,59 +580,60 @@ export default async function HomePage() {
               表示できる大会はありません
             </p>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {homepageCompetitionLinks.map((competition) => (
-                <li key={`${competition.family}-${competition.season}`}>
-                  <Link
-                    className="group flex h-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white py-4 pl-4 pr-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm active:scale-[0.98]"
-                    href={`/c/${competition.family}/${competition.season}`}
-                    style={{
-                      borderLeftColor: getCompetitionFamilyColor(
-                        competition.family,
-                      ),
-                      borderLeftWidth: "4px",
-                    }}
+            <ul className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {homepageCompetitionLinks.map((competition, index) => {
+                const accent = getCompetitionFamilyColor(competition.family);
+                const isFeatured = index === 0;
+
+                return (
+                  <li
+                    className={isFeatured ? "w-44 shrink-0" : "w-32 shrink-0"}
+                    key={`${competition.family}-${competition.season}`}
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-50 ring-1 ring-slate-100">
+                    <Link
+                      aria-label={`${formatFamilyName(competition.family)} ${competition.season} 最新シーズン`}
+                      className="group flex h-24 flex-col justify-between overflow-hidden rounded-2xl px-4 py-3 text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                      href={`/c/${competition.family}/${competition.season}`}
+                      style={{
+                        background: `linear-gradient(160deg, color-mix(in srgb, ${accent} 92%, #111827), ${accent})`,
+                      }}
+                    >
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 shadow-sm ring-1 ring-white/40">
                         <Image
-                          alt={formatFamilyName(competition.family)}
-                          className="h-9 w-9 object-contain"
-                          height={36}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-7 w-7 object-contain"
+                          height={28}
                           src={getCompetitionLogoSrc(competition.family)}
-                          width={36}
+                          width={28}
                         />
                       </span>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="block font-semibold text-[var(--color-ink)]">
-                            {formatFamilyName(competition.family)}
-                          </span>
+                      <span>
+                        <span className="line-clamp-2 text-sm font-black leading-tight">
+                          {formatFamilyName(competition.family)}
+                        </span>
+                        <span className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-white/75">
+                          {competition.season}
+                          <span className="sr-only"> 最新シーズン</span>
                           {competition.family === "league-one" && (
-                            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                            <span className="rounded-full bg-white/18 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/85">
                               EN
                             </span>
                           )}
-                        </div>
-                        <span className="mt-0.5 block text-xs text-[var(--color-ink-muted)]">
-                          {competition.season}
                         </span>
-                      </div>
-                    </div>
-                    <span className="text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
-                      最新シーズン →
-                    </span>
-                  </Link>
-                  {competition.family === "rwc" && (
-                    <Link
-                      className="mt-2 block rounded-lg px-2 py-2 text-xs font-medium text-[var(--color-accent)] underline underline-offset-4 transition-colors hover:text-[var(--color-accent-strong)]"
-                      href="/c/rwc/2027"
-                    >
-                      2027年大会（オーストラリア開催）の日程はこちら →
+                      </span>
                     </Link>
-                  )}
-                </li>
-              ))}
+                    {competition.family === "rwc" && (
+                      <Link
+                        className="mt-2 block rounded-lg px-1 text-xs font-medium text-[var(--color-accent)] underline underline-offset-4 transition-colors hover:text-[var(--color-accent-strong)]"
+                        href="/c/rwc/2027"
+                      >
+                        2027年大会（オーストラリア開催）の日程はこちら →
+                      </Link>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
