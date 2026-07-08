@@ -120,14 +120,53 @@ const match: MatchListItem = {
   venue: "The Rec",
 };
 
+const japanMatch: MatchListItem = {
+  ...match,
+  awayTeam: {
+    name: "Japan",
+    shortCode: "JPN",
+    slug: "japan",
+  },
+  homeTeam: {
+    name: "Fiji",
+    shortCode: "FIJ",
+    slug: "fiji",
+  },
+  id: "japan-match-1",
+  kickoffAt: "2026-02-28T09:00:00.000Z",
+};
+
 function follows(left: Element, right: Element): boolean {
   return Boolean(
     left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING,
   );
 }
 
+function getJsonLdScripts(container: HTMLElement): Record<string, unknown>[] {
+  return Array.from(
+    container.querySelectorAll<HTMLScriptElement>(
+      'script[type="application/ld+json"]',
+    ),
+  ).map((script) => JSON.parse(script.textContent ?? "{}"));
+}
+
+function getFaqJsonLd(container: HTMLElement) {
+  return getJsonLdScripts(container).find(
+    (script) => script["@type"] === "FAQPage",
+  ) as
+    | {
+        mainEntity: Array<{
+          acceptedAnswer: { text: string };
+          name: string;
+        }>;
+      }
+    | undefined;
+}
+
 describe("season page information architecture", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-02-01T00:00:00.000Z"));
     vi.clearAllMocks();
     competitionMocks.getCompetitionBySlug.mockResolvedValue(competition);
     competitionMocks.getCompetitionGuide.mockResolvedValue("観戦ガイド全文");
@@ -144,6 +183,7 @@ describe("season page information architecture", () => {
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
   it("places standings before the match list and keeps the guide expanded at the bottom", async () => {
@@ -194,5 +234,125 @@ describe("season page information architecture", () => {
     expect(standings).toHaveTextContent("Bath");
     expect(follows(standings!, emptyState)).toBe(true);
     expect(screen.queryByTestId("season-match-groups")).not.toBeInTheDocument();
+  });
+
+  it("outputs season FAQ JSON-LD without changing breadcrumb JSON-LD", async () => {
+    const { container } = render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    );
+
+    const scripts = getJsonLdScripts(container);
+    const breadcrumb = scripts.find(
+      (script) => script["@type"] === "BreadcrumbList",
+    ) as { itemListElement: Array<{ name: string; position: number }> };
+    const faq = getFaqJsonLd(container);
+
+    expect(breadcrumb.itemListElement).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "Tryline", position: 1 }),
+        expect.objectContaining({ name: "Premiership", position: 2 }),
+        expect.objectContaining({
+          name: "プレミアシップ 2025-26",
+          position: 3,
+        }),
+      ]),
+    );
+    expect(faq).toBeDefined();
+    expect(faq?.mainEntity).toHaveLength(4);
+    expect(faq?.mainEntity).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          acceptedAnswer: expect.objectContaining({
+            text: "次の試合は2026-03-01 (日) 21:00 JST（日本時間）です。",
+          }),
+          name: "Premiershipの次の試合はいつですか（日本時間）？",
+        }),
+      ]),
+    );
+  });
+
+  it("shows the next Japan match block after standings when a scheduled Japan match exists", async () => {
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      match,
+      japanMatch,
+    ]);
+    contentMocks.getContentStatusForMatches.mockResolvedValue({
+      [match.id]: {
+        hasPreview: true,
+        hasRecap: false,
+      } satisfies MatchContentStatus,
+      [japanMatch.id]: {
+        hasPreview: false,
+        hasRecap: false,
+      } satisfies MatchContentStatus,
+    });
+
+    const { container } = render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "pnc",
+          season: "2026",
+        }),
+      }),
+    );
+
+    const standings = container.querySelector("#standings");
+    const japanNextMatch = screen.getByText("日本代表の次戦");
+    const link = japanNextMatch.closest("a");
+
+    expect(standings).not.toBeNull();
+    expect(link).toHaveAttribute("href", "/matches/japan-match-1");
+    expect(link).toHaveTextContent("Fiji vs Japan");
+    expect(link).toHaveTextContent("2026-02-28 (土) 18:00 JST");
+    expect(follows(standings!, link!)).toBe(true);
+    expect(follows(link!, screen.getByTestId("season-match-groups"))).toBe(
+      true,
+    );
+  });
+
+  it("does not render the Japan match block when no scheduled Japan match exists", async () => {
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "six-nations",
+          season: "2026",
+        }),
+      }),
+    );
+
+    expect(screen.queryByText("日本代表の次戦")).not.toBeInTheDocument();
+  });
+
+  it("keeps FAQ JSON-LD when the season has no matches", async () => {
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([]);
+    contentMocks.getContentStatusForMatches.mockResolvedValue({});
+
+    const { container } = render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "pnc",
+          season: "2027",
+        }),
+      }),
+    );
+
+    const faq = getFaqJsonLd(container);
+
+    expect(screen.queryByText("日本代表の次戦")).not.toBeInTheDocument();
+    expect(faq).toBeDefined();
+    expect(faq?.mainEntity).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          acceptedAnswer: expect.objectContaining({
+            text: "現在予定されている試合はありません。",
+          }),
+        }),
+      ]),
+    );
   });
 });
