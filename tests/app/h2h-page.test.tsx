@@ -93,9 +93,11 @@ describe("H2H page", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Leinster vs Stade Toulousain 対戦成績",
+        name: "Leinster 対 Stade Toulousain 対戦成績",
       }),
     ).toBeInTheDocument();
+    expect(container.textContent).toContain("Leinster 対 Stade Toulousain");
+    expect(container.textContent).not.toContain("Leinster vs Stade Toulousain");
     expect(screen.getAllByText(/Tryline 収録分/).length).toBeGreaterThan(0);
     expect(container.querySelector('a[href="/matches/match-1"]')).toBeTruthy();
     expect(container.querySelector('a[href="/teams/leinster"]')).toBeTruthy();
@@ -137,6 +139,10 @@ describe("H2H page", () => {
       },
       openGraph: {
         locale: "ja_JP",
+        title: "Leinster 対 Stade Toulousain 対戦成績 | Tryline",
+      },
+      title: {
+        absolute: "Leinster 対 Stade Toulousain 対戦成績 | Tryline",
       },
     });
   });

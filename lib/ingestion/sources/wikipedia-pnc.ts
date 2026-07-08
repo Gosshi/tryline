@@ -3,7 +3,6 @@ import { parse } from "date-fns";
 
 import {
   isMissingWikipediaPage,
-  mapWithTeamSlugs,
   normalizeWhitespace,
   toEmptyWhenMissingOrUnstructured,
 } from "@/lib/ingestion/sources/live-source-utils";
@@ -27,6 +26,11 @@ const FINALS_ROUNDS: Record<string, number> = {
   "Fifth-place_play-off": 4,
   Grand_Final: 6,
   "Semi-finals": 4,
+};
+const CONDENSED_FORMAT_ROUNDS: Record<string, number> = {
+  Grand_Final: 102,
+  "Semi-finals": 101,
+  "Third_place_play-off": 103,
 };
 
 type SectionVevent = {
@@ -115,11 +119,13 @@ function buildRoundHeading(round: number) {
 function wrapVeventsWithFixturesSection(html: string) {
   const $ = load(html);
   const roundBlocks = new Map<number, string[]>();
+  let poolBlockCount = 0;
 
   for (const sectionId of POOL_SECTION_IDS) {
     const blocks = collectSectionVevents($, sectionId).sort(
       (a, b) => a.kickoffTime - b.kickoffTime,
     );
+    poolBlockCount += blocks.length;
 
     blocks.forEach((block, index) => {
       const round = index + 1;
@@ -127,7 +133,10 @@ function wrapVeventsWithFixturesSection(html: string) {
     });
   }
 
-  for (const [sectionId, round] of Object.entries(FINALS_ROUNDS)) {
+  const sectionRounds =
+    poolBlockCount > 0 ? FINALS_ROUNDS : CONDENSED_FORMAT_ROUNDS;
+
+  for (const [sectionId, round] of Object.entries(sectionRounds)) {
     const blocks = collectSectionVevents($, sectionId);
 
     if (blocks.length > 0) {
@@ -153,6 +162,19 @@ function wrapVeventsWithFixturesSection(html: string) {
   ].join("\n");
 }
 
+function attachKnownPncTeamSlugs(matches: ParsedLiveMatch[]): ParsedLiveMatch[] {
+  return matches.map((match) => {
+    const homeTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[match.homeTeamName];
+    const awayTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[match.awayTeamName];
+
+    return {
+      ...match,
+      ...(awayTeamSlug ? { awayTeamSlug } : {}),
+      ...(homeTeamSlug ? { homeTeamSlug } : {}),
+    };
+  });
+}
+
 export function parsePncLiveHtml(html: string): ParsedLiveMatch[] {
   const wrappedHtml = wrapVeventsWithFixturesSection(html);
 
@@ -165,7 +187,7 @@ export function parsePncLiveHtml(html: string): ParsedLiveMatch[] {
     ["Unable to locate the Wikipedia fixtures section", "No fixture vevent"],
   );
 
-  return mapWithTeamSlugs(parsedMatches, TEAM_SLUG_BY_WIKIPEDIA_NAME);
+  return attachKnownPncTeamSlugs(parsedMatches);
 }
 
 export async function fetchPnc2026(): Promise<ParsedLiveMatch[]> {

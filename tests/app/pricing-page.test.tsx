@@ -110,7 +110,7 @@ describe("PricingPage", () => {
         name: "まず無料サンプルで確認できます",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Northampton vs Gloucester")).toBeInTheDocument();
+    expect(screen.getByText("Northampton 対 Gloucester")).toBeInTheDocument();
     expect(screen.getByText(/Northamptonは終盤の接点/)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "7日間無料で全文を読む" }),

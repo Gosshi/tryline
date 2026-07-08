@@ -1,5 +1,6 @@
 import { getServerEnv, hasConfiguredValue } from "@/lib/env";
 
+import type { DataIntegrityAuditReport } from "@/lib/data-integrity/audit";
 import type { ContentType, QaResult } from "@/lib/llm/types";
 
 async function postToSlack(text: string): Promise<void> {
@@ -57,6 +58,32 @@ export async function notifyCostAlert(
     `試合ID: ${matchId}`,
     `累積コスト: $${totalCostUsd.toFixed(4)}（閾値: $${thresholdUsd}）`,
     "pipeline_runs テーブルを確認し、異常なトークン消費がないか調査してください",
+  ].join("\n");
+
+  await postToSlack(message);
+}
+
+export async function notifyDataIntegrityReport(
+  report: DataIntegrityAuditReport,
+): Promise<void> {
+  const staleStandings =
+    report.staleStandings.competitions.length === 0
+      ? "なし"
+      : report.staleStandings.competitions
+          .map(
+            (competition) =>
+              `${competition.slug} (${competition.daysStale}日 stale)`,
+          )
+          .join(" / ");
+  const message = [
+    "🧪 データ整合性 週次監査",
+    `生成日時: ${report.generatedAt}`,
+    `1. 重複イベント: groups=${report.duplicateEvents.groupCount} matches=${report.duplicateEvents.matchCount}`,
+    `2. スコア不一致: matches=${report.scoreMismatches.count}`,
+    `3. finished イベント0件: matches=${report.emptyFinishedEvents.count}`,
+    `4. draft滞留: total=${report.draftBacklog.total} recent7d=${report.draftBacklog.recent7Days}`,
+    `5. 順位表 stale: competitions=${report.staleStandings.count} ${staleStandings}`,
+    "対応: 異常値がある場合は該当データを確認し、修正は個別specで対応してください",
   ].join("\n");
 
   await postToSlack(message);

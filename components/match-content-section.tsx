@@ -56,7 +56,7 @@ export function MatchContentSection({
   const matchTitle =
     language === "en"
       ? `${match.homeTeam.englishName ?? match.homeTeam.name} vs ${match.awayTeam.englishName ?? match.awayTeam.name}`
-      : `${match.homeTeam.name} vs ${match.awayTeam.name}`;
+      : `${match.homeTeam.name} 対 ${match.awayTeam.name}`;
   const blocks = content ? parseMarkdown(content.contentMdJa) : [];
   const contentHeading = blocks.find((block) => block.type === "heading");
   const lead = blocks.find((block) => block.type === "paragraph");

@@ -27,6 +27,7 @@ const matchesMocks = vi.hoisted(() => ({
 }));
 
 const standingsMocks = vi.hoisted(() => ({
+  getPoolStandingsForCompetition: vi.fn(),
   getStandingsForCompetition: vi.fn(),
 }));
 
@@ -172,6 +173,7 @@ describe("season page information architecture", () => {
     competitionMocks.getCompetitionGuide.mockResolvedValue("観戦ガイド全文");
     competitionMocks.listSeasonsByFamily.mockResolvedValue([competition]);
     matchesMocks.listMatchesForCompetition.mockResolvedValue([match]);
+    standingsMocks.getPoolStandingsForCompetition.mockResolvedValue([]);
     standingsMocks.getStandingsForCompetition.mockResolvedValue([standing]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({
       [match.id]: {
@@ -234,6 +236,42 @@ describe("season page information architecture", () => {
     expect(standings).toHaveTextContent("Bath");
     expect(follows(standings!, emptyState)).toBe(true);
     expect(screen.queryByTestId("season-match-groups")).not.toBeInTheDocument();
+  });
+
+  it("renders pool standings when the season has pool assignments", async () => {
+    standingsMocks.getPoolStandingsForCompetition.mockResolvedValue([
+      {
+        poolName: "Northern Hemisphere",
+        standings: [standing],
+      },
+      {
+        poolName: "Southern Hemisphere",
+        standings: [
+          {
+            ...standing,
+            position: 1,
+            teamName: "New Zealand",
+            teamShortCode: "NZL",
+          },
+        ],
+      },
+    ]);
+
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "nations-championship",
+          season: "2026",
+        }),
+      }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Northern Hemisphere" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Southern Hemisphere" }),
+    ).toBeInTheDocument();
   });
 
   it("outputs season FAQ JSON-LD without changing breadcrumb JSON-LD", async () => {
@@ -307,7 +345,7 @@ describe("season page information architecture", () => {
 
     expect(standings).not.toBeNull();
     expect(link).toHaveAttribute("href", "/matches/japan-match-1");
-    expect(link).toHaveTextContent("Fiji vs Japan");
+    expect(link).toHaveTextContent("Fiji 対 Japan");
     expect(link).toHaveTextContent("2026-02-28 (土) 18:00 JST");
     expect(follows(standings!, link!)).toBe(true);
     expect(follows(link!, screen.getByTestId("season-match-groups"))).toBe(

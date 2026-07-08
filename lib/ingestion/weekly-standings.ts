@@ -6,6 +6,7 @@ import {
   collectCompetitionTeamIds,
   resolveWikipediaStandingsUrl,
   SUPPORTED_FAMILIES,
+  upsertCompetitionPoolsForStandings,
   warnUnmatchedStandingsTeams,
   type StandingsTeamRow,
   type SupportedFamily,
@@ -166,6 +167,11 @@ export async function ingestStandingsForFamily(
   }
 
   const result = await upsertCompetitionStandings({
+    competitionId: competition.id,
+    rows,
+    teamLookup,
+  });
+  await upsertCompetitionPoolsForStandings({
     competitionId: competition.id,
     rows,
     teamLookup,

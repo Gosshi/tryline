@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  buildCompetitionPoolAssignments,
   buildResolvedStandingsTeamLookup,
   buildStandingsTeamLookup,
   collectCompetitionTeamIds,
@@ -42,6 +43,21 @@ describe("backfill-standings", () => {
     });
   });
 
+  it("accepts Nations Championship as a standings target", () => {
+    expect(
+      parseOptions([
+        "--family=nations-championship",
+        "--season=2026",
+        "--dry-run",
+      ]),
+    ).toEqual({
+      dryRun: true,
+      family: "nations-championship",
+      ownerApproved: false,
+      season: "2026",
+    });
+  });
+
   it("rejects unsupported or incomplete targets", () => {
     expect(() => parseOptions(["--family=unknown", "--season=2025"])).toThrow(
       "Usage:",
@@ -58,6 +74,9 @@ describe("backfill-standings", () => {
     );
     expect(resolveWikipediaStandingsUrl("league-one", "2025-26")).toBe(
       "https://es.wikipedia.org/wiki/Japan_Rugby_League_One_2025-26",
+    );
+    expect(resolveWikipediaStandingsUrl("nations-championship", "2026")).toBe(
+      "https://en.wikipedia.org/wiki/2026_Nations_Championship",
     );
   });
 
@@ -193,5 +212,38 @@ describe("backfill-standings", () => {
     expect(lookup).toEqual({
       Montauban: "montauban-id",
     });
+  });
+
+  it("builds competition pool assignments from parsed standings rows", () => {
+    expect(
+      buildCompetitionPoolAssignments(
+        [
+          {
+            ...standingsRow("England"),
+            poolName: "Northern Hemisphere",
+            position: 1,
+          },
+          {
+            ...standingsRow("New Zealand"),
+            poolName: "Southern Hemisphere",
+            position: 1,
+          },
+          standingsRow("Unmatched"),
+        ],
+        {
+          England: "england-id",
+          "New Zealand": "new-zealand-id",
+        },
+      ),
+    ).toEqual([
+      {
+        poolName: "Northern Hemisphere",
+        teamId: "england-id",
+      },
+      {
+        poolName: "Southern Hemisphere",
+        teamId: "new-zealand-id",
+      },
+    ]);
   });
 });

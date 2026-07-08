@@ -170,6 +170,7 @@ export default async function MatchEnglishPage({
         <MatchHeader
           awayDisplayName={awayDisplayName}
           homeDisplayName={homeDisplayName}
+          language="en"
           match={match}
         />
 

@@ -65,7 +65,8 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${data.teamA.name} vs ${data.teamB.name} 対戦成績`;
+  const matchupTitle = `${data.teamA.name} 対 ${data.teamB.name}`;
+  const title = `${matchupTitle} 対戦成績`;
   const description = `${data.teamA.name}と${data.teamB.name}の対戦成績（Tryline 収録分）。直近の対戦結果とスコア、日本語レビューへのリンク。`;
   const canonical = `${SITE_URL}/h2h/${data.canonicalSlug}`;
 
@@ -123,7 +124,7 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
                 /
               </li>
               <li className="text-[var(--color-ink)]">
-                {data.teamA.name} vs {data.teamB.name}
+                {data.teamA.name} 対 {data.teamB.name}
               </li>
             </ol>
           </nav>
@@ -136,7 +137,7 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
                   Head to Head
                 </p>
                 <h1 className="mt-2 font-heading text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
-                  {data.teamA.name} vs {data.teamB.name} 対戦成績
+                  {data.teamA.name} 対 {data.teamB.name} 対戦成績
                 </h1>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
                   Tryline 収録分の対戦を表示しています。全history
@@ -208,7 +209,7 @@ function buildBreadcrumbJsonLd(data: HeadToHeadPageData) {
       {
         "@type": "ListItem",
         item: `${SITE_URL}/h2h/${data.canonicalSlug}`,
-        name: `${data.teamA.name} vs ${data.teamB.name}`,
+        name: `${data.teamA.name} 対 ${data.teamB.name}`,
         position: 3,
       },
     ],
@@ -284,7 +285,7 @@ function HeadToHeadMatchRow({
           {formatKickoffJst(match.kickoffAt)}
         </span>
         <span className="mt-1 block truncate text-sm font-bold text-slate-950">
-          {teamA.name} vs {teamB.name}
+          {teamA.name} 対 {teamB.name}
         </span>
       </span>
       <span className="flex items-center justify-between gap-3 sm:justify-end">

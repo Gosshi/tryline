@@ -15,7 +15,10 @@ import {
 } from "@/lib/db/queries/competitions";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import { listMatchesForCompetition } from "@/lib/db/queries/matches";
-import { getStandingsForCompetition } from "@/lib/db/queries/standings";
+import {
+  getPoolStandingsForCompetition,
+  getStandingsForCompetition,
+} from "@/lib/db/queries/standings";
 import {
   formatCompetitionTitle,
   formatFamilyName,
@@ -152,9 +155,10 @@ export default async function SeasonPage({ params }: Props) {
     notFound();
   }
 
-  const [matches, standings, seasons, guide] = await Promise.all([
+  const [matches, standings, poolStandings, seasons, guide] = await Promise.all([
     listMatchesForCompetition(comp.slug),
     getStandingsForCompetition(comp.slug),
+    getPoolStandingsForCompetition(comp.slug),
     listSeasonsByFamily(comp.family),
     getCompetitionGuide(comp.family),
   ]);
@@ -284,8 +288,16 @@ export default async function SeasonPage({ params }: Props) {
           </p>
         )}
 
-        <div id="standings">
-          <StandingsTable standings={standings} />
+        <div className="space-y-4" id="standings">
+          {poolStandings.length > 0
+            ? poolStandings.map((pool) => (
+                <StandingsTable
+                  key={pool.poolName}
+                  standings={pool.standings}
+                  title={pool.poolName}
+                />
+              ))
+            : <StandingsTable standings={standings} />}
         </div>
 
         {nextJapanMatch && (
@@ -297,7 +309,7 @@ export default async function SeasonPage({ params }: Props) {
               日本代表の次戦
             </p>
             <p className="mt-2 text-lg font-bold text-[var(--color-ink)]">
-              {nextJapanMatch.homeTeam.name} vs {nextJapanMatch.awayTeam.name}
+              {nextJapanMatch.homeTeam.name} 対 {nextJapanMatch.awayTeam.name}
             </p>
             <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
               {formatMatchKickoffJst(nextJapanMatch.kickoffAt)}

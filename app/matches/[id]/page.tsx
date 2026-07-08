@@ -82,7 +82,8 @@ export async function generateMetadata({
     match.competition,
     match.competition.season,
   );
-  const title = `${match.homeTeam.name} vs ${match.awayTeam.name} — ${competitionTitle}`;
+  const matchupTitle = `${match.homeTeam.name} 対 ${match.awayTeam.name}`;
+  const title = `${matchupTitle} — ${competitionTitle}`;
   const hasScore = match.homeScore !== null && match.awayScore !== null;
   const isScheduledPoolMatch =
     match.status === "scheduled" &&
@@ -103,8 +104,8 @@ export async function generateMetadata({
         : content.preview
           ? extractDescription(content.preview.contentMdJa)
           : isScheduledPoolMatch && poolTeams.length > 0
-            ? `${match.homeTeam.name} vs ${match.awayTeam.name}（${poolContextTitle}）の試合情報。同プール: ${poolTeams.map((team) => team.name).join("、")}。`
-            : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合情報。${competitionTitle}。`;
+            ? `${matchupTitle}（${poolContextTitle}）の試合情報。同プール: ${poolTeams.map((team) => team.name).join("、")}。`
+            : `${matchupTitle} の試合情報。${competitionTitle}。`;
   const score =
     match.homeScore !== null && match.awayScore !== null
       ? `${match.homeScore}–${match.awayScore}`
@@ -185,6 +186,7 @@ export default async function MatchDetailPage({
     match.competition,
     match.competition.season,
   );
+  const matchupTitle = `${match.homeTeam.name} 対 ${match.awayTeam.name}`;
   const pageUrl = `${SITE_URL}/matches/${id}`;
   const score =
     match.homeScore !== null && match.awayScore !== null
@@ -200,8 +202,8 @@ export default async function MatchDetailPage({
         : publishedContent.preview
           ? extractDescription(publishedContent.preview.contentMdJa)
           : isScheduledPoolMatch && poolTeams.length > 0
-            ? `${match.homeTeam.name} vs ${match.awayTeam.name}（${poolContextTitle}）の試合情報。同プール: ${poolTeams.map((team) => team.name).join("、")}。`
-            : `${match.homeTeam.name} vs ${match.awayTeam.name} の試合情報。${competitionTitle}。`;
+            ? `${matchupTitle}（${poolContextTitle}）の試合情報。同プール: ${poolTeams.map((team) => team.name).join("、")}。`
+            : `${matchupTitle} の試合情報。${competitionTitle}。`;
   const ogImageUrl = createMatchOgImage({
     away: match.awayTeam.name,
     competition: competitionTitle,
@@ -221,7 +223,7 @@ export default async function MatchDetailPage({
       name: match.homeTeam.name,
     },
     eventStatus: toEventStatus(match.status),
-    name: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+    name: matchupTitle,
     sport: "Rugby Union",
     startDate: match.kickoffAt,
     ...(match.venue
@@ -255,7 +257,7 @@ export default async function MatchDetailPage({
         dateModified: publishedContent.recap.generatedAt,
         datePublished: publishedContent.recap.generatedAt,
         description,
-        headline: `${match.homeTeam.name} vs ${match.awayTeam.name} — ${competitionTitle}`,
+        headline: `${matchupTitle} — ${competitionTitle}`,
         image: ogImageUrl.startsWith("http")
           ? ogImageUrl
           : `${SITE_URL}${ogImageUrl}`,

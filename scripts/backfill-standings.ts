@@ -19,6 +19,7 @@ import {
 export type SupportedFamily =
   | "autumn-nations"
   | "league-one"
+  | "nations-championship"
   | "pnc"
   | "premiership"
   | "rugby-championship"
@@ -61,6 +62,7 @@ type TeamDbRow = {
 export const SUPPORTED_FAMILIES = new Set<SupportedFamily>([
   "autumn-nations",
   "league-one",
+  "nations-championship",
   "pnc",
   "premiership",
   "rugby-championship",
@@ -94,6 +96,8 @@ export function resolveWikipediaStandingsUrl(
         : `https://en.wikipedia.org/wiki/${season}_Autumn_Nations_Series`;
     case "league-one":
       return `https://es.wikipedia.org/wiki/Japan_Rugby_League_One_${season}`;
+    case "nations-championship":
+      return `https://en.wikipedia.org/wiki/${season}_Nations_Championship`;
     case "pnc":
       return `https://en.wikipedia.org/wiki/${season}_World_Rugby_Pacific_Nations_Cup`;
     case "premiership":
@@ -292,6 +296,65 @@ export function warnUnmatchedStandingsTeams(
   }
 }
 
+export function buildCompetitionPoolAssignments(
+  rows: ParsedStandingsRow[],
+  teamLookup: Record<string, string>,
+) {
+  const assignments = new Map<string, { poolName: string; teamId: string }>();
+
+  for (const row of rows) {
+    if (!row.poolName) {
+      continue;
+    }
+
+    const teamId = teamLookup[row.teamName];
+    if (!teamId) {
+      continue;
+    }
+
+    assignments.set(teamId, {
+      poolName: row.poolName,
+      teamId,
+    });
+  }
+
+  return [...assignments.values()];
+}
+
+export async function upsertCompetitionPoolsForStandings(params: {
+  competitionId: string;
+  rows: ParsedStandingsRow[];
+  teamLookup: Record<string, string>;
+}) {
+  const assignments = buildCompetitionPoolAssignments(
+    params.rows,
+    params.teamLookup,
+  );
+
+  if (assignments.length === 0) {
+    return { upserted: 0 };
+  }
+
+  const db = getSupabaseServerClient();
+  const { data, error } = await db
+    .from("competition_pools")
+    .upsert(
+      assignments.map((assignment) => ({
+        competition_id: params.competitionId,
+        pool_name: assignment.poolName,
+        team_id: assignment.teamId,
+      })),
+      { onConflict: "competition_id,team_id" },
+    )
+    .select("id");
+
+  if (error) {
+    throw error;
+  }
+
+  return { upserted: data?.length ?? 0 };
+}
+
 async function loadCompetition(
   family: SupportedFamily,
   season: string,
@@ -396,9 +459,14 @@ export async function main() {
     rows,
     teamLookup,
   });
+  const poolResult = await upsertCompetitionPoolsForStandings({
+    competitionId: competition.id,
+    rows,
+    teamLookup,
+  });
 
   console.log(
-    `Standings backfill complete: competition=${competition.slug} upserted=${result.upserted}`,
+    `Standings backfill complete: competition=${competition.slug} upserted=${result.upserted} pools=${poolResult.upserted}`,
   );
 }
 
