@@ -164,6 +164,10 @@ export function summarizeScoreMismatches(
   const mismatches: ScoreMismatchSummary["matches"] = [];
 
   for (const match of matches) {
+    if (match.match_events.length === 0) {
+      continue;
+    }
+
     const homeName = match.home_team?.name ?? "";
     const awayName = match.away_team?.name ?? "";
     const events = [...match.match_events]

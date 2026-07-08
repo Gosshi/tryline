@@ -125,6 +125,22 @@ describe("data integrity audit summaries", () => {
     });
   });
 
+  it("does not count zero-event matches as score mismatches", () => {
+    const summary = summarizeScoreMismatches([
+      auditMatch({
+        away_score: 99,
+        home_score: 99,
+        id: "without-events",
+        match_events: [],
+      }),
+    ]);
+
+    expect(summary).toEqual({
+      count: 0,
+      matches: [],
+    });
+  });
+
   it("summarizes finished matches with zero events", () => {
     const summary = summarizeEmptyFinishedEvents([
       auditMatch({ id: "with-events" }),
