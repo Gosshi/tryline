@@ -1,5 +1,7 @@
 import { ImageResponse } from "@vercel/og";
 
+import { getResultTeamNameFontSize } from "@/lib/seo/og-result-team-name";
+
 export const runtime = "edge";
 
 function truncate(value: string, maxLength: number): string {
@@ -171,6 +173,8 @@ export async function GET(request: Request) {
       homeScore !== null && awayScore !== null
         ? `${homeScore} — ${awayScore}`
         : "vs";
+    const homeFontSize = getResultTeamNameFontSize(home);
+    const awayFontSize = getResultTeamNameFontSize(away);
 
     return new ImageResponse(
       <div
@@ -263,7 +267,7 @@ export async function GET(request: Request) {
             style={{
               display: "flex",
               flex: 1,
-              fontSize: "58px",
+              fontSize: `${homeFontSize}px`,
               fontWeight: 800,
               justifyContent: "flex-end",
               lineHeight: 1.05,
@@ -292,7 +296,7 @@ export async function GET(request: Request) {
             style={{
               display: "flex",
               flex: 1,
-              fontSize: "58px",
+              fontSize: `${awayFontSize}px`,
               fontWeight: 800,
               justifyContent: "flex-start",
               lineHeight: 1.05,
