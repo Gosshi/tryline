@@ -54,8 +54,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.12.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.12.0");
+  it("uses recap prompt version 4.13.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.13.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -70,6 +70,55 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("入力データに無い統計");
     expect(prompt).toContain("「好調」");
     expect(prompt).toContain("「鍵となります」");
+    expect(prompt).toContain("「〜という圧倒的なスコアで」");
+    expect(prompt).toContain("「〜というスコアが示すように」");
+    expect(prompt).toContain("「〜というスコアが示す通り」");
+    expect(prompt).toContain("スコアの形容から文を始めるパターン");
+  });
+
+  it("constrains the recap opening structure in all recap modes", () => {
+    const sparsePrompt = buildGenerateRecapPrompt(assembled, [], []);
+    const eventsPrompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        match_events: [
+          {
+            type: "try",
+            minute: 23,
+            team_name: "England",
+            player_name: "Marcus Smith",
+          },
+        ],
+      },
+      [],
+      [],
+    );
+    const lineupPrompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        projected_lineups: {
+          away: [],
+          home: [
+            {
+              is_starter: true,
+              jersey_number: 10,
+              name: "Marcus Smith",
+              position: "Fly-half",
+            },
+          ],
+        },
+      },
+      [],
+      [],
+    );
+
+    for (const prompt of [sparsePrompt, eventsPrompt, lineupPrompt]) {
+      expect(prompt).toContain("試合を決定づけた特定の瞬間");
+      expect(prompt).toContain("試合前の予想との対比");
+      expect(prompt).toContain("対戦構図・大会文脈における意味");
+      expect(prompt).toContain("「[スコア]という[形容]で」");
+      expect(prompt).toContain("「[スコア]が示すように」");
+    }
   });
 
   it("instructs the model to use final scores as the winner source", () => {
