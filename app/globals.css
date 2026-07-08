@@ -59,6 +59,10 @@
     @apply border-border;
   }
 
+  html {
+    overflow-x: hidden;
+  }
+
   body {
     background-color: #f1efe9;
     background-image:
@@ -69,6 +73,7 @@
     color: var(--color-ink);
     font-family: var(--font-body);
     font-weight: 500;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
 
