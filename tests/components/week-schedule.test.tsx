@@ -34,7 +34,8 @@ const baseMatch: CalendarMatch = {
     season: "2025-26",
     slug: "league-one-2025-26",
   },
-  hasContent: false,
+  hasPreview: false,
+  hasRecap: false,
   homeScore: null,
   homeTeam: {
     name: "Kubota Spears",
@@ -54,16 +55,19 @@ describe("WeekSchedule", () => {
   it("groups matches by JST day and links every match page", () => {
     render(
       <WeekSchedule
+        highlightMatchId="match-1"
         matches={[
           {
             ...baseMatch,
-            hasContent: true,
+            hasPreview: true,
+            hasRecap: true,
             id: "match-1",
             kickoffAt: "2026-06-07T15:30:00.000Z",
           },
           {
             ...baseMatch,
             awayScore: 19,
+            hasPreview: true,
             homeScore: 24,
             id: "match-2",
             kickoffAt: "2026-06-08T15:00:00.000Z",
@@ -96,7 +100,9 @@ describe("WeekSchedule", () => {
       "href",
       "/matches/match-1",
     );
-    expect(screen.getByText("解説")).toBeInTheDocument();
+    expect(screen.getByText("注目")).toBeInTheDocument();
+    expect(screen.getByText("レビュー")).toBeInTheDocument();
+    expect(screen.getByText("プレビュー")).toBeInTheDocument();
     expect(screen.getByText("24–19")).toBeInTheDocument();
     expect(screen.getByText("ライブ")).toBeInTheDocument();
   });

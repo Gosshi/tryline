@@ -2,20 +2,18 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const matchQueryMock = vi.hoisted(() => ({
   getMatchesInRange: vi.fn(),
 }));
+const standingsQueryMock = vi.hoisted(() => ({
+  getStandingPositionLookupForCompetitions: vi.fn(),
+}));
 
 vi.mock("@/lib/db/queries/matches", () => matchQueryMock);
-vi.mock("@/lib/format/week", () => ({
-  getCurrentJstWeekRangeUtc: () => ({
-    endUtcIso: "2026-06-14T15:00:00.000Z",
-    startUtcIso: "2026-06-07T15:00:00.000Z",
-  }),
-}));
+vi.mock("@/lib/db/queries/standings", () => standingsQueryMock);
 vi.mock("next/link", () => ({
   default: ({
     children,
@@ -29,26 +27,81 @@ vi.mock("next/link", () => ({
 }));
 
 describe("/calendar page", () => {
-  it("has canonical metadata", async () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-08T03:00:00.000Z"));
+    matchQueryMock.getMatchesInRange.mockResolvedValue([]);
+    standingsQueryMock.getStandingPositionLookupForCompetitions.mockResolvedValue(
+      new Map(),
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it("has canonical metadata and noindex for week query pages", async () => {
     const { generateMetadata } = await import("@/app/calendar/page");
 
-    expect(generateMetadata()).toMatchObject({
+    await expect(generateMetadata({})).resolves.toMatchObject({
       alternates: { canonical: "https://www.trylinerugby.com/calendar" },
-      title: "今週の試合カレンダー",
+      title: "今週の試合カレンダー｜海外ラグビー 日本時間",
+    });
+    await expect(
+      generateMetadata({ searchParams: Promise.resolve({ week: "2026-07-13" }) }),
+    ).resolves.toMatchObject({
+      alternates: { canonical: "https://www.trylinerugby.com/calendar" },
+      robots: { follow: true, index: false },
     });
   });
 
-  it("renders the weekly schedule empty state", async () => {
-    matchQueryMock.getMatchesInRange.mockResolvedValue([]);
+  it("renders the current weekly schedule empty state", async () => {
     const { default: CalendarPage } = await import("@/app/calendar/page");
 
-    render(await CalendarPage());
+    render(await CalendarPage({}));
 
-    expect(screen.getByRole("heading", { name: "今週の試合" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "今週の試合カレンダー" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("7月6日 - 12日 JST")).toBeInTheDocument();
     expect(matchQueryMock.getMatchesInRange).toHaveBeenCalledWith(
-      "2026-06-07T15:00:00.000Z",
-      "2026-06-14T15:00:00.000Z",
+      "2026-07-05T15:00:00.000Z",
+      "2026-07-12T15:00:00.000Z",
     );
-    expect(screen.getByText(/今週表示できる試合はありません/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "前週" })).toHaveAttribute(
+      "href",
+      "/calendar?week=2026-06-29",
+    );
+    expect(screen.getByRole("link", { name: "今週" })).toHaveAttribute(
+      "href",
+      "/calendar",
+    );
+    expect(screen.getByText(/この週に表示できる試合はありません/)).toBeInTheDocument();
+  });
+
+  it("uses a valid monday week query", async () => {
+    const { default: CalendarPage } = await import("@/app/calendar/page");
+
+    render(await CalendarPage({ searchParams: Promise.resolve({ week: "2026-07-13" }) }));
+
+    expect(screen.getByText("7月13日 - 19日 JST")).toBeInTheDocument();
+    expect(matchQueryMock.getMatchesInRange).toHaveBeenCalledWith(
+      "2026-07-12T15:00:00.000Z",
+      "2026-07-19T15:00:00.000Z",
+    );
+  });
+
+  it("falls back to current week for invalid week queries", async () => {
+    const { default: CalendarPage } = await import("@/app/calendar/page");
+
+    render(await CalendarPage({ searchParams: Promise.resolve({ week: "2026-07-14" }) }));
+
+    expect(screen.getByText("7月6日 - 12日 JST")).toBeInTheDocument();
+    expect(matchQueryMock.getMatchesInRange).toHaveBeenCalledWith(
+      "2026-07-05T15:00:00.000Z",
+      "2026-07-12T15:00:00.000Z",
+    );
   });
 });

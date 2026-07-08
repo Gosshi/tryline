@@ -1,5 +1,7 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
+import { getStandingPositionLookupForCompetitions } from "@/lib/db/queries/standings";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
+import { getMatchLevelScore } from "@/lib/format/match-level";
 import { type MatchStatus } from "@/lib/format/status";
 import { getTeamDisplayName } from "@/lib/format/team";
 import { truncateAtSentenceBoundary } from "@/lib/text";
@@ -11,16 +13,20 @@ export type MatchListItem = {
   kickoffAt: string;
   status: MatchStatus;
   homeTeam: {
+    id?: string;
     slug: string;
     name: string;
     nameJa?: string | null;
     shortCode: string;
+    worldRanking?: number | null;
   };
   awayTeam: {
+    id?: string;
     slug: string;
     name: string;
     nameJa?: string | null;
     shortCode: string;
+    worldRanking?: number | null;
   };
   homeScore: number | null;
   awayScore: number | null;
@@ -32,6 +38,7 @@ export type MatchListItem = {
 
 export type MatchDetail = Omit<MatchListItem, "awayTeam" | "homeTeam"> & {
   competition: {
+    id?: string;
     family: string;
     slug: string;
     name: string;
@@ -86,6 +93,7 @@ export type RecentlyReviewedCompetitionGroup = {
 
 export type UpcomingMatch = MatchListItem & {
   competition: {
+    id?: string;
     family: string;
     slug: string;
     name: string;
@@ -95,7 +103,8 @@ export type UpcomingMatch = MatchListItem & {
 };
 
 export type CalendarMatch = UpcomingMatch & {
-  hasContent: boolean;
+  hasPreview: boolean;
+  hasRecap: boolean;
 };
 
 export type FavoriteTeamMatch = UpcomingMatch;
@@ -244,12 +253,6 @@ type RecentlyReviewedEntry = {
   row: RecentlyReviewedContentRow & { match: RecentlyReviewedMatchRow };
 };
 
-type StandingPositionRow = {
-  competition_id: string;
-  position: number;
-  team_id: string;
-};
-
 type RecentlyReviewedFamilyContentRow = {
   generated_at: string;
   match: {
@@ -265,6 +268,7 @@ type RecentlyReviewedFamilyContentRow = {
 
 type UpcomingMatchRow = BaseMatchRow & {
   competition: {
+    id?: string;
     family: string;
     slug: string;
     name: string;
@@ -310,6 +314,7 @@ type SitemapContentMatchRow = {
 };
 
 type MatchContentIdRow = {
+  content_type: string;
   match_id: string;
 };
 
@@ -524,17 +529,21 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
   return {
     awayScore: row.away_score,
     awayTeam: {
+      id: row.away_team.id,
       name: awayDisplayName,
       nameJa: awayNameJa,
       shortCode: row.away_team.short_code ?? awayDisplayName.slice(0, 3).toUpperCase(),
       slug: row.away_team.slug,
+      worldRanking: row.away_team.world_ranking ?? null,
     },
     homeScore: row.home_score,
     homeTeam: {
+      id: row.home_team.id,
       name: homeDisplayName,
       nameJa: homeNameJa,
       shortCode: row.home_team.short_code ?? homeDisplayName.slice(0, 3).toUpperCase(),
       slug: row.home_team.slug,
+      worldRanking: row.home_team.world_ranking ?? null,
     },
     id: row.id,
     kickoffAt: row.kickoff_at,
@@ -659,34 +668,6 @@ function getRecentlyReviewedGroupKey(row: RecentlyReviewedMatchRow) {
   return [competition.family, competition.season, round ?? "roundless"].join("|");
 }
 
-function getRecentlyReviewedLevelScore(
-  entry: RecentlyReviewedEntry,
-  standingPositions: Map<string, Map<string, number>>,
-) {
-  const { match: row } = entry.row;
-  const homeRanking = row.home_team?.world_ranking ?? null;
-  const awayRanking = row.away_team?.world_ranking ?? null;
-
-  if (homeRanking !== null && awayRanking !== null) {
-    return homeRanking + awayRanking;
-  }
-
-  const competitionId = row.competition?.id;
-  const homeTeamId = row.home_team?.id;
-  const awayTeamId = row.away_team?.id;
-
-  if (!competitionId || !homeTeamId || !awayTeamId) {
-    return null;
-  }
-
-  const competitionPositions = standingPositions.get(competitionId);
-  const homePosition = competitionPositions?.get(homeTeamId) ?? null;
-  const awayPosition = competitionPositions?.get(awayTeamId) ?? null;
-
-  return homePosition !== null && awayPosition !== null
-    ? homePosition + awayPosition
-    : null;
-}
 
 function pickRecentlyReviewedHero(
   entries: RecentlyReviewedEntry[],
@@ -694,11 +675,11 @@ function pickRecentlyReviewedHero(
 ) {
   let bestEntry = entries[0] ?? null;
   let bestScore = bestEntry
-    ? getRecentlyReviewedLevelScore(bestEntry, standingPositions)
+    ? getMatchLevelScore(bestEntry.match, standingPositions)
     : null;
 
   for (const entry of entries.slice(1)) {
-    const score = getRecentlyReviewedLevelScore(entry, standingPositions);
+    const score = getMatchLevelScore(entry.match, standingPositions);
 
     if (score === null) {
       continue;
@@ -765,40 +746,14 @@ function buildRecentlyReviewedCompetitionGroups(
     });
 }
 
-async function getStandingPositionsForRecentReviews(
-  entries: RecentlyReviewedEntry[],
-): Promise<Map<string, Map<string, number>>> {
-  const competitionIds = [
+function getRecentlyReviewedCompetitionIds(entries: RecentlyReviewedEntry[]): string[] {
+  return [
     ...new Set(
       entries
-        .map((entry) => entry.row.match.competition?.id)
+        .map((entry) => entry.match.competition.id)
         .filter((id): id is string => Boolean(id)),
     ),
   ];
-
-  if (competitionIds.length === 0) {
-    return new Map();
-  }
-
-  const client = getSupabasePublicServerClient();
-  const { data, error } = await client
-    .from("competition_standings")
-    .select("competition_id, team_id, position")
-    .in("competition_id", competitionIds);
-
-  if (error) {
-    throw error;
-  }
-
-  const positionsByCompetition = new Map<string, Map<string, number>>();
-
-  for (const row of (data ?? []) as StandingPositionRow[]) {
-    const positions = positionsByCompetition.get(row.competition_id) ?? new Map<string, number>();
-    positions.set(row.team_id, row.position);
-    positionsByCompetition.set(row.competition_id, positions);
-  }
-
-  return positionsByCompetition;
 }
 
 async function getRecentlyReviewedEntries(
@@ -841,7 +796,9 @@ export async function getRecentlyReviewedCompetitionGroups(
     return [];
   }
 
-  const standingPositions = await getStandingPositionsForRecentReviews(entries);
+  const standingPositions = await getStandingPositionLookupForCompetitions(
+    getRecentlyReviewedCompetitionIds(entries),
+  );
 
   return buildRecentlyReviewedCompetitionGroups(entries, standingPositions);
 }
@@ -1093,16 +1050,21 @@ export async function getUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
         venue,
         external_ids,
         home_team:teams!matches_home_team_id_fkey (
+          id,
           slug,
           name,
-          short_code
+          short_code,
+          world_ranking
         ),
         away_team:teams!matches_away_team_id_fkey (
+          id,
           slug,
           name,
-          short_code
+          short_code,
+          world_ranking
         ),
         competition:competitions!matches_competition_id_fkey (
+          id,
           family,
           slug,
           name,
@@ -1171,16 +1133,21 @@ export async function getMatchesInRange(
         venue,
         external_ids,
         home_team:teams!matches_home_team_id_fkey (
+          id,
           slug,
           name,
-          short_code
+          short_code,
+          world_ranking
         ),
         away_team:teams!matches_away_team_id_fkey (
+          id,
           slug,
           name,
-          short_code
+          short_code,
+          world_ranking
         ),
         competition:competitions!matches_competition_id_fkey (
+          id,
           family,
           slug,
           name,
@@ -1200,12 +1167,13 @@ export async function getMatchesInRange(
     (row) => row.competition !== null,
   );
   const matchIds = rows.map((row) => row.id);
-  const contentMatchIds = new Set<string>();
+  const previewMatchIds = new Set<string>();
+  const recapMatchIds = new Set<string>();
 
   if (matchIds.length > 0) {
     const { data: contentRows, error: contentError } = await client
       .from("match_content")
-      .select("match_id")
+      .select("match_id, content_type")
       .in("match_id", matchIds)
       .eq("language", "ja")
       .eq("status", "published")
@@ -1216,7 +1184,11 @@ export async function getMatchesInRange(
     }
 
     for (const row of (contentRows ?? []) as MatchContentIdRow[]) {
-      contentMatchIds.add(row.match_id);
+      if (row.content_type === "recap") {
+        recapMatchIds.add(row.match_id);
+      } else if (row.content_type === "preview") {
+        previewMatchIds.add(row.match_id);
+      }
     }
   }
 
@@ -1229,7 +1201,8 @@ export async function getMatchesInRange(
       return {
         ...mapMatchRow(row),
         competition: mapCompetitionRow(row.competition),
-        hasContent: contentMatchIds.has(row.id),
+        hasPreview: previewMatchIds.has(row.id),
+        hasRecap: recapMatchIds.has(row.id),
       };
     }),
   );

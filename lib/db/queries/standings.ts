@@ -22,6 +22,8 @@ export type PoolStanding = {
   standings: StandingRow[];
 };
 
+export type StandingPositionLookup = Map<string, Map<string, number>>;
+
 type CompetitionStandingRow = {
   bonus_points_losing: number;
   bonus_points_try: number;
@@ -224,4 +226,42 @@ export async function getPoolStandingsForCompetition(
       poolName,
       standings: [...standings].sort((left, right) => left.position - right.position),
     }));
+}
+
+
+type StandingPositionRow = {
+  competition_id: string;
+  position: number;
+  team_id: string;
+};
+
+export async function getStandingPositionLookupForCompetitions(
+  competitionIds: string[],
+): Promise<StandingPositionLookup> {
+  const uniqueCompetitionIds = [...new Set(competitionIds)].filter(Boolean);
+
+  if (uniqueCompetitionIds.length === 0) {
+    return new Map();
+  }
+
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("competition_standings")
+    .select("competition_id, team_id, position")
+    .in("competition_id", uniqueCompetitionIds);
+
+  if (error) {
+    throw error;
+  }
+
+  const positionsByCompetition: StandingPositionLookup = new Map();
+
+  for (const row of (data ?? []) as StandingPositionRow[]) {
+    const positions =
+      positionsByCompetition.get(row.competition_id) ?? new Map<string, number>();
+    positions.set(row.team_id, row.position);
+    positionsByCompetition.set(row.competition_id, positions);
+  }
+
+  return positionsByCompetition;
 }
