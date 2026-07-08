@@ -4,8 +4,10 @@ import {
   UNGROUNDED_ENTITY_ISSUE,
   UNGROUNDED_PLAYER_REFERENCE_ISSUE,
   UNSUPPORTED_STATISTIC_ISSUE,
+  PLAYER_STAT_MISMATCH_ISSUE,
   WINNER_MISMATCH_ISSUE,
 } from "@/lib/content/fabrication-guard";
+import { pointsForMatchEvent } from "@/lib/format/match-event-points";
 import {
   CONTENT_LENGTH_ISSUE,
   getContentLengthRequirement,
@@ -20,6 +22,7 @@ import {
 } from "@/lib/llm/prompts/qa-content";
 
 import type {
+  AssembledContentInput,
   ContentLanguage,
   ContentType,
   MatchTeamStats,
@@ -41,12 +44,26 @@ export type QaStageResponse = {
 type ParsedQaResponse = {
   scores?: QaResult["scores"];
   issues?: unknown;
+  statedPlayerStats?: unknown;
   statedWinner?: unknown;
 };
 
 export const DENSITY_PUBLISH_MIN = 4;
 export type ActualWinner = "away" | "draw" | "home" | null;
 type StatedWinner = "away" | "home" | "unclear";
+type StatedPlayerStatClaim = {
+  conversions?: number;
+  penaltyGoals?: number;
+  playerName: string;
+  totalPoints?: number;
+  tries?: number;
+};
+type ActualPlayerStats = {
+  conversions: number;
+  penaltyGoals: number;
+  totalPoints: number;
+  tries: number;
+};
 
 function appendIssue(issues: string[], issue: string): string[] {
   return issues.includes(issue) ? issues : [...issues, issue];
@@ -62,6 +79,7 @@ export function isFactualGroundingHardBlock(result: QaResult): boolean {
     result.issues.includes(UNGROUNDED_ENTITY_ISSUE) ||
     result.issues.includes(UNGROUNDED_PLAYER_REFERENCE_ISSUE) ||
     result.issues.includes(UNSUPPORTED_STATISTIC_ISSUE) ||
+    result.issues.includes(PLAYER_STAT_MISMATCH_ISSUE) ||
     result.issues.includes(WINNER_MISMATCH_ISSUE)
   );
 }
@@ -169,6 +187,138 @@ function parseStatedWinner(value: unknown): StatedWinner | null {
     : null;
 }
 
+function normalizePlayerNameForStatMatch(name: string): string {
+  return name
+    .replace(/[・.．'\s-]+/g, "")
+    .trim()
+    .toLocaleLowerCase();
+}
+
+function playerNamesLikelyMatch(claimedName: string, eventName: string) {
+  const claimed = normalizePlayerNameForStatMatch(claimedName);
+  const actual = normalizePlayerNameForStatMatch(eventName);
+
+  if (!claimed || !actual) {
+    return false;
+  }
+
+  return (
+    claimed === actual || actual.endsWith(claimed) || claimed.endsWith(actual)
+  );
+}
+
+function parseNumberClaim(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
+    : undefined;
+}
+
+function parseStatedPlayerStats(value: unknown): StatedPlayerStatClaim[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") {
+      return [];
+    }
+
+    const candidate = entry as Record<string, unknown>;
+    if (typeof candidate.playerName !== "string") {
+      return [];
+    }
+
+    const claim: StatedPlayerStatClaim = {
+      playerName: candidate.playerName.trim(),
+    };
+    const tries = parseNumberClaim(candidate.tries);
+    const conversions = parseNumberClaim(candidate.conversions);
+    const penaltyGoals = parseNumberClaim(candidate.penaltyGoals);
+    const totalPoints = parseNumberClaim(candidate.totalPoints);
+
+    if (tries !== undefined) claim.tries = tries;
+    if (conversions !== undefined) claim.conversions = conversions;
+    if (penaltyGoals !== undefined) claim.penaltyGoals = penaltyGoals;
+    if (totalPoints !== undefined) claim.totalPoints = totalPoints;
+
+    return claim.playerName &&
+      (tries !== undefined ||
+        conversions !== undefined ||
+        penaltyGoals !== undefined ||
+        totalPoints !== undefined)
+      ? [claim]
+      : [];
+  });
+}
+
+function buildPlayerStatsFromEvents(
+  events: AssembledContentInput["match_events"],
+): Map<string, { playerName: string; stats: ActualPlayerStats }> {
+  const statsByPlayer = new Map<
+    string,
+    { playerName: string; stats: ActualPlayerStats }
+  >();
+
+  for (const event of events) {
+    if (!event.player_name) {
+      continue;
+    }
+
+    const key = normalizePlayerNameForStatMatch(event.player_name);
+    if (!key) {
+      continue;
+    }
+
+    const current = statsByPlayer.get(key) ?? {
+      playerName: event.player_name,
+      stats: {
+        conversions: 0,
+        penaltyGoals: 0,
+        totalPoints: 0,
+        tries: 0,
+      },
+    };
+
+    if (event.type === "try") current.stats.tries += 1;
+    if (event.type === "conversion") current.stats.conversions += 1;
+    if (event.type === "penalty_goal" || event.type === "penalty") {
+      current.stats.penaltyGoals += 1;
+    }
+    current.stats.totalPoints += pointsForMatchEvent(event);
+    statsByPlayer.set(key, current);
+  }
+
+  return statsByPlayer;
+}
+
+function findActualPlayerStats(
+  claim: StatedPlayerStatClaim,
+  statsByPlayer: Map<string, { playerName: string; stats: ActualPlayerStats }>,
+): ActualPlayerStats | null {
+  for (const actual of statsByPlayer.values()) {
+    if (playerNamesLikelyMatch(claim.playerName, actual.playerName)) {
+      return actual.stats;
+    }
+  }
+
+  return null;
+}
+
+function playerStatClaimMatchesActual(
+  claim: StatedPlayerStatClaim,
+  actual: ActualPlayerStats,
+) {
+  return (
+    (claim.tries === undefined || claim.tries === actual.tries) &&
+    (claim.conversions === undefined ||
+      claim.conversions === actual.conversions) &&
+    (claim.penaltyGoals === undefined ||
+      claim.penaltyGoals === actual.penaltyGoals) &&
+    (claim.totalPoints === undefined ||
+      claim.totalPoints === actual.totalPoints)
+  );
+}
+
 // Single source of truth for QA verdicts. The LLM scores content only; code
 // applies the stable retry/reject thresholds used by the pipeline.
 export function resolveVerdict(
@@ -229,6 +379,8 @@ function applyDeterministicQaGuards(
     matchContext: QaMatchContext;
     narrative: string;
     entityViolations?: string[];
+    matchEvents?: AssembledContentInput["match_events"];
+    statedPlayerStats?: StatedPlayerStatClaim[];
     statedWinner?: StatedWinner | null;
   },
 ): QaResult {
@@ -252,6 +404,31 @@ function applyDeterministicQaGuards(
         factual_grounding: 1,
       },
     };
+  }
+
+  if (
+    options.contentType === "recap" &&
+    options.hasEvents &&
+    (options.statedPlayerStats ?? []).length > 0
+  ) {
+    const statedPlayerStats = options.statedPlayerStats ?? [];
+    const statsByPlayer = buildPlayerStatsFromEvents(options.matchEvents ?? []);
+    const hasMismatch = statedPlayerStats.some((claim) => {
+      const actual = findActualPlayerStats(claim, statsByPlayer);
+
+      return !actual || !playerStatClaimMatchesActual(claim, actual);
+    });
+
+    if (hasMismatch) {
+      guarded = {
+        ...guarded,
+        issues: appendIssue(guarded.issues, PLAYER_STAT_MISMATCH_ISSUE),
+        scores: {
+          ...guarded.scores,
+          factual_grounding: 1,
+        },
+      };
+    }
   }
 
   if ((options.entityViolations ?? []).length > 0) {
@@ -380,6 +557,7 @@ function parseQaResponse(
     matchContext: QaMatchContext;
     narrative: string;
     entityViolations?: string[];
+    matchEvents?: AssembledContentInput["match_events"];
   },
 ): QaResult {
   const parsed = JSON.parse(jsonText) as ParsedQaResponse;
@@ -395,6 +573,7 @@ function parseQaResponse(
   const llmIssues = (Array.isArray(parsed.issues) ? parsed.issues : []).filter(
     (issue) => issue !== CONTENT_LENGTH_ISSUE,
   );
+  const statedPlayerStats = parseStatedPlayerStats(parsed.statedPlayerStats);
   const statedWinner = parseStatedWinner(parsed.statedWinner);
 
   const guarded = applyDeterministicQaGuards(
@@ -405,6 +584,7 @@ function parseQaResponse(
     },
     {
       ...options,
+      statedPlayerStats,
       statedWinner,
     },
   );
@@ -430,6 +610,7 @@ export async function evaluateNarrativeQuality(options: {
   hasLineups?: boolean;
   language?: ContentLanguage;
   matchContext: QaMatchContext;
+  matchEvents?: AssembledContentInput["match_events"];
   narrative: string;
   retryCount: number;
 }): Promise<QaStageResponse> {
@@ -461,6 +642,7 @@ export async function evaluateNarrativeQuality(options: {
         hasLineups,
         language: options.language ?? "ja",
         matchContext: options.matchContext,
+        matchEvents: options.matchEvents,
         narrative: options.narrative,
         entityViolations: options.entityViolations,
       });
