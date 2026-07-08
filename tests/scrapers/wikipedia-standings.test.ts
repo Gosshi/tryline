@@ -182,6 +182,30 @@ describe("wikipedia standings scraper", () => {
     });
   });
 
+  it("returns the first compatible standalone table when no pool heading is present", async () => {
+    const { parseCompetitionStandingsHtml } =
+      await import("@/lib/scrapers/wikipedia-standings");
+    const result = parseCompetitionStandingsHtml(`
+      <table class="wikitable">
+        <tr>
+          <th>Pos</th><th>Team</th><th>Pld</th><th>W</th><th>D</th><th>L</th>
+          <th>PF</th><th>PA</th><th>Pts</th>
+        </tr>
+        <tr><td>1</td><th>Ireland</th><td>1</td><td>1</td><td>0</td><td>0</td><td>30</td><td>10</td><td>5</td></tr>
+      </table>
+      <table class="wikitable">
+        <tr>
+          <th>Pos</th><th>Team</th><th>Pld</th><th>W</th><th>D</th><th>L</th>
+          <th>PF</th><th>PA</th><th>Pts</th>
+        </tr>
+        <tr><td>1</td><th>Unrelated Team</th><td>1</td><td>1</td><td>0</td><td>0</td><td>20</td><td>5</td><td>4</td></tr>
+      </table>
+    `);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ teamName: "Ireland" });
+  });
+
   it("uses row order when the standings table has no position header", async () => {
     const { parseCompetitionStandingsHtml } =
       await import("@/lib/scrapers/wikipedia-standings");

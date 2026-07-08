@@ -310,7 +310,7 @@ export function parseCompetitionStandingsHtml(
   html: string,
 ): ParsedStandingsRow[] {
   const $ = load(html);
-  const allParsedRows: ParsedStandingsRow[] = [];
+  const pooledParsedRows: ParsedStandingsRow[] = [];
 
   for (const table of $("table.wikitable").toArray()) {
     const rows = $(table).find("tr").toArray();
@@ -337,17 +337,27 @@ export function parseCompetitionStandingsHtml(
         );
 
       if (parsedRows.length > 0) {
-        allParsedRows.push(...parsedRows);
+        if (poolName) {
+          pooledParsedRows.push(...parsedRows);
+          break;
+        }
+
+        if (pooledParsedRows.length === 0) {
+          return parsedRows;
+        }
+
         break;
       }
     }
   }
 
-  if (allParsedRows.length === 0) {
-    console.warn("No compatible competition standings rows were found.");
+  if (pooledParsedRows.length > 0) {
+    return pooledParsedRows;
   }
 
-  return allParsedRows;
+  console.warn("No compatible competition standings rows were found.");
+
+  return [];
 }
 
 export async function scrapeCompetitionStandings(
