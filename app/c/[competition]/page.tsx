@@ -12,7 +12,9 @@ import { getRecentlyReviewedMatchesForFamily } from "@/lib/db/queries/matches";
 import {
   formatCompetitionTitle,
   formatFamilyName,
+  getCompetitionFamilyColor,
 } from "@/lib/format/competition";
+import { createCompetitionOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -71,11 +73,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       description,
       images: [
-        {
-          height: 630,
-          url: `${SITE_URL}/og-image.png`,
-          width: 1200,
-        },
+        createCompetitionOgImage({
+          accentColor: getCompetitionFamilyColor(competition),
+          familyName: formatFamilyName(competition),
+        }),
       ],
       title: `${title} | Tryline`,
       type: "website",

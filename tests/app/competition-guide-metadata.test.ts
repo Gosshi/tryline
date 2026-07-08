@@ -26,6 +26,12 @@ describe("competition guide metadata", () => {
     expect(metadata.title).toContain("順位表");
     expect(metadata.title).toContain("視聴方法");
     expect(metadata.description).toContain("日本での視聴方法");
+    expect(JSON.stringify(metadata.openGraph?.images)).toContain(
+      "/api/og?type=competition",
+    );
+    expect(JSON.stringify(metadata.openGraph?.images)).toContain(
+      "family_name=URC",
+    );
   });
 
   it("includes standings and viewing guidance in season metadata", async () => {
@@ -52,5 +58,11 @@ describe("competition guide metadata", () => {
 
     expect(metadata.title).toContain("順位表");
     expect(metadata.description).toContain("日本での視聴方法");
+    expect(JSON.stringify(metadata.openGraph?.images)).toContain(
+      "/api/og?type=competition",
+    );
+    expect(JSON.stringify(metadata.openGraph?.images)).toContain(
+      "season=2025-26",
+    );
   });
 });
