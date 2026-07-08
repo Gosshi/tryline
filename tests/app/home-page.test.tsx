@@ -211,7 +211,12 @@ describe("HomePage", () => {
   });
 
   it("uses the configured free sample match for homepage sample links", async () => {
-    render(await HomePage());
+    const { container } = render(await HomePage());
+
+    const heading = container.querySelector("h1");
+    expect(heading).toHaveTextContent("今週の海外ラグビーを、日本時間で追う。");
+    expect(heading?.querySelectorAll("wbr")).toHaveLength(3);
+    expect(heading?.innerHTML).not.toContain("ラグビー<wbr>を");
 
     expect(matchMocks.getRecentlyReviewedMatchById).toHaveBeenCalledWith(
       PRIMARY_SAMPLE_MATCH_ID,
