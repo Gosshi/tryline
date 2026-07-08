@@ -57,6 +57,38 @@ const NATIONS_CHAMPIONSHIP_SECOND_EVENT_HTML = `
 </div>
 `;
 
+const SOUTH_AFRICA_V_ENGLAND_EVENT_HTML = `
+<div class="vevent summary" id="South_Africa_v_England">
+  <table><tbody><tr><td>4 July 2026<br />17:40 SAST</td></tr></tbody></table>
+  <table><tbody>
+    <tr>
+      <td class="vcard"><span class="fn org"><a>South Africa</a></span></td>
+      <td>45–21</td>
+      <td class="vcard"><span class="fn org"><a>England</a></span></td>
+    </tr>
+    <tr style="font-size:85%">
+      <td>
+        <b>Try:</b> <a>T. du Toit</a> 2' m<br />
+        <a>Kolbe</a> 5' c<br />
+        <a>Arendse</a> 11' m<br />
+        <a>Williams</a> 44' c<br />
+        <a>Kriel</a> 56' c<br />
+        <a>Marx</a> 73' c<br />
+        <a>Dixon</a> 78' c<br />
+        <b>Con:</b> <a>Kolbe</a> (5/7) 6', 45', 57', 73', 79'
+      </td>
+      <td></td>
+      <td>
+        <b>Try:</b> <a>Genge</a> 35' c<br />
+        <a>Martin</a> 40+1' c<br />
+        <a>Coles</a> 67' c<br />
+        <b>Con:</b> <a>F. Smith</a> (3/3) 35', 40+1, 68'
+      </td>
+    </tr>
+  </tbody></table>
+</div>
+`;
+
 const scoringEvent = (params: {
   isPenaltyTry?: boolean;
   teamSide: "home" | "away";
@@ -281,6 +313,33 @@ describe("Nations Championship event source", () => {
     expect(
       eventTotalsMatchFinalScore(totals, { away_score: 10, home_score: 7 }),
     ).toBe(false);
+  });
+
+  it("keeps stoppage-time aggregate kicks without apostrophes in the score total", () => {
+    const [match] = parseNationsChampionshipEventHtml(
+      SOUTH_AFRICA_V_ENGLAND_EVENT_HTML,
+    );
+
+    expect(match).toMatchObject({
+      awayScore: 21,
+      awayTeamSlug: "england",
+      homeScore: 45,
+      homeTeamSlug: "south-africa",
+    });
+
+    const events = parseMatchEventsFromVeventHtml(match!.rawHtml);
+
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          minute: 40,
+          playerName: "F. Smith",
+          teamSide: "away",
+          type: "conversion",
+        }),
+      ]),
+    );
+    expect(computeEventPointTotals(events)).toEqual({ away: 21, home: 45 });
   });
 
   it("skips backfill inserts when parsed event totals mismatch the final score", async () => {

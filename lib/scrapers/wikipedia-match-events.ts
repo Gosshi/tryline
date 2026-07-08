@@ -62,17 +62,19 @@ function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+const MINUTE_MARKER_RE = /(\d{1,3})(?:\+\d{1,2})?\s*'|(\d{1,3})(?:\+\d{1,2})(?=\s*(?:,|$))/g;
+
 function parseMinutes(value: string): Array<number | null> {
-  const minutes = [...value.matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g)].map(
-    (match) => Number(match[1]),
+  const minutes = [...value.matchAll(MINUTE_MARKER_RE)].map((match) =>
+    Number(match[1] ?? match[2]),
   );
   return minutes.length > 0 ? minutes : [null];
 }
 
 function parseMinuteMarkers(value: string) {
-  return [...value.matchAll(/(\d{1,3})(?:\+\d{1,2})?\s*'/g)].map((match) => ({
+  return [...value.matchAll(MINUTE_MARKER_RE)].map((match) => ({
     index: match.index ?? 0,
-    minute: Number(match[1]),
+    minute: Number(match[1] ?? match[2]),
   }));
 }
 
