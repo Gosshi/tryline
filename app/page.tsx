@@ -20,8 +20,8 @@ import {
   getFavoriteTeamMatches,
   getMatchesInRange,
   getRecentlyReviewedFamilies,
+  getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedMatchById,
-  getRecentlyReviewedMatches,
   getUpcomingMatches,
 } from "@/lib/db/queries/matches";
 import {
@@ -92,7 +92,7 @@ export default async function HomePage() {
   const [
     families,
     reviewedFamilies,
-    recentReviews,
+    recentReviewGroups,
     sampleMatch,
     weeklyMatches,
     upcomingMatches,
@@ -100,7 +100,7 @@ export default async function HomePage() {
   ] = await Promise.all([
     listFamilies(),
     getRecentlyReviewedFamilies(4),
-    getRecentlyReviewedMatches("ja"),
+    getRecentlyReviewedCompetitionGroups("ja"),
     getRecentlyReviewedMatchById(PRIMARY_SAMPLE_MATCH_ID, "ja"),
     getMatchesInRange(weekRange.startUtcIso, weekRange.endUtcIso),
     getUpcomingMatches(5),
@@ -448,91 +448,107 @@ export default async function HomePage() {
           </section>
         )}
 
-        {recentReviews.length > 0 && (
+        {recentReviewGroups.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               最近のレビュー
             </h2>
-            <div className="space-y-2">
-              {recentReviews.slice(0, 1).map((match) => (
-                <Link
-                  className="group block overflow-hidden rounded-2xl px-5 py-5 text-white shadow-[0_18px_36px_rgb(15_23_42/0.18)] transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                  href={`/matches/${match.id}`}
-                  key={match.id}
-                  style={{
-                    background: `linear-gradient(180deg, rgb(12 16 28 / 12%), rgb(12 16 28 / 34%)), linear-gradient(120deg, ${getTeamColor(match.homeTeam.slug)}, ${getTeamColor(match.awayTeam.slug)})`,
-                  }}
-                >
-                  <p className="inline-flex rounded-full bg-white/18 px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur-sm">
-                    {formatCompetitionTitle(
-                      match.competition,
-                      match.competition.season,
-                    )}
-                  </p>
-                  <div className="mt-4 flex min-w-0 items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
-                        <TeamBadge
-                          shortCode={match.homeTeam.shortCode}
-                          size={24}
-                          slug={match.homeTeam.slug}
-                        />
-                        <span className="truncate">{match.homeTeam.name}</span>
-                      </p>
-                      <p className="mt-2 flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
-                        <TeamBadge
-                          shortCode={match.awayTeam.shortCode}
-                          size={24}
-                          slug={match.awayTeam.slug}
-                        />
-                        <span className="truncate">{match.awayTeam.name}</span>
-                      </p>
-                    </div>
-                    <p className="shrink-0 font-number text-3xl font-black tabular-nums sm:text-4xl">
-                      {match.homeScore}–{match.awayScore}
-                    </p>
-                  </div>
-                  <span className="mt-4 inline-flex text-sm font-bold text-white/90 transition-transform group-hover:translate-x-1">
-                    レビューを読む →
-                  </span>
-                </Link>
-              ))}
+            <div className="space-y-5">
+              {recentReviewGroups.map((group) => {
+                const match = group.hero;
 
-              {recentReviews.length > 1 && (
-                <ul className="divide-y divide-slate-200 rounded-xl bg-white px-1 shadow-sm shadow-slate-200/40 ring-1 ring-slate-200">
-                  {recentReviews.slice(1).map((match) => (
-                    <li key={match.id}>
-                      <Link
-                        className="group flex items-center justify-between gap-3 px-3 py-3 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
-                        href={`/matches/${match.id}`}
-                      >
+                return (
+                  <div className="space-y-2" key={`${group.competition.slug}-${group.latestReviewAt}`}>
+                    <div className="flex min-w-0 items-center justify-between gap-3">
+                      <h3 className="truncate text-sm font-black text-[var(--color-ink)]">
+                        {formatCompetitionTitle(
+                          group.competition,
+                          group.competition.season,
+                        )}
+                      </h3>
+                      <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[var(--color-ink-muted)] ring-1 ring-slate-200">
+                        最新節
+                      </span>
+                    </div>
+                    <Link
+                      className="group block overflow-hidden rounded-2xl px-5 py-5 text-white shadow-[0_18px_36px_rgb(15_23_42/0.18)] transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                      href={`/matches/${match.id}`}
+                      style={{
+                        background: `linear-gradient(180deg, rgb(12 16 28 / 12%), rgb(12 16 28 / 34%)), linear-gradient(120deg, ${getTeamColor(match.homeTeam.slug)}, ${getTeamColor(match.awayTeam.slug)})`,
+                      }}
+                    >
+                      <p className="inline-flex rounded-full bg-white/18 px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur-sm">
+                        {formatCompetitionTitle(
+                          match.competition,
+                          match.competition.season,
+                        )}
+                      </p>
+                      <div className="mt-4 flex min-w-0 items-center justify-between gap-4">
                         <div className="min-w-0">
-                          <p className="truncate text-[11px] font-medium text-[var(--color-ink-muted)]">
-                            {formatCompetitionTitle(
-                              match.competition,
-                              match.competition.season,
-                            )}
+                          <p className="flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
+                            <TeamBadge
+                              shortCode={match.homeTeam.shortCode}
+                              size={24}
+                              slug={match.homeTeam.slug}
+                            />
+                            <span className="truncate">{match.homeTeam.name}</span>
                           </p>
-                          <p className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden text-sm font-semibold text-[var(--color-ink)]">
-                            <span className="truncate">
-                              {match.homeTeam.shortCode}
-                            </span>
-                            <span className="shrink-0 font-number tabular-nums text-slate-500">
-                              {match.homeScore}–{match.awayScore}
-                            </span>
-                            <span className="truncate">
-                              {match.awayTeam.shortCode}
-                            </span>
+                          <p className="mt-2 flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
+                            <TeamBadge
+                              shortCode={match.awayTeam.shortCode}
+                              size={24}
+                              slug={match.awayTeam.slug}
+                            />
+                            <span className="truncate">{match.awayTeam.name}</span>
                           </p>
                         </div>
-                        <span className="shrink-0 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
-                          →
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                        <p className="shrink-0 font-number text-3xl font-black tabular-nums sm:text-4xl">
+                          {match.homeScore}–{match.awayScore}
+                        </p>
+                      </div>
+                      <span className="mt-4 inline-flex text-sm font-bold text-white/90 transition-transform group-hover:translate-x-1">
+                        レビューを読む →
+                      </span>
+                    </Link>
+
+                    {group.compact.length > 0 && (
+                      <ul className="divide-y divide-slate-200 rounded-xl bg-white px-1 shadow-sm shadow-slate-200/40 ring-1 ring-slate-200">
+                        {group.compact.map((compactMatch) => (
+                          <li key={compactMatch.id}>
+                            <Link
+                              className="group flex items-center justify-between gap-3 px-3 py-3 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
+                              href={`/matches/${compactMatch.id}`}
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-[11px] font-medium text-[var(--color-ink-muted)]">
+                                  {formatCompetitionTitle(
+                                    compactMatch.competition,
+                                    compactMatch.competition.season,
+                                  )}
+                                </p>
+                                <p className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden text-sm font-semibold text-[var(--color-ink)]">
+                                  <span className="truncate">
+                                    {compactMatch.homeTeam.shortCode}
+                                  </span>
+                                  <span className="shrink-0 font-number tabular-nums text-slate-500">
+                                    {compactMatch.homeScore}–{compactMatch.awayScore}
+                                  </span>
+                                  <span className="truncate">
+                                    {compactMatch.awayTeam.shortCode}
+                                  </span>
+                                </p>
+                              </div>
+                              <span className="shrink-0 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
+                                →
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}
