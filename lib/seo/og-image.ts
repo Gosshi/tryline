@@ -52,3 +52,29 @@ export function createCompetitionOgImage(params: CompetitionOgImageParams) {
     width: 1200,
   };
 }
+
+type RoundScoreboardOgImageParams = {
+  competitionId: string;
+  competitionLabel?: string;
+  round: number;
+};
+
+export function createRoundScoreboardOgImage(
+  params: RoundScoreboardOgImageParams,
+) {
+  const searchParams = new URLSearchParams({
+    type: "round-scoreboard",
+    competition_id: params.competitionId,
+    round: String(params.round),
+  });
+
+  if (params.competitionLabel) {
+    searchParams.set("competition", params.competitionLabel);
+  }
+
+  return {
+    height: 630,
+    url: `/api/og?${searchParams.toString()}`,
+    width: 1200,
+  };
+}

@@ -4,6 +4,14 @@ const ogMocks = vi.hoisted(() => ({
   imageResponse: vi.fn(),
 }));
 
+const dbMock = vi.hoisted(() => ({
+  filters: [] as Array<[string, unknown]>,
+  notFilters: [] as Array<[string, string, unknown]>,
+  rawFilters: [] as Array<[string, string, unknown]>,
+  rows: [] as unknown[],
+  selects: [] as string[],
+}));
+
 vi.mock("@vercel/og", () => ({
   ImageResponse: vi.fn((element: unknown, init: unknown) => {
     ogMocks.imageResponse(element, init);
@@ -14,8 +22,45 @@ vi.mock("@vercel/og", () => ({
   }),
 }));
 
+vi.mock("@/lib/db/public-server", () => ({
+  getSupabasePublicServerClient: () => ({
+    from: (table: string) => {
+      expect(table).toBe("matches");
+
+      const builder = {
+        eq(column: string, value: unknown) {
+          dbMock.filters.push([column, value]);
+          return this;
+        },
+        filter(column: string, operator: string, value: unknown) {
+          dbMock.rawFilters.push([column, operator, value]);
+          return this;
+        },
+        not(column: string, operator: string, value: unknown) {
+          dbMock.notFilters.push([column, operator, value]);
+          return this;
+        },
+        order() {
+          return Promise.resolve({ data: dbMock.rows, error: null });
+        },
+        select(value: string) {
+          dbMock.selects.push(value);
+          return this;
+        },
+      };
+
+      return builder;
+    },
+  }),
+}));
+
 describe("/api/og competition images", () => {
   beforeEach(() => {
+    dbMock.filters = [];
+    dbMock.notFilters = [];
+    dbMock.rawFilters = [];
+    dbMock.rows = [];
+    dbMock.selects = [];
     ogMocks.imageResponse.mockClear();
     vi.stubGlobal(
       "fetch",
@@ -60,4 +105,97 @@ describe("/api/og competition images", () => {
       expect.objectContaining({ height: 675, width: 1200 }),
     );
   });
+
+  it("returns a fallback round scoreboard image when no matches exist", async () => {
+    const { GET } = await import("@/app/api/og/route");
+
+    const response = await GET(
+      new Request(
+        "https://tryline.test/api/og?type=round-scoreboard&competition_id=competition-1&round=3",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(ogMocks.imageResponse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ height: 630, width: 1200 }),
+    );
+    expect(dbMock.filters).toEqual([
+      ["competition_id", "competition-1"],
+      ["status", "finished"],
+    ]);
+    expect(dbMock.rawFilters).toEqual([["round", "eq", 3]]);
+  });
+
+  it("builds a round scoreboard from match scores without event data", async () => {
+    dbMock.rows = [
+      roundMatch("match-1", "Bath", "Saracens", 24, 18),
+      roundMatch("match-2", "Leicester", "Sale", 17, 21),
+    ];
+
+    const { GET } = await import("@/app/api/og/route");
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=round-scoreboard&competition_id=competition-1&round=4",
+      ),
+    );
+
+    expect(dbMock.selects[0]).not.toContain("match_events");
+    expect(dbMock.notFilters).toEqual([
+      ["home_score", "is", null],
+      ["away_score", "is", null],
+    ]);
+    expect(ogMocks.imageResponse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ height: 630, width: 1200 }),
+    );
+  });
+
+  it("keeps the round scoreboard layout stable for many matches", async () => {
+    dbMock.rows = Array.from({ length: 8 }, (_, index) =>
+      roundMatch(
+        `match-${index + 1}`,
+        `Home Team ${index + 1}`,
+        `Away Team ${index + 1}`,
+        20 + index,
+        10 + index,
+      ),
+    );
+
+    const { GET } = await import("@/app/api/og/route");
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=round-scoreboard&competition_id=competition-1&round=5",
+      ),
+    );
+
+    expect(ogMocks.imageResponse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ height: 630, width: 1200 }),
+    );
+  });
 });
+
+function roundMatch(
+  id: string,
+  homeName: string,
+  awayName: string,
+  homeScore: number,
+  awayScore: number,
+) {
+  return {
+    away_score: awayScore,
+    away_team: { name: awayName, short_code: awayName.slice(0, 3) },
+    competition: {
+      name: "Premiership Rugby",
+      name_ja: null,
+      season: "2025-26",
+    },
+    home_score: homeScore,
+    home_team: { name: homeName, short_code: homeName.slice(0, 3) },
+    id,
+    kickoff_at: "2026-01-01T00:00:00.000Z",
+  };
+}
