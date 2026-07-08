@@ -221,6 +221,7 @@ export async function generateMatchContent(
         },
         hasEvents,
         hasLineups,
+        matchEvents: assembled.match_events,
         narrative: options.narrative,
         retryCount: options.retryCount,
       }),

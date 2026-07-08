@@ -14,8 +14,8 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.3.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.3.0");
+  it("uses qa prompt version 2.4.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.4.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -104,6 +104,21 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).toContain("## セクション構成チェック");
     expect(prompt).toContain("# ターニングポイント");
     expect(prompt).toContain("information_density のスコアを最大 3");
+  });
+
+  it("adds player stat extraction checks for recaps with events", () => {
+    const prompt = buildQaContentPrompt(
+      "recap",
+      "本文",
+      "ja",
+      matchContext,
+      true,
+    );
+
+    expect(prompt).toContain("## 選手別得点統計チェック");
+    expect(prompt).toContain("statedPlayerStats");
+    expect(prompt).toContain("トライ数・コンバージョン成功数");
+    expect(prompt).toContain("match_events との照合はプログラム側で行う");
   });
 
   it("adds sourced facts as allowed grounding context", () => {
@@ -210,5 +225,6 @@ describe("buildQaContentPrompt", () => {
     );
 
     expect(prompt).not.toContain("## セクション構成チェック");
+    expect(prompt).not.toContain("## 選手別得点統計チェック");
   });
 });

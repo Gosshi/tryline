@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   containsUnsupportedStatistic,
+  PLAYER_STAT_MISMATCH_ISSUE,
   UNGROUNDED_ENTITY_ISSUE,
   WINNER_MISMATCH_ISSUE,
 } from "@/lib/content/fabrication-guard";
@@ -33,6 +34,90 @@ const passingScores = {
   japanese_quality: 4,
   tactical_depth: 4,
 };
+const recapWithTurningPoint = `# ターニングポイント\n${longJaRecap}`;
+
+const matsunagaMatchEvents = [
+  {
+    is_penalty_try: false,
+    minute: 16,
+    player_name: "Matsunaga",
+    team_name: "Japan",
+    type: "try",
+  },
+  {
+    is_penalty_try: false,
+    minute: 11,
+    player_name: "Matsunaga",
+    team_name: "Japan",
+    type: "conversion",
+  },
+  {
+    is_penalty_try: false,
+    minute: 16,
+    player_name: "Matsunaga",
+    team_name: "Japan",
+    type: "conversion",
+  },
+  {
+    is_penalty_try: false,
+    minute: 47,
+    player_name: "Matsunaga",
+    team_name: "Japan",
+    type: "conversion",
+  },
+  {
+    is_penalty_try: false,
+    minute: 24,
+    player_name: "Matsunaga",
+    team_name: "Japan",
+    type: "penalty_goal",
+  },
+  {
+    is_penalty_try: false,
+    minute: 66,
+    player_name: "Matsunaga",
+    team_name: "Japan",
+    type: "penalty_goal",
+  },
+];
+
+const scotlandKickerEvents = [
+  {
+    is_penalty_try: false,
+    minute: 12,
+    player_name: "Jordan",
+    team_name: "Scotland",
+    type: "conversion",
+  },
+  {
+    is_penalty_try: false,
+    minute: 29,
+    player_name: "Jordan",
+    team_name: "Scotland",
+    type: "conversion",
+  },
+  {
+    is_penalty_try: false,
+    minute: 44,
+    player_name: "Jordan",
+    team_name: "Scotland",
+    type: "conversion",
+  },
+  {
+    is_penalty_try: false,
+    minute: 61,
+    player_name: "Burke",
+    team_name: "Scotland",
+    type: "conversion",
+  },
+  {
+    is_penalty_try: false,
+    minute: 74,
+    player_name: "Burke",
+    team_name: "Scotland",
+    type: "conversion",
+  },
+];
 
 describe("computeActualWinner", () => {
   it("returns the winner side, draw, or null from final scores", () => {
@@ -357,6 +442,174 @@ describe("evaluateNarrativeQuality", () => {
 
     expect(result.result.issues).not.toContain(WINNER_MISMATCH_ISSUE);
     expect(result.result.scores.factual_grounding).toBe(5);
+  });
+
+  it("flags f56e9ee9 Matsunaga player stat claims that exceed match_events", async () => {
+    const callCountBefore = openAIMock.createTextResponse.mock.calls.length;
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+        statedPlayerStats: [
+          {
+            conversions: 3,
+            penaltyGoals: 2,
+            playerName: "Matsunaga",
+            totalPoints: 20,
+            tries: 2,
+          },
+        ],
+        statedWinner: "home",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      hasEvents: true,
+      matchContext: {
+        awayScore: 10,
+        awayTeam: "Italy",
+        homeScore: 27,
+        homeTeam: "Japan",
+      },
+      matchEvents: matsunagaMatchEvents,
+      narrative: recapWithTurningPoint,
+      retryCount: 0,
+    });
+
+    expect(result.result.issues).toContain(PLAYER_STAT_MISMATCH_ISSUE);
+    expect(result.result.scores.factual_grounding).toBe(1);
+    expect(result.result.verdict).toBe("retry");
+    expect(openAIMock.createTextResponse).toHaveBeenCalledTimes(
+      callCountBefore + 1,
+    );
+  });
+
+  it("flags 42bebc1f Burton player stat claims when the player has no events", async () => {
+    const callCountBefore = openAIMock.createTextResponse.mock.calls.length;
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+        statedPlayerStats: [
+          {
+            conversions: 5,
+            playerName: "バートン",
+          },
+        ],
+        statedWinner: "away",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      hasEvents: true,
+      matchContext: {
+        awayScore: 47,
+        awayTeam: "Scotland",
+        homeScore: 38,
+        homeTeam: "Argentina",
+      },
+      matchEvents: scotlandKickerEvents,
+      narrative: recapWithTurningPoint,
+      retryCount: 0,
+    });
+
+    expect(result.result.issues).toContain(PLAYER_STAT_MISMATCH_ISSUE);
+    expect(result.result.scores.factual_grounding).toBe(1);
+    expect(result.result.verdict).toBe("retry");
+    expect(openAIMock.createTextResponse).toHaveBeenCalledTimes(
+      callCountBefore + 1,
+    );
+  });
+
+  it("does not flag player stat claims that match the actual event totals", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+        statedPlayerStats: [
+          {
+            conversions: 3,
+            penaltyGoals: 2,
+            playerName: "Takuro Matsunaga",
+            totalPoints: 17,
+            tries: 1,
+          },
+        ],
+        statedWinner: "home",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      hasEvents: true,
+      matchContext: {
+        awayScore: 10,
+        awayTeam: "Italy",
+        homeScore: 27,
+        homeTeam: "Japan",
+      },
+      matchEvents: matsunagaMatchEvents,
+      narrative: recapWithTurningPoint,
+      retryCount: 0,
+    });
+
+    expect(result.result.issues).not.toContain(PLAYER_STAT_MISMATCH_ISSUE);
+    expect(result.result.scores.factual_grounding).toBe(5);
+    expect(result.result.verdict).toBe("publish");
+  });
+
+  it("skips the player stat guard when no quantified claims are extracted", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+        statedPlayerStats: [],
+        statedWinner: "home",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      hasEvents: true,
+      matchContext,
+      matchEvents: matsunagaMatchEvents,
+      narrative: recapWithTurningPoint,
+      retryCount: 0,
+    });
+
+    expect(result.result.issues).not.toContain(PLAYER_STAT_MISMATCH_ISSUE);
+    expect(result.result.scores.factual_grounding).toBe(5);
+    expect(result.result.verdict).toBe("publish");
   });
 
   it("returns retry when tactical depth is <= 2 even if other scores pass", async () => {

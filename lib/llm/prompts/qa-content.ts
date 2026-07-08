@@ -8,7 +8,7 @@ import type {
   SourcedFactInput,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.3.0";
+export const PROMPT_VERSION = "qa@2.4.0";
 
 export type QaMatchContext = {
   awayScore: number | null;
@@ -68,6 +68,15 @@ export function buildQaContentPrompt(
           "本文に「# ターニングポイント」という見出しが含まれているかチェックすること。",
           "含まれていない場合は issues に「ターニングポイントセクションが欠落しています」を追加し、",
           "information_density のスコアを最大 3 に制限すること。",
+        ].join("\n")
+      : "";
+  const playerStatCheckBlock =
+    contentType === "recap" && hasEvents
+      ? [
+          "## 選手別得点統計チェック",
+          "本文中で、選手名とともに具体的なトライ数・コンバージョン成功数・ペナルティゴール数・合計得点のいずれかを定量的に主張している箇所を抽出し、JSONの statedPlayerStats に入れること。",
+          "該当する定量主張がない場合は statedPlayerStats を空配列にすること。",
+          "ここでは正誤判定をしない。match_events との照合はプログラム側で行う。",
         ].join("\n")
       : "";
   const sourcedFactsBlock =
@@ -133,10 +142,11 @@ export function buildQaContentPrompt(
     ].join("\n"),
     winnerCheckBlock,
     turningPointCheckBlock,
+    playerStatCheckBlock,
     sourcedFactsBlock,
     derivedStatsBlock,
     teamStatsBlock,
-    'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[],"statedWinner":"home"|"away"|"unclear"}',
+    'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[],"statedWinner":"home"|"away"|"unclear","statedPlayerStats":[{"playerName":string,"tries"?:number,"conversions"?:number,"penaltyGoals"?:number,"totalPoints"?:number}]}',
     `本文: ${narrative}`,
   ].join("\n\n");
 }
