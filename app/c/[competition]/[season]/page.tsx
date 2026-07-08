@@ -21,9 +21,14 @@ import {
   formatFamilyName,
   getCompetitionFamilyColor,
 } from "@/lib/format/competition";
+import {
+  formatKickoffJstDate,
+  formatKickoffJstTime,
+} from "@/lib/format/kickoff";
 import { groupMatchesByRound } from "@/lib/format/match-groups";
 import { SITE_URL } from "@/lib/site";
 
+import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { Metadata } from "next";
 
 type Props = {
@@ -72,6 +77,31 @@ function formatDateRange(
     .filter((date): date is string => date !== null)
     .map(formatDateJa)
     .join(" 〜 ");
+}
+
+function formatMatchKickoffJst(kickoffAt: string): string {
+  return `${formatKickoffJstDate(kickoffAt)} ${formatKickoffJstTime(kickoffAt)}`;
+}
+
+function findNextScheduledMatch(
+  matches: MatchListItem[],
+  now = new Date(),
+): MatchListItem | null {
+  const nowTime = now.getTime();
+
+  return (
+    matches
+      .filter(
+        (match) =>
+          match.status === "scheduled" &&
+          new Date(match.kickoffAt).getTime() >= nowTime,
+      )
+      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt))[0] ?? null
+  );
+}
+
+function isJapanMatch(match: MatchListItem): boolean {
+  return match.homeTeam.slug === "japan" || match.awayTeam.slug === "japan";
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -138,6 +168,13 @@ export default async function SeasonPage({ params }: Props) {
   const family = comp.family;
   const accentColor = getCompetitionFamilyColor(family);
   const pageUrl = `${SITE_URL}/c/${competition}/${season}`;
+  const competitionTitle = formatCompetitionTitle(comp, comp.season);
+  const familyTitle = formatFamilyName(family);
+  const nextMatch = findNextScheduledMatch(matches);
+  const nextJapanMatch = findNextScheduledMatch(matches.filter(isJapanMatch));
+  const nextMatchJst = nextMatch
+    ? formatMatchKickoffJst(nextMatch.kickoffAt)
+    : null;
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -151,16 +188,51 @@ export default async function SeasonPage({ params }: Props) {
       {
         "@type": "ListItem",
         item: `${SITE_URL}/c/${competition}`,
-        name: formatFamilyName(comp.family),
+        name: familyTitle,
         position: 2,
       },
       {
         "@type": "ListItem",
         item: pageUrl,
-        name: formatCompetitionTitle(comp, comp.season),
+        name: competitionTitle,
         position: 3,
       },
     ],
+  };
+  const seasonFaqs = [
+    {
+      answer: `${competitionTitle}は${dateRange ?? "開催期間未定"}に開催されます。`,
+      question: `${competitionTitle}はいつ開催されますか？`,
+    },
+    {
+      answer: "日本ではDAZN・J SPORTS 等の配信サービスで視聴できます。",
+      question: `${familyTitle}はどこで見られますか？`,
+    },
+    {
+      answer: nextMatchJst
+        ? `次の試合は${nextMatchJst}（日本時間）です。`
+        : "現在予定されている試合はありません。",
+      question: `${familyTitle}の次の試合はいつですか（日本時間）？`,
+    },
+    {
+      answer:
+        standings.length > 0
+          ? "このページ上部の順位表で最新順位を確認できます。"
+          : "このシーズンの順位表はまだ確定していません。",
+      question: `${familyTitle}の順位表はどこで見られますか？`,
+    },
+  ];
+  const seasonFaqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: seasonFaqs.map((faq) => ({
+      "@type": "Question",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+      name: faq.question,
+    })),
   };
 
   return (
@@ -168,6 +240,12 @@ export default async function SeasonPage({ params }: Props) {
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbJsonLd),
+        }}
+        type="application/ld+json"
+      />
+      <script
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(seasonFaqJsonLd),
         }}
         type="application/ld+json"
       />
@@ -208,6 +286,23 @@ export default async function SeasonPage({ params }: Props) {
         <div id="standings">
           <StandingsTable standings={standings} />
         </div>
+
+        {nextJapanMatch && (
+          <Link
+            className="block rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 p-5 transition-colors hover:border-[var(--color-accent)]/60"
+            href={`/matches/${nextJapanMatch.id}`}
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+              日本代表の次戦
+            </p>
+            <p className="mt-2 text-lg font-bold text-[var(--color-ink)]">
+              {nextJapanMatch.homeTeam.name} vs {nextJapanMatch.awayTeam.name}
+            </p>
+            <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+              {formatMatchKickoffJst(nextJapanMatch.kickoffAt)}
+            </p>
+          </Link>
+        )}
 
         {matches.length === 0 ? (
           <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
