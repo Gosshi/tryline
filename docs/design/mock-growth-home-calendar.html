@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tryline growth home/calendar mock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #f6f2ea;
+      --surface: #fffdf8;
+      --ink: #151817;
+      --muted: #68716e;
+      --line: #ded6c8;
+      --accent: #c93a3a;
+      --green: #1f6f66;
+      --gold: #b98432;
+      --blue: #173c74;
+      --charcoal: #202626;
+      --shadow: 0 24px 70px rgba(21, 24, 23, 0.12);
+      --serif: "Shippori Mincho", serif;
+      --sans: "Zen Kaku Gothic New", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(21, 24, 23, 0.92), rgba(21, 24, 23, 0.78) 460px, var(--paper) 460px),
+        var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .site {
+      min-height: 100vh;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(21, 24, 23, 0.86);
+      color: white;
+      backdrop-filter: blur(18px);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 16px 24px;
+    }
+
+    .brand {
+      font-family: var(--serif);
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand span {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .nav-cta {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      padding: 9px 14px;
+      color: white;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      color: white;
+    }
+
+    .hero::before {
+      position: absolute;
+      inset: 0;
+      content: "";
+      background:
+        linear-gradient(90deg, rgba(21, 24, 23, 0.98), rgba(21, 24, 23, 0.8) 42%, rgba(21, 24, 23, 0.42)),
+        url("../../public/visuals/home-hero.jpg") center / cover;
+      opacity: 0.9;
+    }
+
+    .hero::after {
+      position: absolute;
+      inset: auto 0 0;
+      height: 160px;
+      content: "";
+      background: linear-gradient(180deg, rgba(21, 24, 23, 0), var(--paper));
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 420px;
+      gap: 48px;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 74px 24px 88px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 18px;
+      color: #f0c28c;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 34px;
+      height: 2px;
+      content: "";
+      background: var(--accent);
+    }
+
+    h1 {
+      max-width: 720px;
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(44px, 7vw, 88px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.08;
+    }
+
+    .hero-copy {
+      max-width: 620px;
+      margin: 26px 0 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 1.95;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border-radius: 999px;
+      padding: 0 18px;
+      font-size: 14px;
+      font-weight: 900;
+      transition: transform 0.16s ease, opacity 0.16s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button.primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .button.secondary {
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: white;
+    }
+
+    .matchday-panel {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, 0.94);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px solid var(--line);
+      padding: 18px 18px 14px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .panel-date {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .featured-match {
+      padding: 18px;
+    }
+
+    .league-pill {
+      display: inline-flex;
+      border-radius: 999px;
+      background: rgba(31, 111, 102, 0.12);
+      padding: 5px 10px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .fixture {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .team {
+      min-width: 0;
+    }
+
+    .team.away {
+      text-align: right;
+    }
+
+    .team-name {
+      display: block;
+      overflow: hidden;
+      font-size: 21px;
+      font-weight: 900;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .team-note {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .versus {
+      display: grid;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: white;
+      color: var(--accent);
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .match-meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+      padding: 10px;
+    }
+
+    .metric b {
+      display: block;
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .quick-list {
+      border-top: 1px solid var(--line);
+      padding: 0 18px 10px;
+    }
+
+    .quick-match {
+      display: grid;
+      grid-template-columns: 58px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      padding: 13px 0;
+      font-size: 13px;
+    }
+
+    .quick-match:last-child {
+      border-bottom: 0;
+    }
+
+    .time {
+      color: var(--accent);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .badge {
+      border-radius: 999px;
+      background: #ece6da;
+      padding: 4px 9px;
+      color: #6f6558;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .content {
+      max-width: 1180px;
+      margin: -38px auto 0;
+      padding: 0 24px 80px;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .band {
+      position: relative;
+      z-index: 2;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .calendar-band {
+      padding: 0;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      border-bottom: 1px solid var(--line);
+      padding: 22px 24px 18px;
+    }
+
+    h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+    }
+
+    .section-sub {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .week-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #f2ece1;
+    }
+
+    .week-tabs span {
+      border-radius: 999px;
+      padding: 7px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .week-tabs .active {
+      background: var(--ink);
+      color: white;
+    }
+
+    .calendar-list {
+      padding: 8px 0;
+    }
+
+    .calendar-row {
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr) 112px;
+      align-items: center;
+      gap: 16px;
+      padding: 17px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .calendar-row:last-child {
+      border-bottom: 0;
+    }
+
+    .calendar-row.highlight {
+      background: linear-gradient(90deg, rgba(201, 58, 58, 0.09), rgba(255, 253, 248, 0));
+    }
+
+    .kickoff b {
+      display: block;
+      color: var(--accent);
+      font-size: 20px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .kickoff span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .match-title {
+      min-width: 0;
+    }
+
+    .match-title strong {
+      display: block;
+      overflow-wrap: anywhere;
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1.45;
+    }
+
+    .match-title span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .action-pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: white;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .action-pill.hot {
+      border-color: rgba(201, 58, 58, 0.35);
+      background: rgba(201, 58, 58, 0.1);
+      color: var(--accent);
+    }
+
+    .side-stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .focus-card {
+      overflow: hidden;
+      color: white;
+      background: var(--charcoal);
+    }
+
+    .focus-visual {
+      min-height: 148px;
+      background:
+        linear-gradient(180deg, rgba(21, 24, 23, 0.04), rgba(21, 24, 23, 0.96)),
+        url("../../public/visuals/pnc.jpg") center / cover;
+    }
+
+    .focus-body {
+      padding: 18px;
+    }
+
+    .focus-body h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 26px;
+      line-height: 1.25;
+    }
+
+    .focus-body p {
+      margin: 12px 0 0;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.75;
+    }
+
+    .focus-link {
+      display: inline-flex;
+      margin-top: 16px;
+      color: #f0c28c;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .stat-strip div {
+      padding: 14px;
+      border-right: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .stat-strip div:last-child {
+      border-right: 0;
+    }
+
+    .stat-strip b {
+      display: block;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .stat-strip span {
+      display: block;
+      margin-top: 4px;
+      color: rgba(255, 255, 255, 0.58);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .review-card {
+      padding: 18px;
+    }
+
+    .review-score {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .review-score strong {
+      font-family: var(--serif);
+      font-size: 36px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .review-card h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.45;
+    }
+
+    .review-card p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.8;
+    }
+
+    .lower-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .hub-card {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      overflow: hidden;
+    }
+
+    .hub-image {
+      min-height: 100%;
+      background: url("../../public/visuals/six-nations.jpg") center / cover;
+    }
+
+    .hub-card:nth-child(2) .hub-image {
+      background-image: url("../../public/visuals/match-detail-bg.jpg");
+    }
+
+    .hub-body {
+      padding: 22px;
+    }
+
+    .hub-body h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 27px;
+      line-height: 1.25;
+    }
+
+    .hub-body p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.8;
+    }
+
+    .hub-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .small-chip {
+      border-radius: 999px;
+      background: #efe7da;
+      padding: 6px 10px;
+      color: #6b6154;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .conversion {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 24px;
+      margin-top: 24px;
+      padding: 24px;
+      background: var(--ink);
+      color: white;
+    }
+
+    .conversion h2 {
+      max-width: 620px;
+      color: white;
+    }
+
+    .conversion p {
+      max-width: 660px;
+      margin: 12px 0 0;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 14px;
+      line-height: 1.85;
+    }
+
+    .sample-box {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.07);
+      padding: 16px;
+    }
+
+    .sample-box b {
+      display: block;
+      color: #f0c28c;
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .sample-box p {
+      margin-top: 12px;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    @media (max-width: 920px) {
+      .hero-inner,
+      .section-grid,
+      .lower-grid,
+      .conversion {
+        grid-template-columns: 1fr;
+      }
+
+      .content {
+        margin-top: -22px;
+      }
+
+      .hero-inner {
+        padding-top: 48px;
+      }
+
+      .matchday-panel {
+        max-width: 560px;
+      }
+
+      .hub-card {
+        grid-template-columns: 140px 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .nav-inner {
+        padding: 14px 16px;
+      }
+
+      .nav-links a:not(.nav-cta) {
+        display: none;
+      }
+
+      .hero-inner,
+      .content {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .hero-inner {
+        gap: 30px;
+        padding-bottom: 56px;
+      }
+
+      .hero-copy {
+        font-size: 14px;
+      }
+
+      .panel-head,
+      .section-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .match-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .fixture {
+        grid-template-columns: 1fr;
+      }
+
+      .team.away {
+        text-align: left;
+      }
+
+      .versus {
+        width: 42px;
+        height: 42px;
+      }
+
+      .quick-match {
+        grid-template-columns: 52px 1fr;
+      }
+
+      .quick-match .badge {
+        grid-column: 2;
+        justify-self: start;
+      }
+
+      .calendar-row {
+        grid-template-columns: 72px minmax(0, 1fr);
+        padding: 16px;
+      }
+
+      .row-actions {
+        grid-column: 2;
+        justify-content: flex-start;
+      }
+
+      .hub-card {
+        grid-template-columns: 1fr;
+      }
+
+      .hub-image {
+        min-height: 150px;
+      }
+
+      h2 {
+        font-size: 27px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="site">
+    <header class="nav">
+      <div class="nav-inner">
+        <a class="brand" href="#">Try<span>line</span></a>
+        <nav class="nav-links" aria-label="主要ナビゲーション">
+          <a href="#">今週の試合</a>
+          <a href="#">大会</a>
+          <a href="#">レビュー</a>
+          <a class="nav-cta" href="#">7日間無料</a>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-inner">
+        <div>
+          <p class="eyebrow">Rugby matchday in Japanese</p>
+          <h1>今週の海外ラグビーを、日本時間で追う。</h1>
+          <p class="hero-copy">
+            PNC、Six Nations、Premiership、URC。週末に重なる試合を、日程、結果、順位、日本語レビューまでひとつの流れで確認できます。
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#">今週の試合を見る</a>
+            <a class="button secondary" href="#">無料レビューを読む</a>
+          </div>
+        </div>
+
+        <aside class="matchday-panel" aria-label="今週の注目試合">
+          <div class="panel-head">
+            <p class="panel-title">Matchday board</p>
+            <span class="panel-date">7月第2週</span>
+          </div>
+          <div class="featured-match">
+            <span class="league-pill">Pacific Nations Cup 2026</span>
+            <div class="fixture">
+              <div class="team">
+                <span class="team-name">日本</span>
+                <span class="team-note">Japan</span>
+              </div>
+              <div class="versus">vs</div>
+              <div class="team away">
+                <span class="team-name">フィジー</span>
+                <span class="team-note">Fiji</span>
+              </div>
+            </div>
+            <div class="match-meta">
+              <div class="metric"><b>19:10</b><span>JST kickoff</span></div>
+              <div class="metric"><b>2位</b><span>プール順位</span></div>
+              <div class="metric"><b>公開</b><span>プレビュー</span></div>
+            </div>
+          </div>
+          <div class="quick-list">
+            <div class="quick-match">
+              <span class="time">16:10</span>
+              <strong>NZ vs フランス</strong>
+              <span class="badge">レビューあり</span>
+            </div>
+            <div class="quick-match">
+              <span class="time">22:10</span>
+              <strong>豪州 vs アイルランド</strong>
+              <span class="badge">注目</span>
+            </div>
+            <div class="quick-match">
+              <span class="time">翌4:10</span>
+              <strong>アルゼンチン vs スコットランド</strong>
+              <span class="badge">プレビュー</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <main class="content">
+      <div class="section-grid">
+        <section class="band calendar-band">
+          <div class="section-head">
+            <div>
+              <h2>今週の試合</h2>
+              <p class="section-sub">全大会横断、JST表示。レビュー公開状況まで一画面で確認。</p>
+            </div>
+            <div class="week-tabs" aria-label="週ナビゲーション">
+              <span>前週</span>
+              <span class="active">今週</span>
+              <span>翌週</span>
+            </div>
+          </div>
+          <div class="calendar-list">
+            <div class="calendar-row highlight">
+              <div class="kickoff"><b>19:10</b><span>7/11 Sat</span></div>
+              <div class="match-title">
+                <strong>日本 vs フィジー</strong>
+                <span>Pacific Nations Cup 2026 · 日本代表の次戦</span>
+              </div>
+              <div class="row-actions">
+                <span class="action-pill hot">注目</span>
+                <span class="action-pill">プレビュー</span>
+              </div>
+            </div>
+            <div class="calendar-row">
+              <div class="kickoff"><b>21:40</b><span>7/11 Sat</span></div>
+              <div class="match-title">
+                <strong>サモア vs トンガ</strong>
+                <span>Pacific Nations Cup 2026 · 順位争い</span>
+              </div>
+              <div class="row-actions">
+                <span class="action-pill">H2H</span>
+                <span class="action-pill">試合ページ</span>
+              </div>
+            </div>
+            <div class="calendar-row">
+              <div class="kickoff"><b>翌0:40</b><span>7/12 Sun</span></div>
+              <div class="match-title">
+                <strong>南アフリカ vs アイルランド</strong>
+                <span>Nations Championship · 開幕節レビュー公開済み</span>
+              </div>
+              <div class="row-actions">
+                <span class="action-pill hot">レビュー</span>
+                <span class="action-pill">チャット</span>
+              </div>
+            </div>
+            <div class="calendar-row">
+              <div class="kickoff"><b>翌4:10</b><span>7/12 Sun</span></div>
+              <div class="match-title">
+                <strong>アルゼンチン vs スコットランド</strong>
+                <span>Nations Championship · 得点推移あり</span>
+              </div>
+              <div class="row-actions">
+                <span class="action-pill">プレビュー</span>
+                <span class="action-pill">レビュー</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side-stack">
+          <section class="band focus-card">
+            <div class="focus-visual"></div>
+            <div class="focus-body">
+              <h3>PNC 2026を追う</h3>
+              <p>検索流入が最も立ち上がっている大会。日程、順位、結果、日本代表の次戦をひとつに集約。</p>
+              <a class="focus-link" href="#">大会ページへ</a>
+            </div>
+            <div class="stat-strip">
+              <div><b>5</b><span>GSCクリック</span></div>
+              <div><b>10.3</b><span>平均順位</span></div>
+              <div><b>142</b><span>表示回数</span></div>
+            </div>
+          </section>
+
+          <section class="band review-card">
+            <div class="review-score">
+              <span class="league-pill">無料サンプル</span>
+              <strong>36-32</strong>
+            </div>
+            <h3>終盤の逆転劇を、試合の流れで読む。</h3>
+            <p>スコアだけでは分からない転換点、得点推移、順位への影響を日本語で整理します。</p>
+          </section>
+        </aside>
+      </div>
+
+      <section class="lower-grid">
+        <article class="band hub-card">
+          <div class="hub-image"></div>
+          <div class="hub-body">
+            <h3>Six Nations 2026</h3>
+            <p>順位表検索でクリック圏内。順位、結果、次節を上部にまとめる大会ハブ。</p>
+            <div class="hub-actions">
+              <span class="small-chip">順位表</span>
+              <span class="small-chip">日程</span>
+              <span class="small-chip">レビュー</span>
+            </div>
+          </div>
+        </article>
+        <article class="band hub-card">
+          <div class="hub-image"></div>
+          <div class="hub-body">
+            <h3>RWC 2027</h3>
+            <p>中長期で育てる検索資産。日本時間、出場国、開催都市、視聴方法を常設化。</p>
+            <div class="hub-actions">
+              <span class="small-chip">日本時間</span>
+              <span class="small-chip">出場国</span>
+              <span class="small-chip">FAQ</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="band conversion">
+        <div>
+          <h2>レビュー全文と試合チャットで、見逃した試合を取り戻す。</h2>
+          <p>
+            無料プレビューで見どころを確認し、試合後はレビュー全文、得点推移、AIチャットで深掘り。週末に重なる海外ラグビーを、あとからでも日本語で追える設計です。
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#">7日間無料で読む</a>
+            <a class="button secondary" href="#">サンプルを見る</a>
+          </div>
+        </div>
+        <div class="sample-box">
+          <b>Ask after match</b>
+          <p>「勝敗を分けた場面はどこ？」「日本代表の次戦にどう影響する？」「この選手はどんなタイプ？」を試合ページからそのまま質問できます。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

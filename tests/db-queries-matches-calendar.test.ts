@@ -68,7 +68,10 @@ describe("getMatchesInRange", () => {
     dbMock.contentBuilder.then.mockImplementation((resolve) =>
       Promise.resolve(
         resolve({
-          data: [{ match_id: "match-finished" }],
+          data: [
+            { content_type: "recap", match_id: "match-finished" },
+            { content_type: "preview", match_id: "match-scheduled" },
+          ],
           error: null,
         }),
       ),
@@ -80,7 +83,7 @@ describe("getMatchesInRange", () => {
     });
   });
 
-  it("returns mixed statuses in range with hasContent flags", async () => {
+  it("returns mixed statuses in range with preview and recap flags", async () => {
     dbMock.matchRows = [
       createMatchRow({
         competitionName: "Z Competition",
@@ -133,12 +136,14 @@ describe("getMatchesInRange", () => {
     ]);
     expect(matches.find((match) => match.id === "match-finished")).toMatchObject(
       {
-        hasContent: true,
+        hasPreview: false,
+        hasRecap: true,
       },
     );
     expect(matches.find((match) => match.id === "match-scheduled")).toMatchObject(
       {
-        hasContent: false,
+        hasPreview: true,
+        hasRecap: false,
       },
     );
     expect(dbMock.contentBuilder.eq).toHaveBeenCalledWith("language", "ja");

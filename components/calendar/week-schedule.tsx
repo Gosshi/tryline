@@ -13,6 +13,7 @@ import type { CalendarMatch } from "@/lib/db/queries/matches";
 type WeekScheduleProps = {
   compact?: boolean;
   emptyMessage?: string;
+  highlightMatchId?: string | null;
   matches: CalendarMatch[];
 };
 
@@ -80,17 +81,30 @@ function getMatchStateLabel(match: CalendarMatch): string {
 
 function MatchRow({
   compact,
+  isHighlighted,
   match,
 }: {
   compact: boolean;
+  isHighlighted: boolean;
   match: CalendarMatch;
 }) {
   const status = getStatusPresentation(match.status);
   const stateLabel = getMatchStateLabel(match);
+  const contentBadge = match.hasRecap
+    ? {
+        className: "bg-[var(--color-accent)]/10 text-[var(--color-accent)]",
+        label: "レビュー",
+      }
+    : match.hasPreview
+      ? { className: "bg-slate-100 text-slate-600", label: "プレビュー" }
+      : null;
+  const rowClassName = isHighlighted && !compact
+    ? "group block rounded-lg border border-[var(--color-accent)]/35 bg-gradient-to-r from-[var(--color-accent)]/10 to-white px-4 py-3 shadow-sm transition-colors hover:border-[var(--color-accent)]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+    : "group block rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]";
 
   return (
     <Link
-      className="group block rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+      className={rowClassName}
       href={`/matches/${match.id}`}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -129,9 +143,16 @@ function MatchRow({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:justify-end">
-          {match.hasContent && (
-            <span className="rounded-full bg-[var(--color-accent)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--color-accent)]">
-              解説
+          {isHighlighted && (
+            <span className="rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[10px] font-bold text-white">
+              注目
+            </span>
+          )}
+          {contentBadge && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${contentBadge.className}`}
+            >
+              {contentBadge.label}
             </span>
           )}
           {match.status !== "scheduled" && (
@@ -153,6 +174,7 @@ function MatchRow({
 export function WeekSchedule({
   compact = false,
   emptyMessage = "今週の試合はありません。",
+  highlightMatchId = null,
   matches,
 }: WeekScheduleProps) {
   if (matches.length === 0) {
@@ -200,7 +222,11 @@ export function WeekSchedule({
             <ul className="min-w-0 flex-1 space-y-2">
               {group.matches.map((match) => (
                 <li key={match.id}>
-                  <MatchRow compact={compact} match={match} />
+                  <MatchRow
+                    compact={compact}
+                    isHighlighted={match.id === highlightMatchId}
+                    match={match}
+                  />
                 </li>
               ))}
             </ul>
