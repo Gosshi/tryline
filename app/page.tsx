@@ -253,7 +253,9 @@ export default async function HomePage() {
                 <wbr />
                 を、
                 <br className="hidden sm:block" />
-                日本時間で追う。
+                日本時間
+                <wbr />
+                で追う。
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
                 PNC、Six
