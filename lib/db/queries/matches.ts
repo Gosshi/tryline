@@ -63,6 +63,7 @@ export type ReviewedFamily = {
 
 export type RecentlyReviewedMatch = MatchListItem & {
   competition: {
+    id?: string;
     family: string;
     slug: string;
     name: string;
@@ -71,6 +72,16 @@ export type RecentlyReviewedMatch = MatchListItem & {
   };
   recapGeneratedAt: string;
   recapExcerpt: string;
+};
+
+export type RecentlyReviewedCompetitionGroup = {
+  compact: RecentlyReviewedMatch[];
+  competition: RecentlyReviewedMatch["competition"];
+  hero: RecentlyReviewedMatch;
+  latestReviewAt: string;
+  poolName: string | null;
+  round: number | null;
+  roundName: string | null;
 };
 
 export type UpcomingMatch = MatchListItem & {
@@ -164,18 +175,22 @@ type BaseMatchRow = {
   venue: string | null;
   external_ids: Json;
   home_team: {
+    id?: string;
     english_name?: string | null;
     slug: string;
     name: string;
     name_ja?: string | null;
     short_code: string | null;
+    world_ranking?: number | null;
   } | null;
   away_team: {
+    id?: string;
     english_name?: string | null;
     slug: string;
     name: string;
     name_ja?: string | null;
     short_code: string | null;
+    world_ranking?: number | null;
   } | null;
 };
 
@@ -204,6 +219,7 @@ type LatestCompetitionRow = {
 
 type RecentlyReviewedMatchRow = BaseMatchRow & {
   competition: {
+    id?: string;
     family: string;
     slug: string;
     name: string;
@@ -213,12 +229,25 @@ type RecentlyReviewedMatchRow = BaseMatchRow & {
 };
 
 const RECENTLY_REVIEWED_CANDIDATE_LIMIT = 40;
+const RECENTLY_REVIEWED_ACTIVE_WINDOW_DAYS = 7;
+const RECENTLY_REVIEWED_GROUP_LIMIT = 4;
 const RECENTLY_REVIEWED_ROUND_CAP = 8;
 
 type RecentlyReviewedContentRow = {
   content_md: string;
   generated_at: string;
   match: RecentlyReviewedMatchRow | null;
+};
+
+type RecentlyReviewedEntry = {
+  match: RecentlyReviewedMatch;
+  row: RecentlyReviewedContentRow & { match: RecentlyReviewedMatchRow };
+};
+
+type StandingPositionRow = {
+  competition_id: string;
+  position: number;
+  team_id: string;
 };
 
 type RecentlyReviewedFamilyContentRow = {
@@ -328,16 +357,21 @@ const RECENTLY_REVIEWED_MATCH_SELECT = `
     venue,
     external_ids,
     home_team:teams!matches_home_team_id_fkey (
+      id,
       slug,
       name,
-      short_code
+      short_code,
+      world_ranking
     ),
     away_team:teams!matches_away_team_id_fkey (
+      id,
       slug,
       name,
-      short_code
+      short_code,
+      world_ranking
     ),
     competition:competitions!matches_competition_id_fkey (
+      id,
       family,
       slug,
       name,
@@ -614,9 +648,162 @@ export async function getLatestCompetitionWithMatches(): Promise<CompetitionSumm
   };
 }
 
-export async function getRecentlyReviewedMatches(
+function getRecentlyReviewedGroupKey(row: RecentlyReviewedMatchRow) {
+  const competition = row.competition;
+  const round = getRoundFromExternalIds(row.external_ids);
+
+  if (!competition) {
+    return null;
+  }
+
+  return [competition.family, competition.season, round ?? "roundless"].join("|");
+}
+
+function getRecentlyReviewedLevelScore(
+  entry: RecentlyReviewedEntry,
+  standingPositions: Map<string, Map<string, number>>,
+) {
+  const { match: row } = entry.row;
+  const homeRanking = row.home_team?.world_ranking ?? null;
+  const awayRanking = row.away_team?.world_ranking ?? null;
+
+  if (homeRanking !== null && awayRanking !== null) {
+    return homeRanking + awayRanking;
+  }
+
+  const competitionId = row.competition?.id;
+  const homeTeamId = row.home_team?.id;
+  const awayTeamId = row.away_team?.id;
+
+  if (!competitionId || !homeTeamId || !awayTeamId) {
+    return null;
+  }
+
+  const competitionPositions = standingPositions.get(competitionId);
+  const homePosition = competitionPositions?.get(homeTeamId) ?? null;
+  const awayPosition = competitionPositions?.get(awayTeamId) ?? null;
+
+  return homePosition !== null && awayPosition !== null
+    ? homePosition + awayPosition
+    : null;
+}
+
+function pickRecentlyReviewedHero(
+  entries: RecentlyReviewedEntry[],
+  standingPositions: Map<string, Map<string, number>>,
+) {
+  let bestEntry = entries[0] ?? null;
+  let bestScore = bestEntry
+    ? getRecentlyReviewedLevelScore(bestEntry, standingPositions)
+    : null;
+
+  for (const entry of entries.slice(1)) {
+    const score = getRecentlyReviewedLevelScore(entry, standingPositions);
+
+    if (score === null) {
+      continue;
+    }
+
+    if (bestScore === null || score < bestScore) {
+      bestEntry = entry;
+      bestScore = score;
+    }
+  }
+
+  return bestEntry ?? entries[0];
+}
+
+function buildRecentlyReviewedCompetitionGroups(
+  entries: RecentlyReviewedEntry[],
+  standingPositions: Map<string, Map<string, number>>,
+  now = new Date(),
+): RecentlyReviewedCompetitionGroup[] {
+  const activeAfterMs =
+    now.getTime() - RECENTLY_REVIEWED_ACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+  const groupsByKey = new Map<string, RecentlyReviewedEntry[]>();
+
+  for (const entry of entries) {
+    const key = getRecentlyReviewedGroupKey(entry.row.match);
+
+    if (!key) {
+      continue;
+    }
+
+    const group = groupsByKey.get(key) ?? [];
+
+    if (group.length < RECENTLY_REVIEWED_ROUND_CAP) {
+      group.push(entry);
+    }
+
+    groupsByKey.set(key, group);
+  }
+
+  return [...groupsByKey.values()]
+    .filter((entriesForGroup) => entriesForGroup.length > 0)
+    .filter((entriesForGroup) => {
+      const latestReviewAt = entriesForGroup[0]!.match.recapGeneratedAt;
+
+      return Date.parse(latestReviewAt) >= activeAfterMs;
+    })
+    .slice(0, RECENTLY_REVIEWED_GROUP_LIMIT)
+    .map((entriesForGroup) => {
+      const heroEntry = pickRecentlyReviewedHero(entriesForGroup, standingPositions);
+      const hero = heroEntry!.match;
+      const compact = entriesForGroup
+        .filter((entry) => entry.match.id !== hero.id)
+        .map((entry) => entry.match);
+
+      return {
+        compact,
+        competition: hero.competition,
+        hero,
+        latestReviewAt: entriesForGroup[0]!.match.recapGeneratedAt,
+        poolName: hero.poolName,
+        round: hero.round,
+        roundName: hero.roundName,
+      };
+    });
+}
+
+async function getStandingPositionsForRecentReviews(
+  entries: RecentlyReviewedEntry[],
+): Promise<Map<string, Map<string, number>>> {
+  const competitionIds = [
+    ...new Set(
+      entries
+        .map((entry) => entry.row.match.competition?.id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+
+  if (competitionIds.length === 0) {
+    return new Map();
+  }
+
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("competition_standings")
+    .select("competition_id, team_id, position")
+    .in("competition_id", competitionIds);
+
+  if (error) {
+    throw error;
+  }
+
+  const positionsByCompetition = new Map<string, Map<string, number>>();
+
+  for (const row of (data ?? []) as StandingPositionRow[]) {
+    const positions = positionsByCompetition.get(row.competition_id) ?? new Map<string, number>();
+    positions.set(row.team_id, row.position);
+    positionsByCompetition.set(row.competition_id, positions);
+  }
+
+  return positionsByCompetition;
+}
+
+async function getRecentlyReviewedEntries(
   language?: "ja" | "en",
-): Promise<RecentlyReviewedMatch[]> {
+): Promise<RecentlyReviewedEntry[]> {
   const client = getSupabasePublicServerClient();
   let query = client
     .from("match_content")
@@ -635,50 +822,36 @@ export async function getRecentlyReviewedMatches(
     throw error;
   }
 
-  const reviewedMatches = ((data ?? []) as RecentlyReviewedContentRow[])
+  return ((data ?? []) as RecentlyReviewedContentRow[])
     .map((row) => ({ match: mapRecentlyReviewedContentRow(row), row }))
     .filter(
       (
         entry,
-      ): entry is {
-        match: RecentlyReviewedMatch;
-        row: RecentlyReviewedContentRow;
-      } => entry.match !== null,
+      ): entry is RecentlyReviewedEntry =>
+        entry.match !== null && entry.row.match !== null,
     );
+}
 
-  const latestEntry = reviewedMatches[0];
+export async function getRecentlyReviewedCompetitionGroups(
+  language?: "ja" | "en",
+): Promise<RecentlyReviewedCompetitionGroup[]> {
+  const entries = await getRecentlyReviewedEntries(language);
 
-  if (!latestEntry) {
+  if (entries.length === 0) {
     return [];
   }
 
-  const latestMatchRow = latestEntry.row.match;
-  const latestCompetition = latestMatchRow?.competition;
-  const latestRound = latestMatchRow
-    ? getRoundFromExternalIds(latestMatchRow.external_ids)
-    : null;
+  const standingPositions = await getStandingPositionsForRecentReviews(entries);
 
-  if (!latestCompetition || latestRound === null) {
-    return [latestEntry.match];
-  }
+  return buildRecentlyReviewedCompetitionGroups(entries, standingPositions);
+}
 
-  return reviewedMatches
-    .filter(({ row }) => {
-      const match = row.match;
-      const competition = match?.competition;
+export async function getRecentlyReviewedMatches(
+  language?: "ja" | "en",
+): Promise<RecentlyReviewedMatch[]> {
+  const [firstGroup] = await getRecentlyReviewedCompetitionGroups(language);
 
-      if (!match || !competition) {
-        return false;
-      }
-
-      return (
-        competition.family === latestCompetition.family &&
-        competition.season === latestCompetition.season &&
-        getRoundFromExternalIds(match.external_ids) === latestRound
-      );
-    })
-    .map(({ match }) => match)
-    .slice(0, RECENTLY_REVIEWED_ROUND_CAP);
+  return firstGroup ? [firstGroup.hero, ...firstGroup.compact] : [];
 }
 
 export async function getRecentlyReviewedMatchById(

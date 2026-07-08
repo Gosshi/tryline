@@ -23,9 +23,9 @@ const competitionMocks = vi.hoisted(() => ({
 const matchMocks = vi.hoisted(() => ({
   getFavoriteTeamMatches: vi.fn(),
   getMatchesInRange: vi.fn(),
+  getRecentlyReviewedCompetitionGroups: vi.fn(),
   getRecentlyReviewedFamilies: vi.fn(),
   getRecentlyReviewedMatchById: vi.fn(),
-  getRecentlyReviewedMatches: vi.fn(),
   getUpcomingMatches: vi.fn(),
 }));
 
@@ -76,9 +76,10 @@ vi.mock("@/lib/db/queries/competitions", () => ({
 vi.mock("@/lib/db/queries/matches", () => ({
   getFavoriteTeamMatches: matchMocks.getFavoriteTeamMatches,
   getMatchesInRange: matchMocks.getMatchesInRange,
+  getRecentlyReviewedCompetitionGroups:
+    matchMocks.getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedFamilies: matchMocks.getRecentlyReviewedFamilies,
   getRecentlyReviewedMatchById: matchMocks.getRecentlyReviewedMatchById,
-  getRecentlyReviewedMatches: matchMocks.getRecentlyReviewedMatches,
   getUpcomingMatches: matchMocks.getUpcomingMatches,
 }));
 
@@ -93,23 +94,31 @@ describe("HomePage", () => {
       (links) => links,
     );
     matchMocks.getRecentlyReviewedFamilies.mockResolvedValue([]);
-    matchMocks.getRecentlyReviewedMatches.mockResolvedValue([
+    matchMocks.getRecentlyReviewedCompetitionGroups.mockResolvedValue([
       {
-        awayScore: 21,
-        awayTeam: {
-          name: "Recent Away",
-          shortCode: "RA",
-          slug: "recent-away",
+        compact: [],
+        competition: { family: "urc", name: "URC", season: "2025-26", slug: "urc-2025-26" },
+        hero: {
+          awayScore: 21,
+          awayTeam: {
+            name: "Recent Away",
+            shortCode: "RA",
+            slug: "recent-away",
+          },
+          competition: { family: "urc", name: "URC", season: "2025-26", slug: "urc-2025-26" },
+          homeScore: 24,
+          homeTeam: {
+            name: "Recent Home",
+            shortCode: "RH",
+            slug: "recent-home",
+          },
+          id: "recent-review-not-sample",
+          recapExcerpt: "This recent review is not the free sample.",
         },
-        competition: { name: "URC", season: "2025-26" },
-        homeScore: 24,
-        homeTeam: {
-          name: "Recent Home",
-          shortCode: "RH",
-          slug: "recent-home",
-        },
-        id: "recent-review-not-sample",
-        recapExcerpt: "This recent review is not the free sample.",
+        latestReviewAt: "2026-07-06T06:30:00.000Z",
+        poolName: null,
+        round: 1,
+        roundName: null,
       },
     ]);
     matchMocks.getRecentlyReviewedMatchById.mockResolvedValue({
@@ -146,8 +155,8 @@ describe("HomePage", () => {
       PRIMARY_SAMPLE_MATCH_ID,
       "ja",
     );
-    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenCalledWith("ja");
-    expect(matchMocks.getRecentlyReviewedMatches).toHaveBeenCalledTimes(1);
+    expect(matchMocks.getRecentlyReviewedCompetitionGroups).toHaveBeenCalledWith("ja");
+    expect(matchMocks.getRecentlyReviewedCompetitionGroups).toHaveBeenCalledTimes(1);
 
     for (const link of screen.getAllByRole("link", {
       name: /無料サンプルを読む/,
@@ -164,6 +173,104 @@ describe("HomePage", () => {
     expect(
       screen.getByRole("link", { name: "今週の試合を見る" }),
     ).toHaveAttribute("href", "/calendar");
+  });
+
+  it("renders multiple recent review competition blocks", async () => {
+    matchMocks.getRecentlyReviewedCompetitionGroups.mockResolvedValue([
+      {
+        compact: [
+          {
+            awayScore: 18,
+            awayTeam: { name: "France", shortCode: "FRA", slug: "france" },
+            competition: {
+              family: "nations-championship",
+              name: "Nations Championship",
+              season: "2026",
+              slug: "nations-championship-2026",
+            },
+            homeScore: 26,
+            homeTeam: {
+              name: "New Zealand",
+              shortCode: "NZL",
+              slug: "new-zealand",
+            },
+            id: "nz-france-compact",
+            recapExcerpt: "compact",
+          },
+        ],
+        competition: {
+          family: "nations-championship",
+          name: "Nations Championship",
+          season: "2026",
+          slug: "nations-championship-2026",
+        },
+        hero: {
+          awayScore: 17,
+          awayTeam: { name: "England", shortCode: "ENG", slug: "england" },
+          competition: {
+            family: "nations-championship",
+            name: "Nations Championship",
+            season: "2026",
+            slug: "nations-championship-2026",
+          },
+          homeScore: 24,
+          homeTeam: {
+            name: "South Africa",
+            shortCode: "RSA",
+            slug: "south-africa",
+          },
+          id: "sa-england-hero",
+          recapExcerpt: "hero",
+        },
+        latestReviewAt: "2026-07-06T06:30:00.000Z",
+        poolName: null,
+        round: 1,
+        roundName: null,
+      },
+      {
+        compact: [],
+        competition: {
+          family: "super-rugby-pacific",
+          name: "Super Rugby Pacific",
+          season: "2026",
+          slug: "super-rugby-pacific-2026",
+        },
+        hero: {
+          awayScore: 21,
+          awayTeam: { name: "Chiefs", shortCode: "CHI", slug: "chiefs" },
+          competition: {
+            family: "super-rugby-pacific",
+            name: "Super Rugby Pacific",
+            season: "2026",
+            slug: "super-rugby-pacific-2026",
+          },
+          homeScore: 31,
+          homeTeam: {
+            name: "Hurricanes",
+            shortCode: "HUR",
+            slug: "hurricanes",
+          },
+          id: "srp-hero",
+          recapExcerpt: "srp",
+        },
+        latestReviewAt: "2026-07-05T06:30:00.000Z",
+        poolName: null,
+        round: 12,
+        roundName: null,
+      },
+    ]);
+
+    render(await HomePage());
+
+    expect(
+      screen.getByRole("link", { name: /South Africa[\s\S]*England/ }),
+    ).toHaveAttribute("href", "/matches/sa-england-hero");
+    expect(
+      screen.getByRole("link", { name: /Hurricanes[\s\S]*Chiefs/ }),
+    ).toHaveAttribute("href", "/matches/srp-hero");
+    expect(
+      screen.getByRole("link", { name: /NZL[\s\S]*26–18[\s\S]*FRA/ }),
+    ).toHaveAttribute("href", "/matches/nz-france-compact");
   });
 
   it("keeps the RWC archive card on 2023 while adding the 2027 schedule link", async () => {
