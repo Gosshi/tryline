@@ -228,7 +228,7 @@ describe("HomePage", () => {
         `/matches/${PRIMARY_SAMPLE_MATCH_ID}`,
       );
     }
-    expect(screen.getAllByText("Northampton vs Gloucester").length).toBe(1);
+    expect(screen.getAllByText("Northampton 対 Gloucester").length).toBe(1);
     expect(
       screen.getAllByText("これは無料で読めるレビュー本文です。").length,
     ).toBe(1);

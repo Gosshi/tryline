@@ -323,7 +323,7 @@ export default async function HomePage() {
                 )}
               </p>
               <p className="mt-0.5 text-sm font-bold text-[var(--color-ink)]">
-                {sampleMatch.homeTeam.name} vs {sampleMatch.awayTeam.name}
+                {sampleMatch.homeTeam.name} 対 {sampleMatch.awayTeam.name}
               </p>
             </div>
             <div className="mx-5 my-4 border-l-4 border-[var(--color-accent)] pl-4">
@@ -474,7 +474,7 @@ export default async function HomePage() {
                             {match.homeTeam.shortCode}
                           </span>
                           <span className="shrink-0 font-normal text-slate-400">
-                            vs
+                            対
                           </span>
                           <TeamBadge
                             shortCode={match.awayTeam.shortCode}

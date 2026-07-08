@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const matches = await getRoundMatches(competition, season, roundNumber);
   const matchSummary = matches
     .slice(0, 3)
-    .map((match) => `${match.homeTeam.name} vs ${match.awayTeam.name}`)
+    .map((match) => `${match.homeTeam.name} 対 ${match.awayTeam.name}`)
     .join("、");
   const description = `${competitionTitle} ${roundLabel}の全試合の結果・スコア・日本語レビュー。${matchSummary}。`;
   const url = `${SITE_URL}/c/${competition}/${season}/round/${roundNumber}`;

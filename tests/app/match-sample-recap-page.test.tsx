@@ -376,8 +376,12 @@ describe("match sample recap page", () => {
       params: Promise.resolve({ id: sampleMatchId }),
     });
 
+    expect(metadata.title).toBe(
+      "スコットランド 対 ポルトガル — ラグビーワールドカップ 2027",
+    );
     expect(metadata.description).toContain("Rugby World Cup 2027 Pool D");
     expect(metadata.description).toContain("スコットランド");
     expect(metadata.description).toContain("ポルトガル");
+    expect(String(metadata.description)).not.toContain("vs");
   });
 });

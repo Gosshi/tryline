@@ -243,7 +243,7 @@ export default async function PricingPage() {
                   )}
                 </p>
                 <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
-                  {sample.homeTeam.name} vs {sample.awayTeam.name}
+                  {sample.homeTeam.name} 対 {sample.awayTeam.name}
                 </p>
                 <p className="mt-4 max-h-32 overflow-hidden text-sm leading-7 text-[var(--color-ink-muted)]">
                   {sample.recapExcerpt}

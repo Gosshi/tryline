@@ -170,7 +170,7 @@ export default async function PlayerPage({ params }: Props) {
                   </time>
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-[var(--color-ink)]">
-                      {match.homeTeamName} vs {match.awayTeamName}
+                      {match.homeTeamName} 対 {match.awayTeamName}
                     </p>
                     <p className="mt-1 truncate text-xs text-[var(--color-ink-muted)]">
                       {formatCompetitionTitle(

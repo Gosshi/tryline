@@ -67,7 +67,7 @@ function MatchMiniRow({ match }: { match: CalendarMatch }) {
         </p>
         <p className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden text-xs font-bold text-white">
           <span className="truncate">{match.homeTeam.shortCode}</span>
-          <span className="shrink-0 text-white/35">vs</span>
+          <span className="shrink-0 text-white/35">対</span>
           <span className="truncate">{match.awayTeam.shortCode}</span>
         </p>
       </div>
@@ -145,7 +145,7 @@ export function HomeMatchdayBoard({
             </p>
           </div>
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-[var(--color-ink)] shadow-sm">
-            vs
+            対
           </span>
           <div className="min-w-0 text-left">
             <p className="flex min-w-0 items-center gap-2 overflow-hidden text-base font-black leading-tight">
