@@ -104,6 +104,49 @@ const PNC_PARSOID_HTML = `
 <div class="mw-heading mw-heading2"><h2 id="References">References</h2></div>
 `;
 
+const PNC_CONDENSED_2026_HTML = `
+<div class="mw-heading mw-heading2"><h2 id="Bracket">Bracket</h2></div>
+<div class="mw-heading mw-heading3"><h3 id="Semi-finals">Semi-finals</h3></div>
+<div class="vevent summary" id="Fiji_v_Canada">
+  <table><tbody><tr><td>12 September 2026<br />16:00 JST (UTC+09)</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Fiji</a></span></td>
+    <td>v</td>
+    <td class="vcard"><span class="fn org"><a>Canada</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Hanazono Rugby Stadium, Higashiōsaka</span></td></tr></tbody></table>
+</div>
+<div class="vevent summary" id="Japan_v_United_States">
+  <table><tbody><tr><td>12 September 2026<br />19:05 JST (UTC+09)</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>Japan</a></span></td>
+    <td>v</td>
+    <td class="vcard"><span class="fn org"><a>United States</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Hanazono Rugby Stadium, Higashiōsaka</span></td></tr></tbody></table>
+</div>
+<div class="mw-heading mw-heading3"><h3 id="Third_place_play-off">Third place play-off</h3></div>
+<div class="vevent summary" id="Loser_SF1_v_Loser_SF2">
+  <table><tbody><tr><td>19 September 2026<br />16:00 JST (UTC+09)</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org">Loser SF1</span></td>
+    <td>v</td>
+    <td class="vcard"><span class="fn org">Loser SF2</span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Chichibunomiya Rugby Stadium, Tokyo</span></td></tr></tbody></table>
+</div>
+<div class="mw-heading mw-heading3"><h3 id="Grand_Final">Grand Final</h3></div>
+<div class="vevent summary" id="Winner_SF1_v_Winner_SF2">
+  <table><tbody><tr><td>19 September 2026<br />19:05 JST (UTC+09)</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org">Winner SF1</span></td>
+    <td>v</td>
+    <td class="vcard"><span class="fn org">Winner SF2</span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Chichibunomiya Rugby Stadium, Tokyo</span></td></tr></tbody></table>
+</div>
+`;
+
 const NATIONS_CHAMPIONSHIP_HTML = `
 <div class="mw-heading mw-heading2"><h2 id="Fixtures">Fixtures</h2></div>
 <div class="mw-heading mw-heading3"><h3 id="Southern_Hemisphere_Series">Southern Hemisphere Series</h3></div>
@@ -479,6 +522,27 @@ describe("live competition source adapters", () => {
     expect(matches[0]).toMatchObject({
       awayTeamSlug: "fiji",
       homeTeamSlug: "japan",
+      round: 1,
+      status: "scheduled",
+    });
+  });
+
+  it("parses Nations Cup 2026 condensed semi-finals and skips unresolved finals placeholders", () => {
+    const matches = parsePncLiveHtml(PNC_CONDENSED_2026_HTML);
+
+    expect(matches).toHaveLength(2);
+    expect(matches[0]).toMatchObject({
+      awayTeamSlug: "canada",
+      homeTeamSlug: "fiji",
+      kickoffAt: "2026-09-12T07:00:00.000Z",
+      round: 1,
+      status: "scheduled",
+      venue: "Hanazono Rugby Stadium, Higashiōsaka",
+    });
+    expect(matches[1]).toMatchObject({
+      awayTeamSlug: "usa",
+      homeTeamSlug: "japan",
+      kickoffAt: "2026-09-12T10:05:00.000Z",
       round: 1,
       status: "scheduled",
     });

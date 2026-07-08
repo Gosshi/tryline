@@ -28,6 +28,11 @@ const FINALS_ROUNDS: Record<string, number> = {
   Grand_Final: 6,
   "Semi-finals": 4,
 };
+const CONDENSED_FORMAT_ROUNDS: Record<string, number> = {
+  Grand_Final: 2,
+  "Semi-finals": 1,
+  "Third_place_play-off": 2,
+};
 
 type SectionVevent = {
   html: string;
@@ -115,11 +120,13 @@ function buildRoundHeading(round: number) {
 function wrapVeventsWithFixturesSection(html: string) {
   const $ = load(html);
   const roundBlocks = new Map<number, string[]>();
+  let poolBlockCount = 0;
 
   for (const sectionId of POOL_SECTION_IDS) {
     const blocks = collectSectionVevents($, sectionId).sort(
       (a, b) => a.kickoffTime - b.kickoffTime,
     );
+    poolBlockCount += blocks.length;
 
     blocks.forEach((block, index) => {
       const round = index + 1;
@@ -127,7 +134,10 @@ function wrapVeventsWithFixturesSection(html: string) {
     });
   }
 
-  for (const [sectionId, round] of Object.entries(FINALS_ROUNDS)) {
+  const sectionRounds =
+    poolBlockCount > 0 ? FINALS_ROUNDS : CONDENSED_FORMAT_ROUNDS;
+
+  for (const [sectionId, round] of Object.entries(sectionRounds)) {
     const blocks = collectSectionVevents($, sectionId);
 
     if (blocks.length > 0) {
