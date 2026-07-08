@@ -324,7 +324,7 @@ export function MatchChat({
           <p className="mb-3 text-sm font-semibold text-slate-700">
             1問使用済み。続きは Premium で
           </p>
-          <Paywall isPremium={false}>
+          <Paywall contentType="chat" isPremium={false} matchId={matchId}>
             <MatchChatPanel disabled matchId={matchId} />
           </Paywall>
           {showSamples && <SampleQaList />}
