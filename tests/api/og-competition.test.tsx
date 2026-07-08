@@ -7,7 +7,6 @@ const ogMocks = vi.hoisted(() => ({
 const dbMock = vi.hoisted(() => ({
   filters: [] as Array<[string, unknown]>,
   notFilters: [] as Array<[string, string, unknown]>,
-  rawFilters: [] as Array<[string, string, unknown]>,
   rows: [] as unknown[],
   selects: [] as string[],
 }));
@@ -32,10 +31,6 @@ vi.mock("@/lib/db/public-server", () => ({
           dbMock.filters.push([column, value]);
           return this;
         },
-        filter(column: string, operator: string, value: unknown) {
-          dbMock.rawFilters.push([column, operator, value]);
-          return this;
-        },
         not(column: string, operator: string, value: unknown) {
           dbMock.notFilters.push([column, operator, value]);
           return this;
@@ -58,7 +53,6 @@ describe("/api/og competition images", () => {
   beforeEach(() => {
     dbMock.filters = [];
     dbMock.notFilters = [];
-    dbMock.rawFilters = [];
     dbMock.rows = [];
     dbMock.selects = [];
     ogMocks.imageResponse.mockClear();
@@ -124,13 +118,14 @@ describe("/api/og competition images", () => {
       ["competition_id", "competition-1"],
       ["status", "finished"],
     ]);
-    expect(dbMock.rawFilters).toEqual([["round", "eq", 3]]);
+    expect(dbMock.selects[0]).toContain("external_ids");
   });
 
   it("builds a round scoreboard from match scores without event data", async () => {
     dbMock.rows = [
-      roundMatch("match-1", "Bath", "Saracens", 24, 18),
-      roundMatch("match-2", "Leicester", "Sale", 17, 21),
+      roundMatch("match-1", "Bath", "Saracens", 24, 18, 4),
+      roundMatch("match-2", "Leicester", "Sale", 17, 21, "4"),
+      roundMatch("match-3", "Exeter", "Gloucester", 30, 12, 5),
     ];
 
     const { GET } = await import("@/app/api/og/route");
@@ -146,6 +141,10 @@ describe("/api/og competition images", () => {
       ["home_score", "is", null],
       ["away_score", "is", null],
     ]);
+    expect(dbMock.filters).toEqual([
+      ["competition_id", "competition-1"],
+      ["status", "finished"],
+    ]);
     expect(ogMocks.imageResponse).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ height: 630, width: 1200 }),
@@ -160,6 +159,7 @@ describe("/api/og competition images", () => {
         `Away Team ${index + 1}`,
         20 + index,
         10 + index,
+        5,
       ),
     );
 
@@ -184,6 +184,7 @@ function roundMatch(
   awayName: string,
   homeScore: number,
   awayScore: number,
+  round = 4 as number | string,
 ) {
   return {
     away_score: awayScore,
@@ -193,6 +194,7 @@ function roundMatch(
       name_ja: null,
       season: "2025-26",
     },
+    external_ids: { wikipedia_round: round },
     home_score: homeScore,
     home_team: { name: homeName, short_code: homeName.slice(0, 3) },
     id,

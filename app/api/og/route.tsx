@@ -3,6 +3,8 @@ import { ImageResponse } from "@vercel/og";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 
+import type { Json } from "@/lib/db/types";
+
 export const runtime = "edge";
 
 function truncate(value: string, maxLength: number): string {
@@ -21,6 +23,7 @@ type RoundScoreboardMatchRow = {
     name_ja: string | null;
     season: string;
   } | null;
+  external_ids: Json;
   home_score: number | null;
   home_team: { name: string; short_code: string | null } | null;
   id: string;
@@ -37,6 +40,28 @@ function parseRound(value: string | null): number | null {
   return Number.isSafeInteger(round) ? round : null;
 }
 
+function getRoundFromExternalIds(externalIds: Json): number | null {
+  if (
+    !externalIds ||
+    typeof externalIds !== "object" ||
+    Array.isArray(externalIds)
+  ) {
+    return null;
+  }
+
+  const round = externalIds.round ?? externalIds.wikipedia_round;
+
+  if (typeof round === "number" && Number.isInteger(round)) {
+    return round;
+  }
+
+  if (typeof round === "string" && /^\d+$/.test(round.trim())) {
+    return Number.parseInt(round, 10);
+  }
+
+  return null;
+}
+
 async function loadRoundScoreboardMatches(
   competitionId: string,
   round: number,
@@ -50,13 +75,13 @@ async function loadRoundScoreboardMatches(
         kickoff_at,
         home_score,
         away_score,
+        external_ids,
         home_team:teams!matches_home_team_id_fkey(name, short_code),
         away_team:teams!matches_away_team_id_fkey(name, short_code),
         competition:competitions!matches_competition_id_fkey(name, name_ja, season)
       `,
     )
     .eq("competition_id", competitionId)
-    .filter("round", "eq", round)
     .eq("status", "finished")
     .not("home_score", "is", null)
     .not("away_score", "is", null)
@@ -66,7 +91,9 @@ async function loadRoundScoreboardMatches(
     throw error;
   }
 
-  return (data ?? []) as RoundScoreboardMatchRow[];
+  return ((data ?? []) as RoundScoreboardMatchRow[]).filter(
+    (match) => getRoundFromExternalIds(match.external_ids) === round,
+  );
 }
 
 export async function GET(request: Request) {
