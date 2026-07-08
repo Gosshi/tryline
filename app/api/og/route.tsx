@@ -6,6 +6,10 @@ function truncate(value: string, maxLength: number): string {
   return value.length > maxLength ? `${value.slice(0, maxLength - 1)}…` : value;
 }
 
+function sanitizeAccentColor(value: string | null): string {
+  return value && /^#[0-9a-f]{3,8}$/i.test(value) ? value : "#c93a3a";
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const interFont = await fetch(
@@ -36,6 +40,119 @@ export async function GET(request: Request) {
     )}`;
   } catch {
     bgDataUri = null;
+  }
+
+  if (searchParams.get("type") === "competition") {
+    const familyName = truncate(searchParams.get("family_name") ?? "Rugby", 42);
+    const seasonLabel = truncate(searchParams.get("season") ?? "", 16);
+    const accentColor = sanitizeAccentColor(searchParams.get("accent"));
+
+    return new ImageResponse(
+      <div
+        style={{
+          alignItems: "center",
+          background: `linear-gradient(135deg, #111827 0%, ${accentColor} 145%)`,
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          fontFamily: "Inter, Geist, sans-serif",
+          height: "630px",
+          justifyContent: "center",
+          overflow: "hidden",
+          padding: "64px 80px",
+          position: "relative",
+          width: "1200px",
+        }}
+      >
+        <div
+          style={{
+            background:
+              "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18), transparent 34%), radial-gradient(circle at 80% 0%, rgba(255,255,255,0.12), transparent 30%)",
+            display: "flex",
+            inset: 0,
+            position: "absolute",
+          }}
+        />
+        <div
+          style={{
+            border: "1px solid rgba(255,255,255,0.18)",
+            borderRadius: "9999px",
+            color: "rgba(255,255,255,0.74)",
+            display: "flex",
+            fontSize: "24px",
+            fontWeight: 800,
+            letterSpacing: "0.14em",
+            padding: "10px 22px",
+            position: "absolute",
+            right: 72,
+            top: 58,
+          }}
+        >
+          TRYLINE
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            maxWidth: "980px",
+            position: "relative",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              color: "white",
+              display: "flex",
+              fontSize: familyName.length > 28 ? "64px" : "76px",
+              fontWeight: 800,
+              justifyContent: "center",
+              lineHeight: 1.05,
+              textAlign: "center",
+            }}
+          >
+            {familyName}
+          </div>
+          {seasonLabel && (
+            <div
+              style={{
+                color: "rgba(255,255,255,0.72)",
+                display: "flex",
+                fontSize: "38px",
+                fontWeight: 700,
+                justifyContent: "center",
+                marginTop: "20px",
+              }}
+            >
+              {seasonLabel}
+            </div>
+          )}
+        </div>
+        <div
+          style={{
+            bottom: 52,
+            color: "rgba(255,255,255,0.54)",
+            display: "flex",
+            fontSize: "24px",
+            fontWeight: 700,
+            position: "absolute",
+          }}
+        >
+          trylinerugby.com
+        </div>
+      </div>,
+      {
+        fonts: [
+          {
+            data: fontData,
+            name: fontName,
+            style: "normal",
+            weight: 700,
+          },
+        ],
+        height: 630,
+        width: 1200,
+      },
+    );
   }
 
   const home = truncate(searchParams.get("home") ?? "Home", 20);

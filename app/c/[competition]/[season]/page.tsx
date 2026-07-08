@@ -26,6 +26,7 @@ import {
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
 import { groupMatchesByRound } from "@/lib/format/match-groups";
+import { createCompetitionOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
@@ -122,11 +123,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       description,
       images: [
-        {
-          height: 630,
-          url: `${SITE_URL}/og-image.png`,
-          width: 1200,
-        },
+        createCompetitionOgImage({
+          accentColor: getCompetitionFamilyColor(comp.family),
+          familyName: formatFamilyName(comp.family),
+          season: comp.season,
+        }),
       ],
       title: `${title} | Tryline`,
       type: "website",

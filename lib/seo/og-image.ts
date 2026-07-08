@@ -27,3 +27,28 @@ export function createMatchOgImage(params: OgImageParams) {
     width: 1200,
   };
 }
+
+
+type CompetitionOgImageParams = {
+  accentColor: string;
+  familyName: string;
+  season?: string;
+};
+
+export function createCompetitionOgImage(params: CompetitionOgImageParams) {
+  const searchParams = new URLSearchParams({
+    type: "competition",
+    family_name: params.familyName,
+    accent: params.accentColor,
+  });
+
+  if (params.season) {
+    searchParams.set("season", params.season);
+  }
+
+  return {
+    height: 630,
+    url: `/api/og?${searchParams.toString()}`,
+    width: 1200,
+  };
+}
