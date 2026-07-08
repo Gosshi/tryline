@@ -47,6 +47,10 @@ vi.mock("@/components/checkout-success-tracker", () => ({
   CheckoutSuccessTracker: () => null,
 }));
 
+vi.mock("@/components/signup-success-tracker", () => ({
+  SignupSuccessTracker: () => null,
+}));
+
 vi.mock("@/components/favorite-teams-banner", () => ({
   FavoriteTeamsBanner: () => null,
 }));

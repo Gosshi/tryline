@@ -3,20 +3,16 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
-export function CheckoutSuccessTracker() {
+export function SignupSuccessTracker() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (searchParams.get("checkout") !== "success") {
+    if (searchParams.get("signup") !== "success") {
       return;
     }
 
     if (typeof window.gtag === "function") {
-      window.gtag("event", "purchase", {
-        currency: "JPY",
-        value: 980,
-      });
-      window.gtag("event", "trial_start");
+      window.gtag("event", "sign_up");
     }
   }, [searchParams]);
 

@@ -9,6 +9,7 @@ import { FeaturedCompetitionCard } from "@/components/featured-competition-card"
 import { HeroTexture } from "@/components/hero-texture";
 import { HomeMatchdayBoard } from "@/components/home-matchday-board";
 import { MatchCard } from "@/components/match-card";
+import { SignupSuccessTracker } from "@/components/signup-success-tracker";
 import { TeamBadge } from "@/components/team-badge";
 import { TrackedLink } from "@/components/tracked-link";
 import { getUser, getUserProfile } from "@/lib/auth/server";
@@ -217,6 +218,7 @@ export default async function HomePage() {
       />
       <Suspense>
         <CheckoutSuccessTracker />
+        <SignupSuccessTracker />
       </Suspense>
       <section className="relative overflow-hidden bg-[var(--color-ink)] py-16 sm:py-24">
         <HeroTexture />

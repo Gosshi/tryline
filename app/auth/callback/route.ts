@@ -25,10 +25,20 @@ export async function GET(request: Request) {
         },
       },
     );
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      const redirectUrl = new URL(`${origin}${next}`);
+      const userCreatedAt = data.user?.created_at;
+      const isNewSignup = userCreatedAt
+        ? Date.now() - new Date(userCreatedAt).getTime() <= 60_000
+        : false;
+
+      if (isNewSignup) {
+        redirectUrl.searchParams.set("signup", "success");
+      }
+
+      return NextResponse.redirect(redirectUrl.toString());
     }
   }
 
