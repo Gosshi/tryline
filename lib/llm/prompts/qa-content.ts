@@ -10,10 +10,18 @@ import type {
 
 export const PROMPT_VERSION = "qa@2.4.0";
 
+export type TeamFormStats = {
+  win_rate_last_5: number | null;
+};
+
 export type QaMatchContext = {
   awayScore: number | null;
   awayTeam: string;
   derivedStats?: DerivedMatchStats | null;
+  formStats?: {
+    away: TeamFormStats | null;
+    home: TeamFormStats | null;
+  };
   homeScore: number | null;
   homeTeam: string;
   sourcedFacts?: SourcedFactInput[];

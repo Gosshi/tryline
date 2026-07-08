@@ -214,6 +214,14 @@ export async function generateMatchContent(
           awayScore: assembled.match.away_score,
           awayTeam: assembled.match.away_team?.name ?? "Away",
           derivedStats: assembled.derived_stats,
+          formStats: {
+            away: {
+              win_rate_last_5: assembled.key_stats.away.win_rate_last_5,
+            },
+            home: {
+              win_rate_last_5: assembled.key_stats.home.win_rate_last_5,
+            },
+          },
           homeScore: assembled.match.home_score,
           homeTeam: assembled.match.home_team?.name ?? "Home",
           sourcedFacts: assembled.sourced_facts,

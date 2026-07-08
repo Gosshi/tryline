@@ -7,6 +7,7 @@ import {
   WINNER_MISMATCH_ISSUE,
 } from "@/lib/content/fabrication-guard";
 import {
+  buildFormStatsFactStrings,
   buildTeamStatsFactStrings,
   computeActualWinner,
   evaluateNarrativeQuality,
@@ -190,6 +191,49 @@ describe("buildTeamStatsFactStrings", () => {
         facts,
       ),
     ).toBe(false);
+  });
+});
+
+describe("buildFormStatsFactStrings", () => {
+  it("allows recent win-rate percentages through the statistic guard", () => {
+    const facts = buildFormStatsFactStrings({
+      away: { win_rate_last_5: 0.2 },
+      home: { win_rate_last_5: 0.8 },
+    });
+
+    expect(facts).toContain("アウェイチームの勝率20%");
+    expect(facts).toContain("アウェイチームの勝率20.0%");
+    expect(
+      containsUnsupportedStatistic(
+        "イングランドは直近5試合で勝率20%と苦戦している。",
+        facts,
+      ),
+    ).toBe(false);
+    expect(
+      containsUnsupportedStatistic(
+        "イングランドは直近5試合で勝率20.0%と苦戦している。",
+        facts,
+      ),
+    ).toBe(false);
+  });
+
+  it("does not allow unsupported percentage or success-rate claims", () => {
+    const facts = buildFormStatsFactStrings({
+      away: { win_rate_last_5: 0.2 },
+      home: { win_rate_last_5: null },
+    });
+
+    expect(
+      containsUnsupportedStatistic(
+        "イングランドは直近5試合で勝率20%と苦戦している。",
+      ),
+    ).toBe(true);
+    expect(
+      containsUnsupportedStatistic("イングランドの成功率は80%だった。", facts),
+    ).toBe(true);
+    expect(
+      containsUnsupportedStatistic("イングランドの成功率は20%だった。", facts),
+    ).toBe(true);
   });
 });
 
@@ -755,6 +799,43 @@ describe("evaluateNarrativeQuality", () => {
     expect(result.result.scores.factual_grounding).toBe(1);
     expect(result.result.issues).toContain("データに存在しない統計値を含む");
     expect(result.result.verdict).not.toBe("publish");
+  });
+
+  it("allows supported recent win-rate percentages in recaps", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      hasEvents: true,
+      matchContext: {
+        ...matchContext,
+        awayTeam: "England",
+        formStats: {
+          away: { win_rate_last_5: 0.2 },
+          home: { win_rate_last_5: null },
+        },
+      },
+      narrative: `# ターニングポイント\nイングランドは直近5試合で勝率20%と苦戦していた。${"あ".repeat(
+        2000,
+      )}`,
+      retryCount: 0,
+    });
+
+    expect(result.result.scores.factual_grounding).toBe(5);
+    expect(result.result.issues).not.toContain("データに存在しない統計値を含む");
+    expect(result.result.verdict).toBe("publish");
   });
 
   it("forces factual grounding failure when player references are ungrounded", async () => {

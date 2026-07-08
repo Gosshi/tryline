@@ -19,6 +19,7 @@ import {
   buildQaContentPrompt,
   PROMPT_VERSION,
   type QaMatchContext,
+  type TeamFormStats,
 } from "@/lib/llm/prompts/qa-content";
 
 import type {
@@ -163,6 +164,39 @@ export function buildTeamStatsFactStrings(
   return [
     ...buildFactsForSide("ホーム", teamStats.home),
     ...buildFactsForSide("アウェイ", teamStats.away),
+  ];
+}
+
+function buildFormStatsFactsForSide(
+  label: string,
+  stats: TeamFormStats | null | undefined,
+): string[] {
+  if (!stats || typeof stats.win_rate_last_5 !== "number") {
+    return [];
+  }
+
+  const winRatePercent = stats.win_rate_last_5 * 100;
+  const facts = [
+    `${label}チームの勝率${formatPercent(winRatePercent)}`,
+  ];
+
+  if (Number.isInteger(winRatePercent)) {
+    facts.push(`${label}チームの勝率${winRatePercent.toFixed(1)}%`);
+  }
+
+  return facts;
+}
+
+export function buildFormStatsFactStrings(
+  formStats?: QaMatchContext["formStats"],
+): string[] {
+  if (!formStats) {
+    return [];
+  }
+
+  return [
+    ...buildFormStatsFactsForSide("ホーム", formStats.home),
+    ...buildFormStatsFactsForSide("アウェイ", formStats.away),
   ];
 }
 
@@ -446,6 +480,7 @@ function applyDeterministicQaGuards(
     containsUnsupportedStatistic(options.narrative, [
       ...(options.matchContext.sourcedFacts?.map((fact) => fact.fact) ?? []),
       ...buildTeamStatsFactStrings(options.matchContext.teamStats),
+      ...buildFormStatsFactStrings(options.matchContext.formStats),
     ])
   ) {
     guarded = {
