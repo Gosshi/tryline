@@ -235,7 +235,7 @@ export default async function HomePage() {
           <div
             className={
               homepageWeekMatches.length > 0
-                ? "grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px]"
+                ? "grid grid-cols-[minmax(0,1fr)] items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px]"
                 : "max-w-3xl"
             }
           >
@@ -244,7 +244,7 @@ export default async function HomePage() {
                 Rugby Analysis in Japanese
               </p>
               <h1 className="break-keep font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
-                今週の海外ラグビーを、
+                今週の<wbr />海外<wbr />ラグビー<wbr />を、
                 <br className="hidden sm:block" />
                 日本時間で追う。
               </h1>

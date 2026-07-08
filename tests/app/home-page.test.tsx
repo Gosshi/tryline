@@ -231,6 +231,9 @@ describe("HomePage", () => {
     expect(screen.queryByLabelText("今週の注目試合")).not.toBeInTheDocument();
     expect(screen.queryByText("home_hero_sample_recap")).not.toBeInTheDocument();
     expect(
+      screen.getByRole("heading", { level: 1 }).textContent,
+    ).toBe("今週の海外ラグビーを、日本時間で追う。");
+    expect(
       screen.getByRole("link", { name: "今週の試合を見る" }),
     ).toHaveAttribute("href", "/calendar");
   });
@@ -277,6 +280,9 @@ describe("HomePage", () => {
 
     expect(focusMocks.selectCalendarFocusMatchId).toHaveBeenCalled();
     expect(screen.getByLabelText("今週の注目試合")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1 }).parentElement?.parentElement,
+    ).toHaveClass("grid-cols-[minmax(0,1fr)]");
     expect(screen.getByRole("link", { name: /Japan[\s\S]*Fiji/ })).toHaveAttribute(
       "href",
       "/matches/japan-match",
