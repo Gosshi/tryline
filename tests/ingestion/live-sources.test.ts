@@ -527,15 +527,15 @@ describe("live competition source adapters", () => {
     });
   });
 
-  it("parses Nations Cup 2026 condensed semi-finals and skips unresolved finals placeholders", () => {
+  it("parses Nations Cup 2026 condensed semi-finals and preserves known finals dates", () => {
     const matches = parsePncLiveHtml(PNC_CONDENSED_2026_HTML);
 
-    expect(matches).toHaveLength(2);
+    expect(matches).toHaveLength(4);
     expect(matches[0]).toMatchObject({
       awayTeamSlug: "canada",
       homeTeamSlug: "fiji",
       kickoffAt: "2026-09-12T07:00:00.000Z",
-      round: 1,
+      round: 101,
       status: "scheduled",
       venue: "Hanazono Rugby Stadium, Higashiōsaka",
     });
@@ -543,9 +543,25 @@ describe("live competition source adapters", () => {
       awayTeamSlug: "usa",
       homeTeamSlug: "japan",
       kickoffAt: "2026-09-12T10:05:00.000Z",
-      round: 1,
+      round: 101,
       status: "scheduled",
     });
+    expect(matches).toContainEqual(
+      expect.objectContaining({
+        awayTeamName: "Winner SF2",
+        homeTeamName: "Winner SF1",
+        kickoffAt: "2026-09-19T10:05:00.000Z",
+        round: 102,
+      }),
+    );
+    expect(matches).toContainEqual(
+      expect.objectContaining({
+        awayTeamName: "Loser SF2",
+        homeTeamName: "Loser SF1",
+        kickoffAt: "2026-09-19T07:00:00.000Z",
+        round: 103,
+      }),
+    );
   });
 
   it("parses Nations Championship round tables and skips unresolved finals placeholders", () => {
