@@ -251,9 +251,7 @@ export default async function HomePage() {
                 <wbr />
                 海外
                 <wbr />
-                ラグビー
-                <wbr />
-                を、
+                ラグビーを、
                 <br className="hidden sm:block" />
                 日本時間
                 <wbr />
