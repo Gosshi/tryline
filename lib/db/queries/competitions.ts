@@ -19,6 +19,7 @@ export type HomepageCompetitionLink = {
   family: string;
   name: string;
   name_ja?: string | null;
+  publishedContentCount?: number;
   season: string;
 };
 

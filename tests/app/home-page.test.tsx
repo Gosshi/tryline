@@ -20,6 +20,14 @@ const competitionMocks = vi.hoisted(() => ({
   sortHomepageCompetitionLinks: vi.fn(),
 }));
 
+const standingMocks = vi.hoisted(() => ({
+  getStandingPositionLookupForCompetitions: vi.fn(),
+}));
+
+const focusMocks = vi.hoisted(() => ({
+  selectCalendarFocusMatchId: vi.fn(),
+}));
+
 const matchMocks = vi.hoisted(() => ({
   getFavoriteTeamMatches: vi.fn(),
   getMatchesInRange: vi.fn(),
@@ -73,6 +81,15 @@ vi.mock("@/lib/db/queries/competitions", () => ({
   sortHomepageCompetitionLinks: competitionMocks.sortHomepageCompetitionLinks,
 }));
 
+vi.mock("@/lib/db/queries/standings", () => ({
+  getStandingPositionLookupForCompetitions:
+    standingMocks.getStandingPositionLookupForCompetitions,
+}));
+
+vi.mock("@/lib/format/calendar-focus", () => ({
+  selectCalendarFocusMatchId: focusMocks.selectCalendarFocusMatchId,
+}));
+
 vi.mock("@/lib/db/queries/matches", () => ({
   getFavoriteTeamMatches: matchMocks.getFavoriteTeamMatches,
   getMatchesInRange: matchMocks.getMatchesInRange,
@@ -82,6 +99,45 @@ vi.mock("@/lib/db/queries/matches", () => ({
   getRecentlyReviewedMatchById: matchMocks.getRecentlyReviewedMatchById,
   getUpcomingMatches: matchMocks.getUpcomingMatches,
 }));
+
+
+function createCalendarMatch(overrides: Record<string, unknown> = {}) {
+  return {
+    awayScore: null,
+    awayTeam: {
+      id: "away-id",
+      name: "Away Team",
+      shortCode: "AWY",
+      slug: "away-team",
+      worldRanking: 8,
+    },
+    competition: {
+      family: "six-nations",
+      id: "six-nations-id",
+      name: "Six Nations",
+      season: "2026",
+      slug: "six-nations-2026",
+    },
+    hasPreview: false,
+    hasRecap: false,
+    homeScore: null,
+    homeTeam: {
+      id: "home-id",
+      name: "Home Team",
+      shortCode: "HOM",
+      slug: "home-team",
+      worldRanking: 3,
+    },
+    id: "calendar-match",
+    kickoffAt: "2026-07-11T09:00:00.000Z",
+    poolName: null,
+    round: null,
+    roundName: null,
+    status: "scheduled",
+    venue: null,
+    ...overrides,
+  };
+}
 
 describe("HomePage", () => {
   beforeEach(() => {
@@ -93,6 +149,8 @@ describe("HomePage", () => {
     competitionMocks.sortHomepageCompetitionLinks.mockImplementation(
       (links) => links,
     );
+    standingMocks.getStandingPositionLookupForCompetitions.mockResolvedValue(new Map());
+    focusMocks.selectCalendarFocusMatchId.mockReturnValue(null);
     matchMocks.getRecentlyReviewedFamilies.mockResolvedValue([]);
     matchMocks.getRecentlyReviewedCompetitionGroups.mockResolvedValue([
       {
@@ -166,13 +224,75 @@ describe("HomePage", () => {
         `/matches/${PRIMARY_SAMPLE_MATCH_ID}`,
       );
     }
-    expect(screen.getAllByText("Northampton vs Gloucester").length).toBe(2);
+    expect(screen.getAllByText("Northampton vs Gloucester").length).toBe(1);
     expect(
       screen.getAllByText("これは無料で読めるレビュー本文です。").length,
-    ).toBe(2);
+    ).toBe(1);
+    expect(screen.queryByLabelText("今週の注目試合")).not.toBeInTheDocument();
+    expect(screen.queryByText("home_hero_sample_recap")).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "今週の試合を見る" }),
     ).toHaveAttribute("href", "/calendar");
+  });
+
+
+
+  it("renders the matchday board from current week matches", async () => {
+    competitionMocks.listFamilies.mockResolvedValue(["pnc"]);
+    competitionMocks.listSeasonsByFamily.mockResolvedValue([
+      {
+        endDate: "2026-09-20",
+        matchCount: 12,
+        name: "Pacific Nations Cup 2026",
+        publishedContentCount: 7,
+        season: "2026",
+      },
+    ]);
+    competitionMocks.selectLatestSeasonWithMatches.mockImplementation(
+      (seasons) => seasons[0] ?? null,
+    );
+    focusMocks.selectCalendarFocusMatchId.mockReturnValue("japan-match");
+    matchMocks.getMatchesInRange.mockResolvedValue([
+      createCalendarMatch({
+        awayTeam: { name: "Fiji", shortCode: "FIJ", slug: "fiji" },
+        competition: {
+          family: "pnc",
+          id: "pnc-2026-id",
+          name: "Pacific Nations Cup",
+          season: "2026",
+          slug: "pnc-2026",
+        },
+        hasPreview: true,
+        homeTeam: { name: "Japan", shortCode: "JPN", slug: "japan" },
+        id: "japan-match",
+        kickoffAt: "2026-07-10T10:30:00.000Z",
+      }),
+      createCalendarMatch({ id: "quick-1" }),
+      createCalendarMatch({ id: "quick-2" }),
+      createCalendarMatch({ id: "quick-3" }),
+      createCalendarMatch({ id: "quick-4" }),
+    ]);
+
+    render(await HomePage());
+
+    expect(focusMocks.selectCalendarFocusMatchId).toHaveBeenCalled();
+    expect(screen.getByLabelText("今週の注目試合")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Japan[\s\S]*Fiji/ })).toHaveAttribute(
+      "href",
+      "/matches/japan-match",
+    );
+    expect(screen.getByText("プレビュー公開")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "ほか1試合 →" })).toHaveAttribute(
+      "href",
+      "/calendar",
+    );
+    expect(screen.getByRole("link", { name: "大会ページを見る →" })).toHaveAttribute(
+      "href",
+      "/c/pnc/2026",
+    );
+    expect(screen.getByText("7本")).toBeInTheDocument();
+    expect(screen.getByText("1試合")).toBeInTheDocument();
+    expect(screen.queryByText(/GSC|クリック|平均順位|表示回数/)).not.toBeInTheDocument();
   });
 
   it("renders multiple recent review competition blocks", async () => {

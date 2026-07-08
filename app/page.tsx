@@ -5,7 +5,9 @@ import { Suspense } from "react";
 import { WeekSchedule } from "@/components/calendar/week-schedule";
 import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { FavoriteTeamsBanner } from "@/components/favorite-teams-banner";
+import { FeaturedCompetitionCard } from "@/components/featured-competition-card";
 import { HeroTexture } from "@/components/hero-texture";
+import { HomeMatchdayBoard } from "@/components/home-matchday-board";
 import { MatchCard } from "@/components/match-card";
 import { TeamBadge } from "@/components/team-badge";
 import { TrackedLink } from "@/components/tracked-link";
@@ -24,6 +26,9 @@ import {
   getRecentlyReviewedMatchById,
   getUpcomingMatches,
 } from "@/lib/db/queries/matches";
+import { getStandingPositionLookupForCompetitions } from "@/lib/db/queries/standings";
+import { FEATURED_COMPETITION } from "@/lib/featured-competition";
+import { selectCalendarFocusMatchId } from "@/lib/format/calendar-focus";
 import {
   formatCompetitionTitle,
   formatFamilyName,
@@ -60,6 +65,19 @@ function getCompetitionLogoSrc(family: string): string {
   return COMPETITION_LOGO_FAMILIES.has(family)
     ? `/logos/${family}.svg`
     : "/logos/default-competition.svg";
+}
+
+function getHomeWeekLabel(weekStartJst: string): string {
+  const [, month, day] = weekStartJst.split("-").map(Number);
+
+  return String(month) + "月第" + Math.ceil((day ?? 1) / 7) + "週";
+}
+
+function isFeaturedCompetitionMatch(match: { competition: { family: string; season: string } }) {
+  return (
+    match.competition.family === FEATURED_COMPETITION.family &&
+    match.competition.season === FEATURED_COMPETITION.season
+  );
 }
 
 export const metadata: Metadata = {
@@ -122,6 +140,7 @@ export default async function HomePage() {
             endDate: latestSeason.endDate,
             family,
             name: latestSeason.name,
+            publishedContentCount: latestSeason.publishedContentCount,
             season: latestSeason.season,
           };
         }),
@@ -136,6 +155,32 @@ export default async function HomePage() {
     (match) =>
       !homepageWeekMatches.some((weekMatch) => weekMatch.id === match.id),
   );
+  const weekCompetitionIds = homepageWeekMatches
+    .map((match) => match.competition.id)
+    .filter((id): id is string => Boolean(id));
+  const homepageStandingPositions = await getStandingPositionLookupForCompetitions(
+    weekCompetitionIds,
+  );
+  const homepageFocusMatchId = selectCalendarFocusMatchId(
+    homepageWeekMatches,
+    homepageStandingPositions,
+  );
+  const featuredCompetitionMatches = homepageWeekMatches.filter(
+    isFeaturedCompetitionMatch,
+  );
+  const featuredCompetitionLink = homepageCompetitionLinks.find(
+    (competition) =>
+      competition.family === FEATURED_COMPETITION.family &&
+      competition.season === FEATURED_COMPETITION.season,
+  );
+  const featuredNextMatch = featuredCompetitionMatches[0] ?? null;
+  const featuredCompetitionStats = {
+    nextMatchLabel: featuredNextMatch
+      ? formatKickoffJstTime(featuredNextMatch.kickoffAt)
+      : "未定",
+    publishedReviewCount: featuredCompetitionLink?.publishedContentCount ?? 0,
+    weekMatchCount: featuredCompetitionMatches.length,
+  };
   const favoriteTeamPageSlug =
     favoriteTeamSlugs.length === 1 ? (favoriteTeamSlugs[0] ?? null) : null;
   const jsonLd = [
@@ -187,79 +232,55 @@ export default async function HomePage() {
         </div>
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
-            Rugby Analysis in Japanese
-          </p>
-          <h1 className="break-keep font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
-            海外ラグビーを、
-            <br className="hidden sm:block" />
-            日本語で深掘り。
-          </h1>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
-            DAZN、J SPORTS、WOWOW で見たい試合が重なる週末でも、Six
-            Nations・Premiership・URC
-            をはじめとする主要大会の試合の流れと見どころを
-            日本語レビューと試合チャットで追えます。
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            {profile?.subscription_status !== "premium" && (
-              <TrackedLink
-                analytics={{
-                  cta_id: "home_hero_pricing",
-                  cta_location: "home_hero",
-                  destination: "pricing",
-                  label: "7日間無料でレビュー全文を読む",
-                }}
-                className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                href="/pricing"
-              >
-                7日間無料でレビュー全文を読む
-              </TrackedLink>
-            )}
-            <Link
-              className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              href="/calendar"
-            >
-              今週の試合を見る
-            </Link>
-          </div>
-          {sampleMatch?.recapExcerpt && (
-            <TrackedLink
-              analytics={{
-                content_type: "recap",
-                cta_id: "home_hero_sample_recap",
-                cta_location: "home_hero_sample_card",
-                destination: "sample_match",
-                is_sample: true,
-                label: "無料サンプルを読む",
-                match_id: sampleMatch.id,
-              }}
-              className="mt-8 block max-w-xl rounded-xl border border-white/15 bg-white/10 p-4 text-white/90 shadow-lg shadow-black/10 backdrop-blur-sm transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              href={`/matches/${sampleMatch.id}`}
-            >
-              <p className="text-xs font-semibold text-white/55">
-                {formatCompetitionTitle(
-                  sampleMatch.competition,
-                  sampleMatch.competition.season,
+          <div
+            className={
+              homepageWeekMatches.length > 0
+                ? "grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px]"
+                : "max-w-3xl"
+            }
+          >
+            <div>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                Rugby Analysis in Japanese
+              </p>
+              <h1 className="break-keep font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
+                今週の海外ラグビーを、
+                <br className="hidden sm:block" />
+                日本時間で追う。
+              </h1>
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
+                PNC、Six Nations、Premiership、URC。週末に重なる試合を、日程・結果・順位・日本語レビューまでひとつの流れで確認できます。
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                {profile?.subscription_status !== "premium" && (
+                  <TrackedLink
+                    analytics={{
+                      cta_id: "home_hero_pricing",
+                      cta_location: "home_hero",
+                      destination: "pricing",
+                      label: "7日間無料でレビュー全文を読む",
+                    }}
+                    className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    href="/pricing"
+                  >
+                    7日間無料でレビュー全文を読む
+                  </TrackedLink>
                 )}
-              </p>
-              <p className="mt-1 text-sm font-bold text-white">
-                {sampleMatch.homeTeam.name} vs {sampleMatch.awayTeam.name}
-                {sampleMatch.homeScore !== null &&
-                  sampleMatch.awayScore !== null && (
-                    <span className="ml-2 font-semibold tabular-nums text-white/70">
-                      {sampleMatch.homeScore}–{sampleMatch.awayScore}
-                    </span>
-                  )}
-              </p>
-              <p className="mt-3 line-clamp-6 text-sm leading-6 text-white/75">
-                {sampleMatch.recapExcerpt}
-              </p>
-              <p className="mt-3 text-right text-xs font-semibold text-white">
-                無料サンプルを読む →
-              </p>
-            </TrackedLink>
-          )}
+                <Link
+                  className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  href="/calendar"
+                >
+                  今週の試合を見る
+                </Link>
+              </div>
+            </div>
+            <HomeMatchdayBoard
+              focusMatchId={homepageFocusMatchId}
+              matches={homepageWeekMatches}
+              standingPositions={homepageStandingPositions}
+              weekLabel={getHomeWeekLabel(weekRange.weekStartJst)}
+            />
+          </div>
         </div>
       </section>
 
@@ -297,6 +318,16 @@ export default async function HomePage() {
               <p className="line-clamp-8 text-sm leading-relaxed text-[var(--color-ink)]">
                 {sampleMatch.recapExcerpt}
               </p>
+            </div>
+            <div className="mx-5 mb-4 rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                Ask After Match
+              </p>
+              <ul className="mt-3 space-y-2 text-sm font-semibold text-[var(--color-ink)]">
+                <li>勝敗を分けた場面はどこ？</li>
+                <li>日本代表の次戦にどう影響する？</li>
+                <li>この選手はどんなタイプ？</li>
+              </ul>
             </div>
             <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-4">
               <TrackedLink
@@ -362,28 +393,34 @@ export default async function HomePage() {
       )}
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <section className="-m-3.5 space-y-3 rounded-[20px] bg-[radial-gradient(140%_100%_at_0%_0%,rgb(201_58_58/5%),transparent_65%)] p-3.5">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-                今週の試合
-              </h2>
-              <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
-                全大会横断・JST表示
-              </p>
+        <section className="-m-3.5 rounded-[20px] bg-[radial-gradient(140%_100%_at_0%_0%,rgb(201_58_58/5%),transparent_65%)] p-3.5">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="font-serif text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
+                    今週の試合
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+                    全大会横断・JST 表示
+                  </p>
+                </div>
+                <Link
+                  className="shrink-0 text-xs font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)]"
+                  href="/calendar"
+                >
+                  前週・翌週もカレンダーで →
+                </Link>
+              </div>
+              <WeekSchedule
+                compact
+                emptyMessage="今週の残り試合はありません。"
+                highlightMatchId={homepageFocusMatchId}
+                matches={homepageWeekMatches}
+              />
             </div>
-            <Link
-              className="text-xs font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)]"
-              href="/calendar"
-            >
-              今週をすべて見る →
-            </Link>
+            <FeaturedCompetitionCard stats={featuredCompetitionStats} />
           </div>
-          <WeekSchedule
-            compact
-            emptyMessage="今週の残り試合はありません。"
-            matches={homepageWeekMatches}
-          />
         </section>
 
         {homepageUpcomingMatches.length > 0 && (
