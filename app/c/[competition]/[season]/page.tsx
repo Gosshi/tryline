@@ -297,7 +297,7 @@ export default async function SeasonPage({ params }: Props) {
               日本代表の次戦
             </p>
             <p className="mt-2 text-lg font-bold text-[var(--color-ink)]">
-              {nextJapanMatch.homeTeam.name} vs {nextJapanMatch.awayTeam.name}
+              {nextJapanMatch.homeTeam.name} 対 {nextJapanMatch.awayTeam.name}
             </p>
             <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
               {formatMatchKickoffJst(nextJapanMatch.kickoffAt)}

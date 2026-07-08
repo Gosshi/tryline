@@ -307,7 +307,7 @@ describe("season page information architecture", () => {
 
     expect(standings).not.toBeNull();
     expect(link).toHaveAttribute("href", "/matches/japan-match-1");
-    expect(link).toHaveTextContent("Fiji vs Japan");
+    expect(link).toHaveTextContent("Fiji 対 Japan");
     expect(link).toHaveTextContent("2026-02-28 (土) 18:00 JST");
     expect(follows(standings!, link!)).toBe(true);
     expect(follows(link!, screen.getByTestId("season-match-groups"))).toBe(

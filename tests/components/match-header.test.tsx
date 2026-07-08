@@ -53,7 +53,7 @@ describe("MatchHeader", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "Ireland vs France",
+        name: "Ireland 対 France",
       }),
     ).toHaveClass("sr-only", "font-heading");
   });
@@ -153,12 +153,13 @@ describe("MatchHeader", () => {
 
   it("uses display name overrides for EN pages", () => {
     render(
-      <MatchHeader
-        awayDisplayName="Les Bleus"
-        homeDisplayName="Irish Rugby"
-        match={{
-          ...match,
-          awayScore: 28,
+        <MatchHeader
+          awayDisplayName="Les Bleus"
+          homeDisplayName="Irish Rugby"
+          language="en"
+          match={{
+            ...match,
+            awayScore: 28,
           homeScore: 31,
           status: "finished",
         }}

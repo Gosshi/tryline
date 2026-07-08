@@ -16,6 +16,7 @@ type MatchHeaderProps = {
   awayDisplayName?: string;
   headToHeadHref?: string | null;
   homeDisplayName?: string;
+  language?: "ja" | "en";
   match: MatchDetail;
 };
 
@@ -47,6 +48,7 @@ export function MatchHeader({
   awayDisplayName,
   headToHeadHref,
   homeDisplayName,
+  language = "ja",
   match,
 }: MatchHeaderProps) {
   const localTimezone = getVenueTimezone(match.homeTeam.slug);
@@ -55,6 +57,7 @@ export function MatchHeader({
   const awayColor = getTeamColor(match.awayTeam.slug);
   const homeName = homeDisplayName ?? match.homeTeam.name;
   const awayName = awayDisplayName ?? match.awayTeam.name;
+  const matchupConnector = language === "en" ? "vs" : "対";
   const showScore =
     (match.status === "finished" || match.status === "in_progress") &&
     match.homeScore !== null &&
@@ -81,7 +84,7 @@ export function MatchHeader({
       }
     >
       <h1 className="sr-only font-heading">
-        {homeName} vs {awayName}
+        {homeName} {matchupConnector} {awayName}
       </h1>
 
       <div className="flex flex-wrap items-center justify-between gap-2">

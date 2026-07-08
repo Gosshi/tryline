@@ -42,7 +42,7 @@ describe("KnockoutBracket", () => {
     );
 
     expect(
-      screen.getByRole("link", { name: /Hqf-1 vs Aqf-1/i }),
+      screen.getByRole("link", { name: /Hqf-1 対 Aqf-1/i }),
     ).toHaveAttribute("href", "/matches/qf-1");
     expect(screen.getByText("24 – 19")).toBeInTheDocument();
     expect(screen.getByText("FT")).toBeInTheDocument();

@@ -62,7 +62,7 @@ export function KnockoutBracket({ matches }: Props) {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-[var(--color-ink)]">
-                          {match.homeTeam.shortCode} vs {match.awayTeam.shortCode}
+                          {match.homeTeam.shortCode} 対 {match.awayTeam.shortCode}
                         </p>
                         <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
                           {match.status === "finished"

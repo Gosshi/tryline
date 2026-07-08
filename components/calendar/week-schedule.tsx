@@ -125,7 +125,7 @@ function MatchRow({
               <span className="truncate">{match.homeTeam.name}</span>
             </span>
             <span className="shrink-0 text-xs font-normal uppercase text-slate-400">
-              vs
+              対
             </span>
             <span className="inline-flex min-w-0 items-center gap-1.5">
               <TeamBadge
