@@ -59,14 +59,6 @@ function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
 export function selectLatestSeasonWithMatches(
   seasons: CompetitionRow[],
 ): CompetitionRow | null {
-  const withContent = seasons.filter(
-    (season) => season.publishedContentCount > 0,
-  );
-
-  if (withContent.length > 0) {
-    return withContent[0] ?? null;
-  }
-
   const withMatches = seasons.filter((season) => season.matchCount > 0);
 
   return withMatches[0] ?? seasons[0] ?? null;
