@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { containsUngroundedPlayerReference } from "@/lib/content/fabrication-guard";
+import {
+  containsUngroundedPlayerReference,
+  containsUnsupportedStatistic,
+} from "@/lib/content/fabrication-guard";
 
 const fabricatedPreview = `
 # セクション2: キープレイヤーとマッチアップ
@@ -36,5 +39,26 @@ describe("containsUngroundedPlayerReference", () => {
         false,
       ),
     ).toBe(false);
+  });
+});
+
+describe("containsUnsupportedStatistic", () => {
+  it("detects kick attempt ratio phrasing without source support", () => {
+    expect(containsUnsupportedStatistic("彼は7回中5回成功させた")).toBe(
+      true,
+    );
+    expect(
+      containsUnsupportedStatistic(
+        "コルベはコンバージョンを12回中10回成功させた",
+      ),
+    ).toBe(true);
+  });
+
+  it("keeps existing unsupported statistic detections", () => {
+    expect(containsUnsupportedStatistic("成功率は80%だった")).toBe(true);
+    expect(containsUnsupportedStatistic("テリトリーで優位に立った")).toBe(
+      true,
+    );
+    expect(containsUnsupportedStatistic("支配率の差が出た")).toBe(true);
   });
 });
