@@ -143,6 +143,45 @@ describe("wikipedia standings scraper", () => {
     ]);
   });
 
+  it("parses multiple hemisphere standings tables with pool names", async () => {
+    const { parseCompetitionStandingsHtml } =
+      await import("@/lib/scrapers/wikipedia-standings");
+    const result = parseCompetitionStandingsHtml(`
+      <div class="mw-heading mw-heading3"><h3 id="Northern_Hemisphere">Northern Hemisphere</h3></div>
+      <table class="wikitable">
+        <tr>
+          <th>Pos</th><th>Team</th><th>Pld</th><th>W</th><th>D</th><th>L</th>
+          <th>PF</th><th>PA</th><th>TF</th><th>TB</th><th>LB</th><th>Pts</th>
+        </tr>
+        <tr><td>1</td><th>England</th><td>1</td><td>1</td><td>0</td><td>0</td><td>45</td><td>21</td><td>6</td><td>1</td><td>0</td><td>5</td></tr>
+        <tr><td>2</td><th>France</th><td>1</td><td>0</td><td>0</td><td>1</td><td>21</td><td>45</td><td>3</td><td>0</td><td>0</td><td>0</td></tr>
+      </table>
+      <div class="mw-heading mw-heading3"><h3 id="Southern_Hemisphere">Southern Hemisphere</h3></div>
+      <table class="wikitable">
+        <tr>
+          <th>Pos</th><th>Team</th><th>Pld</th><th>W</th><th>D</th><th>L</th>
+          <th>PF</th><th>PA</th><th>TF</th><th>TB</th><th>LB</th><th>Pts</th>
+        </tr>
+        <tr><td>1</td><th>New Zealand</th><td>1</td><td>1</td><td>0</td><td>0</td><td>31</td><td>20</td><td>4</td><td>1</td><td>0</td><td>5</td></tr>
+        <tr><td>2</td><th>Australia</th><td>1</td><td>0</td><td>0</td><td>1</td><td>20</td><td>31</td><td>2</td><td>0</td><td>0</td><td>0</td></tr>
+      </table>
+    `);
+
+    expect(result).toHaveLength(4);
+    expect(result.map((row) => row.position)).toEqual([1, 2, 1, 2]);
+    expect(result[0]).toMatchObject({
+      bonusPointsTry: 1,
+      poolName: "Northern Hemisphere",
+      teamName: "England",
+      totalPoints: 5,
+    });
+    expect(result[2]).toMatchObject({
+      poolName: "Southern Hemisphere",
+      teamName: "New Zealand",
+      triesFor: 4,
+    });
+  });
+
   it("uses row order when the standings table has no position header", async () => {
     const { parseCompetitionStandingsHtml } =
       await import("@/lib/scrapers/wikipedia-standings");

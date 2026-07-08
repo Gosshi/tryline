@@ -3,6 +3,7 @@ import { load } from "cheerio";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 export type ParsedStandingsRow = {
+  poolName?: string | null;
   position: number;
   teamName: string;
   played: number;
@@ -190,6 +191,7 @@ function parseRow(
   row: Parameters<ReturnType<typeof load>>[0],
   indexes: ColumnIndexes,
   fallbackPosition: number,
+  poolName: string | null,
 ): ParsedStandingsRow | null {
   const cells = $(row).find("th, td");
 
@@ -263,7 +265,7 @@ function parseRow(
     return null;
   }
 
-  return {
+  const parsedRow: ParsedStandingsRow = {
     bonusPointsLosing: parsed.bonusPointsLosing!,
     bonusPointsTry: parsed.bonusPointsTry!,
     drawn: parsed.drawn!,
@@ -277,15 +279,42 @@ function parseRow(
     triesFor: parsed.triesFor!,
     won: parsed.won!,
   };
+
+  if (poolName) {
+    parsedRow.poolName = poolName;
+  }
+
+  return parsedRow;
+}
+
+function resolvePoolNameForTable(
+  $: ReturnType<typeof load>,
+  table: Parameters<ReturnType<typeof load>>[0],
+) {
+  const headingText = normalizeWhitespace(
+    $(table).prevAll("div.mw-heading").first().text(),
+  );
+
+  if (/Northern Hemisphere/i.test(headingText)) {
+    return "Northern Hemisphere";
+  }
+
+  if (/Southern Hemisphere/i.test(headingText)) {
+    return "Southern Hemisphere";
+  }
+
+  return null;
 }
 
 export function parseCompetitionStandingsHtml(
   html: string,
 ): ParsedStandingsRow[] {
   const $ = load(html);
+  const allParsedRows: ParsedStandingsRow[] = [];
 
   for (const table of $("table.wikitable").toArray()) {
     const rows = $(table).find("tr").toArray();
+    const poolName = resolvePoolNameForTable($, table);
 
     for (const [headerRowIndex, row] of rows.entries()) {
       const headers = $(row)
@@ -300,20 +329,25 @@ export function parseCompetitionStandingsHtml(
 
       const parsedRows = rows
         .slice(headerRowIndex + 1)
-        .map((dataRow, index) => parseRow($, dataRow, indexes, index + 1))
+        .map((dataRow, index) =>
+          parseRow($, dataRow, indexes, index + 1, poolName),
+        )
         .filter(
           (parsedRow): parsedRow is ParsedStandingsRow => parsedRow !== null,
         );
 
       if (parsedRows.length > 0) {
-        return parsedRows;
+        allParsedRows.push(...parsedRows);
+        break;
       }
     }
   }
 
-  console.warn("No compatible competition standings rows were found.");
+  if (allParsedRows.length === 0) {
+    console.warn("No compatible competition standings rows were found.");
+  }
 
-  return [];
+  return allParsedRows;
 }
 
 export async function scrapeCompetitionStandings(
