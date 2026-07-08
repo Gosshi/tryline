@@ -25,14 +25,14 @@ function buildSeason(
 }
 
 describe("selectLatestSeasonWithMatches", () => {
-  it("prefers the latest season that has published content", () => {
+  it("prefers the latest season that has matches even without published content", () => {
     const result = selectLatestSeasonWithMatches([
       buildSeason("2026", 12, 0),
       buildSeason("2025", 21, 3),
       buildSeason("2024", 20, 8),
     ]);
 
-    expect(result?.season).toBe("2025");
+    expect(result?.season).toBe("2026");
   });
 
   it("prefers the latest season that has matches", () => {
