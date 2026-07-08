@@ -73,7 +73,9 @@ function getHomeWeekLabel(weekStartJst: string): string {
   return String(month) + "月第" + Math.ceil((day ?? 1) / 7) + "週";
 }
 
-function isFeaturedCompetitionMatch(match: { competition: { family: string; season: string } }) {
+function isFeaturedCompetitionMatch(match: {
+  competition: { family: string; season: string };
+}) {
   return (
     match.competition.family === FEATURED_COMPETITION.family &&
     match.competition.season === FEATURED_COMPETITION.season
@@ -158,9 +160,8 @@ export default async function HomePage() {
   const weekCompetitionIds = homepageWeekMatches
     .map((match) => match.competition.id)
     .filter((id): id is string => Boolean(id));
-  const homepageStandingPositions = await getStandingPositionLookupForCompetitions(
-    weekCompetitionIds,
-  );
+  const homepageStandingPositions =
+    await getStandingPositionLookupForCompetitions(weekCompetitionIds);
   const homepageFocusMatchId = selectCalendarFocusMatchId(
     homepageWeekMatches,
     homepageStandingPositions,
@@ -209,7 +210,7 @@ export default async function HomePage() {
   ];
 
   return (
-    <main className="min-h-screen bg-paper">
+    <main className="bg-paper min-h-screen">
       <script
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         type="application/ld+json"
@@ -235,7 +236,7 @@ export default async function HomePage() {
           <div
             className={
               homepageWeekMatches.length > 0
-                ? "grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px]"
+                ? "grid grid-cols-[minmax(0,1fr)] items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px]"
                 : "max-w-3xl"
             }
           >
@@ -244,12 +245,21 @@ export default async function HomePage() {
                 Rugby Analysis in Japanese
               </p>
               <h1 className="break-keep font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
-                今週の海外ラグビーを、
+                今週の
+                <wbr />
+                海外
+                <wbr />
+                ラグビー
+                <wbr />
+                を、
                 <br className="hidden sm:block" />
-                日本時間で追う。
+                日本時間
+                <wbr />
+                で追う。
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
-                PNC、Six Nations、Premiership、URC。週末に重なる試合を、日程・結果・順位・日本語レビューまでひとつの流れで確認できます。
+                PNC、Six
+                Nations、Premiership、URC。週末に重なる試合を、日程・結果・順位・日本語レビューまでひとつの流れで確認できます。
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 {profile?.subscription_status !== "premium" && (
@@ -495,7 +505,10 @@ export default async function HomePage() {
                 const match = group.hero;
 
                 return (
-                  <div className="space-y-2" key={`${group.competition.slug}-${group.latestReviewAt}`}>
+                  <div
+                    className="space-y-2"
+                    key={`${group.competition.slug}-${group.latestReviewAt}`}
+                  >
                     <div className="flex min-w-0 items-center justify-between gap-3">
                       <h3 className="truncate text-sm font-black text-[var(--color-ink)]">
                         {formatCompetitionTitle(
@@ -508,13 +521,13 @@ export default async function HomePage() {
                       </span>
                     </div>
                     <Link
-                      className="group block overflow-hidden rounded-2xl px-5 py-5 text-white shadow-[0_18px_36px_rgb(15_23_42/0.18)] transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                      className="group block overflow-hidden rounded-2xl px-5 py-5 text-white shadow-[0_18px_36px_rgb(15_23_42/0.18)] transition-all duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.98]"
                       href={`/matches/${match.id}`}
                       style={{
                         background: `linear-gradient(180deg, rgb(12 16 28 / 12%), rgb(12 16 28 / 34%)), linear-gradient(120deg, ${getTeamColor(match.homeTeam.slug)}, ${getTeamColor(match.awayTeam.slug)})`,
                       }}
                     >
-                      <p className="inline-flex rounded-full bg-white/18 px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur-sm">
+                      <p className="bg-white/18 inline-flex rounded-full px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur-sm">
                         {formatCompetitionTitle(
                           match.competition,
                           match.competition.season,
@@ -528,7 +541,9 @@ export default async function HomePage() {
                               size={24}
                               slug={match.homeTeam.slug}
                             />
-                            <span className="truncate">{match.homeTeam.name}</span>
+                            <span className="truncate">
+                              {match.homeTeam.name}
+                            </span>
                           </p>
                           <p className="mt-2 flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
                             <TeamBadge
@@ -536,7 +551,9 @@ export default async function HomePage() {
                               size={24}
                               slug={match.awayTeam.slug}
                             />
-                            <span className="truncate">{match.awayTeam.name}</span>
+                            <span className="truncate">
+                              {match.awayTeam.name}
+                            </span>
                           </p>
                         </div>
                         <p className="shrink-0 font-number text-3xl font-black tabular-nums sm:text-4xl">
@@ -568,7 +585,8 @@ export default async function HomePage() {
                                     {compactMatch.homeTeam.shortCode}
                                   </span>
                                   <span className="shrink-0 font-number tabular-nums text-slate-500">
-                                    {compactMatch.homeScore}–{compactMatch.awayScore}
+                                    {compactMatch.homeScore}–
+                                    {compactMatch.awayScore}
                                   </span>
                                   <span className="truncate">
                                     {compactMatch.awayTeam.shortCode}
@@ -645,7 +663,7 @@ export default async function HomePage() {
                   >
                     <Link
                       aria-label={`${formatFamilyName(competition.family)} ${competition.season} 最新シーズン`}
-                      className="group flex h-24 flex-col justify-between overflow-hidden rounded-2xl px-4 py-3 text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                      className="group flex h-24 flex-col justify-between overflow-hidden rounded-2xl px-4 py-3 text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.98]"
                       href={`/c/${competition.family}/${competition.season}`}
                       style={{
                         background: `linear-gradient(160deg, color-mix(in srgb, ${accent} 92%, #111827), ${accent})`,
@@ -669,7 +687,7 @@ export default async function HomePage() {
                           {competition.season}
                           <span className="sr-only"> 最新シーズン</span>
                           {competition.family === "league-one" && (
-                            <span className="rounded-full bg-white/18 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/85">
+                            <span className="bg-white/18 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/85">
                               EN
                             </span>
                           )}
