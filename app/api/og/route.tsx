@@ -1,5 +1,10 @@
 import { ImageResponse } from "@vercel/og";
 
+import { getSupabasePublicServerClient } from "@/lib/db/public-server";
+import { formatCompetitionTitle } from "@/lib/format/competition";
+
+import type { Json } from "@/lib/db/types";
+
 export const runtime = "edge";
 
 function truncate(value: string, maxLength: number): string {
@@ -8,6 +13,87 @@ function truncate(value: string, maxLength: number): string {
 
 function sanitizeAccentColor(value: string | null): string {
   return value && /^#[0-9a-f]{3,8}$/i.test(value) ? value : "#c93a3a";
+}
+
+type RoundScoreboardMatchRow = {
+  away_score: number | null;
+  away_team: { name: string; short_code: string | null } | null;
+  competition: {
+    name: string;
+    name_ja: string | null;
+    season: string;
+  } | null;
+  external_ids: Json;
+  home_score: number | null;
+  home_team: { name: string; short_code: string | null } | null;
+  id: string;
+  kickoff_at: string;
+};
+
+function parseRound(value: string | null): number | null {
+  if (!value || !/^\d+$/.test(value)) {
+    return null;
+  }
+
+  const round = Number(value);
+
+  return Number.isSafeInteger(round) ? round : null;
+}
+
+function getRoundFromExternalIds(externalIds: Json): number | null {
+  if (
+    !externalIds ||
+    typeof externalIds !== "object" ||
+    Array.isArray(externalIds)
+  ) {
+    return null;
+  }
+
+  const round = externalIds.round ?? externalIds.wikipedia_round;
+
+  if (typeof round === "number" && Number.isInteger(round)) {
+    return round;
+  }
+
+  if (typeof round === "string" && /^\d+$/.test(round.trim())) {
+    return Number.parseInt(round, 10);
+  }
+
+  return null;
+}
+
+async function loadRoundScoreboardMatches(
+  competitionId: string,
+  round: number,
+) {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        id,
+        kickoff_at,
+        home_score,
+        away_score,
+        external_ids,
+        home_team:teams!matches_home_team_id_fkey(name, short_code),
+        away_team:teams!matches_away_team_id_fkey(name, short_code),
+        competition:competitions!matches_competition_id_fkey(name, name_ja, season)
+      `,
+    )
+    .eq("competition_id", competitionId)
+    .eq("status", "finished")
+    .not("home_score", "is", null)
+    .not("away_score", "is", null)
+    .order("kickoff_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as RoundScoreboardMatchRow[]).filter(
+    (match) => getRoundFromExternalIds(match.external_ids) === round,
+  );
 }
 
 export async function GET(request: Request) {
@@ -135,6 +221,260 @@ export async function GET(request: Request) {
             fontSize: "24px",
             fontWeight: 700,
             position: "absolute",
+          }}
+        >
+          trylinerugby.com
+        </div>
+      </div>,
+      {
+        fonts: [
+          {
+            data: fontData,
+            name: fontName,
+            style: "normal",
+            weight: 700,
+          },
+        ],
+        height: 630,
+        width: 1200,
+      },
+    );
+  }
+
+  if (searchParams.get("type") === "round-scoreboard") {
+    const competitionId = searchParams.get("competition_id");
+    const round = parseRound(searchParams.get("round"));
+    const matches =
+      competitionId && round !== null
+        ? await loadRoundScoreboardMatches(competitionId, round)
+        : [];
+    const competitionLabel =
+      matches[0]?.competition !== null && matches[0]?.competition !== undefined
+        ? formatCompetitionTitle(
+            {
+              name: matches[0].competition.name,
+              nameJa: matches[0].competition.name_ja,
+            },
+            matches[0].competition.season,
+          )
+        : truncate(searchParams.get("competition") ?? "Round Scoreboard", 42);
+    const roundLabel = round !== null ? `Round ${round}` : "Round";
+    const compactRows = matches.length >= 8;
+    const rowHeight = compactRows ? 42 : 54;
+    const rowGap = compactRows ? 8 : 12;
+    const teamFontSize = compactRows ? "24px" : "30px";
+    const scoreFontSize = compactRows ? "28px" : "34px";
+
+    return new ImageResponse(
+      <div
+        style={{
+          background: "linear-gradient(135deg, #06111f 0%, #0f172a 100%)",
+          color: "white",
+          display: "flex",
+          fontFamily: "Inter, Geist, sans-serif",
+          height: "630px",
+          overflow: "hidden",
+          padding: "52px 64px",
+          position: "relative",
+          width: "1200px",
+        }}
+      >
+        {bgDataUri && (
+          // eslint-disable-next-line @next/next/no-img-element -- @vercel/og renders plain img elements in ImageResponse.
+          <img
+            alt=""
+            src={bgDataUri}
+            style={{
+              display: "flex",
+              height: "100%",
+              inset: 0,
+              objectFit: "cover",
+              opacity: 0.32,
+              position: "absolute",
+              width: "100%",
+            }}
+          />
+        )}
+        <div
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(6,17,31,0.72) 0%, rgba(6,17,31,0.94) 100%)",
+            display: "flex",
+            inset: 0,
+            position: "absolute",
+          }}
+        />
+        <div
+          style={{
+            alignItems: "center",
+            display: "flex",
+            justifyContent: "space-between",
+            position: "relative",
+            width: "100%",
+            zIndex: 2,
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div
+              style={{
+                color: "#f8fafc",
+                display: "flex",
+                fontSize: "34px",
+                fontWeight: 800,
+                lineHeight: 1.1,
+              }}
+            >
+              {truncate(competitionLabel, 38)}
+            </div>
+            <div
+              style={{
+                color: "#94a3b8",
+                display: "flex",
+                fontSize: "22px",
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
+              {roundLabel} results
+            </div>
+          </div>
+          <div
+            style={{
+              color: "#f8fafc",
+              display: "flex",
+              fontSize: "28px",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+            }}
+          >
+            TRYLINE
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: `${rowGap}px`,
+            left: 64,
+            position: "absolute",
+            right: 64,
+            top: 152,
+            zIndex: 2,
+          }}
+        >
+          {matches.length === 0 ? (
+            <div
+              style={{
+                alignItems: "center",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.16)",
+                borderRadius: "22px",
+                color: "#cbd5e1",
+                display: "flex",
+                fontSize: "34px",
+                fontWeight: 800,
+                height: "220px",
+                justifyContent: "center",
+                textAlign: "center",
+              }}
+            >
+              No finished matches yet
+            </div>
+          ) : (
+            matches.map((match) => {
+              const homeScore = match.home_score ?? 0;
+              const awayScore = match.away_score ?? 0;
+              const homeWon = homeScore > awayScore;
+              const awayWon = awayScore > homeScore;
+
+              return (
+                <div
+                  key={match.id}
+                  style={{
+                    alignItems: "center",
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    borderRadius: "18px",
+                    display: "flex",
+                    height: `${rowHeight}px`,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      background: homeWon ? "#22c55e" : "transparent",
+                      display: "flex",
+                      height: "100%",
+                      width: "7px",
+                    }}
+                  />
+                  <div
+                    style={{
+                      color: homeWon ? "#f8fafc" : "#cbd5e1",
+                      display: "flex",
+                      flex: 1,
+                      fontSize: teamFontSize,
+                      fontWeight: homeWon ? 900 : 700,
+                      lineHeight: 1,
+                      paddingLeft: "22px",
+                    }}
+                  >
+                    {truncate(match.home_team?.name ?? "Home", 26)}
+                  </div>
+                  <div
+                    style={{
+                      color: "#22c55e",
+                      display: "flex",
+                      fontSize: scoreFontSize,
+                      fontWeight: 900,
+                      justifyContent: "center",
+                      minWidth: "156px",
+                      textAlign: "center",
+                    }}
+                  >
+                    {homeScore} — {awayScore}
+                  </div>
+                  <div
+                    style={{
+                      color: awayWon ? "#f8fafc" : "#cbd5e1",
+                      display: "flex",
+                      flex: 1,
+                      fontSize: teamFontSize,
+                      fontWeight: awayWon ? 900 : 700,
+                      justifyContent: "flex-end",
+                      lineHeight: 1,
+                      paddingRight: "22px",
+                      textAlign: "right",
+                    }}
+                  >
+                    {truncate(match.away_team?.name ?? "Away", 26)}
+                  </div>
+                  <div
+                    style={{
+                      background: awayWon ? "#22c55e" : "transparent",
+                      display: "flex",
+                      height: "100%",
+                      width: "7px",
+                    }}
+                  />
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div
+          style={{
+            bottom: 36,
+            color: "#94a3b8",
+            display: "flex",
+            fontSize: "20px",
+            fontWeight: 700,
+            position: "absolute",
+            right: 64,
+            zIndex: 2,
           }}
         >
           trylinerugby.com
