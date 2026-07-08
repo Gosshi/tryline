@@ -7,7 +7,7 @@ export const PLAYER_STAT_MISMATCH_ISSUE =
   "選手別得点統計がmatch_eventsと矛盾しています";
 
 const UNSUPPORTED_STATISTIC_PATTERN =
-  /\d+\s*%|成功率|テリトリー|支配率|ポゼッション|ランメートル|ラインブレイク|獲得率|スティール率|22m進入/;
+  /\d+\s*%|成功率|テリトリー|支配率|ポゼッション|ランメートル|ラインブレイク|獲得率|スティール率|22m進入|\d+回中\d+回/;
 const KEY_PLAYER_CONTEXT_PATTERN =
   /キープレイヤー|注目選手|注目のマッチアップ|マッチアップ|スタメン|先発|出場メンバー/;
 const RUGBY_POSITION_PATTERN =
