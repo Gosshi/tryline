@@ -88,8 +88,10 @@ function normalizeConfidence(
 }
 
 const SCORE_PATTERN = /\b\d{1,3}\s*[-–]\s*\d{1,3}\b/;
+const DATE_PATTERN =
+  /\b(?:\d{1,2}\s+)?(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}\b|\b\d{4}-\d{2}-\d{2}\b/i;
 const RELATIVE_RECENCY_PATTERN =
-  /\b(most recent|latest encounter|latest meeting|previous meeting|previous encounter|last time they met|last meeting|last encounter)\b/i;
+  /\b(most recent|latest encounter|latest meeting|previous meeting|previous encounter|last time they met|last meeting|last encounter|last met)\b/i;
 
 export function getDbAuthoritativeFactRejectionReason(
   fact: string,
@@ -98,7 +100,7 @@ export function getDbAuthoritativeFactRejectionReason(
     return "db_authoritative_score";
   }
 
-  if (RELATIVE_RECENCY_PATTERN.test(fact)) {
+  if (RELATIVE_RECENCY_PATTERN.test(fact) && DATE_PATTERN.test(fact)) {
     return "db_authoritative_relative_recency";
   }
 
@@ -134,8 +136,7 @@ export function filterAllowedSourcedFacts(
         return null;
       }
 
-      const dbAuthoritativeReason =
-        getDbAuthoritativeFactRejectionReason(fact);
+      const dbAuthoritativeReason = getDbAuthoritativeFactRejectionReason(fact);
       if (dbAuthoritativeReason) {
         options?.rejected?.push({
           fact,
@@ -171,7 +172,8 @@ export function filterAllowedSourcedFacts(
   const deduped = new Map<string, SourcedFact>();
   for (const item of normalized) {
     const key = `${item.fact.toLowerCase()}|${item.source_domain}`;
-    const sourceCount = sourceCountByFact.get(item.fact.toLowerCase())?.size ?? 1;
+    const sourceCount =
+      sourceCountByFact.get(item.fact.toLowerCase())?.size ?? 1;
     deduped.set(key, {
       ...item,
       confidence: normalizeConfidence(
