@@ -18,7 +18,13 @@ function asJsonObject(value: Json): JsonObject {
 }
 
 function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
 }
 
 export async function POST(request: Request) {
@@ -29,7 +35,10 @@ export async function POST(request: Request) {
     const matchId = searchParams.get("match_id");
 
     if (!matchId || !isUuid(matchId)) {
-      return NextResponse.json({ error: "match_id is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "match_id is required" },
+        { status: 400 },
+      );
     }
 
     const db = getSupabaseServerClient();
@@ -42,6 +51,7 @@ export async function POST(request: Request) {
           away_team_id,
           kickoff_at,
           external_ids,
+          competition:competitions!matches_competition_id_fkey(family),
           home_team:teams!matches_home_team_id_fkey(name),
           away_team:teams!matches_away_team_id_fkey(name)
         `,
@@ -72,8 +82,10 @@ export async function POST(request: Request) {
 
     const response = await fetchWithPolicy(wikipediaUrl);
     const html = await response.text();
+    const competition = firstRelation(match.competition);
     const lineup = parseMatchLineupFromHtml({
       awayTeamName: match.away_team?.name ?? null,
+      competitionFamily: competition?.family ?? null,
       homeTeamName: match.home_team?.name ?? null,
       html,
       kickoffAt: match.kickoff_at,
@@ -99,8 +111,12 @@ export async function POST(request: Request) {
         throw existingError;
       }
 
-      const existingByName = new Map(existing.map((player) => [player.name, player.id]));
-      const missingNames = uniqueNames.filter((name) => !existingByName.has(name));
+      const existingByName = new Map(
+        existing.map((player) => [player.name, player.id]),
+      );
+      const missingNames = uniqueNames.filter(
+        (name) => !existingByName.has(name),
+      );
 
       if (missingNames.length > 0) {
         const { error: insertError } = await db.from("players").insert(
@@ -178,7 +194,9 @@ export async function POST(request: Request) {
 
     const { error: upsertError } = await db
       .from("match_lineups")
-      .upsert([...homeRows, ...awayRows], { onConflict: "match_id,team_id,jersey_number" });
+      .upsert([...homeRows, ...awayRows], {
+        onConflict: "match_id,team_id,jersey_number",
+      });
 
     if (upsertError) {
       throw upsertError;
@@ -196,6 +214,9 @@ export async function POST(request: Request) {
 
     console.error("Failed to ingest lineups.", error);
 
-    return NextResponse.json({ error: "Failed to ingest lineups" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to ingest lineups" },
+      { status: 500 },
+    );
   }
 }

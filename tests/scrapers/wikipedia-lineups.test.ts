@@ -217,6 +217,139 @@ describe("wikipedia lineups scraper", () => {
     ).toBeNull();
   });
 
+  it.each([
+    {
+      awayTeamName: "Bulls",
+      competitionFamily: "urc",
+      homeTeamName: "Leinster",
+      html: `
+        <div class="mw-heading"><h3 id="Round_1">Round 1</h3></div>
+        <table class="mw-collapsible mw-collapsed">
+          <tr>
+            <td>26 September 2025</td>
+            <td><a>Leinster</a></td>
+            <td>31–22</td>
+            <td><a>Bulls</a></td>
+            <td>Dublin</td>
+          </tr>
+          <tr><td>19:35</td></tr>
+        </table>
+      `,
+      sourceUrl:
+        "https://en.wikipedia.org/wiki/2025%E2%80%9326_United_Rugby_Championship",
+    },
+    {
+      awayTeamName: "Clermont",
+      competitionFamily: "top-14",
+      homeTeamName: "Toulouse",
+      html: `
+        <div class="mw-heading"><h3 id="Round_1">Round 1</h3></div>
+        <div class="vevent summary" id="Toulouse_v_Clermont">
+          <table><tr><td>6 September 2025 21:05</td></tr></table>
+          <table><tr>
+            <td><a>Toulouse</a></td>
+            <td>28–17</td>
+            <td><a>Clermont</a></td>
+          </tr></table>
+          <table><tr><td><span class="location">Toulouse</span></td></tr></table>
+        </div>
+      `,
+      sourceUrl: "https://en.wikipedia.org/wiki/2025%E2%80%9326_Top_14_season",
+    },
+    {
+      awayTeamName: "Bristol Bears",
+      competitionFamily: "premiership",
+      homeTeamName: "Bath",
+      html: `
+        <div class="mw-heading"><h3 id="Round_1">Round 1</h3></div>
+        <div class="vevent summary" id="Bath_v_Bristol">
+          <table><tr><td>26 September 2025 19:45</td></tr></table>
+          <table><tr>
+            <td><a>Bath</a></td>
+            <td>24–20</td>
+            <td><a>Bristol Bears</a></td>
+          </tr></table>
+          <table><tr><td><span class="location">The Rec</span></td></tr></table>
+        </div>
+      `,
+      sourceUrl:
+        "https://en.wikipedia.org/wiki/2025%E2%80%9326_Premiership_Rugby",
+    },
+    {
+      awayTeamName: "Chiefs",
+      competitionFamily: "super-rugby-pacific",
+      homeTeamName: "Blues",
+      html: `
+        <div class="mw-heading"><h3 id="Round_1">Round 1</h3></div>
+        <div class="vevent summary" id="Blues_v_Chiefs">
+          <table><tr><td>14 February 2026 19:05 (UTC+13)</td></tr></table>
+          <table><tr>
+            <td><a>Blues</a></td>
+            <td>22–19</td>
+            <td><a>Chiefs</a></td>
+          </tr></table>
+          <table><tr><td><span class="location">Auckland</span></td></tr></table>
+        </div>
+      `,
+      sourceUrl:
+        "https://en.wikipedia.org/wiki/List_of_2026_Super_Rugby_Pacific_matches",
+    },
+    {
+      awayTeamName: "Italy",
+      competitionFamily: "nations-championship",
+      homeTeamName: "Japan",
+      html: `
+        <div class="vevent summary" id="Japan_v_Italy">
+          <table><tr><td>4 July 2026 17:40 JST</td></tr></table>
+          <table><tr>
+            <td><span class="fn org"><a>Japan</a></span></td>
+            <td>24–19</td>
+            <td><span class="fn org"><a>Italy</a></span></td>
+          </tr></table>
+          <table><tr><td><span class="location">Tokyo</span></td></tr></table>
+        </div>
+      `,
+      sourceUrl: "https://en.wikipedia.org/wiki/2026_Nations_Championship",
+    },
+  ])(
+    "parses season-page lineups with the $competitionFamily parser",
+    async ({
+      awayTeamName,
+      competitionFamily,
+      homeTeamName,
+      html,
+      sourceUrl,
+    }) => {
+      const lineupTable = `
+        <table>
+          <tr><td>FB</td><td>15</td><td>${homeTeamName} Fullback</td></tr>
+          <tr><td>R</td><td>16</td><td>${homeTeamName} Hooker</td></tr>
+          <tr><td>FB</td><td>15</td><td>${awayTeamName} Fullback</td></tr>
+          <tr><td>R</td><td>23</td><td>${awayTeamName} Replacement</td></tr>
+        </table>
+      `;
+      const { parseMatchLineupFromHtml } =
+        await import("@/lib/scrapers/wikipedia-lineups");
+      const result = parseMatchLineupFromHtml({
+        awayTeamName,
+        competitionFamily,
+        homeTeamName,
+        html: `${html}${lineupTable}`,
+        sourceUrl,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.home_players).toEqual([
+        { jersey_number: 15, name: `${homeTeamName} Fullback` },
+        { jersey_number: 16, name: `${homeTeamName} Hooker` },
+      ]);
+      expect(result?.away_players).toEqual([
+        { jersey_number: 15, name: `${awayTeamName} Fullback` },
+        { jersey_number: 23, name: `${awayTeamName} Replacement` },
+      ]);
+    },
+  );
+
   it("uses fetchWithPolicy for network access", async () => {
     fetcherMock.fetchWithPolicy.mockResolvedValue(
       new Response("<h2>No lineups</h2>"),

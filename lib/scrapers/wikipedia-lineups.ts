@@ -1,8 +1,19 @@
 import * as cheerio from "cheerio";
 
+import { parseNationsChampionshipLiveHtml } from "@/lib/ingestion/sources/wikipedia-nations-championship";
+import { parsePremiershipLiveHtml } from "@/lib/ingestion/sources/wikipedia-premiership";
 import { parseWikipediaSixNationsHtml } from "@/lib/ingestion/sources/wikipedia-six-nations";
+import {
+  parseSuperRugbyPacificRegularMatchesHtml,
+  parseSuperRugbyPacificSeasonHtml,
+} from "@/lib/ingestion/sources/wikipedia-super-rugby-pacific";
+import { parseTop14LiveHtml } from "@/lib/ingestion/sources/wikipedia-top-14";
+import { parseUrcLiveHtml } from "@/lib/ingestion/sources/wikipedia-urc";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 import { mapWikipediaTeamName } from "@/lib/scrapers/wikipedia-team-name-map";
+
+import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
+import type { ParsedWikipediaMatch } from "@/lib/ingestion/sources/wikipedia-six-nations";
 
 export type WikipediaLineupPlayer = {
   jersey_number: number;
@@ -21,7 +32,10 @@ function normalizeWhitespace(value: string) {
 }
 
 function normalizeComparableName(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function teamNamesMatch(wikipediaName: string, dbName: string) {
@@ -181,12 +195,17 @@ export function parseLineupFromTableHtml(
 
 export function parseSeasonPageLineupHtml(params: {
   awayTeamName: string;
+  competitionFamily?: string | null;
   homeTeamName: string;
   html: string;
   kickoffAt?: string | null;
   sourceUrl: string;
 }): WikipediaMatchLineup | null {
-  const parsedMatches = parseWikipediaSixNationsHtml(params.html);
+  const parsedMatches = parseSeasonPageMatches({
+    competitionFamily: params.competitionFamily,
+    html: params.html,
+    sourceUrl: params.sourceUrl,
+  });
   const candidates = parsedMatches.filter((match) => {
     if (
       !teamNamesMatch(match.homeTeamName, params.homeTeamName) ||
@@ -214,8 +233,39 @@ export function parseSeasonPageLineupHtml(params: {
   return parseLineupFromTableHtml(lineupTableHtml, params.sourceUrl);
 }
 
+function parseSeasonPageMatches(params: {
+  competitionFamily?: string | null;
+  html: string;
+  sourceUrl: string;
+}): Array<ParsedWikipediaMatch | ParsedLiveMatch> {
+  switch (params.competitionFamily) {
+    case "nations-championship":
+      return parseNationsChampionshipLiveHtml(
+        params.html,
+        [],
+        params.sourceUrl,
+      );
+    case "premiership":
+      return parsePremiershipLiveHtml(params.html, params.sourceUrl);
+    case "super-rugby-pacific":
+      return params.sourceUrl.includes("List_of_")
+        ? parseSuperRugbyPacificRegularMatchesHtml(
+            params.html,
+            params.sourceUrl,
+          )
+        : parseSuperRugbyPacificSeasonHtml(params.html, params.sourceUrl);
+    case "top-14":
+      return parseTop14LiveHtml(params.html, params.sourceUrl);
+    case "urc":
+      return parseUrcLiveHtml(params.html, params.sourceUrl);
+    default:
+      return parseWikipediaSixNationsHtml(params.html, params.sourceUrl);
+  }
+}
+
 export function parseMatchLineupFromHtml(params: {
   awayTeamName?: string | null;
+  competitionFamily?: string | null;
   homeTeamName?: string | null;
   html: string;
   kickoffAt?: string | null;
@@ -234,6 +284,7 @@ export function parseMatchLineupFromHtml(params: {
   try {
     return parseSeasonPageLineupHtml({
       awayTeamName: params.awayTeamName,
+      competitionFamily: params.competitionFamily,
       homeTeamName: params.homeTeamName,
       html: params.html,
       kickoffAt: params.kickoffAt,
@@ -242,7 +293,9 @@ export function parseMatchLineupFromHtml(params: {
   } catch (error) {
     if (
       error instanceof Error &&
-      (error.message.includes("Unable to locate the Wikipedia fixtures section") ||
+      (error.message.includes(
+        "Unable to locate the Wikipedia fixtures section",
+      ) ||
         error.message.includes("No fixture vevent"))
     ) {
       return null;

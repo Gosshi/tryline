@@ -6,6 +6,7 @@ import {
   normalizeWhitespace,
   parseScoreText,
 } from "@/lib/ingestion/sources/live-source-utils";
+import { findAdjacentLineupTableHtml } from "@/lib/ingestion/sources/wikipedia-lineup-table";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
@@ -110,7 +111,7 @@ function parseVeventSectionsHtml(
       homeTeamName,
       homeTeamSlug,
       kickoffAt: parseKickoffAtFromBlockText(dateTable.text()),
-      lineupTableHtml: null,
+      lineupTableHtml: findAdjacentLineupTableHtml($, block),
       rawHtml: $.html(block),
       round: currentRound,
       roundName: null,
@@ -130,24 +131,44 @@ export function parseSuperRugbyPacificLiveHtml(params: {
   seasonHtml: string;
   seasonWikipediaUrl?: string | null;
 }): ParsedLiveMatch[] {
-  const stageById = new Map(FINALS_STAGES.map((stage) => [stage.id, stage]));
-
   return [
-    ...parseVeventSectionsHtml(
+    ...parseSuperRugbyPacificRegularMatchesHtml(
       params.regularHtml,
-      (id) => {
-        const matched = id?.match(ROUND_ID_PATTERN);
-
-        return matched?.[1] ? Number(matched[1]) : null;
-      },
       params.regularWikipediaUrl ?? null,
     ),
-    ...parseVeventSectionsHtml(
+    ...parseSuperRugbyPacificSeasonHtml(
       params.seasonHtml,
-      (id) => stageById.get(id ?? "")?.round ?? null,
       params.seasonWikipediaUrl ?? null,
     ),
   ];
+}
+
+export function parseSuperRugbyPacificRegularMatchesHtml(
+  html: string,
+  wikipediaUrl: string | null = null,
+) {
+  return parseVeventSectionsHtml(
+    html,
+    (id) => {
+      const matched = id?.match(ROUND_ID_PATTERN);
+
+      return matched?.[1] ? Number(matched[1]) : null;
+    },
+    wikipediaUrl,
+  );
+}
+
+export function parseSuperRugbyPacificSeasonHtml(
+  html: string,
+  wikipediaUrl: string | null = null,
+) {
+  const stageById = new Map(FINALS_STAGES.map((stage) => [stage.id, stage]));
+
+  return parseVeventSectionsHtml(
+    html,
+    (id) => stageById.get(id ?? "")?.round ?? null,
+    wikipediaUrl,
+  );
 }
 
 export async function fetchSuperRugbyPacific2026(): Promise<ParsedLiveMatch[]> {
