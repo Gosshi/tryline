@@ -2,13 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import { LIVE_COMPETITION_SOURCES } from "@/lib/ingestion/live-competitions";
 import { parseLeagueOneLiveHtml } from "@/lib/ingestion/sources/league-one-live";
+import { parseAutumnNationsLiveHtml } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
 import {
   fetchNationsChampionship2026,
   parseNationsChampionshipLiveHtml,
 } from "@/lib/ingestion/sources/wikipedia-nations-championship";
-import { fetchNationsChampionship2026EventMatches } from "@/lib/ingestion/sources/wikipedia-nations-championship-events";
+import {
+  fetchNationsChampionship2026EventMatches,
+  NATIONS_CHAMPIONSHIP_SOUTHERN_HEMISPHERE_URL,
+  parseNationsChampionshipEventHtml,
+} from "@/lib/ingestion/sources/wikipedia-nations-championship-events";
 import { parsePncLiveHtml } from "@/lib/ingestion/sources/wikipedia-pnc";
 import { parsePremiershipLiveHtml } from "@/lib/ingestion/sources/wikipedia-premiership";
+import { parseRugbyChampionshipLiveHtml } from "@/lib/ingestion/sources/wikipedia-rugby-championship";
 import {
   fetchSixNations2027,
   parseSixNations2027LiveHtml,
@@ -407,6 +413,20 @@ const TOP_14_HTML = `
 </div>
 `;
 
+const RUGBY_CHAMPIONSHIP_HTML = `
+<div class="mw-heading mw-heading2"><h2 id="Fixtures">Fixtures</h2></div>
+<div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
+<div class="vevent summary" id="New_Zealand_v_South_Africa">
+  <table><tbody><tr><td>5 September 2026<br />19:05 NZST</td></tr></tbody></table>
+  <table><tbody><tr>
+    <td class="vcard"><span class="fn org"><a>New Zealand</a></span></td>
+    <td>v</td>
+    <td class="vcard"><span class="fn org"><a>South Africa</a></span></td>
+  </tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Eden Park</span></td></tr></tbody></table>
+</div>
+`;
+
 describe("live competition source adapters", () => {
   it("registers Six Nations 2027 with the established family and slug", () => {
     expect(
@@ -442,7 +462,12 @@ describe("live competition source adapters", () => {
   });
 
   it("keeps Six Nations 2027 scheduled and finished matches with per-match HTML", () => {
-    const matches = parseSixNations2027LiveHtml(SIX_NATIONS_2027_HTML);
+    const wikipediaUrl =
+      "https://en.wikipedia.org/wiki/2027_Six_Nations_Championship";
+    const matches = parseSixNations2027LiveHtml(
+      SIX_NATIONS_2027_HTML,
+      wikipediaUrl,
+    );
 
     expect(matches).toHaveLength(2);
     expect(matches[0]).toMatchObject({
@@ -450,6 +475,7 @@ describe("live competition source adapters", () => {
       homeTeamName: "Ireland",
       round: 1,
       status: "scheduled",
+      wikipediaUrl,
     });
     expect(matches[1]).toMatchObject({
       awayScore: 13,
@@ -463,8 +489,11 @@ describe("live competition source adapters", () => {
   });
 
   it("parses Super Rugby Pacific kickoff text with timezone abbreviation", () => {
+    const regularWikipediaUrl =
+      "https://en.wikipedia.org/wiki/List_of_2026_Super_Rugby_Pacific_matches";
     const matches = parseSuperRugbyPacificLiveHtml({
       regularHtml: SUPER_RUGBY_PACIFIC_HTML,
+      regularWikipediaUrl,
       seasonHtml: "",
     });
 
@@ -475,11 +504,14 @@ describe("live competition source adapters", () => {
       kickoffAt: "2026-02-13T06:05:00.000Z",
       round: 1,
       status: "scheduled",
+      wikipediaUrl: regularWikipediaUrl,
     });
   });
 
   it("keeps Premiership scheduled vevents instead of dropping scoreless matches", () => {
-    const matches = parsePremiershipLiveHtml(PREMIERSHIP_HTML);
+    const wikipediaUrl =
+      "https://en.wikipedia.org/wiki/2025–26_Premiership_Rugby";
+    const matches = parsePremiershipLiveHtml(PREMIERSHIP_HTML, wikipediaUrl);
 
     expect(matches).toHaveLength(3);
     expect(matches[0]).toMatchObject({
@@ -488,6 +520,7 @@ describe("live competition source adapters", () => {
       homeScore: null,
       homeTeamSlug: "bath",
       status: "scheduled",
+      wikipediaUrl,
     });
     expect(matches[1]).toMatchObject({
       awayScore: 17,
@@ -504,7 +537,9 @@ describe("live competition source adapters", () => {
   });
 
   it("returns Nations Cup scheduled matches without filtering to finished only", () => {
-    const matches = parsePncLiveHtml(PNC_HTML);
+    const wikipediaUrl =
+      "https://en.wikipedia.org/wiki/2026_World_Rugby_Pacific_Nations_Cup";
+    const matches = parsePncLiveHtml(PNC_HTML, wikipediaUrl);
 
     expect(matches).toHaveLength(1);
     expect(matches[0]).toMatchObject({
@@ -512,11 +547,14 @@ describe("live competition source adapters", () => {
       homeTeamSlug: "japan",
       round: 1,
       status: "scheduled",
+      wikipediaUrl,
     });
   });
 
   it("returns Nations Cup matches wrapped in Parsoid section elements", () => {
-    const matches = parsePncLiveHtml(PNC_PARSOID_HTML);
+    const wikipediaUrl =
+      "https://en.wikipedia.org/wiki/2026_World_Rugby_Pacific_Nations_Cup";
+    const matches = parsePncLiveHtml(PNC_PARSOID_HTML, wikipediaUrl);
 
     expect(matches).toHaveLength(1);
     expect(matches[0]).toMatchObject({
@@ -524,11 +562,14 @@ describe("live competition source adapters", () => {
       homeTeamSlug: "japan",
       round: 1,
       status: "scheduled",
+      wikipediaUrl,
     });
   });
 
   it("parses Nations Cup 2026 condensed semi-finals and preserves known finals dates", () => {
-    const matches = parsePncLiveHtml(PNC_CONDENSED_2026_HTML);
+    const wikipediaUrl =
+      "https://en.wikipedia.org/wiki/2026_World_Rugby_Pacific_Nations_Cup";
+    const matches = parsePncLiveHtml(PNC_CONDENSED_2026_HTML, wikipediaUrl);
 
     expect(matches).toHaveLength(4);
     expect(matches[0]).toMatchObject({
@@ -538,6 +579,7 @@ describe("live competition source adapters", () => {
       round: 101,
       status: "scheduled",
       venue: "Hanazono Rugby Stadium, Higashiōsaka",
+      wikipediaUrl,
     });
     expect(matches[1]).toMatchObject({
       awayTeamSlug: "usa",
@@ -565,8 +607,12 @@ describe("live competition source adapters", () => {
   });
 
   it("parses Nations Championship round tables and skips unresolved finals placeholders", () => {
+    const wikipediaUrl =
+      "https://en.wikipedia.org/wiki/2026_Nations_Championship";
     const matches = parseNationsChampionshipLiveHtml(
       NATIONS_CHAMPIONSHIP_HTML,
+      [],
+      wikipediaUrl,
     );
 
     expect(matches).toHaveLength(3);
@@ -579,6 +625,7 @@ describe("live competition source adapters", () => {
       round: 1,
       status: "scheduled",
       venue: "Chichibunomiya Rugby Stadium, Tokyo",
+      wikipediaUrl,
     });
     expect(matches[1]).toMatchObject({
       awayScore: 20,
@@ -609,6 +656,7 @@ describe("live competition source adapters", () => {
     const matches = parseNationsChampionshipLiveHtml(
       NATIONS_CHAMPIONSHIP_HTML,
       kickoffTimes,
+      "https://en.wikipedia.org/wiki/2026_Nations_Championship",
     );
 
     expect(kickoffTimes).toHaveLength(7);
@@ -634,7 +682,9 @@ describe("live competition source adapters", () => {
   });
 
   it("keeps URC regular season scheduled vevents", () => {
-    const matches = parseUrcLiveHtml(URC_HTML);
+    const wikipediaUrl =
+      "https://en.wikipedia.org/wiki/2025–26_United_Rugby_Championship";
+    const matches = parseUrcLiveHtml(URC_HTML, wikipediaUrl);
 
     expect(matches).toHaveLength(1);
     expect(matches[0]).toMatchObject({
@@ -642,11 +692,13 @@ describe("live competition source adapters", () => {
       homeTeamSlug: "leinster",
       round: 1,
       status: "scheduled",
+      wikipediaUrl,
     });
   });
 
   it("keeps Top 14 regular season scheduled vevents", () => {
-    const matches = parseTop14LiveHtml(TOP_14_HTML);
+    const wikipediaUrl = "https://en.wikipedia.org/wiki/2025–26_Top_14_season";
+    const matches = parseTop14LiveHtml(TOP_14_HTML, wikipediaUrl);
 
     expect(matches).toHaveLength(1);
     expect(matches[0]).toMatchObject({
@@ -654,11 +706,17 @@ describe("live competition source adapters", () => {
       homeTeamSlug: "toulouse",
       round: 1,
       status: "scheduled",
+      wikipediaUrl,
     });
   });
 
   it("keeps League One scheduled cards without Full-Time or scores", () => {
-    const matches = parseLeagueOneLiveHtml(LEAGUE_ONE_HTML, "2024-25");
+    const sourceUrl = "https://league-one.jp/en/schedule/?t1=3&year=2024";
+    const matches = parseLeagueOneLiveHtml(
+      LEAGUE_ONE_HTML,
+      "2024-25",
+      sourceUrl,
+    );
 
     expect(matches).toHaveLength(2);
     expect(matches[0]).toMatchObject({
@@ -667,6 +725,7 @@ describe("live competition source adapters", () => {
       homeScore: 23,
       homeTeamSlug: "honda-heat",
       status: "finished",
+      wikipediaUrl: sourceUrl,
     });
     expect(matches[1]).toMatchObject({
       awayScore: null,
@@ -679,7 +738,12 @@ describe("live competition source adapters", () => {
   });
 
   it("keeps League One playoff cards and stores the stage name", () => {
-    const matches = parseLeagueOneLiveHtml(LEAGUE_ONE_PLAYOFF_HTML, "2025-26");
+    const sourceUrl = "https://league-one.jp/en/schedule/?t1=0&year=2025";
+    const matches = parseLeagueOneLiveHtml(
+      LEAGUE_ONE_PLAYOFF_HTML,
+      "2025-26",
+      sourceUrl,
+    );
 
     expect(matches).toHaveLength(1);
     expect(matches[0]).toMatchObject({
@@ -692,6 +756,7 @@ describe("live competition source adapters", () => {
       round: null,
       roundName: "SEMI-FINAL",
       status: "scheduled",
+      wikipediaUrl: sourceUrl,
     });
   });
 
@@ -718,5 +783,30 @@ describe("live competition source adapters", () => {
     });
     expect(matches[0]?.roundName).not.toBe(matches[1]?.roundName);
     expect(matches[0]?.roundName?.toLowerCase()).not.toContain("final");
+  });
+
+  it("annotates remaining live Wikipedia sources with the parsed source URL", () => {
+    const autumnUrl =
+      "https://en.wikipedia.org/wiki/2026_Autumn_Nations_Series";
+    const rugbyChampionshipUrl =
+      "https://en.wikipedia.org/wiki/2026_Rugby_Championship";
+
+    expect(
+      parseAutumnNationsLiveHtml(SIX_NATIONS_2027_HTML, autumnUrl)[0],
+    ).toMatchObject({ wikipediaUrl: autumnUrl });
+    expect(
+      parseRugbyChampionshipLiveHtml(
+        RUGBY_CHAMPIONSHIP_HTML,
+        rugbyChampionshipUrl,
+      )[0],
+    ).toMatchObject({ wikipediaUrl: rugbyChampionshipUrl });
+    expect(
+      parseNationsChampionshipEventHtml(
+        SIX_NATIONS_2027_HTML,
+        NATIONS_CHAMPIONSHIP_SOUTHERN_HEMISPHERE_URL,
+      )[0],
+    ).toMatchObject({
+      wikipediaUrl: NATIONS_CHAMPIONSHIP_SOUTHERN_HEMISPHERE_URL,
+    });
   });
 });

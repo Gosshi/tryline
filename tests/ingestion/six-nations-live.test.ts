@@ -81,6 +81,8 @@ describe("Six Nations 2027 live ingestion", () => {
             source: "wikipedia",
             wikipedia_event_id: "Ireland_v_England",
             wikipedia_round: 1,
+            wikipedia_url:
+              "https://en.wikipedia.org/wiki/2027_Six_Nations_Championship",
           },
           homeTeamId: "team-ireland",
           id: "match-1",
@@ -130,6 +132,8 @@ describe("Six Nations 2027 live ingestion", () => {
           roundName: null,
           status: "finished",
           venue: "Aviva Stadium",
+          wikipediaUrl:
+            "https://en.wikipedia.org/wiki/2027_Six_Nations_Championship",
         },
       ]),
       season: "2027",
@@ -147,6 +151,12 @@ describe("Six Nations 2027 live ingestion", () => {
       expect.objectContaining({
         awayTeamId: "team-england",
         competitionId: "competition-1",
+        externalIds: expect.objectContaining({
+          wikipedia_event_id: "Ireland_v_England",
+          wikipedia_round: 1,
+          wikipedia_url:
+            "https://en.wikipedia.org/wiki/2027_Six_Nations_Championship",
+        }),
         homeTeamId: "team-ireland",
         rawHtml,
       }),

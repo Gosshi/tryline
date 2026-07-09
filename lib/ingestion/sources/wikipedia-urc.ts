@@ -92,7 +92,10 @@ function resolveRound(sectionId: string | null) {
   return matched?.[1] !== undefined ? Number(matched[1]) : undefined;
 }
 
-export function parseUrcLiveHtml(html: string): ParsedLiveMatch[] {
+export function parseUrcLiveHtml(
+  html: string,
+  wikipediaUrl: string | null = null,
+): ParsedLiveMatch[] {
   const $ = load(html);
   const results: ParsedLiveMatch[] = [];
 
@@ -150,6 +153,7 @@ export function parseUrcLiveHtml(html: string): ParsedLiveMatch[] {
       roundName: null,
       status: score.status,
       venue: normalizeWhitespace(firstRowCells.eq(4).text()) || null,
+      wikipediaUrl,
     });
   }
 
@@ -161,7 +165,7 @@ export async function fetchUrc202526(): Promise<ParsedLiveMatch[]> {
 
   try {
     const response = await fetchWithPolicy(sourceUrl);
-    return parseUrcLiveHtml(await response.text());
+    return parseUrcLiveHtml(await response.text(), sourceUrl);
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
       return [];

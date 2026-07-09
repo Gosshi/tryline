@@ -6,12 +6,18 @@ import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
 
-export function parseSixNations2027LiveHtml(html: string): ParsedLiveMatch[] {
-  return parseWikipediaSixNations2027Html(html);
+export function parseSixNations2027LiveHtml(
+  html: string,
+  wikipediaUrl: string | null = null,
+): ParsedLiveMatch[] {
+  return parseWikipediaSixNations2027Html(html, wikipediaUrl);
 }
 
 export async function fetchSixNations2027(): Promise<ParsedLiveMatch[]> {
   const response = await fetchWithPolicy(WIKIPEDIA_SIX_NATIONS_2027_URL);
 
-  return parseSixNations2027LiveHtml(await response.text());
+  return parseSixNations2027LiveHtml(
+    await response.text(),
+    WIKIPEDIA_SIX_NATIONS_2027_URL,
+  );
 }

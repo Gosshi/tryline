@@ -123,7 +123,10 @@ function resolveRound(sectionId: string | null) {
   return matched?.[1] !== undefined ? Number(matched[1]) : undefined;
 }
 
-export function parseTop14LiveHtml(html: string): ParsedLiveMatch[] {
+export function parseTop14LiveHtml(
+  html: string,
+  wikipediaUrl: string | null = null,
+): ParsedLiveMatch[] {
   const $ = load(html);
   const results: ParsedLiveMatch[] = [];
 
@@ -174,6 +177,7 @@ export function parseTop14LiveHtml(html: string): ParsedLiveMatch[] {
       venue:
         normalizeWhitespace(venueTable.find(".location").first().text()) ||
         null,
+      wikipediaUrl,
     });
   }
 
@@ -185,7 +189,7 @@ export async function fetchTop14202526(): Promise<ParsedLiveMatch[]> {
 
   try {
     const response = await fetchWithPolicy(sourceUrl);
-    return parseTop14LiveHtml(await response.text());
+    return parseTop14LiveHtml(await response.text(), sourceUrl);
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
       return [];
