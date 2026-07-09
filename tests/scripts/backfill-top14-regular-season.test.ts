@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  mergeCompetitionDateRange,
   parseOptions,
   runBackfillTop14RegularSeason,
 } from "@/scripts/backfill-top14-regular-season";
@@ -24,6 +25,22 @@ const MATCHES: Top14LnrMatchResult[] = [
     status: "finished",
     venue: "Stade Ernest-Wallon",
   },
+  {
+    away_score: null,
+    away_team_slug: "stade-francais",
+    home_score: null,
+    home_team_slug: "bordeaux-begles",
+    kickoff_at: "2025-09-07T14:30:00.000Z",
+    lnr_id: "11002",
+    lnr_match_path:
+      "/feuille-de-match/2025-2026/j1/11002-union-bordeaux-begles-stade-francais-paris",
+    round: 1,
+    round_slug: "j1",
+    season: "2025-26",
+    source_url: "https://top14.lnr.fr/calendrier-et-resultats/2025-2026/j1",
+    status: "scheduled",
+    venue: null,
+  },
 ];
 
 describe("backfill-top14-regular-season", () => {
@@ -41,6 +58,21 @@ describe("backfill-top14-regular-season", () => {
       season: "2025-26",
     });
     expect(() => parseOptions(["--season=2025-26"])).toThrow("Writes require");
+    expect(() => parseOptions(["--season=2026-27", "--dry-run"])).toThrow(
+      "Unsupported Top 14 regular-season --season=2026-27",
+    );
+  });
+
+  it("merges regular-season dates with existing competition dates", () => {
+    expect(
+      mergeCompetitionDateRange(
+        { endDate: "2026-06-27", startDate: "2026-06-13" },
+        { endDate: "2026-06-06", startDate: "2025-09-06" },
+      ),
+    ).toEqual({
+      endDate: "2026-06-27",
+      startDate: "2025-09-06",
+    });
   });
 
   it("dry-runs parsed targets without touching Supabase", async () => {
@@ -67,14 +99,22 @@ describe("backfill-top14-regular-season", () => {
       }),
     ).resolves.toEqual({
       dryRun: true,
+      finished: 1,
       matchesInserted: 0,
       matchesUpdated: 0,
-      parsed: 1,
+      parsed: 2,
+      scheduled: 1,
       season: "2025-26",
     });
     expect(db.from).not.toHaveBeenCalled();
     expect(logger.log).toHaveBeenCalledWith(
-      "Top 14 regular-season target: season=2025-26 parsed=1 teams=2 dry_run=true",
+      "Top 14 regular-season target: season=2025-26 parsed=2 teams=4 dry_run=true",
+    );
+    expect(logger.log).toHaveBeenCalledWith(
+      "Top 14 regular-season status: finished=1 scheduled=1",
+    );
+    expect(logger.log).toHaveBeenCalledWith(
+      "Top 14 regular-season sample 1: toulouse vs clermont kickoff=2025-09-06T19:05:00.000Z venue=Stade Ernest-Wallon score=31-18",
     );
   });
 });

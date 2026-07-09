@@ -27,6 +27,40 @@ const CALENDAR_HTML = `
   </article>
 `;
 
+const REALISH_LNR_SCORE_LINK_HTML = `
+  <div class="calendar-results__fixture-date title title--textured">
+    samedi 06 septembre
+  </div>
+  <div class="calendar-results__line">
+    <div class="match-calendar-line">
+      <div class="match-line">
+        <div class="club-line club-line--reversed">
+          <a href="https://top14.lnr.fr/club/paris" class="club-line__name">Stade Français Paris</a>
+        </div>
+        <div class="match-line__score-wrapper">
+          <a href="https://top14.lnr.fr/feuille-de-match/2025-2026/j1/11311-paris-montauban" class="match-line__score">
+            47 - 24
+          </a>
+        </div>
+        <div class="club-line">
+          <a href="https://top14.lnr.fr/club/montauban" class="club-line__name">US Montauban</a>
+        </div>
+      </div>
+    </div>
+  </div>
+`;
+
+const UNKNOWN_TEAM_HTML = `
+  <article>
+    <a href="/feuille-de-match/2025-2026/j1/11001-known-unknown">Unknown 1</a>
+    <time datetime="2025-09-06T21:05:00+02:00"></time>
+  </article>
+  <article>
+    <a href="/feuille-de-match/2025-2026/j1/11002-also-missing">Unknown 2</a>
+    <time datetime="2025-09-06T21:05:00+02:00"></time>
+  </article>
+`;
+
 describe("top14-lnr-results", () => {
   it("builds regular-season LNR URLs", () => {
     expect(toLnrSeason("2025-26")).toBe("2025-2026");
@@ -91,5 +125,40 @@ describe("top14-lnr-results", () => {
         venue: "Stade Chaban-Delmas",
       },
     ]);
+  });
+
+  it("parses finished score links from real-ish LNR calendar rows", () => {
+    const matches = parseTop14LnrCalendarHtml({
+      html: REALISH_LNR_SCORE_LINK_HTML,
+      roundSlug: "j1",
+      season: "2025-26",
+      sourceUrl: "https://top14.lnr.fr/calendrier-et-resultats/2025-2026/j1",
+    });
+
+    expect(matches).toEqual([
+      expect.objectContaining({
+        away_score: 24,
+        away_team_slug: "us-montauban",
+        home_score: 47,
+        home_team_slug: "stade-francais",
+        kickoff_at: "2025-09-06T00:00:00.000Z",
+        lnr_id: "11311",
+        status: "finished",
+        venue: null,
+      }),
+    ]);
+  });
+
+  it("reports all unknown LNR team slug pairs in a round", () => {
+    expect(() =>
+      parseTop14LnrCalendarHtml({
+        html: UNKNOWN_TEAM_HTML,
+        roundSlug: "j1",
+        season: "2025-26",
+        sourceUrl: "https://top14.lnr.fr/calendrier-et-resultats/2025-2026/j1",
+      }),
+    ).toThrow(
+      "Unknown Top 14 LNR team slug pair(s): known-unknown, also-missing",
+    );
   });
 });

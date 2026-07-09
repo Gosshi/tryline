@@ -33,13 +33,16 @@ type RunDeps = {
 
 type BackfillResult = {
   dryRun: boolean;
+  finished: number;
   matchesInserted: number;
   matchesUpdated: number;
   parsed: number;
+  scheduled: number;
   season: string;
 };
 
 const FAMILY = "top-14";
+const SUPPORTED_SEASONS = new Set(["2024-25", "2025-26"]);
 const USAGE =
   "Usage: pnpm tsx scripts/backfill-top14-regular-season.ts --season=<YYYY-YY> [--dry-run] [--confirm-owner-approved]";
 
@@ -79,6 +82,14 @@ export function parseOptions(argv: string[]): CliOptions {
     throw new Error(USAGE);
   }
 
+  if (!SUPPORTED_SEASONS.has(season)) {
+    throw new Error(
+      `Unsupported Top 14 regular-season --season=${season}. Supported seasons: ${[
+        ...SUPPORTED_SEASONS,
+      ].join(", ")}`,
+    );
+  }
+
   if (!dryRun && !ownerApproved) {
     throw new Error(`${USAGE}\nWrites require --confirm-owner-approved.`);
   }
@@ -100,22 +111,59 @@ function getCompetitionDates(results: Top14LnrMatchResult[]) {
   return { endDate, startDate };
 }
 
+export function mergeCompetitionDateRange(
+  existing: { endDate: string | null; startDate: string | null },
+  next: { endDate: string; startDate: string },
+) {
+  const isDate = (value: string | null): value is string => Boolean(value);
+  const startDate = [existing.startDate, next.startDate]
+    .filter(isDate)
+    .sort((a, b) => a.localeCompare(b))[0];
+  const endDate = [existing.endDate, next.endDate]
+    .filter(isDate)
+    .sort((a, b) => b.localeCompare(a))[0];
+
+  if (!startDate || !endDate) {
+    throw new Error("Unable to merge Top 14 competition dates.");
+  }
+
+  return { endDate, startDate };
+}
+
 async function upsertCompetition(
   db: SupabaseClient<Database>,
   season: string,
   results: Top14LnrMatchResult[],
 ) {
   const { endDate, startDate } = getCompetitionDates(results);
+  const slug = `${FAMILY}-${season}`;
+  const { data: existing, error: existingError } = await db
+    .from("competitions")
+    .select("start_date, end_date")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  const mergedDates = mergeCompetitionDateRange(
+    {
+      endDate: existing?.end_date ?? null,
+      startDate: existing?.start_date ?? null,
+    },
+    { endDate, startDate },
+  );
   const { data, error } = await db
     .from("competitions")
     .upsert(
       {
-        end_date: endDate,
+        end_date: mergedDates.endDate,
         family: FAMILY,
         name: `Top 14 ${season}`,
         season,
-        slug: `${FAMILY}-${season}`,
-        start_date: startDate,
+        slug,
+        start_date: mergedDates.startDate,
       },
       { onConflict: "slug" },
     )
@@ -127,6 +175,52 @@ async function upsertCompetition(
   }
 
   return data.id;
+}
+
+function summarizeResults(results: Top14LnrMatchResult[]) {
+  const finished = results.filter(
+    (result) => result.status === "finished",
+  ).length;
+
+  return {
+    finished,
+    scheduled: results.length - finished,
+  };
+}
+
+function formatResultSample(result: Top14LnrMatchResult) {
+  const score =
+    result.status === "finished" &&
+    result.home_score !== null &&
+    result.away_score !== null
+      ? `${result.home_score}-${result.away_score}`
+      : "scheduled";
+
+  return [
+    `${result.home_team_slug} vs ${result.away_team_slug}`,
+    `kickoff=${result.kickoff_at}`,
+    `venue=${result.venue ?? "unknown"}`,
+    `score=${score}`,
+  ].join(" ");
+}
+
+function logDryRunSummary(
+  logger: Pick<Console, "log">,
+  results: Top14LnrMatchResult[],
+) {
+  const summary = summarizeResults(results);
+
+  logger.log(
+    `Top 14 regular-season status: finished=${summary.finished} scheduled=${summary.scheduled}`,
+  );
+
+  results.slice(0, 5).forEach((result, index) => {
+    logger.log(
+      `Top 14 regular-season sample ${index + 1}: ${formatResultSample(result)}`,
+    );
+  });
+
+  return summary;
 }
 
 async function getTeamLookup(
@@ -232,13 +326,16 @@ export async function runBackfillTop14RegularSeason({
   logger.log(
     `Top 14 regular-season target: season=${options.season} parsed=${results.length} teams=${uniqueTeams.length} dry_run=${options.dryRun}`,
   );
+  const summary = logDryRunSummary(logger, results);
 
   if (options.dryRun) {
     return {
       dryRun: true,
+      finished: summary.finished,
       matchesInserted: 0,
       matchesUpdated: 0,
       parsed: results.length,
+      scheduled: summary.scheduled,
       season: options.season,
     };
   }
@@ -257,9 +354,11 @@ export async function runBackfillTop14RegularSeason({
 
   const result = {
     dryRun: false,
+    finished: summary.finished,
     matchesInserted: upserted.matchesInserted,
     matchesUpdated: upserted.matchesUpdated,
     parsed: results.length,
+    scheduled: summary.scheduled,
     season: options.season,
   };
 

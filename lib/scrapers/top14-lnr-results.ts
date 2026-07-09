@@ -155,6 +155,14 @@ export function resolveTop14TeamsFromLnrSlug(slugPart: string) {
   throw new Error(`Unknown Top 14 LNR team slug pair: ${slugPart}`);
 }
 
+function tryResolveTop14TeamsFromLnrSlug(slugPart: string) {
+  try {
+    return resolveTop14TeamsFromLnrSlug(slugPart);
+  } catch {
+    return null;
+  }
+}
+
 function lastSundayOfMonthUtc(year: number, monthIndex: number) {
   const date = new Date(Date.UTC(year, monthIndex + 1, 0));
   date.setUTCDate(date.getUTCDate() - date.getUTCDay());
@@ -406,6 +414,7 @@ export function parseTop14LnrCalendarHtml(params: {
 }): Top14LnrMatchResult[] {
   const $ = load(params.html);
   const results = new Map<string, Top14LnrMatchResult>();
+  const unknownSlugParts = new Set<string>();
   const expectedLnrSeason = toLnrSeason(params.season);
 
   $("a[href*='/feuille-de-match/']").each((_, element) => {
@@ -422,7 +431,13 @@ export function parseTop14LnrCalendarHtml(params: {
       return;
     }
 
-    const teams = resolveTop14TeamsFromLnrSlug(parsedPath.slugPart);
+    const teams = tryResolveTop14TeamsFromLnrSlug(parsedPath.slugPart);
+
+    if (!teams) {
+      unknownSlugParts.add(parsedPath.slugPart);
+      return;
+    }
+
     const container = findMatchContainer($, element);
     const dateContext = findFixtureDateContext($, element);
     const kickoffAt = parseKickoffAt(container, parsedPath.season, dateContext);
@@ -449,6 +464,12 @@ export function parseTop14LnrCalendarHtml(params: {
       venue: parseVenue(container),
     });
   });
+
+  if (unknownSlugParts.size > 0) {
+    throw new Error(
+      `Unknown Top 14 LNR team slug pair(s): ${[...unknownSlugParts].join(", ")}`,
+    );
+  }
 
   return [...results.values()].filter(
     (match) => toLnrSeason(match.season) === expectedLnrSeason,
