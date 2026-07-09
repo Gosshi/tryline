@@ -7,7 +7,6 @@ import {
   parseDmyDate,
   parseScoreText,
 } from "@/lib/ingestion/sources/live-source-utils";
-import { findAdjacentLineupTableHtml } from "@/lib/ingestion/sources/wikipedia-lineup-table";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
@@ -155,7 +154,7 @@ export function parsePremiershipLiveHtml(
       homeTeamName,
       homeTeamSlug,
       kickoffAt: parseKickoffAt(dateTable.text()),
-      lineupTableHtml: findAdjacentLineupTableHtml($, block),
+      lineupTableHtml: null,
       rawHtml: $.html(block),
       round,
       roundName,
