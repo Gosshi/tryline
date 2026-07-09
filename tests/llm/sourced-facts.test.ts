@@ -169,6 +169,16 @@ describe("sourced facts allowlist", () => {
         "The two sides last met in November 2025",
       ),
     ).toBe("db_authoritative_relative_recency");
+    expect(
+      getDbAuthoritativeFactRejectionReason(
+        "On 4 July 2026, England's fly-half missed a match-winning penalty attempt against South Africa in the final minute",
+      ),
+    ).toBe("db_authoritative_relative_recency");
+    expect(
+      getDbAuthoritativeFactRejectionReason(
+        "On 4 July 2026, South Africa and England played a Nations Championship match in Twickenham",
+      ),
+    ).toBe("db_authoritative_relative_recency");
   });
 
   it("allows off-DB injury and lineup facts", () => {
@@ -194,8 +204,8 @@ describe("sourced facts allowlist", () => {
 });
 
 describe("buildSearchPrompt", () => {
-  it("uses sourced facts prompt version 1.1.0", () => {
-    expect(SEARCH_PROMPT_VERSION).toBe("sourced-facts@1.1.0");
+  it("uses sourced facts prompt version 1.2.0", () => {
+    expect(SEARCH_PROMPT_VERSION).toBe("sourced-facts@1.2.0");
   });
 
   it("targets post-match statistics and official awards for recaps", () => {
@@ -251,6 +261,20 @@ describe("isSourcedFactsEnabledForMatch", () => {
         external_ids: { round_name: "Semi-finals" },
       }),
     ).toBe(true);
+  });
+
+  it("keeps non-target regular-round matches disabled", () => {
+    expect(
+      isSourcedFactsEnabledForMatch({
+        ...leagueOneMatch,
+        competition: {
+          family: "premiership",
+          name: "Premiership Rugby",
+          season: "2025-26",
+        },
+        external_ids: { round_name: "Round 12" },
+      }),
+    ).toBe(false);
   });
 });
 
@@ -434,7 +458,7 @@ describe("fetchSourcedFactsForMatch", () => {
       "Do not return past result scores, league standings, or win/loss records",
     );
     expect(input).toContain(
-      "Never use relative recency phrasing such as 'most recent'",
+      "Do not return past-match dates or relative recency phrasing",
     );
   });
 });

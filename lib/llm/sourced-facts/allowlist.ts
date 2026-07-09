@@ -100,7 +100,7 @@ export function getDbAuthoritativeFactRejectionReason(
     return "db_authoritative_score";
   }
 
-  if (RELATIVE_RECENCY_PATTERN.test(fact) && DATE_PATTERN.test(fact)) {
+  if (DATE_PATTERN.test(fact)) {
     return "db_authoritative_relative_recency";
   }
 

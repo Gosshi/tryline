@@ -13,7 +13,7 @@ import type {
 } from "@/lib/llm/sourced-facts/types";
 import type { ContentType } from "@/lib/llm/types";
 
-export const SEARCH_PROMPT_VERSION = "sourced-facts@1.1.0";
+export const SEARCH_PROMPT_VERSION = "sourced-facts@1.2.0";
 const PREVIEW_REFRESH_WINDOW_HOURS = 72;
 const PREVIEW_FRESHNESS_HOURS = 24;
 const MAX_STORED_FACTS = 8;
@@ -175,7 +175,7 @@ export function buildSearchPrompt(
       "- Use medium for a single trusted third-party source.",
       "- Use low for uncertain or weakly supported facts.",
       "- Do not return past result scores, league standings, or win/loss records (the database is authoritative for these).",
-      "- When referencing any past match, include the exact date. Never use relative recency phrasing such as 'most recent', 'previous meeting', or 'last time they met'.",
+      "- Do not return past-match dates or relative recency phrasing such as 'most recent', 'previous meeting', or 'last time they met' (the database is authoritative for match dates).",
       "- Do not include quotes longer than 15 words. Prefer paraphrased facts.",
       "- Do not return article text or copyrighted prose.",
       ...contentTypeRules,
