@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const playerMocks = vi.hoisted(() => ({
   getMatchesForPlayer: vi.fn(),
+  getPlayerCareerStats: vi.fn(),
   getPlayerBySlug: vi.fn(),
   isIndexablePlayer: vi.fn(),
 }));
@@ -47,7 +48,9 @@ describe("player page metadata", () => {
     playerMocks.isIndexablePlayer.mockReturnValue(false);
 
     await expect(
-      generateMetadata({ params: Promise.resolve({ slug: "player-1234abcd" }) }),
+      generateMetadata({
+        params: Promise.resolve({ slug: "player-1234abcd" }),
+      }),
     ).resolves.toMatchObject({
       robots: {
         follow: true,

@@ -1,5 +1,10 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { listMatchIdsWithContent } from "@/lib/db/queries/matches";
+import {
+  buildPlayerStatsFromEvents,
+  createEmptyPlayerStats,
+  playerNamesLikelyMatch,
+} from "@/lib/stats/player-stats";
 
 export type PlayerDetail = {
   aliasTeams: { name: string; slug: string }[];
@@ -34,6 +39,14 @@ export type TeamPlayerItem = {
   slug: string;
 };
 
+export type PlayerCareerStats = {
+  appearances: number;
+  conversions: number;
+  penaltyGoals: number;
+  points: number;
+  tries: number;
+};
+
 type PlayerDetailRow = {
   canonical_player_id: string | null;
   id: string;
@@ -59,7 +72,10 @@ type PlayerLineupRow = {
 };
 
 type PlayerAliasTeamRow = {
-  team: { name: string; slug: string } | { name: string; slug: string }[] | null;
+  team:
+    | { name: string; slug: string }
+    | { name: string; slug: string }[]
+    | null;
 };
 
 type PlayerIndexRow = {
@@ -71,6 +87,16 @@ type PlayerIndexRow = {
 
 type PlayerIdRow = {
   player_id: string | null;
+};
+
+type PlayerNameRow = {
+  id: string;
+  name: string;
+};
+
+type PlayerMatchEventRow = {
+  metadata: unknown;
+  type: string;
 };
 
 const UNRESOLVED_PLAYER_SLUG_PATTERN = /^player-[a-f0-9]{8}$/i;
@@ -190,7 +216,9 @@ async function listPlayerIndexRowsByIds(
   return rows;
 }
 
-async function getPlayerIdsForLineupLookup(playerId: string): Promise<string[]> {
+async function getPlayerIdsForLineupLookup(
+  playerId: string,
+): Promise<string[]> {
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("players")
@@ -206,9 +234,160 @@ async function getPlayerIdsForLineupLookup(playerId: string): Promise<string[]> 
   return ids.length > 0 ? ids : [playerId];
 }
 
-async function hasPublishedContentLineup(
+function asMetadataObject(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function getEventPlayerName(metadata: unknown): string | null {
+  const value = asMetadataObject(metadata).player_name;
+
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function isPenaltyTry(metadata: unknown): boolean {
+  return asMetadataObject(metadata).is_penalty_try === true;
+}
+
+async function listPlayerNamesByIds(playerIds: string[]): Promise<string[]> {
+  if (playerIds.length === 0) {
+    return [];
+  }
+
+  const client = getSupabasePublicServerClient();
+  const rows: PlayerNameRow[] = [];
+
+  for (const playerIdChunk of chunkArray(playerIds, 200)) {
+    const { data, error } = await client
+      .from("players")
+      .select("id, name")
+      .in("id", playerIdChunk);
+
+    if (error) {
+      throw error;
+    }
+
+    rows.push(...((data ?? []) as PlayerNameRow[]));
+  }
+
+  return [...new Set(rows.map((row) => row.name).filter(Boolean))];
+}
+
+async function listLineupMatchIdsForPlayerIds(
+  playerIds: string[],
+): Promise<string[]> {
+  if (playerIds.length === 0) {
+    return [];
+  }
+
+  const client = getSupabasePublicServerClient();
+  const matchIds = new Set<string>();
+
+  for (const playerIdChunk of chunkArray(playerIds, 200)) {
+    for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
+      const { data, error } = await client
+        .from("match_lineups")
+        .select("match_id")
+        .in("player_id", playerIdChunk)
+        .range(from, from + SUPABASE_PAGE_SIZE - 1);
+
+      if (error) {
+        throw error;
+      }
+
+      const rows = (data ?? []) as Array<{ match_id: string }>;
+
+      for (const row of rows) {
+        matchIds.add(row.match_id);
+      }
+
+      if (rows.length < SUPABASE_PAGE_SIZE) {
+        break;
+      }
+    }
+  }
+
+  return [...matchIds];
+}
+
+async function listScoringEventsForMatchIds(
+  matchIds: string[],
+): Promise<PlayerMatchEventRow[]> {
+  if (matchIds.length === 0) {
+    return [];
+  }
+
+  const client = getSupabasePublicServerClient();
+  const rows: PlayerMatchEventRow[] = [];
+
+  for (const matchIdChunk of chunkArray(matchIds, 200)) {
+    for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
+      const { data, error } = await client
+        .from("match_events")
+        .select("type, metadata")
+        .in("match_id", matchIdChunk)
+        .in("type", ["try", "conversion", "penalty", "penalty_goal"])
+        .range(from, from + SUPABASE_PAGE_SIZE - 1);
+
+      if (error) {
+        throw error;
+      }
+
+      const page = (data ?? []) as PlayerMatchEventRow[];
+      rows.push(...page);
+
+      if (page.length < SUPABASE_PAGE_SIZE) {
+        break;
+      }
+    }
+  }
+
+  return rows;
+}
+
+export async function getPlayerCareerStats(
   playerId: string,
-): Promise<boolean> {
+): Promise<PlayerCareerStats> {
+  const playerIds = await getPlayerIdsForLineupLookup(playerId);
+  const [playerNames, lineupMatchIds] = await Promise.all([
+    listPlayerNamesByIds(playerIds),
+    listLineupMatchIdsForPlayerIds(playerIds),
+  ]);
+  const events = await listScoringEventsForMatchIds(lineupMatchIds);
+  const matchedEvents = events.flatMap((event) => {
+    const playerName = getEventPlayerName(event.metadata);
+
+    if (
+      !playerName ||
+      !playerNames.some((name) => playerNamesLikelyMatch(name, playerName))
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        is_penalty_try: isPenaltyTry(event.metadata),
+        player_name: playerNames[0] ?? playerName,
+        type: event.type,
+      },
+    ];
+  });
+  const [statsEntry] = buildPlayerStatsFromEvents(matchedEvents).values();
+  const stats = statsEntry?.stats ?? createEmptyPlayerStats();
+
+  return {
+    appearances: lineupMatchIds.length,
+    conversions: stats.conversions,
+    penaltyGoals: stats.penaltyGoals,
+    points: stats.totalPoints,
+    tries: stats.tries,
+  };
+}
+
+async function hasPublishedContentLineup(playerId: string): Promise<boolean> {
   const [playerIds, matchIds] = await Promise.all([
     getPlayerIdsForLineupLookup(playerId),
     listPublishedContentMatchIds(),

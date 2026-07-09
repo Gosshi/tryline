@@ -4,13 +4,17 @@ import { Fragment } from "react";
 
 import { PlayerAvatar } from "@/components/player-avatar";
 import {
+  getPlayerCareerStats,
   getMatchesForPlayer,
   getPlayerBySlug,
   isIndexablePlayer,
 } from "@/lib/db/queries/players";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 
-import type { PlayerMatchRow } from "@/lib/db/queries/players";
+import type {
+  PlayerCareerStats,
+  PlayerMatchRow,
+} from "@/lib/db/queries/players";
 import type { Metadata } from "next";
 
 type Props = {
@@ -41,6 +45,16 @@ function formatScore(match: PlayerMatchRow): string {
   }
 
   return `${match.homeScore}-${match.awayScore}`;
+}
+
+function hasRecordedScoringStats(stats: PlayerCareerStats): boolean {
+  return (
+    stats.appearances > 0 ||
+    stats.tries > 0 ||
+    stats.conversions > 0 ||
+    stats.penaltyGoals > 0 ||
+    stats.points > 0
+  );
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -79,10 +93,13 @@ export default async function PlayerPage({ params }: Props) {
     redirect(`/players/${player.canonicalSlug}`);
   }
 
-  const matches = await getMatchesForPlayer(player.id);
+  const [matches, careerStats] = await Promise.all([
+    getMatchesForPlayer(player.id),
+    getPlayerCareerStats(player.id),
+  ]);
 
   return (
-    <main className="min-h-screen bg-paper">
+    <main className="bg-paper min-h-screen">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         <nav aria-label="パンくずリスト">
           <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
@@ -139,6 +156,42 @@ export default async function PlayerPage({ params }: Props) {
             ))}
           </div>
         </header>
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              通算成績
+            </h2>
+            <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+              match_events とラインアップ登録から集計
+            </p>
+          </div>
+
+          {hasRecordedScoringStats(careerStats) ? (
+            <dl className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50 sm:grid-cols-5">
+              {[
+                ["出場", careerStats.appearances],
+                ["トライ", careerStats.tries],
+                ["コンバージョン", careerStats.conversions],
+                ["PG", careerStats.penaltyGoals],
+                ["獲得ポイント", careerStats.points],
+              ].map(([label, value]) => (
+                <div key={label} className="min-w-0">
+                  <dt className="text-xs font-semibold text-[var(--color-ink-muted)]">
+                    {label}
+                  </dt>
+                  <dd className="mt-1 text-2xl font-bold tabular-nums text-[var(--color-ink)]">
+                    {value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
+              記録なし
+            </p>
+          )}
+        </section>
 
         <section className="space-y-4">
           <div>

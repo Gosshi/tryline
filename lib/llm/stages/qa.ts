@@ -7,7 +7,6 @@ import {
   PLAYER_STAT_MISMATCH_ISSUE,
   WINNER_MISMATCH_ISSUE,
 } from "@/lib/content/fabrication-guard";
-import { pointsForMatchEvent } from "@/lib/format/match-event-points";
 import {
   CONTENT_LENGTH_ISSUE,
   getContentLengthRequirement,
@@ -21,6 +20,11 @@ import {
   type QaMatchContext,
   type TeamFormStats,
 } from "@/lib/llm/prompts/qa-content";
+import {
+  buildPlayerStatsFromEvents,
+  findActualPlayerStats,
+  type ActualPlayerStats,
+} from "@/lib/stats/player-stats";
 
 import type {
   AssembledContentInput,
@@ -58,12 +62,6 @@ type StatedPlayerStatClaim = {
   playerName: string;
   totalPoints?: number;
   tries?: number;
-};
-type ActualPlayerStats = {
-  conversions: number;
-  penaltyGoals: number;
-  totalPoints: number;
-  tries: number;
 };
 
 function appendIssue(issues: string[], issue: string): string[] {
@@ -176,9 +174,7 @@ function buildFormStatsFactsForSide(
   }
 
   const winRatePercent = stats.win_rate_last_5 * 100;
-  const facts = [
-    `${label}チームの勝率${formatPercent(winRatePercent)}`,
-  ];
+  const facts = [`${label}チームの勝率${formatPercent(winRatePercent)}`];
 
   if (Number.isInteger(winRatePercent)) {
     facts.push(`${label}チームの勝率${winRatePercent.toFixed(1)}%`);
@@ -219,26 +215,6 @@ function parseStatedWinner(value: unknown): StatedWinner | null {
   return value === "home" || value === "away" || value === "unclear"
     ? value
     : null;
-}
-
-function normalizePlayerNameForStatMatch(name: string): string {
-  return name
-    .replace(/[・.．'\s-]+/g, "")
-    .trim()
-    .toLocaleLowerCase();
-}
-
-function playerNamesLikelyMatch(claimedName: string, eventName: string) {
-  const claimed = normalizePlayerNameForStatMatch(claimedName);
-  const actual = normalizePlayerNameForStatMatch(eventName);
-
-  if (!claimed || !actual) {
-    return false;
-  }
-
-  return (
-    claimed === actual || actual.endsWith(claimed) || claimed.endsWith(actual)
-  );
 }
 
 function parseNumberClaim(value: unknown): number | undefined {
@@ -283,59 +259,6 @@ function parseStatedPlayerStats(value: unknown): StatedPlayerStatClaim[] {
       ? [claim]
       : [];
   });
-}
-
-function buildPlayerStatsFromEvents(
-  events: AssembledContentInput["match_events"],
-): Map<string, { playerName: string; stats: ActualPlayerStats }> {
-  const statsByPlayer = new Map<
-    string,
-    { playerName: string; stats: ActualPlayerStats }
-  >();
-
-  for (const event of events) {
-    if (!event.player_name) {
-      continue;
-    }
-
-    const key = normalizePlayerNameForStatMatch(event.player_name);
-    if (!key) {
-      continue;
-    }
-
-    const current = statsByPlayer.get(key) ?? {
-      playerName: event.player_name,
-      stats: {
-        conversions: 0,
-        penaltyGoals: 0,
-        totalPoints: 0,
-        tries: 0,
-      },
-    };
-
-    if (event.type === "try") current.stats.tries += 1;
-    if (event.type === "conversion") current.stats.conversions += 1;
-    if (event.type === "penalty_goal" || event.type === "penalty") {
-      current.stats.penaltyGoals += 1;
-    }
-    current.stats.totalPoints += pointsForMatchEvent(event);
-    statsByPlayer.set(key, current);
-  }
-
-  return statsByPlayer;
-}
-
-function findActualPlayerStats(
-  claim: StatedPlayerStatClaim,
-  statsByPlayer: Map<string, { playerName: string; stats: ActualPlayerStats }>,
-): ActualPlayerStats | null {
-  for (const actual of statsByPlayer.values()) {
-    if (playerNamesLikelyMatch(claim.playerName, actual.playerName)) {
-      return actual.stats;
-    }
-  }
-
-  return null;
 }
 
 function playerStatClaimMatchesActual(
@@ -448,7 +371,7 @@ function applyDeterministicQaGuards(
     const statedPlayerStats = options.statedPlayerStats ?? [];
     const statsByPlayer = buildPlayerStatsFromEvents(options.matchEvents ?? []);
     const hasMismatch = statedPlayerStats.some((claim) => {
-      const actual = findActualPlayerStats(claim, statsByPlayer);
+      const actual = findActualPlayerStats(claim.playerName, statsByPlayer);
 
       return !actual || !playerStatClaimMatchesActual(claim, actual);
     });
