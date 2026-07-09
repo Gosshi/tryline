@@ -30,9 +30,10 @@ const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
 
 export function parseNationsChampionshipEventHtml(
   html: string,
+  wikipediaUrl: string | null = null,
 ): ParsedLiveMatch[] {
   const parsedMatches = toEmptyWhenMissingOrUnstructured(
-    () => parseWikipediaSixNationsHtml(html),
+    () => parseWikipediaSixNationsHtml(html, wikipediaUrl),
     ["Unable to locate the Wikipedia fixtures section", "No fixture vevent"],
   );
 
@@ -42,7 +43,7 @@ export function parseNationsChampionshipEventHtml(
 async function fetchEventPage(url: string): Promise<ParsedLiveMatch[]> {
   try {
     const response = await fetchWithPolicy(url);
-    return parseNationsChampionshipEventHtml(await response.text());
+    return parseNationsChampionshipEventHtml(await response.text(), url);
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
       return [];

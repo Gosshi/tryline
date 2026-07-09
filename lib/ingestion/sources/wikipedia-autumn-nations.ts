@@ -38,9 +38,12 @@ function buildWikipediaUrl(season: string) {
   return `https://en.wikipedia.org/wiki/${season}_Autumn_Nations_Series`;
 }
 
-export function parseAutumnNationsLiveHtml(html: string): ParsedLiveMatch[] {
+export function parseAutumnNationsLiveHtml(
+  html: string,
+  wikipediaUrl: string | null = null,
+): ParsedLiveMatch[] {
   const parsedMatches = toEmptyWhenMissingOrUnstructured(
-    () => parseWikipediaSixNationsHtml(html),
+    () => parseWikipediaSixNationsHtml(html, wikipediaUrl),
     ["Unable to locate the Wikipedia fixtures section", "No fixture vevent"],
   );
 
@@ -52,7 +55,7 @@ export async function fetchAutumnNations2026(): Promise<ParsedLiveMatch[]> {
 
   try {
     const response = await fetchWithPolicy(sourceUrl);
-    return parseAutumnNationsLiveHtml(await response.text());
+    return parseAutumnNationsLiveHtml(await response.text(), sourceUrl);
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
       return [];

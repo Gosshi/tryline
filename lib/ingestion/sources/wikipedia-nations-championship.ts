@@ -48,7 +48,10 @@ function parseRoundNumber(value: string) {
   return matched?.[1] ? Number(matched[1]) : null;
 }
 
-function parseRoundTableMatches(html: string): ParsedWikipediaMatch[] {
+function parseRoundTableMatches(
+  html: string,
+  wikipediaUrl: string | null,
+): ParsedWikipediaMatch[] {
   const $ = load(html);
   const matches: ParsedWikipediaMatch[] = [];
 
@@ -106,6 +109,7 @@ function parseRoundTableMatches(html: string): ParsedWikipediaMatch[] {
             roundName: null,
             status: score.status,
             venue,
+            wikipediaUrl,
           });
         });
       }
@@ -117,9 +121,12 @@ function parseRoundTableMatches(html: string): ParsedWikipediaMatch[] {
   return matches;
 }
 
-function parseFinalsMatches(html: string): ParsedWikipediaMatch[] {
+function parseFinalsMatches(
+  html: string,
+  wikipediaUrl: string | null,
+): ParsedWikipediaMatch[] {
   return toEmptyWhenMissingOrUnstructured(
-    () => parseWikipediaSixNationsHtml(html),
+    () => parseWikipediaSixNationsHtml(html, wikipediaUrl),
     ["Unable to locate the Wikipedia fixtures section", "No fixture vevent"],
   );
 }
@@ -127,10 +134,11 @@ function parseFinalsMatches(html: string): ParsedWikipediaMatch[] {
 export function parseNationsChampionshipLiveHtml(
   html: string,
   kickoffTimes: WorldRugbyNationsChampionshipTime[] = [],
+  wikipediaUrl: string | null = null,
 ): ParsedLiveMatch[] {
   const parsedMatches = [
-    ...parseRoundTableMatches(html),
-    ...parseFinalsMatches(html),
+    ...parseRoundTableMatches(html, wikipediaUrl),
+    ...parseFinalsMatches(html, wikipediaUrl),
   ];
   const kickoffTimeByTeams = new Map(
     kickoffTimes.map((match) => [
@@ -175,6 +183,7 @@ export async function fetchNationsChampionship2026(): Promise<
     return parseNationsChampionshipLiveHtml(
       await response.text(),
       kickoffTimes,
+      sourceUrl,
     );
   } catch (error) {
     if (isMissingWikipediaPage(error)) {

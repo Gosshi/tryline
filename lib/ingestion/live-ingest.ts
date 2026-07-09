@@ -136,6 +136,10 @@ function toExternalIds(
     externalIds.wikipedia_event_id = match.eventId;
   }
 
+  if (match.wikipediaUrl) {
+    externalIds.wikipedia_url = match.wikipediaUrl;
+  }
+
   if (match.round !== null && match.round !== undefined) {
     externalIds.wikipedia_round = match.round;
   }

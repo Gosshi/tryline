@@ -21,9 +21,10 @@ function buildWikipediaUrl(season: string) {
 
 export function parseRugbyChampionshipLiveHtml(
   html: string,
+  wikipediaUrl: string | null = null,
 ): ParsedLiveMatch[] {
   const parsedMatches = toEmptyWhenMissingOrUnstructured(
-    () => parseWikipediaSixNationsHtml(html),
+    () => parseWikipediaSixNationsHtml(html, wikipediaUrl),
     ["Unable to locate the Wikipedia fixtures section", "No fixture vevent"],
   );
 
@@ -35,7 +36,7 @@ export async function fetchRugbyChampionship2026(): Promise<ParsedLiveMatch[]> {
 
   try {
     const response = await fetchWithPolicy(sourceUrl);
-    return parseRugbyChampionshipLiveHtml(await response.text());
+    return parseRugbyChampionshipLiveHtml(await response.text(), sourceUrl);
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
       return [];

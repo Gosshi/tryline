@@ -115,7 +115,10 @@ function getHeadingInfo(
   return { round: null, roundName: null };
 }
 
-export function parsePremiershipLiveHtml(html: string): ParsedLiveMatch[] {
+export function parsePremiershipLiveHtml(
+  html: string,
+  wikipediaUrl: string | null = null,
+): ParsedLiveMatch[] {
   const $ = load(html);
   const results: ParsedLiveMatch[] = [];
 
@@ -159,6 +162,7 @@ export function parsePremiershipLiveHtml(html: string): ParsedLiveMatch[] {
       venue:
         normalizeWhitespace(venueTable.find(".location").first().text()) ||
         null,
+      wikipediaUrl,
     });
   }
 
@@ -170,7 +174,7 @@ export async function fetchPremiership202526(): Promise<ParsedLiveMatch[]> {
 
   try {
     const response = await fetchWithPolicy(sourceUrl);
-    return parsePremiershipLiveHtml(await response.text());
+    return parsePremiershipLiveHtml(await response.text(), sourceUrl);
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
       return [];

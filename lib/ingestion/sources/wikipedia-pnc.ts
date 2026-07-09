@@ -162,7 +162,9 @@ function wrapVeventsWithFixturesSection(html: string) {
   ].join("\n");
 }
 
-function attachKnownPncTeamSlugs(matches: ParsedLiveMatch[]): ParsedLiveMatch[] {
+function attachKnownPncTeamSlugs(
+  matches: ParsedLiveMatch[],
+): ParsedLiveMatch[] {
   return matches.map((match) => {
     const homeTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[match.homeTeamName];
     const awayTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[match.awayTeamName];
@@ -175,7 +177,10 @@ function attachKnownPncTeamSlugs(matches: ParsedLiveMatch[]): ParsedLiveMatch[] 
   });
 }
 
-export function parsePncLiveHtml(html: string): ParsedLiveMatch[] {
+export function parsePncLiveHtml(
+  html: string,
+  wikipediaUrl: string | null = null,
+): ParsedLiveMatch[] {
   const wrappedHtml = wrapVeventsWithFixturesSection(html);
 
   if (!wrappedHtml) {
@@ -183,7 +188,7 @@ export function parsePncLiveHtml(html: string): ParsedLiveMatch[] {
   }
 
   const parsedMatches = toEmptyWhenMissingOrUnstructured(
-    () => parseWikipediaSixNationsHtml(wrappedHtml),
+    () => parseWikipediaSixNationsHtml(wrappedHtml, wikipediaUrl),
     ["Unable to locate the Wikipedia fixtures section", "No fixture vevent"],
   );
 
@@ -195,7 +200,7 @@ export async function fetchPnc2026(): Promise<ParsedLiveMatch[]> {
 
   try {
     const response = await fetchWithPolicy(sourceUrl);
-    return parsePncLiveHtml(await response.text());
+    return parsePncLiveHtml(await response.text(), sourceUrl);
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
       return [];

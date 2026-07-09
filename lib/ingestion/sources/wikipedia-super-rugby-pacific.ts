@@ -63,6 +63,7 @@ function parseKickoffAtFromBlockText(blockText: string) {
 function parseVeventSectionsHtml(
   html: string,
   resolveRound: SectionRoundResolver,
+  wikipediaUrl: string | null,
 ): ParsedLiveMatch[] {
   const $ = load(html);
   let currentRound: number | null = null;
@@ -116,6 +117,7 @@ function parseVeventSectionsHtml(
       status: score.status,
       venue:
         normalizeWhitespace(block.find(".location").first().text()) || null,
+      wikipediaUrl,
     });
   });
 
@@ -124,19 +126,26 @@ function parseVeventSectionsHtml(
 
 export function parseSuperRugbyPacificLiveHtml(params: {
   regularHtml: string;
+  regularWikipediaUrl?: string | null;
   seasonHtml: string;
+  seasonWikipediaUrl?: string | null;
 }): ParsedLiveMatch[] {
   const stageById = new Map(FINALS_STAGES.map((stage) => [stage.id, stage]));
 
   return [
-    ...parseVeventSectionsHtml(params.regularHtml, (id) => {
-      const matched = id?.match(ROUND_ID_PATTERN);
+    ...parseVeventSectionsHtml(
+      params.regularHtml,
+      (id) => {
+        const matched = id?.match(ROUND_ID_PATTERN);
 
-      return matched?.[1] ? Number(matched[1]) : null;
-    }),
+        return matched?.[1] ? Number(matched[1]) : null;
+      },
+      params.regularWikipediaUrl ?? null,
+    ),
     ...parseVeventSectionsHtml(
       params.seasonHtml,
       (id) => stageById.get(id ?? "")?.round ?? null,
+      params.seasonWikipediaUrl ?? null,
     ),
   ];
 }
@@ -155,7 +164,12 @@ export async function fetchSuperRugbyPacific2026(): Promise<ParsedLiveMatch[]> {
       seasonResponse.text(),
     ]);
 
-    return parseSuperRugbyPacificLiveHtml({ regularHtml, seasonHtml });
+    return parseSuperRugbyPacificLiveHtml({
+      regularHtml,
+      regularWikipediaUrl: regularSourceUrl,
+      seasonHtml,
+      seasonWikipediaUrl: seasonUrl,
+    });
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
       return [];

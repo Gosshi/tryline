@@ -130,6 +130,7 @@ function slugEventPart(value: string) {
 export function parseLeagueOneLiveHtml(
   html: string,
   season: string,
+  sourceUrl: string | null = null,
 ): ParsedLiveMatch[] {
   const $ = load(html);
   const entries: ParsedLiveMatch[] = [];
@@ -197,6 +198,7 @@ export function parseLeagueOneLiveHtml(
       venue:
         normalizeWhitespace(card.find(".ttl-wrap .place").first().text()) ||
         null,
+      wikipediaUrl: sourceUrl,
     });
   });
 
@@ -205,23 +207,34 @@ export function parseLeagueOneLiveHtml(
 
 export async function fetchLeagueOne202425(): Promise<ParsedLiveMatch[]> {
   const season = "2024-25";
-  const response = await fetchWithPolicy(buildScheduleUrl(season));
+  const sourceUrl = buildScheduleUrl(season);
+  const response = await fetchWithPolicy(sourceUrl);
 
-  return parseLeagueOneLiveHtml(await response.text(), season);
+  return parseLeagueOneLiveHtml(await response.text(), season, sourceUrl);
 }
 
 export async function fetchLeagueOne202526(): Promise<ParsedLiveMatch[]> {
   const season = "2025-26";
+  const scheduleUrl = buildScheduleUrl(season);
+  const playoffsUrl = buildPlayoffsUrl(season);
   const [regularResponse, playoffResponse] = await Promise.all([
-    fetchWithPolicy(buildScheduleUrl(season)),
-    fetchWithPolicy(buildPlayoffsUrl(season)),
+    fetchWithPolicy(scheduleUrl),
+    fetchWithPolicy(playoffsUrl),
   ]);
   const [regularHtml, playoffHtml] = await Promise.all([
     regularResponse.text(),
     playoffResponse.text(),
   ]);
-  const regularMatches = parseLeagueOneLiveHtml(regularHtml, season);
-  const playoffMatches = parseLeagueOneLiveHtml(playoffHtml, season);
+  const regularMatches = parseLeagueOneLiveHtml(
+    regularHtml,
+    season,
+    scheduleUrl,
+  );
+  const playoffMatches = parseLeagueOneLiveHtml(
+    playoffHtml,
+    season,
+    playoffsUrl,
+  );
 
   return [...regularMatches, ...playoffMatches].sort((a, b) =>
     a.kickoffAt.localeCompare(b.kickoffAt),

@@ -34,6 +34,7 @@ export type ParsedWikipediaMatch = {
   status: "finished" | "scheduled";
   venue: string | null;
   rawHtml: string;
+  wikipediaUrl: string | null;
 };
 
 function normalizeWhitespace(value: string) {
@@ -179,6 +180,7 @@ function findLineupTableHtml(
 
 export function parseWikipediaSixNationsHtml(
   html: string,
+  wikipediaUrl: string | null = null,
 ): ParsedWikipediaMatch[] {
   const $ = load(html);
   const fixturesSection = $("#Fixtures").closest("div");
@@ -219,7 +221,9 @@ export function parseWikipediaSixNationsHtml(
       round,
       roundName: null,
       status: score.status,
-      venue: normalizeWhitespace(block.find(".location").first().text()) || null,
+      venue:
+        normalizeWhitespace(block.find(".location").first().text()) || null,
+      wikipediaUrl,
     });
   }
 
@@ -233,9 +237,7 @@ export function parseWikipediaSixNationsHtml(
     );
   }
 
-  function processFixtureElement(
-    element: ReturnType<ReturnType<typeof load>>,
-  ) {
+  function processFixtureElement(element: ReturnType<ReturnType<typeof load>>) {
     if (headingHasLevel(element, "h3")) {
       currentRound = parseRoundFromId(element.find("h3").attr("id"));
       return;
