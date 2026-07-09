@@ -13,7 +13,7 @@ import type {
 } from "@/lib/llm/sourced-facts/types";
 import type { ContentType } from "@/lib/llm/types";
 
-export const SEARCH_PROMPT_VERSION = "sourced-facts@1.1.0";
+export const SEARCH_PROMPT_VERSION = "sourced-facts@1.2.0";
 const PREVIEW_REFRESH_WINDOW_HOURS = 72;
 const PREVIEW_FRESHNESS_HOURS = 24;
 const MAX_STORED_FACTS = 8;
@@ -47,7 +47,9 @@ export type FetchSourcedFactsResult = {
   skippedReason: string | null;
 };
 
-function resolveDisplayName(team: { english_name: string | null; name: string } | null) {
+function resolveDisplayName(
+  team: { english_name: string | null; name: string } | null,
+) {
   return team?.english_name ?? team?.name ?? "Unknown";
 }
 
@@ -74,6 +76,10 @@ export function isSourcedFactsEnabledForMatch(
 ): boolean {
   const family = match.competition?.family;
   if (family === "league-one") {
+    return true;
+  }
+
+  if (family === "nations-championship") {
     return true;
   }
 
@@ -122,10 +128,7 @@ export function buildSearchPrompt(
 ) {
   const homeTeam = resolveDisplayName(match.home_team);
   const awayTeam = resolveDisplayName(match.away_team);
-  const competitionLabel = [
-    match.competition?.name,
-    match.competition?.season,
-  ]
+  const competitionLabel = [match.competition?.name, match.competition?.season]
     .filter(Boolean)
     .join(" ");
   const kickoffDate = match.kickoff_at.slice(0, 10);
@@ -147,11 +150,12 @@ export function buildSearchPrompt(
           "- player news such as retirements, transfers, and availability",
           "- key players",
           "- stakes and knockout/final context",
+          "- how the previous meeting between these two teams ended, focusing on narrative details a bare scoreline would not capture (e.g., a missed match-winning penalty, a last-minute momentum swing, a memorable individual play). Do NOT restate the final score or the date of that match — those are already known; only report contextual/dramatic details not captured by the score itself",
         ].join("\n");
   const contentTypeRules =
     contentType === "recap"
       ? [
-          "- For numeric statistics, state the stat name and both teams' values exactly as reported (e.g., \"Possession: Glasgow 54% - Bulls 46%\"). Never estimate or round.",
+          '- For numeric statistics, state the stat name and both teams\' values exactly as reported (e.g., "Possession: Glasgow 54% - Bulls 46%"). Never estimate or round.',
         ]
       : [];
 
@@ -171,7 +175,7 @@ export function buildSearchPrompt(
       "- Use medium for a single trusted third-party source.",
       "- Use low for uncertain or weakly supported facts.",
       "- Do not return past result scores, league standings, or win/loss records (the database is authoritative for these).",
-      "- When referencing any past match, include the exact date. Never use relative recency phrasing such as 'most recent', 'previous meeting', or 'last time they met'.",
+      "- Do not return past-match dates or relative recency phrasing such as 'most recent', 'previous meeting', or 'last time they met' (the database is authoritative for match dates).",
       "- Do not include quotes longer than 15 words. Prefer paraphrased facts.",
       "- Do not return article text or copyrighted prose.",
       ...contentTypeRules,

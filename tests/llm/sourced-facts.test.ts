@@ -9,6 +9,7 @@ import {
   SEARCH_PROMPT_VERSION,
   buildSearchPrompt,
   fetchSourcedFactsForMatch,
+  isSourcedFactsEnabledForMatch,
   parseSourcedFactsResponse,
 } from "@/lib/llm/sourced-facts/fetch";
 
@@ -45,9 +46,8 @@ function createSourcedFactsBuilder(cachedRows: unknown[] = []) {
     limit: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
-    then: (
-      resolve: (value: { data: unknown[]; error: null }) => unknown,
-    ) => Promise.resolve(resolve({ data: cachedRows, error: null })),
+    then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
+      Promise.resolve(resolve({ data: cachedRows, error: null })),
     upsert: dbMock.upsert,
   };
 }
@@ -64,6 +64,16 @@ const leagueOneMatch = {
   id: "match-1",
   kickoff_at: "2026-06-10T09:00:00.000Z",
   status: "scheduled",
+};
+
+const nationsChampionshipMatch = {
+  ...leagueOneMatch,
+  competition: {
+    family: "nations-championship",
+    name: "Nations Championship",
+    season: "2026",
+  },
+  external_ids: { round_name: "Round 1" },
 };
 
 describe("sourced facts allowlist", () => {
@@ -131,19 +141,42 @@ describe("sourced facts allowlist", () => {
     ).toBe("db_authoritative_score");
   });
 
-  it("rejects relative recency claims", () => {
+  it("rejects score or date facts while allowing scoreless previous-meeting context", () => {
     const facts = filterAllowedSourcedFacts([
       {
         confidence: "high",
-        fact: "In their most recent encounter, Kubota Spears beat Kobe.",
+        fact: "In their most recent meeting, the Wallabies missed a match-winning penalty in the final minute.",
         source_url: "https://www.rugbypass.com/news/recent",
       },
     ]);
 
-    expect(facts).toEqual([]);
+    expect(facts).toHaveLength(1);
+    expect(facts[0]?.fact).toBe(
+      "In their most recent meeting, the Wallabies missed a match-winning penalty in the final minute.",
+    );
     expect(
       getDbAuthoritativeFactRejectionReason(
-        "In their latest encounter, Kubota Spears beat Kobe.",
+        "In their most recent meeting, South Africa won 45-21",
+      ),
+    ).toBe("db_authoritative_score");
+    expect(
+      getDbAuthoritativeFactRejectionReason(
+        "In their most recent meeting, the Wallabies missed a match-winning penalty in the final minute",
+      ),
+    ).toBeNull();
+    expect(
+      getDbAuthoritativeFactRejectionReason(
+        "The two sides last met in November 2025",
+      ),
+    ).toBe("db_authoritative_relative_recency");
+    expect(
+      getDbAuthoritativeFactRejectionReason(
+        "On 4 July 2026, England's fly-half missed a match-winning penalty attempt against South Africa in the final minute",
+      ),
+    ).toBe("db_authoritative_relative_recency");
+    expect(
+      getDbAuthoritativeFactRejectionReason(
+        "On 4 July 2026, South Africa and England played a Nations Championship match in Twickenham",
       ),
     ).toBe("db_authoritative_relative_recency");
   });
@@ -171,8 +204,8 @@ describe("sourced facts allowlist", () => {
 });
 
 describe("buildSearchPrompt", () => {
-  it("uses sourced facts prompt version 1.1.0", () => {
-    expect(SEARCH_PROMPT_VERSION).toBe("sourced-facts@1.1.0");
+  it("uses sourced facts prompt version 1.2.0", () => {
+    expect(SEARCH_PROMPT_VERSION).toBe("sourced-facts@1.2.0");
   });
 
   it("targets post-match statistics and official awards for recaps", () => {
@@ -186,7 +219,7 @@ describe("buildSearchPrompt", () => {
     expect(prompt).not.toContain("Search intent:\n- latest team news");
   });
 
-  it("keeps the preview search intent unchanged", () => {
+  it("adds scoreless previous-meeting context to the preview search intent only", () => {
     const prompt = buildSearchPrompt(leagueOneMatch, "preview");
 
     expect(prompt).toContain(
@@ -198,11 +231,50 @@ describe("buildSearchPrompt", () => {
         "- player news such as retirements, transfers, and availability",
         "- key players",
         "- stakes and knockout/final context",
+        "- how the previous meeting between these two teams ended, focusing on narrative details a bare scoreline would not capture (e.g., a missed match-winning penalty, a last-minute momentum swing, a memorable individual play). Do NOT restate the final score or the date of that match — those are already known; only report contextual/dramatic details not captured by the score itself",
       ].join("\n"),
     );
     expect(prompt).not.toContain("Search intent (post-match):");
     expect(prompt).not.toContain("post-match statistics");
     expect(prompt).not.toContain("both teams' values exactly as reported");
+
+    const recapPrompt = buildSearchPrompt(leagueOneMatch, "recap");
+    expect(recapPrompt).not.toContain("how the previous meeting");
+  });
+});
+
+describe("isSourcedFactsEnabledForMatch", () => {
+  it("enables Nations Championship regular-round matches", () => {
+    expect(isSourcedFactsEnabledForMatch(nationsChampionshipMatch)).toBe(true);
+  });
+
+  it("keeps League One and knockout-round behavior enabled", () => {
+    expect(isSourcedFactsEnabledForMatch(leagueOneMatch)).toBe(true);
+    expect(
+      isSourcedFactsEnabledForMatch({
+        ...leagueOneMatch,
+        competition: {
+          family: "premiership",
+          name: "Premiership Rugby",
+          season: "2025-26",
+        },
+        external_ids: { round_name: "Semi-finals" },
+      }),
+    ).toBe(true);
+  });
+
+  it("keeps non-target regular-round matches disabled", () => {
+    expect(
+      isSourcedFactsEnabledForMatch({
+        ...leagueOneMatch,
+        competition: {
+          family: "premiership",
+          name: "Premiership Rugby",
+          season: "2025-26",
+        },
+        external_ids: { round_name: "Round 12" },
+      }),
+    ).toBe(false);
   });
 });
 
@@ -224,11 +296,7 @@ describe("parseSourcedFactsResponse", () => {
 
   it("extracts facts from a json code fence", () => {
     const facts = parseSourcedFactsResponse(
-      [
-        "```json",
-        JSON.stringify({ facts: [allowedFact] }),
-        "```",
-      ].join("\n"),
+      ["```json", JSON.stringify({ facts: [allowedFact] }), "```"].join("\n"),
     );
 
     expect(facts).toHaveLength(1);
@@ -390,7 +458,7 @@ describe("fetchSourcedFactsForMatch", () => {
       "Do not return past result scores, league standings, or win/loss records",
     );
     expect(input).toContain(
-      "Never use relative recency phrasing such as 'most recent'",
+      "Do not return past-match dates or relative recency phrasing",
     );
   });
 });
