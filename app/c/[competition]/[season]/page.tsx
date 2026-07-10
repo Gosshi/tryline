@@ -33,6 +33,7 @@ import { createCompetitionOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
+import type { StandingRow } from "@/lib/db/queries/standings";
 import type { Metadata } from "next";
 
 type Props = {
@@ -108,6 +109,121 @@ function isJapanMatch(match: MatchListItem): boolean {
   return match.homeTeam.slug === "japan" || match.awayTeam.slug === "japan";
 }
 
+function getMatchLabel(match: MatchListItem): string {
+  return `${match.homeTeam.name} 対 ${match.awayTeam.name}`;
+}
+
+function selectStandingsExcerpt<T extends { teamName: string; teamShortCode: string }>(
+  standings: T[],
+  includeJapan: boolean,
+): T[] {
+  const excerpt = new Map<string, T>();
+
+  for (const row of standings.slice(0, 3)) {
+    excerpt.set(row.teamName, row);
+  }
+
+  if (includeJapan) {
+    for (const row of standings) {
+      if (
+        row.teamShortCode.toLowerCase() === "jpn" ||
+        row.teamName.toLowerCase() === "japan" ||
+        row.teamName === "日本"
+      ) {
+        excerpt.set(row.teamName, row);
+      }
+    }
+  }
+
+  return [...excerpt.values()].sort((left, right) => {
+    const leftIndex = standings.indexOf(left);
+    const rightIndex = standings.indexOf(right);
+
+    return leftIndex - rightIndex;
+  });
+}
+
+function SeasonSummaryBand({
+  leaderLabel,
+  nextJapanMatch,
+  nextMatch,
+}: {
+  leaderLabel: string | null;
+  nextJapanMatch: MatchListItem | null;
+  nextMatch: MatchListItem | null;
+}) {
+  const items = [
+    nextMatch
+      ? {
+          href: `/matches/${nextMatch.id}`,
+          label: "次戦",
+          primary: getMatchLabel(nextMatch),
+          secondary: formatMatchKickoffJst(nextMatch.kickoffAt),
+        }
+      : null,
+    leaderLabel
+      ? {
+          href: null,
+          label: "首位",
+          primary: leaderLabel,
+          secondary: "最新順位表より",
+        }
+      : null,
+    nextJapanMatch
+      ? {
+          href: `/matches/${nextJapanMatch.id}`,
+          label: "日本代表の次戦",
+          primary: getMatchLabel(nextJapanMatch),
+          secondary: formatMatchKickoffJst(nextJapanMatch.kickoffAt),
+        }
+      : null,
+  ].filter((item): item is NonNullable<typeof item> => item !== null);
+
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <section
+      aria-label="シーズン要約"
+      className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3"
+    >
+      {items.map((item) => {
+        const content = (
+          <>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+              {item.label}
+            </p>
+            <p className="mt-1 text-sm font-bold text-[var(--color-ink)]">
+              {item.primary}
+            </p>
+            <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
+              {item.secondary}
+            </p>
+          </>
+        );
+
+        return item.href ? (
+          <Link
+            className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-white"
+            href={item.href}
+            key={item.label}
+          >
+            {content}
+          </Link>
+        ) : (
+          <div
+            className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3"
+            key={item.label}
+          >
+            {content}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { competition, season } = await params;
   const comp = await getCompetitionBySlug(`${competition}-${season}`);
@@ -177,6 +293,19 @@ export default async function SeasonPage({ params }: Props) {
   const familyTitle = formatFamilyName(family);
   const nextMatch = findNextScheduledMatch(matches);
   const nextJapanMatch = findNextScheduledMatch(matches.filter(isJapanMatch));
+  const hasJapanInSeason = matches.some(isJapanMatch);
+  const leaderLabel =
+    poolStandings.length > 0
+      ? poolStandings
+          .map((pool) =>
+            pool.standings[0]
+              ? `${pool.poolName}: ${pool.standings[0].teamName}`
+              : null,
+          )
+          .filter((label): label is string => label !== null)
+          .slice(0, 2)
+          .join(" / ") || null
+      : standings[0]?.teamName ?? null;
   const nextMatchJst = nextMatch
     ? formatMatchKickoffJst(nextMatch.kickoffAt)
     : null;
@@ -239,6 +368,32 @@ export default async function SeasonPage({ params }: Props) {
       name: faq.question,
     })),
   };
+  function renderStandingsBlock(rows: StandingRow[], title?: string) {
+    if (rows.length === 0) {
+      return null;
+    }
+
+    const excerpt = selectStandingsExcerpt(rows, hasJapanInSeason);
+    const shouldCollapse = excerpt.length > 0 && excerpt.length < rows.length;
+
+    if (!shouldCollapse) {
+      return <StandingsTable standings={rows} title={title} />;
+    }
+
+    return (
+      <div className="space-y-3">
+        <StandingsTable standings={excerpt} title={title ?? "順位表"} />
+        <details className="rounded-[var(--radius-md)] bg-white p-4 shadow-[var(--shadow-soft)]">
+          <summary className="cursor-pointer rounded-full border border-slate-200 px-4 py-2 text-center text-xs font-bold text-[var(--color-accent)] transition-colors hover:border-slate-300 hover:bg-slate-50">
+            全順位表を見る
+          </summary>
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <StandingsTable standings={rows} title={title} />
+          </div>
+        </details>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-paper">
@@ -281,6 +436,36 @@ export default async function SeasonPage({ params }: Props) {
           seasons={seasons}
         />
 
+        <SeasonSummaryBand
+          leaderLabel={leaderLabel}
+          nextJapanMatch={hasJapanInSeason ? nextJapanMatch : null}
+          nextMatch={nextMatch}
+        />
+
+        <nav
+          aria-label="シーズンページ内ナビ"
+          className="flex gap-2 overflow-x-auto rounded-full border border-slate-200 bg-white p-1 text-sm font-bold shadow-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <a
+            className="shrink-0 rounded-full bg-[var(--color-accent)] px-4 py-2 text-white"
+            href="#schedule"
+          >
+            日程・結果
+          </a>
+          <a
+            className="shrink-0 rounded-full px-4 py-2 text-[var(--color-ink-muted)] transition-colors hover:bg-slate-50 hover:text-[var(--color-ink)]"
+            href="#standings"
+          >
+            順位
+          </a>
+          <a
+            className="shrink-0 rounded-full px-4 py-2 text-[var(--color-ink-muted)] transition-colors hover:bg-slate-50 hover:text-[var(--color-ink)]"
+            href="#guide"
+          >
+            大会ガイド
+          </a>
+        </nav>
+
         {family === "league-one" && (
           <p className="text-xs text-[var(--color-ink-muted)]">
             🌐 English match reviews available — select a match to read in
@@ -288,37 +473,9 @@ export default async function SeasonPage({ params }: Props) {
           </p>
         )}
 
-        <div className="space-y-4" id="standings">
-          {poolStandings.length > 0
-            ? poolStandings.map((pool) => (
-                <StandingsTable
-                  key={pool.poolName}
-                  standings={pool.standings}
-                  title={pool.poolName}
-                />
-              ))
-            : <StandingsTable standings={standings} />}
-        </div>
-
-        {nextJapanMatch && (
-          <Link
-            className="block rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 p-5 transition-colors hover:border-[var(--color-accent)]/60"
-            href={`/matches/${nextJapanMatch.id}`}
-          >
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
-              日本代表の次戦
-            </p>
-            <p className="mt-2 text-lg font-bold text-[var(--color-ink)]">
-              {nextJapanMatch.homeTeam.name} 対 {nextJapanMatch.awayTeam.name}
-            </p>
-            <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
-              {formatMatchKickoffJst(nextJapanMatch.kickoffAt)}
-            </p>
-          </Link>
-        )}
-
-        {matches.length === 0 ? (
-          <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
+        <section className="space-y-4 scroll-mt-4" id="schedule">
+          {matches.length === 0 ? (
+            <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
             <p className="text-sm font-medium text-[var(--color-ink)]">
               試合データを準備中です
             </p>
@@ -342,22 +499,36 @@ export default async function SeasonPage({ params }: Props) {
                 トップへ戻る
               </Link>
             </div>
-          </div>
-        ) : (
-          <>
-            {hasAnyContent && <PremiumUpsellBanner />}
-            <Suspense>
-              <SeasonMatchGroups
-                contentStatusMap={contentStatusMap}
-                family={family}
-                groupedMatches={groupedMatches}
-                roundHubBasePath={`/c/${competition}/${season}`}
-              />
-            </Suspense>
-          </>
-        )}
+            </div>
+          ) : (
+            <>
+              {hasAnyContent && <PremiumUpsellBanner />}
+              <Suspense>
+                <SeasonMatchGroups
+                  contentStatusMap={contentStatusMap}
+                  family={family}
+                  groupedMatches={groupedMatches}
+                  roundHubBasePath={`/c/${competition}/${season}`}
+                />
+              </Suspense>
+            </>
+          )}
+        </section>
 
-        <div className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
+        <section className="space-y-4 scroll-mt-4" id="standings">
+          {poolStandings.length > 0
+            ? poolStandings.map((pool) => (
+                <div key={pool.poolName}>
+                  {renderStandingsBlock(pool.standings, pool.poolName)}
+                </div>
+              ))
+            : renderStandingsBlock(standings)}
+        </section>
+
+        <div
+          className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6"
+          id="guide"
+        >
           <CompetitionViewingGuide
             markdown={guide?.guideJa ?? null}
             sourceUrl={guide?.sourceUrl ?? null}
