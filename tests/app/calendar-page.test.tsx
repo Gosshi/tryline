@@ -11,8 +11,16 @@ const matchQueryMock = vi.hoisted(() => ({
 const standingsQueryMock = vi.hoisted(() => ({
   getStandingPositionLookupForCompetitions: vi.fn(),
 }));
+const authMock = vi.hoisted(() => ({
+  getUser: vi.fn(),
+}));
+const spoilerGuardMock = vi.hoisted(() => ({
+  getSpoilerGuardEnabledForUser: vi.fn(),
+}));
 
+vi.mock("@/lib/auth/server", () => authMock);
 vi.mock("@/lib/db/queries/matches", () => matchQueryMock);
+vi.mock("@/lib/db/queries/spoiler-guard", () => spoilerGuardMock);
 vi.mock("@/lib/db/queries/standings", () => standingsQueryMock);
 vi.mock("next/link", () => ({
   default: ({
@@ -31,6 +39,8 @@ describe("/calendar page", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-08T03:00:00.000Z"));
     matchQueryMock.getMatchesInRange.mockResolvedValue([]);
+    authMock.getUser.mockResolvedValue(null);
+    spoilerGuardMock.getSpoilerGuardEnabledForUser.mockResolvedValue(false);
     standingsQueryMock.getStandingPositionLookupForCompetitions.mockResolvedValue(
       new Map(),
     );

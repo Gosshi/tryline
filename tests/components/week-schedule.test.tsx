@@ -2,8 +2,8 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WeekSchedule } from "@/components/calendar/week-schedule";
 
@@ -52,6 +52,10 @@ const baseMatch: CalendarMatch = {
 };
 
 describe("WeekSchedule", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("groups matches by JST day and links every match page", () => {
     render(
       <WeekSchedule
@@ -111,5 +115,30 @@ describe("WeekSchedule", () => {
     render(<WeekSchedule emptyMessage="試合なし" matches={[]} />);
 
     expect(screen.getByText("試合なし")).toBeInTheDocument();
+  });
+
+  it("hides finished scores behind spoiler guard until clicked", () => {
+    render(
+      <WeekSchedule
+        matches={[
+          {
+            ...baseMatch,
+            awayScore: 19,
+            homeScore: 24,
+            id: "match-2",
+            status: "finished",
+          },
+        ]}
+        spoilerGuardEnabled
+      />,
+    );
+
+    expect(screen.queryByText("24–19")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "タップして結果を見る" }),
+    );
+
+    expect(screen.getByText("24–19")).toBeInTheDocument();
   });
 });

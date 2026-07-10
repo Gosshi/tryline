@@ -17,6 +17,7 @@ import type { User } from "@supabase/supabase-js";
 type MobileHeaderMenuProps = {
   allTeams: TeamOption[];
   favoriteTeamSlugs: string[];
+  initialSpoilerGuard?: boolean;
   isPremium: boolean;
   user: User | null;
 };
@@ -58,6 +59,7 @@ function CloseIcon() {
 export function MobileHeaderMenu({
   allTeams,
   favoriteTeamSlugs,
+  initialSpoilerGuard = false,
   isPremium,
   user,
 }: MobileHeaderMenuProps) {
@@ -208,6 +210,7 @@ export function MobileHeaderMenu({
                   <UserMenu
                     allTeams={allTeams}
                     favoriteTeamSlugs={favoriteTeamSlugs}
+                    initialSpoilerGuard={initialSpoilerGuard}
                     isPremium={isPremium}
                     user={user}
                   />

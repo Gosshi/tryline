@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { WeekSchedule } from "@/components/calendar/week-schedule";
+import { getUser } from "@/lib/auth/server";
 import { getMatchesInRange } from "@/lib/db/queries/matches";
+import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { getStandingPositionLookupForCompetitions } from "@/lib/db/queries/standings";
 import { selectCalendarFocusMatchId } from "@/lib/format/calendar-focus";
 import {
@@ -71,7 +73,11 @@ export default async function CalendarPage({
   const range = weekParam
     ? getJstWeekRangeUtc(weekParam)
     : getCurrentJstWeekRangeUtc();
-  const matches = await getMatchesInRange(range.startUtcIso, range.endUtcIso);
+  const user = await getUser();
+  const [matches, spoilerGuardEnabled] = await Promise.all([
+    getMatchesInRange(range.startUtcIso, range.endUtcIso),
+    getSpoilerGuardEnabledForUser(user?.id),
+  ]);
   const competitionIds = matches
     .map((match) => match.competition.id)
     .filter((id): id is string => Boolean(id));
@@ -134,6 +140,7 @@ export default async function CalendarPage({
           emptyMessage="この週に表示できる試合はありません。大会ページから過去シーズンの試合を確認できます。"
           highlightMatchId={focusMatchId}
           matches={matches}
+          spoilerGuardEnabled={spoilerGuardEnabled}
         />
       </section>
     </main>

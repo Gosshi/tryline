@@ -7,12 +7,18 @@ import { getTeamColor } from "@/lib/format/team-identity";
 
 import type { CalendarMatch } from "@/lib/db/queries/matches";
 import type { StandingPositionLookup } from "@/lib/db/queries/standings";
+import type { ReactNode } from "react";
 
 type HomeMatchdayBoardProps = {
   focusMatchId: string | null;
   matches: CalendarMatch[];
   standingPositions: StandingPositionLookup;
   weekLabel: string;
+};
+
+type BoardMetric = {
+  label: string;
+  value: ReactNode;
 };
 
 function getContentLabel(match: CalendarMatch): string {
@@ -100,11 +106,11 @@ export function HomeMatchdayBoard({
     .slice(0, 3);
   const overflowCount = Math.max(0, matches.length - 1 - quickMatches.length);
   const levelMetric = getLevelMetric(focusMatch, standingPositions);
-  const metrics = [
+  const metrics: BoardMetric[] = [
     { label: "キックオフ", value: formatKickoffJstTime(focusMatch.kickoffAt) },
-    levelMetric ? { label: "順位情報", value: levelMetric } : null,
+    ...(levelMetric ? [{ label: "順位情報", value: levelMetric }] : []),
     { label: "コンテンツ", value: getContentLabel(focusMatch) },
-  ].filter((metric): metric is { label: string; value: string } => Boolean(metric));
+  ];
 
   return (
     <aside

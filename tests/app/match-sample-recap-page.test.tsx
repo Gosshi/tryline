@@ -21,6 +21,14 @@ const standingsMocks = vi.hoisted(() => ({
   getStandingsForCompetition: vi.fn(),
 }));
 
+const authMocks = vi.hoisted(() => ({
+  getUser: vi.fn(),
+}));
+
+const spoilerGuardMocks = vi.hoisted(() => ({
+  getSpoilerGuardEnabledForUser: vi.fn(),
+}));
+
 const matchMocks = vi.hoisted(() => ({
   countHeadToHeadMatches: vi.fn(),
   getMatchById: vi.fn(),
@@ -85,10 +93,12 @@ vi.mock("@/components/premium-match-chat", () => ({
 
 vi.mock("@/components/premium-recap-section", () => premiumRecapMocks);
 
+vi.mock("@/lib/auth/server", () => authMocks);
 vi.mock("@/lib/db/queries/match-content", () => matchContentMocks);
 vi.mock("@/lib/db/queries/match-events", () => matchEventMocks);
 vi.mock("@/lib/db/queries/match-lineups", () => matchLineupMocks);
 vi.mock("@/lib/db/queries/matches", () => matchMocks);
+vi.mock("@/lib/db/queries/spoiler-guard", () => spoilerGuardMocks);
 vi.mock("@/lib/db/queries/standings", () => standingsMocks);
 vi.mock("next/navigation", () => navigationMocks);
 
@@ -183,6 +193,8 @@ function setCommonMocks(params: {
   standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
   matchMocks.countHeadToHeadMatches.mockResolvedValue(0);
   matchMocks.getPoolTeamsForMatch.mockResolvedValue([]);
+  authMocks.getUser.mockResolvedValue(null);
+  spoilerGuardMocks.getSpoilerGuardEnabledForUser.mockResolvedValue(false);
 }
 
 describe("match sample recap page", () => {
