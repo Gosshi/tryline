@@ -22,6 +22,7 @@ import {
 import {
   getFavoriteTeamMatches,
   getMatchesInRange,
+  getNextMatchForCompetition,
   getRecentlyReviewedFamilies,
   getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedMatchById,
@@ -120,6 +121,7 @@ export default async function HomePage() {
     sampleMatch,
     weeklyMatches,
     upcomingMatches,
+    featuredCompetitionNextMatch,
     favoriteMatches,
     allTeams,
     spoilerGuardEnabled,
@@ -130,6 +132,10 @@ export default async function HomePage() {
     getRecentlyReviewedMatchById(sampleMatchId, "ja"),
     getMatchesInRange(weekRange.startUtcIso, weekRange.endUtcIso),
     getUpcomingMatches(5),
+    getNextMatchForCompetition({
+      family: FEATURED_COMPETITION.family,
+      season: FEATURED_COMPETITION.season,
+    }),
     getFavoriteTeamMatches(favoriteTeamSlugs),
     listAllTeams(),
     getSpoilerGuardEnabledForUser(user?.id),
@@ -182,11 +188,13 @@ export default async function HomePage() {
       competition.family === FEATURED_COMPETITION.family &&
       competition.season === FEATURED_COMPETITION.season,
   );
-  const featuredNextMatch = featuredCompetitionMatches[0] ?? null;
   const featuredCompetitionStats = {
-    nextMatchLabel: featuredNextMatch
-      ? formatKickoffJstTime(featuredNextMatch.kickoffAt)
-      : "未定",
+    nextMatchLabel: featuredCompetitionNextMatch
+      ? `${formatKickoffJstDate(featuredCompetitionNextMatch.kickoffAt)} ${formatKickoffJstTime(featuredCompetitionNextMatch.kickoffAt)}`
+      : "次日程待ち",
+    nextMatchSubLabel: featuredCompetitionNextMatch
+      ? `${featuredCompetitionNextMatch.homeTeam.name} 対 ${featuredCompetitionNextMatch.awayTeam.name}`
+      : "今季の予定は確認でき次第反映します",
     publishedReviewCount: featuredCompetitionLink?.publishedContentCount ?? 0,
     weekMatchCount: featuredCompetitionMatches.length,
   };
@@ -348,30 +356,11 @@ export default async function HomePage() {
       )}
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <section className="-m-3.5 rounded-[20px] bg-[radial-gradient(140%_100%_at_0%_0%,rgb(201_58_58/5%),transparent_65%)] p-3.5">
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="space-y-2">
-              <h2 className="font-serif text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
-                注目大会
-              </h2>
-              <p className="max-w-2xl text-sm leading-7 text-[var(--color-ink-muted)]">
-                PNC 2026 を中心に、日程・順位・レビューが揃う大会ハブへ移動できます。
-              </p>
-              <TrackedLink
-                analytics={{
-                  cta_id: "home_focus_calendar",
-                  cta_location: "home_focus_section",
-                  destination: "calendar",
-                  label: "全日程をカレンダーで見る",
-                }}
-                className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-[var(--color-ink)] transition-colors hover:border-slate-300 hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                href="/calendar"
-              >
-                全日程をカレンダーで見る →
-              </TrackedLink>
-            </div>
-            <FeaturedCompetitionCard stats={featuredCompetitionStats} />
-          </div>
+        <section className="space-y-3">
+          <h2 className="font-serif text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
+            注目大会
+          </h2>
+          <FeaturedCompetitionCard stats={featuredCompetitionStats} />
         </section>
 
         {homepageUpcomingMatches.length > 0 && (
