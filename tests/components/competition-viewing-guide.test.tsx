@@ -2,12 +2,16 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
 
 describe("CompetitionViewingGuide", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("renders markdown content and external links", () => {
     render(
       <CompetitionViewingGuide
@@ -45,7 +49,19 @@ describe("CompetitionViewingGuide", () => {
 
     expect(screen.getByText("強豪同士の対戦に注目です。")).toBeInTheDocument();
     expect(screen.queryByText(/全試合ライブ配信/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "日本での視聴方法" })).toBeNull();
     expect(screen.getByText(/放送・配信情報は確認中です/)).toBeInTheDocument();
+  });
+
+  it("formats verified dates in JST", () => {
+    render(
+      <CompetitionViewingGuide
+        markdown="大会形式を確認済みです。"
+        verifiedAt="2026-07-10T00:00:00+09:00"
+      />,
+    );
+
+    expect(screen.getByText(/最終確認日: 2026-07-10/)).toBeInTheDocument();
   });
 
   it("renders ordered lists and bold text", () => {

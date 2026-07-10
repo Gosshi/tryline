@@ -155,17 +155,49 @@ function renderBlock(block: MarkdownBlock, index: number) {
 }
 
 const BROADCAST_INFORMATION_PATTERN =
-  /(DAZN|WOWOW|J\s*SPORTS|JSPORTS|NHK|放送|配信|中継|独占|全試合)/i;
+  /(DAZN|WOWOW|J\s*SPORTS|JSPORTS|NHK|放送|配信|中継|視聴|独占|全試合)/i;
+
+function isMarkdownHeading(block: string) {
+  return /^#{1,6}\s+/.test(block.trim());
+}
 
 function removeUnverifiedBroadcastBlocks(markdown: string) {
   const blocks = markdown.split(/\n{2,}/);
-  const filteredBlocks = blocks.filter(
-    (block) => !BROADCAST_INFORMATION_PATTERN.test(block),
-  );
+  const filteredBlocks: string[] = [];
+  let removed = false;
+
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index] ?? "";
+
+    if (
+      isMarkdownHeading(block) &&
+      BROADCAST_INFORMATION_PATTERN.test(block)
+    ) {
+      removed = true;
+      while (
+        index + 1 < blocks.length &&
+        !isMarkdownHeading(blocks[index + 1] ?? "")
+      ) {
+        index += 1;
+      }
+      continue;
+    }
+
+    if (BROADCAST_INFORMATION_PATTERN.test(block)) {
+      removed = true;
+      const previous = filteredBlocks.at(-1);
+      if (previous && isMarkdownHeading(previous)) {
+        filteredBlocks.pop();
+      }
+      continue;
+    }
+
+    filteredBlocks.push(block);
+  }
 
   return {
     content: filteredBlocks.join("\n\n").trim(),
-    removed: filteredBlocks.length !== blocks.length,
+    removed,
   };
 }
 
@@ -176,7 +208,14 @@ function formatVerifiedDate(value: string) {
     return value.slice(0, 10);
   }
 
-  return date.toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("ja-JP", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+  })
+    .format(date)
+    .replaceAll("/", "-");
 }
 
 export function CompetitionViewingGuide({
