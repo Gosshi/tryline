@@ -364,7 +364,6 @@ export default async function MatchDetailPage({
                 afterBody={
                   publishedContent.preview ? (
                     <MatchContentTrustStrip
-                      content={publishedContent.preview}
                       hasConfirmedLineups={hasConfirmedLineups}
                       sourcedFactCount={sourcedFactCounts.preview}
                     />
@@ -408,7 +407,6 @@ export default async function MatchDetailPage({
                   afterBody={
                     <>
                       <MatchContentTrustStrip
-                        content={publishedContent.recap!}
                         hasConfirmedLineups={hasConfirmedLineups}
                         sourcedFactCount={sourcedFactCounts.recap}
                       />
@@ -450,7 +448,6 @@ export default async function MatchDetailPage({
                   publishedContent.recap ? (
                     <>
                       <MatchContentTrustStrip
-                        content={publishedContent.recap}
                         hasConfirmedLineups={hasConfirmedLineups}
                         sourcedFactCount={sourcedFactCounts.recap}
                       />
@@ -503,7 +500,6 @@ export default async function MatchDetailPage({
                   <MatchContentSection
                     afterBody={
                       <MatchContentTrustStrip
-                        content={publishedContent.preview}
                         hasConfirmedLineups={hasConfirmedLineups}
                         sourcedFactCount={sourcedFactCounts.preview}
                       />

@@ -24,6 +24,10 @@ const standingMocks = vi.hoisted(() => ({
   getStandingPositionLookupForCompetitions: vi.fn(),
 }));
 
+const teamMocks = vi.hoisted(() => ({
+  listAllTeams: vi.fn(),
+}));
+
 const focusMocks = vi.hoisted(() => ({
   selectCalendarFocusMatchId: vi.fn(),
 }));
@@ -94,6 +98,8 @@ vi.mock("@/lib/db/queries/standings", () => ({
     standingMocks.getStandingPositionLookupForCompetitions,
 }));
 
+vi.mock("@/lib/db/queries/teams", () => teamMocks);
+
 vi.mock("@/lib/format/calendar-focus", () => ({
   selectCalendarFocusMatchId: focusMocks.selectCalendarFocusMatchId,
 }));
@@ -160,6 +166,7 @@ describe("HomePage", () => {
       (links) => links,
     );
     standingMocks.getStandingPositionLookupForCompetitions.mockResolvedValue(new Map());
+    teamMocks.listAllTeams.mockResolvedValue([]);
     focusMocks.selectCalendarFocusMatchId.mockReturnValue(null);
     matchMocks.getRecentlyReviewedFamilies.mockResolvedValue([]);
     matchMocks.getRecentlyReviewedCompetitionGroups.mockResolvedValue([
@@ -283,7 +290,7 @@ describe("HomePage", () => {
         hasPreview: true,
         homeTeam: { name: "Japan", shortCode: "JPN", slug: "japan" },
         id: "japan-match",
-        kickoffAt: "2026-07-10T10:30:00.000Z",
+        kickoffAt: "2026-07-11T10:30:00.000Z",
       }),
       createCalendarMatch({ id: "quick-1" }),
       createCalendarMatch({ id: "quick-2" }),

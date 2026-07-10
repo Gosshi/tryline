@@ -1,31 +1,20 @@
-import type { PublishedMatchContent } from "@/lib/db/queries/match-content";
-
 type MatchContentTrustStripProps = {
-  content: PublishedMatchContent;
   hasConfirmedLineups: boolean;
   sourcedFactCount: number;
 };
 
-function formatGeneratedDate(value: string): string {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value.slice(0, 10);
-  }
-
-  return date.toISOString().slice(0, 10);
-}
-
 export function MatchContentTrustStrip({
-  content,
   hasConfirmedLineups,
   sourcedFactCount,
 }: MatchContentTrustStripProps) {
   const signals = [
     hasConfirmedLineups ? "ラインアップ確認済み" : null,
     sourcedFactCount > 0 ? `参照元${sourcedFactCount}件` : null,
-    `更新: ${formatGeneratedDate(content.generatedAt)}`,
   ].filter(Boolean);
+
+  if (signals.length === 0) {
+    return null;
+  }
 
   return (
     <div className="mt-6 border-t border-[var(--color-rule)] pt-4">
