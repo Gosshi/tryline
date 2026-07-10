@@ -1,6 +1,7 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { Outfit, Zen_Maru_Gothic } from "next/font/google";
 
+import { ReturnVisitTracker } from "@/components/return-visit-tracker";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SITE_URL } from "@/lib/site";
@@ -63,6 +64,7 @@ export default function RootLayout({
     <html className={`${body.variable} ${numbers.variable}`} lang="ja">
       <body className="min-h-screen">
         <SiteHeader />
+        <ReturnVisitTracker />
         {children}
         <SiteFooter />
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (

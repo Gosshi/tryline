@@ -23,6 +23,7 @@ const standingsMocks = vi.hoisted(() => ({
 
 const authMocks = vi.hoisted(() => ({
   getUser: vi.fn(),
+  getUserProfile: vi.fn(),
 }));
 
 const spoilerGuardMocks = vi.hoisted(() => ({
@@ -194,6 +195,7 @@ function setCommonMocks(params: {
   matchMocks.countHeadToHeadMatches.mockResolvedValue(0);
   matchMocks.getPoolTeamsForMatch.mockResolvedValue([]);
   authMocks.getUser.mockResolvedValue(null);
+  authMocks.getUserProfile.mockResolvedValue(null);
   spoilerGuardMocks.getSpoilerGuardEnabledForUser.mockResolvedValue(false);
 }
 

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { FlagIcon } from "@/components/flag-icon";
+import { trackFavoriteTeamAdded } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 export type TeamOption = {
@@ -42,6 +43,12 @@ export function TeamPicker({ initialSelected, teams }: TeamPickerProps) {
 
       if (!response.ok) {
         throw new Error("Failed to save favorite teams");
+      }
+
+      for (const slug of selected.filter(
+        (slug) => !initialSelected.includes(slug),
+      )) {
+        trackFavoriteTeamAdded({ source: "team_picker", team_slug: slug });
       }
 
       router.refresh();

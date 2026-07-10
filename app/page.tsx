@@ -30,6 +30,7 @@ import {
 } from "@/lib/db/queries/matches";
 import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { getStandingPositionLookupForCompetitions } from "@/lib/db/queries/standings";
+import { listAllTeams } from "@/lib/db/queries/teams";
 import { FEATURED_COMPETITION } from "@/lib/featured-competition";
 import { selectCalendarFocusMatchId } from "@/lib/format/calendar-focus";
 import {
@@ -120,6 +121,7 @@ export default async function HomePage() {
     weeklyMatches,
     upcomingMatches,
     favoriteMatches,
+    allTeams,
     spoilerGuardEnabled,
   ] = await Promise.all([
     listFamilies(),
@@ -129,6 +131,7 @@ export default async function HomePage() {
     getMatchesInRange(weekRange.startUtcIso, weekRange.endUtcIso),
     getUpcomingMatches(5),
     getFavoriteTeamMatches(favoriteTeamSlugs),
+    listAllTeams(),
     getSpoilerGuardEnabledForUser(user?.id),
   ]);
   const homepageCompetitionLinks = sortHomepageCompetitionLinks(
@@ -298,7 +301,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {user && favoriteTeamSlugs.length === 0 && <FavoriteTeamsBanner />}
+      {user && favoriteTeamSlugs.length === 0 && (
+        <FavoriteTeamsBanner
+          allTeams={allTeams}
+          favoriteTeamSlugs={favoriteTeamSlugs}
+        />
+      )}
 
       {profile?.subscription_status !== "premium" &&
         sampleMatch?.recapExcerpt && (

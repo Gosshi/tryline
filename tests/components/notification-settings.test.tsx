@@ -48,7 +48,13 @@ describe("NotificationSettings", () => {
   it("sends spoiler_guard when subscribing with spoiler guard enabled", async () => {
     mockPushApis();
     const fetchMock = vi.fn().mockResolvedValue(new Response("{}"));
+    const gtag = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("gtag", gtag);
+    Object.defineProperty(window, "gtag", {
+      configurable: true,
+      value: gtag,
+    });
 
     render(<NotificationSettings initialTeamSlugs={["japan"]} />);
 
@@ -67,5 +73,6 @@ describe("NotificationSettings", () => {
       team_slugs: ["japan"],
     });
     expect(init.method).toBe("POST");
+    expect(gtag).toHaveBeenCalledWith("event", "push_permission_granted", {});
   });
 });

@@ -23,13 +23,21 @@ const statsMocks = vi.hoisted(() => ({
   getTeamStatsDataBySlug: vi.fn(),
 }));
 
+const authMocks = vi.hoisted(() => ({
+  getUser: vi.fn(),
+  getUserProfile: vi.fn(),
+}));
+
 const navigationMocks = vi.hoisted(() => ({
   notFound: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
   notFound: navigationMocks.notFound,
+  useRouter: () => ({ refresh: vi.fn() }),
 }));
+
+vi.mock("@/lib/auth/server", () => authMocks);
 
 vi.mock("@/lib/db/queries/teams", () => ({
   getTeamPageDataBySlug: teamMocks.getTeamPageDataBySlug,
@@ -57,6 +65,10 @@ describe("TeamPage", () => {
     playerMocks.getPlayersByTeamSlug.mockReset();
     statsMocks.getTeamStatsDataBySlug.mockReset();
     contentMocks.getContentStatusMap.mockReset();
+    authMocks.getUser.mockReset();
+    authMocks.getUserProfile.mockReset();
+    authMocks.getUser.mockResolvedValue(null);
+    authMocks.getUserProfile.mockResolvedValue(null);
     contentMocks.getContentStatusMap.mockResolvedValue(new Map());
     playerMocks.getPlayersByTeamSlug.mockResolvedValue([
       {
