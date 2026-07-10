@@ -35,6 +35,7 @@ const focusMocks = vi.hoisted(() => ({
 const matchMocks = vi.hoisted(() => ({
   getFavoriteTeamMatches: vi.fn(),
   getMatchesInRange: vi.fn(),
+  getNextMatchForCompetition: vi.fn(),
   getRecentlyReviewedCompetitionGroups: vi.fn(),
   getRecentlyReviewedFamilies: vi.fn(),
   getRecentlyReviewedMatchById: vi.fn(),
@@ -111,6 +112,7 @@ vi.mock("@/lib/format/calendar-focus", () => ({
 vi.mock("@/lib/db/queries/matches", () => ({
   getFavoriteTeamMatches: matchMocks.getFavoriteTeamMatches,
   getMatchesInRange: matchMocks.getMatchesInRange,
+  getNextMatchForCompetition: matchMocks.getNextMatchForCompetition,
   getRecentlyReviewedCompetitionGroups:
     matchMocks.getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedFamilies: matchMocks.getRecentlyReviewedFamilies,
@@ -124,7 +126,6 @@ vi.mock("@/lib/sample-matches", async (importOriginal) => ({
   ...((await importOriginal()) as object),
   getPrimarySampleMatchId: sampleMatchMocks.getPrimarySampleMatchId,
 }));
-
 
 function createCalendarMatch(overrides: Record<string, unknown> = {}) {
   return {
@@ -174,15 +175,24 @@ describe("HomePage", () => {
     competitionMocks.sortHomepageCompetitionLinks.mockImplementation(
       (links) => links,
     );
-    standingMocks.getStandingPositionLookupForCompetitions.mockResolvedValue(new Map());
+    standingMocks.getStandingPositionLookupForCompetitions.mockResolvedValue(
+      new Map(),
+    );
     teamMocks.listAllTeams.mockResolvedValue([]);
     focusMocks.selectCalendarFocusMatchId.mockReturnValue(null);
-    sampleMatchMocks.getPrimarySampleMatchId.mockResolvedValue(PRIMARY_SAMPLE_MATCH_ID);
+    sampleMatchMocks.getPrimarySampleMatchId.mockResolvedValue(
+      PRIMARY_SAMPLE_MATCH_ID,
+    );
     matchMocks.getRecentlyReviewedFamilies.mockResolvedValue([]);
     matchMocks.getRecentlyReviewedCompetitionGroups.mockResolvedValue([
       {
         compact: [],
-        competition: { family: "urc", name: "URC", season: "2025-26", slug: "urc-2025-26" },
+        competition: {
+          family: "urc",
+          name: "URC",
+          season: "2025-26",
+          slug: "urc-2025-26",
+        },
         hero: {
           awayScore: 21,
           awayTeam: {
@@ -190,7 +200,12 @@ describe("HomePage", () => {
             shortCode: "RA",
             slug: "recent-away",
           },
-          competition: { family: "urc", name: "URC", season: "2025-26", slug: "urc-2025-26" },
+          competition: {
+            family: "urc",
+            name: "URC",
+            season: "2025-26",
+            slug: "urc-2025-26",
+          },
           homeScore: 24,
           homeTeam: {
             name: "Recent Home",
@@ -224,6 +239,7 @@ describe("HomePage", () => {
       recapExcerpt: "これは無料で読めるレビュー本文です。",
     });
     matchMocks.getMatchesInRange.mockResolvedValue([]);
+    matchMocks.getNextMatchForCompetition.mockResolvedValue(null);
     matchMocks.getUpcomingMatches.mockResolvedValue([]);
     matchMocks.getFavoriteTeamMatches.mockResolvedValue([]);
     spoilerGuardMocks.getSpoilerGuardEnabledForUser.mockResolvedValue(false);
@@ -246,8 +262,12 @@ describe("HomePage", () => {
       PRIMARY_SAMPLE_MATCH_ID,
       "ja",
     );
-    expect(matchMocks.getRecentlyReviewedCompetitionGroups).toHaveBeenCalledWith("ja");
-    expect(matchMocks.getRecentlyReviewedCompetitionGroups).toHaveBeenCalledTimes(1);
+    expect(
+      matchMocks.getRecentlyReviewedCompetitionGroups,
+    ).toHaveBeenCalledWith("ja");
+    expect(
+      matchMocks.getRecentlyReviewedCompetitionGroups,
+    ).toHaveBeenCalledTimes(1);
 
     for (const link of screen.getAllByRole("link", {
       name: /無料サンプルを読む/,
@@ -262,15 +282,15 @@ describe("HomePage", () => {
       screen.getAllByText("これは無料で読めるレビュー本文です。").length,
     ).toBe(1);
     expect(screen.queryByLabelText("今週の注目試合")).not.toBeInTheDocument();
-    expect(screen.queryByText("home_hero_sample_recap")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("home_hero_sample_recap"),
+    ).not.toBeInTheDocument();
     const heroLinks = screen.getAllByRole("link").slice(0, 2);
     expect(heroLinks[0]).toHaveTextContent("今週の試合を見る");
     expect(heroLinks[0]).toHaveAttribute("href", "/calendar");
     expect(heroLinks[1]).toHaveTextContent("Premium無料体験");
     expect(heroLinks[1]).toHaveAttribute("href", "/pricing");
   });
-
-
 
   it("renders the matchday board from current week matches", async () => {
     competitionMocks.listFamilies.mockResolvedValue(["pnc"]);
@@ -307,31 +327,54 @@ describe("HomePage", () => {
       createCalendarMatch({ id: "quick-3" }),
       createCalendarMatch({ id: "quick-4" }),
     ]);
+    matchMocks.getNextMatchForCompetition.mockResolvedValue(
+      createCalendarMatch({
+        awayTeam: { name: "Canada", shortCode: "CAN", slug: "canada" },
+        competition: {
+          family: "pnc",
+          id: "pnc-2026-id",
+          name: "Pacific Nations Cup",
+          season: "2026",
+          slug: "pnc-2026",
+        },
+        homeTeam: { name: "Fiji", shortCode: "FIJ", slug: "fiji" },
+        id: "pnc-next-match",
+        kickoffAt: "2026-09-12T07:00:00.000Z",
+      }),
+    );
 
     render(await HomePage());
 
     expect(focusMocks.selectCalendarFocusMatchId).toHaveBeenCalled();
     expect(screen.getByLabelText("今週の注目試合")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Japan[\s\S]*Fiji/ })).toHaveAttribute(
-      "href",
-      "/matches/japan-match",
-    );
+    expect(
+      screen.getByRole("link", { name: /Japan[\s\S]*Fiji/ }),
+    ).toHaveAttribute("href", "/matches/japan-match");
     expect(
       screen.queryByRole("heading", { name: "今週の試合" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "注目大会" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "注目大会" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("プレビュー公開")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "ほか1試合 →" })).toHaveAttribute(
       "href",
       "/calendar",
     );
-    expect(screen.getByRole("link", { name: "大会ページを見る →" })).toHaveAttribute(
-      "href",
-      "/c/pnc/2026",
-    );
+    expect(
+      screen.getByRole("link", { name: "大会ページを見る →" }),
+    ).toHaveAttribute("href", "/c/pnc/2026");
+    expect(matchMocks.getNextMatchForCompetition).toHaveBeenCalledWith({
+      family: "pnc",
+      season: "2026",
+    });
+    expect(screen.getByText("2026-09-12 (土) 16:00 JST")).toBeInTheDocument();
+    expect(screen.getByText("Fiji 対 Canada")).toBeInTheDocument();
     expect(screen.getByText("7本")).toBeInTheDocument();
     expect(screen.getByText("1試合")).toBeInTheDocument();
-    expect(screen.queryByText(/GSC|クリック|平均順位|表示回数/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/GSC|クリック|平均順位|表示回数/),
+    ).not.toBeInTheDocument();
   });
 
   it("renders multiple recent review competition blocks", async () => {

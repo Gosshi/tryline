@@ -10,7 +10,9 @@ const dbMock = vi.hoisted(() => ({
   from: vi.fn(),
   matchRows: [] as unknown[],
   matchesBuilder: {
+    eq: vi.fn().mockReturnThis(),
     gte: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
     lt: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
@@ -26,6 +28,7 @@ vi.mock("@/lib/db/public-server", () => ({
 
 function createMatchRow(params: {
   competitionName?: string;
+  competitionSeason?: string;
   id: string;
   kickoffAt: string;
   status: string;
@@ -41,7 +44,7 @@ function createMatchRow(params: {
       ? {
           family: "league-one",
           name: params.competitionName,
-          season: "2025-26",
+          season: params.competitionSeason ?? "2025-26",
           slug: `league-one-${params.competitionName}`,
         }
       : null,
@@ -134,18 +137,18 @@ describe("getMatchesInRange", () => {
       "scheduled",
       "in_progress",
     ]);
-    expect(matches.find((match) => match.id === "match-finished")).toMatchObject(
-      {
-        hasPreview: false,
-        hasRecap: true,
-      },
-    );
-    expect(matches.find((match) => match.id === "match-scheduled")).toMatchObject(
-      {
-        hasPreview: true,
-        hasRecap: false,
-      },
-    );
+    expect(
+      matches.find((match) => match.id === "match-finished"),
+    ).toMatchObject({
+      hasPreview: false,
+      hasRecap: true,
+    });
+    expect(
+      matches.find((match) => match.id === "match-scheduled"),
+    ).toMatchObject({
+      hasPreview: true,
+      hasRecap: false,
+    });
     expect(dbMock.contentBuilder.eq).toHaveBeenCalledWith("language", "ja");
     expect(dbMock.contentBuilder.eq).toHaveBeenCalledWith(
       "status",
@@ -155,5 +158,46 @@ describe("getMatchesInRange", () => {
       "preview",
       "recap",
     ]);
+  });
+
+  it("loads the next scheduled match for a competition beyond the homepage week pool", async () => {
+    dbMock.matchRows = [
+      createMatchRow({
+        competitionName: "Pacific Nations Cup",
+        competitionSeason: "2026",
+        id: "pnc-september-next",
+        kickoffAt: "2026-09-12T07:00:00.000Z",
+        status: "scheduled",
+      }),
+    ];
+    const { getNextMatchForCompetition } =
+      await import("@/lib/db/queries/matches");
+
+    const match = await getNextMatchForCompetition({
+      family: "pnc",
+      season: "2026",
+    });
+
+    expect(dbMock.matchesBuilder.eq).toHaveBeenCalledWith(
+      "competition.family",
+      "pnc",
+    );
+    expect(dbMock.matchesBuilder.eq).toHaveBeenCalledWith(
+      "competition.season",
+      "2026",
+    );
+    expect(dbMock.matchesBuilder.eq).toHaveBeenCalledWith(
+      "status",
+      "scheduled",
+    );
+    expect(dbMock.matchesBuilder.limit).toHaveBeenCalledWith(1);
+    expect(match).toMatchObject({
+      competition: {
+        name: "Pacific Nations Cup",
+        season: "2026",
+      },
+      id: "pnc-september-next",
+      kickoffAt: "2026-09-12T07:00:00.000Z",
+    });
   });
 });
