@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const EXISTING_CONTENT_STATUSES = ["draft", "published"] as const;
 const PREVIEW_WINDOW_START_HOURS = 12;
-const PREVIEW_WINDOW_END_HOURS = 72;
+const PREVIEW_WINDOW_END_HOURS = 48;
 const RECAP_BATCH_SIZE = 10;
 
 type LineupIngestOutcome = "triggered" | "no_url";
@@ -246,7 +246,8 @@ export async function runOrchestrate(
   await Promise.all(
     previewCandidates.eligibleMatches.map(async (match) => {
       const matchId = match.id;
-      const competitionFamily = firstRelation(match.competition)?.family ?? null;
+      const competitionFamily =
+        firstRelation(match.competition)?.family ?? null;
       try {
         const lineupOutcome = await deps.ingestLineups(
           matchId,

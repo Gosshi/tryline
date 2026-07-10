@@ -245,12 +245,12 @@ describe("runOrchestrate", () => {
     expect(calls).toEqual(["facts", "generate"]);
   });
 
-  it("includes next-day early UTC kickoffs in the 12-72h preview window", async () => {
+  it("includes next-day early UTC kickoffs in the 12-48h preview window", async () => {
     const db = createMockDb({
       scheduledIds: ["too-soon", "srp-next-day", "too-late"],
       scheduledKickoffAt: {
         "srp-next-day": "2026-05-16T04:35:00.000Z",
-        "too-late": "2026-05-18T12:01:00.000Z",
+        "too-late": "2026-05-17T12:01:00.000Z",
         "too-soon": "2026-05-15T23:59:00.000Z",
       },
       finishedIds: [],
