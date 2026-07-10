@@ -32,9 +32,5 @@ export async function getPrimarySampleMatchId(): Promise<string> {
 }
 
 export async function isSampleMatch(matchId: string): Promise<boolean> {
-  if ((FALLBACK_SAMPLE_MATCH_IDS as readonly string[]).includes(matchId)) {
-    return true;
-  }
-
   return (await getSampleMatchIds()).includes(matchId);
 }
