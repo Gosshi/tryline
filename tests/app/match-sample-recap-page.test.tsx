@@ -34,6 +34,10 @@ const sourcedFactMocks = vi.hoisted(() => ({
   getSourcedFactCountsForMatch: vi.fn(),
 }));
 
+const sampleMatchMocks = vi.hoisted(() => ({
+  isSampleMatch: vi.fn(),
+}));
+
 const matchMocks = vi.hoisted(() => ({
   countHeadToHeadMatches: vi.fn(),
   getMatchById: vi.fn(),
@@ -106,6 +110,7 @@ vi.mock("@/lib/db/queries/matches", () => matchMocks);
 vi.mock("@/lib/db/queries/spoiler-guard", () => spoilerGuardMocks);
 vi.mock("@/lib/db/queries/sourced-facts", () => sourcedFactMocks);
 vi.mock("@/lib/db/queries/standings", () => standingsMocks);
+vi.mock("@/lib/sample-matches", () => sampleMatchMocks);
 vi.mock("next/navigation", () => navigationMocks);
 
 import MatchEnglishPage from "@/app/matches/[id]/en/page";
@@ -206,6 +211,9 @@ function setCommonMocks(params: {
   authMocks.getUser.mockResolvedValue(null);
   authMocks.getUserProfile.mockResolvedValue(null);
   spoilerGuardMocks.getSpoilerGuardEnabledForUser.mockResolvedValue(false);
+  sampleMatchMocks.isSampleMatch.mockImplementation(
+    async (matchId: string) => matchId === sampleMatchId,
+  );
 }
 
 describe("match sample recap page", () => {

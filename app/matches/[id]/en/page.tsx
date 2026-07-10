@@ -128,7 +128,7 @@ export default async function MatchEnglishPage({
   const homeDisplayName = match.homeTeam.englishName ?? match.homeTeam.name;
   const awayDisplayName = match.awayTeam.englishName ?? match.awayTeam.name;
   const isFreeSampleRecap =
-    isSampleMatch(id) && englishContent.recap !== null;
+    (await isSampleMatch(id)) && englishContent.recap !== null;
   const recapSplit = englishContent.recap
     ? splitRecapForPaywall(englishContent.recap.contentMdJa)
     : null;
