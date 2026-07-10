@@ -12,10 +12,6 @@ export function CheckoutSuccessTracker() {
     }
 
     if (typeof window.gtag === "function") {
-      window.gtag("event", "purchase", {
-        currency: "JPY",
-        value: 980,
-      });
       window.gtag("event", "trial_start");
     }
   }, [searchParams]);
