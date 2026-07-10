@@ -269,17 +269,23 @@ export type Database = {
         Row: {
           family: string;
           guide_ja: string;
+          source_url: string | null;
           updated_at: string;
+          verified_at: string | null;
         };
         Insert: {
           family: string;
           guide_ja: string;
+          source_url?: string | null;
           updated_at?: string;
+          verified_at?: string | null;
         };
         Update: {
           family?: string;
           guide_ja?: string;
+          source_url?: string | null;
           updated_at?: string;
+          verified_at?: string | null;
         };
         Relationships: [];
       };

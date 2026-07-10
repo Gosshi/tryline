@@ -37,19 +37,21 @@ describe("success trackers", () => {
     vi.unstubAllGlobals();
   });
 
-  it("tracks purchase and trial_start on checkout success", async () => {
+  it("tracks only trial_start on checkout success", async () => {
     navigationMocks.searchParams = new URLSearchParams("checkout=success");
     const gtag = stubGtag();
 
     render(<CheckoutSuccessTracker />);
 
     await waitFor(() => {
-      expect(gtag).toHaveBeenCalledWith("event", "purchase", {
-        currency: "JPY",
-        value: 980,
-      });
       expect(gtag).toHaveBeenCalledWith("event", "trial_start");
     });
+    expect(
+      gtag.mock.calls.some(
+        ([command, eventName]) =>
+          command === "event" && eventName === "purchase",
+      ),
+    ).toBe(false);
   });
 
   it("tracks sign_up on signup success", async () => {
