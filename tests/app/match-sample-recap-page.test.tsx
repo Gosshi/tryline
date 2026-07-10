@@ -30,6 +30,10 @@ const spoilerGuardMocks = vi.hoisted(() => ({
   getSpoilerGuardEnabledForUser: vi.fn(),
 }));
 
+const sourcedFactMocks = vi.hoisted(() => ({
+  getSourcedFactCountsForMatch: vi.fn(),
+}));
+
 const matchMocks = vi.hoisted(() => ({
   countHeadToHeadMatches: vi.fn(),
   getMatchById: vi.fn(),
@@ -100,6 +104,7 @@ vi.mock("@/lib/db/queries/match-events", () => matchEventMocks);
 vi.mock("@/lib/db/queries/match-lineups", () => matchLineupMocks);
 vi.mock("@/lib/db/queries/matches", () => matchMocks);
 vi.mock("@/lib/db/queries/spoiler-guard", () => spoilerGuardMocks);
+vi.mock("@/lib/db/queries/sourced-facts", () => sourcedFactMocks);
 vi.mock("@/lib/db/queries/standings", () => standingsMocks);
 vi.mock("next/navigation", () => navigationMocks);
 
@@ -191,6 +196,10 @@ function setCommonMocks(params: {
   );
   matchEventMocks.getMatchEventsForMatch.mockResolvedValue([]);
   matchLineupMocks.getMatchLineupsForMatch.mockResolvedValue([]);
+  sourcedFactMocks.getSourcedFactCountsForMatch.mockResolvedValue({
+    preview: 0,
+    recap: 0,
+  });
   standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
   matchMocks.countHeadToHeadMatches.mockResolvedValue(0);
   matchMocks.getPoolTeamsForMatch.mockResolvedValue([]);
