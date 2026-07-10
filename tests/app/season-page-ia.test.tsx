@@ -220,6 +220,28 @@ describe("season page information architecture", () => {
     expect(follows(matchGroups, guideFrame!)).toBe(true);
   });
 
+  it("links to the competition-specific iCal subscription", async () => {
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    );
+
+    expect(
+      screen.getByRole("link", { name: "この大会を購読" }),
+    ).toHaveAttribute(
+      "href",
+      "webcal://www.trylinerugby.com/api/calendar/premiership-2025-26.ics",
+    );
+    expect(screen.getByRole("link", { name: "大会iCal URL" })).toHaveAttribute(
+      "href",
+      "https://www.trylinerugby.com/api/calendar/premiership-2025-26.ics",
+    );
+  });
+
   it("keeps standings above the empty state when no matches are available", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({});

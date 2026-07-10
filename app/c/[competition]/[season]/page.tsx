@@ -69,6 +69,10 @@ function formatDateJa(dateStr: string): string {
   }).format(date);
 }
 
+function getWebcalUrl(url: string): string {
+  return url.replace(/^https?:/, "webcal:");
+}
+
 function formatDateRange(
   startDate: string | null,
   endDate: string | null,
@@ -155,13 +159,15 @@ export default async function SeasonPage({ params }: Props) {
     notFound();
   }
 
-  const [matches, standings, poolStandings, seasons, guide] = await Promise.all([
-    listMatchesForCompetition(comp.slug),
-    getStandingsForCompetition(comp.slug),
-    getPoolStandingsForCompetition(comp.slug),
-    listSeasonsByFamily(comp.family),
-    getCompetitionGuide(comp.family),
-  ]);
+  const [matches, standings, poolStandings, seasons, guide] = await Promise.all(
+    [
+      listMatchesForCompetition(comp.slug),
+      getStandingsForCompetition(comp.slug),
+      getPoolStandingsForCompetition(comp.slug),
+      listSeasonsByFamily(comp.family),
+      getCompetitionGuide(comp.family),
+    ],
+  );
   const contentStatusMap = await getContentStatusForMatches(
     matches.map((match) => match.id),
   );
@@ -173,6 +179,7 @@ export default async function SeasonPage({ params }: Props) {
   const family = comp.family;
   const accentColor = getCompetitionFamilyColor(family);
   const pageUrl = `${SITE_URL}/c/${competition}/${season}`;
+  const competitionCalendarFeedUrl = `${SITE_URL}/api/calendar/${comp.slug}.ics`;
   const competitionTitle = formatCompetitionTitle(comp, comp.season);
   const familyTitle = formatFamilyName(family);
   const nextMatch = findNextScheduledMatch(matches);
@@ -241,7 +248,7 @@ export default async function SeasonPage({ params }: Props) {
   };
 
   return (
-    <main className="min-h-screen bg-paper">
+    <main className="bg-paper min-h-screen">
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbJsonLd),
@@ -273,6 +280,20 @@ export default async function SeasonPage({ params }: Props) {
               {dateRange}
             </p>
           )}
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link
+              className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
+              href={getWebcalUrl(competitionCalendarFeedUrl)}
+            >
+              この大会を購読
+            </Link>
+            <Link
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+              href={competitionCalendarFeedUrl}
+            >
+              大会iCal URL
+            </Link>
+          </div>
         </header>
 
         <SeasonSwitcher
@@ -289,20 +310,22 @@ export default async function SeasonPage({ params }: Props) {
         )}
 
         <div className="space-y-4" id="standings">
-          {poolStandings.length > 0
-            ? poolStandings.map((pool) => (
-                <StandingsTable
-                  key={pool.poolName}
-                  standings={pool.standings}
-                  title={pool.poolName}
-                />
-              ))
-            : <StandingsTable standings={standings} />}
+          {poolStandings.length > 0 ? (
+            poolStandings.map((pool) => (
+              <StandingsTable
+                key={pool.poolName}
+                standings={pool.standings}
+                title={pool.poolName}
+              />
+            ))
+          ) : (
+            <StandingsTable standings={standings} />
+          )}
         </div>
 
         {nextJapanMatch && (
           <Link
-            className="block rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 p-5 transition-colors hover:border-[var(--color-accent)]/60"
+            className="border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 hover:border-[var(--color-accent)]/60 block rounded-xl border p-5 transition-colors"
             href={`/matches/${nextJapanMatch.id}`}
           >
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
