@@ -407,4 +407,71 @@ describe("match sample recap page", () => {
     expect(metadata.description).toContain("ポルトガル");
     expect(String(metadata.description)).not.toContain("vs");
   });
+
+  it("marks thin future match pages as noindex when content is missing", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-10T00:00:00.000Z"));
+    setCommonMocks({
+      match: {
+        awayScore: null,
+        homeScore: null,
+        kickoffAt: "2027-10-01T10:00:00.000Z",
+        status: "scheduled",
+      },
+      publishedContent: {
+        preview: null,
+        recap: null,
+      },
+    });
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    expect(metadata.robots).toEqual({ follow: true, index: false });
+    vi.useRealTimers();
+  });
+
+  it("keeps near-term or content-backed match pages indexable", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-10T00:00:00.000Z"));
+    setCommonMocks({
+      match: {
+        awayScore: null,
+        homeScore: null,
+        kickoffAt: "2026-07-12T10:00:00.000Z",
+        status: "scheduled",
+      },
+      publishedContent: {
+        preview: null,
+        recap: null,
+      },
+    });
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({ id: sampleMatchId }),
+      }),
+    ).resolves.not.toHaveProperty("robots");
+
+    setCommonMocks({
+      match: {
+        awayScore: null,
+        homeScore: null,
+        kickoffAt: "2027-10-01T10:00:00.000Z",
+        status: "scheduled",
+      },
+      publishedContent: {
+        preview,
+        recap: null,
+      },
+    });
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({ id: sampleMatchId }),
+      }),
+    ).resolves.not.toHaveProperty("robots");
+    vi.useRealTimers();
+  });
 });
