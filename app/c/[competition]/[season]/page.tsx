@@ -358,7 +358,11 @@ export default async function SeasonPage({ params }: Props) {
         )}
 
         <div className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
-          <CompetitionViewingGuide markdown={guide} />
+          <CompetitionViewingGuide
+            markdown={guide?.guideJa ?? null}
+            sourceUrl={guide?.sourceUrl ?? null}
+            verifiedAt={guide?.verifiedAt ?? null}
+          />
         </div>
       </div>
     </main>
