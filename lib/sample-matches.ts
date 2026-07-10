@@ -1,6 +1,8 @@
+import { listCachedSampleMatchIds } from "@/lib/db/queries/sample-matches";
+
 export const PRIMARY_SAMPLE_MATCH_ID = "a06219be-9d24-486b-92a5-7f9f88ef8826";
 
-export const SAMPLE_MATCH_IDS = [
+export const FALLBACK_SAMPLE_MATCH_IDS = [
   PRIMARY_SAMPLE_MATCH_ID,
   "2f2463af-e5d4-4503-ae41-292e961dc6cc",
   "040cdb1a-74b6-41b1-906a-70ea06f2ad1c",
@@ -11,8 +13,28 @@ export const SAMPLE_MATCH_IDS = [
   "2cbc8b44-2404-42c0-8ea3-6e96cf4ac3f6",
 ] as const;
 
-const SAMPLE_MATCH_ID_SET = new Set<string>(SAMPLE_MATCH_IDS);
+export const SAMPLE_MATCH_IDS = FALLBACK_SAMPLE_MATCH_IDS;
 
-export function isSampleMatch(matchId: string): boolean {
-  return SAMPLE_MATCH_ID_SET.has(matchId);
+export async function getSampleMatchIds(): Promise<string[]> {
+  try {
+    const cachedIds = await listCachedSampleMatchIds();
+
+    return cachedIds.length > 0 ? cachedIds : [...FALLBACK_SAMPLE_MATCH_IDS];
+  } catch {
+    return [...FALLBACK_SAMPLE_MATCH_IDS];
+  }
+}
+
+export async function getPrimarySampleMatchId(): Promise<string> {
+  const [primary] = await getSampleMatchIds();
+
+  return primary ?? PRIMARY_SAMPLE_MATCH_ID;
+}
+
+export async function isSampleMatch(matchId: string): Promise<boolean> {
+  if ((FALLBACK_SAMPLE_MATCH_IDS as readonly string[]).includes(matchId)) {
+    return true;
+  }
+
+  return (await getSampleMatchIds()).includes(matchId);
 }

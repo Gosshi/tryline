@@ -27,6 +27,10 @@ const matchMocks = vi.hoisted(() => ({
   getRecentlyReviewedMatchById: vi.fn(),
 }));
 
+const sampleMatchMocks = vi.hoisted(() => ({
+  getPrimarySampleMatchId: vi.fn(),
+}));
+
 vi.mock("@/lib/auth/client", () => ({
   getSupabaseBrowserClient: () => ({
     auth: {
@@ -40,9 +44,17 @@ vi.mock("@/lib/db/queries/matches", () => ({
   getRecentlyReviewedMatchById: matchMocks.getRecentlyReviewedMatchById,
 }));
 
+vi.mock("@/lib/sample-matches", async (importOriginal) => ({
+  ...((await importOriginal()) as object),
+  getPrimarySampleMatchId: sampleMatchMocks.getPrimarySampleMatchId,
+}));
+
 describe("PricingPage", () => {
   beforeEach(() => {
     matchMocks.getRecentlyReviewedMatchById.mockReset();
+    sampleMatchMocks.getPrimarySampleMatchId.mockResolvedValue(
+      PRIMARY_SAMPLE_MATCH_ID,
+    );
     matchMocks.getRecentlyReviewedMatchById.mockResolvedValue({
       awayTeam: { name: "Gloucester" },
       competition: { name: "Premiership", season: "2025-26" },

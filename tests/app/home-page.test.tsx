@@ -45,6 +45,10 @@ const spoilerGuardMocks = vi.hoisted(() => ({
   getSpoilerGuardEnabledForUser: vi.fn(),
 }));
 
+const sampleMatchMocks = vi.hoisted(() => ({
+  getPrimarySampleMatchId: vi.fn(),
+}));
+
 vi.mock("@/components/calendar/week-schedule", () => ({
   WeekSchedule: ({ emptyMessage }: { emptyMessage: string }) => (
     <div>{emptyMessage}</div>
@@ -116,6 +120,11 @@ vi.mock("@/lib/db/queries/matches", () => ({
 
 vi.mock("@/lib/db/queries/spoiler-guard", () => spoilerGuardMocks);
 
+vi.mock("@/lib/sample-matches", async (importOriginal) => ({
+  ...((await importOriginal()) as object),
+  getPrimarySampleMatchId: sampleMatchMocks.getPrimarySampleMatchId,
+}));
+
 
 function createCalendarMatch(overrides: Record<string, unknown> = {}) {
   return {
@@ -168,6 +177,7 @@ describe("HomePage", () => {
     standingMocks.getStandingPositionLookupForCompetitions.mockResolvedValue(new Map());
     teamMocks.listAllTeams.mockResolvedValue([]);
     focusMocks.selectCalendarFocusMatchId.mockReturnValue(null);
+    sampleMatchMocks.getPrimarySampleMatchId.mockResolvedValue(PRIMARY_SAMPLE_MATCH_ID);
     matchMocks.getRecentlyReviewedFamilies.mockResolvedValue([]);
     matchMocks.getRecentlyReviewedCompetitionGroups.mockResolvedValue([
       {

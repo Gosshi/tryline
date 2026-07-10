@@ -193,7 +193,7 @@ export default async function MatchDetailPage({
   const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
   const hasConfirmedLineups = lineups.length > 0;
   const isFreeSampleRecap =
-    isSampleMatch(id) && publishedContent.recap !== null;
+    (await isSampleMatch(id)) && publishedContent.recap !== null;
   const recapSplit = publishedContent.recap
     ? splitRecapForPaywall(publishedContent.recap.contentMdJa)
     : null;
