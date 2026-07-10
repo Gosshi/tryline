@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SpoilerScore } from "@/components/spoiler-score";
 import { TeamBadge } from "@/components/team-badge";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJstTime } from "@/lib/format/kickoff";
@@ -7,12 +8,19 @@ import { getTeamColor } from "@/lib/format/team-identity";
 
 import type { CalendarMatch } from "@/lib/db/queries/matches";
 import type { StandingPositionLookup } from "@/lib/db/queries/standings";
+import type { ReactNode } from "react";
 
 type HomeMatchdayBoardProps = {
   focusMatchId: string | null;
   matches: CalendarMatch[];
+  spoilerGuardEnabled?: boolean;
   standingPositions: StandingPositionLookup;
   weekLabel: string;
+};
+
+type BoardMetric = {
+  label: string;
+  value: ReactNode;
 };
 
 function getContentLabel(match: CalendarMatch): string {
@@ -81,6 +89,7 @@ function MatchMiniRow({ match }: { match: CalendarMatch }) {
 export function HomeMatchdayBoard({
   focusMatchId,
   matches,
+  spoilerGuardEnabled = false,
   standingPositions,
   weekLabel,
 }: HomeMatchdayBoardProps) {
@@ -100,11 +109,28 @@ export function HomeMatchdayBoard({
     .slice(0, 3);
   const overflowCount = Math.max(0, matches.length - 1 - quickMatches.length);
   const levelMetric = getLevelMetric(focusMatch, standingPositions);
-  const metrics = [
+  const scoreMetric: BoardMetric | null =
+    focusMatch.status === "finished" &&
+    focusMatch.homeScore !== null &&
+    focusMatch.awayScore !== null
+      ? {
+          label: "結果",
+          value: (
+            <SpoilerScore
+              className="max-w-[8rem] text-white"
+              enabled={spoilerGuardEnabled}
+            >
+              {focusMatch.homeScore}–{focusMatch.awayScore}
+            </SpoilerScore>
+          ),
+        }
+      : null;
+  const metrics: BoardMetric[] = [
     { label: "キックオフ", value: formatKickoffJstTime(focusMatch.kickoffAt) },
+    scoreMetric,
     levelMetric ? { label: "順位情報", value: levelMetric } : null,
     { label: "コンテンツ", value: getContentLabel(focusMatch) },
-  ].filter((metric): metric is { label: string; value: string } => Boolean(metric));
+  ].filter((metric): metric is BoardMetric => metric !== null);
 
   return (
     <aside

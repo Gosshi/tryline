@@ -7,6 +7,7 @@ import { formatRoundLabel } from "@/lib/format/round-label";
 import { getTeamColor } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
 
+import { SpoilerScore } from "./spoiler-score";
 import { StatusBadge } from "./status-badge";
 import { TeamBadge } from "./team-badge";
 
@@ -18,6 +19,7 @@ type MatchHeaderProps = {
   homeDisplayName?: string;
   language?: "ja" | "en";
   match: MatchDetail;
+  spoilerGuardEnabled?: boolean;
 };
 
 const TEAM_TIMEZONES: Record<string, string> = {
@@ -50,6 +52,7 @@ export function MatchHeader({
   homeDisplayName,
   language = "ja",
   match,
+  spoilerGuardEnabled = false,
 }: MatchHeaderProps) {
   const localTimezone = getVenueTimezone(match.homeTeam.slug);
   const outcome = getMatchOutcome(match);
@@ -115,19 +118,24 @@ export function MatchHeader({
 
         <div className="min-w-[5.5rem] text-center sm:min-w-[10rem]">
           {showScore ? (
-            <p className="flex items-center justify-center gap-1.5 font-number text-[clamp(2.25rem,10vw,4rem)] font-bold tabular-nums leading-none sm:gap-3">
-              <ScoreNumber
-                isWinner={outcome === "home_win"}
-                score={match.homeScore ?? 0}
-              />
-              <span className="text-xl font-medium text-white/55 sm:text-2xl">
-                –
-              </span>
-              <ScoreNumber
-                isWinner={outcome === "away_win"}
-                score={match.awayScore ?? 0}
-              />
-            </p>
+            <SpoilerScore
+              className="max-w-[9rem] text-white sm:max-w-[12rem]"
+              enabled={spoilerGuardEnabled}
+            >
+              <p className="flex items-center justify-center gap-1.5 font-number text-[clamp(2.25rem,10vw,4rem)] font-bold tabular-nums leading-none sm:gap-3">
+                <ScoreNumber
+                  isWinner={outcome === "home_win"}
+                  score={match.homeScore ?? 0}
+                />
+                <span className="text-xl font-medium text-white/55 sm:text-2xl">
+                  –
+                </span>
+                <ScoreNumber
+                  isWinner={outcome === "away_win"}
+                  score={match.awayScore ?? 0}
+                />
+              </p>
+            </SpoilerScore>
           ) : (
             <p className="font-number text-xl font-bold text-white/70">VS</p>
           )}

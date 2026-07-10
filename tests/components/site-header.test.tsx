@@ -16,6 +16,10 @@ vi.mock("@/lib/db/queries/teams", () => ({
   listAllTeams: vi.fn(() => []),
 }));
 
+vi.mock("@/lib/db/queries/spoiler-guard", () => ({
+  getSpoilerGuardEnabledForUser: vi.fn(() => false),
+}));
+
 vi.mock("@/components/user-menu", () => ({
   UserMenu: () => <div data-testid="user-menu" />,
 }));

@@ -15,6 +15,7 @@ import type { User } from "@supabase/supabase-js";
 type UserMenuProps = {
   allTeams: TeamOption[];
   favoriteTeamSlugs: string[];
+  initialSpoilerGuard?: boolean;
   isPremium: boolean;
   user: User | null;
 };
@@ -22,6 +23,7 @@ type UserMenuProps = {
 export function UserMenu({
   allTeams,
   favoriteTeamSlugs,
+  initialSpoilerGuard = false,
   isPremium,
   user,
 }: UserMenuProps) {
@@ -111,7 +113,10 @@ export function UserMenu({
             />
           </div>
           <div className="border-t border-slate-100 px-4 py-2">
-            <NotificationSettings initialTeamSlugs={favoriteTeamSlugs} />
+            <NotificationSettings
+              initialSpoilerGuard={initialSpoilerGuard}
+              initialTeamSlugs={favoriteTeamSlugs}
+            />
           </div>
           <button
             className="block w-full px-4 py-2.5 text-left text-xs text-slate-600 hover:bg-slate-50"

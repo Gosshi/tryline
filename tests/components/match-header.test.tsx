@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { MatchHeader } from "@/components/match-header";
@@ -109,6 +109,30 @@ describe("MatchHeader", () => {
     );
 
     expect(screen.getByText("WIN")).toBeInTheDocument();
+  });
+
+  it("hides finished scores behind spoiler guard until clicked", () => {
+    render(
+      <MatchHeader
+        match={{
+          ...match,
+          awayScore: 18,
+          homeScore: 24,
+          status: "finished",
+        }}
+        spoilerGuardEnabled
+      />,
+    );
+
+    expect(screen.queryByText("24")).not.toBeInTheDocument();
+    expect(screen.queryByText("18")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "タップして結果を見る" }),
+    );
+
+    expect(screen.getByText("24")).toBeInTheDocument();
+    expect(screen.getByText("18")).toBeInTheDocument();
   });
 
   it("shows a YouTube highlight search link only for finished matches", () => {

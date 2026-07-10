@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SpoilerScore } from "@/components/spoiler-score";
 import { TeamBadge } from "@/components/team-badge";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import {
@@ -15,6 +16,7 @@ type WeekScheduleProps = {
   emptyMessage?: string;
   highlightMatchId?: string | null;
   matches: CalendarMatch[];
+  spoilerGuardEnabled?: boolean;
 };
 
 type DayGroup = {
@@ -83,10 +85,12 @@ function MatchRow({
   compact,
   isHighlighted,
   match,
+  spoilerGuardEnabled,
 }: {
   compact: boolean;
   isHighlighted: boolean;
   match: CalendarMatch;
+  spoilerGuardEnabled: boolean;
 }) {
   const status = getStatusPresentation(match.status);
   const stateLabel = getMatchStateLabel(match);
@@ -163,7 +167,13 @@ function MatchRow({
             </span>
           )}
           <span className="min-w-[72px] text-right text-sm font-bold tabular-nums text-[var(--color-ink)]">
-            {stateLabel}
+            {match.status === "finished" ? (
+              <SpoilerScore enabled={spoilerGuardEnabled}>
+                {stateLabel}
+              </SpoilerScore>
+            ) : (
+              stateLabel
+            )}
           </span>
         </div>
       </div>
@@ -176,6 +186,7 @@ export function WeekSchedule({
   emptyMessage = "今週の試合はありません。",
   highlightMatchId = null,
   matches,
+  spoilerGuardEnabled = false,
 }: WeekScheduleProps) {
   if (matches.length === 0) {
     return (
@@ -226,6 +237,7 @@ export function WeekSchedule({
                     compact={compact}
                     isHighlighted={match.id === highlightMatchId}
                     match={match}
+                    spoilerGuardEnabled={spoilerGuardEnabled}
                   />
                 </li>
               ))}

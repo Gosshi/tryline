@@ -37,6 +37,10 @@ const matchMocks = vi.hoisted(() => ({
   getUpcomingMatches: vi.fn(),
 }));
 
+const spoilerGuardMocks = vi.hoisted(() => ({
+  getSpoilerGuardEnabledForUser: vi.fn(),
+}));
+
 vi.mock("@/components/calendar/week-schedule", () => ({
   WeekSchedule: ({ emptyMessage }: { emptyMessage: string }) => (
     <div>{emptyMessage}</div>
@@ -103,6 +107,8 @@ vi.mock("@/lib/db/queries/matches", () => ({
   getRecentlyReviewedMatchById: matchMocks.getRecentlyReviewedMatchById,
   getUpcomingMatches: matchMocks.getUpcomingMatches,
 }));
+
+vi.mock("@/lib/db/queries/spoiler-guard", () => spoilerGuardMocks);
 
 
 function createCalendarMatch(overrides: Record<string, unknown> = {}) {
@@ -203,6 +209,7 @@ describe("HomePage", () => {
     matchMocks.getMatchesInRange.mockResolvedValue([]);
     matchMocks.getUpcomingMatches.mockResolvedValue([]);
     matchMocks.getFavoriteTeamMatches.mockResolvedValue([]);
+    spoilerGuardMocks.getSpoilerGuardEnabledForUser.mockResolvedValue(false);
   });
 
   afterEach(() => {

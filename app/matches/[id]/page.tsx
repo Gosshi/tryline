@@ -10,6 +10,7 @@ import { PremiumMatchChat } from "@/components/premium-match-chat";
 import { PremiumRecapSection } from "@/components/premium-recap-section";
 import { SampleRecapCta } from "@/components/sample-recap-cta";
 import { StandingsTable } from "@/components/standings-table";
+import { getUser } from "@/lib/auth/server";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
@@ -21,6 +22,7 @@ import {
   listMatchIdsWithContent,
   normalizeHeadToHeadSlug,
 } from "@/lib/db/queries/matches";
+import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { getStandingsForCompetition } from "@/lib/db/queries/standings";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
@@ -137,12 +139,15 @@ export default async function MatchDetailPage({
   params,
 }: MatchDetailPageProps) {
   const { id } = await params;
-  const [match, publishedContent, events, lineups] = await Promise.all([
-    getMatchById(id),
-    getPublishedContentForMatch(id),
-    getMatchEventsForMatch(id),
-    getMatchLineupsForMatch(id),
-  ]);
+  const user = await getUser();
+  const [match, publishedContent, events, lineups, spoilerGuardEnabled] =
+    await Promise.all([
+      getMatchById(id),
+      getPublishedContentForMatch(id),
+      getMatchEventsForMatch(id),
+      getMatchLineupsForMatch(id),
+      getSpoilerGuardEnabledForUser(user?.id),
+    ]);
 
   if (!match) {
     notFound();
@@ -310,7 +315,11 @@ export default async function MatchDetailPage({
             </ol>
           </nav>
 
-          <MatchHeader headToHeadHref={headToHeadHref} match={match} />
+          <MatchHeader
+            headToHeadHref={headToHeadHref}
+            match={match}
+            spoilerGuardEnabled={spoilerGuardEnabled}
+          />
 
           {hasEnglishContent && (
             <div className="flex items-center justify-end">

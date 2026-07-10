@@ -16,13 +16,42 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
 
 type NotificationSettingsProps = {
   initialTeamSlugs?: string[];
+  initialSpoilerGuard?: boolean;
 };
 
 export function NotificationSettings({
+  initialSpoilerGuard = false,
   initialTeamSlugs = [],
 }: NotificationSettingsProps) {
   const [supported, setSupported] = useState(true);
   const [subscribed, setSubscribed] = useState(false);
+  const [spoilerGuard, setSpoilerGuard] = useState(initialSpoilerGuard);
+
+  async function saveSubscriptionSettings(nextSpoilerGuard: boolean) {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      return false;
+    }
+
+    const key = subscription.getKey("p256dh");
+    const authKey = subscription.getKey("auth");
+
+    await fetch("/api/push/subscribe", {
+      body: JSON.stringify({
+        auth_key: authKey ? arrayBufferToBase64(authKey) : "",
+        endpoint: subscription.endpoint,
+        p256dh: key ? arrayBufferToBase64(key) : "",
+        spoiler_guard: nextSpoilerGuard,
+        team_slugs: initialTeamSlugs,
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+
+    return true;
+  }
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -54,6 +83,7 @@ export function NotificationSettings({
         auth_key: authKey ? arrayBufferToBase64(authKey) : "",
         endpoint: subscription.endpoint,
         p256dh: key ? arrayBufferToBase64(key) : "",
+        spoiler_guard: spoilerGuard,
         team_slugs: initialTeamSlugs,
       }),
       headers: { "Content-Type": "application/json" },
@@ -61,6 +91,21 @@ export function NotificationSettings({
     });
 
     setSubscribed(true);
+  }
+
+  async function toggleSpoilerGuard() {
+    const nextValue = !spoilerGuard;
+    setSpoilerGuard(nextValue);
+
+    if (!subscribed) {
+      return;
+    }
+
+    const saved = await saveSubscriptionSettings(nextValue);
+
+    if (!saved) {
+      setSubscribed(false);
+    }
   }
 
   async function unsubscribe() {
@@ -88,20 +133,45 @@ export function NotificationSettings({
   }
 
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-sm text-slate-700">recap 通知</span>
-      <button
-        className={[
-          "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-          subscribed
-            ? "bg-slate-200 text-slate-700"
-            : "bg-[var(--color-accent)] text-white",
-        ].join(" ")}
-        onClick={subscribed ? unsubscribe : subscribe}
-        type="button"
-      >
-        {subscribed ? "オフ" : "オン"}
-      </button>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm text-slate-700">recap 通知</span>
+        <button
+          aria-label={subscribed ? "recap 通知をオフ" : "recap 通知をオン"}
+          className={[
+            "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+            subscribed
+              ? "bg-slate-200 text-slate-700"
+              : "bg-[var(--color-accent)] text-white",
+          ].join(" ")}
+          onClick={subscribed ? unsubscribe : subscribe}
+          type="button"
+        >
+          {subscribed ? "オフ" : "オン"}
+        </button>
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm text-slate-700">ネタバレ防止モード</span>
+        <button
+          aria-label="ネタバレ防止モード"
+          aria-pressed={spoilerGuard}
+          className={[
+            "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+            spoilerGuard
+              ? "bg-[var(--color-accent)] text-white"
+              : "bg-slate-100 text-slate-600",
+          ].join(" ")}
+          onClick={() => void toggleSpoilerGuard()}
+          type="button"
+        >
+          {spoilerGuard ? "オン" : "オフ"}
+        </button>
+      </div>
+      {!subscribed && spoilerGuard && (
+        <p className="text-[11px] leading-5 text-slate-500">
+          通知をオンにすると、この設定が保存されます。
+        </p>
+      )}
     </div>
   );
 }

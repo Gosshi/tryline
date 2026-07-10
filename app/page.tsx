@@ -10,6 +10,7 @@ import { HeroTexture } from "@/components/hero-texture";
 import { HomeMatchdayBoard } from "@/components/home-matchday-board";
 import { MatchCard } from "@/components/match-card";
 import { SignupSuccessTracker } from "@/components/signup-success-tracker";
+import { SpoilerScore } from "@/components/spoiler-score";
 import { TeamBadge } from "@/components/team-badge";
 import { TrackedLink } from "@/components/tracked-link";
 import { getUser, getUserProfile } from "@/lib/auth/server";
@@ -27,6 +28,7 @@ import {
   getRecentlyReviewedMatchById,
   getUpcomingMatches,
 } from "@/lib/db/queries/matches";
+import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { getStandingPositionLookupForCompetitions } from "@/lib/db/queries/standings";
 import { FEATURED_COMPETITION } from "@/lib/featured-competition";
 import { selectCalendarFocusMatchId } from "@/lib/format/calendar-focus";
@@ -118,6 +120,7 @@ export default async function HomePage() {
     weeklyMatches,
     upcomingMatches,
     favoriteMatches,
+    spoilerGuardEnabled,
   ] = await Promise.all([
     listFamilies(),
     getRecentlyReviewedFamilies(4),
@@ -126,6 +129,7 @@ export default async function HomePage() {
     getMatchesInRange(weekRange.startUtcIso, weekRange.endUtcIso),
     getUpcomingMatches(5),
     getFavoriteTeamMatches(favoriteTeamSlugs),
+    getSpoilerGuardEnabledForUser(user?.id),
   ]);
   const homepageCompetitionLinks = sortHomepageCompetitionLinks(
     (
@@ -287,6 +291,7 @@ export default async function HomePage() {
             <HomeMatchdayBoard
               focusMatchId={homepageFocusMatchId}
               matches={homepageWeekMatches}
+              spoilerGuardEnabled={spoilerGuardEnabled}
               standingPositions={homepageStandingPositions}
               weekLabel={getHomeWeekLabel(weekRange.weekStartJst)}
             />
@@ -427,6 +432,7 @@ export default async function HomePage() {
                 emptyMessage="今週の残り試合はありません。"
                 highlightMatchId={homepageFocusMatchId}
                 matches={homepageWeekMatches}
+                spoilerGuardEnabled={spoilerGuardEnabled}
               />
             </div>
             <FeaturedCompetitionCard stats={featuredCompetitionStats} />
@@ -557,7 +563,12 @@ export default async function HomePage() {
                           </p>
                         </div>
                         <p className="shrink-0 font-number text-3xl font-black tabular-nums sm:text-4xl">
-                          {match.homeScore}–{match.awayScore}
+                          <SpoilerScore
+                            className="max-w-[8rem] text-white"
+                            enabled={spoilerGuardEnabled}
+                          >
+                            {match.homeScore}–{match.awayScore}
+                          </SpoilerScore>
                         </p>
                       </div>
                       <span className="mt-4 inline-flex text-sm font-bold text-white/90 transition-transform group-hover:translate-x-1">
@@ -585,8 +596,13 @@ export default async function HomePage() {
                                     {compactMatch.homeTeam.shortCode}
                                   </span>
                                   <span className="shrink-0 font-number tabular-nums text-slate-500">
-                                    {compactMatch.homeScore}–
-                                    {compactMatch.awayScore}
+                                    <SpoilerScore
+                                      className="max-w-[7rem]"
+                                      enabled={spoilerGuardEnabled}
+                                    >
+                                      {compactMatch.homeScore}–
+                                      {compactMatch.awayScore}
+                                    </SpoilerScore>
                                   </span>
                                   <span className="truncate">
                                     {compactMatch.awayTeam.shortCode}

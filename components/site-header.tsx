@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { getUser, getUserProfile } from "@/lib/auth/server";
+import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { listAllTeams } from "@/lib/db/queries/teams";
 
 import { CompetitionNavDropdown } from "./competition-nav-dropdown";
@@ -12,7 +13,12 @@ import { UserMenu } from "./user-menu";
 
 export async function SiteHeader() {
   const [user, allTeams] = await Promise.all([getUser(), listAllTeams()]);
-  const profile = user ? await getUserProfile(user.id) : null;
+  const [profile, spoilerGuardEnabled] = user
+    ? await Promise.all([
+        getUserProfile(user.id),
+        getSpoilerGuardEnabledForUser(user.id),
+      ])
+    : [null, false];
   const premium = profile?.subscription_status === "premium";
 
   return (
@@ -31,6 +37,7 @@ export async function SiteHeader() {
         <MobileHeaderMenu
           allTeams={allTeams}
           favoriteTeamSlugs={profile?.favorite_team_slugs ?? []}
+          initialSpoilerGuard={spoilerGuardEnabled}
           isPremium={premium}
           user={user}
         />
@@ -97,6 +104,7 @@ export async function SiteHeader() {
           <UserMenu
             allTeams={allTeams}
             favoriteTeamSlugs={profile?.favorite_team_slugs ?? []}
+            initialSpoilerGuard={spoilerGuardEnabled}
             isPremium={premium}
             user={user}
           />
