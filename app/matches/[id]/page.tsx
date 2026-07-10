@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { FavoriteTeamFollowButton } from "@/components/favorite-team-follow-button";
 import { LangToggle } from "@/components/lang-toggle";
 import { MatchContentSection } from "@/components/match-content-section";
 import { MatchEventsSection } from "@/components/match-events-section";
@@ -10,7 +11,7 @@ import { PremiumMatchChat } from "@/components/premium-match-chat";
 import { PremiumRecapSection } from "@/components/premium-recap-section";
 import { SampleRecapCta } from "@/components/sample-recap-cta";
 import { StandingsTable } from "@/components/standings-table";
-import { getUser } from "@/lib/auth/server";
+import { getUser, getUserProfile } from "@/lib/auth/server";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
@@ -140,13 +141,20 @@ export default async function MatchDetailPage({
 }: MatchDetailPageProps) {
   const { id } = await params;
   const user = await getUser();
-  const [match, publishedContent, events, lineups, spoilerGuardEnabled] =
-    await Promise.all([
+  const [
+    match,
+    publishedContent,
+    events,
+    lineups,
+    spoilerGuardEnabled,
+    profile,
+  ] = await Promise.all([
       getMatchById(id),
       getPublishedContentForMatch(id),
       getMatchEventsForMatch(id),
       getMatchLineupsForMatch(id),
       getSpoilerGuardEnabledForUser(user?.id),
+      user ? getUserProfile(user.id) : null,
     ]);
 
   if (!match) {
@@ -178,6 +186,7 @@ export default async function MatchDetailPage({
       : null;
   const hasEnglishContent =
     englishContent.preview !== null || englishContent.recap !== null;
+  const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
   const isFreeSampleRecap =
     isSampleMatch(id) && publishedContent.recap !== null;
   const recapSplit = publishedContent.recap
@@ -320,6 +329,23 @@ export default async function MatchDetailPage({
             match={match}
             spoilerGuardEnabled={spoilerGuardEnabled}
           />
+
+          {user && (
+            <div className="flex flex-wrap gap-2">
+              <FavoriteTeamFollowButton
+                initialFavoriteTeamSlugs={favoriteTeamSlugs}
+                source="match_detail_home_team"
+                teamName={match.homeTeam.name}
+                teamSlug={match.homeTeam.slug}
+              />
+              <FavoriteTeamFollowButton
+                initialFavoriteTeamSlugs={favoriteTeamSlugs}
+                source="match_detail_away_team"
+                teamName={match.awayTeam.name}
+                teamSlug={match.awayTeam.slug}
+              />
+            </div>
+          )}
 
           {hasEnglishContent && (
             <div className="flex items-center justify-end">

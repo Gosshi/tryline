@@ -28,3 +28,20 @@ export function trackEvent(
 export function trackCtaClick(params: CtaClickParams) {
   trackEvent("cta_click", params);
 }
+
+export function trackFavoriteTeamAdded(params: {
+  team_slug: string;
+  source: string;
+}) {
+  trackEvent("favorite_team_added", params);
+}
+
+export function trackPushPermissionGranted() {
+  trackEvent("push_permission_granted");
+}
+
+export function trackReturnVisit(params: {
+  days_since_last_visit: number;
+}) {
+  trackEvent("return_visit", params);
+}

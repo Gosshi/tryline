@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { FavoriteTeamFollowButton } from "@/components/favorite-team-follow-button";
 import { MatchCard } from "@/components/match-card";
 import { TeamBadge } from "@/components/team-badge";
 import { TeamPlayersSection } from "@/components/team-players-section";
 import { TeamStatsPanel } from "@/components/team-stats-panel";
+import { getUser, getUserProfile } from "@/lib/auth/server";
 import { getContentStatusMap } from "@/lib/db/queries/match-content";
 import { getPlayersByTeamSlug } from "@/lib/db/queries/players";
 import { getTeamStatsDataBySlug } from "@/lib/db/queries/team-stats";
@@ -61,10 +63,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TeamPage({ params }: Props) {
   const { slug } = await params;
-  const [data, stats, players] = await Promise.all([
+  const user = await getUser();
+  const [data, stats, players, profile] = await Promise.all([
     getTeamPageDataBySlug(slug),
     getTeamStatsDataBySlug(slug).catch(() => null),
     getPlayersByTeamSlug(slug),
+    user ? getUserProfile(user.id) : null,
   ]);
 
   if (!data) {
@@ -77,6 +81,7 @@ export default async function TeamPage({ params }: Props) {
   );
   const emptyStatus = { hasPreview: false, hasRecap: false };
   const teamColor = getTeamColor(data.team.slug);
+  const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
 
   return (
     <main className="min-h-screen bg-paper">
@@ -104,22 +109,33 @@ export default async function TeamPage({ params }: Props) {
             background: `linear-gradient(135deg, color-mix(in srgb, ${teamColor} 12%, #fff), #fff 70%)`,
           }}
         >
-          <div className="flex items-center gap-4">
-            <TeamBadge
-              shortCode={
-                data.team.shortCode ?? data.team.name.slice(0, 3).toUpperCase()
-              }
-              size={64}
-              slug={data.team.slug}
-            />
-            <div className="min-w-0">
-              <h1 className="font-serif text-3xl font-bold tracking-tight text-[var(--color-ink)] sm:text-4xl">
-                {data.team.name}
-              </h1>
-              <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
-                {data.team.country || "Unknown"}
-              </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <TeamBadge
+                shortCode={
+                  data.team.shortCode ??
+                  data.team.name.slice(0, 3).toUpperCase()
+                }
+                size={64}
+                slug={data.team.slug}
+              />
+              <div className="min-w-0">
+                <h1 className="font-serif text-3xl font-bold tracking-tight text-[var(--color-ink)] sm:text-4xl">
+                  {data.team.name}
+                </h1>
+                <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+                  {data.team.country || "Unknown"}
+                </p>
+              </div>
             </div>
+            {user && (
+              <FavoriteTeamFollowButton
+                initialFavoriteTeamSlugs={favoriteTeamSlugs}
+                source="team_page"
+                teamName={data.team.name}
+                teamSlug={data.team.slug}
+              />
+            )}
           </div>
         </section>
 

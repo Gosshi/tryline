@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { trackPushPermissionGranted } from "@/lib/analytics";
+
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -91,6 +93,7 @@ export function NotificationSettings({
     });
 
     setSubscribed(true);
+    trackPushPermissionGranted();
   }
 
   async function toggleSpoilerGuard() {
