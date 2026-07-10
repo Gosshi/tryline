@@ -109,6 +109,11 @@ export type CalendarMatch = UpcomingMatch & {
 
 export type FavoriteTeamMatch = UpcomingMatch;
 
+export type TeamNextMatch = {
+  match: UpcomingMatch;
+  teamId: string;
+};
+
 export type TeamPageMatch = MatchListItem & {
   competition: { slug: string; name: string; nameJa?: string | null; season: string };
 };
@@ -1093,6 +1098,189 @@ export async function getUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
         competition: mapCompetitionRow(row.competition),
       };
     });
+}
+
+export async function getNextMatchesForTeams({
+  afterIso,
+  excludeMatchId,
+  teamIds,
+}: {
+  afterIso: string;
+  excludeMatchId: string;
+  teamIds: string[];
+}): Promise<TeamNextMatch[]> {
+  const uniqueTeamIds = [...new Set(teamIds)].filter(Boolean);
+
+  if (uniqueTeamIds.length === 0) {
+    return [];
+  }
+
+  const client = getSupabasePublicServerClient();
+  const teamFilters = uniqueTeamIds
+    .flatMap((teamId) => [
+      `home_team_id.eq.${teamId}`,
+      `away_team_id.eq.${teamId}`,
+    ])
+    .join(",");
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        id,
+        kickoff_at,
+        status,
+        home_score,
+        away_score,
+        venue,
+        external_ids,
+        home_team_id,
+        away_team_id,
+        home_team:teams!matches_home_team_id_fkey (
+          id,
+          slug,
+          name,
+          short_code,
+          world_ranking
+        ),
+        away_team:teams!matches_away_team_id_fkey (
+          id,
+          slug,
+          name,
+          short_code,
+          world_ranking
+        ),
+        competition:competitions!matches_competition_id_fkey (
+          id,
+          family,
+          slug,
+          name,
+          name_ja,
+          season
+        )
+      `,
+    )
+    .eq("status", "scheduled")
+    .neq("id", excludeMatchId)
+    .gte("kickoff_at", afterIso)
+    .or(teamFilters)
+    .order("kickoff_at", { ascending: true })
+    .limit(20);
+
+  if (error) {
+    throw error;
+  }
+
+  const byTeam = new Map<string, TeamNextMatch>();
+
+  for (const row of (data ?? []) as Array<
+    UpcomingMatchRow & { away_team_id: string; home_team_id: string }
+  >) {
+    if (!row.competition) {
+      continue;
+    }
+
+    const match = {
+      ...mapMatchRow(row),
+      competition: mapCompetitionRow(row.competition),
+    };
+
+    for (const teamId of [row.home_team_id, row.away_team_id]) {
+      if (uniqueTeamIds.includes(teamId) && !byTeam.has(teamId)) {
+        byTeam.set(teamId, { match, teamId });
+      }
+    }
+
+    if (byTeam.size === uniqueTeamIds.length) {
+      break;
+    }
+  }
+
+  return uniqueTeamIds
+    .map((teamId) => byTeam.get(teamId))
+    .filter((entry): entry is TeamNextMatch => entry !== undefined);
+}
+
+export async function getRelatedPublishedRecapsForMatch({
+  competitionSlug,
+  excludeMatchId,
+  limit = 2,
+  round,
+}: {
+  competitionSlug: string;
+  excludeMatchId: string;
+  limit?: number;
+  round: number | null;
+}): Promise<RecentlyReviewedMatch[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("match_content")
+    .select(
+      `
+        generated_at,
+        content_md,
+        match:matches!inner (
+          id,
+          kickoff_at,
+          status,
+          home_score,
+          away_score,
+          venue,
+          external_ids,
+          home_team:teams!matches_home_team_id_fkey (
+            id,
+            slug,
+            name,
+            short_code,
+            world_ranking
+          ),
+          away_team:teams!matches_away_team_id_fkey (
+            id,
+            slug,
+            name,
+            short_code,
+            world_ranking
+          ),
+          competition:competitions!inner (
+            id,
+            family,
+            slug,
+            name,
+            name_ja,
+            season
+          )
+        )
+      `,
+    )
+    .eq("content_type", "recap")
+    .eq("language", "ja")
+    .eq("status", "published")
+    .eq("match.competition.slug", competitionSlug)
+    .neq("match_id", excludeMatchId)
+    .order("generated_at", { ascending: false })
+    .limit(Math.max(limit * 4, limit));
+
+  if (error) {
+    throw error;
+  }
+
+  const candidates = ((data ?? []) as RecentlyReviewedContentRow[])
+    .map(mapRecentlyReviewedContentRow)
+    .filter((match): match is RecentlyReviewedMatch => match !== null);
+  const sameRound =
+    round === null ? [] : candidates.filter((match) => match.round === round);
+  const fallback = candidates.filter((match) => match.round !== round);
+  const seen = new Set<string>();
+
+  return [...sameRound, ...fallback]
+    .filter((match) => {
+      if (seen.has(match.id)) {
+        return false;
+      }
+
+      seen.add(match.id);
+      return true;
+    })
+    .slice(0, limit);
 }
 
 function sortCalendarMatches(matches: CalendarMatch[]): CalendarMatch[] {

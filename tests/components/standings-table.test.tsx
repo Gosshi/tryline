@@ -25,6 +25,15 @@ const standing: StandingRow = {
   won: 2,
 };
 
+function createStanding(position: number, teamName: string): StandingRow {
+  return {
+    ...standing,
+    position,
+    teamName,
+    teamShortCode: teamName.slice(0, 3).toUpperCase(),
+  };
+}
+
 describe("StandingsTable", () => {
   it("renders nothing when no standings are available", () => {
     const { container } = render(<StandingsTable standings={[]} />);
@@ -59,5 +68,24 @@ describe("StandingsTable", () => {
     expect(container.querySelector("tbody tr")).toHaveClass(
       "bg-[var(--color-accent-subtle)]",
     );
+  });
+
+  it("keeps full standings in collapsed markup while showing a match excerpt", () => {
+    render(
+      <StandingsTable
+        highlightedTeams={["Team 3", "Team 8"]}
+        standings={Array.from({ length: 10 }, (_, index) =>
+          createStanding(index + 1, `Team ${index + 1}`),
+        )}
+      />,
+    );
+
+    const details = screen.getByText("全順位表を見る").closest("details");
+
+    expect(details).not.toHaveAttribute("open");
+    expect(screen.getAllByText("Team 3")).toHaveLength(2);
+    expect(screen.getAllByText("Team 8")).toHaveLength(2);
+    expect(screen.getByText("Team 10")).toBeInTheDocument();
+    expect(screen.getByLabelText("省略された順位があります")).toBeInTheDocument();
   });
 });

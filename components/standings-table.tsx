@@ -2,11 +2,42 @@ import { cn } from "@/lib/utils";
 
 import type { StandingRow } from "@/lib/db/queries/standings";
 
+type StandingTableEntry =
+  | { row: StandingRow; type: "row" }
+  | { key: string; type: "gap" };
+
+function buildTableEntries(
+  rows: StandingRow[],
+  showGaps: boolean,
+): StandingTableEntry[] {
+  if (!showGaps) {
+    return rows.map((row) => ({ row, type: "row" as const }));
+  }
+
+  return rows.flatMap((row, index) => {
+    const previous = rows[index - 1];
+    const entries: StandingTableEntry[] = [];
+
+    if (previous && row.position - previous.position > 1) {
+      entries.push({
+        key: `gap-${previous.position}-${row.position}`,
+        type: "gap",
+      });
+    }
+
+    entries.push({ row, type: "row" });
+
+    return entries;
+  });
+}
+
 export function StandingsTable({
   highlightedTeams = [],
+  excerptThreshold = 10,
   standings,
   title = "順位表",
 }: {
+  excerptThreshold?: number;
   highlightedTeams?: string[];
   standings: StandingRow[];
   title?: string;
@@ -18,18 +49,18 @@ export function StandingsTable({
   const highlighted = new Set(
     highlightedTeams.map((team) => team.trim().toLowerCase()),
   );
+  const excerptRows = standings.filter(
+    (row) =>
+      highlighted.has(row.teamName.toLowerCase()) ||
+      highlighted.has(row.teamShortCode.toLowerCase()),
+  );
+  const shouldUseExcerpt =
+    standings.length >= excerptThreshold && excerptRows.length > 0;
 
-  return (
-    <section className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
-      <div className="mb-4 border-b border-slate-100 pb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Standings
-        </p>
-        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
-          {title}
-        </h2>
-      </div>
+  function renderTable(rows: StandingRow[], showGaps = false) {
+    const entries = buildTableEntries(rows, showGaps);
 
+    return (
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -46,7 +77,22 @@ export function StandingsTable({
             </tr>
           </thead>
           <tbody>
-            {standings.map((row) => {
+            {entries.map((entry) => {
+              if (entry.type === "gap") {
+                return (
+                  <tr
+                    aria-label="省略された順位があります"
+                    className="border-b border-slate-50 text-center text-slate-400"
+                    key={entry.key}
+                  >
+                    <td className="py-1" colSpan={9}>
+                      …
+                    </td>
+                  </tr>
+                );
+              }
+
+              const { row } = entry;
               const isHighlighted =
                 highlighted.has(row.teamName.toLowerCase()) ||
                 highlighted.has(row.teamShortCode.toLowerCase());
@@ -101,6 +147,35 @@ export function StandingsTable({
           </tbody>
         </table>
       </div>
+    );
+  }
+
+  return (
+    <section className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
+      <div className="mb-4 border-b border-slate-100 pb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+          Standings
+        </p>
+        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
+          {title}
+        </h2>
+      </div>
+
+      {shouldUseExcerpt ? (
+        <div className="space-y-4">
+          {renderTable(excerptRows, true)}
+          <details>
+            <summary className="cursor-pointer rounded-full border border-slate-200 px-4 py-2 text-center text-xs font-bold text-[var(--color-accent)] transition-colors hover:border-slate-300 hover:bg-slate-50">
+              全順位表を見る
+            </summary>
+            <div className="mt-4 border-t border-slate-100 pt-4">
+              {renderTable(standings)}
+            </div>
+          </details>
+        </div>
+      ) : (
+        renderTable(standings)
+      )}
     </section>
   );
 }
