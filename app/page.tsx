@@ -291,7 +291,6 @@ export default async function HomePage() {
             <HomeMatchdayBoard
               focusMatchId={homepageFocusMatchId}
               matches={homepageWeekMatches}
-              spoilerGuardEnabled={spoilerGuardEnabled}
               standingPositions={homepageStandingPositions}
               weekLabel={getHomeWeekLabel(weekRange.weekStartJst)}
             />
