@@ -6,7 +6,7 @@ import { PricingFaq } from "@/components/pricing-faq";
 import { TrackedLink } from "@/components/tracked-link";
 import { getRecentlyReviewedMatchById } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
-import { PRIMARY_SAMPLE_MATCH_ID } from "@/lib/sample-matches";
+import { getPrimarySampleMatchId } from "@/lib/sample-matches";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -104,11 +104,9 @@ function FeatureMark({ enabled }: { enabled: boolean }) {
 }
 
 export default async function PricingPage() {
-  const sample = await getRecentlyReviewedMatchById(
-    PRIMARY_SAMPLE_MATCH_ID,
-    "ja",
-  );
-  const trialUrl = sample ? `/matches/${PRIMARY_SAMPLE_MATCH_ID}` : "/";
+  const sampleMatchId = await getPrimarySampleMatchId();
+  const sample = await getRecentlyReviewedMatchById(sampleMatchId, "ja");
+  const trialUrl = sample ? `/matches/${sampleMatchId}` : "/";
 
   return (
     <main className="min-h-screen bg-paper">
@@ -161,7 +159,7 @@ export default async function PricingPage() {
                 destination: sample ? "sample_match" : "home",
                 is_sample: Boolean(sample),
                 label: "無料サンプルを読む",
-                match_id: sample ? PRIMARY_SAMPLE_MATCH_ID : undefined,
+                match_id: sample ? sampleMatchId : undefined,
               }}
               className="rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               href={trialUrl}

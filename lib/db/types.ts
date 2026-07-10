@@ -784,6 +784,35 @@ export type Database = {
           },
         ];
       };
+      sample_matches: {
+        Row: {
+          match_id: string;
+          rank: number;
+          selected_at: string;
+          selection_reason: string | null;
+        };
+        Insert: {
+          match_id: string;
+          rank: number;
+          selected_at?: string;
+          selection_reason?: string | null;
+        };
+        Update: {
+          match_id?: string;
+          rank?: number;
+          selected_at?: string;
+          selection_reason?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sample_matches_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: true;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       pipeline_runs: {
         Row: {
           content_type: string;

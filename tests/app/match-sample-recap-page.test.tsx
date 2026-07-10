@@ -34,11 +34,17 @@ const sourcedFactMocks = vi.hoisted(() => ({
   getSourcedFactCountsForMatch: vi.fn(),
 }));
 
+const sampleMatchMocks = vi.hoisted(() => ({
+  isSampleMatch: vi.fn(),
+}));
+
 const matchMocks = vi.hoisted(() => ({
   countHeadToHeadMatches: vi.fn(),
   getMatchById: vi.fn(),
   getMatchContentEn: vi.fn(),
+  getNextMatchesForTeams: vi.fn(),
   getPoolTeamsForMatch: vi.fn(),
+  getRelatedPublishedRecapsForMatch: vi.fn(),
   listAllMatchIds: vi.fn(),
   listMatchIdsWithContent: vi.fn(),
   normalizeHeadToHeadSlug: vi.fn(() => "sample-home-vs-sample-away"),
@@ -48,6 +54,7 @@ const navigationMocks = vi.hoisted(() => ({
   notFound: vi.fn(() => {
     throw new Error("NEXT_NOT_FOUND");
   }),
+  useRouter: vi.fn(() => ({ refresh: vi.fn() })),
 }));
 
 const premiumRecapMocks = vi.hoisted(() => ({
@@ -106,6 +113,7 @@ vi.mock("@/lib/db/queries/matches", () => matchMocks);
 vi.mock("@/lib/db/queries/spoiler-guard", () => spoilerGuardMocks);
 vi.mock("@/lib/db/queries/sourced-facts", () => sourcedFactMocks);
 vi.mock("@/lib/db/queries/standings", () => standingsMocks);
+vi.mock("@/lib/sample-matches", () => sampleMatchMocks);
 vi.mock("next/navigation", () => navigationMocks);
 
 import MatchEnglishPage from "@/app/matches/[id]/en/page";
@@ -202,10 +210,15 @@ function setCommonMocks(params: {
   });
   standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
   matchMocks.countHeadToHeadMatches.mockResolvedValue(0);
+  matchMocks.getNextMatchesForTeams.mockResolvedValue([]);
+  matchMocks.getRelatedPublishedRecapsForMatch.mockResolvedValue([]);
   matchMocks.getPoolTeamsForMatch.mockResolvedValue([]);
   authMocks.getUser.mockResolvedValue(null);
   authMocks.getUserProfile.mockResolvedValue(null);
   spoilerGuardMocks.getSpoilerGuardEnabledForUser.mockResolvedValue(false);
+  sampleMatchMocks.isSampleMatch.mockImplementation(
+    async (matchId: string) => matchId === sampleMatchId,
+  );
 }
 
 describe("match sample recap page", () => {
@@ -267,10 +280,103 @@ describe("match sample recap page", () => {
     expect(screen.getByTestId("premium-recap-content")).not.toHaveTextContent(
       "サンプル全文だけに含まれる終盤分析。",
     );
+    expect(screen.getByRole("heading", { name: "次に見る" })).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("link", { name: "このチームを追う" }),
+    ).toHaveLength(2);
     const previewDetails = screen
       .getByText("試合前のプレビューを表示")
       .closest("details");
     expect(previewDetails).toHaveTextContent("プレビュー本文");
+  });
+
+  it("renders favorite follow buttons for signed-in users", async () => {
+    authMocks.getUser.mockResolvedValue({ id: "user-1" });
+    authMocks.getUserProfile.mockResolvedValue({
+      favorite_team_slugs: ["sample-away"],
+    });
+
+    const element = await MatchDetailPage({
+      params: Promise.resolve({ id: nonSampleMatchId }),
+    });
+
+    render(element);
+
+    expect(screen.getAllByRole("button", { name: "サンプルホームを追う" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "応援中" })).toHaveLength(2);
+    expect(
+      screen.queryByRole("link", { name: "このチームを追う" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders next matches and related recaps after the chat", async () => {
+    matchMocks.getNextMatchesForTeams.mockResolvedValue([
+      {
+        match: {
+          ...match,
+          awayScore: null,
+          awayTeam: {
+            name: "次戦アウェイ",
+            shortCode: "NXT",
+            slug: "next-away",
+          },
+          homeScore: null,
+          homeTeam: {
+            name: "サンプルホーム",
+            shortCode: "HME",
+            slug: "sample-home",
+          },
+          id: "next-home-match",
+          kickoffAt: "2026-06-06T10:00:00.000Z",
+          status: "scheduled",
+        },
+        teamId: "home-team",
+      },
+    ]);
+    matchMocks.getRelatedPublishedRecapsForMatch.mockResolvedValue([
+      {
+        ...match,
+        awayTeam: {
+          name: "関連アウェイ",
+          shortCode: "REL",
+          slug: "related-away",
+        },
+        homeTeam: {
+          name: "関連ホーム",
+          shortCode: "REL",
+          slug: "related-home",
+        },
+        id: "related-recap",
+        recapExcerpt: "関連レビュー",
+        recapGeneratedAt: "2026-05-31T10:00:00.000Z",
+      },
+    ]);
+
+    const element = await MatchDetailPage({
+      params: Promise.resolve({ id: nonSampleMatchId }),
+    });
+
+    render(element);
+
+    expect(matchMocks.getNextMatchesForTeams).toHaveBeenCalledWith({
+      afterIso: match.kickoffAt,
+      excludeMatchId: nonSampleMatchId,
+      teamIds: ["home-team", "away-team"],
+    });
+    expect(matchMocks.getRelatedPublishedRecapsForMatch).toHaveBeenCalledWith({
+      competitionSlug: "premiership-2025-26",
+      excludeMatchId: nonSampleMatchId,
+      round: 18,
+    });
+    expect(
+      screen.getByRole("link", { name: "サンプルホーム 対 次戦アウェイ" }),
+    ).toHaveAttribute("href", "/matches/next-home-match");
+    expect(
+      screen.getByRole("link", { name: /関連ホーム 対 関連アウェイ/ }),
+    ).toHaveAttribute("href", "/matches/related-recap");
+    expect(
+      screen.getByRole("link", { name: "今週の全試合を見る" }),
+    ).toHaveAttribute("href", "/calendar");
   });
 
   it("server-renders English sample recaps when English content exists", async () => {
@@ -406,5 +512,72 @@ describe("match sample recap page", () => {
     expect(metadata.description).toContain("スコットランド");
     expect(metadata.description).toContain("ポルトガル");
     expect(String(metadata.description)).not.toContain("vs");
+  });
+
+  it("marks thin future match pages as noindex when content is missing", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-10T00:00:00.000Z"));
+    setCommonMocks({
+      match: {
+        awayScore: null,
+        homeScore: null,
+        kickoffAt: "2027-10-01T10:00:00.000Z",
+        status: "scheduled",
+      },
+      publishedContent: {
+        preview: null,
+        recap: null,
+      },
+    });
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    expect(metadata.robots).toEqual({ follow: true, index: false });
+    vi.useRealTimers();
+  });
+
+  it("keeps near-term or content-backed match pages indexable", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-10T00:00:00.000Z"));
+    setCommonMocks({
+      match: {
+        awayScore: null,
+        homeScore: null,
+        kickoffAt: "2026-07-12T10:00:00.000Z",
+        status: "scheduled",
+      },
+      publishedContent: {
+        preview: null,
+        recap: null,
+      },
+    });
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({ id: sampleMatchId }),
+      }),
+    ).resolves.not.toHaveProperty("robots");
+
+    setCommonMocks({
+      match: {
+        awayScore: null,
+        homeScore: null,
+        kickoffAt: "2027-10-01T10:00:00.000Z",
+        status: "scheduled",
+      },
+      publishedContent: {
+        preview,
+        recap: null,
+      },
+    });
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({ id: sampleMatchId }),
+      }),
+    ).resolves.not.toHaveProperty("robots");
+    vi.useRealTimers();
   });
 });

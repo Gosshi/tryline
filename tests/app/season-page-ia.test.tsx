@@ -192,7 +192,7 @@ describe("season page information architecture", () => {
     vi.useRealTimers();
   });
 
-  it("places standings before the match list and keeps the guide expanded at the bottom", async () => {
+  it("places the summary and schedule before standings while keeping the guide expanded", async () => {
     const { container } = render(
       await SeasonPage({
         params: Promise.resolve({
@@ -203,11 +203,26 @@ describe("season page information architecture", () => {
     );
 
     const standings = container.querySelector("#standings");
+    const schedule = container.querySelector("#schedule");
     const matchGroups = screen.getByTestId("season-match-groups");
     const guide = screen.getByTestId("competition-guide");
     const guideFrame = guide.parentElement;
 
+    expect(screen.getByLabelText("シーズン要約")).toHaveTextContent("次戦");
+    expect(screen.getByRole("link", { name: "日程・結果" })).toHaveAttribute(
+      "href",
+      "#schedule",
+    );
+    expect(screen.getByRole("link", { name: "順位" })).toHaveAttribute(
+      "href",
+      "#standings",
+    );
+    expect(screen.getByRole("link", { name: "大会ガイド" })).toHaveAttribute(
+      "href",
+      "#guide",
+    );
     expect(standings).not.toBeNull();
+    expect(schedule).not.toBeNull();
     expect(guide.closest("details")).toBeNull();
     expect(screen.queryByText("大会ガイドを見る")).not.toBeInTheDocument();
     expect(guideFrame).toHaveClass(
@@ -216,8 +231,9 @@ describe("season page information architecture", () => {
       "shadow-[var(--shadow-soft)]",
     );
     expect(guide).toHaveTextContent("観戦ガイド全文");
-    expect(follows(standings!, matchGroups)).toBe(true);
-    expect(follows(matchGroups, guideFrame!)).toBe(true);
+    expect(follows(schedule!, standings!)).toBe(true);
+    expect(follows(matchGroups, standings!)).toBe(true);
+    expect(follows(standings!, guideFrame!)).toBe(true);
   });
 
   it("links to the competition-specific iCal subscription", async () => {
@@ -242,7 +258,7 @@ describe("season page information architecture", () => {
     );
   });
 
-  it("keeps standings above the empty state when no matches are available", async () => {
+  it("keeps standings and guide in the DOM when no matches are available", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({});
 
@@ -256,11 +272,14 @@ describe("season page information architecture", () => {
     );
 
     const standings = container.querySelector("#standings");
+    const schedule = container.querySelector("#schedule");
     const emptyState = screen.getByText("試合データを準備中です");
 
     expect(standings).not.toBeNull();
+    expect(schedule).not.toBeNull();
     expect(standings).toHaveTextContent("Bath");
-    expect(follows(standings!, emptyState)).toBe(true);
+    expect(follows(schedule!, standings!)).toBe(true);
+    expect(follows(emptyState, standings!)).toBe(true);
     expect(screen.queryByTestId("season-match-groups")).not.toBeInTheDocument();
   });
 
@@ -298,6 +317,45 @@ describe("season page information architecture", () => {
     expect(
       screen.getByRole("heading", { name: "Southern Hemisphere" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows a standings excerpt while keeping the full table in collapsed markup", async () => {
+    standingsMocks.getStandingsForCompetition.mockResolvedValue([
+      { ...standing, position: 1, teamName: "Bath", teamShortCode: "BAT" },
+      {
+        ...standing,
+        position: 2,
+        teamName: "Saracens",
+        teamShortCode: "SAR",
+      },
+      {
+        ...standing,
+        position: 3,
+        teamName: "Leicester",
+        teamShortCode: "LEI",
+      },
+      { ...standing, position: 4, teamName: "Exeter", teamShortCode: "EXE" },
+      { ...standing, position: 5, teamName: "Japan", teamShortCode: "JPN" },
+    ]);
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      match,
+      japanMatch,
+    ]);
+
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "pnc",
+          season: "2026",
+        }),
+      }),
+    );
+
+    const details = screen.getByText("全順位表を見る").closest("details");
+
+    expect(details).not.toHaveAttribute("open");
+    expect(screen.getAllByText("Japan")).toHaveLength(2);
+    expect(screen.getByText("Exeter")).toBeInTheDocument();
   });
 
   it("outputs season FAQ JSON-LD without changing breadcrumb JSON-LD", async () => {
@@ -340,7 +398,7 @@ describe("season page information architecture", () => {
     );
   });
 
-  it("shows the next Japan match block after standings when a scheduled Japan match exists", async () => {
+  it("shows the next Japan match in the summary when a scheduled Japan match exists", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([
       match,
       japanMatch,
@@ -366,15 +424,17 @@ describe("season page information architecture", () => {
     );
 
     const standings = container.querySelector("#standings");
+    const schedule = container.querySelector("#schedule");
     const japanNextMatch = screen.getByText("日本代表の次戦");
     const link = japanNextMatch.closest("a");
 
     expect(standings).not.toBeNull();
+    expect(schedule).not.toBeNull();
     expect(link).toHaveAttribute("href", "/matches/japan-match-1");
     expect(link).toHaveTextContent("Fiji 対 Japan");
     expect(link).toHaveTextContent("2026-02-28 (土) 18:00 JST");
-    expect(follows(standings!, link!)).toBe(true);
-    expect(follows(link!, screen.getByTestId("season-match-groups"))).toBe(
+    expect(follows(link!, schedule!)).toBe(true);
+    expect(follows(screen.getByTestId("season-match-groups"), standings!)).toBe(
       true,
     );
   });

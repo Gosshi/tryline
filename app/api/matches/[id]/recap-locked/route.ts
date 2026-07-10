@@ -36,7 +36,7 @@ export async function GET(
     return json({ isPremium: false, lockedMd: null });
   }
 
-  if (isSampleMatch(id)) {
+  if (await isSampleMatch(id)) {
     return json({ isPremium: true, lockedMd: null });
   }
 
