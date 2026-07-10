@@ -5,33 +5,32 @@ export type SourcedFactCounts = {
   recap: number;
 };
 
-type SourcedFactCountRow = {
-  content_type: string;
-};
-
-export async function getSourcedFactCountsForMatch(
+async function countFactsForContentType(
   matchId: string,
-): Promise<SourcedFactCounts> {
+  contentType: "preview" | "recap",
+): Promise<number> {
   const client = getSupabasePublicServerClient();
-  const { data, error } = await client
+  const { count, error } = await client
     .from("match_sourced_facts")
-    .select("content_type")
-    .eq("match_id", matchId);
+    .select("id", { count: "exact", head: true })
+    .eq("match_id", matchId)
+    .in("content_type", [contentType, "shared"])
+    .in("confidence", ["high", "medium"]);
 
   if (error) {
     throw error;
   }
 
-  const counts: SourcedFactCounts = {
-    preview: 0,
-    recap: 0,
-  };
+  return count ?? 0;
+}
 
-  for (const row of data satisfies SourcedFactCountRow[]) {
-    if (row.content_type === "preview" || row.content_type === "recap") {
-      counts[row.content_type] += 1;
-    }
-  }
+export async function getSourcedFactCountsForMatch(
+  matchId: string,
+): Promise<SourcedFactCounts> {
+  const [preview, recap] = await Promise.all([
+    countFactsForContentType(matchId, "preview"),
+    countFactsForContentType(matchId, "recap"),
+  ]);
 
-  return counts;
+  return { preview, recap };
 }

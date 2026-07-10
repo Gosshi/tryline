@@ -2,9 +2,22 @@
 
 import { useEffect, useState } from "react";
 
+import { TeamPicker } from "@/components/team-picker";
+
+import type { TeamOption } from "@/components/team-picker";
+
 const BANNER_KEY = "favorite_teams_banner_dismissed";
 
-export function FavoriteTeamsBanner() {
+type FavoriteTeamsBannerProps = {
+  allTeams: TeamOption[];
+  favoriteTeamSlugs: string[];
+};
+
+export function FavoriteTeamsBanner({
+  allTeams,
+  favoriteTeamSlugs,
+}: FavoriteTeamsBannerProps) {
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -34,13 +47,18 @@ export function FavoriteTeamsBanner() {
               応援チームを登録して、次の試合を逃さない
             </h2>
             <p className="mt-2 text-sm leading-6 text-[var(--color-ink-muted)]">
-              登録したチームの試合をトップページに優先表示します。ヘッダーのユーザーメニューから最大3チームまで選べます。
+              登録したチームの試合をトップページに優先表示します。最大3チームまで選べます。
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <span className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-xs font-bold text-white">
+            <button
+              aria-expanded={pickerOpen}
+              className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
+              onClick={() => setPickerOpen((current) => !current)}
+              type="button"
+            >
               このチームを応援する
-            </span>
+            </button>
             <button
               aria-label="バナーを閉じる"
               className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
@@ -51,6 +69,14 @@ export function FavoriteTeamsBanner() {
             </button>
           </div>
         </div>
+        {pickerOpen && (
+          <div className="mt-4 max-w-md rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <TeamPicker
+              initialSelected={favoriteTeamSlugs}
+              teams={allTeams}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
