@@ -88,6 +88,14 @@ describe("/calendar page", () => {
       "href",
       "/calendar",
     );
+    expect(screen.getByRole("link", { name: "全大会を購読" })).toHaveAttribute(
+      "href",
+      "webcal://www.trylinerugby.com/api/calendar/all.ics",
+    );
+    expect(screen.getByRole("link", { name: "iCal URL" })).toHaveAttribute(
+      "href",
+      "https://www.trylinerugby.com/api/calendar/all.ics",
+    );
     expect(screen.getByText(/この週に表示できる試合はありません/)).toBeInTheDocument();
   });
 

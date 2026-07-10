@@ -70,6 +70,10 @@ function formatDateJa(dateStr: string): string {
   }).format(date);
 }
 
+function getWebcalUrl(url: string): string {
+  return url.replace(/^https?:/, "webcal:");
+}
+
 function formatDateRange(
   startDate: string | null,
   endDate: string | null,
@@ -113,10 +117,9 @@ function getMatchLabel(match: MatchListItem): string {
   return `${match.homeTeam.name} 対 ${match.awayTeam.name}`;
 }
 
-function selectStandingsExcerpt<T extends { teamName: string; teamShortCode: string }>(
-  standings: T[],
-  includeJapan: boolean,
-): T[] {
+function selectStandingsExcerpt<
+  T extends { teamName: string; teamShortCode: string },
+>(standings: T[], includeJapan: boolean): T[] {
   const excerpt = new Map<string, T>();
 
   for (const row of standings.slice(0, 3)) {
@@ -271,13 +274,15 @@ export default async function SeasonPage({ params }: Props) {
     notFound();
   }
 
-  const [matches, standings, poolStandings, seasons, guide] = await Promise.all([
-    listMatchesForCompetition(comp.slug),
-    getStandingsForCompetition(comp.slug),
-    getPoolStandingsForCompetition(comp.slug),
-    listSeasonsByFamily(comp.family),
-    getCompetitionGuide(comp.family),
-  ]);
+  const [matches, standings, poolStandings, seasons, guide] = await Promise.all(
+    [
+      listMatchesForCompetition(comp.slug),
+      getStandingsForCompetition(comp.slug),
+      getPoolStandingsForCompetition(comp.slug),
+      listSeasonsByFamily(comp.family),
+      getCompetitionGuide(comp.family),
+    ],
+  );
   const contentStatusMap = await getContentStatusForMatches(
     matches.map((match) => match.id),
   );
@@ -289,6 +294,7 @@ export default async function SeasonPage({ params }: Props) {
   const family = comp.family;
   const accentColor = getCompetitionFamilyColor(family);
   const pageUrl = `${SITE_URL}/c/${competition}/${season}`;
+  const competitionCalendarFeedUrl = `${SITE_URL}/api/calendar/${comp.slug}.ics`;
   const competitionTitle = formatCompetitionTitle(comp, comp.season);
   const familyTitle = formatFamilyName(family);
   const nextMatch = findNextScheduledMatch(matches);
@@ -305,7 +311,7 @@ export default async function SeasonPage({ params }: Props) {
           .filter((label): label is string => label !== null)
           .slice(0, 2)
           .join(" / ") || null
-      : standings[0]?.teamName ?? null;
+      : (standings[0]?.teamName ?? null);
   const nextMatchJst = nextMatch
     ? formatMatchKickoffJst(nextMatch.kickoffAt)
     : null;
@@ -396,7 +402,7 @@ export default async function SeasonPage({ params }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-paper">
+    <main className="bg-paper min-h-screen">
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbJsonLd),
@@ -428,6 +434,20 @@ export default async function SeasonPage({ params }: Props) {
               {dateRange}
             </p>
           )}
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link
+              className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
+              href={getWebcalUrl(competitionCalendarFeedUrl)}
+            >
+              この大会を購読
+            </Link>
+            <Link
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+              href={competitionCalendarFeedUrl}
+            >
+              大会iCal URL
+            </Link>
+          </div>
         </header>
 
         <SeasonSwitcher
@@ -473,32 +493,32 @@ export default async function SeasonPage({ params }: Props) {
           </p>
         )}
 
-        <section className="space-y-4 scroll-mt-4" id="schedule">
+        <section className="scroll-mt-4 space-y-4" id="schedule">
           {matches.length === 0 ? (
             <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
-            <p className="text-sm font-medium text-[var(--color-ink)]">
-              試合データを準備中です
-            </p>
-            <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
-              このシーズンの試合情報はまもなく公開予定です。
-            </p>
-            <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Link
-                className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
-                href={`/c/${competition}`}
-              >
-                他のシーズンを見る
-              </Link>
-              <span className="hidden text-[var(--color-ink-muted)] sm:inline">
-                ·
-              </span>
-              <Link
-                className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
-                href="/"
-              >
-                トップへ戻る
-              </Link>
-            </div>
+              <p className="text-sm font-medium text-[var(--color-ink)]">
+                試合データを準備中です
+              </p>
+              <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
+                このシーズンの試合情報はまもなく公開予定です。
+              </p>
+              <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                <Link
+                  className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+                  href={`/c/${competition}`}
+                >
+                  他のシーズンを見る
+                </Link>
+                <span className="hidden text-[var(--color-ink-muted)] sm:inline">
+                  ·
+                </span>
+                <Link
+                  className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+                  href="/"
+                >
+                  トップへ戻る
+                </Link>
+              </div>
             </div>
           ) : (
             <>
@@ -515,7 +535,7 @@ export default async function SeasonPage({ params }: Props) {
           )}
         </section>
 
-        <section className="space-y-4 scroll-mt-4" id="standings">
+        <section className="scroll-mt-4 space-y-4" id="standings">
           {poolStandings.length > 0
             ? poolStandings.map((pool) => (
                 <div key={pool.poolName}>

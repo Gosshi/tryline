@@ -236,6 +236,28 @@ describe("season page information architecture", () => {
     expect(follows(standings!, guideFrame!)).toBe(true);
   });
 
+  it("links to the competition-specific iCal subscription", async () => {
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    );
+
+    expect(
+      screen.getByRole("link", { name: "この大会を購読" }),
+    ).toHaveAttribute(
+      "href",
+      "webcal://www.trylinerugby.com/api/calendar/premiership-2025-26.ics",
+    );
+    expect(screen.getByRole("link", { name: "大会iCal URL" })).toHaveAttribute(
+      "href",
+      "https://www.trylinerugby.com/api/calendar/premiership-2025-26.ics",
+    );
+  });
+
   it("keeps standings and guide in the DOM when no matches are available", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({});
@@ -412,7 +434,9 @@ describe("season page information architecture", () => {
     expect(link).toHaveTextContent("Fiji 対 Japan");
     expect(link).toHaveTextContent("2026-02-28 (土) 18:00 JST");
     expect(follows(link!, schedule!)).toBe(true);
-    expect(follows(screen.getByTestId("season-match-groups"), standings!)).toBe(true);
+    expect(follows(screen.getByTestId("season-match-groups"), standings!)).toBe(
+      true,
+    );
   });
 
   it("does not render the Japan match block when no scheduled Japan match exists", async () => {
