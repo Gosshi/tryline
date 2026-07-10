@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { WeekSchedule } from "@/components/calendar/week-schedule";
 import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { FavoriteTeamsBanner } from "@/components/favorite-teams-banner";
 import { FeaturedCompetitionCard } from "@/components/featured-competition-card";
@@ -192,6 +191,8 @@ export default async function HomePage() {
   };
   const favoriteTeamPageSlug =
     favoriteTeamSlugs.length === 1 ? (favoriteTeamSlugs[0] ?? null) : null;
+  const shouldShowSampleReview =
+    profile?.subscription_status !== "premium" && Boolean(sampleMatch?.recapExcerpt);
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -269,26 +270,32 @@ export default async function HomePage() {
                 Nations、Premiership、URC。週末に重なる試合を、日程・結果・順位・日本語レビューまでひとつの流れで確認できます。
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
+                <TrackedLink
+                  analytics={{
+                    cta_id: "home_hero_calendar",
+                    cta_location: "home_hero",
+                    destination: "calendar",
+                    label: "今週の試合を見る",
+                  }}
+                  className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  href="/calendar"
+                >
+                  今週の試合を見る
+                </TrackedLink>
                 {profile?.subscription_status !== "premium" && (
                   <TrackedLink
                     analytics={{
                       cta_id: "home_hero_pricing",
                       cta_location: "home_hero",
                       destination: "pricing",
-                      label: "7日間無料でレビュー全文を読む",
+                      label: "Premium無料体験",
                     }}
-                    className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                     href="/pricing"
                   >
-                    7日間無料でレビュー全文を読む
+                    Premium無料体験
                   </TrackedLink>
                 )}
-                <Link
-                  className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                  href="/calendar"
-                >
-                  今週の試合を見る
-                </Link>
               </div>
             </div>
             <HomeMatchdayBoard
@@ -307,81 +314,6 @@ export default async function HomePage() {
           favoriteTeamSlugs={favoriteTeamSlugs}
         />
       )}
-
-      {profile?.subscription_status !== "premium" &&
-        sampleMatch?.recapExcerpt && (
-          <section
-            aria-labelledby="sample-heading"
-            className="mx-4 my-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:mx-6 md:mx-8 lg:mx-auto lg:max-w-6xl"
-          >
-            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-[#f8fafc] px-5 py-3">
-              <p
-                className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]"
-                id="sample-heading"
-              >
-                無料で読めるレビュー
-              </p>
-              <span className="bg-[var(--color-accent)]/10 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
-                Sample
-              </span>
-            </div>
-            <div className="border-b border-slate-100 px-5 py-3">
-              <p className="text-xs text-[var(--color-ink-muted)]">
-                {formatCompetitionTitle(
-                  sampleMatch.competition,
-                  sampleMatch.competition.season,
-                )}
-              </p>
-              <p className="mt-0.5 text-sm font-bold text-[var(--color-ink)]">
-                {sampleMatch.homeTeam.name} 対 {sampleMatch.awayTeam.name}
-              </p>
-            </div>
-            <div className="mx-5 my-4 border-l-4 border-[var(--color-accent)] pl-4">
-              <p className="line-clamp-8 text-sm leading-relaxed text-[var(--color-ink)]">
-                {sampleMatch.recapExcerpt}
-              </p>
-            </div>
-            <div className="mx-5 mb-4 rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                Ask After Match
-              </p>
-              <ul className="mt-3 space-y-2 text-sm font-semibold text-[var(--color-ink)]">
-                <li>勝敗を分けた場面はどこ？</li>
-                <li>日本代表の次戦にどう影響する？</li>
-                <li>この選手はどんなタイプ？</li>
-              </ul>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-4">
-              <TrackedLink
-                analytics={{
-                  content_type: "recap",
-                  cta_id: "home_sample_section_sample_recap",
-                  cta_location: "home_sample_section",
-                  destination: "sample_match",
-                  is_sample: true,
-                  label: "無料サンプルを読む",
-                  match_id: sampleMatch.id,
-                }}
-                className="text-xs font-semibold text-[var(--color-accent)] hover:underline"
-                href={`/matches/${sampleMatch.id}`}
-              >
-                無料サンプルを読む →
-              </TrackedLink>
-              <TrackedLink
-                analytics={{
-                  cta_id: "home_sample_section_pricing",
-                  cta_location: "home_sample_section",
-                  destination: "pricing",
-                  label: "他のレビューも7日間無料で読む",
-                }}
-                className="rounded-full bg-[var(--color-accent)] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90"
-                href="/pricing"
-              >
-                他のレビューも7日間無料で読む
-              </TrackedLink>
-            </div>
-          </section>
-        )}
 
       {favoriteMatches.length > 0 && (
         <section
@@ -417,30 +349,25 @@ export default async function HomePage() {
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         <section className="-m-3.5 rounded-[20px] bg-[radial-gradient(140%_100%_at_0%_0%,rgb(201_58_58/5%),transparent_65%)] p-3.5">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="space-y-3">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="font-serif text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
-                    今週の試合
-                  </h2>
-                  <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
-                    全大会横断・JST 表示
-                  </p>
-                </div>
-                <Link
-                  className="shrink-0 text-xs font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)]"
-                  href="/calendar"
-                >
-                  前週・翌週もカレンダーで →
-                </Link>
-              </div>
-              <WeekSchedule
-                compact
-                emptyMessage="今週の残り試合はありません。"
-                highlightMatchId={homepageFocusMatchId}
-                matches={homepageWeekMatches}
-                spoilerGuardEnabled={spoilerGuardEnabled}
-              />
+            <div className="space-y-2">
+              <h2 className="font-serif text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
+                注目大会
+              </h2>
+              <p className="max-w-2xl text-sm leading-7 text-[var(--color-ink-muted)]">
+                PNC 2026 を中心に、日程・順位・レビューが揃う大会ハブへ移動できます。
+              </p>
+              <TrackedLink
+                analytics={{
+                  cta_id: "home_focus_calendar",
+                  cta_location: "home_focus_section",
+                  destination: "calendar",
+                  label: "全日程をカレンダーで見る",
+                }}
+                className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-[var(--color-ink)] transition-colors hover:border-slate-300 hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                href="/calendar"
+              >
+                全日程をカレンダーで見る →
+              </TrackedLink>
             </div>
             <FeaturedCompetitionCard stats={featuredCompetitionStats} />
           </div>
@@ -508,12 +435,80 @@ export default async function HomePage() {
           </section>
         )}
 
-        {recentReviewGroups.length > 0 && (
+        {(recentReviewGroups.length > 0 || shouldShowSampleReview) && (
           <section className="space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               最近のレビュー
             </h2>
             <div className="space-y-5">
+              {shouldShowSampleReview && sampleMatch && (
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-[#f8fafc] px-5 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                      無料で読めるレビュー
+                    </p>
+                    <span className="bg-[var(--color-accent)]/10 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
+                      Sample
+                    </span>
+                  </div>
+                  <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_240px]">
+                    <div>
+                      <p className="text-xs text-[var(--color-ink-muted)]">
+                        {formatCompetitionTitle(
+                          sampleMatch.competition,
+                          sampleMatch.competition.season,
+                        )}
+                      </p>
+                      <p className="mt-0.5 text-sm font-bold text-[var(--color-ink)]">
+                        {sampleMatch.homeTeam.name} 対{" "}
+                        {sampleMatch.awayTeam.name}
+                      </p>
+                      <p className="mt-4 line-clamp-7 border-l-4 border-[var(--color-accent)] pl-4 text-sm leading-relaxed text-[var(--color-ink)]">
+                        {sampleMatch.recapExcerpt}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
+                      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                        Ask After Match
+                      </p>
+                      <ul className="mt-3 space-y-2 text-sm font-semibold text-[var(--color-ink)]">
+                        <li>勝敗を分けた場面はどこ？</li>
+                        <li>日本代表の次戦にどう影響する？</li>
+                        <li>この選手はどんなタイプ？</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-4">
+                    <TrackedLink
+                      analytics={{
+                        content_type: "recap",
+                        cta_id: "home_recent_reviews_sample_recap",
+                        cta_location: "home_recent_reviews",
+                        destination: "sample_match",
+                        is_sample: true,
+                        label: "無料サンプルを読む",
+                        match_id: sampleMatch.id,
+                      }}
+                      className="text-xs font-semibold text-[var(--color-accent)] hover:underline"
+                      href={`/matches/${sampleMatch.id}`}
+                    >
+                      無料サンプルを読む →
+                    </TrackedLink>
+                    <TrackedLink
+                      analytics={{
+                        cta_id: "home_recent_reviews_pricing",
+                        cta_location: "home_recent_reviews",
+                        destination: "pricing",
+                        label: "他のレビューも7日間無料で読む",
+                      }}
+                      className="rounded-full bg-[var(--color-accent)] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90"
+                      href="/pricing"
+                    >
+                      他のレビューも7日間無料で読む
+                    </TrackedLink>
+                  </div>
+                </div>
+              )}
               {recentReviewGroups.map((group) => {
                 const match = group.hero;
 
