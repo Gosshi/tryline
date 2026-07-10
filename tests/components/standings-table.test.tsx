@@ -86,5 +86,6 @@ describe("StandingsTable", () => {
     expect(screen.getAllByText("Team 3")).toHaveLength(2);
     expect(screen.getAllByText("Team 8")).toHaveLength(2);
     expect(screen.getByText("Team 10")).toBeInTheDocument();
+    expect(screen.getByLabelText("省略された順位があります")).toBeInTheDocument();
   });
 });

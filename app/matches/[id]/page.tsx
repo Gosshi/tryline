@@ -57,6 +57,8 @@ type MatchDetailPageProps = {
 
 export const revalidate = 3600;
 
+const THIN_FUTURE_MATCH_NOINDEX_DAYS = 7;
+
 export async function generateStaticParams() {
   const matches = await listMatchIdsWithContent();
 
@@ -201,6 +203,27 @@ function NextWatchSection({
   );
 }
 
+function shouldNoIndexThinFutureMatch({
+  hasContent,
+  kickoffAt,
+  now = new Date(),
+  status,
+}: {
+  hasContent: boolean;
+  kickoffAt: string;
+  now?: Date;
+  status: MatchStatus;
+}): boolean {
+  if (hasContent || status !== "scheduled") {
+    return false;
+  }
+
+  const kickoffTime = new Date(kickoffAt).getTime();
+  const thresholdMs = THIN_FUTURE_MATCH_NOINDEX_DAYS * 24 * 60 * 60 * 1000;
+
+  return kickoffTime - now.getTime() >= thresholdMs;
+}
+
 export async function generateMetadata({
   params,
 }: MatchDetailPageProps): Promise<Metadata> {
@@ -248,6 +271,11 @@ export async function generateMetadata({
     match.homeScore !== null && match.awayScore !== null
       ? `${match.homeScore}–${match.awayScore}`
       : undefined;
+  const shouldNoIndex = shouldNoIndexThinFutureMatch({
+    hasContent: content.preview !== null || content.recap !== null,
+    kickoffAt: match.kickoffAt,
+    status: match.status,
+  });
 
   return {
     alternates: { canonical: `${SITE_URL}/matches/${id}` },
@@ -267,6 +295,9 @@ export async function generateMetadata({
       type: "article",
       url: `${SITE_URL}/matches/${id}`,
     },
+    ...(shouldNoIndex
+      ? { robots: { follow: true, index: false } }
+      : {}),
     title,
   };
 }
@@ -342,7 +373,7 @@ export default async function MatchDetailPage({
   const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
   const hasConfirmedLineups = lineups.length > 0;
   const isFreeSampleRecap =
-    isSampleMatch(id) && publishedContent.recap !== null;
+    (await isSampleMatch(id)) && publishedContent.recap !== null;
   const recapSplit = publishedContent.recap
     ? splitRecapForPaywall(publishedContent.recap.contentMdJa)
     : null;

@@ -26,6 +26,11 @@ const numbers = Outfit({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  alternates: {
+    types: {
+      "application/rss+xml": `${SITE_URL}/rss.xml`,
+    },
+  },
   title: {
     default: "Tryline",
     template: "%s | Tryline",

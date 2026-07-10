@@ -2,6 +2,35 @@ import { cn } from "@/lib/utils";
 
 import type { StandingRow } from "@/lib/db/queries/standings";
 
+type StandingTableEntry =
+  | { row: StandingRow; type: "row" }
+  | { key: string; type: "gap" };
+
+function buildTableEntries(
+  rows: StandingRow[],
+  showGaps: boolean,
+): StandingTableEntry[] {
+  if (!showGaps) {
+    return rows.map((row) => ({ row, type: "row" as const }));
+  }
+
+  return rows.flatMap((row, index) => {
+    const previous = rows[index - 1];
+    const entries: StandingTableEntry[] = [];
+
+    if (previous && row.position - previous.position > 1) {
+      entries.push({
+        key: `gap-${previous.position}-${row.position}`,
+        type: "gap",
+      });
+    }
+
+    entries.push({ row, type: "row" });
+
+    return entries;
+  });
+}
+
 export function StandingsTable({
   highlightedTeams = [],
   excerptThreshold = 10,
@@ -28,7 +57,9 @@ export function StandingsTable({
   const shouldUseExcerpt =
     standings.length >= excerptThreshold && excerptRows.length > 0;
 
-  function renderTable(rows: StandingRow[]) {
+  function renderTable(rows: StandingRow[], showGaps = false) {
+    const entries = buildTableEntries(rows, showGaps);
+
     return (
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -46,7 +77,22 @@ export function StandingsTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
+            {entries.map((entry) => {
+              if (entry.type === "gap") {
+                return (
+                  <tr
+                    aria-label="省略された順位があります"
+                    className="border-b border-slate-50 text-center text-slate-400"
+                    key={entry.key}
+                  >
+                    <td className="py-1" colSpan={9}>
+                      …
+                    </td>
+                  </tr>
+                );
+              }
+
+              const { row } = entry;
               const isHighlighted =
                 highlighted.has(row.teamName.toLowerCase()) ||
                 highlighted.has(row.teamShortCode.toLowerCase());
@@ -117,7 +163,7 @@ export function StandingsTable({
 
       {shouldUseExcerpt ? (
         <div className="space-y-4">
-          {renderTable(excerptRows)}
+          {renderTable(excerptRows, true)}
           <details>
             <summary className="cursor-pointer rounded-full border border-slate-200 px-4 py-2 text-center text-xs font-bold text-[var(--color-accent)] transition-colors hover:border-slate-300 hover:bg-slate-50">
               全順位表を見る

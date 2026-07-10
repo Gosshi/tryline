@@ -34,6 +34,10 @@ const sourcedFactMocks = vi.hoisted(() => ({
   getSourcedFactCountsForMatch: vi.fn(),
 }));
 
+const sampleMatchMocks = vi.hoisted(() => ({
+  isSampleMatch: vi.fn(),
+}));
+
 const matchMocks = vi.hoisted(() => ({
   countHeadToHeadMatches: vi.fn(),
   getMatchById: vi.fn(),
@@ -50,6 +54,7 @@ const navigationMocks = vi.hoisted(() => ({
   notFound: vi.fn(() => {
     throw new Error("NEXT_NOT_FOUND");
   }),
+  useRouter: vi.fn(() => ({ refresh: vi.fn() })),
 }));
 
 const premiumRecapMocks = vi.hoisted(() => ({
@@ -108,6 +113,7 @@ vi.mock("@/lib/db/queries/matches", () => matchMocks);
 vi.mock("@/lib/db/queries/spoiler-guard", () => spoilerGuardMocks);
 vi.mock("@/lib/db/queries/sourced-facts", () => sourcedFactMocks);
 vi.mock("@/lib/db/queries/standings", () => standingsMocks);
+vi.mock("@/lib/sample-matches", () => sampleMatchMocks);
 vi.mock("next/navigation", () => navigationMocks);
 
 import MatchEnglishPage from "@/app/matches/[id]/en/page";
@@ -210,6 +216,9 @@ function setCommonMocks(params: {
   authMocks.getUser.mockResolvedValue(null);
   authMocks.getUserProfile.mockResolvedValue(null);
   spoilerGuardMocks.getSpoilerGuardEnabledForUser.mockResolvedValue(false);
+  sampleMatchMocks.isSampleMatch.mockImplementation(
+    async (matchId: string) => matchId === sampleMatchId,
+  );
 }
 
 describe("match sample recap page", () => {
@@ -279,6 +288,25 @@ describe("match sample recap page", () => {
       .getByText("試合前のプレビューを表示")
       .closest("details");
     expect(previewDetails).toHaveTextContent("プレビュー本文");
+  });
+
+  it("renders favorite follow buttons for signed-in users", async () => {
+    authMocks.getUser.mockResolvedValue({ id: "user-1" });
+    authMocks.getUserProfile.mockResolvedValue({
+      favorite_team_slugs: ["sample-away"],
+    });
+
+    const element = await MatchDetailPage({
+      params: Promise.resolve({ id: nonSampleMatchId }),
+    });
+
+    render(element);
+
+    expect(screen.getAllByRole("button", { name: "サンプルホームを追う" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "応援中" })).toHaveLength(2);
+    expect(
+      screen.queryByRole("link", { name: "このチームを追う" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders next matches and related recaps after the chat", async () => {
@@ -484,5 +512,72 @@ describe("match sample recap page", () => {
     expect(metadata.description).toContain("スコットランド");
     expect(metadata.description).toContain("ポルトガル");
     expect(String(metadata.description)).not.toContain("vs");
+  });
+
+  it("marks thin future match pages as noindex when content is missing", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-10T00:00:00.000Z"));
+    setCommonMocks({
+      match: {
+        awayScore: null,
+        homeScore: null,
+        kickoffAt: "2027-10-01T10:00:00.000Z",
+        status: "scheduled",
+      },
+      publishedContent: {
+        preview: null,
+        recap: null,
+      },
+    });
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    expect(metadata.robots).toEqual({ follow: true, index: false });
+    vi.useRealTimers();
+  });
+
+  it("keeps near-term or content-backed match pages indexable", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-10T00:00:00.000Z"));
+    setCommonMocks({
+      match: {
+        awayScore: null,
+        homeScore: null,
+        kickoffAt: "2026-07-12T10:00:00.000Z",
+        status: "scheduled",
+      },
+      publishedContent: {
+        preview: null,
+        recap: null,
+      },
+    });
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({ id: sampleMatchId }),
+      }),
+    ).resolves.not.toHaveProperty("robots");
+
+    setCommonMocks({
+      match: {
+        awayScore: null,
+        homeScore: null,
+        kickoffAt: "2027-10-01T10:00:00.000Z",
+        status: "scheduled",
+      },
+      publishedContent: {
+        preview,
+        recap: null,
+      },
+    });
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({ id: sampleMatchId }),
+      }),
+    ).resolves.not.toHaveProperty("robots");
+    vi.useRealTimers();
   });
 });

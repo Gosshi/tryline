@@ -43,7 +43,7 @@ import {
 } from "@/lib/format/kickoff";
 import { getTeamColor } from "@/lib/format/team-identity";
 import { getCurrentJstWeekRangeUtc } from "@/lib/format/week";
-import { PRIMARY_SAMPLE_MATCH_ID } from "@/lib/sample-matches";
+import { getPrimarySampleMatchId } from "@/lib/sample-matches";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -112,6 +112,7 @@ export default async function HomePage() {
   const profile = user ? await getUserProfile(user.id) : null;
   const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
   const weekRange = getCurrentJstWeekRangeUtc();
+  const sampleMatchId = await getPrimarySampleMatchId();
   const [
     families,
     reviewedFamilies,
@@ -126,7 +127,7 @@ export default async function HomePage() {
     listFamilies(),
     getRecentlyReviewedFamilies(4),
     getRecentlyReviewedCompetitionGroups("ja"),
-    getRecentlyReviewedMatchById(PRIMARY_SAMPLE_MATCH_ID, "ja"),
+    getRecentlyReviewedMatchById(sampleMatchId, "ja"),
     getMatchesInRange(weekRange.startUtcIso, weekRange.endUtcIso),
     getUpcomingMatches(5),
     getFavoriteTeamMatches(favoriteTeamSlugs),

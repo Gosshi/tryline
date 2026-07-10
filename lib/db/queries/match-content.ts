@@ -18,6 +18,15 @@ export type MatchContentStatus = {
   hasRecap: boolean;
 };
 
+export type PublishedRecapFeedItem = {
+  awayTeamName: string;
+  competitionName: string;
+  contentMdJa: string;
+  generatedAt: string;
+  homeTeamName: string;
+  matchId: string;
+};
+
 type PublishedMatchContentRow = {
   content_type: string;
   content_md: string;
@@ -29,6 +38,17 @@ type PublishedMatchContentRow = {
 type MatchContentStatusRow = {
   match_id: string;
   content_type: string;
+};
+
+type PublishedRecapFeedRow = {
+  content_md: string;
+  generated_at: string;
+  match_id: string;
+  match: {
+    away_team: { name: string; name_ja?: string | null } | null;
+    competition: { name: string; name_ja?: string | null; season: string } | null;
+    home_team: { name: string; name_ja?: string | null } | null;
+  } | null;
 };
 
 function mapRow(row: PublishedMatchContentRow): PublishedMatchContent {
@@ -124,4 +144,64 @@ export async function getContentStatusForMatches(
   const statusMap = await getContentStatusMap(matchIds);
 
   return Object.fromEntries(statusMap);
+}
+
+export async function listPublishedRecapsForFeed(
+  limit = 30,
+): Promise<PublishedRecapFeedItem[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("match_content")
+    .select(
+      `
+        match_id,
+        content_md,
+        generated_at,
+        match:matches!match_content_match_id_fkey (
+          home_team:teams!matches_home_team_id_fkey (
+            name,
+            name_ja
+          ),
+          away_team:teams!matches_away_team_id_fkey (
+            name,
+            name_ja
+          ),
+          competition:competitions!matches_competition_id_fkey (
+            name,
+            name_ja,
+            season
+          )
+        )
+      `,
+    )
+    .eq("content_type", "recap")
+    .eq("status", "published")
+    .eq("language", "ja")
+    .order("generated_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as PublishedRecapFeedRow[])
+    .filter(
+      (row) =>
+        row.match?.home_team && row.match.away_team && row.match.competition,
+    )
+    .map((row) => ({
+      awayTeamName:
+        row.match?.away_team?.name_ja ?? row.match?.away_team?.name ?? "",
+      competitionName: [
+        row.match?.competition?.name_ja ?? row.match?.competition?.name ?? "",
+        row.match?.competition?.season,
+      ]
+        .filter(Boolean)
+        .join(" "),
+      contentMdJa: row.content_md,
+      generatedAt: row.generated_at,
+      homeTeamName:
+        row.match?.home_team?.name_ja ?? row.match?.home_team?.name ?? "",
+      matchId: row.match_id,
+    }));
 }
