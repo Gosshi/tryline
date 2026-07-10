@@ -246,9 +246,11 @@ describe("HomePage", () => {
     ).toBe(1);
     expect(screen.queryByLabelText("今週の注目試合")).not.toBeInTheDocument();
     expect(screen.queryByText("home_hero_sample_recap")).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "今週の試合を見る" }),
-    ).toHaveAttribute("href", "/calendar");
+    const heroLinks = screen.getAllByRole("link").slice(0, 2);
+    expect(heroLinks[0]).toHaveTextContent("今週の試合を見る");
+    expect(heroLinks[0]).toHaveAttribute("href", "/calendar");
+    expect(heroLinks[1]).toHaveTextContent("Premium無料体験");
+    expect(heroLinks[1]).toHaveAttribute("href", "/pricing");
   });
 
 
@@ -297,6 +299,10 @@ describe("HomePage", () => {
       "href",
       "/matches/japan-match",
     );
+    expect(
+      screen.queryByRole("heading", { name: "今週の試合" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "注目大会" })).toBeInTheDocument();
     expect(screen.getByText("プレビュー公開")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "ほか1試合 →" })).toHaveAttribute(
       "href",
