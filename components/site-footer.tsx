@@ -68,6 +68,16 @@ export function SiteFooter() {
               </h2>
               <ul className="mt-3 space-y-2 text-xs text-slate-500">
                 <li>
+                  <Link
+                    className="hover:text-slate-900"
+                    href="/rss.xml"
+                    rel="alternate"
+                    type="application/rss+xml"
+                  >
+                    RSS
+                  </Link>
+                </li>
+                <li>
                   <a
                     aria-label="X (Twitter) @tryline_rugbyjp"
                     className="flex items-center gap-1.5 hover:text-slate-900"
