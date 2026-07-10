@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { FavoriteTeamFollowButton } from "@/components/favorite-team-follow-button";
 import { LangToggle } from "@/components/lang-toggle";
 import { MatchContentSection } from "@/components/match-content-section";
+import { MatchContentTrustStrip } from "@/components/match-content-trust-strip";
 import { MatchEventsSection } from "@/components/match-events-section";
 import { MatchHeader } from "@/components/match-header";
 import { MatchLineupsSection } from "@/components/match-lineups-section";
@@ -23,6 +24,7 @@ import {
   listMatchIdsWithContent,
   normalizeHeadToHeadSlug,
 } from "@/lib/db/queries/matches";
+import { getSourcedFactCountsForMatch } from "@/lib/db/queries/sourced-facts";
 import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { getStandingsForCompetition } from "@/lib/db/queries/standings";
 import { formatCompetitionTitle } from "@/lib/format/competition";
@@ -146,6 +148,7 @@ export default async function MatchDetailPage({
     publishedContent,
     events,
     lineups,
+    sourcedFactCounts,
     spoilerGuardEnabled,
     profile,
   ] = await Promise.all([
@@ -153,6 +156,7 @@ export default async function MatchDetailPage({
       getPublishedContentForMatch(id),
       getMatchEventsForMatch(id),
       getMatchLineupsForMatch(id),
+      getSourcedFactCountsForMatch(id),
       getSpoilerGuardEnabledForUser(user?.id),
       user ? getUserProfile(user.id) : null,
     ]);
@@ -187,6 +191,7 @@ export default async function MatchDetailPage({
   const hasEnglishContent =
     englishContent.preview !== null || englishContent.recap !== null;
   const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
+  const hasConfirmedLineups = lineups.length > 0;
   const isFreeSampleRecap =
     isSampleMatch(id) && publishedContent.recap !== null;
   const recapSplit = publishedContent.recap
@@ -356,6 +361,14 @@ export default async function MatchDetailPage({
           <section className="space-y-4">
             {match.status !== "finished" && (
               <MatchContentSection
+                afterBody={
+                  publishedContent.preview ? (
+                    <MatchContentTrustStrip
+                      hasConfirmedLineups={hasConfirmedLineups}
+                      sourcedFactCount={sourcedFactCounts.preview}
+                    />
+                  ) : null
+                }
                 content={publishedContent.preview}
                 contentType="preview"
                 isPremium={true}
@@ -392,17 +405,23 @@ export default async function MatchDetailPage({
               <>
                 <MatchContentSection
                   afterBody={
-                    <MatchEventsSection
-                      awayTeamName={match.awayTeam.name}
-                      awayTeamSlug={match.awayTeam.slug}
-                      events={events}
-                      finalAwayScore={match.awayScore ?? 0}
-                      finalHomeScore={match.homeScore ?? 0}
-                      homeTeamId={match.homeTeamId}
-                      homeTeamName={match.homeTeam.name}
-                      homeTeamSlug={match.homeTeam.slug}
-                      variant="timeline"
-                    />
+                    <>
+                      <MatchContentTrustStrip
+                        hasConfirmedLineups={hasConfirmedLineups}
+                        sourcedFactCount={sourcedFactCounts.recap}
+                      />
+                      <MatchEventsSection
+                        awayTeamName={match.awayTeam.name}
+                        awayTeamSlug={match.awayTeam.slug}
+                        events={events}
+                        finalAwayScore={match.awayScore ?? 0}
+                        finalHomeScore={match.homeScore ?? 0}
+                        homeTeamId={match.homeTeamId}
+                        homeTeamName={match.homeTeam.name}
+                        homeTeamSlug={match.homeTeam.slug}
+                        variant="timeline"
+                      />
+                    </>
                   }
                   betweenLeadAndBody={
                     <MatchEventsSection
@@ -426,17 +445,25 @@ export default async function MatchDetailPage({
             ) : (
               <PremiumRecapSection
                 afterBody={
-                  <MatchEventsSection
-                    awayTeamName={match.awayTeam.name}
-                    awayTeamSlug={match.awayTeam.slug}
-                    events={events}
-                    finalAwayScore={match.awayScore ?? 0}
-                    finalHomeScore={match.homeScore ?? 0}
-                    homeTeamId={match.homeTeamId}
-                    homeTeamName={match.homeTeam.name}
-                    homeTeamSlug={match.homeTeam.slug}
-                    variant="timeline"
-                  />
+                  publishedContent.recap ? (
+                    <>
+                      <MatchContentTrustStrip
+                        hasConfirmedLineups={hasConfirmedLineups}
+                        sourcedFactCount={sourcedFactCounts.recap}
+                      />
+                      <MatchEventsSection
+                        awayTeamName={match.awayTeam.name}
+                        awayTeamSlug={match.awayTeam.slug}
+                        events={events}
+                        finalAwayScore={match.awayScore ?? 0}
+                        finalHomeScore={match.homeScore ?? 0}
+                        homeTeamId={match.homeTeamId}
+                        homeTeamName={match.homeTeam.name}
+                        homeTeamSlug={match.homeTeam.slug}
+                        variant="timeline"
+                      />
+                    </>
+                  ) : null
                 }
                 betweenLeadAndBody={
                   publishedContent.recap ? (
@@ -471,6 +498,12 @@ export default async function MatchDetailPage({
                 </summary>
                 <div className="space-y-4 border-t border-[var(--color-rule)] bg-[var(--color-paper)] p-3 sm:p-4">
                   <MatchContentSection
+                    afterBody={
+                      <MatchContentTrustStrip
+                        hasConfirmedLineups={hasConfirmedLineups}
+                        sourcedFactCount={sourcedFactCounts.preview}
+                      />
+                    }
                     content={publishedContent.preview}
                     contentType="preview"
                     isPremium
