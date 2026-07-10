@@ -23,6 +23,12 @@ export type HomepageCompetitionLink = {
   season: string;
 };
 
+export type CompetitionGuide = {
+  guideJa: string;
+  sourceUrl: string | null;
+  verifiedAt: string | null;
+};
+
 type CompetitionDbRow = {
   champion: string | null;
   id: string;
@@ -159,11 +165,11 @@ export async function getCompetitionBySlug(
 
 export async function getCompetitionGuide(
   family: string,
-): Promise<string | null> {
+): Promise<CompetitionGuide | null> {
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("competition_guides")
-    .select("guide_ja")
+    .select("guide_ja, source_url, verified_at")
     .eq("family", family)
     .maybeSingle();
 
@@ -171,7 +177,13 @@ export async function getCompetitionGuide(
     throw error;
   }
 
-  return data?.guide_ja ?? null;
+  return data
+    ? {
+        guideJa: data.guide_ja,
+        sourceUrl: data.source_url ?? null,
+        verifiedAt: data.verified_at ?? null,
+      }
+    : null;
 }
 
 export async function listFamilies(): Promise<string[]> {

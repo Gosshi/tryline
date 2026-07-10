@@ -165,12 +165,12 @@ VALUES ('nations-championship', '# ネーションズチャンピオンシップ
 ネーションズチャンピオンシップは、ラグビーファンにとって新たな歴史の幕開けとなります。日本代表の活躍を期待しつつ、世界最高峰の戦いを楽しみましょう。')
 ON CONFLICT (family) DO UPDATE SET guide_ja = EXCLUDED.guide_ja, updated_at = now();
 
-INSERT INTO competition_guides (family, guide_ja)
+INSERT INTO competition_guides (family, guide_ja, source_url, verified_at)
 VALUES ('rwc', '# ラグビーワールドカップ（RWC）ガイド
 
 ## 大会概要
 
-ラグビーワールドカップ（RWC）は、4年に一度開催されるラグビー界最高峰の国際大会です。参加チームは20カ国で、予選を勝ち抜いたチームが集結します。大会は約6週間にわたり、世界各地で行われ、ラグビーの魅力を存分に堪能できます。特有のルールとして、ノックアウト方式のトーナメントが採用され、勝者がウェブ・エリス・カップを手にします。
+ラグビーワールドカップ（RWC）は、4年に一度開催されるラグビー界最高峰の国際大会です。大会は24チーム・52試合の形式で行われ、予選を勝ち抜いたチームが世界一を争います。大会は約6週間にわたり、世界各地で行われ、ラグビーの魅力を存分に堪能できます。特有のルールとして、ノックアウト方式のトーナメントが採用され、勝者がウェブ・エリス・カップを手にします。
 
 ## 見どころ
 
@@ -195,7 +195,12 @@ VALUES ('rwc', '# ラグビーワールドカップ（RWC）ガイド
 - **NHK**: 地上波での放送あり。日本代表戦を中心に放送。
 
 ラグビーワールドカップは、ラグビーファンにとっての祭典です。歴史的な瞬間を見逃さず、ぜひ観戦を楽しんでください。')
-ON CONFLICT (family) DO UPDATE SET guide_ja = EXCLUDED.guide_ja, updated_at = now();
+, 'https://www.rugbyworldcup.com/2027/en', '2026-07-10T00:00:00+09:00')
+ON CONFLICT (family) DO UPDATE SET
+  guide_ja = EXCLUDED.guide_ja,
+  source_url = EXCLUDED.source_url,
+  verified_at = EXCLUDED.verified_at,
+  updated_at = now();
 
 INSERT INTO competition_guides (family, guide_ja)
 VALUES ('autumn-nations', '# オータムネーションズシリーズガイド

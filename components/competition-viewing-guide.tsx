@@ -6,6 +6,8 @@ import type { MarkdownBlock } from "@/lib/match-content/markdown";
 
 type CompetitionViewingGuideProps = {
   markdown: string | null;
+  sourceUrl?: string | null;
+  verifiedAt?: string | null;
 };
 
 type InlineChunk =
@@ -152,12 +154,47 @@ function renderBlock(block: MarkdownBlock, index: number) {
   );
 }
 
+const BROADCAST_INFORMATION_PATTERN =
+  /(DAZN|WOWOW|J\s*SPORTS|JSPORTS|NHK|放送|配信|中継|独占|全試合)/i;
+
+function removeUnverifiedBroadcastBlocks(markdown: string) {
+  const blocks = markdown.split(/\n{2,}/);
+  const filteredBlocks = blocks.filter(
+    (block) => !BROADCAST_INFORMATION_PATTERN.test(block),
+  );
+
+  return {
+    content: filteredBlocks.join("\n\n").trim(),
+    removed: filteredBlocks.length !== blocks.length,
+  };
+}
+
+function formatVerifiedDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, 10);
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
 export function CompetitionViewingGuide({
   markdown,
+  sourceUrl,
+  verifiedAt,
 }: CompetitionViewingGuideProps) {
-  const content = markdown?.trim();
+  const rawContent = markdown?.trim();
 
-  if (!content) {
+  if (!rawContent) {
+    return null;
+  }
+
+  const normalized = verifiedAt
+    ? { content: rawContent, removed: false }
+    : removeUnverifiedBroadcastBlocks(rawContent);
+
+  if (!normalized.content && !normalized.removed) {
     return null;
   }
 
@@ -169,9 +206,34 @@ export function CompetitionViewingGuide({
       >
         大会ガイド
       </h2>
-      <div className="space-y-4 text-sm sm:text-base">
-        {parseMarkdown(content).map(renderBlock)}
-      </div>
+      {verifiedAt && (
+        <p className="text-xs font-medium text-[var(--color-ink-muted)]">
+          最終確認日: {formatVerifiedDate(verifiedAt)}
+          {sourceUrl && (
+            <>
+              {" "}
+              <a
+                className="text-[var(--color-accent)] underline underline-offset-4"
+                href={sourceUrl}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                参照元
+              </a>
+            </>
+          )}
+        </p>
+      )}
+      {normalized.removed && (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
+          放送・配信情報は確認中です。最新の視聴方法は各配信サービスの公式案内を確認してください。
+        </p>
+      )}
+      {normalized.content && (
+        <div className="space-y-4 text-sm sm:text-base">
+          {parseMarkdown(normalized.content).map(renderBlock)}
+        </div>
+      )}
     </section>
   );
 }

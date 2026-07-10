@@ -147,7 +147,11 @@ export default async function CompetitionHubPage({ params }: Props) {
           </p>
         </Link>
 
-        <CompetitionViewingGuide markdown={guide} />
+        <CompetitionViewingGuide
+          markdown={guide?.guideJa ?? null}
+          sourceUrl={guide?.sourceUrl ?? null}
+          verifiedAt={guide?.verifiedAt ?? null}
+        />
 
         {recentReviews.length > 0 && (
           <section className="space-y-3">

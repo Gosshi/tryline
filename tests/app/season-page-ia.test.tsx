@@ -170,7 +170,11 @@ describe("season page information architecture", () => {
     vi.setSystemTime(new Date("2026-02-01T00:00:00.000Z"));
     vi.clearAllMocks();
     competitionMocks.getCompetitionBySlug.mockResolvedValue(competition);
-    competitionMocks.getCompetitionGuide.mockResolvedValue("観戦ガイド全文");
+    competitionMocks.getCompetitionGuide.mockResolvedValue({
+      guideJa: "観戦ガイド全文",
+      sourceUrl: null,
+      verifiedAt: null,
+    });
     competitionMocks.listSeasonsByFamily.mockResolvedValue([competition]);
     matchesMocks.listMatchesForCompetition.mockResolvedValue([match]);
     standingsMocks.getPoolStandingsForCompetition.mockResolvedValue([]);
