@@ -15,6 +15,10 @@ const OFFICIAL_DOMAINS = [
   "super.rugby",
   "league-one.jp",
   "rugbychampionship.com",
+  "rugby-japan.jp",
+  "rugby.com.au",
+  "allblacks.com",
+  "englandrugby.com",
 ] as const;
 
 const MEDIA_DOMAINS = [
@@ -23,6 +27,9 @@ const MEDIA_DOMAINS = [
   "rugbyasia247.com",
   "bbc.com",
   "bbc.co.uk",
+  "espn.com",
+  "skysports.com",
+  "rugby-rp.com",
 ] as const;
 
 export const SOURCED_FACT_ALLOWED_DOMAINS = [

@@ -120,7 +120,7 @@ describe("import-news-digest-facts", () => {
     });
   });
 
-  it("dry-runs allowed facts and excludes disallowed domains with reasons", async () => {
+  it("dry-runs newly allowed official facts without excluding them", async () => {
     const file = await writeDigest(`
 ## 日本 vs アイルランド
 
@@ -148,15 +148,10 @@ describe("import-news-digest-facts", () => {
     expect(result).toMatchObject({
       dryRun: true,
       extracted: 2,
-      matched: 1,
+      matched: 2,
       upserted: 0,
     });
-    expect(result.excluded).toEqual([
-      expect.objectContaining({
-        reason: "disallowed_domain",
-        sourceDomain: "rugby-japan.jp",
-      }),
-    ]);
+    expect(result.excluded).toEqual([]);
     expect(dbMock.matchesBuilder.gte).toHaveBeenCalledWith(
       "kickoff_at",
       "2026-07-09T15:00:00.000Z",
