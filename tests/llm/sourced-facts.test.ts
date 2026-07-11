@@ -82,6 +82,13 @@ describe("sourced facts allowlist", () => {
     expect(isAllowedSourcedFactDomain("news.world.rugby")).toBe(true);
     expect(isAllowedSourcedFactDomain("bbc.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.bbc.co.uk")).toBe(true);
+    expect(isAllowedSourcedFactDomain("rugby-japan.jp")).toBe(true);
+    expect(isAllowedSourcedFactDomain("www.rugby.com.au")).toBe(true);
+    expect(isAllowedSourcedFactDomain("news.allblacks.com")).toBe(true);
+    expect(isAllowedSourcedFactDomain("www.englandrugby.com")).toBe(true);
+    expect(isAllowedSourcedFactDomain("www.espn.com")).toBe(true);
+    expect(isAllowedSourcedFactDomain("www.skysports.com")).toBe(true);
+    expect(isAllowedSourcedFactDomain("www.rugby-rp.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("sportytrader.com")).toBe(false);
   });
 
