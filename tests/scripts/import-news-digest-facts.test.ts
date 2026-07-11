@@ -4,6 +4,7 @@ import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  parseArgs,
   parseNewsDigestFacts,
   runImportNewsDigestFacts,
 } from "@/scripts/import-news-digest-facts";
@@ -84,6 +85,20 @@ describe("import-news-digest-facts", () => {
       sourceUrl: "https://www.rugby-japan.jp/news/54051",
       teamA: "日本",
       teamB: "アイルランド",
+    });
+  });
+
+  it("parses the optional preview regeneration flag", () => {
+    expect(
+      parseArgs([
+        "--file=docs/notes/news-digest-2026-07-10.md",
+        "--dry-run",
+        "--regenerate-preview",
+      ]),
+    ).toEqual({
+      dryRun: true,
+      file: "docs/notes/news-digest-2026-07-10.md",
+      regeneratePreview: true,
     });
   });
 
@@ -184,6 +199,177 @@ describe("import-news-digest-facts", () => {
         }),
       ],
       { onConflict: "match_id,fact" },
+    );
+  });
+
+  it("does not check or regenerate previews unless the flag is enabled", async () => {
+    const file = await writeDigest(`
+## 日本 vs アイルランド
+
+- **事実**: Japan named Warner Dearns in the starting lineup for Ireland.
+  確度: 複数ソース一致／出典: [BBC](https://www.bbc.com/sport/rugby-union/example)／確認日時: 2026-07-10（JST）
+`);
+    const getPublishedContent = vi.fn();
+    const generatePreview = vi.fn();
+
+    const result = await runImportNewsDigestFacts({
+      db: { from: dbMock.from } as never,
+      dryRun: false,
+      file,
+      generatePreview,
+      getPublishedContent,
+      logger: { error: vi.fn(), log: vi.fn(), warn: vi.fn() },
+      now: new Date("2026-07-10T09:00:00.000Z"),
+    });
+
+    expect(result.previewRegeneration).toEqual({
+      failed: 0,
+      regenerated: 0,
+      skippedNoPreview: 0,
+      targets: [],
+    });
+    expect(getPublishedContent).not.toHaveBeenCalled();
+    expect(generatePreview).not.toHaveBeenCalled();
+  });
+
+  it("dry-runs preview regeneration for matched facts with existing previews", async () => {
+    const file = await writeDigest(`
+## 日本 vs アイルランド
+
+- **事実**: Japan named Warner Dearns in the starting lineup for Ireland.
+  確度: 複数ソース一致／出典: [BBC](https://www.bbc.com/sport/rugby-union/example)／確認日時: 2026-07-10（JST）
+`);
+    const logger = { error: vi.fn(), log: vi.fn(), warn: vi.fn() };
+    const getPublishedContent = vi.fn().mockResolvedValue({
+      preview: { contentType: "preview" },
+      recap: null,
+    });
+    const generatePreview = vi.fn();
+
+    const result = await runImportNewsDigestFacts({
+      db: { from: dbMock.from } as never,
+      dryRun: true,
+      file,
+      generatePreview,
+      getPublishedContent,
+      logger,
+      regeneratePreview: true,
+    });
+
+    expect(result.previewRegeneration).toEqual({
+      failed: 0,
+      regenerated: 0,
+      skippedNoPreview: 0,
+      targets: ["match-japan-ireland"],
+    });
+    expect(generatePreview).not.toHaveBeenCalled();
+    expect(logger.log).toHaveBeenCalledWith(
+      "[preview-regeneration-target] match-japan-ireland",
+    );
+  });
+
+  it("skips preview regeneration when a matched fact has no existing preview", async () => {
+    const file = await writeDigest(`
+## 日本 vs アイルランド
+
+- **事実**: Japan named Warner Dearns in the starting lineup for Ireland.
+  確度: 複数ソース一致／出典: [BBC](https://www.bbc.com/sport/rugby-union/example)／確認日時: 2026-07-10（JST）
+`);
+    const getPublishedContent = vi.fn().mockResolvedValue({
+      preview: null,
+      recap: null,
+    });
+    const generatePreview = vi.fn();
+
+    const result = await runImportNewsDigestFacts({
+      db: { from: dbMock.from } as never,
+      dryRun: false,
+      file,
+      generatePreview,
+      getPublishedContent,
+      logger: { error: vi.fn(), log: vi.fn(), warn: vi.fn() },
+      regeneratePreview: true,
+    });
+
+    expect(result.previewRegeneration).toEqual({
+      failed: 0,
+      regenerated: 0,
+      skippedNoPreview: 1,
+      targets: [],
+    });
+    expect(generatePreview).not.toHaveBeenCalled();
+  });
+
+  it("continues preview regeneration after one match fails", async () => {
+    dbMock.matchRows = [
+      createMatchRow(),
+      {
+        away_team: {
+          name: "France",
+          name_ja: "フランス",
+          short_code: "FRA",
+          slug: "france",
+        },
+        home_team: {
+          name: "Australia",
+          name_ja: "オーストラリア",
+          short_code: "AUS",
+          slug: "australia",
+        },
+        id: "match-australia-france",
+        kickoff_at: "2026-07-12T10:00:00.000Z",
+      },
+    ];
+    const file = await writeDigest(`
+## 日本 vs アイルランド
+
+- **事実**: Japan named Warner Dearns in the starting lineup for Ireland.
+  確度: 複数ソース一致／出典: [BBC](https://www.bbc.com/sport/rugby-union/example)／確認日時: 2026-07-10（JST）
+
+## オーストラリア vs フランス
+
+- **事実**: France confirmed a revised midfield combination for Australia.
+  確度: 複数ソース一致／出典: [PlanetRugby](https://www.planetrugby.com/news/example)／確認日時: 2026-07-10（JST）
+`);
+    const logger = { error: vi.fn(), log: vi.fn(), warn: vi.fn() };
+    const getPublishedContent = vi.fn().mockResolvedValue({
+      preview: { contentType: "preview" },
+      recap: null,
+    });
+    const generatePreview = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("LLM failure"))
+      .mockResolvedValueOnce({ status: "published" });
+
+    const result = await runImportNewsDigestFacts({
+      db: { from: dbMock.from } as never,
+      dryRun: false,
+      file,
+      generatePreview,
+      getPublishedContent,
+      logger,
+      regeneratePreview: true,
+    });
+
+    expect(generatePreview).toHaveBeenCalledWith(
+      "match-japan-ireland",
+      "preview",
+      "ja",
+    );
+    expect(generatePreview).toHaveBeenCalledWith(
+      "match-australia-france",
+      "preview",
+      "ja",
+    );
+    expect(result.previewRegeneration).toEqual({
+      failed: 1,
+      regenerated: 1,
+      skippedNoPreview: 0,
+      targets: ["match-japan-ireland", "match-australia-france"],
+    });
+    expect(logger.error).toHaveBeenCalledWith(
+      "[import-news-digest-facts] preview regeneration failed for match-japan-ireland",
+      expect.any(Error),
     );
   });
 });
