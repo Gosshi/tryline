@@ -293,13 +293,13 @@ describe("HomePage", () => {
   });
 
   it("renders the matchday board from current week matches", async () => {
-    competitionMocks.listFamilies.mockResolvedValue(["pnc"]);
+    competitionMocks.listFamilies.mockResolvedValue(["nations-championship"]);
     competitionMocks.listSeasonsByFamily.mockResolvedValue([
       {
-        endDate: "2026-09-20",
-        matchCount: 12,
-        name: "Pacific Nations Cup 2026",
-        publishedContentCount: 7,
+        endDate: "2026-11-29",
+        matchCount: 36,
+        name: "Nations Championship 2026",
+        publishedContentCount: 12,
         season: "2026",
       },
     ]);
@@ -309,13 +309,13 @@ describe("HomePage", () => {
     focusMocks.selectCalendarFocusMatchId.mockReturnValue("japan-match");
     matchMocks.getMatchesInRange.mockResolvedValue([
       createCalendarMatch({
-        awayTeam: { name: "Fiji", shortCode: "FIJ", slug: "fiji" },
+        awayTeam: { name: "Ireland", shortCode: "IRE", slug: "ireland" },
         competition: {
-          family: "pnc",
-          id: "pnc-2026-id",
-          name: "Pacific Nations Cup",
+          family: "nations-championship",
+          id: "nations-championship-2026-id",
+          name: "Nations Championship",
           season: "2026",
-          slug: "pnc-2026",
+          slug: "nations-championship-2026",
         },
         hasPreview: true,
         homeTeam: { name: "Japan", shortCode: "JPN", slug: "japan" },
@@ -329,17 +329,17 @@ describe("HomePage", () => {
     ]);
     matchMocks.getNextMatchForCompetition.mockResolvedValue(
       createCalendarMatch({
-        awayTeam: { name: "Canada", shortCode: "CAN", slug: "canada" },
+        awayTeam: { name: "Ireland", shortCode: "IRE", slug: "ireland" },
         competition: {
-          family: "pnc",
-          id: "pnc-2026-id",
-          name: "Pacific Nations Cup",
+          family: "nations-championship",
+          id: "nations-championship-2026-id",
+          name: "Nations Championship",
           season: "2026",
-          slug: "pnc-2026",
+          slug: "nations-championship-2026",
         },
-        homeTeam: { name: "Fiji", shortCode: "FIJ", slug: "fiji" },
-        id: "pnc-next-match",
-        kickoffAt: "2026-09-12T07:00:00.000Z",
+        homeTeam: { name: "Japan", shortCode: "JPN", slug: "japan" },
+        id: "nations-championship-next-match",
+        kickoffAt: "2026-07-11T10:30:00.000Z",
       }),
     );
 
@@ -348,7 +348,7 @@ describe("HomePage", () => {
     expect(focusMocks.selectCalendarFocusMatchId).toHaveBeenCalled();
     expect(screen.getByLabelText("今週の注目試合")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Japan[\s\S]*Fiji/ }),
+      screen.getByRole("link", { name: /Japan[\s\S]*Ireland/ }),
     ).toHaveAttribute("href", "/matches/japan-match");
     expect(
       screen.queryByRole("heading", { name: "今週の試合" }),
@@ -363,14 +363,17 @@ describe("HomePage", () => {
     );
     expect(
       screen.getByRole("link", { name: "大会ページを見る →" }),
-    ).toHaveAttribute("href", "/c/pnc/2026");
+    ).toHaveAttribute("href", "/c/nations-championship/2026");
     expect(matchMocks.getNextMatchForCompetition).toHaveBeenCalledWith({
-      family: "pnc",
+      family: "nations-championship",
       season: "2026",
     });
-    expect(screen.getByText("2026-09-12 (土) 16:00 JST")).toBeInTheDocument();
-    expect(screen.getByText("Fiji 対 Canada")).toBeInTheDocument();
-    expect(screen.getByText("7本")).toBeInTheDocument();
+    expect(
+      screen.getByText("ネーションズチャンピオンシップ 2026 を追う"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("2026-07-11 (土) 19:30 JST")).toBeInTheDocument();
+    expect(screen.getByText("Japan 対 Ireland")).toBeInTheDocument();
+    expect(screen.getByText("12本")).toBeInTheDocument();
     expect(screen.getByText("1試合")).toBeInTheDocument();
     expect(
       screen.queryByText(/GSC|クリック|平均順位|表示回数/),
