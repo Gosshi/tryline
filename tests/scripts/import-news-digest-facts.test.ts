@@ -87,6 +87,24 @@ describe("import-news-digest-facts", () => {
     });
   });
 
+  it("strips numbered heading prefixes and kickoff parentheses from team names", () => {
+    const facts = parseNewsDigestFacts(`
+## 3. オーストラリア vs フランス（7/11、ブリスベン）
+
+- **事実**: フランスは主将アントワーヌ・デュポンが負傷離脱中で今節も不在。
+  確度: 複数ソース一致（PlanetRugby、RugbyPass）／出典: [PlanetRugby](https://www.planetrugby.com/news/france-team-v-wallabies-romain-ntamack-and-matthieu-jalibert-start-with-top-14s-best)／確認日時: 2026-07-10（JST）
+`);
+
+    expect(facts).toHaveLength(1);
+    expect(facts[0]).toMatchObject({
+      heading: "3. オーストラリア vs フランス（7/11、ブリスベン）",
+      sourceUrl:
+        "https://www.planetrugby.com/news/france-team-v-wallabies-romain-ntamack-and-matthieu-jalibert-start-with-top-14s-best",
+      teamA: "オーストラリア",
+      teamB: "フランス",
+    });
+  });
+
   it("dry-runs allowed facts and excludes disallowed domains with reasons", async () => {
     const file = await writeDigest(`
 ## 日本 vs アイルランド

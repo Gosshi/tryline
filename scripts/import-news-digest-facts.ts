@@ -195,7 +195,10 @@ function parseMatchupHeading(heading: string): {
   teamA: string;
   teamB: string;
 } | null {
-  const headingWithoutPrefix = heading.replace(/^#+\s*/, "").trim();
+  const headingWithoutPrefix = heading
+    .replace(/^#+\s*/, "")
+    .replace(/^\d+\.\s*/, "")
+    .trim();
   const matchup = headingWithoutPrefix.match(
     /^(.+?)\s*(?:vs\.?|v\.?|対|－|–|—)\s*(.+?)(?:[（(].*)?$/i,
   );
