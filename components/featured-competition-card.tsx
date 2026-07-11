@@ -3,6 +3,11 @@ import Image from "next/image";
 import { TrackedLink } from "@/components/tracked-link";
 import { FEATURED_COMPETITION } from "@/lib/featured-competition";
 
+const FEATURED_COMPETITION_IMAGES: Record<string, string> = {
+  pnc: "/visuals/pnc.jpg",
+};
+const DEFAULT_FEATURED_COMPETITION_IMAGE = "/visuals/default.jpg";
+
 export type FeaturedCompetitionStats = {
   nextMatchLabel: string;
   nextMatchSubLabel: string;
@@ -17,6 +22,10 @@ type FeaturedCompetitionCardProps = {
 export function FeaturedCompetitionCard({
   stats,
 }: FeaturedCompetitionCardProps) {
+  const imageSrc =
+    FEATURED_COMPETITION_IMAGES[FEATURED_COMPETITION.family] ??
+    DEFAULT_FEATURED_COMPETITION_IMAGE;
+
   return (
     <aside className="grid overflow-hidden rounded-[22px] bg-[var(--color-ink)] text-white shadow-sm ring-1 ring-slate-900/10 md:min-h-[236px] md:grid-cols-[minmax(240px,0.78fr)_minmax(0,1.22fr)]">
       <div className="relative min-h-40 overflow-hidden md:min-h-full">
@@ -25,7 +34,7 @@ export function FeaturedCompetitionCard({
           className="object-cover opacity-70"
           fill
           sizes="(min-width: 1024px) 420px, 100vw"
-          src="/visuals/pnc.jpg"
+          src={imageSrc}
         />
         <div className="via-[var(--color-ink)]/25 absolute inset-0 bg-gradient-to-t from-[var(--color-ink)] to-transparent md:bg-gradient-to-r" />
       </div>
