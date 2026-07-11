@@ -1,19 +1,23 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { generateMatchContent } from "@/lib/llm/pipeline";
 import {
   isAllowedSourcedFactDomain,
   normalizeSourcedFactDomain,
 } from "@/lib/llm/sourced-facts/allowlist";
 
 import type { Database, Json } from "@/lib/db/types";
+import type { PipelineResult } from "@/lib/llm/pipeline";
 import type { SourcedFactConfidence } from "@/lib/llm/sourced-facts/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type CliOptions = {
   dryRun: boolean;
   file: string;
+  regeneratePreview: boolean;
 };
 
 type Logger = Pick<Console, "error" | "log" | "warn">;
@@ -60,16 +64,31 @@ export type ImportNewsDigestFactsResult = {
   dryRun: boolean;
   excluded: ExcludedFact[];
   extracted: number;
+  previewRegeneration: PreviewRegenerationResult;
   matched: number;
   upserted: number;
+};
+
+export type PreviewRegenerationResult = {
+  failed: number;
+  regenerated: number;
+  skippedNoPreview: number;
+  targets: string[];
 };
 
 type RunDeps = {
   db: SupabaseClient<Database>;
   dryRun: boolean;
   file: string;
+  generatePreview?: (
+    matchId: string,
+    contentType: "preview",
+    language: "ja",
+  ) => Promise<PipelineResult>;
+  getPublishedContent?: typeof getPublishedContentForMatch;
   logger?: Logger;
   now?: Date;
+  regeneratePreview?: boolean;
 };
 
 const IMPORT_MODEL_VERSION = "news-digest-import@1.0.0";
@@ -92,7 +111,7 @@ const TEAM_ALIASES: Record<string, string[]> = {
 
 function usage(): never {
   console.error(
-    "Usage: import-news-digest-facts.ts --file=docs/notes/news-digest-YYYY-MM-DD.md [--dry-run]",
+    "Usage: import-news-digest-facts.ts --file=docs/notes/news-digest-YYYY-MM-DD.md [--dry-run] [--regenerate-preview]",
   );
   process.exit(1);
 }
@@ -100,6 +119,7 @@ function usage(): never {
 export function parseArgs(argv: string[]): CliOptions {
   let file: string | null = null;
   let dryRun = false;
+  let regeneratePreview = false;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -119,13 +139,18 @@ export function parseArgs(argv: string[]): CliOptions {
       dryRun = true;
       continue;
     }
+
+    if (arg === "--regenerate-preview") {
+      regeneratePreview = true;
+      continue;
+    }
   }
 
   if (!file) {
     usage();
   }
 
-  return { dryRun, file };
+  return { dryRun, file, regeneratePreview };
 }
 
 function cleanText(value: string): string {
@@ -435,12 +460,64 @@ function summarizeExcluded(excluded: ExcludedFact[]): string {
     .join(" ");
 }
 
+async function buildPreviewRegenerationTargets(params: {
+  getPublishedContent: typeof getPublishedContentForMatch;
+  matchIds: string[];
+}) {
+  const targets: string[] = [];
+  let skippedNoPreview = 0;
+
+  for (const matchId of params.matchIds) {
+    const content = await params.getPublishedContent(matchId);
+    if (content.preview) {
+      targets.push(matchId);
+    } else {
+      skippedNoPreview += 1;
+    }
+  }
+
+  return { skippedNoPreview, targets };
+}
+
+async function regeneratePreviewTargets(params: {
+  dryRun: boolean;
+  generatePreview: NonNullable<RunDeps["generatePreview"]>;
+  logger: Logger;
+  targets: string[];
+}): Promise<{ failed: number; regenerated: number }> {
+  if (params.dryRun) {
+    return { failed: 0, regenerated: 0 };
+  }
+
+  let failed = 0;
+  let regenerated = 0;
+
+  for (const matchId of params.targets) {
+    try {
+      await params.generatePreview(matchId, "preview", "ja");
+      regenerated += 1;
+      params.logger.log(`[regenerated-preview] ${matchId}`);
+    } catch (error) {
+      failed += 1;
+      params.logger.error(
+        `[import-news-digest-facts] preview regeneration failed for ${matchId}`,
+        error,
+      );
+    }
+  }
+
+  return { failed, regenerated };
+}
+
 export async function runImportNewsDigestFacts({
   db,
   dryRun,
   file,
+  generatePreview = generateMatchContent,
+  getPublishedContent = getPublishedContentForMatch,
   logger = console,
   now = new Date(),
+  regeneratePreview = false,
 }: RunDeps): Promise<ImportNewsDigestFactsResult> {
   const markdown = await readFile(file, "utf8");
   const facts = parseNewsDigestFacts(markdown);
@@ -500,10 +577,45 @@ export async function runImportNewsDigestFacts({
         facts: matched,
         fetchedAt: now.toISOString(),
       });
+  const uniqueMatchedMatchIds = [
+    ...new Set(matched.map((item) => item.match.id)),
+  ];
+  const previewRegeneration: PreviewRegenerationResult = {
+    failed: 0,
+    regenerated: 0,
+    skippedNoPreview: 0,
+    targets: [],
+  };
+
+  if (regeneratePreview) {
+    const targetResult = await buildPreviewRegenerationTargets({
+      getPublishedContent,
+      matchIds: uniqueMatchedMatchIds,
+    });
+    previewRegeneration.targets = targetResult.targets;
+    previewRegeneration.skippedNoPreview = targetResult.skippedNoPreview;
+
+    const regenerated = await regeneratePreviewTargets({
+      dryRun,
+      generatePreview,
+      logger,
+      targets: previewRegeneration.targets,
+    });
+    previewRegeneration.failed = regenerated.failed;
+    previewRegeneration.regenerated = regenerated.regenerated;
+  }
 
   logger.log(
     `News digest sourced facts: extracted=${facts.length} matched=${matched.length} excluded=${excluded.length} upserted=${upserted}`,
   );
+  if (regeneratePreview) {
+    logger.log(
+      `Preview regeneration: targets=${previewRegeneration.targets.length} skipped_no_preview=${previewRegeneration.skippedNoPreview} regenerated=${previewRegeneration.regenerated} failed=${previewRegeneration.failed}`,
+    );
+    for (const matchId of previewRegeneration.targets) {
+      logger.log(`[preview-regeneration-target] ${matchId}`);
+    }
+  }
   if (excluded.length > 0) {
     logger.log(`Excluded reasons: ${summarizeExcluded(excluded)}`);
   }
@@ -525,6 +637,7 @@ export async function runImportNewsDigestFacts({
     dryRun,
     excluded,
     extracted: facts.length,
+    previewRegeneration,
     matched: matched.length,
     upserted,
   };
@@ -537,6 +650,7 @@ async function main() {
     db: getSupabaseServerClient(),
     dryRun: options.dryRun,
     file: options.file,
+    regeneratePreview: options.regeneratePreview,
   });
 }
 
