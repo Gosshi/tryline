@@ -74,11 +74,7 @@ function normalizeWhitespace(value: string) {
 function resolveTeamSlug(teamName: string) {
   const slug = TEAM_SLUG_BY_WORLD_RUGBY_NAME[normalizeWhitespace(teamName)];
 
-  if (!slug) {
-    throw new Error(`Unknown Nations Championship team name: ${teamName}`);
-  }
-
-  return slug;
+  return slug ?? null;
 }
 
 function parseTeams(teams: unknown) {
@@ -93,10 +89,18 @@ function parseTeams(teams: unknown) {
     throw new Error("Nations Championship schedule match is missing team names.");
   }
 
-  return {
-    awayTeamSlug: resolveTeamSlug(awayName),
-    homeTeamSlug: resolveTeamSlug(homeName),
-  };
+  const awayTeamSlug = resolveTeamSlug(awayName);
+  const homeTeamSlug = resolveTeamSlug(homeName);
+
+  if (!awayTeamSlug || !homeTeamSlug) {
+    console.warn("Skipping Nations Championship schedule match with unknown team", {
+      awayTeamName: awayName,
+      homeTeamName: homeName,
+    });
+    return null;
+  }
+
+  return { awayTeamSlug, homeTeamSlug };
 }
 
 function getMatchId(match: WorldRugbyScheduleMatch) {
@@ -125,6 +129,40 @@ function formatVenue(match: WorldRugbyScheduleMatch) {
   return parts.length > 0 ? parts.join(", ") : null;
 }
 
+function parseScheduleMatch(
+  rawMatch: unknown,
+  index: number,
+): WorldRugbyNationsChampionshipTime | null {
+  try {
+    const match = rawMatch as WorldRugbyScheduleMatch;
+    const teams = parseTeams(match.teams);
+
+    if (!teams) {
+      return null;
+    }
+
+    const worldRugbyMatchId = getMatchId(match);
+
+    if (!worldRugbyMatchId) {
+      throw new Error("Nations Championship schedule match is missing match id.");
+    }
+
+    return {
+      ...teams,
+      kickoffAt: parseKickoffAt(match),
+      round: Math.floor(index / 6) + 1,
+      venue: formatVenue(match),
+      worldRugbyMatchId,
+    };
+  } catch (error) {
+    console.warn("Skipping invalid Nations Championship schedule match", {
+      index,
+      reason: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
+
 export function parseWorldRugbyNationsChampionshipSchedulePayload(
   payload: WorldRugbySchedulePayload,
 ): WorldRugbyNationsChampionshipTime[] {
@@ -138,21 +176,9 @@ export function parseWorldRugbyNationsChampionshipSchedulePayload(
     throw new Error("Nations Championship schedule payload is missing matches.");
   }
 
-  return payload.matches.map((rawMatch, index) => {
-    const match = rawMatch as WorldRugbyScheduleMatch;
-    const worldRugbyMatchId = getMatchId(match);
-
-    if (!worldRugbyMatchId) {
-      throw new Error("Nations Championship schedule match is missing match id.");
-    }
-
-    return {
-      ...parseTeams(match.teams),
-      kickoffAt: parseKickoffAt(match),
-      round: Math.floor(index / 6) + 1,
-      venue: formatVenue(match),
-      worldRugbyMatchId,
-    };
+  return payload.matches.flatMap((rawMatch, index) => {
+    const match = parseScheduleMatch(rawMatch, index);
+    return match ? [match] : [];
   });
 }
 
