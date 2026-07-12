@@ -34,6 +34,7 @@ export function buildQaContentPrompt(
   language: ContentLanguage,
   matchContext: QaMatchContext,
   hasEvents = false,
+  playerStatNames: string[] = [],
 ): string {
   const lengthRequirement = getContentLengthRequirement(contentType, language);
   const unitLabel = lengthRequirement.unit === "words" ? " words" : "字";
@@ -83,6 +84,11 @@ export function buildQaContentPrompt(
       ? [
           "## 選手別得点統計チェック",
           "本文中で、選手名とともに具体的なトライ数・コンバージョン成功数・ペナルティゴール数・合計得点のいずれかを定量的に主張している箇所を抽出し、JSONの statedPlayerStats に入れること。",
+          playerStatNames.length > 0
+            ? `実際の得点者名一覧（英語表記）: ${JSON.stringify(playerStatNames)}`
+            : "実際の得点者名一覧は空です。",
+          "本文中の選手名がカタカナ等の日本語表記でも、statedPlayerStats[].playerName には上記一覧から対応する英語表記を選んで入れること。",
+          "上記一覧のどの選手にも確信を持って対応づけられない場合、その主張は statedPlayerStats に含めないこと。",
           "該当する定量主張がない場合は statedPlayerStats を空配列にすること。",
           "ここでは正誤判定をしない。match_events との照合はプログラム側で行う。",
         ].join("\n")

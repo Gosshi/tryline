@@ -121,6 +121,24 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).toContain("match_events との照合はプログラム側で行う");
   });
 
+  it("adds actual scorer names for player stat extraction resolution", () => {
+    const prompt = buildQaContentPrompt(
+      "recap",
+      "本文",
+      "ja",
+      matchContext,
+      true,
+      ["Frawley", "Lucu"],
+    );
+
+    expect(prompt).toContain("実際の得点者名一覧（英語表記）");
+    expect(prompt).toContain('"Frawley"');
+    expect(prompt).toContain('"Lucu"');
+    expect(prompt).toContain("カタカナ等の日本語表記");
+    expect(prompt).toContain("対応する英語表記を選んで入れること");
+    expect(prompt).toContain("確信を持って対応づけられない場合");
+  });
+
   it("adds sourced facts as allowed grounding context", () => {
     const prompt = buildQaContentPrompt("preview", "本文", "ja", {
       ...matchContext,
