@@ -1,4 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const fetcherMock = vi.hoisted(() => ({
+  fetchWithPolicy: vi.fn(),
+}));
+
+vi.mock("@/lib/scrapers/fetcher", () => fetcherMock);
 
 import { LIVE_COMPETITION_SOURCES } from "@/lib/ingestion/live-competitions";
 import { parseLeagueOneLiveHtml } from "@/lib/ingestion/sources/league-one-live";
@@ -279,6 +285,45 @@ const NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD = {
   ],
 };
 
+const NATIONS_CHAMPIONSHIP_PLACEHOLDER_WORLD_RUGBY_MATCHES = [
+  ["NTH 6th", "STH 6th"],
+  ["NTH 3rd", "STH 3rd"],
+  ["NTH 5th", "STH 5th"],
+  ["NTH 2nd", "STH 2nd"],
+  ["NTH 4th", "STH 4th"],
+  ["NTH 1st", "STH 1st"],
+].map(([homeName, awayName], index) => ({
+  matchId: `wr-placeholder-${index + 1}`,
+  teams: [{ name: homeName }, { name: awayName }],
+  time: { millis: Date.parse("2026-11-27T16:40:00.000Z") + index },
+}));
+
+function buildNationsChampionshipWorldRugbyPayloadWithPlaceholders() {
+  const knownMatches = NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD.matches.map(
+    (match, index) => ({
+      ...match,
+      matchId: `wr-valid-${index + 1}`,
+    }),
+  );
+  const fillerMatches = Array.from({ length: 29 }, (_, index) => ({
+    ...NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD.matches[
+      index % (NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD.matches.length - 1)
+    ],
+    matchId: `wr-valid-${knownMatches.length + index + 1}`,
+  }));
+
+  return {
+    event: {
+      label: "Nations Championship 2026",
+    },
+    matches: [
+      ...knownMatches,
+      ...fillerMatches,
+      ...NATIONS_CHAMPIONSHIP_PLACEHOLDER_WORLD_RUGBY_MATCHES,
+    ],
+  };
+}
+
 const LEAGUE_ONE_HTML = `
 <div class="c-schedule">
   <div class="ttl-wrap">
@@ -428,6 +473,10 @@ const RUGBY_CHAMPIONSHIP_HTML = `
 `;
 
 describe("live competition source adapters", () => {
+  beforeEach(() => {
+    fetcherMock.fetchWithPolicy.mockReset();
+  });
+
   it("registers Six Nations 2027 with the established family and slug", () => {
     expect(
       LIVE_COMPETITION_SOURCES.find(
@@ -679,6 +728,71 @@ describe("live competition source adapters", () => {
       kickoffAt: "2026-07-11T10:10:00.000Z",
       round: 2,
     });
+  });
+
+  it("skips unresolved World Rugby Nations Championship placeholders without dropping valid matches", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const kickoffTimes = parseWorldRugbyNationsChampionshipSchedulePayload(
+      buildNationsChampionshipWorldRugbyPayloadWithPlaceholders(),
+    );
+
+    expect(kickoffTimes).toHaveLength(36);
+    expect(kickoffTimes[0]).toMatchObject({
+      awayTeamSlug: "france",
+      homeTeamSlug: "new-zealand",
+      worldRugbyMatchId: "wr-valid-1",
+    });
+    expect(
+      kickoffTimes.some((match) =>
+        [match.homeTeamSlug, match.awayTeamSlug].some((slug) =>
+          /^(nth|sth)-/.test(slug),
+        ),
+      ),
+    ).toBe(false);
+    expect(warn).toHaveBeenCalledTimes(6);
+
+    warn.mockRestore();
+  });
+
+  it("returns an empty World Rugby kickoff list for placeholder-only Nations Championship payloads", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const kickoffTimes = parseWorldRugbyNationsChampionshipSchedulePayload({
+      event: {
+        label: "Nations Championship 2026",
+      },
+      matches: NATIONS_CHAMPIONSHIP_PLACEHOLDER_WORLD_RUGBY_MATCHES,
+    });
+
+    expect(kickoffTimes).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(6);
+
+    warn.mockRestore();
+  });
+
+  it("fetches Nations Championship matches when the World Rugby schedule includes placeholders", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(new Response(NATIONS_CHAMPIONSHIP_HTML))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify(
+            buildNationsChampionshipWorldRugbyPayloadWithPlaceholders(),
+          ),
+        ),
+      );
+
+    const matches = await fetchNationsChampionship2026();
+
+    expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledTimes(2);
+    expect(matches).toHaveLength(3);
+    expect(matches[2]).toMatchObject({
+      awayTeamSlug: "ireland",
+      homeTeamSlug: "japan",
+      kickoffAt: "2026-07-11T10:10:00.000Z",
+      round: 2,
+    });
+
+    warn.mockRestore();
   });
 
   it("keeps URC regular season scheduled vevents", () => {
