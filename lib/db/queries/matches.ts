@@ -245,7 +245,7 @@ type RecentlyReviewedMatchRow = BaseMatchRow & {
 const RECENTLY_REVIEWED_CANDIDATE_LIMIT = 40;
 const RECENTLY_REVIEWED_ACTIVE_WINDOW_DAYS = 7;
 const RECENTLY_REVIEWED_GROUP_LIMIT = 4;
-const RECENTLY_REVIEWED_ROUND_CAP = 8;
+const RECENTLY_REVIEWED_COMPETITION_CAP = 12;
 
 type RecentlyReviewedContentRow = {
   content_md: string;
@@ -664,13 +664,12 @@ export async function getLatestCompetitionWithMatches(): Promise<CompetitionSumm
 
 function getRecentlyReviewedGroupKey(row: RecentlyReviewedMatchRow) {
   const competition = row.competition;
-  const round = getRoundFromExternalIds(row.external_ids);
 
   if (!competition) {
     return null;
   }
 
-  return [competition.family, competition.season, round ?? "roundless"].join("|");
+  return [competition.family, competition.season].join("|");
 }
 
 
@@ -717,7 +716,7 @@ function buildRecentlyReviewedCompetitionGroups(
 
     const group = groupsByKey.get(key) ?? [];
 
-    if (group.length < RECENTLY_REVIEWED_ROUND_CAP) {
+    if (group.length < RECENTLY_REVIEWED_COMPETITION_CAP) {
       group.push(entry);
     }
 

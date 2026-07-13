@@ -131,7 +131,7 @@ describe("recently reviewed match queries", () => {
     standingsQueryMock.in.mockResolvedValue({ data: [], error: null });
   });
 
-  it("returns every published review from the latest competition season round", async () => {
+  it("returns every published review from the latest competition season", async () => {
     const latestRoundRows = Array.from({ length: 6 }, (_, index) =>
       buildReviewedContentRow({
         generatedAt: isoDaysAgo(1, index),
@@ -170,10 +170,11 @@ describe("recently reviewed match queries", () => {
       "nations-round-1-4",
       "nations-round-1-5",
       "nations-round-1-6",
+      "nations-round-2",
     ]);
   });
 
-  it("falls back to the latest single review when the latest match has no round", async () => {
+  it("keeps roundless reviews in the same competition group", async () => {
     reviewQueryMock.limit.mockResolvedValue({
       data: [
         buildReviewedContentRow({
@@ -190,18 +191,21 @@ describe("recently reviewed match queries", () => {
       error: null,
     });
 
-    await expect(getRecentlyReviewedMatches()).resolves.toMatchObject([
-      { id: "roundless-latest" },
+    const matches = await getRecentlyReviewedMatches();
+
+    expect(matches.map((match) => match.id)).toEqual([
+      "roundless-latest",
+      "same-family-round-1",
     ]);
   });
 
-  it("caps unusually large latest-round groups at eight reviews", async () => {
+  it("caps unusually large competition groups at twelve reviews", async () => {
     reviewQueryMock.limit.mockResolvedValue({
-      data: Array.from({ length: 10 }, (_, index) =>
+      data: Array.from({ length: 14 }, (_, index) =>
         buildReviewedContentRow({
           generatedAt: isoDaysAgo(1, index),
-          id: `oversized-round-${index + 1}`,
-          round: 1,
+          id: `oversized-competition-${index + 1}`,
+          round: index < 7 ? 1 : 2,
         }),
       ),
       error: null,
@@ -209,17 +213,66 @@ describe("recently reviewed match queries", () => {
 
     const matches = await getRecentlyReviewedMatches();
 
-    expect(matches).toHaveLength(8);
+    expect(matches).toHaveLength(12);
     expect(matches.map((match) => match.id)).toEqual([
-      "oversized-round-1",
-      "oversized-round-2",
-      "oversized-round-3",
-      "oversized-round-4",
-      "oversized-round-5",
-      "oversized-round-6",
-      "oversized-round-7",
-      "oversized-round-8",
+      "oversized-competition-1",
+      "oversized-competition-2",
+      "oversized-competition-3",
+      "oversized-competition-4",
+      "oversized-competition-5",
+      "oversized-competition-6",
+      "oversized-competition-7",
+      "oversized-competition-8",
+      "oversized-competition-9",
+      "oversized-competition-10",
+      "oversized-competition-11",
+      "oversized-competition-12",
     ]);
+  });
+
+  it("merges multiple active rounds from the same competition into one group", async () => {
+    reviewQueryMock.limit.mockResolvedValue({
+      data: [
+        buildReviewedContentRow({
+          awayWorldRanking: 9,
+          generatedAt: isoDaysAgo(1),
+          homeWorldRanking: 7,
+          id: "round-2-latest",
+          round: 2,
+        }),
+        buildReviewedContentRow({
+          awayWorldRanking: 4,
+          generatedAt: isoDaysAgo(1, 10),
+          homeWorldRanking: 2,
+          id: "round-1-level-hero",
+          round: 1,
+        }),
+        buildReviewedContentRow({
+          awayWorldRanking: 12,
+          generatedAt: isoDaysAgo(1, 20),
+          homeWorldRanking: 10,
+          id: "roundless-same-competition",
+          round: null,
+        }),
+      ],
+      error: null,
+    });
+
+    const groups = await getRecentlyReviewedCompetitionGroups("ja");
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.competition).toMatchObject({
+      family: "nations-championship",
+      season: "2026",
+    });
+    expect(groups[0]?.hero.id).toBe("round-1-level-hero");
+    expect(groups[0]?.compact.map((match) => match.id)).toEqual([
+      "round-2-latest",
+      "roundless-same-competition",
+    ]);
+    expect(groups[0]?.latestReviewAt).toEqual(
+      expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+    );
   });
 
   it("returns active groups for multiple competitions and uses world rankings for the hero", async () => {
