@@ -65,6 +65,51 @@ const MAX_SCRIPT_CHARS = 320;
 const TTS_PRICE_PER_MILLION_CHARS_USD = 15;
 const GPT_4O_INPUT_PER_MILLION_USD = 2.5;
 const GPT_4O_OUTPUT_PER_MILLION_USD = 10;
+const KNOWN_RUGBY_TEAM_NAME_CANDIDATES = [
+  "日本",
+  "イングランド",
+  "フランス",
+  "アイルランド",
+  "イタリア",
+  "スコットランド",
+  "ウェールズ",
+  "ニュージーランド",
+  "南アフリカ",
+  "オーストラリア",
+  "アルゼンチン",
+  "ジョージア",
+  "フィジー",
+  "サモア",
+  "トンガ",
+  "カナダ",
+  "アメリカ",
+  "ウルグアイ",
+  "ポルトガル",
+  "チリ",
+  "スペイン",
+  "Japan",
+  "England",
+  "France",
+  "Ireland",
+  "Italy",
+  "Scotland",
+  "Wales",
+  "New Zealand",
+  "South Africa",
+  "Australia",
+  "Argentina",
+  "Georgia",
+  "Fiji",
+  "Samoa",
+  "Tonga",
+  "Canada",
+  "United States",
+  "USA",
+  "Uruguay",
+  "Portugal",
+  "Chile",
+  "Spain",
+] as const;
 
 function formatDate(value: string | null): string | null {
   if (!value) {
@@ -233,6 +278,27 @@ export function validateExplainerScript(
     if (!allowedScores.has(normalized)) {
       throw new Error(
         `Generated script contains unsupported score: ${match[0]}`,
+      );
+    }
+  }
+
+  const allowedTeamNames = new Set(
+    data.matches.flatMap((match) => [
+      getDisplayTeamName(match.homeTeam),
+      getDisplayTeamName(match.awayTeam),
+      match.homeTeam.name,
+      match.homeTeam.nameJa,
+      match.homeTeam.shortCode,
+      match.awayTeam.name,
+      match.awayTeam.nameJa,
+      match.awayTeam.shortCode,
+    ]),
+  );
+
+  for (const teamName of KNOWN_RUGBY_TEAM_NAME_CANDIDATES) {
+    if (sanitized.includes(teamName) && !allowedTeamNames.has(teamName)) {
+      throw new Error(
+        `Generated script contains unsupported team name: ${teamName}`,
       );
     }
   }

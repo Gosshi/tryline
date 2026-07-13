@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildConcatFileContent,
+  calculateSecondsPerSlide,
+  parseFfprobeDuration,
   parseArgs,
 } from "@/scripts/generate-competition-explainer-video";
 
@@ -38,5 +40,28 @@ describe("generate-competition-explainer-video script helpers", () => {
         file '/tmp/slide-2.png'
         "
       `);
+  });
+
+  it("uses audio duration to calculate slide timing", () => {
+    expect(
+      calculateSecondsPerSlide({
+        audioDurationSeconds: 42.2,
+        slideCount: 4,
+      }),
+    ).toBeCloseTo(10.675);
+  });
+
+  it("rejects audio longer than the 60 second PoC cap", () => {
+    expect(() =>
+      calculateSecondsPerSlide({
+        audioDurationSeconds: 60.01,
+        slideCount: 4,
+      }),
+    ).toThrow("TTS audio is too long");
+  });
+
+  it("parses ffprobe duration output", () => {
+    expect(parseFfprobeDuration("42.345000\n")).toBeCloseTo(42.345);
+    expect(() => parseFfprobeDuration("N/A")).toThrow("Unable to read");
   });
 });

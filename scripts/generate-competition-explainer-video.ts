@@ -62,6 +62,7 @@ type MatchDbRow = {
 
 const DEFAULT_OUT_DIR = "tmp/video-poc";
 const COST_WARNING_THRESHOLD_USD = 0.05;
+const MAX_VIDEO_SECONDS = 60;
 const SLIDE_WIDTH = 1080;
 const SLIDE_HEIGHT = 1920;
 const USAGE =
@@ -335,6 +336,68 @@ export function buildConcatFileContent(
   return `${lines.join("\n")}\n`;
 }
 
+export function parseFfprobeDuration(raw: string): number {
+  const duration = Number(raw.trim());
+
+  if (!Number.isFinite(duration) || duration <= 0) {
+    throw new Error(
+      `Unable to read audio duration from ffprobe output: ${raw}`,
+    );
+  }
+
+  return duration;
+}
+
+export function calculateSecondsPerSlide(params: {
+  audioDurationSeconds: number;
+  slideCount: number;
+}): number {
+  if (params.slideCount < 1) {
+    throw new Error("At least one slide is required to compose a video.");
+  }
+
+  if (params.audioDurationSeconds > MAX_VIDEO_SECONDS) {
+    throw new Error(
+      `TTS audio is too long (${params.audioDurationSeconds.toFixed(
+        2,
+      )}s). Regenerate a shorter script before composing a 60s video.`,
+    );
+  }
+
+  const totalSlideSeconds = Math.min(
+    MAX_VIDEO_SECONDS,
+    Math.max(params.audioDurationSeconds + 0.5, params.slideCount),
+  );
+
+  return totalSlideSeconds / params.slideCount;
+}
+
+function getAudioDurationSeconds(audioPath: string): number {
+  const result = spawnSync(
+    "ffprobe",
+    [
+      "-v",
+      "error",
+      "-show_entries",
+      "format=duration",
+      "-of",
+      "default=noprint_wrappers=1:nokey=1",
+      audioPath,
+    ],
+    { encoding: "utf8" },
+  );
+
+  if (result.error || result.status !== 0) {
+    throw new Error(
+      `ffprobe failed to read narration duration: ${
+        result.stderr.trim() || result.error?.message || "unknown error"
+      }`,
+    );
+  }
+
+  return parseFfprobeDuration(result.stdout);
+}
+
 async function composeVideo(params: {
   audioPath: string;
   outputPath: string;
@@ -343,17 +406,15 @@ async function composeVideo(params: {
 }): Promise<void> {
   ensureCommand("ffmpeg", ["-version"], "ffmpeg");
 
-  const estimatedSeconds = Math.min(
-    58,
-    Math.max(24, params.slidePaths.length * 7),
-  );
+  const audioDurationSeconds = getAudioDurationSeconds(params.audioPath);
+  const secondsPerSlide = calculateSecondsPerSlide({
+    audioDurationSeconds,
+    slideCount: params.slidePaths.length,
+  });
   const concatPath = path.join(params.workDir, "slides.txt");
   await fs.writeFile(
     concatPath,
-    buildConcatFileContent(
-      params.slidePaths,
-      estimatedSeconds / params.slidePaths.length,
-    ),
+    buildConcatFileContent(params.slidePaths, secondsPerSlide),
     "utf8",
   );
 
@@ -381,7 +442,7 @@ async function composeVideo(params: {
       "128k",
       "-shortest",
       "-t",
-      "60",
+      String(MAX_VIDEO_SECONDS),
       params.outputPath,
     ],
     "Video composition",

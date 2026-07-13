@@ -114,6 +114,15 @@ describe("competition explainer video helpers", () => {
     ).toContain("24-17");
   });
 
+  it("rejects known rugby team names that are not present in DB-backed facts", () => {
+    expect(() =>
+      validateExplainerScript(
+        "ネーションズチャンピオンシップ2026は、日本とイングランドに加えてフランスの強さも見どころです。",
+        sampleData,
+      ),
+    ).toThrow("unsupported team name: フランス");
+  });
+
   it("renders vertical slide HTML with Japanese-safe font fallbacks", () => {
     const [slide] = buildExplainerSlides(
       buildCompetitionExplainerFacts(sampleData),
