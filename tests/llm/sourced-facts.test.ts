@@ -76,6 +76,20 @@ const nationsChampionshipMatch = {
   external_ids: { round_name: "Round 1" },
 };
 
+function cachedFact(overrides: Record<string, unknown> = {}) {
+  return {
+    confidence: "high",
+    content_type: "preview",
+    fact: "Malcolm Marx is unavailable for the final.",
+    fetched_at: "2026-06-09T12:00:00.000Z",
+    metadata: { prompt_version: SEARCH_PROMPT_VERSION },
+    model_version: "gpt-4o",
+    source_domain: "rugbypass.com",
+    source_url: "https://www.rugbypass.com/news/marx",
+    ...overrides,
+  };
+}
+
 describe("sourced facts allowlist", () => {
   it("allows configured domains and subdomains only", () => {
     expect(isAllowedSourcedFactDomain("www.rugbypass.com")).toBe(true);
@@ -363,18 +377,7 @@ describe("fetchSourcedFactsForMatch", () => {
   });
 
   it("uses cached facts without calling web search inside the freshness window", async () => {
-    const cachedRows = [
-      {
-        confidence: "high",
-        content_type: "preview",
-        fact: "Malcolm Marx is unavailable for the final.",
-        fetched_at: "2026-06-09T12:00:00.000Z",
-        metadata: {},
-        model_version: "gpt-4o",
-        source_domain: "rugbypass.com",
-        source_url: "https://www.rugbypass.com/news/marx",
-      },
-    ];
+    const cachedRows = [cachedFact()];
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
       if (table === "match_sourced_facts") {
@@ -392,6 +395,174 @@ describe("fetchSourcedFactsForMatch", () => {
     expect(result.cached).toBe(true);
     expect(result.facts).toHaveLength(1);
     expect(openAIMock.createWebSearchJsonResponse).not.toHaveBeenCalled();
+  });
+
+  it("uses current-version recap cached facts without calling web search", async () => {
+    const cachedRows = [
+      cachedFact({
+        content_type: "recap",
+        fetched_at: "2026-06-09T12:00:00.000Z",
+      }),
+    ];
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder(cachedRows);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "recap",
+      matchId: "match-1",
+      now: new Date("2026-06-11T18:00:00.000Z"),
+    });
+
+    expect(result.cached).toBe(true);
+    expect(result.facts).toHaveLength(1);
+    expect(openAIMock.createWebSearchJsonResponse).not.toHaveBeenCalled();
+  });
+
+  it("refetches recap cached facts from stale prompt versions", async () => {
+    const cachedRows = [
+      cachedFact({
+        content_type: "recap",
+        metadata: { prompt_version: "sourced-facts@1.2.0" },
+      }),
+    ];
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder(cachedRows);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({
+        facts: [
+          {
+            confidence: "medium",
+            fact: "Japan and Ireland both conceded nine penalties.",
+            source_url: "https://www.rugbypass.com/news/penalties",
+          },
+        ],
+      }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "recap",
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(result.cached).toBe(false);
+    expect(result.fetched).toBe(true);
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
+    expect(dbMock.upsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            prompt_version: SEARCH_PROMPT_VERSION,
+          }),
+        }),
+      ],
+      { onConflict: "match_id,fact" },
+    );
+  });
+
+  it("refetches cached facts with missing prompt version metadata", async () => {
+    const cachedRows = [
+      cachedFact({
+        content_type: "recap",
+        metadata: null,
+      }),
+    ];
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder(cachedRows);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "recap",
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(result.cached).toBe(false);
+    expect(result.fetched).toBe(true);
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
+  });
+
+  it("keeps preview freshness expiry even when cached prompt version is current", async () => {
+    const cachedRows = [
+      cachedFact({
+        content_type: "preview",
+        fetched_at: "2026-06-08T12:00:00.000Z",
+      }),
+    ];
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder(cachedRows);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(result.cached).toBe(false);
+    expect(result.fetched).toBe(true);
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
+  });
+
+  it("refetches preview cached facts from stale prompt versions inside the freshness window", async () => {
+    const cachedRows = [
+      cachedFact({
+        content_type: "preview",
+        metadata: { prompt_version: "sourced-facts@1.2.0" },
+      }),
+    ];
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder(cachedRows);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(result.cached).toBe(false);
+    expect(result.fetched).toBe(true);
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
   });
 
   it("stores only allowlisted web-search facts", async () => {

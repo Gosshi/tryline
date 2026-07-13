@@ -122,6 +122,11 @@ function shouldUseCachedFacts(params: {
   return true;
 }
 
+function getCachedPromptVersion(fact: StoredSourcedFact | undefined): string | null {
+  const version = fact?.metadata?.prompt_version;
+  return typeof version === "string" ? version : null;
+}
+
 export function buildSearchPrompt(
   match: MatchForSourcedFacts,
   contentType: ContentType,
@@ -302,9 +307,11 @@ export async function fetchSourcedFactsForMatch(options: {
     options.contentType,
   );
   const newestFetchedAt = cachedFacts[0]?.fetched_at ?? null;
+  const cachedPromptVersion = getCachedPromptVersion(cachedFacts[0]);
   if (
     !options.force &&
     cachedFacts.length > 0 &&
+    cachedPromptVersion === SEARCH_PROMPT_VERSION &&
     shouldUseCachedFacts({
       contentType: options.contentType,
       fetchedAt: newestFetchedAt,
