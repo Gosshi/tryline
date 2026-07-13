@@ -85,7 +85,11 @@ describe("verifyNarrativeEntities", () => {
     [
       "fixture C",
       fixtureC,
-      ["アレッサンドロ・ガルビジ", "レオナルド・マリン", "ピーター・ラブスカフニ"],
+      [
+        "アレッサンドロ・ガルビジ",
+        "レオナルド・マリン",
+        "ピーター・ラブスカフニ",
+      ],
     ],
   ])(
     "detects ungrounded person entities in %s with an empty allowlist",
@@ -175,7 +179,7 @@ describe("verifyNarrativeEntities", () => {
     });
 
     expect(response.result.ungroundedSurfaces).toEqual(["未確認選手"]);
-    expect(response.promptVersion).toBe("entity-verification@1.0.1");
+    expect(response.promptVersion).toBe("entity-verification@1.1.0");
   });
 
   it("excludes known team and competition names from ungrounded surfaces while keeping mentions", async () => {
@@ -195,8 +199,15 @@ describe("verifyNarrativeEntities", () => {
 
     const response = await verifyNarrativeEntities({
       allowedEntities: [],
-      knownNonPersonNames: ["日本", "イタリア", "フランス", "アイルランド", "URC"],
-      narrative: "日本とイタリアに加え、フランスとアイルランドの近況も見る。URCも対象。",
+      knownNonPersonNames: [
+        "日本",
+        "イタリア",
+        "フランス",
+        "アイルランド",
+        "URC",
+      ],
+      narrative:
+        "日本とイタリアに加え、フランスとアイルランドの近況も見る。URCも対象。",
       sourcedFacts: [],
     });
 
