@@ -216,6 +216,37 @@ describe("buildTeamStatsFactStrings", () => {
       ),
     ).toBe(false);
   });
+
+  it("allows derived sourced-fact team stats through the statistic guard", () => {
+    const facts = buildTeamStatsFactStrings({
+      away: {
+        lineout_success_pct: 90,
+        metres_gained: 400,
+        scrum_success_pct: 85,
+        turnovers: 10,
+      },
+      home: {
+        lineout_success_pct: 85,
+        metres_gained: 350,
+        possession_pct: 48,
+        scrum_success_pct: 80,
+        turnovers: 12,
+      },
+    });
+
+    expect(facts).toContain("ホームチームのポゼッション率48%");
+    expect(facts).toContain("ホームチームのラインアウト成功率85%");
+    expect(facts).toContain("ホームチームのスクラム成功率80%");
+    expect(facts).toContain("ホームチームのターンオーバー12回");
+    expect(facts).toContain("ホームチームの獲得メートル350m");
+    expect(facts).toContain("アウェイチームのラインアウト成功率90%");
+    expect(facts).toContain("アウェイチームのスクラム成功率85%");
+    expect(facts).toContain("アウェイチームのターンオーバー10回");
+    expect(facts).toContain("アウェイチームの獲得メートル400m");
+    expect(
+      containsUnsupportedStatistic("ラインアウトの成功率が高かった。", facts),
+    ).toBe(false);
+  });
 });
 
 describe("buildFormStatsFactStrings", () => {
@@ -908,7 +939,9 @@ describe("evaluateNarrativeQuality", () => {
     });
 
     expect(result.result.scores.factual_grounding).toBe(5);
-    expect(result.result.issues).not.toContain("データに存在しない統計値を含む");
+    expect(result.result.issues).not.toContain(
+      "データに存在しない統計値を含む",
+    );
     expect(result.result.verdict).toBe("publish");
   });
 
