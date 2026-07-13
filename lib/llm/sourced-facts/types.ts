@@ -22,5 +22,5 @@ export type StoredSourcedFact = SourcedFact & {
   content_type: ContentType | "shared";
   fetched_at: string;
   model_version: string;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, unknown> | null;
 };
