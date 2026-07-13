@@ -291,4 +291,105 @@ describe("assembleMatchContentInput", () => {
       },
     ]);
   });
+
+  it("derives team_stats from parseable sourced facts for non-Top14 matches", async () => {
+    const { matchId, service } = await insertMatchFixture();
+
+    await service.from("match_sourced_facts").insert([
+      {
+        confidence: "high",
+        content_type: "recap",
+        fact: "Possession: Home 48% - Away 52%",
+        match_id: matchId,
+        model_version: "test-model",
+        source_domain: "rugby-japan.jp",
+        source_url: "https://rugby-japan.jp/example",
+      },
+      {
+        confidence: "high",
+        content_type: "recap",
+        fact: "Tackle counts: Home 120 - Away 110",
+        match_id: matchId,
+        model_version: "test-model",
+        source_domain: "rugby-japan.jp",
+        source_url: "https://rugby-japan.jp/example",
+      },
+      {
+        confidence: "high",
+        content_type: "recap",
+        fact: "Broadcast: available on example service",
+        match_id: matchId,
+        model_version: "test-model",
+        source_domain: "example.com",
+        source_url: "https://example.com/broadcast",
+      },
+    ]);
+
+    const result = await assembleMatchContentInput(matchId, "ja", "recap");
+
+    expect(result.team_stats).toMatchObject({
+      away: {
+        possession_pct: 52,
+        tackles_made: 110,
+      },
+      home: {
+        possession_pct: 48,
+        tackles_made: 120,
+      },
+    });
+    expect(result.sourced_facts.map((sourcedFact) => sourcedFact.fact)).toEqual(
+      ["Broadcast: available on example service"],
+    );
+  });
+
+  it("keeps Top14 match_team_stats ahead of sourced facts derivation", async () => {
+    const { awayTeamId, competitionId, homeTeamId, matchId, service } =
+      await insertMatchFixture();
+
+    await service
+      .from("competitions")
+      .update({ family: "top-14" })
+      .eq("id", competitionId);
+    await service.from("match_team_stats").insert([
+      {
+        match_id: matchId,
+        possession_pct: 61,
+        source_url: "https://lnr.fr/example",
+        team_id: homeTeamId,
+        territory_pct: 58,
+      },
+      {
+        match_id: matchId,
+        possession_pct: 39,
+        source_url: "https://lnr.fr/example",
+        team_id: awayTeamId,
+        territory_pct: 42,
+      },
+    ]);
+    await service.from("match_sourced_facts").insert({
+      confidence: "high",
+      content_type: "recap",
+      fact: "Possession: Home 48% - Away 52%",
+      match_id: matchId,
+      model_version: "test-model",
+      source_domain: "rugby-japan.jp",
+      source_url: "https://rugby-japan.jp/example",
+    });
+
+    const result = await assembleMatchContentInput(matchId, "ja", "recap");
+
+    expect(result.team_stats).toMatchObject({
+      away: {
+        possession_pct: 39,
+        territory_pct: 42,
+      },
+      home: {
+        possession_pct: 61,
+        territory_pct: 58,
+      },
+    });
+    expect(result.sourced_facts.map((sourcedFact) => sourcedFact.fact)).toEqual(
+      ["Possession: Home 48% - Away 52%"],
+    );
+  });
 });

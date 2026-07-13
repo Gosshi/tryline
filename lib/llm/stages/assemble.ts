@@ -6,6 +6,7 @@ import {
 } from "@/lib/format/japanese-names";
 import { pointsForMatchEvent } from "@/lib/format/match-event-points";
 import { getTeamDisplayName } from "@/lib/format/team";
+import { deriveTeamStatsFromSourcedFacts } from "@/lib/llm/sourced-facts/derive-team-stats";
 import { loadSourcedFactsForMatch } from "@/lib/llm/sourced-facts/fetch";
 import { computeDerivedMatchStats } from "@/lib/llm/stages/derived-stats";
 
@@ -802,6 +803,37 @@ export async function assembleMatchContentInput(
   const homeFormStats = computeTeamFormStats(homeRecent, homeTeamName);
   const awayFormStats = computeTeamFormStats(awayRecent, awayTeamName);
   const matchStats = computeMatchStats(matchEvents, homeTeamName, awayTeamName);
+  const normalizedSourcedFacts = sourcedFacts.map((fact) => ({
+    confidence:
+      fact.confidence === "high" || fact.confidence === "medium"
+        ? fact.confidence
+        : "medium",
+    fact: fact.fact,
+    source_domain: fact.source_domain,
+    source_url: fact.source_url,
+  }));
+  const derivedTeamStats = teamStats
+    ? null
+    : deriveTeamStatsFromSourcedFacts(
+        normalizedSourcedFacts,
+        [
+          match.home_team?.name,
+          match.home_team?.english_name,
+          homeTeamName,
+        ].filter((name): name is string => Boolean(name)),
+        [
+          match.away_team?.name,
+          match.away_team?.english_name,
+          awayTeamName,
+        ].filter((name): name is string => Boolean(name)),
+      );
+  const resolvedTeamStats = teamStats ?? derivedTeamStats?.teamStats ?? null;
+  const consumedSourcedFactIndexes = new Set(
+    derivedTeamStats?.consumedFactIndexes ?? [],
+  );
+  const remainingSourcedFacts = normalizedSourcedFacts.filter(
+    (_, index) => !consumedSourcedFactIndexes.has(index),
+  );
   const scoreTimeline = computeScoreTimeline(
     matchEvents,
     homeTeamName,
@@ -852,27 +884,27 @@ export async function assembleMatchContentInput(
   const japaneseNameGlossary: NonNullable<
     AssembledContentInput["japanese_name_glossary"]
   > = [
-      competitionNameJa && match.competition
-        ? {
-            japanese: competitionNameJa,
-            kind: "competition" as const,
-            source: match.competition.name,
-          }
-        : null,
-      homeNameJa && match.home_team
-        ? {
-            japanese: homeNameJa,
-            kind: "team" as const,
-            source: match.home_team.name,
-          }
-        : null,
-      awayNameJa && match.away_team
-        ? {
-            japanese: awayNameJa,
-            kind: "team" as const,
-            source: match.away_team.name,
-          }
-        : null,
+    competitionNameJa && match.competition
+      ? {
+          japanese: competitionNameJa,
+          kind: "competition" as const,
+          source: match.competition.name,
+        }
+      : null,
+    homeNameJa && match.home_team
+      ? {
+          japanese: homeNameJa,
+          kind: "team" as const,
+          source: match.home_team.name,
+        }
+      : null,
+    awayNameJa && match.away_team
+      ? {
+          japanese: awayNameJa,
+          kind: "team" as const,
+          source: match.away_team.name,
+        }
+      : null,
   ].filter(
     (
       item,
@@ -942,16 +974,8 @@ export async function assembleMatchContentInput(
     },
     score_timeline: scoreTimeline,
     derived_stats: derivedStats,
-    team_stats: teamStats,
-    sourced_facts: sourcedFacts.map((fact) => ({
-      confidence:
-        fact.confidence === "high" || fact.confidence === "medium"
-          ? fact.confidence
-          : "medium",
-      fact: fact.fact,
-      source_domain: fact.source_domain,
-      source_url: fact.source_url,
-    })),
+    team_stats: resolvedTeamStats,
+    sourced_facts: remainingSourcedFacts,
     japanese_name_glossary: language === "ja" ? japaneseNameGlossary : [],
   };
 }
