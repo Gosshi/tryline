@@ -19,15 +19,24 @@ import {
   SAMPLE_MATCH_IDS,
 } from "@/lib/sample-matches";
 
+const previousPrimarySampleMatchId = "a06219be-9d24-486b-92a5-7f9f88ef8826";
+
 describe("sample matches", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("keeps the fallback sample list available", () => {
-    expect(SAMPLE_MATCH_IDS).toHaveLength(8);
+    expect(PRIMARY_SAMPLE_MATCH_ID).toBe(
+      "d31077ee-92c6-480e-bbef-87f955e6bc1d",
+    );
+    expect(SAMPLE_MATCH_IDS).toHaveLength(9);
     expect(SAMPLE_MATCH_IDS[0]).toBe(PRIMARY_SAMPLE_MATCH_ID);
     expect(FALLBACK_SAMPLE_MATCH_IDS[0]).toBe(PRIMARY_SAMPLE_MATCH_ID);
+    expect(FALLBACK_SAMPLE_MATCH_IDS).toContain(previousPrimarySampleMatchId);
+    expect(
+      FALLBACK_SAMPLE_MATCH_IDS.filter((id) => id === PRIMARY_SAMPLE_MATCH_ID),
+    ).toHaveLength(1);
   });
 
   it("uses cached sample match ids when available", async () => {
