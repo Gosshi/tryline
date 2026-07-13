@@ -109,14 +109,18 @@ export type Top14TeamStats = {
   errors?: number;
   lineouts_total?: number;
   lineouts_won?: number;
+  lineout_success_pct?: number;
+  metres_gained?: number;
   penalties_conceded?: number;
   possession_pct?: number;
   red_cards?: number;
   scrums_total?: number;
   scrums_won?: number;
+  scrum_success_pct?: number;
   tackles_made?: number;
   tackles_missed?: number;
   territory_pct?: number;
+  turnovers?: number;
   yellow_cards?: number;
 };
 
