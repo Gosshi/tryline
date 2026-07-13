@@ -117,6 +117,11 @@ function buildFactsForSide(
   } else if (typeof stats.lineouts_won === "number") {
     facts.push(`${label}チームのラインアウト獲得${stats.lineouts_won}`);
   }
+  if (typeof stats.lineout_success_pct === "number") {
+    facts.push(
+      `${label}チームのラインアウト成功率${formatPercent(stats.lineout_success_pct)}`,
+    );
+  }
   if (
     typeof stats.scrums_won === "number" &&
     typeof stats.scrums_total === "number"
@@ -127,6 +132,11 @@ function buildFactsForSide(
   } else if (typeof stats.scrums_won === "number") {
     facts.push(`${label}チームのスクラム獲得${stats.scrums_won}`);
   }
+  if (typeof stats.scrum_success_pct === "number") {
+    facts.push(
+      `${label}チームのスクラム成功率${formatPercent(stats.scrum_success_pct)}`,
+    );
+  }
   if (typeof stats.tackles_made === "number") {
     facts.push(`${label}チームのタックル成功${stats.tackles_made}`);
   }
@@ -135,6 +145,12 @@ function buildFactsForSide(
   }
   if (typeof stats.carries === "number") {
     facts.push(`${label}チームのキャリー${stats.carries}`);
+  }
+  if (typeof stats.turnovers === "number") {
+    facts.push(`${label}チームのターンオーバー${stats.turnovers}回`);
+  }
+  if (typeof stats.metres_gained === "number") {
+    facts.push(`${label}チームの獲得メートル${stats.metres_gained}m`);
   }
   if (typeof stats.penalties_conceded === "number") {
     facts.push(`${label}チームのペナルティ${stats.penalties_conceded}`);
