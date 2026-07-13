@@ -61,4 +61,31 @@ describe("containsUnsupportedStatistic", () => {
     );
     expect(containsUnsupportedStatistic("支配率の差が出た")).toBe(true);
   });
+
+  it("detects ungrounded penalty discipline claims", () => {
+    expect(
+      containsUnsupportedStatistic(
+        "アイルランドは反則なしのクリーンなプレーで勝利した",
+      ),
+    ).toBe(true);
+    expect(
+      containsUnsupportedStatistic(
+        "アイルランドは反則を犯さないプレーで試合を支配した",
+      ),
+    ).toBe(true);
+  });
+
+  it("allows penalty discipline claims when penalty facts support them", () => {
+    expect(
+      containsUnsupportedStatistic("アイルランドは反則が少なかった", [
+        "ホームチームのペナルティ5",
+      ]),
+    ).toBe(false);
+  });
+
+  it("does not treat penalty goal wording as an unsupported statistic", () => {
+    expect(
+      containsUnsupportedStatistic("アイルランドはペナルティゴールを決めた"),
+    ).toBe(false);
+  });
 });

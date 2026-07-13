@@ -74,6 +74,11 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("「〜というスコアが示すように」");
     expect(prompt).toContain("「〜というスコアが示す通り」");
     expect(prompt).toContain("スコアの形容から文を始めるパターン");
+    expect(prompt).toContain("反則数データ");
+    expect(prompt).toContain("反則なし");
+    expect(prompt).toContain("反則を犯さない");
+    expect(prompt).toContain("クリーンなプレー");
+    expect(prompt).toContain("規律あるプレー");
   });
 
   it("constrains the recap opening structure in all recap modes", () => {

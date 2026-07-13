@@ -7,7 +7,7 @@ export const PLAYER_STAT_MISMATCH_ISSUE =
   "選手別得点統計がmatch_eventsと矛盾しています";
 
 const UNSUPPORTED_STATISTIC_PATTERN =
-  /\d+\s*%|成功率|テリトリー|支配率|ポゼッション|ランメートル|ラインブレイク|獲得率|スティール率|22m進入|\d+回中\d+回/;
+  /\d+\s*%|成功率|テリトリー|支配率|ポゼッション|ランメートル|ラインブレイク|獲得率|スティール率|22m進入|\d+回中\d+回|反則/;
 const KEY_PLAYER_CONTEXT_PATTERN =
   /キープレイヤー|注目選手|注目のマッチアップ|マッチアップ|スタメン|先発|出場メンバー/;
 const RUGBY_POSITION_PATTERN =
@@ -31,6 +31,7 @@ function extractStatisticSignals(text: string): string[] {
     "獲得率",
     "スティール率",
     "22m進入",
+    "反則",
   ]) {
     if (text.includes(keyword)) {
       signals.add(keyword);
@@ -47,6 +48,7 @@ const STATISTIC_SIGNAL_ALIASES: Record<string, string[]> = {
   ポゼッション: ["possession"],
   ラインブレイク: ["line break"],
   ランメートル: ["run metres", "run meters", "metres made", "meters made"],
+  反則: ["ペナルティ", "penalty", "penalties conceded"],
   成功率: ["success rate", "accuracy"],
   支配率: ["possession", "territory share"],
   獲得率: ["win rate", "success rate"],
