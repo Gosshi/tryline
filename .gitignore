@@ -63,5 +63,5 @@ tsconfig.tsbuildinfo
 .codex/
 .playwright-mcp/
 
-# GSC analysis output
-/tmp/gsc/
+# Scratch output (GSC pulls, entity-grounding audits, video PoC artifacts, etc.)
+/tmp/

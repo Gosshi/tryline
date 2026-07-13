@@ -143,3 +143,16 @@ Reddit フィルタ（元の段階 3）は削除せず「承認後に差し込�
 - 後続仕様書として `p1-match-content-display.md`（プレースホルダー差し替え）と `p1-pipeline-scheduling.md`（Vercel Cron）を別途起票予定
 
 **関係する仕様書**: `specs/p1-content-pipeline.md` を本決定の内容で確定。以後、パイプライン関連の判断は D010 を優先参照する。
+
+## D011 — Rugby Championship 2026 は不開催、後継は「Rugby's Greatest Rivalry」（2026-07-13、D007 を補足・確定）
+
+**背景**: D007（2026-04）は「2026年の Rugby Championship は World Rugby のカレンダー再編に伴い実施されない見通し」としたが、その後 `.claude/skills/hub-audit/SKILL.md` や `docs/marketing-strategy-2026-07-06.md`（07-06、⑤「TRC 2026 ハブ整備」施策）が「8月開幕大会」として SEO 施策の優先項目に組み込んでおり、D007 と矛盾したまま放置されていた。2026-07-13 の運用インフラ監査（Claude Fable 5 / Codex 並行分析）でこの矛盾が発覚し、Owner 確認により決着。
+
+**決定**: The Rugby Championship（従来の SANZAAR 南半球大会）は D007 の通り 2026 年は開催されない。後継として「Rugby's Greatest Rivalry」という名称の大会が 2026 年から開催される。DB 上の `competitions`（`family='rugby-championship', season='2026'`）レコード（2026-07-13 実測: 試合 0 件・`start_date`/`end_date` とも null）は、開催されない大会の誤ったプレースホルダーである可能性が高い。
+
+**影響**:
+- `docs/marketing-strategy-2026-07-06.md` の「TRC 2026 ハブ整備」施策・`hub-audit` スキルの8月開幕前提は、これらの記述通りには実装しない
+- 「Rugby's Greatest Rivalry」が DB 上どの大会として扱われるべきか（新規競技として追加するか、既存の `nations-championship`/2026 の一部か）は未調査。DB の `rugby-championship`/2026 レコードの扱い（削除・不開催ステータス付与等）も含め、別途調査・spec 化が必要
+- 本決定は方針の確定のみで、DB 変更・spec 起票は未実施
+
+**未解決の質問**: 「Rugby's Greatest Rivalry」の対象チーム・試合形式・開催時期・DB 上の扱いは、Owner 確認・追加調査のうえで別 spec に起票する。

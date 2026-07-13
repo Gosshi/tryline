@@ -17,19 +17,19 @@ description: 公開済みコンテンツ（recap/preview）の品質を監査す
 | 密度後退 | recap density（具体的事実の出現率）の月次推移 | 2026-06 に 3.72→2.96 へ後退（PMF監査） |
 | 冒頭の紋切り型 | 冒頭表現の多様性（「得点力」開始が37%だった事例） | fix-recap-opening-variety で対応済み。再発監視 |
 | 見出し崩れ | 「セクションN:」「（字数）」等のラベル露出 | fix-recap-heading-format / fix-preview-section-headings |
-| 字数不足 | QA 最低字数（recap 2,000字）との整合 | 297件 draft 化事故（プロンプト字数予算と QA 基準の矛盾） |
+| 字数不足 | QA 最低字数（`lib/llm/content-length.ts` が正。値を書き写さず実行時に確認）との整合 | 297件 draft 化事故（プロンプト字数予算と QA 基準の矛盾） |
 | MOM 不整合 | MOM が公式発表と食い違う（LLM 推論のため） | 決勝で手修正した事例（project_mom_data_gap） |
 
 ## 手順
 
-1. **人名捏造は全件機械監査が可能**（他の観点と違いサンプリング不要）: `node --env-file=.env.production.local tools/run-ts.cjs tools/audit-entity-grounding.ts --confirm-owner-approved`。公開済み全件（899件時点で$0.45〜$0.90）を照合し `tmp/entity-audit/entity-grounding-audit-*.json` にレポート出力
+1. **人名捏造は全件機械監査が可能**（他の観点と違いサンプリング不要）: `node --env-file=.env.production.local tools/run-ts.cjs tools/audit-entity-grounding.ts --confirm-owner-approved`。公開済み全件を照合し `tmp/entity-audit/entity-grounding-audit-*.json` にレポート出力（件数・コスト見積もりは実行時にログ出力されるので、固定値を書き写さずそちらを見る。`tmp/` 配下は `.gitignore` 対象なので本番由来レポートが誤ってコミットされる心配はない）
    - 結果は `allowedEntityCount` で層別すること: **0件＝ほぼ確実に本物の捏造**（最優先で確認）。**1件以上＝実データはある状態での違反**で、チーム名・大会名の誤検出（照合精度の偽陽性）や、事件性の低い言及の可能性も高いため個別に本文を読んで判断する
-   - 違反（特に allowedEntityCount=0）が見つかった記事は、`content-regen` の draft戻し手順で即座に unpublish し、原因を確認してから再生成する
+   - 違反（特に allowedEntityCount=0）が見つかった記事は、`content-regen` の「公開停止（draft戻し / unpublish）」節の手順で unpublish し、原因を確認してから再生成する
    - **手動で match_events と突き合わせる場合の必須注意（2026-07-05 の誤検知事故から）**: 得点者名の真実は `match_events.metadata->>'player_name'` にある。`player_id` は players テーブルへのリンク解決結果にすぎず、**`player_id IS NULL` は「得点者不明」を意味しない**（リンク未解決でも metadata に名前は入っている）。assemble・許可リスト・プロンプトはすべて metadata 側を使う。player_id だけを見て「LLM が名前を補完した」と断定すると、正確な記事を捏造と誤判定する
 2. **他の観点はサンプリング**: 直近公開分から大会横断で 10〜20件抽出（1大会に偏らせない）
 3. **機械チェック**: 字数・見出し形式・禁止パターン（「セクション」「自動生成」等）を grep 相当で
 4. **目視チェック**: 冒頭多様性・密度は本文を読んで判定
-5. **基準との比較**: `docs/pmf-audit-2026-06-10.md` の density 測定方法を踏襲し、時系列で比較可能にする
+5. **基準との比較**: density（具体的事実の出現率）は「1記事あたりの sourced facts / DB実測に基づく固有名詞・数値の出現数」を数え、直近の監査結果（`docs/growth-audit-2026-07-01.md` 等、実在するレポートを都度 `ls docs/*.md` で確認）と比較して時系列の推移を見る
 
 ## 問題を見つけたら
 
