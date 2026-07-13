@@ -53,44 +53,10 @@ function resolveDisplayName(
   return team?.english_name ?? team?.name ?? "Unknown";
 }
 
-function asObject(value: Json): Record<string, Json> {
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    return {};
-  }
-
-  return value as Record<string, Json>;
-}
-
-function getRoundName(match: MatchForSourcedFacts): string {
-  const externalIds = asObject(match.external_ids);
-  const roundName = externalIds.round_name;
-  if (typeof roundName === "string") {
-    return roundName.toLowerCase();
-  }
-
-  return "";
-}
-
 export function isSourcedFactsEnabledForMatch(
-  match: MatchForSourcedFacts,
+  _match: MatchForSourcedFacts,
 ): boolean {
-  const family = match.competition?.family;
-  if (family === "league-one") {
-    return true;
-  }
-
-  if (family === "nations-championship") {
-    return true;
-  }
-
-  const roundName = getRoundName(match);
-  return (
-    roundName.includes("final") ||
-    roundName.includes("semi") ||
-    roundName.includes("quarter") ||
-    roundName.includes("playoff") ||
-    roundName.includes("knockout")
-  );
+  return true;
 }
 
 function shouldUseCachedFacts(params: {

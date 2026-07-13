@@ -290,18 +290,32 @@ describe("isSourcedFactsEnabledForMatch", () => {
     ).toBe(true);
   });
 
-  it("keeps non-target regular-round matches disabled", () => {
-    expect(
-      isSourcedFactsEnabledForMatch({
-        ...leagueOneMatch,
-        competition: {
-          family: "premiership",
-          name: "Premiership Rugby",
-          season: "2025-26",
-        },
-        external_ids: { round_name: "Round 12" },
-      }),
-    ).toBe(false);
+  it("enables regular-round matches for all supported overseas families", () => {
+    const families = [
+      "premiership",
+      "urc",
+      "top-14",
+      "super-rugby-pacific",
+      "six-nations",
+      "rugby-championship",
+      "pnc",
+      "autumn-nations",
+      "rwc",
+    ];
+
+    for (const family of families) {
+      expect(
+        isSourcedFactsEnabledForMatch({
+          ...leagueOneMatch,
+          competition: {
+            family,
+            name: family,
+            season: "2025-26",
+          },
+          external_ids: { round_name: "Round 12" },
+        }),
+      ).toBe(true);
+    }
   });
 });
 
