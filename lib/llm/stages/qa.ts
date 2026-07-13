@@ -276,6 +276,14 @@ function playerStatClaimMatchesActual(
   );
 }
 
+function buildPlayerStatPromptNames(
+  events: AssembledContentInput["match_events"] | undefined,
+): string[] {
+  return [...buildPlayerStatsFromEvents(events ?? []).values()].map(
+    (entry) => entry.playerName,
+  );
+}
+
 // Single source of truth for QA verdicts. The LLM scores content only; code
 // applies the stable retry/reject thresholds used by the pipeline.
 export function resolveVerdict(
@@ -574,12 +582,17 @@ export async function evaluateNarrativeQuality(options: {
 }): Promise<QaStageResponse> {
   const hasEvents = options.hasEvents ?? false;
   const hasLineups = options.hasLineups ?? false;
+  const playerStatNames =
+    options.contentType === "recap" && hasEvents
+      ? buildPlayerStatPromptNames(options.matchEvents)
+      : [];
   const prompt = buildQaContentPrompt(
     options.contentType,
     options.narrative,
     options.language ?? "ja",
     options.matchContext,
     hasEvents,
+    playerStatNames,
   );
   let attempts = 0;
 

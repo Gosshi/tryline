@@ -120,6 +120,30 @@ const scotlandKickerEvents = [
   },
 ];
 
+const frawleyMatchEvents = [
+  {
+    is_penalty_try: false,
+    minute: 9,
+    player_name: "Frawley",
+    team_name: "Ireland",
+    type: "conversion",
+  },
+  {
+    is_penalty_try: false,
+    minute: 34,
+    player_name: "Frawley",
+    team_name: "Ireland",
+    type: "conversion",
+  },
+  {
+    is_penalty_try: false,
+    minute: 50,
+    player_name: "Frawley",
+    team_name: "Ireland",
+    type: "conversion",
+  },
+];
+
 describe("computeActualWinner", () => {
   it("returns the winner side, draw, or null from final scores", () => {
     expect(computeActualWinner(24, 17)).toBe("home");
@@ -620,6 +644,56 @@ describe("evaluateNarrativeQuality", () => {
       retryCount: 0,
     });
 
+    expect(result.result.issues).not.toContain(PLAYER_STAT_MISMATCH_ISSUE);
+    expect(result.result.scores.factual_grounding).toBe(5);
+    expect(result.result.verdict).toBe("publish");
+  });
+
+  it("passes katakana scorer claims when QA resolves them to event player names", async () => {
+    const callCountBefore = openAIMock.createTextResponse.mock.calls.length;
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+        statedPlayerStats: [
+          {
+            conversions: 3,
+            playerName: "Frawley",
+          },
+        ],
+        statedWinner: "away",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      hasEvents: true,
+      matchContext: {
+        awayScore: 36,
+        awayTeam: "Ireland",
+        homeScore: 20,
+        homeTeam: "Japan",
+      },
+      matchEvents: frawleyMatchEvents,
+      narrative: `# ターニングポイント\nフローリーはコンバージョンを3本成功させ、アイルランドの勝利を支えた。${longJaRecap}`,
+      retryCount: 0,
+    });
+
+    expect(openAIMock.createTextResponse).toHaveBeenCalledTimes(
+      callCountBefore + 1,
+    );
+    expect(openAIMock.createTextResponse).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining('"Frawley"'),
+      }),
+    );
     expect(result.result.issues).not.toContain(PLAYER_STAT_MISMATCH_ISSUE);
     expect(result.result.scores.factual_grounding).toBe(5);
     expect(result.result.verdict).toBe("publish");
