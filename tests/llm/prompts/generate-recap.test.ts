@@ -54,8 +54,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.13.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.13.0");
+  it("uses recap prompt version 4.13.1", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.13.1");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -268,6 +268,102 @@ describe("buildGenerateRecapPrompt", () => {
     );
     expect(prompt).not.toContain("【データスパースモード】");
     expect(prompt).toContain("# ターニングポイント` 末尾に統合済み");
+  });
+
+  it("does not hard-code playoff framing for league recaps without lineup data", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        match: {
+          ...assembled.match,
+          competition: {
+            family: "nations-championship",
+            id: "competition-1",
+            name: "Nations Championship",
+            season: "2026",
+          },
+        },
+        match_events: [
+          {
+            type: "try",
+            minute: 23,
+            team_name: "Japan",
+            player_name: "Kotaro Matsushima",
+          },
+        ],
+        match_phase: "league",
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain(
+      "大会内での位置づけ（大会名・シーズン・順位表への影響、分かる場合はラウンド名）（80字程度）",
+    );
+    expect(prompt).not.toContain(
+      "プレーオフという文脈と一発勝負の重み",
+    );
+    expect(prompt).not.toContain("敗者はそこでシーズン終了となる一発勝負");
+  });
+
+  it("does not hard-code playoff framing when match phase is unknown", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        match_events: [
+          {
+            type: "try",
+            minute: 23,
+            team_name: "England",
+            player_name: "Marcus Smith",
+          },
+        ],
+        match_phase: null,
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain(
+      "大会内での位置づけ（大会名・シーズン・順位表への影響、分かる場合はラウンド名）（80字程度）",
+    );
+    expect(prompt).not.toContain(
+      "プレーオフという文脈と一発勝負の重み",
+    );
+    expect(prompt).not.toContain("この試合はプレーオフ戦");
+    expect(prompt).not.toContain("敗者はそこでシーズン終了となる一発勝負");
+  });
+
+  it("keeps playoff framing for playoff recaps without lineup data", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        match: {
+          ...assembled.match,
+          competition: {
+            family: "top-14",
+            id: "competition-1",
+            name: "Top 14",
+            season: "2025-26",
+          },
+        },
+        match_events: [
+          {
+            type: "try",
+            minute: 23,
+            team_name: "Toulouse",
+            player_name: "Antoine Dupont",
+          },
+        ],
+        match_phase: "playoff_other",
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("プレーオフという文脈と一発勝負の重み");
+    expect(prompt).toContain("この試合はプレーオフ戦");
+    expect(prompt).toContain("敗者はそこでシーズン終了となる一発勝負");
   });
 
   it("includes the featured player section when lineup data is available", () => {

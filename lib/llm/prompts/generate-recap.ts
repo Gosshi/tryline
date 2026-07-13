@@ -13,10 +13,11 @@ import {
 import type {
   AdditionalSignal,
   AssembledContentInput,
+  MatchPhase,
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.13.0";
+export const PROMPT_VERSION = "recap@4.13.1";
 
 const CORE_SECTION_INSTRUCTION = [
   "- この試合の核心: 150-250字。定型句を使わず、この試合固有の事実（最終スコア・決勝点のシチュエーション・試合の転換点）から書き始めること。",
@@ -27,6 +28,19 @@ const CORE_SECTION_INSTRUCTION = [
   "  ・戦術型: 「前半のスクラム圧倒が後半のペナルティ量産につながった{チーム名}の勝利構造」",
   "  ・スコア対比型: 「{点数}対{点数}という数字より、前半と後半で別々のチームになった試合だった」",
 ].join("\n");
+
+function buildMatchContextBullet(matchPhase: MatchPhase | null): string {
+  if (
+    matchPhase === "playoff_final" ||
+    matchPhase === "playoff_other" ||
+    matchPhase === "playoff_third_place" ||
+    matchPhase === "playoff_semifinal"
+  ) {
+    return "- プレーオフという文脈と一発勝負の重み（80字程度）";
+  }
+
+  return "- 大会内での位置づけ（大会名・シーズン・順位表への影響、分かる場合はラウンド名）（80字程度）";
+}
 
 export function buildGenerateRecapPrompt(
   assembled: AssembledContentInput,
@@ -91,7 +105,7 @@ export function buildGenerateRecapPrompt(
           CORE_SECTION_INSTRUCTION,
           "",
           "# 試合全体像（550-700字）— 以下の要素をすべて含めること:",
-          "- プレーオフという文脈と一発勝負の重み（80字程度）",
+          buildMatchContextBullet(assembled.match_phase),
           "- 前半の展開とスコア推移（150字程度）",
           "- 後半の展開とスコア推移（150字程度）",
           "- 両チームの戦術的特徴・優劣の評価（200字程度）",
