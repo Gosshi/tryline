@@ -13,6 +13,11 @@ export type OpenAITextResponse = {
   usage: OpenAIUsage;
 };
 
+export type OpenAISpeechResponse = {
+  audio: Buffer;
+  model: string;
+};
+
 type OpenAINonStreamingResponse = {
   output_text: string;
   model: string;
@@ -68,6 +73,36 @@ export async function createWebSearchJsonResponse(options: {
       inputTokens: response.usage?.input_tokens ?? 0,
       outputTokens: response.usage?.output_tokens ?? 0,
     },
+  };
+}
+
+export async function createSpeechAudio(options: {
+  input: string;
+  model: string;
+  voice:
+    | "alloy"
+    | "ash"
+    | "ballad"
+    | "coral"
+    | "echo"
+    | "fable"
+    | "nova"
+    | "onyx"
+    | "sage"
+    | "shimmer";
+}): Promise<OpenAISpeechResponse> {
+  const client = getOpenAIClient();
+
+  const response = await client.audio.speech.create({
+    input: options.input,
+    model: options.model,
+    response_format: "mp3",
+    voice: options.voice,
+  });
+
+  return {
+    audio: Buffer.from(await response.arrayBuffer()),
+    model: options.model,
   };
 }
 
