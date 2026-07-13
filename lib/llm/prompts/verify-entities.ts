@@ -1,7 +1,7 @@
 import type { AllowedPersonEntity } from "@/lib/content/allowed-entities";
 import type { SourcedFactInput } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "entity-verification@1.0.1";
+export const PROMPT_VERSION = "entity-verification@1.1.0";
 
 export function buildVerifyEntitiesPrompt(options: {
   narrative: string;
@@ -19,7 +19,7 @@ export function buildVerifyEntitiesPrompt(options: {
       "- sourced_facts に同一人物が明確に含まれる場合も対応付けてよい。",
       "- sourced_facts で対応付ける場合、matched_entity には sourced_facts 原文中の人物表記をそのまま返す。",
       "- 許可リストまたは sourced_facts に対応しない人物は matched_entity を null にする。",
-      "- 許可リストが空の場合、本文中の人名はすべて matched_entity null になる。",
+      "- 許可リストが空でも、sourced_facts に対応する人物まで null にしてはいけない。null にするのは許可リストにも sourced_facts にも対応しない人物のみ。",
     ].join("\n"),
     [
       "出力は JSON のみ:",
