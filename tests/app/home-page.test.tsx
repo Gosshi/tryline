@@ -155,7 +155,7 @@ function createCalendarMatch(overrides: Record<string, unknown> = {}) {
       worldRanking: 3,
     },
     id: "calendar-match",
-    kickoffAt: "2026-07-11T09:00:00.000Z",
+    kickoffAt: "2026-07-18T09:00:00.000Z",
     poolName: null,
     round: null,
     roundName: null,
@@ -320,7 +320,7 @@ describe("HomePage", () => {
         hasPreview: true,
         homeTeam: { name: "Japan", shortCode: "JPN", slug: "japan" },
         id: "japan-match",
-        kickoffAt: "2026-07-11T10:30:00.000Z",
+        kickoffAt: "2026-07-18T10:30:00.000Z",
       }),
       createCalendarMatch({ id: "quick-1" }),
       createCalendarMatch({ id: "quick-2" }),
@@ -339,7 +339,7 @@ describe("HomePage", () => {
         },
         homeTeam: { name: "Japan", shortCode: "JPN", slug: "japan" },
         id: "nations-championship-next-match",
-        kickoffAt: "2026-07-11T10:30:00.000Z",
+        kickoffAt: "2026-07-18T10:30:00.000Z",
       }),
     );
 
@@ -371,7 +371,7 @@ describe("HomePage", () => {
     expect(
       screen.getByText("ネーションズチャンピオンシップ 2026 を追う"),
     ).toBeInTheDocument();
-    expect(screen.getByText("2026-07-11 (土) 19:30 JST")).toBeInTheDocument();
+    expect(screen.getByText("2026-07-18 (土) 19:30 JST")).toBeInTheDocument();
     expect(screen.getByText("Japan 対 Ireland")).toBeInTheDocument();
     expect(screen.getByText("12本")).toBeInTheDocument();
     expect(screen.getByText("1試合")).toBeInTheDocument();
