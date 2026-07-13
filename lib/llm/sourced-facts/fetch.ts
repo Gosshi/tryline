@@ -13,7 +13,7 @@ import type {
 } from "@/lib/llm/sourced-facts/types";
 import type { ContentType } from "@/lib/llm/types";
 
-export const SEARCH_PROMPT_VERSION = "sourced-facts@1.2.0";
+export const SEARCH_PROMPT_VERSION = "sourced-facts@1.3.0";
 const PREVIEW_REFRESH_WINDOW_HOURS = 72;
 const PREVIEW_FRESHNESS_HOURS = 24;
 const MAX_STORED_FACTS = 8;
@@ -140,6 +140,7 @@ export function buildSearchPrompt(
           "- the official Player of the Match / Man of the Match award (only if officially announced; include the awarding body)",
           "- notable records or milestones set in this match (e.g., career try record, debut)",
           "- significant injuries sustained during the match",
+          "- yellow/red cards, sin-bins, permanent send-offs, and any resulting suspensions (player name, minute if reported)",
           "- brief post-match comments from head coaches or captains (paraphrased, max 15 words per quote)",
         ].join("\n")
       : [

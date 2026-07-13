@@ -211,16 +211,20 @@ describe("sourced facts allowlist", () => {
 });
 
 describe("buildSearchPrompt", () => {
-  it("uses sourced facts prompt version 1.2.0", () => {
-    expect(SEARCH_PROMPT_VERSION).toBe("sourced-facts@1.2.0");
+  it("uses sourced facts prompt version 1.3.0", () => {
+    expect(SEARCH_PROMPT_VERSION).toBe("sourced-facts@1.3.0");
   });
 
-  it("targets post-match statistics and official awards for recaps", () => {
+  it("targets post-match statistics, incidents, and official awards for recaps", () => {
     const prompt = buildSearchPrompt(leagueOneMatch, "recap");
 
     expect(prompt).toContain("Search intent (post-match):");
     expect(prompt).toContain("post-match statistics");
     expect(prompt).toContain("Player of the Match");
+    expect(prompt).toContain("yellow/red cards");
+    expect(prompt).toContain("sin-bins");
+    expect(prompt).toContain("permanent send-offs");
+    expect(prompt).toContain("resulting suspensions");
     expect(prompt).toContain("both teams' values exactly as reported");
     expect(prompt).not.toContain("latest lineup changes");
     expect(prompt).not.toContain("Search intent:\n- latest team news");
@@ -243,6 +247,8 @@ describe("buildSearchPrompt", () => {
     );
     expect(prompt).not.toContain("Search intent (post-match):");
     expect(prompt).not.toContain("post-match statistics");
+    expect(prompt).not.toContain("yellow/red cards");
+    expect(prompt).not.toContain("sin-bins");
     expect(prompt).not.toContain("both teams' values exactly as reported");
 
     const recapPrompt = buildSearchPrompt(leagueOneMatch, "recap");
