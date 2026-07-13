@@ -18,15 +18,15 @@
 - `curl` / `wget` による外部 URL への通信（スクレイピング仕様書に明記されたソース以外）
 - `cat .env`、`echo $OPENAI_API_KEY` 等、機密情報を出力しうるコマンド
 - `git push --force`、`git reset --hard`、ブランチ削除
-- `psql` / `supabase db` で本番データベースに対する書き込み・DDL 実行
-- `DROP TABLE`、`TRUNCATE`、`DELETE FROM` を含む SQL
+- 本番データベースへの `UPDATE`（Claude Code 自身が実行する場合は承認後に実行してよい。対象行・条件を先に提示する）
+- `psql` / `supabase db` での DDL 実行、`INSERT`、`DROP TABLE`、`TRUNCATE`、`DELETE FROM` を含む SQL（これらは承認があっても Claude Code 自身は実行しない。Owner 自身が実行するか Codex に依頼する）
 - `npm install -g`、`pnpm add -g` 等のグローバルインストール
 - 本番環境へのデプロイコマンド（`vercel --prod`、`vercel deploy --prod` 等）
 
 ### スコープとアクセス境界
 - ホームディレクトリ（`~/`）への直接アクセス禁止。作業は本リポジトリ配下のみ
 - 他プロジェクトのリポジトリ内容を参照しない
-- Supabase の production プロジェクトに対する書き込み禁止（local / staging のみ）
+- Supabase の production プロジェクトへの `UPDATE` は、その都度 Owner の明示的な承認を得た場合のみ Claude Code 自身が実行してよい（対象行・条件を事前に明示し、実行後に影響件数を確認する）。`INSERT` / `DELETE` / DDL（`DROP` / `TRUNCATE` / `ALTER` 等）は Owner の承認があっても Claude Code 自身は実行しない（Owner 自身が実行するか、Codex への実装依頼に回す）
 - Stripe の本番 API キー（`sk_live_` から始まるもの）を一切扱わない。テストキー（`sk_test_`）のみ
 
 ### LLM コストの保護

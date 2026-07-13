@@ -52,7 +52,9 @@
 
 Owner から `/specs/<名前>.md` と `/docs/codex-prompts/<名前>.md` を指し示して実装依頼が来た場合、Codex は仕様書を権威ある文書として読み、そのとおりに実装します。実装依頼を受けたときに「これは仕様書にすべきでは？」と差し戻さないでください — `/specs/` 配下の仕様書は既に Claude Code + Owner が策定済みの権威ある文書です。
 
-ただし以下のケースでは実装を停止して Owner に確認してください:
+### 実装を停止すべきケース
+
+以下のケースでは実装を停止して Owner に確認してください:
 - 仕様書の前提が実環境と食い違う（例: スクレイピング対象ページの構造が仕様書の想定と異なる）
 - 仕様書の指示同士が矛盾している、または既存の仕様書・`/docs/decisions.md` と衝突する
 - 「設計の不変条件」（本ファイル後述）に違反する実装が要求されている
@@ -77,15 +79,17 @@ Tryline は、海外ラグビーリーグ（Six Nations、Premiership、URC、To
 - **コンテンツ生成パイプラインは Phase 1 では 4 段階**: 集約 → 事実抽出 → ナラティブ生成 → 品質チェック（`specs/p1-content-pipeline.md` 参照）。Reddit フィルタは Responsible Builder Policy 承認後に段階追加予定（D009）
 - **著作権への配慮**: 15 語を超える直接引用なし、同一ソースから複数引用なし、原則として言い換える
 - **モバイルファーストの PWA**、MVP ではネイティブアプリなし
+- **LLM 出力は sourced facts / DB 実データに接地させる**。QA ゲート・entity grounding・許可リスト等の捏造防止ガードを弱める変更、および LLM が欠損データを補完できる自由度を広げる変更は、仕様書に明記されていない限り行わない
+- 上記の「match_id 中心」「試合単位キャッシュ」は、サイト公開用の試合記事（preview/recap）に適用される。大会単位のコンテンツ（competition guide 等）、週次ダイジェスト、SNS 下書き、sourced facts 取得、動画/TTS 生成等は、それぞれの仕様書が定める単位でキャッシュ・再実行制御してよい（match_id 単位への強制は不要）
 
 ## 技術スタック
 
 - Next.js 15（App Router、RSC）
 - TypeScript strict モード
 - Supabase（postgres + auth + RLS）
-- OpenAI API（抽出・QA は `gpt-4o-mini`、ナラティブは `gpt-4o`。モデル ID は `lib/llm/models.ts` で集中管理）
-- Stripe（Phase 2 から決済）
-- Vercel（ホスティング + cron）
+- OpenAI API（モデル ID は直書きせず `lib/llm/models.ts` の `MODELS` 定数を権威として参照する。抽出/QA/Web Search 等コスト感度の高い段階は `MODELS.FAST`、ナラティブ生成は `MODELS.NARRATIVE`。TTS 等は随時追加されるため、実装時は `lib/llm/models.ts` の最新定義を必ず確認する）
+- Stripe（決済。テストキー `sk_test_` のみ扱う。本番キーは絶対に触らない）
+- Vercel（ホスティング）。定期ジョブは原則 GitHub Actions（`.github/workflows/cron-*.yml`）が `app/api/cron/*` を叩く形。Vercel 側の cron は一部のみ
 - Tailwind CSS + shadcn/ui
 
 ## ディレクトリ構成
@@ -110,18 +114,18 @@ Tryline は、海外ラグビーリーグ（Six Nations、Premiership、URC、To
 1. 指定された `/specs/<名前>.md` と `/docs/codex-prompts/<名前>.md` を必ず最初に読む
 2. 依存する基盤仕様書（例: `p0-foundation.md`、`p1-data-model.md`、`p1-scraping-infra.md`）も確認する
 3. `/docs/decisions.md` と `/docs/architecture.md` を読み、過去の判断と整合させる
-4. 仕様書の「実装前のアクション」があれば、実装前に実施する
-5. 仕様書の「範囲の再確認」と「対象外」を厳守する
+4. 仕様書の「未解決の質問」が残っていれば、実装前に Owner に確認する
+5. 仕様書の「スコープ」の対象外を厳守する
 6. 仕様書の「受け入れ条件」を全て満たすまで実装を続ける
 7. 疑義があれば推測せず Owner に質問する
 
 ### PR を作成するとき
 
-- ブランチ名は `codex/<仕様書スラッグ>` または Owner が指定した名前
+- ブランチ名は `codex/<仕様書スラッグ>`。仕様書を伴わない小さな個別変更は `codex/chore-<slug>` / `codex/fix-<slug>`。いずれも Owner が指定した名前があればそれに従う
 - PR 説明に以下を含める:
   - 追加・変更したファイルの一覧と 1 行要約
   - 追加した依存パッケージとバージョン
-  - 仕様書「完了時に必ず報告すること」の項目
+  - 仕様書の「受け入れ条件」各項目の充足状況
   - 仕様書からの意図的な逸脱があれば、逸脱内容と理由
   - `pnpm lint` / `pnpm typecheck` / `pnpm test` の実行結果
 - マージは Owner が行う。Codex は push / PR 作成までで停止する
@@ -181,7 +185,7 @@ PWA = progressive web app（本プロダクトの配信形式）
 - 仕様書にない React コンポーネント・ページ・API ルートを追加する
 - Match データモデルを経由しないコンテンツ保存（ユーザー ID 紐付けのキャッシュ等）
 - LLM レスポンスを試合単位でなくユーザー単位でキャッシュする
-- robots.txt を確認せずにスクレイプする、`lib/scrapers/fetchWithPolicy` を迂回する
+- robots.txt を確認せずにスクレイプする、`lib/scrapers/fetcher.ts` の `fetchWithPolicy`（`@/lib/scrapers` から re-export）を迂回する
 - MVP の機能膨張 — Phase 1 仕様書にない機能を足す
 - 汎用抽象化・プラグイン機構・設定システムの先回り実装（`Three similar lines is better than a premature abstraction`）
 - エラーを握り潰して Promise を resolve する（throw が基本）
