@@ -177,6 +177,9 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("一般論で終わらせず");
     expect(prompt).toContain("数値→試合中の具体的な事象→結果");
     expect(prompt).toContain("入力データに存在しない具体的なプレー描写を創作してはならず");
+    expect(prompt).toContain("キーが存在しない項目については");
+    expect(prompt).toContain("ゼロを明示的に主張してよいのは");
+    expect(prompt).toContain("実際に0として明示されている場合のみ");
   });
 
   it("omits official team stats when unavailable", () => {

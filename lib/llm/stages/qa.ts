@@ -1,6 +1,8 @@
 import {
+  containsContradictedZeroStatClaim,
   containsUngroundedPlayerReference,
   containsUnsupportedStatistic,
+  CONTRADICTED_ZERO_STAT_CLAIM_ISSUE,
   UNGROUNDED_ENTITY_ISSUE,
   UNGROUNDED_PLAYER_REFERENCE_ISSUE,
   UNSUPPORTED_STATISTIC_ISSUE,
@@ -78,6 +80,7 @@ export function isFactualGroundingHardBlock(result: QaResult): boolean {
     result.issues.includes(UNGROUNDED_ENTITY_ISSUE) ||
     result.issues.includes(UNGROUNDED_PLAYER_REFERENCE_ISSUE) ||
     result.issues.includes(UNSUPPORTED_STATISTIC_ISSUE) ||
+    result.issues.includes(CONTRADICTED_ZERO_STAT_CLAIM_ISSUE) ||
     result.issues.includes(PLAYER_STAT_MISMATCH_ISSUE) ||
     result.issues.includes(WINNER_MISMATCH_ISSUE)
   );
@@ -433,6 +436,22 @@ function applyDeterministicQaGuards(
     guarded = {
       ...guarded,
       issues: appendIssue(guarded.issues, UNSUPPORTED_STATISTIC_ISSUE),
+      scores: {
+        ...guarded.scores,
+        factual_grounding: 1,
+      },
+    };
+  }
+
+  if (
+    containsContradictedZeroStatClaim(
+      options.narrative,
+      options.matchContext.teamStats,
+    )
+  ) {
+    guarded = {
+      ...guarded,
+      issues: appendIssue(guarded.issues, CONTRADICTED_ZERO_STAT_CLAIM_ISSUE),
       scores: {
         ...guarded.scores,
         factual_grounding: 1,

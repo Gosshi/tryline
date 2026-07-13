@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  containsContradictedZeroStatClaim,
   containsUngroundedPlayerReference,
   containsUnsupportedStatistic,
 } from "@/lib/content/fabrication-guard";
@@ -86,6 +87,59 @@ describe("containsUnsupportedStatistic", () => {
   it("does not treat penalty goal wording as an unsupported statistic", () => {
     expect(
       containsUnsupportedStatistic("アイルランドはペナルティゴールを決めた"),
+    ).toBe(false);
+  });
+});
+
+describe("containsContradictedZeroStatClaim", () => {
+  it("detects penalty zero claims contradicted by team_stats", () => {
+    expect(
+      containsContradictedZeroStatClaim(
+        "アイルランドは反則を犯さず、規律あるプレーで日本を封じ込めた",
+        {
+          away: { penalties_conceded: 9 },
+          home: { penalties_conceded: 9 },
+        },
+      ),
+    ).toBe(true);
+  });
+
+  it("detects non-penalty count stat zero claims", () => {
+    expect(
+      containsContradictedZeroStatClaim(
+        "日本はターンオーバーなしで試合を進めた",
+        {
+          away: { turnovers: 3 },
+          home: { turnovers: 5 },
+        },
+      ),
+    ).toBe(true);
+  });
+
+  it("ignores non-zero penalty comparison claims", () => {
+    expect(
+      containsContradictedZeroStatClaim("日本は反則が多かった", {
+        away: { penalties_conceded: 9 },
+        home: { penalties_conceded: 9 },
+      }),
+    ).toBe(false);
+  });
+
+  it("does not flag zero claims when the stat is actually 0-0", () => {
+    expect(
+      containsContradictedZeroStatClaim("両チームとも反則なしで進めた", {
+        away: { penalties_conceded: 0 },
+        home: { penalties_conceded: 0 },
+      }),
+    ).toBe(false);
+  });
+
+  it("returns false when team_stats is unavailable", () => {
+    expect(
+      containsContradictedZeroStatClaim(
+        "アイルランドは反則を犯さず試合を終えた",
+        null,
+      ),
     ).toBe(false);
   });
 });

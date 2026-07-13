@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  CONTRADICTED_ZERO_STAT_CLAIM_ISSUE,
   containsUnsupportedStatistic,
   PLAYER_STAT_MISMATCH_ISSUE,
   UNGROUNDED_ENTITY_ISSUE,
@@ -302,6 +303,16 @@ describe("isFactualGroundingHardBlock", () => {
       }),
     ).toBe(true);
   });
+
+  it("treats contradicted zero stat claims as factual hard blocks", () => {
+    expect(
+      isFactualGroundingHardBlock({
+        issues: [CONTRADICTED_ZERO_STAT_CLAIM_ISSUE],
+        scores: passingScores,
+        verdict: "retry",
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("evaluateNarrativeQuality", () => {
@@ -424,6 +435,42 @@ describe("evaluateNarrativeQuality", () => {
     });
 
     expect(result.result.issues).toContain(WINNER_MISMATCH_ISSUE);
+    expect(result.result.scores.factual_grounding).toBe(1);
+    expect(result.result.verdict).toBe("retry");
+  });
+
+  it("forces factual grounding failure when zero penalty claims contradict team_stats", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+        verdict: "publish",
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap",
+      matchContext: {
+        ...matchContext,
+        teamStats: {
+          away: { penalties_conceded: 9 },
+          home: { penalties_conceded: 9 },
+        },
+      },
+      narrative: `# 試合全体像\nアイルランドは反則を犯さず、規律あるプレーで日本を封じ込めた。\n${longJaRecap}`,
+      retryCount: 0,
+    });
+
+    expect(result.result.issues).toContain(
+      CONTRADICTED_ZERO_STAT_CLAIM_ISSUE,
+    );
     expect(result.result.scores.factual_grounding).toBe(1);
     expect(result.result.verdict).toBe("retry");
   });
