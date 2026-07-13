@@ -172,6 +172,11 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("公式サイトから取得した実際のチームスタッツ");
     expect(prompt).toContain('"possession_pct":58');
     expect(prompt).toContain("ポゼッション率・成功率等の数値表現");
+    expect(prompt).toContain("最低3種類");
+    expect(prompt).toContain("両チームの具体的な数値");
+    expect(prompt).toContain("一般論で終わらせず");
+    expect(prompt).toContain("数値→試合中の具体的な事象→結果");
+    expect(prompt).toContain("入力データに存在しない具体的なプレー描写を創作してはならず");
   });
 
   it("omits official team stats when unavailable", () => {
