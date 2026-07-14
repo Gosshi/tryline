@@ -12,7 +12,7 @@ import { SignupSuccessTracker } from "@/components/signup-success-tracker";
 import { SpoilerScore } from "@/components/spoiler-score";
 import { TeamBadge } from "@/components/team-badge";
 import { TrackedLink } from "@/components/tracked-link";
-import { getUser, getUserProfile } from "@/lib/auth/server";
+import { getUser, getUserProfile, isProfilePremium } from "@/lib/auth/server";
 import {
   listFamilies,
   listSeasonsByFamily,
@@ -111,6 +111,7 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const user = await getUser();
   const profile = user ? await getUserProfile(user.id) : null;
+  const premium = isProfilePremium(profile);
   const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
   const weekRange = getCurrentJstWeekRangeUtc();
   const sampleMatchId = await getPrimarySampleMatchId();
@@ -200,8 +201,7 @@ export default async function HomePage() {
   };
   const favoriteTeamPageSlug =
     favoriteTeamSlugs.length === 1 ? (favoriteTeamSlugs[0] ?? null) : null;
-  const shouldShowSampleReview =
-    profile?.subscription_status !== "premium" && Boolean(sampleMatch?.recapExcerpt);
+  const shouldShowSampleReview = !premium && Boolean(sampleMatch?.recapExcerpt);
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -291,7 +291,7 @@ export default async function HomePage() {
                 >
                   今週の試合を見る
                 </TrackedLink>
-                {profile?.subscription_status !== "premium" && (
+                {!premium && (
                   <TrackedLink
                     analytics={{
                       cta_id: "home_hero_pricing",
@@ -453,7 +453,7 @@ export default async function HomePage() {
                         {sampleMatch.homeTeam.name} 対{" "}
                         {sampleMatch.awayTeam.name}
                       </p>
-                      <p className="mt-4 line-clamp-7 border-l-4 border-[var(--color-accent)] pl-4 text-sm leading-relaxed text-[var(--color-ink)]">
+                      <p className="line-clamp-7 mt-4 border-l-4 border-[var(--color-accent)] pl-4 text-sm leading-relaxed text-[var(--color-ink)]">
                         {sampleMatch.recapExcerpt}
                       </p>
                     </div>

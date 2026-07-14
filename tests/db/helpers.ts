@@ -6,6 +6,7 @@ import type { Database } from "@/lib/db/types";
 type SupabaseStatus = {
   ANON_KEY: string;
   API_URL: string;
+  DB_URL: string;
   SERVICE_ROLE_KEY: string;
 };
 
@@ -28,13 +29,13 @@ function readSupabaseStatus() {
   });
 
   const parsed = JSON.parse(raw) as Record<string, string>;
-  const { ANON_KEY, API_URL, SERVICE_ROLE_KEY } = parsed;
+  const { ANON_KEY, API_URL, DB_URL, SERVICE_ROLE_KEY } = parsed;
 
-  if (!ANON_KEY || !API_URL || !SERVICE_ROLE_KEY) {
+  if (!ANON_KEY || !API_URL || !DB_URL || !SERVICE_ROLE_KEY) {
     throw new Error("Supabase local status is missing required keys.");
   }
 
-  return { ANON_KEY, API_URL, SERVICE_ROLE_KEY };
+  return { ANON_KEY, API_URL, DB_URL, SERVICE_ROLE_KEY };
 }
 
 export function ensureSupabaseTestEnvironment() {
@@ -71,6 +72,15 @@ export function createServiceClient() {
       autoRefreshToken: false,
       persistSession: false,
     },
+  });
+}
+
+export function runLocalSqlFile(path: string) {
+  const { DB_URL } = ensureSupabaseTestEnvironment();
+
+  execFileSync("psql", [DB_URL, "--set", "ON_ERROR_STOP=1", "--file", path], {
+    cwd: process.cwd(),
+    stdio: "pipe",
   });
 }
 
