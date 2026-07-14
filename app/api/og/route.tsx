@@ -16,6 +16,16 @@ function sanitizeAccentColor(value: string | null): string {
   return value && /^#[0-9a-f]{3,8}$/i.test(value) ? value : "#c93a3a";
 }
 
+function parseNonNegativeCount(value: string | null): number {
+  if (!value || !/^\d+$/.test(value)) {
+    return 0;
+  }
+
+  const count = Number(value);
+
+  return Number.isSafeInteger(count) ? count : 0;
+}
+
 type RoundScoreboardMatchRow = {
   away_score: number | null;
   away_team: { name: string; short_code: string | null } | null;
@@ -211,6 +221,179 @@ export async function GET(request: Request) {
               }}
             >
               {seasonLabel}
+            </div>
+          )}
+        </div>
+        <div
+          style={{
+            bottom: 52,
+            color: "rgba(255,255,255,0.54)",
+            display: "flex",
+            fontSize: "24px",
+            fontWeight: 700,
+            position: "absolute",
+          }}
+        >
+          trylinerugby.com
+        </div>
+      </div>,
+      {
+        fonts: [
+          {
+            data: fontData,
+            name: fontName,
+            style: "normal",
+            weight: 700,
+          },
+        ],
+        height: 630,
+        width: 1200,
+      },
+    );
+  }
+
+  if (searchParams.get("type") === "calendar") {
+    const weekLabel = truncate(searchParams.get("week_label") ?? "JST", 30);
+    const matchCount = parseNonNegativeCount(searchParams.get("match_count"));
+    const competitionCount = parseNonNegativeCount(
+      searchParams.get("competition_count"),
+    );
+    const focusHome = searchParams.get("focus_home");
+    const focusAway = searchParams.get("focus_away");
+    const focusCompetition = searchParams.get("focus_competition");
+    const hasFocus = Boolean(focusHome && focusAway);
+    const focusLabel = hasFocus
+      ? `${truncate(focusHome!, 20)} vs ${truncate(focusAway!, 20)}`
+      : "";
+    const focusCompetitionLabel = focusCompetition
+      ? truncate(focusCompetition, 30)
+      : "";
+
+    return new ImageResponse(
+      <div
+        style={{
+          alignItems: "center",
+          background: "linear-gradient(135deg, #111827 0%, #1A3A5C 145%)",
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          fontFamily: "Inter, Geist, sans-serif",
+          height: "630px",
+          justifyContent: "center",
+          overflow: "hidden",
+          padding: "64px 80px",
+          position: "relative",
+          width: "1200px",
+        }}
+      >
+        <div
+          style={{
+            background:
+              "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18), transparent 34%), radial-gradient(circle at 80% 0%, rgba(34,197,94,0.2), transparent 30%)",
+            display: "flex",
+            inset: 0,
+            position: "absolute",
+          }}
+        />
+        <div
+          style={{
+            border: "1px solid rgba(255,255,255,0.18)",
+            borderRadius: "9999px",
+            color: "rgba(255,255,255,0.74)",
+            display: "flex",
+            fontSize: "24px",
+            fontWeight: 800,
+            letterSpacing: "0.14em",
+            padding: "10px 22px",
+            position: "absolute",
+            right: 72,
+            top: 58,
+          }}
+        >
+          TRYLINE
+        </div>
+        <div
+          style={{
+            alignItems: "center",
+            display: "flex",
+            flexDirection: "column",
+            maxWidth: "980px",
+            position: "relative",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              color: "rgba(255,255,255,0.72)",
+              display: "flex",
+              fontSize: "34px",
+              fontWeight: 800,
+              justifyContent: "center",
+              letterSpacing: "0.08em",
+              marginBottom: "22px",
+              textTransform: "uppercase",
+            }}
+          >
+            Weekly Match Calendar
+          </div>
+          <div
+            style={{
+              color: "white",
+              display: "flex",
+              fontSize: "72px",
+              fontWeight: 900,
+              justifyContent: "center",
+              lineHeight: 1.05,
+              textAlign: "center",
+            }}
+          >
+            今週の海外ラグビー
+          </div>
+          <div
+            style={{
+              color: "rgba(255,255,255,0.7)",
+              display: "flex",
+              fontSize: "34px",
+              fontWeight: 800,
+              justifyContent: "center",
+              marginTop: "18px",
+            }}
+          >
+            {weekLabel}
+          </div>
+          <div
+            style={{
+              color: "#22c55e",
+              display: "flex",
+              fontSize: "62px",
+              fontWeight: 900,
+              justifyContent: "center",
+              lineHeight: 1.05,
+              marginTop: "42px",
+            }}
+          >
+            {competitionCount}大会 {matchCount}試合
+          </div>
+          {hasFocus && (
+            <div
+              style={{
+                alignItems: "center",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.16)",
+                borderRadius: "9999px",
+                color: "rgba(255,255,255,0.76)",
+                display: "flex",
+                fontSize: "26px",
+                fontWeight: 750,
+                justifyContent: "center",
+                marginTop: "30px",
+                maxWidth: "920px",
+                padding: "14px 24px",
+                textAlign: "center",
+              }}
+            >
+              注目: {focusLabel}
+              {focusCompetitionLabel ? `（${focusCompetitionLabel}）` : ""}
             </div>
           )}
         </div>
