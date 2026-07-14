@@ -53,6 +53,15 @@ export function formatKickoffJstTime(kickoffAtUtc: string): string {
   return `${parts.hour}:${parts.minute} JST`;
 }
 
+export function formatKickoffJstCompact(kickoffAtUtc: string): string {
+  const parts = getFormatterParts(kickoffAtUtc, {
+    locale: "ja-JP",
+    timeZone: "Asia/Tokyo",
+  });
+
+  return `${Number(parts.month)}/${Number(parts.day)} (${parts.weekday}) ${parts.hour}:${parts.minute} JST`;
+}
+
 export function formatKickoffLocal(
   kickoffAtUtc: string,
   ianaTimezone = "Europe/London",

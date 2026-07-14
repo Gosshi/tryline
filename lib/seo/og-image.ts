@@ -57,6 +57,7 @@ type CalendarOgImageParams = {
   focusAway?: string;
   focusCompetition?: string;
   focusHome?: string;
+  focusKickoffAt?: string;
   matchCount: number;
   weekLabel: string;
 };
@@ -75,6 +76,10 @@ export function createCalendarOgImage(params: CalendarOgImageParams) {
 
     if (params.focusCompetition) {
       searchParams.set("focus_competition", params.focusCompetition);
+    }
+
+    if (params.focusKickoffAt) {
+      searchParams.set("focus_kickoff", params.focusKickoffAt);
     }
   }
 
