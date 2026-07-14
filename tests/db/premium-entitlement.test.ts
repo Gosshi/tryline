@@ -14,10 +14,15 @@ const backfillMigration = path.join(
   process.cwd(),
   "supabase/migrations/20260714084401_backfill_premium_entitlements.sql",
 );
+const restrictChatCounterMigration = path.join(
+  process.cwd(),
+  "supabase/migrations/20260715010000_restrict_chat_counter_updates.sql",
+);
 
 describe("premium entitlement database migration", () => {
   beforeAll(() => {
     ensureSupabaseTestEnvironment();
+    runLocalSqlFile(restrictChatCounterMigration);
   });
 
   it("backfills Stripe and manual entitlements without changing premium count", async () => {
@@ -176,29 +181,37 @@ describe("premium entitlement database migration", () => {
     expect(profile.data).toBeNull();
   });
 
-  it("keeps authenticated profile and chat counter updates working", async () => {
+  it("keeps authenticated profile updates working without chat counter grants", async () => {
     const account = await signUpTestUser("premium-grant-allowed");
 
-    const result = await account.client
+    const profileUpdate = await account.client
       .from("user_profiles")
       .update({
-        chat_daily_count: 2,
-        chat_daily_reset_date: "2026-07-14",
         display_name: "Rugby Fan",
         favorite_team_slugs: ["japan", "france"],
       })
       .eq("id", account.user.id)
-      .select(
-        "chat_daily_count, chat_daily_reset_date, display_name, favorite_team_slugs",
-      )
+      .select("display_name, favorite_team_slugs")
       .single();
 
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual({
-      chat_daily_count: 2,
-      chat_daily_reset_date: "2026-07-14",
+    expect(profileUpdate.error).toBeNull();
+    expect(profileUpdate.data).toEqual({
       display_name: "Rugby Fan",
       favorite_team_slugs: ["japan", "france"],
     });
+
+    const protectedUpdates = [
+      { chat_daily_count: 2 },
+      { chat_daily_reset_date: "2026-07-14" },
+    ];
+
+    for (const update of protectedUpdates) {
+      const result = await account.client
+        .from("user_profiles")
+        .update(update)
+        .eq("id", account.user.id);
+
+      expect(result.error, JSON.stringify(update)).not.toBeNull();
+    }
   });
 });
