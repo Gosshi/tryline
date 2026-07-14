@@ -98,6 +98,7 @@ export async function generateMetadata({
               )
             : undefined,
           focusHome: focusMatch?.homeTeam.name,
+          focusKickoffAt: focusMatch?.kickoffAt,
           matchCount: matches.length,
           weekLabel: formatJstWeekRangeLabel(range.weekStartJst),
         }),

@@ -2,6 +2,7 @@ import { ImageResponse } from "@vercel/og";
 
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { formatCompetitionTitle } from "@/lib/format/competition";
+import { formatKickoffJstCompact } from "@/lib/format/kickoff";
 import { getResultTeamNameFontSize } from "@/lib/seo/og-result-team-name";
 
 import type { Json } from "@/lib/db/types";
@@ -24,6 +25,14 @@ function parseNonNegativeCount(value: string | null): number {
   const count = Number(value);
 
   return Number.isSafeInteger(count) ? count : 0;
+}
+
+function formatCalendarFocusKickoff(value: string | null): string | null {
+  if (!value || Number.isNaN(new Date(value).getTime())) {
+    return null;
+  }
+
+  return formatKickoffJstCompact(value);
 }
 
 type RoundScoreboardMatchRow = {
@@ -268,6 +277,9 @@ export async function GET(request: Request) {
     const focusCompetitionLabel = focusCompetition
       ? truncate(focusCompetition, 30)
       : "";
+    const focusKickoffLabel = hasFocus
+      ? formatCalendarFocusKickoff(searchParams.get("focus_kickoff"))
+      : null;
 
     return new ImageResponse(
       <div
@@ -363,7 +375,7 @@ export async function GET(request: Request) {
           </div>
           <div
             style={{
-              color: "#22c55e",
+              color: "#c93a40",
               display: "flex",
               fontSize: "62px",
               fontWeight: 900,
@@ -393,6 +405,7 @@ export async function GET(request: Request) {
               }}
             >
               注目: {focusLabel}
+              {focusKickoffLabel ? ` — ${focusKickoffLabel}` : ""}
               {focusCompetitionLabel ? `（${focusCompetitionLabel}）` : ""}
             </div>
           )}

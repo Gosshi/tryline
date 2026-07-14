@@ -163,7 +163,7 @@ describe("/calendar page", () => {
       openGraph: {
         images: [
           {
-            url: "/api/og?type=calendar&week_label=7%E6%9C%8813%E6%97%A5+-+19%E6%97%A5+JST&match_count=2&competition_count=2&focus_home=Japan&focus_away=France&focus_competition=%E3%83%8D%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%BA%E3%83%81%E3%83%A3%E3%83%B3%E3%83%94%E3%82%AA%E3%83%B3%E3%82%B7%E3%83%83%E3%83%97+2026",
+            url: "/api/og?type=calendar&week_label=7%E6%9C%8813%E6%97%A5+-+19%E6%97%A5+JST&match_count=2&competition_count=2&focus_home=Japan&focus_away=France&focus_competition=%E3%83%8D%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%BA%E3%83%81%E3%83%A3%E3%83%B3%E3%83%94%E3%82%AA%E3%83%B3%E3%82%B7%E3%83%83%E3%83%97+2026&focus_kickoff=2026-07-18T10%3A00%3A00.000Z",
           },
         ],
       },

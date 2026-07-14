@@ -14,21 +14,23 @@ describe("OG image helpers", () => {
         focusAway: "France",
         focusCompetition: "Nations Championship 2026",
         focusHome: "Japan",
+        focusKickoffAt: "2026-07-18T08:40:00.000Z",
         matchCount: 12,
         weekLabel: "7月14日 - 20日 JST",
       }),
     ).toEqual({
       height: 630,
-      url: "/api/og?type=calendar&week_label=7%E6%9C%8814%E6%97%A5+-+20%E6%97%A5+JST&match_count=12&competition_count=5&focus_home=Japan&focus_away=France&focus_competition=Nations+Championship+2026",
+      url: "/api/og?type=calendar&week_label=7%E6%9C%8814%E6%97%A5+-+20%E6%97%A5+JST&match_count=12&competition_count=5&focus_home=Japan&focus_away=France&focus_competition=Nations+Championship+2026&focus_kickoff=2026-07-18T08%3A40%3A00.000Z",
       width: 1200,
     });
   });
 
-  it("omits calendar focus params unless both teams are present", () => {
+  it("omits calendar focus params and kickoff unless both teams are present", () => {
     expect(
       createCalendarOgImage({
         competitionCount: 0,
         focusHome: "Japan",
+        focusKickoffAt: "2026-07-18T08:40:00.000Z",
         matchCount: 0,
         weekLabel: "7月28日 - 8月3日 JST",
       }).url,

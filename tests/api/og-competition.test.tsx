@@ -1,3 +1,4 @@
+import { isValidElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const ogMocks = vi.hoisted(() => ({
@@ -49,6 +50,57 @@ vi.mock("@/lib/db/public-server", () => ({
   }),
 }));
 
+function getTextContent(node: unknown): string {
+  if (node === null || node === undefined || typeof node === "boolean") {
+    return "";
+  }
+
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node);
+  }
+
+  if (Array.isArray(node)) {
+    return node.map(getTextContent).join("");
+  }
+
+  if (isValidElement(node)) {
+    return getTextContent((node.props as { children?: unknown }).children);
+  }
+
+  return "";
+}
+
+function hasStyledText(
+  node: unknown,
+  expectedText: string,
+  expectedStyle: Record<string, unknown>,
+): boolean {
+  if (isValidElement(node)) {
+    const props = node.props as {
+      children?: unknown;
+      style?: Record<string, unknown>;
+    };
+    const text = getTextContent(props.children);
+    const styleMatches = Object.entries(expectedStyle).every(
+      ([key, value]) => props.style?.[key] === value,
+    );
+
+    if (text.includes(expectedText) && styleMatches) {
+      return true;
+    }
+
+    return hasStyledText(props.children, expectedText, expectedStyle);
+  }
+
+  if (Array.isArray(node)) {
+    return node.some((child) =>
+      hasStyledText(child, expectedText, expectedStyle),
+    );
+  }
+
+  return false;
+}
+
 describe("/api/og competition images", () => {
   beforeEach(() => {
     dbMock.filters = [];
@@ -86,12 +138,12 @@ describe("/api/og competition images", () => {
     );
   });
 
-  it("returns a 1200x630 calendar OG image with a focus match", async () => {
+  it("returns a 1200x630 calendar OG image with a focus match kickoff", async () => {
     const { GET } = await import("@/app/api/og/route");
 
     const response = await GET(
       new Request(
-        "https://tryline.test/api/og?type=calendar&week_label=7%E6%9C%8814%E6%97%A5%20-%2020%E6%97%A5%20JST&match_count=12&competition_count=5&focus_home=Japan&focus_away=France&focus_competition=Nations%20Championship",
+        "https://tryline.test/api/og?type=calendar&week_label=7%E6%9C%8814%E6%97%A5%20-%2020%E6%97%A5%20JST&match_count=12&competition_count=5&focus_home=Japan&focus_away=France&focus_competition=Nations%20Championship&focus_kickoff=2026-07-18T08%3A40%3A00.000Z",
       ),
     );
 
@@ -101,7 +153,32 @@ describe("/api/og competition images", () => {
       expect.anything(),
       expect.objectContaining({ height: 630, width: 1200 }),
     );
+    const element = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+    expect(getTextContent(element)).toContain(
+      "注目: Japan vs France — 7/18 (土) 17:40 JST（Nations Championship）",
+    );
+    expect(hasStyledText(element, "5大会 12試合", { color: "#c93a40" })).toBe(
+      true,
+    );
     expect(dbMock.selects).toEqual([]);
+  });
+
+  it("omits invalid calendar focus kickoff values without failing", async () => {
+    const { GET } = await import("@/app/api/og/route");
+
+    const response = await GET(
+      new Request(
+        "https://tryline.test/api/og?type=calendar&week_label=7%E6%9C%8814%E6%97%A5%20-%2020%E6%97%A5%20JST&match_count=12&competition_count=5&focus_home=Japan&focus_away=France&focus_competition=Nations%20Championship&focus_kickoff=invalid-date",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    const element = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+    expect(getTextContent(element)).toContain(
+      "注目: Japan vs France（Nations Championship）",
+    );
+    expect(getTextContent(element)).not.toContain("invalid-date");
+    expect(getTextContent(element)).not.toContain("JST（Nations");
   });
 
   it("returns a calendar OG image without a focus row for empty weeks", async () => {
@@ -118,6 +195,9 @@ describe("/api/og competition images", () => {
       expect.anything(),
       expect.objectContaining({ height: 630, width: 1200 }),
     );
+    expect(
+      getTextContent(ogMocks.imageResponse.mock.calls.at(-1)?.[0]),
+    ).not.toContain("注目:");
     expect(dbMock.selects).toEqual([]);
   });
 
