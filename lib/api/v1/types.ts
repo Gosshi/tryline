@@ -129,6 +129,10 @@ export type V1MeData = {
   isPremium: boolean;
 };
 
+export type V1MeDeleteData = {
+  deleted: true;
+};
+
 export type V1FavoritesData = {
   favorite_team_slugs: string[];
 };

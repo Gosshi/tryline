@@ -9,8 +9,20 @@ const serverMock = vi.hoisted(() => ({
   getMobileUserProfile: vi.fn(),
 }));
 
+const adminMock = vi.hoisted(() => ({
+  createClient: vi.fn(),
+  deleteUser: vi.fn(),
+  from: vi.fn(),
+  profileEq: vi.fn(),
+  profileMaybeSingle: vi.fn(),
+  profileSelect: vi.fn(),
+}));
+
 vi.mock("@/lib/auth/bearer", () => bearerMock);
 vi.mock("@/lib/api/v1/server", () => serverMock);
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: adminMock.createClient,
+}));
 
 type ClientOptions = {
   teamData?: Array<{ slug: string }>;
@@ -67,6 +79,7 @@ describe("GET /api/v1/me", () => {
       error: "unauthorized",
       success: false,
     });
+    expect(adminMock.createClient).not.toHaveBeenCalled();
   });
 
   it("returns the profile and entitlement for a valid Bearer token", async () => {
@@ -100,6 +113,106 @@ describe("GET /api/v1/me", () => {
       error: null,
       success: true,
     });
+  });
+});
+
+describe("DELETE /api/v1/me", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    bearerMock.getUserFromBearer.mockResolvedValue({ id: "user-1" });
+    adminMock.profileMaybeSingle.mockResolvedValue({
+      data: { stripe_subscription_id: null },
+      error: null,
+    });
+    adminMock.profileEq.mockReturnValue({
+      maybeSingle: adminMock.profileMaybeSingle,
+    });
+    adminMock.profileSelect.mockReturnValue({ eq: adminMock.profileEq });
+    adminMock.from.mockReturnValue({ select: adminMock.profileSelect });
+    adminMock.deleteUser.mockResolvedValue({ error: null });
+    adminMock.createClient.mockReturnValue({
+      auth: { admin: { deleteUser: adminMock.deleteUser } },
+      from: adminMock.from,
+    });
+  });
+
+  async function deleteAccount(authorization?: string) {
+    const { DELETE } = await import("@/app/api/v1/me/route");
+
+    return DELETE(
+      new Request("http://localhost/api/v1/me", {
+        headers: authorization ? { Authorization: authorization } : undefined,
+        method: "DELETE",
+      }),
+    );
+  }
+
+  it.each([undefined, "Bearer invalid-token"])(
+    "returns 401 without a valid Bearer token",
+    async (authorization) => {
+      bearerMock.getUserFromBearer.mockResolvedValue(null);
+
+      const response = await deleteAccount(authorization);
+
+      expect(response.status).toBe(401);
+      expect(response.headers.get("cache-control")).toBe("private, no-store");
+      expect(await response.json()).toEqual({
+        data: null,
+        error: "unauthorized",
+        success: false,
+      });
+      expect(adminMock.createClient).not.toHaveBeenCalled();
+    },
+  );
+
+  it("deletes the authenticated user and returns the shared envelope", async () => {
+    const response = await deleteAccount("Bearer valid-token");
+
+    expect(adminMock.profileSelect).toHaveBeenCalledWith(
+      "stripe_subscription_id",
+    );
+    expect(adminMock.profileEq).toHaveBeenCalledWith("id", "user-1");
+    expect(adminMock.deleteUser).toHaveBeenCalledWith("user-1");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(await response.json()).toEqual({
+      data: { deleted: true },
+      error: null,
+      success: true,
+    });
+  });
+
+  it("returns the Supabase error without destroying the local session", async () => {
+    adminMock.deleteUser.mockResolvedValue({
+      error: { message: "failed to delete auth user" },
+    });
+
+    const response = await deleteAccount("Bearer valid-token");
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      data: null,
+      error: "failed to delete auth user",
+      success: false,
+    });
+    expect(bearerMock.getSupabaseBearerClient).not.toHaveBeenCalled();
+  });
+
+  it("warns but still deletes a user with a Stripe subscription", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    adminMock.profileMaybeSingle.mockResolvedValue({
+      data: { stripe_subscription_id: "sub_test" },
+      error: null,
+    });
+
+    const response = await deleteAccount("Bearer valid-token");
+
+    expect(response.status).toBe(200);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("subscription was not cancelled"),
+    );
+    expect(adminMock.deleteUser).toHaveBeenCalledWith("user-1");
+    warn.mockRestore();
   });
 });
 
