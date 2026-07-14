@@ -6,8 +6,12 @@ const authMocks = vi.hoisted(() => ({
   isPremium: vi.fn(),
 }));
 
-const updateMock = vi.hoisted(() => vi.fn());
-const eqMock = vi.hoisted(() => vi.fn());
+const adminMocks = vi.hoisted(() => ({
+  createClient: vi.fn(),
+  eq: vi.fn(),
+  from: vi.fn(),
+  update: vi.fn(),
+}));
 const freeQuestionMocks = vi.hoisted(() => {
   const query = {
     eq: vi.fn(() => query),
@@ -35,13 +39,17 @@ vi.mock("@/lib/auth/server", () => ({
             select: freeQuestionMocks.select,
             upsert: freeQuestionMocks.upsert,
           }
-        : {
-            update: updateMock,
-          },
+        : (() => {
+            throw new Error(`Unexpected auth table: ${table}`);
+          })(),
   }),
   getUser: authMocks.getUser,
   getUserProfile: authMocks.getUserProfile,
   isPremium: authMocks.isPremium,
+}));
+
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: adminMocks.createClient,
 }));
 
 vi.mock("@/lib/chat/context", () => ({
@@ -84,8 +92,10 @@ describe("chat daily rate limit", () => {
       stripe_customer_id: "cus_123",
       subscription_status: "premium",
     });
-    eqMock.mockResolvedValue({ error: null });
-    updateMock.mockReturnValue({ eq: eqMock });
+    adminMocks.eq.mockResolvedValue({ error: null });
+    adminMocks.update.mockReturnValue({ eq: adminMocks.eq });
+    adminMocks.from.mockReturnValue({ update: adminMocks.update });
+    adminMocks.createClient.mockReturnValue({ from: adminMocks.from });
     freeQuestionMocks.query.eq.mockClear();
     freeQuestionMocks.query.maybeSingle.mockResolvedValue({
       data: null,
@@ -115,7 +125,7 @@ describe("chat daily rate limit", () => {
       error: "daily_limit_exceeded",
     });
     expect(response.status).toBe(429);
-    expect(updateMock).not.toHaveBeenCalled();
+    expect(adminMocks.update).not.toHaveBeenCalled();
   });
 
   it("resets the daily count before checking a new UTC day", async () => {
@@ -137,11 +147,13 @@ describe("chat daily rate limit", () => {
     );
 
     expect(response.status).not.toBe(429);
-    expect(updateMock).toHaveBeenCalledWith({
+    expect(adminMocks.from).toHaveBeenCalledWith("user_profiles");
+    expect(adminMocks.update).toHaveBeenCalledWith({
       chat_daily_count: 0,
       chat_daily_reset_date: "2026-05-07",
       updated_at: "2026-05-07T12:00:00.000Z",
     });
+    expect(adminMocks.eq).toHaveBeenCalledWith("id", "user-1");
   });
 
   it("uses request history for context and does not return a session id", async () => {
@@ -182,10 +194,37 @@ describe("chat daily rate limit", () => {
     );
     expect(text).toContain('"done":true');
     expect(text).not.toContain("sessionId");
-    expect(updateMock).toHaveBeenCalledWith({
+    expect(adminMocks.from).toHaveBeenCalledWith("user_profiles");
+    expect(adminMocks.update).toHaveBeenCalledWith({
       chat_daily_count: 1,
       updated_at: "2026-05-07T12:00:00.000Z",
     });
+    expect(adminMocks.eq).toHaveBeenCalledWith("id", "user-1");
+  });
+
+  it("uses the authenticated user's id for service role counter updates", async () => {
+    authMocks.getUser.mockResolvedValue({ id: "user-2" });
+    authMocks.getUserProfile.mockResolvedValue({
+      chat_daily_count: 0,
+      chat_daily_reset_date: "2026-05-07",
+      stripe_customer_id: "cus_456",
+      subscription_status: "premium",
+    });
+
+    const { POST } = await import("@/app/api/chat/[matchId]/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/chat/match-1", {
+        body: JSON.stringify({ message: "この試合を分析して" }),
+        method: "POST",
+      }),
+      { params: Promise.resolve({ matchId: "match-1" }) },
+    );
+
+    await response.text();
+
+    expect(adminMocks.eq).toHaveBeenCalledWith("id", "user-2");
+    expect(adminMocks.eq).not.toHaveBeenCalledWith("id", "user-1");
   });
 
   it("returns 403 when a non-premium user already used the free question", async () => {
@@ -231,7 +270,7 @@ describe("chat daily rate limit", () => {
     expect(response.status).toBe(200);
     expect(text).toContain('"done":true');
     expect(authMocks.getUserProfile).not.toHaveBeenCalled();
-    expect(updateMock).not.toHaveBeenCalled();
+    expect(adminMocks.update).not.toHaveBeenCalled();
     expect(freeQuestionMocks.upsert).toHaveBeenCalledWith(
       { match_id: "match-1", user_id: "user-1" },
       { ignoreDuplicates: true },

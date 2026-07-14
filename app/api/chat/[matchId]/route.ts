@@ -1,3 +1,5 @@
+import { createClient } from "@supabase/supabase-js";
+
 import {
   getSupabaseServerClientWithAuth,
   getUser,
@@ -8,12 +10,26 @@ import { assembleMatchContext } from "@/lib/chat/context";
 import { getOpenAIClient } from "@/lib/llm/client";
 import { MODELS } from "@/lib/llm/models";
 
+import type { Database } from "@/lib/db/types";
 import type OpenAI from "openai";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const DAILY_MESSAGE_LIMIT = 30;
+
+function getSupabaseAdminClient() {
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    },
+  );
+}
 
 export async function POST(
   request: Request,
@@ -49,9 +65,10 @@ export async function POST(
     premium &&
     (!profile?.chat_daily_reset_date || profile.chat_daily_reset_date < today);
   const dailyCount = resetNeeded ? 0 : (profile?.chat_daily_count ?? 0);
+  const counterSupabase = premium ? getSupabaseAdminClient() : null;
 
   if (resetNeeded) {
-    await supabase
+    await counterSupabase!
       .from("user_profiles")
       .update({
         chat_daily_count: 0,
@@ -107,7 +124,7 @@ export async function POST(
         }
 
         if (premium) {
-          await supabase
+          await counterSupabase!
             .from("user_profiles")
             .update({
               chat_daily_count: dailyCount + 1,
