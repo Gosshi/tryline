@@ -102,82 +102,98 @@ function MatchRow({
     : match.hasPreview
       ? { className: "bg-slate-100 text-slate-600", label: "プレビュー" }
       : null;
-  const rowClassName = isHighlighted && !compact
-    ? "group block rounded-lg border border-[var(--color-accent)]/35 bg-gradient-to-r from-[var(--color-accent)]/10 to-white px-4 py-3 shadow-sm transition-colors hover:border-[var(--color-accent)]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-    : "group block rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]";
+  const rowClassName =
+    isHighlighted && !compact
+      ? "group rounded-lg border border-[var(--color-accent)]/35 bg-gradient-to-r from-[var(--color-accent)]/10 to-white px-4 py-3 shadow-sm transition-colors hover:border-[var(--color-accent)]/60"
+      : "group rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 hover:bg-slate-50";
 
   return (
-    <Link
-      className={rowClassName}
-      href={`/matches/${match.id}`}
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-[var(--color-ink-muted)]">
-            {formatCompetitionTitle(
-              match.competition,
-              match.competition.season,
+    <div className={rowClassName}>
+      <Link
+        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+        href={`/matches/${match.id}`}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-[var(--color-ink-muted)]">
+              {formatCompetitionTitle(
+                match.competition,
+                match.competition.season,
+              )}
+            </p>
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-[var(--color-ink)]">
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <TeamBadge
+                  shortCode={match.homeTeam.shortCode}
+                  size={compact ? 18 : 20}
+                  slug={match.homeTeam.slug}
+                />
+                <span className="truncate">{match.homeTeam.name}</span>
+              </span>
+              <span className="shrink-0 text-xs font-normal uppercase text-slate-400">
+                対
+              </span>
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <TeamBadge
+                  shortCode={match.awayTeam.shortCode}
+                  size={compact ? 18 : 20}
+                  slug={match.awayTeam.slug}
+                />
+                <span className="truncate">{match.awayTeam.name}</span>
+              </span>
+            </div>
+            {!compact && match.venue && (
+              <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
+                {match.venue}
+              </p>
             )}
-          </p>
-          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-[var(--color-ink)]">
-            <span className="inline-flex min-w-0 items-center gap-1.5">
-              <TeamBadge
-                shortCode={match.homeTeam.shortCode}
-                size={compact ? 18 : 20}
-                slug={match.homeTeam.slug}
-              />
-              <span className="truncate">{match.homeTeam.name}</span>
-            </span>
-            <span className="shrink-0 text-xs font-normal uppercase text-slate-400">
-              対
-            </span>
-            <span className="inline-flex min-w-0 items-center gap-1.5">
-              <TeamBadge
-                shortCode={match.awayTeam.shortCode}
-                size={compact ? 18 : 20}
-                slug={match.awayTeam.slug}
-              />
-              <span className="truncate">{match.awayTeam.name}</span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 sm:justify-end">
+            {isHighlighted && (
+              <span className="rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[10px] font-bold text-white">
+                注目
+              </span>
+            )}
+            {contentBadge && (
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${contentBadge.className}`}
+              >
+                {contentBadge.label}
+              </span>
+            )}
+            {match.status !== "scheduled" && (
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${status.className}`}
+              >
+                {status.label}
+              </span>
+            )}
+            <span className="min-w-[72px] text-right text-sm font-bold tabular-nums text-[var(--color-ink)]">
+              {match.status === "finished" ? (
+                <SpoilerScore enabled={spoilerGuardEnabled}>
+                  {stateLabel}
+                </SpoilerScore>
+              ) : (
+                stateLabel
+              )}
             </span>
           </div>
-          {!compact && match.venue && (
-            <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
-              {match.venue}
-            </p>
-          )}
         </div>
-        <div className="flex shrink-0 items-center gap-2 sm:justify-end">
-          {isHighlighted && (
-            <span className="rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[10px] font-bold text-white">
-              注目
-            </span>
-          )}
-          {contentBadge && (
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${contentBadge.className}`}
-            >
-              {contentBadge.label}
-            </span>
-          )}
-          {match.status !== "scheduled" && (
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${status.className}`}
-            >
-              {status.label}
-            </span>
-          )}
-          <span className="min-w-[72px] text-right text-sm font-bold tabular-nums text-[var(--color-ink)]">
-            {match.status === "finished" ? (
-              <SpoilerScore enabled={spoilerGuardEnabled}>
-                {stateLabel}
-              </SpoilerScore>
-            ) : (
-              stateLabel
-            )}
+      </Link>
+      {match.broadcastJpUrl && (
+        <a
+          className="border-[var(--color-accent)]/25 bg-[var(--color-accent)]/10 hover:border-[var(--color-accent)]/45 hover:bg-[var(--color-accent)]/15 mt-3 inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-xs font-bold text-[var(--color-accent)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          href={match.broadcastJpUrl}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          視聴
+          <span aria-hidden className="ml-1">
+            ↗
           </span>
-        </div>
-      </div>
-    </Link>
+        </a>
+      )}
+    </div>
   );
 }
 
@@ -226,7 +242,7 @@ export function WeekSchedule({
               <span className="mt-1 text-[10px] font-bold text-white/70">
                 {dayParts.month}
               </span>
-              <span className="mt-3 rounded-full bg-white/12 px-2 py-0.5 text-[10px] font-bold text-white/75">
+              <span className="bg-white/12 mt-3 rounded-full px-2 py-0.5 text-[10px] font-bold text-white/75">
                 {group.matches.length}試合
               </span>
             </div>

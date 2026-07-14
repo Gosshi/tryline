@@ -2,7 +2,13 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { MatchHeader } from "@/components/match-header";
@@ -175,15 +181,44 @@ describe("MatchHeader", () => {
     ).toHaveAttribute("href", "/h2h/france-vs-ireland");
   });
 
+  it("renders a Japanese broadcast external link when provided", () => {
+    render(
+      <MatchHeader
+        match={{
+          ...match,
+          broadcastJpUrl: "https://example.com/watch/ireland-france",
+        }}
+      />,
+    );
+
+    const link = screen.getByRole("link", { name: "視聴する" });
+
+    expect(link).toHaveAttribute(
+      "href",
+      "https://example.com/watch/ireland-france",
+    );
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(link).toHaveAttribute("target", "_blank");
+  });
+
+  it("does not render a broadcast link or placeholder when no URL is stored", () => {
+    render(<MatchHeader match={{ ...match, broadcastJpUrl: null }} />);
+
+    expect(
+      screen.queryByRole("link", { name: "視聴する" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("視聴情報なし")).not.toBeInTheDocument();
+  });
+
   it("uses display name overrides for EN pages", () => {
     render(
-        <MatchHeader
-          awayDisplayName="Les Bleus"
-          homeDisplayName="Irish Rugby"
-          language="en"
-          match={{
-            ...match,
-            awayScore: 28,
+      <MatchHeader
+        awayDisplayName="Les Bleus"
+        homeDisplayName="Irish Rugby"
+        language="en"
+        match={{
+          ...match,
+          awayScore: 28,
           homeScore: 31,
           status: "finished",
         }}
