@@ -1,0 +1,18 @@
+name: Cron send content notifications
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  send-content-notifications:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send content notifications
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -X GET \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://tryline-six.vercel.app/api/cron/send-content-notifications
