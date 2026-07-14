@@ -28,7 +28,6 @@ export function createMatchOgImage(params: OgImageParams) {
   };
 }
 
-
 type CompetitionOgImageParams = {
   accentColor: string;
   familyName: string;
@@ -44,6 +43,39 @@ export function createCompetitionOgImage(params: CompetitionOgImageParams) {
 
   if (params.season) {
     searchParams.set("season", params.season);
+  }
+
+  return {
+    height: 630,
+    url: `/api/og?${searchParams.toString()}`,
+    width: 1200,
+  };
+}
+
+type CalendarOgImageParams = {
+  competitionCount: number;
+  focusAway?: string;
+  focusCompetition?: string;
+  focusHome?: string;
+  matchCount: number;
+  weekLabel: string;
+};
+
+export function createCalendarOgImage(params: CalendarOgImageParams) {
+  const searchParams = new URLSearchParams({
+    type: "calendar",
+    week_label: params.weekLabel,
+    match_count: String(params.matchCount),
+    competition_count: String(params.competitionCount),
+  });
+
+  if (params.focusHome && params.focusAway) {
+    searchParams.set("focus_home", params.focusHome);
+    searchParams.set("focus_away", params.focusAway);
+
+    if (params.focusCompetition) {
+      searchParams.set("focus_competition", params.focusCompetition);
+    }
   }
 
   return {

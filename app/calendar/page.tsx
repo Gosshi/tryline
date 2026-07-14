@@ -6,12 +6,14 @@ import { getMatchesInRange } from "@/lib/db/queries/matches";
 import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { getStandingPositionLookupForCompetitions } from "@/lib/db/queries/standings";
 import { selectCalendarFocusMatchId } from "@/lib/format/calendar-focus";
+import { formatCompetitionTitle } from "@/lib/format/competition";
 import {
   addJstDays,
   formatJstWeekRangeLabel,
   getCurrentJstWeekRangeUtc,
   getJstWeekRangeUtc,
 } from "@/lib/format/week";
+import { createCalendarOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata } from "next";
@@ -47,7 +49,9 @@ function getWeekParam(searchParams: CalendarSearchParams): string | null {
 function getCalendarHref(weekStartJst: string): string {
   const currentWeek = getCurrentJstWeekRangeUtc().weekStartJst;
 
-  return weekStartJst === currentWeek ? "/calendar" : "/calendar?week=" + weekStartJst;
+  return weekStartJst === currentWeek
+    ? "/calendar"
+    : "/calendar?week=" + weekStartJst;
 }
 
 function getWebcalUrl(url: string): string {
@@ -58,12 +62,50 @@ export async function generateMetadata({
   searchParams,
 }: CalendarPageProps): Promise<Metadata> {
   const params = await resolveSearchParams(searchParams);
-  const hasWeekParam = Boolean(getWeekParam(params));
+  const weekParam = getWeekParam(params);
+  const hasWeekParam = Boolean(weekParam);
+  const range = weekParam
+    ? getJstWeekRangeUtc(weekParam)
+    : getCurrentJstWeekRangeUtc();
+  const matches = await getMatchesInRange(range.startUtcIso, range.endUtcIso);
+  const competitionIds = matches
+    .map((match) => match.competition.id ?? match.competition.slug)
+    .filter(Boolean);
+  const standingPositions =
+    await getStandingPositionLookupForCompetitions(competitionIds);
+  const focusMatchId = selectCalendarFocusMatchId(matches, standingPositions);
+  const focusMatch =
+    focusMatchId !== null
+      ? matches.find((match) => match.id === focusMatchId)
+      : undefined;
+  const competitionCount = new Set(competitionIds).size;
 
   return {
     alternates: { canonical: SITE_URL + "/calendar" },
     description:
       "今週開催される海外ラグビーの試合を全大会横断で確認できます。JSTの曜日別にキックオフ時刻、状態、日本語レビュー・プレビューの有無をまとめています。",
+    openGraph: {
+      description:
+        "今週開催される海外ラグビーの試合を全大会横断で確認できます。JSTの曜日別にキックオフ時刻、状態、日本語レビュー・プレビューの有無をまとめています。",
+      images: [
+        createCalendarOgImage({
+          competitionCount,
+          focusAway: focusMatch?.awayTeam.name,
+          focusCompetition: focusMatch
+            ? formatCompetitionTitle(
+                focusMatch.competition,
+                focusMatch.competition.season,
+              )
+            : undefined,
+          focusHome: focusMatch?.homeTeam.name,
+          matchCount: matches.length,
+          weekLabel: formatJstWeekRangeLabel(range.weekStartJst),
+        }),
+      ],
+      title: `${CALENDAR_TITLE} | Tryline`,
+      type: "website",
+      url: `${SITE_URL}/calendar`,
+    },
     robots: hasWeekParam ? { follow: true, index: false } : undefined,
     title: CALENDAR_TITLE,
   };
@@ -85,16 +127,15 @@ export default async function CalendarPage({
   const competitionIds = matches
     .map((match) => match.competition.id)
     .filter((id): id is string => Boolean(id));
-  const standingPositions = await getStandingPositionLookupForCompetitions(
-    competitionIds,
-  );
+  const standingPositions =
+    await getStandingPositionLookupForCompetitions(competitionIds);
   const focusMatchId = selectCalendarFocusMatchId(matches, standingPositions);
   const previousWeek = addJstDays(range.weekStartJst, -7);
   const nextWeek = addJstDays(range.weekStartJst, 7);
   const allCalendarFeedUrl = `${SITE_URL}/api/calendar/all.ics`;
 
   return (
-    <main className="min-h-screen bg-paper">
+    <main className="bg-paper min-h-screen">
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:px-8">
           <nav className="mb-4 text-xs text-[var(--color-ink-muted)]">

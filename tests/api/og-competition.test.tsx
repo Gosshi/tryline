@@ -58,8 +58,9 @@ describe("/api/og competition images", () => {
     ogMocks.imageResponse.mockClear();
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        new Response(new Uint8Array([0x4f, 0x54, 0x54, 0x4f]).buffer),
+      vi.fn(
+        async () =>
+          new Response(new Uint8Array([0x4f, 0x54, 0x54, 0x4f]).buffer),
       ),
     );
   });
@@ -83,6 +84,41 @@ describe("/api/og competition images", () => {
       expect.anything(),
       expect.objectContaining({ height: 630, width: 1200 }),
     );
+  });
+
+  it("returns a 1200x630 calendar OG image with a focus match", async () => {
+    const { GET } = await import("@/app/api/og/route");
+
+    const response = await GET(
+      new Request(
+        "https://tryline.test/api/og?type=calendar&week_label=7%E6%9C%8814%E6%97%A5%20-%2020%E6%97%A5%20JST&match_count=12&competition_count=5&focus_home=Japan&focus_away=France&focus_competition=Nations%20Championship",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("image/png");
+    expect(ogMocks.imageResponse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ height: 630, width: 1200 }),
+    );
+    expect(dbMock.selects).toEqual([]);
+  });
+
+  it("returns a calendar OG image without a focus row for empty weeks", async () => {
+    const { GET } = await import("@/app/api/og/route");
+
+    const response = await GET(
+      new Request(
+        "https://tryline.test/api/og?type=calendar&week_label=7%E6%9C%8828%E6%97%A5%20-%208%E6%9C%883%E6%97%A5%20JST&match_count=0&competition_count=0",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(ogMocks.imageResponse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ height: 630, width: 1200 }),
+    );
+    expect(dbMock.selects).toEqual([]);
   });
 
   it("keeps result OG images on the existing 1200x675 path", async () => {
