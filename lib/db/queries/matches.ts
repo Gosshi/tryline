@@ -10,6 +10,7 @@ import type { Json } from "@/lib/db/types";
 
 export type MatchListItem = {
   id: string;
+  broadcastJpUrl?: string | null;
   kickoffAt: string;
   status: MatchStatus;
   homeTeam: {
@@ -115,7 +116,12 @@ export type TeamNextMatch = {
 };
 
 export type TeamPageMatch = MatchListItem & {
-  competition: { slug: string; name: string; nameJa?: string | null; season: string };
+  competition: {
+    slug: string;
+    name: string;
+    nameJa?: string | null;
+    season: string;
+  };
 };
 
 export type HeadToHeadTeam = {
@@ -126,7 +132,12 @@ export type HeadToHeadTeam = {
 };
 
 export type HeadToHeadMatch = MatchListItem & {
-  competition: { slug: string; name: string; nameJa?: string | null; season: string };
+  competition: {
+    slug: string;
+    name: string;
+    nameJa?: string | null;
+    season: string;
+  };
 };
 
 export type HeadToHeadPageData = {
@@ -182,6 +193,7 @@ export type PoolTeam = {
 
 type BaseMatchRow = {
   id: string;
+  broadcast_jp_url?: string | null;
   kickoff_at: string;
   status: string;
   home_score: number | null;
@@ -537,7 +549,8 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
       id: row.away_team.id,
       name: awayDisplayName,
       nameJa: awayNameJa,
-      shortCode: row.away_team.short_code ?? awayDisplayName.slice(0, 3).toUpperCase(),
+      shortCode:
+        row.away_team.short_code ?? awayDisplayName.slice(0, 3).toUpperCase(),
       slug: row.away_team.slug,
       worldRanking: row.away_team.world_ranking ?? null,
     },
@@ -546,11 +559,13 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
       id: row.home_team.id,
       name: homeDisplayName,
       nameJa: homeNameJa,
-      shortCode: row.home_team.short_code ?? homeDisplayName.slice(0, 3).toUpperCase(),
+      shortCode:
+        row.home_team.short_code ?? homeDisplayName.slice(0, 3).toUpperCase(),
       slug: row.home_team.slug,
       worldRanking: row.home_team.world_ranking ?? null,
     },
     id: row.id,
+    broadcastJpUrl: row.broadcast_jp_url ?? null,
     kickoffAt: row.kickoff_at,
     poolName: getPoolNameFromExternalIds(row.external_ids),
     round: getRoundFromExternalIds(row.external_ids),
@@ -672,7 +687,6 @@ function getRecentlyReviewedGroupKey(row: RecentlyReviewedMatchRow) {
   return [competition.family, competition.season].join("|");
 }
 
-
 function pickRecentlyReviewedHero(
   entries: RecentlyReviewedEntry[],
   standingPositions: Map<string, Map<string, number>>,
@@ -732,7 +746,10 @@ function buildRecentlyReviewedCompetitionGroups(
     })
     .slice(0, RECENTLY_REVIEWED_GROUP_LIMIT)
     .map((entriesForGroup) => {
-      const heroEntry = pickRecentlyReviewedHero(entriesForGroup, standingPositions);
+      const heroEntry = pickRecentlyReviewedHero(
+        entriesForGroup,
+        standingPositions,
+      );
       const hero = heroEntry!.match;
       const compact = entriesForGroup
         .filter((entry) => entry.match.id !== hero.id)
@@ -750,7 +767,9 @@ function buildRecentlyReviewedCompetitionGroups(
     });
 }
 
-function getRecentlyReviewedCompetitionIds(entries: RecentlyReviewedEntry[]): string[] {
+function getRecentlyReviewedCompetitionIds(
+  entries: RecentlyReviewedEntry[],
+): string[] {
   return [
     ...new Set(
       entries
@@ -784,9 +803,7 @@ async function getRecentlyReviewedEntries(
   return ((data ?? []) as RecentlyReviewedContentRow[])
     .map((row) => ({ match: mapRecentlyReviewedContentRow(row), row }))
     .filter(
-      (
-        entry,
-      ): entry is RecentlyReviewedEntry =>
+      (entry): entry is RecentlyReviewedEntry =>
         entry.match !== null && entry.row.match !== null,
     );
 }
@@ -1383,6 +1400,7 @@ export async function getMatchesInRange(
     .select(
       `
         id,
+        broadcast_jp_url,
         kickoff_at,
         status,
         home_score,
@@ -2178,6 +2196,7 @@ export async function getMatchById(
     .select(
       `
         id,
+        broadcast_jp_url,
         kickoff_at,
         status,
         home_team_id,

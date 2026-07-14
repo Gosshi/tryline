@@ -117,6 +117,36 @@ describe("WeekSchedule", () => {
     expect(screen.getByText("試合なし")).toBeInTheDocument();
   });
 
+  it("renders broadcast links only for matches with a stored URL", () => {
+    render(
+      <WeekSchedule
+        matches={[
+          {
+            ...baseMatch,
+            broadcastJpUrl: "https://example.com/watch/match-1",
+            id: "match-1",
+          },
+          {
+            ...baseMatch,
+            broadcastJpUrl: null,
+            id: "match-2",
+          },
+        ]}
+      />,
+    );
+
+    const links = screen.getAllByRole("link", { name: "視聴" });
+
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAttribute(
+      "href",
+      "https://example.com/watch/match-1",
+    );
+    expect(links[0]).toHaveAttribute("rel", "noopener noreferrer");
+    expect(links[0]).toHaveAttribute("target", "_blank");
+    expect(screen.queryByText("視聴情報なし")).not.toBeInTheDocument();
+  });
+
   it("hides finished scores behind spoiler guard until clicked", () => {
     render(
       <WeekSchedule

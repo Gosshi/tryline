@@ -27,6 +27,7 @@ vi.mock("@/lib/db/public-server", () => ({
 }));
 
 function createMatchRow(params: {
+  broadcastJpUrl?: string | null;
   competitionName?: string;
   competitionSeason?: string;
   id: string;
@@ -56,6 +57,7 @@ function createMatchRow(params: {
       slug: "kubota-spears",
     },
     id: params.id,
+    broadcast_jp_url: params.broadcastJpUrl ?? null,
     kickoff_at: params.kickoffAt,
     status: params.status,
     venue: "National Stadium",
@@ -89,6 +91,7 @@ describe("getMatchesInRange", () => {
   it("returns mixed statuses in range with preview and recap flags", async () => {
     dbMock.matchRows = [
       createMatchRow({
+        broadcastJpUrl: "https://example.com/watch/match-scheduled",
         competitionName: "Z Competition",
         id: "match-scheduled",
         kickoffAt: "2026-06-07T16:00:00.000Z",
@@ -127,6 +130,9 @@ describe("getMatchesInRange", () => {
       "kickoff_at",
       "2026-06-14T15:00:00.000Z",
     );
+    expect(dbMock.matchesBuilder.select).toHaveBeenCalledWith(
+      expect.stringContaining("broadcast_jp_url"),
+    );
     expect(matches.map((match) => match.id)).toEqual([
       "match-finished",
       "match-scheduled",
@@ -146,6 +152,7 @@ describe("getMatchesInRange", () => {
     expect(
       matches.find((match) => match.id === "match-scheduled"),
     ).toMatchObject({
+      broadcastJpUrl: "https://example.com/watch/match-scheduled",
       hasPreview: true,
       hasRecap: false,
     });

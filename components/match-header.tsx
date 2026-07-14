@@ -170,11 +170,26 @@ export function MatchHeader({
         )}
       </div>
 
-      {(match.status === "finished" || headToHeadHref) && (
+      {(match.broadcastJpUrl ||
+        match.status === "finished" ||
+        headToHeadHref) && (
         <div className="mt-4 flex flex-wrap gap-2 border-t border-white/15 pt-4">
+          {match.broadcastJpUrl && (
+            <a
+              className="inline-flex min-h-11 items-center rounded-full bg-white px-4 py-2 text-xs font-bold text-[var(--color-accent)] transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-[0.98]"
+              href={match.broadcastJpUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              視聴する
+              <span aria-hidden className="ml-1">
+                ↗
+              </span>
+            </a>
+          )}
           {match.status === "finished" && (
             <a
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-[#b4232a] transition-transform hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-[#b4232a] transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-[0.98]"
               href={buildYouTubeSearchUrl(homeName, awayName, match.kickoffAt)}
               rel="noreferrer noopener"
               target="_blank"

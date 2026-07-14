@@ -9,6 +9,7 @@ vi.mock("@/lib/db/public-server", () => ({
 }));
 
 import {
+  getMatchById,
   getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedMatches,
   stripMarkdown,
@@ -46,14 +47,76 @@ const reviewQueryMock = {
   select: vi.fn().mockReturnThis(),
 };
 
+const matchDetailQueryMock = {
+  eq: vi.fn().mockReturnThis(),
+  maybeSingle: vi.fn(),
+  select: vi.fn().mockReturnThis(),
+};
+
 const standingsQueryMock = {
   in: vi.fn(),
   select: vi.fn().mockReturnThis(),
 };
 
+describe("getMatchById", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clientMock.from.mockReturnValue(matchDetailQueryMock);
+    matchDetailQueryMock.eq.mockReturnThis();
+    matchDetailQueryMock.maybeSingle.mockResolvedValue({
+      data: {
+        away_score: null,
+        away_team: {
+          english_name: null,
+          name: "France",
+          short_code: "FRA",
+          slug: "france",
+        },
+        away_team_id: "france-id",
+        broadcast_jp_url: "https://example.com/watch/ireland-france",
+        competition: {
+          family: "six-nations",
+          name: "Six Nations",
+          season: "2027",
+          slug: "six-nations-2027",
+        },
+        external_ids: { wikipedia_round: 1 },
+        home_score: null,
+        home_team: {
+          english_name: null,
+          name: "Ireland",
+          short_code: "IRL",
+          slug: "ireland",
+        },
+        home_team_id: "ireland-id",
+        id: "match-detail",
+        kickoff_at: "2027-02-06T15:00:00.000Z",
+        status: "scheduled",
+        venue: "Aviva Stadium",
+      },
+      error: null,
+    });
+  });
+
+  it("selects and maps the stored Japanese broadcast URL", async () => {
+    const match = await getMatchById("match-detail");
+
+    expect(clientMock.from).toHaveBeenCalledWith("matches");
+    expect(matchDetailQueryMock.select).toHaveBeenCalledWith(
+      expect.stringContaining("broadcast_jp_url"),
+    );
+    expect(matchDetailQueryMock.eq).toHaveBeenCalledWith("id", "match-detail");
+    expect(match).toMatchObject({
+      broadcastJpUrl: "https://example.com/watch/ireland-france",
+      id: "match-detail",
+    });
+  });
+});
+
 function isoDaysAgo(days: number, minutes = 0) {
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000 - minutes * 60 * 1000)
-    .toISOString();
+  return new Date(
+    Date.now() - days * 24 * 60 * 60 * 1000 - minutes * 60 * 1000,
+  ).toISOString();
 }
 
 function buildReviewedContentRow(params: {
@@ -307,7 +370,11 @@ describe("recently reviewed match queries", () => {
     });
     standingsQueryMock.in.mockResolvedValue({
       data: [
-        { competition_id: "srp-2026-id", position: 1, team_id: "hurricanes-id" },
+        {
+          competition_id: "srp-2026-id",
+          position: 1,
+          team_id: "hurricanes-id",
+        },
         { competition_id: "srp-2026-id", position: 2, team_id: "chiefs-id" },
       ],
       error: null,
