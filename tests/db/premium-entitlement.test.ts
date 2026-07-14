@@ -139,6 +139,43 @@ describe("premium entitlement database migration", () => {
     }
   });
 
+  it("blocks authenticated clients from deleting and reinserting their profile", async () => {
+    const service = createServiceClient();
+    const account = await signUpTestUser("premium-grant-insert-delete");
+
+    const deleteResult = await account.client
+      .from("user_profiles")
+      .delete()
+      .eq("id", account.user.id);
+
+    expect(deleteResult.error).not.toBeNull();
+
+    const serviceDelete = await service
+      .from("user_profiles")
+      .delete()
+      .eq("id", account.user.id);
+
+    expect(serviceDelete.error).toBeNull();
+
+    const insertResult = await account.client.from("user_profiles").insert({
+      id: account.user.id,
+      premium_source: "manual",
+      premium_until: "2027-01-01T00:00:00.000Z",
+      subscription_status: "premium",
+    });
+
+    expect(insertResult.error).not.toBeNull();
+
+    const profile = await service
+      .from("user_profiles")
+      .select("id")
+      .eq("id", account.user.id)
+      .maybeSingle();
+
+    expect(profile.error).toBeNull();
+    expect(profile.data).toBeNull();
+  });
+
   it("keeps authenticated profile and chat counter updates working", async () => {
     const account = await signUpTestUser("premium-grant-allowed");
 
