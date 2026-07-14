@@ -11,6 +11,7 @@ import { PRIMARY_SAMPLE_MATCH_ID } from "@/lib/sample-matches";
 const authMocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   getUserProfile: vi.fn(),
+  isProfilePremium: vi.fn(),
 }));
 
 const competitionMocks = vi.hoisted(() => ({
@@ -89,6 +90,7 @@ vi.mock("@/components/team-badge", () => ({
 vi.mock("@/lib/auth/server", () => ({
   getUser: authMocks.getUser,
   getUserProfile: authMocks.getUserProfile,
+  isProfilePremium: authMocks.isProfilePremium,
 }));
 
 vi.mock("@/lib/db/queries/competitions", () => ({
@@ -169,6 +171,11 @@ describe("HomePage", () => {
   beforeEach(() => {
     authMocks.getUser.mockResolvedValue(null);
     authMocks.getUserProfile.mockResolvedValue(null);
+    authMocks.isProfilePremium.mockImplementation(
+      (profile: { premium_until?: string | null } | null) =>
+        profile?.premium_until != null &&
+        new Date(profile.premium_until).getTime() > Date.now(),
+    );
     competitionMocks.listFamilies.mockResolvedValue([]);
     competitionMocks.listSeasonsByFamily.mockResolvedValue([]);
     competitionMocks.selectLatestSeasonWithMatches.mockReturnValue(null);

@@ -1046,6 +1046,8 @@ export type Database = {
           display_name: string | null;
           favorite_team_slugs: string[];
           id: string;
+          premium_source: string | null;
+          premium_until: string | null;
           stripe_customer_id: string | null;
           stripe_subscription_id: string | null;
           subscription_status: string;
@@ -1059,6 +1061,8 @@ export type Database = {
           display_name?: string | null;
           favorite_team_slugs?: string[];
           id: string;
+          premium_source?: string | null;
+          premium_until?: string | null;
           stripe_customer_id?: string | null;
           stripe_subscription_id?: string | null;
           subscription_status?: string;
@@ -1072,6 +1076,8 @@ export type Database = {
           display_name?: string | null;
           favorite_team_slugs?: string[];
           id?: string;
+          premium_source?: string | null;
+          premium_until?: string | null;
           stripe_customer_id?: string | null;
           stripe_subscription_id?: string | null;
           subscription_status?: string;

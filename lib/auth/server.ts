@@ -4,6 +4,11 @@ import { redirect } from "next/navigation";
 
 import type { Database } from "@/lib/db/types";
 
+type PremiumProfile = Pick<
+  Database["public"]["Tables"]["user_profiles"]["Row"],
+  "premium_until"
+>;
+
 export async function getSupabaseServerClientWithAuth() {
   const cookieStore = await cookies();
 
@@ -51,7 +56,7 @@ export async function getUserProfile(userId: string) {
   const { data } = await supabase
     .from("user_profiles")
     .select(
-      "subscription_status, stripe_customer_id, chat_daily_count, chat_daily_reset_date, favorite_team_slugs",
+      "stripe_customer_id, premium_until, chat_daily_count, chat_daily_reset_date, favorite_team_slugs",
     )
     .eq("id", userId)
     .maybeSingle();
@@ -59,8 +64,18 @@ export async function getUserProfile(userId: string) {
   return data;
 }
 
+export function isProfilePremium(
+  profile: PremiumProfile | null | undefined,
+  now = new Date(),
+): boolean {
+  return (
+    profile?.premium_until != null &&
+    new Date(profile.premium_until).getTime() > now.getTime()
+  );
+}
+
 export async function isPremium(userId: string): Promise<boolean> {
   const profile = await getUserProfile(userId);
 
-  return profile?.subscription_status === "premium";
+  return isProfilePremium(profile);
 }

@@ -10,6 +10,7 @@ import { SiteHeader } from "@/components/site-header";
 vi.mock("@/lib/auth/server", () => ({
   getUserProfile: vi.fn(() => null),
   getUser: vi.fn(() => null),
+  isProfilePremium: vi.fn(() => false),
 }));
 
 vi.mock("@/lib/db/queries/teams", () => ({

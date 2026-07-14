@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getUser, getUserProfile } from "@/lib/auth/server";
+import { getUser, getUserProfile, isProfilePremium } from "@/lib/auth/server";
 import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { listAllTeams } from "@/lib/db/queries/teams";
 
@@ -19,7 +19,7 @@ export async function SiteHeader() {
         getSpoilerGuardEnabledForUser(user.id),
       ])
     : [null, false];
-  const premium = profile?.subscription_status === "premium";
+  const premium = isProfilePremium(profile);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur-sm">
