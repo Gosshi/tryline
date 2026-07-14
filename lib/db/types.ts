@@ -920,6 +920,85 @@ export type Database = {
           },
         ];
       };
+      expo_push_tokens: {
+        Row: {
+          created_at: string;
+          id: string;
+          last_used_at: string | null;
+          notify_content: boolean;
+          notify_prematch: boolean;
+          spoiler_guard: boolean;
+          team_slugs: string[];
+          token: string;
+          updated_at: string;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          last_used_at?: string | null;
+          notify_content?: boolean;
+          notify_prematch?: boolean;
+          spoiler_guard?: boolean;
+          team_slugs?: string[];
+          token: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          last_used_at?: string | null;
+          notify_content?: boolean;
+          notify_prematch?: boolean;
+          spoiler_guard?: boolean;
+          team_slugs?: string[];
+          token?: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "expo_push_tokens_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      push_notification_log: {
+        Row: {
+          id: string;
+          kind: string;
+          match_id: string;
+          sent_at: string;
+          sent_count: number;
+        };
+        Insert: {
+          id?: string;
+          kind: string;
+          match_id: string;
+          sent_at?: string;
+          sent_count?: number;
+        };
+        Update: {
+          id?: string;
+          kind?: string;
+          match_id?: string;
+          sent_at?: string;
+          sent_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_notification_log_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       push_subscriptions: {
         Row: {
           auth_key: string;
