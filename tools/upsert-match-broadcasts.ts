@@ -192,6 +192,26 @@ async function readInputFile(path: string): Promise<MatchBroadcastInput> {
   return parseMatchBroadcastInput(JSON.parse(raw));
 }
 
+export function shouldRunUpsertMatchBroadcastsCli(
+  argv = process.argv,
+): boolean {
+  return argv[1]?.endsWith("upsert-match-broadcasts.ts") ?? false;
+}
+
+export function logCliInputSummary({
+  filePath,
+  input,
+  logger = console,
+}: {
+  filePath: string;
+  input: MatchBroadcastInput;
+  logger?: Logger;
+}) {
+  logger.log(`Input file: ${filePath}`);
+  logger.log(`Target match ID: ${input.match_id}`);
+  logger.log(`Broadcast count: ${input.broadcasts.length}`);
+}
+
 async function confirmOnTty(
   match: MatchSummary,
   parsed: MatchBroadcastInput,
@@ -219,6 +239,7 @@ async function main() {
   }
 
   const parsed = await readInputFile(filePath);
+  logCliInputSummary({ filePath, input: parsed });
   await upsertMatchBroadcastsForInput({
     confirm: confirmOnTty,
     db: getSupabaseServerClient(),
@@ -226,7 +247,7 @@ async function main() {
   });
 }
 
-if (require.main === module) {
+if (shouldRunUpsertMatchBroadcastsCli()) {
   main().catch((error) => {
     console.error(error);
     process.exit(1);
