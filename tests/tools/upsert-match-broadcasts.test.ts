@@ -1,8 +1,11 @@
+import { execFileSync } from "node:child_process";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   buildMatchBroadcastRows,
+  logCliInputSummary,
   parseMatchBroadcastInput,
+  shouldRunUpsertMatchBroadcastsCli,
   upsertMatchBroadcastsForInput,
   type MatchBroadcastInput,
 } from "@/tools/upsert-match-broadcasts";
@@ -112,6 +115,53 @@ describe("upsert-match-broadcasts", () => {
         service_name: "J SPORTS オンデマンド",
       }),
     ]);
+  });
+
+  it("detects run-ts.cjs execution by the target script argv entry", () => {
+    expect(
+      shouldRunUpsertMatchBroadcastsCli([
+        "/usr/local/bin/node",
+        "tools/upsert-match-broadcasts.ts",
+        "input.json",
+      ]),
+    ).toBe(true);
+    expect(
+      shouldRunUpsertMatchBroadcastsCli([
+        "/usr/local/bin/node",
+        "tools/run-ts.cjs",
+        "tools/upsert-match-broadcasts.ts",
+      ]),
+    ).toBe(false);
+  });
+
+  it("runs main through tools/run-ts.cjs instead of silently exiting", () => {
+    expect(() =>
+      execFileSync(
+        process.execPath,
+        ["tools/run-ts.cjs", "tools/upsert-match-broadcasts.ts"],
+        {
+          cwd: process.cwd(),
+          encoding: "utf8",
+          stdio: "pipe",
+        },
+      ),
+    ).toThrow(/Usage: node --env-file=.env.production.local/);
+  });
+
+  it("logs the CLI input file, target match ID, and broadcast count before writing", () => {
+    const logger = { error: vi.fn(), log: vi.fn() };
+
+    logCliInputSummary({
+      filePath: "tmp/broadcasts.json",
+      input,
+      logger,
+    });
+
+    expect(logger.log).toHaveBeenCalledWith("Input file: tmp/broadcasts.json");
+    expect(logger.log).toHaveBeenCalledWith(
+      `Target match ID: ${input.match_id}`,
+    );
+    expect(logger.log).toHaveBeenCalledWith("Broadcast count: 4");
   });
 
   it("upserts four rows idempotently by match and service name", async () => {
