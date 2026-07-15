@@ -21,6 +21,7 @@ function createMatch(overrides: Partial<CalendarMatch>): CalendarMatch {
       season: "2026",
       slug: "six-nations-2026",
     },
+    hasBroadcasts: false,
     hasPreview: false,
     hasRecap: false,
     homeScore: null,
@@ -103,12 +104,18 @@ describe("selectCalendarFocusMatchId", () => {
 
   it("falls back to standings positions and hides highlight without signals", () => {
     const standings = new Map([
-      ["competition-id", new Map([["home-id", 1], ["away-id", 2]])],
+      [
+        "competition-id",
+        new Map([
+          ["home-id", 1],
+          ["away-id", 2],
+        ]),
+      ],
     ]);
 
-    expect(selectCalendarFocusMatchId([createMatch({ id: "standings" })], standings)).toBe(
-      "standings",
-    );
+    expect(
+      selectCalendarFocusMatchId([createMatch({ id: "standings" })], standings),
+    ).toBe("standings");
     expect(selectCalendarFocusMatchId([createMatch({})], new Map())).toBeNull();
   });
 });

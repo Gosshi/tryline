@@ -24,6 +24,7 @@ const match: MatchDetail = {
     slug: "france",
   },
   awayTeamId: "00000000-0000-0000-0000-000000000003",
+  broadcasts: [],
   competition: {
     family: "six-nations",
     name: "Six Nations 2027",
@@ -181,31 +182,80 @@ describe("MatchHeader", () => {
     ).toHaveAttribute("href", "/h2h/france-vs-ireland");
   });
 
-  it("renders a Japanese broadcast external link when provided", () => {
-    render(
+  it("renders a broadcast section with service links when broadcasts are provided", () => {
+    const { container } = render(
       <MatchHeader
         match={{
           ...match,
-          broadcastJpUrl: "https://example.com/watch/ireland-france",
+          broadcasts: [
+            {
+              displayOrder: 0,
+              kind: "tv",
+              serviceName: "WOWOW プライム",
+              sourceUrl: "https://source.example.com",
+              url: "https://example.com/wowow",
+              verifiedAt: "2026-07-15T12:00:00.000Z",
+            },
+            {
+              displayOrder: 1,
+              kind: "streaming",
+              serviceName: "J SPORTS オンデマンド",
+              sourceUrl: null,
+              url: "https://example.com/jsports",
+              verifiedAt: "2026-07-16T12:00:00.000Z",
+            },
+          ],
         }}
       />,
     );
 
-    const link = screen.getByRole("link", { name: "視聴する" });
+    const section = container.querySelector("#broadcasts");
 
-    expect(link).toHaveAttribute(
+    expect(section).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "視聴方法" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("放送")).toBeInTheDocument();
+    expect(screen.getByText("配信")).toBeInTheDocument();
+    expect(screen.getByText("確認日: 7/16")).toBeInTheDocument();
+    expect(
+      screen.queryByText("https://source.example.com"),
+    ).not.toBeInTheDocument();
+
+    const tvLink = screen.getByRole("link", { name: /WOWOW プライム/ });
+    const streamingLink = screen.getByRole("link", {
+      name: /J SPORTS オンデマンド/,
+    });
+
+    expect(tvLink).toHaveAttribute("href", "https://example.com/wowow");
+    expect(tvLink).toHaveAttribute("rel", "noopener noreferrer");
+    expect(tvLink).toHaveAttribute("target", "_blank");
+    expect(streamingLink).toHaveAttribute(
       "href",
-      "https://example.com/watch/ireland-france",
+      "https://example.com/jsports",
     );
-    expect(link).toHaveAttribute("rel", "noopener noreferrer");
-    expect(link).toHaveAttribute("target", "_blank");
+    expect(streamingLink).toHaveAttribute("rel", "noopener noreferrer");
+    expect(streamingLink).toHaveAttribute("target", "_blank");
   });
 
-  it("does not render a broadcast link or placeholder when no URL is stored", () => {
-    render(<MatchHeader match={{ ...match, broadcastJpUrl: null }} />);
+  it("does not render a broadcast section or placeholder when broadcasts are empty", () => {
+    const { container } = render(
+      <MatchHeader
+        match={{
+          ...match,
+          broadcastJpUrl: "https://example.com/legacy",
+          broadcasts: [],
+        }}
+      />,
+    );
 
+    expect(container.querySelector("#broadcasts")).not.toBeInTheDocument();
+    expect(screen.queryByText("視聴方法")).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: "視聴する" }),
+      screen.queryByRole("link", { name: /視聴する/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("https://example.com/legacy"),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("視聴情報なし")).not.toBeInTheDocument();
   });

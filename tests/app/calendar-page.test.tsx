@@ -57,6 +57,7 @@ function createCalendarMatch(
       season: "2026",
       slug: "nations-championship-2026",
     },
+    hasBroadcasts: false,
     hasPreview: true,
     hasRecap: false,
     homeScore: null,

@@ -20,11 +20,16 @@ const dbMock = vi.hoisted(() => ({
   },
 }));
 
+const broadcastsMock = vi.hoisted(() => ({
+  getMatchBroadcastPresenceForMatches: vi.fn(),
+}));
+
 vi.mock("@/lib/db/public-server", () => ({
   getSupabasePublicServerClient: () => ({
     from: dbMock.from,
   }),
 }));
+vi.mock("@/lib/db/queries/match-broadcasts", () => broadcastsMock);
 
 function createMatchRow(params: {
   broadcastJpUrl?: string | null;
@@ -80,6 +85,9 @@ describe("getMatchesInRange", () => {
           error: null,
         }),
       ),
+    );
+    broadcastsMock.getMatchBroadcastPresenceForMatches.mockResolvedValue(
+      new Set(["match-scheduled"]),
     );
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return dbMock.matchesBuilder;
@@ -153,8 +161,14 @@ describe("getMatchesInRange", () => {
       matches.find((match) => match.id === "match-scheduled"),
     ).toMatchObject({
       broadcastJpUrl: "https://example.com/watch/match-scheduled",
+      hasBroadcasts: true,
       hasPreview: true,
       hasRecap: false,
+    });
+    expect(
+      matches.find((match) => match.id === "match-finished"),
+    ).toMatchObject({
+      hasBroadcasts: false,
     });
     expect(dbMock.contentBuilder.eq).toHaveBeenCalledWith("language", "ja");
     expect(dbMock.contentBuilder.eq).toHaveBeenCalledWith(

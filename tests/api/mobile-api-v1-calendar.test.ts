@@ -10,6 +10,7 @@ const contentMock = vi.hoisted(() => ({
 
 const serverMock = vi.hoisted(() => ({
   getBroadcastUrlsForMatches: vi.fn(),
+  getV1BroadcastsForMatches: vi.fn(),
 }));
 
 vi.mock("@/lib/db/queries/matches", () => matchesMock);
@@ -61,6 +62,20 @@ describe("GET /api/v1/calendar", () => {
     serverMock.getBroadcastUrlsForMatches.mockResolvedValue(
       new Map([["match-1", "https://example.com/watch"]]),
     );
+    serverMock.getV1BroadcastsForMatches.mockResolvedValue(
+      new Map([
+        [
+          "match-1",
+          [
+            {
+              kind: "tv",
+              service_name: "WOWOW プライム",
+              url: "https://example.com/wowow",
+            },
+          ],
+        ],
+      ]),
+    );
   });
 
   afterEach(() => {
@@ -97,6 +112,7 @@ describe("GET /api/v1/calendar", () => {
               season: "2027",
               slug: "six-nations-2027",
             },
+            has_broadcasts: true,
             has_preview: true,
             has_recap: true,
             home_team: {
@@ -113,6 +129,19 @@ describe("GET /api/v1/calendar", () => {
       },
       error: null,
       success: true,
+    });
+  });
+
+  it("returns has_broadcasts false when only the legacy broadcast URL exists", async () => {
+    serverMock.getV1BroadcastsForMatches.mockResolvedValue(new Map());
+
+    const { GET } = await import("@/app/api/v1/calendar/route");
+    const response = await GET(new Request("http://localhost/api/v1/calendar"));
+    const body = await response.json();
+
+    expect(body.data.matches[0]).toMatchObject({
+      broadcast_jp_url: "https://example.com/watch",
+      has_broadcasts: false,
     });
   });
 

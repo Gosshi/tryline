@@ -3,7 +3,10 @@ import {
   apiSuccess,
   PUBLIC_CACHE_CONTROL,
 } from "@/lib/api/v1/response";
-import { getBroadcastUrlsForMatches } from "@/lib/api/v1/server";
+import {
+  getBroadcastUrlsForMatches,
+  getV1BroadcastsForMatches,
+} from "@/lib/api/v1/server";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import { getMatchesInRange } from "@/lib/db/queries/matches";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
@@ -71,9 +74,10 @@ export async function GET(request: Request) {
 
   const matches = await getMatchesInRange(range.startUtcIso, range.endUtcIso);
   const matchIds = matches.map((match) => match.id);
-  const [contentStatuses, broadcastUrls] = await Promise.all([
+  const [contentStatuses, broadcastUrls, broadcasts] = await Promise.all([
     getContentStatusForMatches(matchIds),
     getBroadcastUrlsForMatches(matchIds),
+    getV1BroadcastsForMatches(matchIds),
   ]);
   const responseMatches: V1CalendarMatch[] = matches.map((match) => {
     const contentStatus = contentStatuses[match.id];
@@ -91,6 +95,7 @@ export async function GET(request: Request) {
         season: match.competition.season,
         slug: match.competition.slug,
       },
+      has_broadcasts: (broadcasts.get(match.id) ?? []).length > 0,
       has_preview: contentStatus?.hasPreview ?? false,
       has_recap: contentStatus?.hasRecap ?? false,
       home_team: {

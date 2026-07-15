@@ -19,6 +19,7 @@ export type V1CalendarMatch = {
   away_team: V1TeamSummary;
   broadcast_jp_url: string | null;
   competition: V1CompetitionSummary;
+  has_broadcasts: boolean;
   has_preview: boolean;
   has_recap: boolean;
   home_team: V1TeamSummary;
@@ -50,9 +51,16 @@ export type V1MatchLineupPlayer = {
   team_id: string;
 };
 
+export type V1MatchBroadcast = {
+  kind: "tv" | "streaming";
+  service_name: string;
+  url: string;
+};
+
 export type V1MatchDetail = {
   away_team: V1TeamSummary & { english_name: string | null };
   broadcast_jp_url: string | null;
+  broadcasts: V1MatchBroadcast[];
   competition: V1CompetitionSummary & { family: string };
   events: V1MatchEvent[];
   home_team: V1TeamSummary & { english_name: string | null };

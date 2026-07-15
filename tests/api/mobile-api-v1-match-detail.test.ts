@@ -14,6 +14,7 @@ const lineupsMock = vi.hoisted(() => ({
 
 const serverMock = vi.hoisted(() => ({
   getBroadcastUrlsForMatches: vi.fn(),
+  getV1BroadcastsForMatches: vi.fn(),
 }));
 
 vi.mock("@/lib/db/queries/matches", () => matchesMock);
@@ -82,6 +83,25 @@ describe("GET /api/v1/matches/[id]", () => {
     serverMock.getBroadcastUrlsForMatches.mockResolvedValue(
       new Map([["match-1", "https://example.com/watch"]]),
     );
+    serverMock.getV1BroadcastsForMatches.mockResolvedValue(
+      new Map([
+        [
+          "match-1",
+          [
+            {
+              kind: "tv",
+              service_name: "WOWOW プライム",
+              url: "https://example.com/wowow",
+            },
+            {
+              kind: "streaming",
+              service_name: "J SPORTS オンデマンド",
+              url: "https://example.com/jsports",
+            },
+          ],
+        ],
+      ]),
+    );
   });
 
   it("returns match details with events, lineups and broadcast information", async () => {
@@ -103,6 +123,18 @@ describe("GET /api/v1/matches/[id]", () => {
             name: "フランス",
           },
           broadcast_jp_url: "https://example.com/watch",
+          broadcasts: [
+            {
+              kind: "tv",
+              service_name: "WOWOW プライム",
+              url: "https://example.com/wowow",
+            },
+            {
+              kind: "streaming",
+              service_name: "J SPORTS オンデマンド",
+              url: "https://example.com/jsports",
+            },
+          ],
           competition: {
             name: "シックスネーションズ",
           },

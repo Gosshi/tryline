@@ -3,7 +3,10 @@ import {
   apiSuccess,
   PUBLIC_CACHE_CONTROL,
 } from "@/lib/api/v1/response";
-import { getBroadcastUrlsForMatches } from "@/lib/api/v1/server";
+import {
+  getBroadcastUrlsForMatches,
+  getV1BroadcastsForMatches,
+} from "@/lib/api/v1/server";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
 import { getMatchById } from "@/lib/db/queries/matches";
@@ -22,10 +25,11 @@ export async function GET(
     return apiError("match not found", 404, PUBLIC_CACHE_CONTROL);
   }
 
-  const [events, lineups, broadcastUrls] = await Promise.all([
+  const [events, lineups, broadcastUrls, broadcasts] = await Promise.all([
     getMatchEventsForMatch(id),
     getMatchLineupsForMatch(id),
     getBroadcastUrlsForMatches([id]),
+    getV1BroadcastsForMatches([id]),
   ]);
   const data: V1MatchDetailData = {
     match: {
@@ -37,6 +41,7 @@ export async function GET(
         slug: match.awayTeam.slug,
       },
       broadcast_jp_url: broadcastUrls.get(id) ?? null,
+      broadcasts: broadcasts.get(id) ?? [],
       competition: {
         family: match.competition.family,
         name: getCompetitionDisplayName(match.competition),

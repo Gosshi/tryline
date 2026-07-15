@@ -11,6 +11,7 @@ import { SpoilerScore } from "./spoiler-score";
 import { StatusBadge } from "./status-badge";
 import { TeamBadge } from "./team-badge";
 
+import type { MatchBroadcast } from "@/lib/db/queries/match-broadcasts";
 import type { MatchDetail } from "@/lib/db/queries/matches";
 
 type MatchHeaderProps = {
@@ -46,6 +47,27 @@ function buildYouTubeSearchUrl(
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
 }
 
+function getBroadcastKindLabel(kind: MatchBroadcast["kind"]): string {
+  return kind === "tv" ? "放送" : "配信";
+}
+
+function formatBroadcastVerifiedDate(broadcasts: MatchBroadcast[]): string {
+  const latestVerifiedAt = broadcasts
+    .map((broadcast) => broadcast.verifiedAt)
+    .sort()
+    .at(-1);
+
+  if (!latestVerifiedAt) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("ja-JP", {
+    day: "numeric",
+    month: "numeric",
+    timeZone: "Asia/Tokyo",
+  }).format(new Date(latestVerifiedAt));
+}
+
 export function MatchHeader({
   awayDisplayName,
   headToHeadHref,
@@ -65,6 +87,7 @@ export function MatchHeader({
     (match.status === "finished" || match.status === "in_progress") &&
     match.homeScore !== null &&
     match.awayScore !== null;
+  const verifiedDate = formatBroadcastVerifiedDate(match.broadcasts);
 
   return (
     <section
@@ -170,23 +193,45 @@ export function MatchHeader({
         )}
       </div>
 
-      {(match.broadcastJpUrl ||
-        match.status === "finished" ||
-        headToHeadHref) && (
+      {match.broadcasts.length > 0 && (
+        <div
+          className="bg-white/12 mt-5 rounded-2xl border border-white/20 p-4 backdrop-blur-sm"
+          id="broadcasts"
+        >
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <h2 className="font-heading text-base font-bold text-white">
+              視聴方法
+            </h2>
+            {verifiedDate && (
+              <p className="text-[11px] font-bold text-white/70">
+                確認日: {verifiedDate}
+              </p>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {match.broadcasts.map((broadcast) => (
+              <a
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-[var(--color-ink)] transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-[0.98]"
+                href={broadcast.url}
+                key={`${broadcast.kind}:${broadcast.serviceName}`}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <span className="bg-[var(--color-accent)]/10 rounded-full px-2 py-0.5 text-[10px] text-[var(--color-accent)]">
+                  {getBroadcastKindLabel(broadcast.kind)}
+                </span>
+                <span>{broadcast.serviceName}</span>
+                <span aria-hidden className="text-[var(--color-accent)]">
+                  ↗
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(match.status === "finished" || headToHeadHref) && (
         <div className="mt-4 flex flex-wrap gap-2 border-t border-white/15 pt-4">
-          {match.broadcastJpUrl && (
-            <a
-              className="inline-flex min-h-11 items-center rounded-full bg-white px-4 py-2 text-xs font-bold text-[var(--color-accent)] transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-[0.98]"
-              href={match.broadcastJpUrl}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              視聴する
-              <span aria-hidden className="ml-1">
-                ↗
-              </span>
-            </a>
-          )}
           {match.status === "finished" && (
             <a
               className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-[#b4232a] transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-[0.98]"

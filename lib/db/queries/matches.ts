@@ -1,4 +1,9 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
+import {
+  getMatchBroadcastPresenceForMatches,
+  getMatchBroadcastsForMatches,
+  type MatchBroadcast,
+} from "@/lib/db/queries/match-broadcasts";
 import { getStandingPositionLookupForCompetitions } from "@/lib/db/queries/standings";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
 import { getMatchLevelScore } from "@/lib/format/match-level";
@@ -38,6 +43,7 @@ export type MatchListItem = {
 };
 
 export type MatchDetail = Omit<MatchListItem, "awayTeam" | "homeTeam"> & {
+  broadcasts: MatchBroadcast[];
   competition: {
     id?: string;
     family: string;
@@ -104,6 +110,7 @@ export type UpcomingMatch = MatchListItem & {
 };
 
 export type CalendarMatch = UpcomingMatch & {
+  hasBroadcasts: boolean;
   hasPreview: boolean;
   hasRecap: boolean;
 };
@@ -1444,6 +1451,7 @@ export async function getMatchesInRange(
   const matchIds = rows.map((row) => row.id);
   const previewMatchIds = new Set<string>();
   const recapMatchIds = new Set<string>();
+  const broadcastMatchIds = await getMatchBroadcastPresenceForMatches(matchIds);
 
   if (matchIds.length > 0) {
     const { data: contentRows, error: contentError } = await client
@@ -1476,6 +1484,7 @@ export async function getMatchesInRange(
       return {
         ...mapMatchRow(row),
         competition: mapCompetitionRow(row.competition),
+        hasBroadcasts: broadcastMatchIds.has(row.id),
         hasPreview: previewMatchIds.has(row.id),
         hasRecap: recapMatchIds.has(row.id),
       };
@@ -2237,6 +2246,7 @@ export async function getMatchById(
 
   const row = data as MatchDetailRow;
   const match = mapMatchRow(row);
+  const broadcastsByMatch = await getMatchBroadcastsForMatches([matchId]);
 
   if (!row.competition) {
     throw new Error(`Match ${matchId} is missing competition relation.`);
@@ -2251,6 +2261,7 @@ export async function getMatchById(
       englishName: row.away_team?.english_name ?? null,
     },
     awayTeamId: row.away_team_id,
+    broadcasts: broadcastsByMatch.get(matchId) ?? [],
     competition: {
       family:
         competition?.family ??
