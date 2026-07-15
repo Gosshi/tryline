@@ -36,6 +36,7 @@ function createCalendarMatch(
       season: "2026",
       slug: "nations-championship",
     },
+    hasBroadcasts: false,
     hasPreview: false,
     hasRecap: false,
     homeScore: null,
@@ -98,9 +99,12 @@ describe("/api/calendar/[feed].ics", () => {
 
   it("returns an all-match iCal feed with JST event times", async () => {
     const { GET } = await import("@/app/api/calendar/[feed]/route");
-    const response = await GET(new Request("https://example.com/api/calendar/all.ics"), {
-      params: Promise.resolve({ feed: "all.ics" }),
-    });
+    const response = await GET(
+      new Request("https://example.com/api/calendar/all.ics"),
+      {
+        params: Promise.resolve({ feed: "all.ics" }),
+      },
+    );
     const body = await response.text();
 
     expect(response.status).toBe(200);

@@ -139,6 +139,7 @@ const match: MatchDetail = {
     slug: "sample-away",
   },
   awayTeamId: "away-team",
+  broadcasts: [],
   competition: {
     family: "premiership",
     name: "Premiership Rugby",

@@ -376,6 +376,50 @@ export type Database = {
           },
         ];
       };
+      match_broadcasts: {
+        Row: {
+          created_at: string;
+          display_order: number;
+          id: string;
+          kind: string;
+          match_id: string;
+          service_name: string;
+          source_url: string | null;
+          url: string;
+          verified_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_order?: number;
+          id?: string;
+          kind: string;
+          match_id: string;
+          service_name: string;
+          source_url?: string | null;
+          url: string;
+          verified_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          display_order?: number;
+          id?: string;
+          kind?: string;
+          match_id?: string;
+          service_name?: string;
+          source_url?: string | null;
+          url?: string;
+          verified_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_broadcasts_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       match_content: {
         Row: {
           content_md: string;

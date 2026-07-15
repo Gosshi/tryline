@@ -34,6 +34,7 @@ const baseMatch: CalendarMatch = {
     season: "2025-26",
     slug: "league-one-2025-26",
   },
+  hasBroadcasts: false,
   hasPreview: false,
   hasRecap: false,
   homeScore: null,
@@ -117,18 +118,20 @@ describe("WeekSchedule", () => {
     expect(screen.getByText("試合なし")).toBeInTheDocument();
   });
 
-  it("renders broadcast links only for matches with a stored URL", () => {
+  it("renders broadcast links only for matches with structured broadcasts", () => {
     render(
       <WeekSchedule
         matches={[
           {
             ...baseMatch,
-            broadcastJpUrl: "https://example.com/watch/match-1",
+            broadcastJpUrl: null,
+            hasBroadcasts: true,
             id: "match-1",
           },
           {
             ...baseMatch,
-            broadcastJpUrl: null,
+            broadcastJpUrl: "https://example.com/legacy-only",
+            hasBroadcasts: false,
             id: "match-2",
           },
         ]}
@@ -138,12 +141,12 @@ describe("WeekSchedule", () => {
     const links = screen.getAllByRole("link", { name: "視聴" });
 
     expect(links).toHaveLength(1);
-    expect(links[0]).toHaveAttribute(
-      "href",
-      "https://example.com/watch/match-1",
-    );
-    expect(links[0]).toHaveAttribute("rel", "noopener noreferrer");
-    expect(links[0]).toHaveAttribute("target", "_blank");
+    expect(links[0]).toHaveAttribute("href", "/matches/match-1#broadcasts");
+    expect(links[0]).not.toHaveAttribute("rel");
+    expect(links[0]).not.toHaveAttribute("target");
+    expect(
+      screen.queryByRole("link", { name: "https://example.com/legacy-only" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("視聴情報なし")).not.toBeInTheDocument();
   });
 

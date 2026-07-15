@@ -180,18 +180,16 @@ function MatchRow({
           </div>
         </div>
       </Link>
-      {match.broadcastJpUrl && (
-        <a
+      {match.hasBroadcasts && (
+        <Link
           className="border-[var(--color-accent)]/25 bg-[var(--color-accent)]/10 hover:border-[var(--color-accent)]/45 hover:bg-[var(--color-accent)]/15 mt-3 inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-xs font-bold text-[var(--color-accent)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-          href={match.broadcastJpUrl}
-          rel="noopener noreferrer"
-          target="_blank"
+          href={`/matches/${match.id}#broadcasts`}
         >
           視聴
           <span aria-hidden className="ml-1">
-            ↗
+            →
           </span>
-        </a>
+        </Link>
       )}
     </div>
   );

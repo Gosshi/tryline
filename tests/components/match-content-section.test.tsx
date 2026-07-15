@@ -19,6 +19,7 @@ const match: MatchDetail = {
     slug: "france",
   },
   awayTeamId: "00000000-0000-0000-0000-000000000003",
+  broadcasts: [],
   competition: {
     family: "six-nations",
     name: "Six Nations 2027",

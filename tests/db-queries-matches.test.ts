@@ -4,9 +4,14 @@ const clientMock = vi.hoisted(() => ({
   from: vi.fn(),
 }));
 
+const broadcastsMock = vi.hoisted(() => ({
+  getMatchBroadcastsForMatches: vi.fn(),
+}));
+
 vi.mock("@/lib/db/public-server", () => ({
   getSupabasePublicServerClient: () => clientMock,
 }));
+vi.mock("@/lib/db/queries/match-broadcasts", () => broadcastsMock);
 
 import {
   getMatchById,
@@ -96,9 +101,26 @@ describe("getMatchById", () => {
       },
       error: null,
     });
+    broadcastsMock.getMatchBroadcastsForMatches.mockResolvedValue(
+      new Map([
+        [
+          "match-detail",
+          [
+            {
+              displayOrder: 0,
+              kind: "tv",
+              serviceName: "WOWOW プライム",
+              sourceUrl: null,
+              url: "https://example.com/wowow",
+              verifiedAt: "2026-07-15T12:00:00.000Z",
+            },
+          ],
+        ],
+      ]),
+    );
   });
 
-  it("selects and maps the stored Japanese broadcast URL", async () => {
+  it("selects and maps the stored Japanese broadcast URL and structured broadcasts", async () => {
     const match = await getMatchById("match-detail");
 
     expect(clientMock.from).toHaveBeenCalledWith("matches");
@@ -108,8 +130,18 @@ describe("getMatchById", () => {
     expect(matchDetailQueryMock.eq).toHaveBeenCalledWith("id", "match-detail");
     expect(match).toMatchObject({
       broadcastJpUrl: "https://example.com/watch/ireland-france",
+      broadcasts: [
+        {
+          kind: "tv",
+          serviceName: "WOWOW プライム",
+          url: "https://example.com/wowow",
+        },
+      ],
       id: "match-detail",
     });
+    expect(broadcastsMock.getMatchBroadcastsForMatches).toHaveBeenCalledWith([
+      "match-detail",
+    ]);
   });
 });
 

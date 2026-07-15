@@ -1,5 +1,7 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
+import { getMatchBroadcastsForMatches } from "@/lib/db/queries/match-broadcasts";
 
+import type { V1MatchBroadcast } from "@/lib/api/v1/types";
 import type { Database } from "@/lib/db/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -28,6 +30,23 @@ export async function getBroadcastUrlsForMatches(
 
   return new Map(
     (data ?? []).map((row) => [row.id, row.broadcast_jp_url ?? null]),
+  );
+}
+
+export async function getV1BroadcastsForMatches(
+  matchIds: string[],
+): Promise<Map<string, V1MatchBroadcast[]>> {
+  const broadcastsByMatch = await getMatchBroadcastsForMatches(matchIds);
+
+  return new Map(
+    [...broadcastsByMatch.entries()].map(([matchId, broadcasts]) => [
+      matchId,
+      broadcasts.map((broadcast) => ({
+        kind: broadcast.kind,
+        service_name: broadcast.serviceName,
+        url: broadcast.url,
+      })),
+    ]),
   );
 }
 
