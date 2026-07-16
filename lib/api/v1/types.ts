@@ -9,9 +9,11 @@ export type V1CompetitionSummary = {
 };
 
 export type V1TeamSummary = {
+  flag_code: string | null;
   id: string | null;
   name: string;
   score: number | null;
+  short_code: string;
   slug: string;
 };
 

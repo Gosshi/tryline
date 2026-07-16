@@ -20,6 +20,7 @@ export type MatchListItem = {
   status: MatchStatus;
   homeTeam: {
     id?: string;
+    flagCode?: string | null;
     slug: string;
     name: string;
     nameJa?: string | null;
@@ -28,6 +29,7 @@ export type MatchListItem = {
   };
   awayTeam: {
     id?: string;
+    flagCode?: string | null;
     slug: string;
     name: string;
     nameJa?: string | null;
@@ -210,6 +212,7 @@ type BaseMatchRow = {
   home_team: {
     id?: string;
     english_name?: string | null;
+    flag_code?: string | null;
     slug: string;
     name: string;
     name_ja?: string | null;
@@ -219,6 +222,7 @@ type BaseMatchRow = {
   away_team: {
     id?: string;
     english_name?: string | null;
+    flag_code?: string | null;
     slug: string;
     name: string;
     name_ja?: string | null;
@@ -554,6 +558,7 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     awayScore: row.away_score,
     awayTeam: {
       id: row.away_team.id,
+      flagCode: row.away_team.flag_code ?? null,
       name: awayDisplayName,
       nameJa: awayNameJa,
       shortCode:
@@ -564,6 +569,7 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     homeScore: row.home_score,
     homeTeam: {
       id: row.home_team.id,
+      flagCode: row.home_team.flag_code ?? null,
       name: homeDisplayName,
       nameJa: homeNameJa,
       shortCode:
@@ -1419,6 +1425,7 @@ export async function getMatchesInRange(
           slug,
           name,
           short_code,
+          flag_code,
           world_ranking
         ),
         away_team:teams!matches_away_team_id_fkey (
@@ -1426,6 +1433,7 @@ export async function getMatchesInRange(
           slug,
           name,
           short_code,
+          flag_code,
           world_ranking
         ),
         competition:competitions!matches_competition_id_fkey (
@@ -2218,13 +2226,15 @@ export async function getMatchById(
           slug,
           name,
           english_name,
-          short_code
+          short_code,
+          flag_code
         ),
         away_team:teams!matches_away_team_id_fkey (
           slug,
           name,
           english_name,
-          short_code
+          short_code,
+          flag_code
         ),
         competition:competitions!matches_competition_id_fkey (
           slug,

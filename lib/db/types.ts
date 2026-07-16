@@ -1085,6 +1085,7 @@ export type Database = {
           created_at: string;
           english_name: string | null;
           external_ids: Json;
+          flag_code: string | null;
           id: string;
           logo_url: string | null;
           name: string;
@@ -1100,6 +1101,7 @@ export type Database = {
           created_at?: string;
           english_name?: string | null;
           external_ids?: Json;
+          flag_code?: string | null;
           id?: string;
           logo_url?: string | null;
           name: string;
@@ -1115,6 +1117,7 @@ export type Database = {
           created_at?: string;
           english_name?: string | null;
           external_ids?: Json;
+          flag_code?: string | null;
           id?: string;
           logo_url?: string | null;
           name?: string;

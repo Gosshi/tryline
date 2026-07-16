@@ -73,6 +73,7 @@ describe("getMatchById", () => {
         away_score: null,
         away_team: {
           english_name: null,
+          flag_code: "🇫🇷",
           name: "France",
           short_code: "FRA",
           slug: "france",
@@ -89,6 +90,7 @@ describe("getMatchById", () => {
         home_score: null,
         home_team: {
           english_name: null,
+          flag_code: "🇮🇪",
           name: "Ireland",
           short_code: "IRL",
           slug: "ireland",
@@ -127,8 +129,15 @@ describe("getMatchById", () => {
     expect(matchDetailQueryMock.select).toHaveBeenCalledWith(
       expect.stringContaining("broadcast_jp_url"),
     );
+    expect(matchDetailQueryMock.select).toHaveBeenCalledWith(
+      expect.stringContaining("flag_code"),
+    );
     expect(matchDetailQueryMock.eq).toHaveBeenCalledWith("id", "match-detail");
     expect(match).toMatchObject({
+      awayTeam: {
+        flagCode: "🇫🇷",
+        shortCode: "FRA",
+      },
       broadcastJpUrl: "https://example.com/watch/ireland-france",
       broadcasts: [
         {
@@ -137,6 +146,10 @@ describe("getMatchById", () => {
           url: "https://example.com/wowow",
         },
       ],
+      homeTeam: {
+        flagCode: "🇮🇪",
+        shortCode: "IRL",
+      },
       id: "match-detail",
     });
     expect(broadcastsMock.getMatchBroadcastsForMatches).toHaveBeenCalledWith([
