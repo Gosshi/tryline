@@ -42,6 +42,7 @@ function createMatchRow(params: {
   return {
     away_score: params.status === "finished" ? 19 : null,
     away_team: {
+      flag_code: "🇯🇵",
       name: "Kobe Steelers",
       short_code: "KOB",
       slug: "kobe-steelers",
@@ -57,6 +58,7 @@ function createMatchRow(params: {
     external_ids: {},
     home_score: params.status === "finished" ? 24 : null,
     home_team: {
+      flag_code: "🇯🇵",
       name: "Kubota Spears",
       short_code: "KUB",
       slug: "kubota-spears",
@@ -141,6 +143,9 @@ describe("getMatchesInRange", () => {
     expect(dbMock.matchesBuilder.select).toHaveBeenCalledWith(
       expect.stringContaining("broadcast_jp_url"),
     );
+    expect(dbMock.matchesBuilder.select).toHaveBeenCalledWith(
+      expect.stringContaining("flag_code"),
+    );
     expect(matches.map((match) => match.id)).toEqual([
       "match-finished",
       "match-scheduled",
@@ -160,8 +165,16 @@ describe("getMatchesInRange", () => {
     expect(
       matches.find((match) => match.id === "match-scheduled"),
     ).toMatchObject({
+      awayTeam: {
+        flagCode: "🇯🇵",
+        shortCode: "KOB",
+      },
       broadcastJpUrl: "https://example.com/watch/match-scheduled",
       hasBroadcasts: true,
+      homeTeam: {
+        flagCode: "🇯🇵",
+        shortCode: "KUB",
+      },
       hasPreview: true,
       hasRecap: false,
     });

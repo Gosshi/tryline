@@ -35,9 +35,11 @@ export async function GET(
     match: {
       away_team: {
         english_name: match.awayTeam.englishName,
+        flag_code: match.awayTeam.flagCode ?? null,
         id: match.awayTeamId,
         name: match.awayTeam.name,
         score: match.awayScore,
+        short_code: match.awayTeam.shortCode,
         slug: match.awayTeam.slug,
       },
       broadcast_jp_url: broadcastUrls.get(id) ?? null,
@@ -59,9 +61,11 @@ export async function GET(
       })),
       home_team: {
         english_name: match.homeTeam.englishName,
+        flag_code: match.homeTeam.flagCode ?? null,
         id: match.homeTeamId,
         name: match.homeTeam.name,
         score: match.homeScore,
+        short_code: match.homeTeam.shortCode,
         slug: match.homeTeam.slug,
       },
       id: match.id,

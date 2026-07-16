@@ -26,6 +26,7 @@ const match = {
   awayScore: 17,
   awayTeam: {
     englishName: "France",
+    flagCode: "🇫🇷",
     name: "フランス",
     shortCode: "FRA",
     slug: "france",
@@ -41,6 +42,7 @@ const match = {
   homeScore: 24,
   homeTeam: {
     englishName: "Japan",
+    flagCode: "🇯🇵",
     name: "日本",
     shortCode: "JPN",
     slug: "japan",
@@ -119,8 +121,10 @@ describe("GET /api/v1/matches/[id]", () => {
         match: {
           away_team: {
             english_name: "France",
+            flag_code: "🇫🇷",
             id: "away-id",
             name: "フランス",
+            short_code: "FRA",
           },
           broadcast_jp_url: "https://example.com/watch",
           broadcasts: [
@@ -146,6 +150,13 @@ describe("GET /api/v1/matches/[id]", () => {
               type: "try",
             },
           ],
+          home_team: {
+            english_name: "Japan",
+            flag_code: "🇯🇵",
+            id: "home-id",
+            name: "日本",
+            short_code: "JPN",
+          },
           id: "match-1",
           lineups: [
             {

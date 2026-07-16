@@ -20,6 +20,7 @@ vi.mock("@/lib/api/v1/server", () => serverMock);
 const match = {
   awayScore: 17,
   awayTeam: {
+    flagCode: "🇫🇷",
     id: "away-id",
     name: "フランス",
     shortCode: "FRA",
@@ -36,6 +37,7 @@ const match = {
   hasRecap: false,
   homeScore: 24,
   homeTeam: {
+    flagCode: "🇯🇵",
     id: "home-id",
     name: "日本",
     shortCode: "JPN",
@@ -101,9 +103,11 @@ describe("GET /api/v1/calendar", () => {
         matches: [
           {
             away_team: {
+              flag_code: "🇫🇷",
               id: "away-id",
               name: "フランス",
               score: 17,
+              short_code: "FRA",
               slug: "france",
             },
             broadcast_jp_url: "https://example.com/watch",
@@ -116,9 +120,11 @@ describe("GET /api/v1/calendar", () => {
             has_preview: true,
             has_recap: true,
             home_team: {
+              flag_code: "🇯🇵",
               id: "home-id",
               name: "日本",
               score: 24,
+              short_code: "JPN",
               slug: "japan",
             },
             id: "match-1",
