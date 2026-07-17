@@ -1,0 +1,183 @@
+name: Cron — Weekend Preview Refresh
+
+on:
+  schedule:
+    # Thu 21:05 JST: refresh previews for Thu-Sat JST kickoff matches.
+    - cron: "5 12 * * 4"
+    # Fri 21:05 JST: refresh previews for Sunday JST kickoff matches.
+    - cron: "5 12 * * 5"
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "Target start date in JST (YYYY-MM-DD)"
+        required: true
+        type: string
+      to:
+        description: "Target end date in JST (YYYY-MM-DD)"
+        required: true
+        type: string
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BASE: ${{ secrets.PRODUCTION_URL }}
+      AUTH: "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+      EVENT_NAME: ${{ github.event_name }}
+      EVENT_SCHEDULE: ${{ github.event.schedule }}
+      INPUT_FROM: ${{ inputs.from }}
+      INPUT_TO: ${{ inputs.to }}
+
+    steps:
+      - name: Resolve target date range
+        id: range
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if ! [[ "$INPUT_FROM" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || ! [[ "$INPUT_TO" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+              echo "from/to must be YYYY-MM-DD" >&2
+              exit 1
+            fi
+
+            trigger="manual"
+            from="$INPUT_FROM"
+            to="$INPUT_TO"
+          elif [ "$EVENT_SCHEDULE" = "5 12 * * 4" ]; then
+            trigger="thursday-fri-sat"
+            base_date=$(TZ=Asia/Tokyo date +%F)
+            from="$base_date"
+            to=$(TZ=Asia/Tokyo date -d "$base_date +2 days" +%F)
+          elif [ "$EVENT_SCHEDULE" = "5 12 * * 5" ]; then
+            trigger="friday-sunday"
+            base_date=$(TZ=Asia/Tokyo date +%F)
+            from=$(TZ=Asia/Tokyo date -d "$base_date +1 day" +%F)
+            to=$(TZ=Asia/Tokyo date -d "$base_date +2 days" +%F)
+          else
+            echo "Unsupported trigger schedule: $EVENT_SCHEDULE" >&2
+            exit 1
+          fi
+
+          echo "trigger=$trigger" >> "$GITHUB_OUTPUT"
+          echo "from=$from" >> "$GITHUB_OUTPUT"
+          echo "to=$to" >> "$GITHUB_OUTPUT"
+
+          echo "Trigger: $trigger"
+          echo "Target date range: $from to $to"
+
+      - name: Fetch target matches from calendar API
+        id: targets
+        env:
+          FROM: ${{ steps.range.outputs.from }}
+          TO: ${{ steps.range.outputs.to }}
+        run: |
+          set -euo pipefail
+
+          echo "Fetching calendar: $FROM to $TO"
+          code=$(curl -s -o /tmp/calendar.json -w "%{http_code}" "$BASE/api/v1/calendar?from=$FROM&to=$TO")
+          echo "Calendar HTTP status: $code"
+          cat /tmp/calendar.json
+          echo
+
+          if [ "$code" != "200" ]; then
+            echo "ERROR: calendar API returned non-200 status: $code" >&2
+            exit 1
+          fi
+
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const payload = JSON.parse(fs.readFileSync("/tmp/calendar.json", "utf8"));
+          const from = process.env.FROM;
+          const to = process.env.TO;
+          const matches = Array.isArray(payload?.matches)
+            ? payload.matches
+            : Array.isArray(payload?.data?.matches)
+              ? payload.data.matches
+              : [];
+
+          const formatter = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Tokyo",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          });
+
+          function kickoffDateJst(match) {
+            const kickoff = match.kickoff_at ?? match.kickoff_utc ?? match.kickoffUtc;
+            if (!kickoff) return null;
+            const date = new Date(kickoff);
+            if (Number.isNaN(date.getTime())) return null;
+            return formatter.format(date);
+          }
+
+          const targets = matches.filter((match) => {
+            if (match.status !== "scheduled") return false;
+            const kickoffDate = kickoffDateJst(match);
+            return kickoffDate !== null && kickoffDate >= from && kickoffDate <= to;
+          });
+          const ids = targets.map((match) => match.id).filter(Boolean);
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `match_ids=${ids.join(" ")}\n`);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `count=${ids.length}\n`);
+
+          console.log(`Calendar match count: ${matches.length}`);
+          console.log(`Target scheduled match count: ${ids.length}`);
+          if (ids.length > 0) {
+            console.log(`Target match IDs: ${ids.join(", ")}`);
+          }
+          NODE
+
+      - name: Refresh preview facts and content
+        id: refresh
+        env:
+          MATCH_IDS: ${{ steps.targets.outputs.match_ids }}
+          TRIGGER: ${{ steps.range.outputs.trigger }}
+          FROM: ${{ steps.range.outputs.from }}
+          TO: ${{ steps.range.outputs.to }}
+        run: |
+          set -uo pipefail
+
+          success=0
+          failure=0
+          target_count=0
+
+          echo "Trigger: $TRIGGER"
+          echo "Target date range: $FROM to $TO"
+          echo "Target match count: ${{ steps.targets.outputs.count }}"
+
+          for match_id in $MATCH_IDS; do
+            target_count=$((target_count + 1))
+
+            echo "Refreshing preview sourced facts: match_id=$match_id"
+            fetch_code=$(curl -s -o /tmp/fetch-sourced-facts.json -w "%{http_code}" -X POST -H "$AUTH" "$BASE/api/cron/fetch-sourced-facts?match_id=$match_id&content_type=preview&force=true")
+            echo "fetch-sourced-facts HTTP status: $fetch_code"
+            cat /tmp/fetch-sourced-facts.json
+            echo
+
+            if [ "$fetch_code" != "200" ]; then
+              echo "WARN: fetch-sourced-facts failed for match_id=$match_id; skipping generate-content" >&2
+              failure=$((failure + 1))
+              continue
+            fi
+
+            echo "Generating preview content: match_id=$match_id"
+            generate_code=$(curl -s -o /tmp/generate-content.json -w "%{http_code}" -X POST -H "$AUTH" -H "Content-Type: application/json" --data "{\"contentType\":\"preview\",\"matchIds\":[\"$match_id\"],\"language\":\"ja\"}" "$BASE/api/cron/generate-content")
+            echo "generate-content HTTP status: $generate_code"
+            cat /tmp/generate-content.json
+            echo
+
+            if [ "$generate_code" != "200" ]; then
+              echo "WARN: generate-content failed for match_id=$match_id" >&2
+              failure=$((failure + 1))
+              continue
+            fi
+
+            success=$((success + 1))
+          done
+
+          echo "Weekend preview refresh summary: targets=$target_count success=$success failure=$failure"
+          echo "target_count=$target_count" >> "$GITHUB_OUTPUT"
+          echo "success=$success" >> "$GITHUB_OUTPUT"
+          echo "failure=$failure" >> "$GITHUB_OUTPUT"
