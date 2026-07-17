@@ -142,7 +142,7 @@ describe("GET /api/v1/stories", () => {
     });
     expect(JSON.stringify(body)).not.toContain(LOCKED_SECRET);
     expect(body.data.matches[0].items[0].image.portrait_url).toContain(
-      "/api/og?type=story&match=match-1&item=preview&v=",
+      "https://www.trylinerugby.com/api/og?type=story&match=match-1&item=preview&v=",
     );
     expect(body.data.matches[0].items[0].image.portrait_url).toContain(
       "orientation=portrait",
@@ -204,6 +204,7 @@ describe("GET /api/v1/stories", () => {
     const body = await response.json();
 
     expect(body.data.matches).toEqual([]);
+    expect(contentMock.getPublishedContentForMatch).not.toHaveBeenCalled();
   });
 
   it("excludes cancelled matches and keeps only preview for postponed matches", async () => {
@@ -260,6 +261,10 @@ describe("GET /api/v1/stories", () => {
     const body = await response.json();
 
     expect(body.data.matches).toHaveLength(12);
+    expect(contentMock.getPublishedContentForMatch).toHaveBeenCalledTimes(12);
+    expect(contentMock.getPublishedContentForMatch).not.toHaveBeenCalledWith(
+      "match-13",
+    );
     expect(body.data.matches.map((story: { match: { id: string } }) => story.match.id)).toEqual(
       Array.from({ length: 12 }, (_, index) =>
         `match-${String(index + 1).padStart(2, "0")}`,

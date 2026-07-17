@@ -158,8 +158,8 @@ function buildImageUrls(
   )}&item=${type}&v=${version}`;
 
   return {
-    landscape_url: `${base}&orientation=landscape`,
-    portrait_url: `${base}&orientation=portrait`,
+    landscape_url: `${SITE_URL}${base}&orientation=landscape`,
+    portrait_url: `${SITE_URL}${base}&orientation=portrait`,
   };
 }
 
@@ -222,10 +222,7 @@ async function buildMatchStories(
     return null;
   }
 
-  const [content, sampleMatch] = await Promise.all([
-    getPublishedContentForMatch(match.id),
-    isSampleMatch(match.id),
-  ]);
+  const content = await getPublishedContentForMatch(match.id);
   const items: V1StoryItem[] = [];
 
   if (content.preview) {
@@ -248,6 +245,7 @@ async function buildMatchStories(
     }
 
     if (content.recap) {
+      const sampleMatch = await isSampleMatch(match.id);
       const recapSplit = splitRecapForPaywall(content.recap.contentMdJa);
       const premiumRequired = Boolean(
         !sampleMatch && recapSplit.hasLocked && recapSplit.lockedMd,
@@ -278,6 +276,24 @@ async function buildMatchStories(
   };
 }
 
+function isStoryCandidate(match: CalendarMatch): boolean {
+  if (match.status === "cancelled") {
+    return false;
+  }
+
+  if (match.status === "postponed") {
+    return match.hasPreview;
+  }
+
+  return (
+    match.hasPreview ||
+    match.hasRecap ||
+    (match.status === "finished" &&
+      match.homeScore !== null &&
+      match.awayScore !== null)
+  );
+}
+
 export async function GET(request: Request) {
   const range = resolveRange(request);
 
@@ -286,11 +302,10 @@ export async function GET(request: Request) {
   }
 
   const matches = await getMatchesInRange(range.startUtcIso, range.endUtcIso);
+  const candidates = matches.filter(isStoryCandidate).slice(0, MATCH_LIMIT);
   const matchStories = (
-    await Promise.all(matches.map((match) => buildMatchStories(match)))
-  )
-    .filter((story): story is V1MatchStories => story !== null)
-    .slice(0, MATCH_LIMIT);
+    await Promise.all(candidates.map((match) => buildMatchStories(match)))
+  ).filter((story): story is V1MatchStories => story !== null);
   const data: V1StoriesData = {
     matches: matchStories,
     week: {
