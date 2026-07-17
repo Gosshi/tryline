@@ -244,8 +244,12 @@ describe("/api/og competition images", () => {
     );
     const element = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
     expect(getTextContent(element)).toContain("27 — 31");
+    expect(getTextContent(element)).toContain(
+      "ネーションズチャンピオンシップ 2026",
+    );
     expect(dbMock.filters).toEqual([["id", "match-1"]]);
     expect(dbMock.selects[0]).toContain("home_score");
+    expect(dbMock.selects[0]).toContain("slug");
   });
 
   it("does not render score text for story preview or recap images", async () => {
@@ -270,6 +274,41 @@ describe("/api/og competition images", () => {
     expect(getTextContent(previewElement)).not.toContain("31");
     expect(getTextContent(recapElement)).not.toContain("27");
     expect(getTextContent(recapElement)).not.toContain("31");
+  });
+
+  it("shrinks long landscape story team names to avoid mid-word wrapping", async () => {
+    dbMock.singleRow = storyMatch({
+      away_team: {
+        flag_code: null,
+        name: "Very Long Away Club",
+        name_ja: null,
+        short_code: "AWY",
+        slug: "very-long-away-club",
+      },
+      home_team: {
+        flag_code: null,
+        name: "Very Long Home Club",
+        name_ja: null,
+        short_code: "HOM",
+        slug: "very-long-home-club",
+      },
+    });
+    const { GET } = await import("@/app/api/og/route");
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=result&orientation=landscape",
+      ),
+    );
+
+    const element = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    expect(
+      hasStyledText(element, "Very Long Home Cl", { fontSize: "26px" }),
+    ).toBe(true);
+    expect(
+      hasStyledText(element, "Very Long Away Cl", { fontSize: "26px" }),
+    ).toBe(true);
   });
 
   it("returns a generic brand story card for a missing match", async () => {
@@ -370,7 +409,7 @@ describe("/api/og competition images", () => {
   });
 });
 
-function storyMatch() {
+function storyMatch(overrides: Record<string, unknown> = {}) {
   return {
     away_score: 31,
     away_team: {
@@ -382,8 +421,9 @@ function storyMatch() {
     },
     competition: {
       name: "Nations Championship",
-      name_ja: "ネーションズチャンピオンシップ",
+      name_ja: null,
       season: "2026",
+      slug: "nations-championship-2026",
     },
     home_score: 27,
     home_team: {
@@ -396,6 +436,7 @@ function storyMatch() {
     id: "match-1",
     kickoff_at: "2026-07-18T10:00:00.000Z",
     status: "finished",
+    ...overrides,
   };
 }
 

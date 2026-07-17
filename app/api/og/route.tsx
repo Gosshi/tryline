@@ -24,7 +24,12 @@ type StoryOgMatchRow = {
     short_code: string | null;
     slug: string;
   } | null;
-  competition: { name: string; name_ja: string | null; season: string } | null;
+  competition: {
+    name: string;
+    name_ja: string | null;
+    season: string;
+    slug: string | null;
+  } | null;
   home_score: number | null;
   home_team: {
     flag_code: string | null;
@@ -103,6 +108,7 @@ async function loadStoryOgMatch(matchId: string | null) {
           competition:competitions!matches_competition_id_fkey (
             name,
             name_ja,
+            slug,
             season
           )
         `,
@@ -236,7 +242,11 @@ function storyImage(
   const away = truncate(getStoryTeamLabel(match.away_team), isPortrait ? 18 : 20);
   const competition = truncate(
     formatCompetitionTitle(
-      { name: match.competition.name, nameJa: match.competition.name_ja },
+      {
+        name: match.competition.name,
+        nameJa: match.competition.name_ja,
+        slug: match.competition.slug,
+      },
       match.competition.season,
     ),
     isPortrait ? 28 : 38,
@@ -256,7 +266,12 @@ function storyImage(
     match.away_score !== null
       ? `${match.home_score} — ${match.away_score}`
       : null;
-  const teamFontSize = isPortrait ? "76px" : "58px";
+  const homeFontSize = isPortrait
+    ? 76
+    : getResultTeamNameFontSize(home);
+  const awayFontSize = isPortrait
+    ? 76
+    : getResultTeamNameFontSize(away);
 
   return new ImageResponse(
     <div
@@ -388,7 +403,7 @@ function storyImage(
               color: "#f8fafc",
               display: "flex",
               flex: isPortrait ? "none" : 1,
-              fontSize: teamFontSize,
+              fontSize: `${homeFontSize}px`,
               fontWeight: 900,
               lineHeight: 1.02,
             }}
@@ -411,7 +426,7 @@ function storyImage(
               color: "#f8fafc",
               display: "flex",
               flex: isPortrait ? "none" : 1,
-              fontSize: teamFontSize,
+              fontSize: `${awayFontSize}px`,
               fontWeight: 900,
               lineHeight: 1.02,
             }}

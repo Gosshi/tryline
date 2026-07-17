@@ -203,7 +203,7 @@ export type V1StoriesData = {
 };
 ```
 
-- エンドポイント: `GET /api/v1/stories?from=YYYY-MM-DD&to=YYYY-MM-DD`（省略時は今週。パラメータ検証は `app/api/v1/calendar/route.ts` の実装を踏襲）
+- エンドポイント: `GET /api/v1/stories?from=YYYY-MM-DD&to=YYYY-MM-DD`（省略時は今週。パラメータ検証は `app/api/v1/calendar/route.ts` の実装を踏襲）。`from`/`to` 指定時の範囲は最大31日までとし、それを超えるリクエストは400で拒否する
 - 認証不要・**ユーザー非依存**（§12）。キャッシュは calendar と同じ public CDN キャッシュ方針（`lib/api/v1/response.ts` の既存定数を再利用）
 - 互換性規約: iOS クライアントは未知の `type` の Item を**黙って読み飛ばす**（将来タイプ追加でアプリ強制アップデートを不要にする）。この規約を両リポジトリの型スナップショットにコメントで明記
 - マージ後は `lib/api/v1/types.ts` → `tryline-mobile/reference/api-types.ts` の手動同期を実施（確立済み運用）
