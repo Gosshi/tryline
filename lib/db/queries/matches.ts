@@ -17,6 +17,7 @@ export type MatchListItem = {
   id: string;
   broadcastJpUrl?: string | null;
   kickoffAt: string;
+  updatedAt?: string;
   status: MatchStatus;
   homeTeam: {
     id?: string;
@@ -204,6 +205,7 @@ type BaseMatchRow = {
   id: string;
   broadcast_jp_url?: string | null;
   kickoff_at: string;
+  updated_at?: string;
   status: string;
   home_score: number | null;
   away_score: number | null;
@@ -580,6 +582,7 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     id: row.id,
     broadcastJpUrl: row.broadcast_jp_url ?? null,
     kickoffAt: row.kickoff_at,
+    updatedAt: row.updated_at,
     poolName: getPoolNameFromExternalIds(row.external_ids),
     round: getRoundFromExternalIds(row.external_ids),
     roundName: getRoundNameFromExternalIds(row.external_ids),
@@ -1415,6 +1418,7 @@ export async function getMatchesInRange(
         id,
         broadcast_jp_url,
         kickoff_at,
+        updated_at,
         status,
         home_score,
         away_score,

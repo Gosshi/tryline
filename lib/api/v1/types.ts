@@ -34,6 +34,32 @@ export type V1CalendarData = {
   matches: V1CalendarMatch[];
 };
 
+export type V1StoryItemType = "preview" | "result" | "recap";
+
+// Clients must ignore unknown future Story Item types instead of failing.
+export type V1StoryItem = {
+  contains_result: boolean;
+  destination: { type: "match"; url: string };
+  id: string;
+  image: { landscape_url: string; portrait_url: string };
+  premium_required: boolean;
+  published_at: string;
+  summary: string | null;
+  title: string;
+  type: V1StoryItemType;
+};
+
+export type V1MatchStories = {
+  items: V1StoryItem[];
+  match: V1CalendarMatch;
+  updated_at: string;
+};
+
+export type V1StoriesData = {
+  matches: V1MatchStories[];
+  week: { from: string; label: string; to: string };
+};
+
 export type V1MatchEvent = {
   id: string;
   is_penalty_try: boolean;

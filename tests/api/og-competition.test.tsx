@@ -10,13 +10,19 @@ const dbMock = vi.hoisted(() => ({
   notFilters: [] as Array<[string, string, unknown]>,
   rows: [] as unknown[],
   selects: [] as string[],
+  singleRow: null as unknown,
 }));
 
 vi.mock("@vercel/og", () => ({
   ImageResponse: vi.fn((element: unknown, init: unknown) => {
     ogMocks.imageResponse(element, init);
+    const headers = new Headers(
+      (init as { headers?: HeadersInit } | undefined)?.headers,
+    );
+    headers.set("content-type", "image/png");
+
     return new Response("image", {
-      headers: { "content-type": "image/png" },
+      headers,
       status: 200,
     });
   }),
@@ -35,6 +41,9 @@ vi.mock("@/lib/db/public-server", () => ({
         not(column: string, operator: string, value: unknown) {
           dbMock.notFilters.push([column, operator, value]);
           return this;
+        },
+        maybeSingle() {
+          return Promise.resolve({ data: dbMock.singleRow, error: null });
         },
         order() {
           return Promise.resolve({ data: dbMock.rows, error: null });
@@ -107,6 +116,7 @@ describe("/api/og competition images", () => {
     dbMock.notFilters = [];
     dbMock.rows = [];
     dbMock.selects = [];
+    dbMock.singleRow = null;
     ogMocks.imageResponse.mockClear();
     vi.stubGlobal(
       "fetch",
@@ -216,6 +226,72 @@ describe("/api/og competition images", () => {
     );
   });
 
+  it("returns a 1080x1920 story result image with cache headers", async () => {
+    dbMock.singleRow = storyMatch();
+    const { GET } = await import("@/app/api/og/route");
+
+    const response = await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=result&orientation=portrait&v=1784322300",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toContain("s-maxage=86400");
+    expect(ogMocks.imageResponse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ height: 1920, width: 1080 }),
+    );
+    const element = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+    expect(getTextContent(element)).toContain("27 — 31");
+    expect(dbMock.filters).toEqual([["id", "match-1"]]);
+    expect(dbMock.selects[0]).toContain("home_score");
+  });
+
+  it("does not render score text for story preview or recap images", async () => {
+    dbMock.singleRow = storyMatch();
+    const { GET } = await import("@/app/api/og/route");
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=preview&orientation=landscape",
+      ),
+    );
+    const previewElement = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=recap&orientation=portrait",
+      ),
+    );
+    const recapElement = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    expect(getTextContent(previewElement)).not.toContain("27");
+    expect(getTextContent(previewElement)).not.toContain("31");
+    expect(getTextContent(recapElement)).not.toContain("27");
+    expect(getTextContent(recapElement)).not.toContain("31");
+  });
+
+  it("returns a generic brand story card for a missing match", async () => {
+    dbMock.singleRow = null;
+    const { GET } = await import("@/app/api/og/route");
+
+    const response = await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=missing&item=result&orientation=portrait",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(ogMocks.imageResponse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ height: 1920, width: 1080 }),
+    );
+    expect(getTextContent(ogMocks.imageResponse.mock.calls.at(-1)?.[0])).toContain(
+      "海外ラグビーを日本語で",
+    );
+  });
+
   it("returns a fallback round scoreboard image when no matches exist", async () => {
     const { GET } = await import("@/app/api/og/route");
 
@@ -293,6 +369,35 @@ describe("/api/og competition images", () => {
     );
   });
 });
+
+function storyMatch() {
+  return {
+    away_score: 31,
+    away_team: {
+      flag_code: "🇫🇷",
+      name: "France",
+      name_ja: "フランス",
+      short_code: "FRA",
+      slug: "france",
+    },
+    competition: {
+      name: "Nations Championship",
+      name_ja: "ネーションズチャンピオンシップ",
+      season: "2026",
+    },
+    home_score: 27,
+    home_team: {
+      flag_code: "🇯🇵",
+      name: "Japan",
+      name_ja: "日本",
+      short_code: "JPN",
+      slug: "japan",
+    },
+    id: "match-1",
+    kickoff_at: "2026-07-18T10:00:00.000Z",
+    status: "finished",
+  };
+}
 
 function roundMatch(
   id: string,

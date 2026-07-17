@@ -3,11 +3,40 @@ import { ImageResponse } from "@vercel/og";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJstCompact } from "@/lib/format/kickoff";
+import { getTeamDisplayName } from "@/lib/format/team";
 import { getResultTeamNameFontSize } from "@/lib/seo/og-result-team-name";
 
 import type { Json } from "@/lib/db/types";
 
 export const runtime = "edge";
+
+const STORY_IMAGE_CACHE_CONTROL =
+  "public, s-maxage=86400, stale-while-revalidate=604800";
+
+type StoryItemType = "preview" | "result" | "recap";
+
+type StoryOgMatchRow = {
+  away_score: number | null;
+  away_team: {
+    flag_code: string | null;
+    name: string;
+    name_ja: string | null;
+    short_code: string | null;
+    slug: string;
+  } | null;
+  competition: { name: string; name_ja: string | null; season: string } | null;
+  home_score: number | null;
+  home_team: {
+    flag_code: string | null;
+    name: string;
+    name_ja: string | null;
+    short_code: string | null;
+    slug: string;
+  } | null;
+  id: string;
+  kickoff_at: string;
+  status: string;
+};
 
 function truncate(value: string, maxLength: number): string {
   return value.length > maxLength ? `${value.slice(0, maxLength - 1)}…` : value;
@@ -33,6 +62,393 @@ function formatCalendarFocusKickoff(value: string | null): string | null {
   }
 
   return formatKickoffJstCompact(value);
+}
+
+function parseStoryItemType(value: string | null): StoryItemType | null {
+  return value === "preview" || value === "result" || value === "recap"
+    ? value
+    : null;
+}
+
+async function loadStoryOgMatch(matchId: string | null) {
+  if (!matchId) {
+    return null;
+  }
+
+  try {
+    const client = getSupabasePublicServerClient();
+    const { data, error } = await client
+      .from("matches")
+      .select(
+        `
+          id,
+          kickoff_at,
+          status,
+          home_score,
+          away_score,
+          home_team:teams!matches_home_team_id_fkey (
+            slug,
+            name,
+            name_ja,
+            short_code,
+            flag_code
+          ),
+          away_team:teams!matches_away_team_id_fkey (
+            slug,
+            name,
+            name_ja,
+            short_code,
+            flag_code
+          ),
+          competition:competitions!matches_competition_id_fkey (
+            name,
+            name_ja,
+            season
+          )
+        `,
+      )
+      .eq("id", matchId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return data as StoryOgMatchRow;
+  } catch {
+    return null;
+  }
+}
+
+function getStoryTeamLabel(
+  team: NonNullable<StoryOgMatchRow["home_team"]>,
+): string {
+  return getTeamDisplayName({
+    name: team.name,
+    nameJa: team.name_ja,
+    slug: team.slug,
+  });
+}
+
+function storyFallbackImage(
+  fontData: ArrayBuffer,
+  fontName: string,
+  orientation: "landscape" | "portrait",
+) {
+  const isPortrait = orientation === "portrait";
+  const width = isPortrait ? 1080 : 1200;
+  const height = isPortrait ? 1920 : 630;
+
+  return new ImageResponse(
+    <div
+      style={{
+        alignItems: "center",
+        background: "linear-gradient(180deg, #0B1628 0%, #1A3A5C 100%)",
+        color: "#f8fafc",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "Inter, Geist, sans-serif",
+        height: `${height}px`,
+        justifyContent: "center",
+        overflow: "hidden",
+        padding: isPortrait ? "120px" : "64px",
+        position: "relative",
+        width: `${width}px`,
+      }}
+    >
+      <div
+        style={{
+          background:
+            "radial-gradient(circle at 24% 18%, rgba(201,58,64,0.36), transparent 28%), radial-gradient(circle at 80% 76%, rgba(255,255,255,0.12), transparent 34%)",
+          display: "flex",
+          inset: 0,
+          position: "absolute",
+        }}
+      />
+      <div
+        style={{
+          color: "#f8fafc",
+          display: "flex",
+          fontSize: isPortrait ? "94px" : "72px",
+          fontWeight: 900,
+          letterSpacing: "0.02em",
+          position: "relative",
+        }}
+      >
+        Tryline
+      </div>
+      <div
+        style={{
+          color: "rgba(248,250,252,0.66)",
+          display: "flex",
+          fontSize: isPortrait ? "34px" : "24px",
+          fontWeight: 800,
+          marginTop: "24px",
+          position: "relative",
+        }}
+      >
+        海外ラグビーを日本語で
+      </div>
+      <div
+        style={{
+          bottom: isPortrait ? 84 : 44,
+          color: "rgba(248,250,252,0.56)",
+          display: "flex",
+          fontSize: isPortrait ? "28px" : "20px",
+          fontWeight: 800,
+          position: "absolute",
+        }}
+      >
+        trylinerugby.com
+      </div>
+    </div>,
+    {
+      fonts: [
+        {
+          data: fontData,
+          name: fontName,
+          style: "normal",
+          weight: 700,
+        },
+      ],
+      headers: { "Cache-Control": STORY_IMAGE_CACHE_CONTROL },
+      height,
+      width,
+    },
+  );
+}
+
+function storyImage(
+  match: StoryOgMatchRow,
+  item: StoryItemType,
+  fontData: ArrayBuffer,
+  fontName: string,
+  orientation: "landscape" | "portrait",
+) {
+  if (!match.home_team || !match.away_team || !match.competition) {
+    return storyFallbackImage(fontData, fontName, orientation);
+  }
+
+  const isPortrait = orientation === "portrait";
+  const width = isPortrait ? 1080 : 1200;
+  const height = isPortrait ? 1920 : 630;
+  const home = truncate(getStoryTeamLabel(match.home_team), isPortrait ? 18 : 20);
+  const away = truncate(getStoryTeamLabel(match.away_team), isPortrait ? 18 : 20);
+  const competition = truncate(
+    formatCompetitionTitle(
+      { name: match.competition.name, nameJa: match.competition.name_ja },
+      match.competition.season,
+    ),
+    isPortrait ? 28 : 38,
+  );
+  const label =
+    item === "preview" ? "PREVIEW" : item === "recap" ? "RECAP" : "RESULT";
+  const title =
+    item === "preview"
+      ? "試合プレビュー"
+      : item === "recap"
+        ? "試合レビュー"
+        : "試合結果";
+  const score =
+    item === "result" &&
+    match.status === "finished" &&
+    match.home_score !== null &&
+    match.away_score !== null
+      ? `${match.home_score} — ${match.away_score}`
+      : null;
+  const teamFontSize = isPortrait ? "76px" : "58px";
+
+  return new ImageResponse(
+    <div
+      style={{
+        background: "linear-gradient(180deg, #0B1628 0%, #06111f 100%)",
+        color: "#f8fafc",
+        display: "flex",
+        fontFamily: "Inter, Geist, sans-serif",
+        height: `${height}px`,
+        overflow: "hidden",
+        padding: isPortrait ? "86px 78px" : "52px 64px",
+        position: "relative",
+        width: `${width}px`,
+      }}
+    >
+      <div
+        style={{
+          background:
+            "radial-gradient(circle at 18% 20%, rgba(201,58,64,0.42), transparent 30%), radial-gradient(circle at 82% 82%, rgba(26,58,92,0.92), transparent 38%)",
+          display: "flex",
+          inset: 0,
+          position: "absolute",
+        }}
+      />
+      <div
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(6,17,31,0.48) 0%, rgba(6,17,31,0.92) 100%)",
+          display: "flex",
+          inset: 0,
+          position: "absolute",
+        }}
+      />
+      <div
+        style={{
+          background: "#c93a40",
+          display: "flex",
+          height: isPortrait ? "14px" : "8px",
+          left: 0,
+          position: "absolute",
+          right: 0,
+          top: 0,
+        }}
+      />
+      <div
+        style={{
+          alignItems: "center",
+          display: "flex",
+          justifyContent: "space-between",
+          left: isPortrait ? 78 : 64,
+          position: "absolute",
+          right: isPortrait ? 78 : 64,
+          top: isPortrait ? 86 : 52,
+        }}
+      >
+        <div
+          style={{
+            border: "1px solid rgba(248,250,252,0.22)",
+            borderRadius: "9999px",
+            color: "#f8fafc",
+            display: "flex",
+            fontSize: isPortrait ? "30px" : "22px",
+            fontWeight: 900,
+            letterSpacing: "0.12em",
+            padding: isPortrait ? "14px 24px" : "10px 18px",
+          }}
+        >
+          {label}
+        </div>
+        <div
+          style={{
+            color: "rgba(248,250,252,0.72)",
+            display: "flex",
+            fontSize: isPortrait ? "30px" : "22px",
+            fontWeight: 900,
+            letterSpacing: "0.08em",
+          }}
+        >
+          TRYLINE
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: isPortrait ? "34px" : "22px",
+          bottom: isPortrait ? 230 : 108,
+          justifyContent: "center",
+          left: isPortrait ? 78 : 72,
+          position: "absolute",
+          right: isPortrait ? 78 : 72,
+          top: isPortrait ? 300 : 138,
+        }}
+      >
+        <div
+          style={{
+            color: "rgba(248,250,252,0.66)",
+            display: "flex",
+            fontSize: isPortrait ? "34px" : "24px",
+            fontWeight: 900,
+            letterSpacing: "0.04em",
+          }}
+        >
+          {competition}
+        </div>
+        <div
+          style={{
+            color: "#f8fafc",
+            display: "flex",
+            fontSize: isPortrait ? "54px" : "38px",
+            fontWeight: 900,
+            lineHeight: 1.08,
+          }}
+        >
+          {title}
+        </div>
+        <div
+          style={{
+            alignItems: isPortrait ? "flex-start" : "center",
+            display: "flex",
+            flexDirection: isPortrait ? "column" : "row",
+            gap: isPortrait ? "22px" : "30px",
+            marginTop: isPortrait ? "38px" : "20px",
+          }}
+        >
+          <div
+            style={{
+              color: "#f8fafc",
+              display: "flex",
+              flex: isPortrait ? "none" : 1,
+              fontSize: teamFontSize,
+              fontWeight: 900,
+              lineHeight: 1.02,
+            }}
+          >
+            {home}
+          </div>
+          <div
+            style={{
+              color: score ? "#c93a40" : "rgba(248,250,252,0.42)",
+              display: "flex",
+              fontSize: isPortrait ? (score ? "86px" : "42px") : score ? "62px" : "34px",
+              fontWeight: 950,
+              lineHeight: 1,
+            }}
+          >
+            {score ?? "vs"}
+          </div>
+          <div
+            style={{
+              color: "#f8fafc",
+              display: "flex",
+              flex: isPortrait ? "none" : 1,
+              fontSize: teamFontSize,
+              fontWeight: 900,
+              lineHeight: 1.02,
+            }}
+          >
+            {away}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          bottom: isPortrait ? 82 : 42,
+          color: "rgba(248,250,252,0.58)",
+          display: "flex",
+          fontSize: isPortrait ? "30px" : "20px",
+          fontWeight: 800,
+          position: "absolute",
+          right: isPortrait ? 78 : 64,
+        }}
+      >
+        trylinerugby.com
+      </div>
+    </div>,
+    {
+      fonts: [
+        {
+          data: fontData,
+          name: fontName,
+          style: "normal",
+          weight: 700,
+        },
+      ],
+      headers: { "Cache-Control": STORY_IMAGE_CACHE_CONTROL },
+      height,
+      width,
+    },
+  );
 }
 
 type RoundScoreboardMatchRow = {
@@ -146,6 +562,21 @@ export async function GET(request: Request) {
     )}`;
   } catch {
     bgDataUri = null;
+  }
+
+  if (searchParams.get("type") === "story") {
+    const item = parseStoryItemType(searchParams.get("item"));
+    const orientation =
+      searchParams.get("orientation") === "landscape"
+        ? "landscape"
+        : "portrait";
+    const match = item
+      ? await loadStoryOgMatch(searchParams.get("match"))
+      : null;
+
+    return match && item
+      ? storyImage(match, item, fontData, fontName, orientation)
+      : storyFallbackImage(fontData, fontName, orientation);
   }
 
   if (searchParams.get("type") === "competition") {
