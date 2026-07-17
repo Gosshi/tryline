@@ -103,6 +103,10 @@ describe("sourced facts allowlist", () => {
     expect(isAllowedSourcedFactDomain("www.espn.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.skysports.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.rugby-rp.com")).toBe(true);
+    expect(isAllowedSourcedFactDomain("www.nbcsports.com")).toBe(true);
+    expect(isAllowedSourcedFactDomain("sports.yahoo.com")).toBe(true);
+    expect(isAllowedSourcedFactDomain("www.onrugby.it")).toBe(true);
+    expect(isAllowedSourcedFactDomain("news.yahoo.co.jp")).toBe(true);
     expect(isAllowedSourcedFactDomain("sportytrader.com")).toBe(false);
   });
 

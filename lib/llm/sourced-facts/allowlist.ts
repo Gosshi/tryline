@@ -30,6 +30,10 @@ const MEDIA_DOMAINS = [
   "espn.com",
   "skysports.com",
   "rugby-rp.com",
+  "nbcsports.com",
+  "sports.yahoo.com",
+  "onrugby.it",
+  "news.yahoo.co.jp",
 ] as const;
 
 export const SOURCED_FACT_ALLOWED_DOMAINS = [
