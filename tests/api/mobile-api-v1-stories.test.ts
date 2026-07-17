@@ -166,6 +166,30 @@ describe("GET /api/v1/stories", () => {
     );
   });
 
+  it("uses competition slug fallback when name_ja is null", async () => {
+    matchesMock.getMatchesInRange.mockResolvedValue([
+      match({
+        competition: {
+          family: "nations-championship",
+          name: "Nations Championship",
+          nameJa: null,
+          season: "2026",
+          slug: "nations-championship-2026",
+        },
+      }),
+    ]);
+
+    const { GET } = await import("@/app/api/v1/stories/route");
+    const response = await GET(new Request("http://localhost/api/v1/stories"));
+    const body = await response.json();
+
+    expect(body.data.matches[0].match.competition).toEqual({
+      name: "ネーションズチャンピオンシップ",
+      season: "2026",
+      slug: "nations-championship-2026",
+    });
+  });
+
   it("returns the same public response regardless of Authorization header", async () => {
     const { GET } = await import("@/app/api/v1/stories/route");
     const anonymous = await GET(new Request("http://localhost/api/v1/stories"));

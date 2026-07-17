@@ -5,6 +5,7 @@ import {
 } from "@/lib/api/v1/response";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchesInRange, type CalendarMatch } from "@/lib/db/queries/matches";
+import { getCompetitionDisplayName } from "@/lib/format/competition";
 import {
   formatJstWeekRangeLabel,
   getCurrentJstWeekRangeUtc,
@@ -100,7 +101,7 @@ function mapMatch(match: CalendarMatch): V1CalendarMatch {
     },
     broadcast_jp_url: match.broadcastJpUrl ?? null,
     competition: {
-      name: match.competition.nameJa ?? match.competition.name,
+      name: getCompetitionDisplayName(match.competition),
       season: match.competition.season,
       slug: match.competition.slug,
     },
