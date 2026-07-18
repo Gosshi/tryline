@@ -5,6 +5,10 @@ import {
 } from "@/lib/api/v1/response";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchesInRange, type CalendarMatch } from "@/lib/db/queries/matches";
+import {
+  getStorySourcedFactsForMatches,
+  type StorySourcedFact,
+} from "@/lib/db/queries/sourced-facts";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
 import {
   formatJstWeekRangeLabel,
@@ -28,6 +32,8 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 24 * 60 * 60 * 1_000;
 const JST_OFFSET_MS = 9 * 60 * 60 * 1_000;
 const MATCH_LIMIT = 12;
+const MAX_NEWS_ITEMS_PER_MATCH = 3;
+const JAPANESE_CHARACTER_PATTERN = /[\p{Script=Hiragana}\p{Script=Katakana}]/u;
 
 function parseDate(value: string): number | null {
   if (!DATE_PATTERN.test(value)) {
@@ -183,6 +189,7 @@ function buildContentItem(
     image: buildImageUrls(match.id, type, content.generatedAt),
     premium_required: premiumRequired,
     published_at: content.generatedAt,
+    source_domain: null,
     summary: summarizeMarkdown(summaryMarkdown),
     title: `${label}｜${matchupTitle(match)}`,
     type,
@@ -210,14 +217,70 @@ function buildResultItem(match: CalendarMatch): V1StoryItem | null {
     image: buildImageUrls(match.id, "result", publishedAt),
     premium_required: false,
     published_at: publishedAt,
+    source_domain: null,
     summary: `${match.homeTeam.name} ${match.homeScore}-${match.awayScore} ${match.awayTeam.name}`,
     title: `試合結果｜${matchupTitle(match)}`,
     type: "result",
   };
 }
 
+function buildNewsItems(
+  match: CalendarMatch,
+  facts: StorySourcedFact[],
+): V1StoryItem[] {
+  const kickoffAt = new Date(match.kickoffAt).getTime();
+  const latestFactByDomain = new Map<string, StorySourcedFact>();
+
+  for (const fact of [...facts]
+    .filter(
+      (candidate) =>
+        candidate.matchId === match.id &&
+        (candidate.contentType === "preview" ||
+          candidate.contentType === "shared") &&
+        candidate.confidence === "high" &&
+        JAPANESE_CHARACTER_PATTERN.test(candidate.fact) &&
+        new Date(candidate.fetchedAt).getTime() < kickoffAt,
+    )
+    .sort(
+      (left, right) =>
+        right.fetchedAt.localeCompare(left.fetchedAt) ||
+        right.id.localeCompare(left.id),
+    )) {
+    if (!latestFactByDomain.has(fact.sourceDomain)) {
+      latestFactByDomain.set(fact.sourceDomain, fact);
+    }
+
+    if (latestFactByDomain.size === MAX_NEWS_ITEMS_PER_MATCH) {
+      break;
+    }
+  }
+
+  return [...latestFactByDomain.values()]
+    .sort(
+      (left, right) =>
+        left.fetchedAt.localeCompare(right.fetchedAt) ||
+        left.id.localeCompare(right.id),
+    )
+    .map((fact) => ({
+      contains_result: false,
+      destination: {
+        type: "match",
+        url: `${SITE_URL}/matches/${match.id}`,
+      },
+      id: `${match.id}:news:${fact.id}`,
+      image: buildImageUrls(match.id, "news", fact.fetchedAt),
+      premium_required: false,
+      published_at: fact.fetchedAt,
+      source_domain: fact.sourceDomain,
+      summary: truncateAtSentenceBoundary(fact.fact, 160),
+      title: `ニュース｜${matchupTitle(match)}`,
+      type: "news",
+    }));
+}
+
 async function buildMatchStories(
   match: CalendarMatch,
+  sourcedFacts: StorySourcedFact[],
 ): Promise<V1MatchStories | null> {
   if (match.status === "cancelled") {
     return null;
@@ -237,6 +300,8 @@ async function buildMatchStories(
       ),
     );
   }
+
+  items.push(...buildNewsItems(match, sourcedFacts));
 
   if (match.status !== "postponed") {
     const result = buildResultItem(match);
@@ -304,8 +369,13 @@ export async function GET(request: Request) {
 
   const matches = await getMatchesInRange(range.startUtcIso, range.endUtcIso);
   const candidates = matches.filter(isStoryCandidate).slice(0, MATCH_LIMIT);
+  const sourcedFacts = await getStorySourcedFactsForMatches(
+    candidates.map((match) => match.id),
+  );
   const matchStories = (
-    await Promise.all(candidates.map((match) => buildMatchStories(match)))
+    await Promise.all(
+      candidates.map((match) => buildMatchStories(match, sourcedFacts)),
+    )
   ).filter((story): story is V1MatchStories => story !== null);
   const data: V1StoriesData = {
     matches: matchStories,

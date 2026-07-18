@@ -5,6 +5,16 @@ export type SourcedFactCounts = {
   recap: number;
 };
 
+export type StorySourcedFact = {
+  confidence: string;
+  contentType: string;
+  fact: string;
+  fetchedAt: string;
+  id: string;
+  matchId: string;
+  sourceDomain: string;
+};
+
 async function countFactsForContentType(
   matchId: string,
   contentType: "preview" | "recap",
@@ -33,4 +43,34 @@ export async function getSourcedFactCountsForMatch(
   ]);
 
   return { preview, recap };
+}
+
+export async function getStorySourcedFactsForMatches(
+  matchIds: string[],
+): Promise<StorySourcedFact[]> {
+  if (matchIds.length === 0) {
+    return [];
+  }
+
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("match_sourced_facts")
+    .select("id, match_id, content_type, confidence, fact, fetched_at, source_domain")
+    .in("match_id", matchIds)
+    .in("content_type", ["preview", "shared"])
+    .eq("confidence", "high");
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((fact) => ({
+    confidence: fact.confidence,
+    contentType: fact.content_type,
+    fact: fact.fact,
+    fetchedAt: fact.fetched_at,
+    id: fact.id,
+    matchId: fact.match_id,
+    sourceDomain: fact.source_domain,
+  }));
 }
