@@ -13,7 +13,7 @@ const COPY: Record<
     unavailable: "このプレビューは公開されませんでした",
   },
   recap: {
-    pre_window: "レビューは試合終了 1 時間後に公開予定",
+    pre_window: "レビューは試合データの確認後、順次公開されます",
     preparing: "レビューを準備中です",
     unavailable: "このレビューは公開されませんでした",
   },

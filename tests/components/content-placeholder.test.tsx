@@ -16,7 +16,7 @@ describe("ContentPlaceholder", () => {
     ["preview", "pre_window", "プレビューは試合開始 48 時間前に公開予定"],
     ["preview", "preparing", "プレビューを準備中です"],
     ["preview", "unavailable", "このプレビューは公開されませんでした"],
-    ["recap", "pre_window", "レビューは試合終了 1 時間後に公開予定"],
+    ["recap", "pre_window", "レビューは試合データの確認後、順次公開されます"],
     ["recap", "preparing", "レビューを準備中です"],
     ["recap", "unavailable", "このレビューは公開されませんでした"],
   ] as const)("renders copy for %s x %s", (type, state, expectedText) => {
