@@ -36,6 +36,7 @@ describe("team identity formatter", () => {
 
   it("returns inline SVG flags and an empty fallback for unknown teams", () => {
     expect(getTeamFlagSvg("england")).toContain("<svg");
+    expect(getTeamFlagSvg("japan")).toContain('circle cx="256.5"');
     expect(getTeamFlagSvg("wales")).toContain("viewBox");
     expect(getTeamFlagSvg("new-zealand")).toBe("");
     expect(getTeamFlagSvg("bath")).toBe("");

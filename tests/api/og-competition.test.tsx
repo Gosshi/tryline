@@ -135,6 +135,51 @@ function hasStyledBackground(node: unknown, expectedValues: string[]): boolean {
   return false;
 }
 
+function countSvgFlagImages(node: unknown): number {
+  if (isValidElement(node)) {
+    const props = node.props as { children?: unknown; src?: unknown };
+    const ownCount =
+      typeof props.src === "string" &&
+      props.src.startsWith("data:image/svg+xml;base64,")
+        ? 1
+        : 0;
+
+    return ownCount + countSvgFlagImages(props.children);
+  }
+
+  if (Array.isArray(node)) {
+    return node.reduce((count, child) => count + countSvgFlagImages(child), 0);
+  }
+
+  return 0;
+}
+
+function hasStripeChip(node: unknown, expectedValues: string[]): boolean {
+  if (isValidElement(node)) {
+    const props = node.props as {
+      children?: unknown;
+      style?: Record<string, unknown>;
+    };
+    const background = props.style?.background;
+
+    if (
+      typeof background === "string" &&
+      background.startsWith("linear-gradient(to right") &&
+      expectedValues.every((value) => background.includes(value))
+    ) {
+      return true;
+    }
+
+    return hasStripeChip(props.children, expectedValues);
+  }
+
+  if (Array.isArray(node)) {
+    return node.some((child) => hasStripeChip(child, expectedValues));
+  }
+
+  return false;
+}
+
 describe("/api/og competition images", () => {
   beforeEach(() => {
     dbMock.filters = [];
@@ -275,6 +320,135 @@ describe("/api/og competition images", () => {
     expect(dbMock.filters).toEqual([["id", "match-1"]]);
     expect(dbMock.selects[0]).toContain("home_score");
     expect(dbMock.selects[0]).toContain("slug");
+  });
+
+  it("renders two SVG flag chips and a prominent type label for Japan vs France", async () => {
+    dbMock.singleRow = storyMatch();
+    const { GET } = await import("@/app/api/og/route");
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=preview&orientation=portrait&text=full",
+      ),
+    );
+    const element = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    expect(countSvgFlagImages(element)).toBe(2);
+    expect(hasStyledText(element, "PREVIEW", { fontSize: "62px", fontWeight: 950 })).toBe(
+      true,
+    );
+  });
+
+  it("renders a stripe chip beside an SVG flag chip for New Zealand vs Ireland", async () => {
+    dbMock.singleRow = storyMatch({
+      away_team: {
+        flag_code: "🇮🇪",
+        name: "Ireland",
+        name_ja: "アイルランド",
+        short_code: "IRL",
+        slug: "ireland",
+      },
+      home_team: {
+        flag_code: "🇳🇿",
+        name: "New Zealand",
+        name_ja: "ニュージーランド",
+        short_code: "NZL",
+        slug: "new-zealand",
+      },
+    });
+    const { GET } = await import("@/app/api/og/route");
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=preview&orientation=portrait&text=full",
+      ),
+    );
+    const element = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    expect(countSvgFlagImages(element)).toBe(1);
+    expect(hasStripeChip(element, ["#000000"])).toBe(true);
+    expect(getTextContent(element)).toContain("NZL");
+  });
+
+  it("renders two stripe chips without their short codes for text=none", async () => {
+    dbMock.singleRow = storyMatch({
+      away_team: {
+        flag_code: "🇿🇦",
+        name: "South Africa",
+        name_ja: "南アフリカ",
+        short_code: "RSA",
+        slug: "south-africa",
+      },
+      home_team: {
+        flag_code: "🇳🇿",
+        name: "New Zealand",
+        name_ja: "ニュージーランド",
+        short_code: "NZL",
+        slug: "new-zealand",
+      },
+    });
+    const { GET } = await import("@/app/api/og/route");
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=result&orientation=portrait&text=full",
+      ),
+    );
+    const fullElement = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=result&orientation=portrait&text=none",
+      ),
+    );
+    const textFreeElement = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    expect(countSvgFlagImages(fullElement)).toBe(0);
+    expect(hasStripeChip(fullElement, ["#000000"])).toBe(true);
+    expect(hasStripeChip(fullElement, ["#007A4D", "#FFB612", "#000000"])).toBe(true);
+    expect(getTextContent(fullElement)).toContain("NZL");
+    expect(getTextContent(fullElement)).toContain("RSA");
+    expect(getTextContent(textFreeElement)).toBe("trylinerugby.com");
+    expect(getTextContent(textFreeElement)).not.toContain("NZL");
+    expect(getTextContent(textFreeElement)).not.toContain("RSA");
+  });
+
+  it.each([
+    ["preview", "portrait", "full"],
+    ["preview", "portrait", "none"],
+    ["preview", "landscape", "full"],
+    ["preview", "landscape", "none"],
+    ["news", "portrait", "full"],
+    ["news", "portrait", "none"],
+    ["news", "landscape", "full"],
+    ["news", "landscape", "none"],
+    ["result", "portrait", "full"],
+    ["result", "portrait", "none"],
+    ["result", "landscape", "full"],
+    ["result", "landscape", "none"],
+    ["recap", "portrait", "full"],
+    ["recap", "portrait", "none"],
+    ["recap", "landscape", "full"],
+    ["recap", "landscape", "none"],
+  ])("renders a stable %s %s story in %s mode", async (item, orientation, text) => {
+    dbMock.singleRow = storyMatch();
+    const { GET } = await import("@/app/api/og/route");
+
+    const response = await GET(
+      new Request(
+        `https://tryline.test/api/og?type=story&match=match-1&item=${item}&orientation=${orientation}&text=${text}`,
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(ogMocks.imageResponse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining(
+        orientation === "portrait"
+          ? { height: 1920, width: 1080 }
+          : { height: 630, width: 1200 },
+      ),
+    );
   });
 
   it.each([

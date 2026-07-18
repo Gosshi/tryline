@@ -22,7 +22,8 @@ const TEAM_FLAGS: Record<string, string> = {
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 513 342"><path fill="#FFF" d="M0 0h513v342H0z"/><path fill="#6DA544" d="M0 0h171v342H0z"/><path fill="#FF9811" d="M342 0h171v342H342z"/></svg>',
   italy:
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 513 342"><path fill="#F4F5F0" d="M342 0H0v341.3h512V0z"/><path fill="#008C45" d="M0 0h171v342H0z"/><path fill="#CD212A" d="M342 0h171v342H342z"/></svg>',
-  japan: "🇯🇵",
+  japan:
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 513 342"><rect width="513" height="342" fill="#FFF"/><circle cx="256.5" cy="171" r="102.6" fill="#BC002D"/></svg>',
   namibia: "🇳🇦",
   "new-zealand": "🇳🇿",
   portugal: "🇵🇹",
