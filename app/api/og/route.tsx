@@ -4,6 +4,7 @@ import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJstCompact } from "@/lib/format/kickoff";
 import { getTeamDisplayName } from "@/lib/format/team";
+import { getTeamColor } from "@/lib/format/team-identity";
 import { getResultTeamNameFontSize } from "@/lib/seo/og-result-team-name";
 
 import type { Json } from "@/lib/db/types";
@@ -78,6 +79,20 @@ function parseStoryItemType(value: string | null): StoryItemType | null {
 
 function parseStoryTextMode(value: string | null): StoryTextMode {
   return value === "none" ? "none" : "full";
+}
+
+function teamColorRgba(color: string, opacity: number): string {
+  const hex = color.replace("#", "");
+
+  if (!/^[0-9a-f]{6}$/i.test(hex)) {
+    return `rgba(148, 163, 184, ${opacity})`;
+  }
+
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
 }
 
 async function loadStoryOgMatch(matchId: string | null) {
@@ -244,6 +259,8 @@ function storyImage(
   const isPortrait = orientation === "portrait";
   const width = isPortrait ? 1080 : 1200;
   const height = isPortrait ? 1920 : 630;
+  const homeColor = getTeamColor(match.home_team.slug);
+  const awayColor = getTeamColor(match.away_team.slug);
   const home = truncate(getStoryTeamLabel(match.home_team), isPortrait ? 18 : 20);
   const away = truncate(getStoryTeamLabel(match.away_team), isPortrait ? 18 : 20);
   const competition = truncate(
@@ -297,19 +314,25 @@ function storyImage(
       <div
         style={{
           background:
-            "radial-gradient(circle at 18% 20%, rgba(201,58,64,0.42), transparent 30%), radial-gradient(circle at 82% 82%, rgba(26,58,92,0.92), transparent 38%)",
+            `radial-gradient(circle at 6% 0%, ${teamColorRgba(homeColor, 1)} 0%, ${teamColorRgba(homeColor, 0.72)} 30%, transparent 64%), radial-gradient(circle at 96% 100%, ${teamColorRgba(awayColor, 1)} 0%, ${teamColorRgba(awayColor, 0.72)} 30%, transparent 64%), linear-gradient(135deg, ${teamColorRgba(homeColor, 0.5)} 0%, #0B1628 48%, ${teamColorRgba(awayColor, 0.5)} 100%)`,
+          bottom: 0,
           display: "flex",
-          inset: 0,
+          left: 0,
           position: "absolute",
+          right: 0,
+          top: 0,
         }}
       />
       <div
         style={{
           background:
-            "linear-gradient(180deg, rgba(6,17,31,0.48) 0%, rgba(6,17,31,0.92) 100%)",
+            "linear-gradient(180deg, rgba(6,17,31,0.2) 0%, rgba(6,17,31,0.78) 100%)",
+          bottom: 0,
           display: "flex",
-          inset: 0,
+          left: 0,
           position: "absolute",
+          right: 0,
+          top: 0,
         }}
       />
       <div
