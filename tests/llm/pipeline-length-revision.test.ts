@@ -66,8 +66,11 @@ const verifyEntitiesMock = vi.hoisted(() => ({
 }));
 
 const dbMock = vi.hoisted(() => ({
+  eq: vi.fn(),
   from: vi.fn(),
   insert: vi.fn(),
+  maybeSingle: vi.fn(),
+  select: vi.fn(),
   upsert: vi.fn(),
 }));
 
@@ -165,9 +168,17 @@ describe("generateMatchContent length revision", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     dbMock.insert.mockResolvedValue({ error: null });
+    dbMock.maybeSingle.mockResolvedValue({ data: null, error: null });
+    const existingContentQuery = {
+      eq: dbMock.eq,
+      maybeSingle: dbMock.maybeSingle,
+    };
+    dbMock.eq.mockReturnValue(existingContentQuery);
+    dbMock.select.mockReturnValue(existingContentQuery);
     dbMock.upsert.mockResolvedValue({ error: null });
     dbMock.from.mockReturnValue({
       insert: dbMock.insert,
+      select: dbMock.select,
       upsert: dbMock.upsert,
     });
     assembleMock.assembleMatchContentInput.mockResolvedValue(assembled);

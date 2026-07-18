@@ -3,6 +3,11 @@ import { getServerEnv, hasConfiguredValue } from "@/lib/env";
 import type { DataIntegrityAuditReport } from "@/lib/data-integrity/audit";
 import type { ContentType, QaResult } from "@/lib/llm/types";
 
+type ContentRejectedNotificationOptions = {
+  contentLength?: number;
+  preservedPublished?: boolean;
+};
+
 async function postToSlack(text: string): Promise<void> {
   const { SLACK_WEBHOOK_URL } = getServerEnv();
 
@@ -35,12 +40,19 @@ export async function notifyContentRejected(
   matchId: string,
   contentType: ContentType,
   qaResult: QaResult,
+  options: ContentRejectedNotificationOptions = {},
 ): Promise<void> {
   const message = [
     `⚠️ コンテンツ却下 [${contentType}]`,
     `試合ID: ${matchId}`,
     `QAスコア: 情報密度 ${qaResult.scores.information_density}/5 / 日本語品質 ${qaResult.scores.japanese_quality}/5 / 事実根拠 ${qaResult.scores.factual_grounding}/5`,
     `問題点: ${qaResult.issues.join(" / ")}`,
+    ...(options.preservedPublished
+      ? [
+          "既存 published を温存: reject 産物はDBへ保存していません",
+          `生成本文: ${options.contentLength ?? "不明"}字`,
+        ]
+      : []),
     "対応: Supabase Studio の match_content テーブルで status を確認し、必要に応じて published に変更してください",
   ].join("\n");
 

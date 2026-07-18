@@ -67,6 +67,23 @@ describe("llm notify", () => {
     expect(String((request as RequestInit).body)).toContain("問題点: tone_mismatch / insufficient_evidence");
   });
 
+  it("includes preservation context and generated length for rejected refreshes", async () => {
+    getServerEnvMock.mockReturnValue({ SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C" });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyContentRejected("match-1", "recap", qaResult, {
+      contentLength: 700,
+      preservedPublished: true,
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = String((request as RequestInit).body);
+
+    expect(body).toContain("既存 published を温存");
+    expect(body).toContain("生成本文: 700字");
+    expect(body).toContain("問題点: tone_mismatch / insufficient_evidence");
+  });
+
   it("does not throw when fetch fails", async () => {
     getServerEnvMock.mockReturnValue({ SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C" });
     vi.mocked(fetch).mockRejectedValue(new Error("network error"));
