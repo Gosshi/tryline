@@ -110,6 +110,31 @@ function hasStyledText(
   return false;
 }
 
+function hasStyledBackground(node: unknown, expectedValues: string[]): boolean {
+  if (isValidElement(node)) {
+    const props = node.props as {
+      children?: unknown;
+      style?: Record<string, unknown>;
+    };
+    const background = props.style?.background;
+
+    if (
+      typeof background === "string" &&
+      expectedValues.every((value) => background.includes(value))
+    ) {
+      return true;
+    }
+
+    return hasStyledBackground(props.children, expectedValues);
+  }
+
+  if (Array.isArray(node)) {
+    return node.some((child) => hasStyledBackground(child, expectedValues));
+  }
+
+  return false;
+}
+
 describe("/api/og competition images", () => {
   beforeEach(() => {
     dbMock.filters = [];
@@ -252,6 +277,72 @@ describe("/api/og competition images", () => {
     expect(dbMock.selects[0]).toContain("slug");
   });
 
+  it.each([
+    ["full portrait", "portrait", "full"],
+    ["full landscape", "landscape", "full"],
+    ["text-free portrait", "portrait", "none"],
+    ["text-free landscape", "landscape", "none"],
+  ])("uses both team colors for %s story backgrounds", async (_, orientation, text) => {
+    dbMock.singleRow = storyMatch();
+    const { GET } = await import("@/app/api/og/route");
+
+    await GET(
+      new Request(
+        `https://tryline.test/api/og?type=story&match=match-1&item=result&orientation=${orientation}&text=${text}`,
+      ),
+    );
+
+    const element = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    expect(
+      hasStyledBackground(element, [
+        "rgba(188, 0, 45, 1)",
+        "rgba(0, 35, 149, 1)",
+      ]),
+    ).toBe(true);
+  });
+
+  it("changes story background colors for a different matchup", async () => {
+    dbMock.singleRow = storyMatch({
+      away_team: {
+        flag_code: "🏴",
+        name: "Wales",
+        name_ja: "ウェールズ",
+        short_code: "WAL",
+        slug: "wales",
+      },
+      home_team: {
+        flag_code: "🇿🇦",
+        name: "South Africa",
+        name_ja: "南アフリカ",
+        short_code: "RSA",
+        slug: "south-africa",
+      },
+    });
+    const { GET } = await import("@/app/api/og/route");
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=preview&orientation=portrait",
+      ),
+    );
+
+    const element = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    expect(
+      hasStyledBackground(element, [
+        "rgba(0, 122, 77, 1)",
+        "rgba(200, 16, 46, 1)",
+      ]),
+    ).toBe(true);
+    expect(
+      hasStyledBackground(element, [
+        "rgba(188, 0, 45, 1)",
+        "rgba(0, 35, 149, 1)",
+      ]),
+    ).toBe(false);
+  });
+
   it("omits all story card text except the site mark for text=none", async () => {
     dbMock.singleRow = storyMatch();
     const { GET } = await import("@/app/api/og/route");
@@ -383,6 +474,12 @@ describe("/api/og competition images", () => {
     expect(getTextContent(ogMocks.imageResponse.mock.calls.at(-1)?.[0])).toContain(
       "海外ラグビーを日本語で",
     );
+    expect(
+      hasStyledBackground(
+        ogMocks.imageResponse.mock.calls.at(-1)?.[0],
+        ["rgba(188, 0, 45, 1)"],
+      ),
+    ).toBe(false);
   });
 
   it("returns a fallback round scoreboard image when no matches exist", async () => {
