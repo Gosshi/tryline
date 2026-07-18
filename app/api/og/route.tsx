@@ -14,6 +14,7 @@ const STORY_IMAGE_CACHE_CONTROL =
   "public, s-maxage=86400, stale-while-revalidate=604800";
 
 type StoryItemType = "preview" | "result" | "recap";
+type StoryTextMode = "full" | "none";
 
 type StoryOgMatchRow = {
   away_score: number | null;
@@ -73,6 +74,10 @@ function parseStoryItemType(value: string | null): StoryItemType | null {
   return value === "preview" || value === "result" || value === "recap"
     ? value
     : null;
+}
+
+function parseStoryTextMode(value: string | null): StoryTextMode {
+  return value === "none" ? "none" : "full";
 }
 
 async function loadStoryOgMatch(matchId: string | null) {
@@ -230,6 +235,7 @@ function storyImage(
   fontData: ArrayBuffer,
   fontName: string,
   orientation: "landscape" | "portrait",
+  textMode: StoryTextMode,
 ) {
   if (!match.home_team || !match.away_team || !match.competition) {
     return storyFallbackImage(fontData, fontName, orientation);
@@ -272,6 +278,7 @@ function storyImage(
   const awayFontSize = isPortrait
     ? 76
     : getResultTeamNameFontSize(away);
+  const renderText = textMode === "full";
 
   return new ImageResponse(
     <div
@@ -316,125 +323,135 @@ function storyImage(
           top: 0,
         }}
       />
-      <div
-        style={{
-          alignItems: "center",
-          display: "flex",
-          justifyContent: "space-between",
-          left: isPortrait ? 78 : 64,
-          position: "absolute",
-          right: isPortrait ? 78 : 64,
-          top: isPortrait ? 86 : 52,
-        }}
-      >
+      {renderText && (
         <div
           style={{
-            border: "1px solid rgba(248,250,252,0.22)",
-            borderRadius: "9999px",
-            color: "#f8fafc",
+            alignItems: "center",
             display: "flex",
-            fontSize: isPortrait ? "30px" : "22px",
-            fontWeight: 900,
-            letterSpacing: "0.12em",
-            padding: isPortrait ? "14px 24px" : "10px 18px",
+            justifyContent: "space-between",
+            left: isPortrait ? 78 : 64,
+            position: "absolute",
+            right: isPortrait ? 78 : 64,
+            top: isPortrait ? 86 : 52,
           }}
         >
-          {label}
+          <div
+            style={{
+              border: "1px solid rgba(248,250,252,0.22)",
+              borderRadius: "9999px",
+              color: "#f8fafc",
+              display: "flex",
+              fontSize: isPortrait ? "30px" : "22px",
+              fontWeight: 900,
+              letterSpacing: "0.12em",
+              padding: isPortrait ? "14px 24px" : "10px 18px",
+            }}
+          >
+            {label}
+          </div>
+          <div
+            style={{
+              color: "rgba(248,250,252,0.72)",
+              display: "flex",
+              fontSize: isPortrait ? "30px" : "22px",
+              fontWeight: 900,
+              letterSpacing: "0.08em",
+            }}
+          >
+            TRYLINE
+          </div>
         </div>
-        <div
-          style={{
-            color: "rgba(248,250,252,0.72)",
-            display: "flex",
-            fontSize: isPortrait ? "30px" : "22px",
-            fontWeight: 900,
-            letterSpacing: "0.08em",
-          }}
-        >
-          TRYLINE
-        </div>
-      </div>
+      )}
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: isPortrait ? "34px" : "22px",
-          bottom: isPortrait ? 230 : 108,
-          justifyContent: "center",
-          left: isPortrait ? 78 : 72,
-          position: "absolute",
-          right: isPortrait ? 78 : 72,
-          top: isPortrait ? 300 : 138,
-        }}
-      >
+      {renderText && (
         <div
           style={{
-            color: "rgba(248,250,252,0.66)",
+            bottom: isPortrait ? 230 : 108,
             display: "flex",
-            fontSize: isPortrait ? "34px" : "24px",
-            fontWeight: 900,
-            letterSpacing: "0.04em",
-          }}
-        >
-          {competition}
-        </div>
-        <div
-          style={{
-            color: "#f8fafc",
-            display: "flex",
-            fontSize: isPortrait ? "54px" : "38px",
-            fontWeight: 900,
-            lineHeight: 1.08,
-          }}
-        >
-          {title}
-        </div>
-        <div
-          style={{
-            alignItems: isPortrait ? "flex-start" : "center",
-            display: "flex",
-            flexDirection: isPortrait ? "column" : "row",
-            gap: isPortrait ? "22px" : "30px",
-            marginTop: isPortrait ? "38px" : "20px",
+            flexDirection: "column",
+            gap: isPortrait ? "34px" : "22px",
+            justifyContent: "center",
+            left: isPortrait ? 78 : 72,
+            position: "absolute",
+            right: isPortrait ? 78 : 72,
+            top: isPortrait ? 300 : 138,
           }}
         >
           <div
             style={{
-              color: "#f8fafc",
+              color: "rgba(248,250,252,0.66)",
               display: "flex",
-              flex: isPortrait ? "none" : 1,
-              fontSize: `${homeFontSize}px`,
+              fontSize: isPortrait ? "34px" : "24px",
               fontWeight: 900,
-              lineHeight: 1.02,
+              letterSpacing: "0.04em",
             }}
           >
-            {home}
-          </div>
-          <div
-            style={{
-              color: score ? "#c93a40" : "rgba(248,250,252,0.42)",
-              display: "flex",
-              fontSize: isPortrait ? (score ? "86px" : "42px") : score ? "62px" : "34px",
-              fontWeight: 950,
-              lineHeight: 1,
-            }}
-          >
-            {score ?? "vs"}
+            {competition}
           </div>
           <div
             style={{
               color: "#f8fafc",
               display: "flex",
-              flex: isPortrait ? "none" : 1,
-              fontSize: `${awayFontSize}px`,
+              fontSize: isPortrait ? "54px" : "38px",
               fontWeight: 900,
-              lineHeight: 1.02,
+              lineHeight: 1.08,
             }}
           >
-            {away}
+            {title}
+          </div>
+          <div
+            style={{
+              alignItems: isPortrait ? "flex-start" : "center",
+              display: "flex",
+              flexDirection: isPortrait ? "column" : "row",
+              gap: isPortrait ? "22px" : "30px",
+              marginTop: isPortrait ? "38px" : "20px",
+            }}
+          >
+            <div
+              style={{
+                color: "#f8fafc",
+                display: "flex",
+                flex: isPortrait ? "none" : 1,
+                fontSize: `${homeFontSize}px`,
+                fontWeight: 900,
+                lineHeight: 1.02,
+              }}
+            >
+              {home}
+            </div>
+            <div
+              style={{
+                color: score ? "#c93a40" : "rgba(248,250,252,0.42)",
+                display: "flex",
+                fontSize: isPortrait
+                  ? score
+                    ? "86px"
+                    : "42px"
+                  : score
+                    ? "62px"
+                    : "34px",
+                fontWeight: 950,
+                lineHeight: 1,
+              }}
+            >
+              {score ?? "vs"}
+            </div>
+            <div
+              style={{
+                color: "#f8fafc",
+                display: "flex",
+                flex: isPortrait ? "none" : 1,
+                fontSize: `${awayFontSize}px`,
+                fontWeight: 900,
+                lineHeight: 1.02,
+              }}
+            >
+              {away}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div
         style={{
@@ -581,6 +598,7 @@ export async function GET(request: Request) {
 
   if (searchParams.get("type") === "story") {
     const item = parseStoryItemType(searchParams.get("item"));
+    const textMode = parseStoryTextMode(searchParams.get("text"));
     const orientation =
       searchParams.get("orientation") === "landscape"
         ? "landscape"
@@ -590,7 +608,7 @@ export async function GET(request: Request) {
       : null;
 
     return match && item
-      ? storyImage(match, item, fontData, fontName, orientation)
+      ? storyImage(match, item, fontData, fontName, orientation, textMode)
       : storyFallbackImage(fontData, fontName, orientation);
   }
 

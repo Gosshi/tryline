@@ -252,6 +252,60 @@ describe("/api/og competition images", () => {
     expect(dbMock.selects[0]).toContain("slug");
   });
 
+  it("omits all story card text except the site mark for text=none", async () => {
+    dbMock.singleRow = storyMatch();
+    const { GET } = await import("@/app/api/og/route");
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=result&orientation=portrait&text=none",
+      ),
+    );
+    const portraitElement = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=result&orientation=landscape&text=none",
+      ),
+    );
+    const landscapeElement = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    for (const element of [portraitElement, landscapeElement]) {
+      const text = getTextContent(element);
+
+      expect(text).toBe("trylinerugby.com");
+      expect(text).not.toContain("日本");
+      expect(text).not.toContain("フランス");
+      expect(text).not.toContain("27 — 31");
+      expect(text).not.toContain("ネーションズチャンピオンシップ");
+      expect(text).not.toContain("試合結果");
+      expect(text).not.toContain("RESULT");
+      expect(text).not.toContain("TRYLINE");
+      expect(text).not.toContain("vs");
+    }
+  });
+
+  it("treats omitted, full, and unknown story text values as full", async () => {
+    dbMock.singleRow = storyMatch();
+    const { GET } = await import("@/app/api/og/route");
+    const urls = [
+      "https://tryline.test/api/og?type=story&match=match-1&item=result&orientation=portrait",
+      "https://tryline.test/api/og?type=story&match=match-1&item=result&orientation=portrait&text=full",
+      "https://tryline.test/api/og?type=story&match=match-1&item=result&orientation=portrait&text=compact",
+    ];
+    const outputs: string[] = [];
+
+    for (const url of urls) {
+      await GET(new Request(url));
+      outputs.push(getTextContent(ogMocks.imageResponse.mock.calls.at(-1)?.[0]));
+    }
+
+    expect(outputs).toEqual([outputs[0], outputs[0], outputs[0]]);
+    expect(outputs[0]).toContain("日本");
+    expect(outputs[0]).toContain("27 — 31");
+    expect(outputs[0]).toContain("TRYLINE");
+  });
+
   it("does not render score text for story preview or recap images", async () => {
     dbMock.singleRow = storyMatch();
     const { GET } = await import("@/app/api/og/route");
