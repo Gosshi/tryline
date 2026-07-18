@@ -607,25 +607,45 @@ export async function generateMatchContent(
   const persistedStatus =
     finalQa.verdict === "publish" && !densityBlocked ? "published" : "draft";
 
-  const { error: upsertError } = await db.from("match_content").upsert(
-    {
-      match_id: matchId,
-      content_type: contentType,
-      content_md: finalNarrative,
-      language,
-      model_version: modelVersion,
-      prompt_version: promptVersion,
-      status: persistedStatus,
-      qa_scores: finalQa,
-      generated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "match_id,content_type,language",
-    },
-  );
+  let preservedPublished = false;
 
-  if (upsertError) {
-    throw upsertError;
+  if (persistedStatus === "draft") {
+    const { data: existingContent, error: existingContentError } = await db
+      .from("match_content")
+      .select("status")
+      .eq("match_id", matchId)
+      .eq("content_type", contentType)
+      .eq("language", language)
+      .maybeSingle();
+
+    if (existingContentError) {
+      throw existingContentError;
+    }
+
+    preservedPublished = existingContent?.status === "published";
+  }
+
+  if (!preservedPublished) {
+    const { error: upsertError } = await db.from("match_content").upsert(
+      {
+        match_id: matchId,
+        content_type: contentType,
+        content_md: finalNarrative,
+        language,
+        model_version: modelVersion,
+        prompt_version: promptVersion,
+        status: persistedStatus,
+        qa_scores: finalQa,
+        generated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "match_id,content_type,language",
+      },
+    );
+
+    if (upsertError) {
+      throw upsertError;
+    }
   }
 
   if (persistedStatus === "published") {
@@ -642,7 +662,29 @@ export async function generateMatchContent(
   }
 
   if (persistedStatus === "draft") {
-    await notifyContentRejected(matchId, contentType, finalQa);
+    const contentLength = Array.from(finalNarrative).length;
+
+    if (preservedPublished) {
+      console.warn(
+        "[content-pipeline] preserved existing published content after rejection",
+        {
+          contentLength,
+          contentType,
+          issues: finalQa.issues,
+          language,
+          matchId,
+        },
+      );
+    }
+
+    if (preservedPublished) {
+      await notifyContentRejected(matchId, contentType, finalQa, {
+        contentLength,
+        preservedPublished: true,
+      });
+    } else {
+      await notifyContentRejected(matchId, contentType, finalQa);
+    }
   }
 
   if (totalCostUsd > COST_ALERT_THRESHOLD_USD) {
