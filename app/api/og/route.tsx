@@ -1,10 +1,15 @@
+/* eslint-disable @next/next/no-img-element -- @vercel/og renders data URI flag SVGs directly. */
 import { ImageResponse } from "@vercel/og";
 
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJstCompact } from "@/lib/format/kickoff";
 import { getTeamDisplayName } from "@/lib/format/team";
-import { getTeamColor } from "@/lib/format/team-identity";
+import {
+  getTeamColor,
+  getTeamFlagSvg,
+  getTeamStripeColors,
+} from "@/lib/format/team-identity";
 import { getResultTeamNameFontSize } from "@/lib/seo/og-result-team-name";
 
 import type { Json } from "@/lib/db/types";
@@ -157,6 +162,76 @@ function getStoryTeamLabel(
     nameJa: team.name_ja,
     slug: team.slug,
   });
+}
+
+function getSvgDataUri(svg: string): string {
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
+
+function getTeamStripeGradient(slug: string): string {
+  const colors = getTeamStripeColors(slug);
+  const stopSize = 100 / colors.length;
+  const stops = colors.flatMap((color, index) => {
+    const start = Math.round(index * stopSize);
+    const end = Math.round((index + 1) * stopSize);
+
+    return [`${color} ${start}%`, `${color} ${end}%`];
+  });
+
+  return `linear-gradient(to right, ${stops.join(", ")})`;
+}
+
+function storyFlagChip(
+  team: NonNullable<StoryOgMatchRow["home_team"]>,
+  isPortrait: boolean,
+  renderText: boolean,
+) {
+  const svg = getTeamFlagSvg(team.slug);
+  const shortCode = team.short_code ?? team.name.slice(0, 3).toUpperCase();
+  const chipWidth = isPortrait ? "300px" : "180px";
+  const chipHeight = isPortrait ? "200px" : "120px";
+
+  return (
+    <div
+      style={{
+        alignItems: "center",
+        background: svg ? "#f8fafc" : getTeamStripeGradient(team.slug),
+        border: "3px solid rgba(248,250,252,0.82)",
+        borderRadius: isPortrait ? "30px" : "20px",
+        boxShadow: "0 12px 28px rgba(0,0,0,0.24)",
+        display: "flex",
+        height: chipHeight,
+        justifyContent: "center",
+        overflow: "hidden",
+        width: chipWidth,
+      }}
+    >
+      {svg ? (
+        <img
+          alt=""
+          height={chipHeight}
+          src={getSvgDataUri(svg)}
+          style={{ display: "flex", height: chipHeight, width: chipWidth }}
+          width={chipWidth}
+        />
+      ) : (
+        renderText && (
+          <div
+            style={{
+              color: "#f8fafc",
+              display: "flex",
+              fontSize: isPortrait ? "58px" : "36px",
+              fontWeight: 950,
+              letterSpacing: "0.04em",
+              textShadow: "0 2px 8px rgba(0,0,0,0.72)",
+            }}
+          >
+            {shortCode}
+          </div>
+        )
+      )}
+    </div>
+  );
 }
 
 function storyFallbackImage(
@@ -371,14 +446,12 @@ function storyImage(
         >
           <div
             style={{
-              border: "1px solid rgba(248,250,252,0.22)",
-              borderRadius: "9999px",
               color: "#f8fafc",
               display: "flex",
-              fontSize: isPortrait ? "30px" : "22px",
-              fontWeight: 900,
-              letterSpacing: "0.12em",
-              padding: isPortrait ? "14px 24px" : "10px 18px",
+              fontSize: isPortrait ? "62px" : "42px",
+              fontWeight: 950,
+              letterSpacing: "0.05em",
+              lineHeight: 0.94,
             }}
           >
             {label}
@@ -397,18 +470,53 @@ function storyImage(
         </div>
       )}
 
+      <div
+        style={{
+          alignItems: "center",
+          display: "flex",
+          gap: isPortrait ? "32px" : "24px",
+          justifyContent: "center",
+          left: isPortrait ? 78 : 64,
+          position: "absolute",
+          right: isPortrait ? 78 : 64,
+          top: renderText
+            ? isPortrait
+              ? 220
+              : 112
+            : isPortrait
+              ? 860
+              : 250,
+        }}
+      >
+        {storyFlagChip(match.home_team, isPortrait, renderText)}
+        {renderText && (
+          <div
+            style={{
+              color: "rgba(248,250,252,0.58)",
+              display: "flex",
+              fontSize: isPortrait ? "64px" : "42px",
+              fontWeight: 900,
+              lineHeight: 1,
+            }}
+          >
+            v
+          </div>
+        )}
+        {storyFlagChip(match.away_team, isPortrait, renderText)}
+      </div>
+
       {renderText && (
         <div
           style={{
             bottom: isPortrait ? 230 : 108,
             display: "flex",
             flexDirection: "column",
-            gap: isPortrait ? "34px" : "22px",
+            gap: isPortrait ? "28px" : "16px",
             justifyContent: "center",
             left: isPortrait ? 78 : 72,
             position: "absolute",
             right: isPortrait ? 78 : 72,
-            top: isPortrait ? 300 : 138,
+            top: isPortrait ? 490 : 248,
           }}
         >
           <div
