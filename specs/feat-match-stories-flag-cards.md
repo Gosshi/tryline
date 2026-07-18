@@ -8,7 +8,7 @@
 
 ## 実装上の前提（2026-07-18 実コード確認済み）
 
-- `getTeamFlagSvg(slug)`（`lib/format/team-identity.ts`）はインライン SVG 文字列を返す。**SVG 旗を持つのは 7 チームのみ**（`TEAM_FLAGS`）。それ以外は空文字
+- `getTeamFlagSvg(slug)`（`lib/format/team-identity.ts`）はインライン SVG 文字列を返す。**SVG 旗を持つのはシックスネーションズ6か国のみ**（england / scotland / wales / france / ireland / italy。2026-07-18 に実コードで確定。当初の「7件」は判定コード行の誤カウント）。**日本を含むそれ以外は空文字**
 - `getTeamStripeColors(slug)` は全チームをカバー（チームカラー縞の配列。クラブ含む）
 - OG ルートには画像を base64 data URI で `<img>` 埋め込む既存パターンあり（`bgDataUri`、605〜627 行付近）。SVG は `data:image/svg+xml;base64,...` で同様に埋め込める（Satori は `<img>` の data URI をサポート）
 
@@ -17,8 +17,11 @@
 対象:
 - `app/api/og/route.tsx` の `storyImage`（4 タイプ × portrait/landscape × text=full/none）
 
+対象:
+- **`TEAM_FLAGS` への `japan` の SVG 追加**（白地＋中央の赤丸のみ。既存エントリと同じ viewBox 513×342 形式。日章旗は単純図形で作画品質リスクがなく、旗艦試合に毎回登場する日本が縞チップでは本 spec の価値が半減するため、例外的にスコープに含める）
+
 対象外:
-- `TEAM_FLAGS` への SVG 旗の追加（ユニオンジャック系など複雑な国旗の作画は品質リスク。将来の別タスク）
+- `japan` 以外の `TEAM_FLAGS` への SVG 旗追加（ユニオンジャック系・紋章入りなど複雑な国旗の作画は品質リスク。将来の別タスク）
 - fallback ブランドカード・他の og type・mobile
 - ホーム/ビューアーの UI 変更
 
