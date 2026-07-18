@@ -169,6 +169,8 @@ function createCalendarMatch(overrides: Record<string, unknown> = {}) {
 
 describe("HomePage", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-17T03:00:00.000Z"));
     authMocks.getUser.mockResolvedValue(null);
     authMocks.getUserProfile.mockResolvedValue(null);
     authMocks.isProfilePremium.mockImplementation(
@@ -254,6 +256,7 @@ describe("HomePage", () => {
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
