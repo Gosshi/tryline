@@ -34,7 +34,7 @@ export type V1CalendarData = {
   matches: V1CalendarMatch[];
 };
 
-export type V1StoryItemType = "preview" | "result" | "recap";
+export type V1StoryItemType = "preview" | "news" | "result" | "recap";
 
 // Clients must ignore unknown future Story Item types instead of failing.
 export type V1StoryItem = {
@@ -44,6 +44,7 @@ export type V1StoryItem = {
   image: { landscape_url: string; portrait_url: string };
   premium_required: boolean;
   published_at: string;
+  source_domain: string | null;
   summary: string | null;
   title: string;
   type: V1StoryItemType;

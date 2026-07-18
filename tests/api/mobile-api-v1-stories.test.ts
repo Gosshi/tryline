@@ -8,12 +8,17 @@ const contentMock = vi.hoisted(() => ({
   getPublishedContentForMatch: vi.fn(),
 }));
 
+const sourcedFactsMock = vi.hoisted(() => ({
+  getStorySourcedFactsForMatches: vi.fn(),
+}));
+
 const sampleMock = vi.hoisted(() => ({
   isSampleMatch: vi.fn(),
 }));
 
 vi.mock("@/lib/db/queries/matches", () => matchesMock);
 vi.mock("@/lib/db/queries/match-content", () => contentMock);
+vi.mock("@/lib/db/queries/sourced-facts", () => sourcedFactsMock);
 vi.mock("@/lib/sample-matches", () => sampleMock);
 
 const LOCKED_SECRET = "LOCKED_ONLY_TACTICAL_SECRET";
@@ -88,6 +93,7 @@ describe("GET /api/v1/stories", () => {
       preview,
       recap,
     });
+    sourcedFactsMock.getStorySourcedFactsForMatches.mockResolvedValue([]);
     sampleMock.isSampleMatch.mockResolvedValue(false);
   });
 
@@ -125,12 +131,14 @@ describe("GET /api/v1/stories", () => {
       },
       id: "match-1:preview",
       premium_required: false,
+      source_domain: null,
       title: "プレビュー｜日本 vs フランス",
     });
     expect(body.data.matches[0].items[1]).toMatchObject({
       contains_result: true,
       id: "match-1:result",
       premium_required: false,
+      source_domain: null,
       summary: "日本 27-31 フランス",
       title: "試合結果｜日本 vs フランス",
     });
@@ -138,6 +146,7 @@ describe("GET /api/v1/stories", () => {
       contains_result: true,
       id: "match-1:recap",
       premium_required: true,
+      source_domain: null,
       title: "レビュー｜日本 vs フランス",
     });
     expect(JSON.stringify(body)).not.toContain(LOCKED_SECRET);
@@ -149,6 +158,144 @@ describe("GET /api/v1/stories", () => {
     );
     expect(body.data.matches[0].items[0].image.portrait_url).not.toContain("27");
     expect(body.data.matches[0].items[0].image.portrait_url).not.toContain("31");
+  });
+
+  it("adds up to three eligible news items in fetched order with one sourced facts query", async () => {
+    sourcedFactsMock.getStorySourcedFactsForMatches.mockResolvedValue([
+      {
+        confidence: "high",
+        contentType: "preview",
+        fact: "同じ出典の古いニュースです。",
+        fetchedAt: "2026-07-18T09:00:00.000Z",
+        id: "same-domain-old",
+        matchId: "match-1",
+        sourceDomain: "same.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "shared",
+        fact: "同じ出典の最新ニュースです。",
+        fetchedAt: "2026-07-18T09:45:00.000Z",
+        id: "same-domain-latest",
+        matchId: "match-1",
+        sourceDomain: "same.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "preview",
+        fact: "2番目に新しいニュースです。",
+        fetchedAt: "2026-07-18T09:30:00.000Z",
+        id: "second-latest",
+        matchId: "match-1",
+        sourceDomain: "second.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "shared",
+        fact: "3番目に新しいニュースです。",
+        fetchedAt: "2026-07-18T09:15:00.000Z",
+        id: "third-latest",
+        matchId: "match-1",
+        sourceDomain: "third.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "preview",
+        fact: "4番目のニュースなので上限で除外されます。",
+        fetchedAt: "2026-07-18T09:05:00.000Z",
+        id: "fourth-latest",
+        matchId: "match-1",
+        sourceDomain: "fourth.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "preview",
+        fact: "English-only fact is excluded.",
+        fetchedAt: "2026-07-18T09:50:00.000Z",
+        id: "english",
+        matchId: "match-1",
+        sourceDomain: "english.example.com",
+      },
+      {
+        confidence: "medium",
+        contentType: "preview",
+        fact: "medium confidence は除外されます。",
+        fetchedAt: "2026-07-18T09:51:00.000Z",
+        id: "medium",
+        matchId: "match-1",
+        sourceDomain: "medium.example.com",
+      },
+      {
+        confidence: "low",
+        contentType: "preview",
+        fact: "low confidence は除外されます。",
+        fetchedAt: "2026-07-18T09:52:00.000Z",
+        id: "low",
+        matchId: "match-1",
+        sourceDomain: "low.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "preview",
+        fact: "キックオフ時刻と同時のニュースは除外されます。",
+        fetchedAt: "2026-07-18T10:00:00.000Z",
+        id: "at-kickoff",
+        matchId: "match-1",
+        sourceDomain: "at-kickoff.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "recap",
+        fact: "レビュー用のニュースは除外されます。",
+        fetchedAt: "2026-07-18T09:55:00.000Z",
+        id: "recap",
+        matchId: "match-1",
+        sourceDomain: "recap.example.com",
+      },
+    ]);
+
+    const { GET } = await import("@/app/api/v1/stories/route");
+    const response = await GET(new Request("http://localhost/api/v1/stories"));
+    const body = await response.json();
+    const items = body.data.matches[0].items;
+
+    expect(sourcedFactsMock.getStorySourcedFactsForMatches).toHaveBeenCalledTimes(1);
+    expect(sourcedFactsMock.getStorySourcedFactsForMatches).toHaveBeenCalledWith([
+      "match-1",
+    ]);
+    expect(items.map((item: { type: string }) => item.type)).toEqual([
+      "preview",
+      "news",
+      "news",
+      "news",
+      "result",
+      "recap",
+    ]);
+    expect(
+      items
+        .filter((item: { type: string }) => item.type === "news")
+        .map((item: { id: string }) => item.id),
+    ).toEqual([
+      "match-1:news:third-latest",
+      "match-1:news:second-latest",
+      "match-1:news:same-domain-latest",
+    ]);
+    expect(items[1]).toMatchObject({
+      contains_result: false,
+      premium_required: false,
+      published_at: "2026-07-18T09:15:00.000Z",
+      source_domain: "third.example.com",
+      summary: "3番目に新しいニュースです。",
+      title: "ニュース｜日本 vs フランス",
+      type: "news",
+    });
+    expect(JSON.stringify(items)).not.toContain("English-only");
+    expect(JSON.stringify(items)).not.toContain("medium confidence");
+    expect(JSON.stringify(items)).not.toContain("low confidence");
+    expect(JSON.stringify(items)).not.toContain("キックオフ時刻と同時");
+    expect(JSON.stringify(items)).not.toContain("レビュー用");
+    expect(JSON.stringify(items)).not.toContain("4番目のニュース");
+    expect(JSON.stringify(items)).not.toContain("同じ出典の古い");
   });
 
   it("validates explicit inclusive JST date ranges", async () => {

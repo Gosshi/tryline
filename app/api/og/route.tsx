@@ -14,7 +14,7 @@ export const runtime = "edge";
 const STORY_IMAGE_CACHE_CONTROL =
   "public, s-maxage=86400, stale-while-revalidate=604800";
 
-type StoryItemType = "preview" | "result" | "recap";
+type StoryItemType = "preview" | "news" | "result" | "recap";
 type StoryTextMode = "full" | "none";
 
 type StoryOgMatchRow = {
@@ -72,7 +72,10 @@ function formatCalendarFocusKickoff(value: string | null): string | null {
 }
 
 function parseStoryItemType(value: string | null): StoryItemType | null {
-  return value === "preview" || value === "result" || value === "recap"
+  return value === "preview" ||
+    value === "news" ||
+    value === "result" ||
+    value === "recap"
     ? value
     : null;
 }
@@ -275,13 +278,21 @@ function storyImage(
     isPortrait ? 28 : 38,
   );
   const label =
-    item === "preview" ? "PREVIEW" : item === "recap" ? "RECAP" : "RESULT";
+    item === "preview"
+      ? "PREVIEW"
+      : item === "news"
+        ? "NEWS"
+        : item === "recap"
+          ? "RECAP"
+          : "RESULT";
   const title =
     item === "preview"
       ? "試合プレビュー"
-      : item === "recap"
-        ? "試合レビュー"
-        : "試合結果";
+      : item === "news"
+        ? "試合ニュース"
+        : item === "recap"
+          ? "試合レビュー"
+          : "試合結果";
   const score =
     item === "result" &&
     match.status === "finished" &&

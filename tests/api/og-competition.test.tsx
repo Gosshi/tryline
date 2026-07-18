@@ -421,6 +421,39 @@ describe("/api/og competition images", () => {
     expect(getTextContent(recapElement)).not.toContain("31");
   });
 
+  it("renders a score-free news story image and preserves text-free team color backgrounds", async () => {
+    dbMock.singleRow = storyMatch();
+    const { GET } = await import("@/app/api/og/route");
+
+    const response = await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=news&orientation=portrait",
+      ),
+    );
+    const newsElement = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    await GET(
+      new Request(
+        "https://tryline.test/api/og?type=story&match=match-1&item=news&orientation=landscape&text=none",
+      ),
+    );
+    const textFreeElement = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
+
+    expect(response.status).toBe(200);
+    expect(getTextContent(newsElement)).toContain("NEWS");
+    expect(getTextContent(newsElement)).toContain("試合ニュース");
+    expect(getTextContent(newsElement)).not.toContain("27 — 31");
+    expect(getTextContent(newsElement)).not.toContain("27");
+    expect(getTextContent(newsElement)).not.toContain("31");
+    expect(getTextContent(textFreeElement)).toBe("trylinerugby.com");
+    expect(
+      hasStyledBackground(textFreeElement, [
+        "rgba(188, 0, 45, 1)",
+        "rgba(0, 35, 149, 1)",
+      ]),
+    ).toBe(true);
+  });
+
   it("shrinks long landscape story team names to avoid mid-word wrapping", async () => {
     dbMock.singleRow = storyMatch({
       away_team: {
