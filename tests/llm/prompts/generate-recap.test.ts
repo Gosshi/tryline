@@ -54,8 +54,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.13.1", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.13.1");
+  it("uses recap prompt version 4.14.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.14.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -145,6 +145,28 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("sourced_facts: なし");
     expect(prompt).toContain("外部記事・モデル訓練データ由来");
     expect(prompt).toContain("統計・負傷・欠場・選手コメント・発言");
+  });
+
+  it("instructs the model to proactively incorporate relevant sourced facts", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        sourced_facts: [
+          {
+            confidence: "high",
+            fact: "Ireland won their last three matches.",
+            source_domain: "irishrugby.ie",
+            source_url: "https://www.irishrugby.ie/news/form",
+          },
+        ],
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("本文の趣旨に沿うものはできるだけ多く反映すること");
+    expect(prompt).toContain("無理にこじつけて記述してはならない");
+    expect(prompt).toContain("自分の日本語で言い換えること");
   });
 
   it("adds official team stats when available", () => {

@@ -163,7 +163,7 @@ describe("regenerate-overseas-content", () => {
 
   it("exposes current prompt versions", () => {
     expect(getCurrentPromptVersion("preview")).toBe("preview@3.9.0");
-    expect(getCurrentPromptVersion("recap")).toBe("recap@4.13.1");
+    expect(getCurrentPromptVersion("recap")).toBe("recap@4.14.0");
   });
 
   it("reports dry-run targets by family and excludes League One", async () => {
