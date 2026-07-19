@@ -2,8 +2,8 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SiteHeader } from "@/components/site-header";
 
@@ -13,6 +13,10 @@ const authServerMocks = vi.hoisted(() => ({
   isProfilePremium: vi.fn(() => false),
 }));
 
+const authClientMocks = vi.hoisted(() => ({
+  getClientUserState: vi.fn(),
+}));
+
 vi.mock("@/lib/auth/server", () => ({
   getUserProfile: authServerMocks.getUserProfile,
   getUser: authServerMocks.getUser,
@@ -20,12 +24,7 @@ vi.mock("@/lib/auth/server", () => ({
 }));
 
 vi.mock("@/lib/auth/client", () => ({
-  getClientUserState: vi.fn().mockResolvedValue({
-    favoriteTeamSlugs: [],
-    isPremium: false,
-    spoilerGuardEnabled: false,
-    user: null,
-  }),
+  getClientUserState: authClientMocks.getClientUserState,
 }));
 
 vi.mock("@/lib/db/queries/teams", () => ({
@@ -41,8 +40,24 @@ vi.mock("@/components/user-menu", () => ({
 }));
 
 describe("SiteHeader", () => {
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
   it("renders its static shell without server-side auth calls", async () => {
+    authClientMocks.getClientUserState.mockResolvedValue({
+      favoriteTeamSlugs: [],
+      isPremium: false,
+      spoilerGuardEnabled: false,
+      user: null,
+    });
+
     render(await SiteHeader());
+
+    await waitFor(() => {
+      expect(authClientMocks.getClientUserState).toHaveBeenCalledTimes(2);
+    });
 
     expect(authServerMocks.getUser).not.toHaveBeenCalled();
     expect(authServerMocks.getUserProfile).not.toHaveBeenCalled();
