@@ -8,7 +8,7 @@ import type {
   SourcedFactInput,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.4.0";
+export const PROMPT_VERSION = "qa@2.5.0";
 
 export type TeamFormStats = {
   win_rate_last_5: number | null;
@@ -40,6 +40,8 @@ export function buildQaContentPrompt(
   const unitLabel = lengthRequirement.unit === "words" ? " words" : "字";
   const minLength = lengthRequirement.min;
   const languageLabel = language === "en" ? "English" : "日本語";
+  const isJapaneseRecap = contentType === "recap" && language === "ja";
+  const sourcedFactsCount = matchContext.sourcedFacts?.length ?? 0;
   const qualityRubric =
     language === "en"
       ? [
@@ -105,6 +107,31 @@ export function buildQaContentPrompt(
           "## sourced_facts grounding",
           "sourced_facts はゼロです。本文がWeb由来の統計・負傷・欠場・選手コメント・発言（入力データにない内容）を含む場合は factual_grounding を 2 以下に下げること。",
         ].join("\n");
+  const recapSourcedFactsDensityBlock = !isJapaneseRecap
+    ? ""
+    : sourcedFactsCount === 0
+      ? [
+          "## recap sourced_facts 反映度チェック",
+          "このrecapの sourced_facts は0件です。information_density は sourced_facts の反映度で下げず、従来どおり字数・具体性・水増しの有無で評価すること。",
+        ].join("\n")
+      : [
+          "## recap sourced_facts 反映度チェック",
+          `このrecapで反映候補となる sourced_facts は ${sourcedFactsCount} 件です。`,
+          "本文の趣旨に沿う事実が、自分の日本語として本文に反映されているかを照合して information_density を評価すること。単なる列挙や不自然なこじつけは反映として数えないこと。",
+          "team_stats が入力されている場合は、本文の趣旨に沿う主要な数値の活用も情報密度の具体性として考慮すること。",
+        ].join("\n");
+  const informationDensityRubric = [
+    "### information_density (1-5)",
+    isJapaneseRecap && sourcedFactsCount > 0
+      ? `- 5: ${minLength}${unitLabel}以上かつ具体的な試合描写・戦術分析・選手名が豊富で、本文の趣旨に沿う sourced_facts のおおむね7割以上を自分の日本語で反映している`
+      : `- 5: ${minLength}${unitLabel}以上かつ具体的な試合描写・戦術分析・選手名が豊富`,
+    isJapaneseRecap && sourcedFactsCount > 0
+      ? `- 4: ${minLength}${unitLabel}以上かつ実質的な情報があるが、sourced_facts の反映が一部にとどまる`
+      : `- 4: ${minLength}${unitLabel}以上かつ一般的な内容を含むが実質的な情報あり`,
+    `- 3: ${Math.round(minLength * 0.75)}${unitLabel}以上。情報密度は普通`,
+    `- 2: ${Math.round(minLength * 0.5)}${unitLabel}未満、または内容が薄く抽象的な記述が多い`,
+    "- 1: 極めて短い、または内容がほぼない",
+  ].join("\n");
   const derivedStatsBlock = !matchContext.derivedStats
     ? ""
     : [
@@ -127,12 +154,7 @@ export function buildQaContentPrompt(
     [
       "## 採点ルーブリック",
       "",
-      "### information_density (1-5)",
-      `- 5: ${minLength}${unitLabel}以上かつ具体的な試合描写・戦術分析・選手名が豊富`,
-      `- 4: ${minLength}${unitLabel}以上かつ一般的な内容を含むが実質的な情報あり`,
-      `- 3: ${Math.round(minLength * 0.75)}${unitLabel}以上。情報密度は普通`,
-      `- 2: ${Math.round(minLength * 0.5)}${unitLabel}未満、または内容が薄く抽象的な記述が多い`,
-      "- 1: 極めて短い、または内容がほぼない",
+      informationDensityRubric,
       "",
       "## 字数ゲート",
       `本文が${minLength}${unitLabel}未満の場合は issues に「本文が目標字数の下限未満です」を必ず追加すること。`,
@@ -158,6 +180,7 @@ export function buildQaContentPrompt(
     turningPointCheckBlock,
     playerStatCheckBlock,
     sourcedFactsBlock,
+    recapSourcedFactsDensityBlock,
     derivedStatsBlock,
     teamStatsBlock,
     'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[],"statedWinner":"home"|"away"|"unclear","statedPlayerStats":[{"playerName":string,"tries"?:number,"conversions"?:number,"penaltyGoals"?:number,"totalPoints"?:number}]}',

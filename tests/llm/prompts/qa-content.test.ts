@@ -14,8 +14,8 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.4.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.4.0");
+  it("uses qa prompt version 2.5.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.5.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -57,6 +57,74 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).toContain("- 4: 1200字以上");
     expect(prompt).toContain("- 3: 900字以上");
     expect(prompt).toContain("- 2: 600字未満");
+  });
+
+  it("rewards Japanese recaps that adopt relevant sourced facts", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      sourcedFacts: [
+        {
+          confidence: "high",
+          fact: "Ireland won their last three matches.",
+          source_domain: "irishrugby.ie",
+          source_url: "https://www.irishrugby.ie/news/form",
+        },
+        {
+          confidence: "medium",
+          fact: "France changed their starting fly-half.",
+          source_domain: "ffr.fr",
+          source_url: "https://www.ffr.fr/news/team",
+        },
+      ],
+      teamStats: {
+        away: { possession_pct: 44 },
+        home: { possession_pct: 56 },
+      },
+    });
+
+    expect(prompt).toContain("反映候補となる sourced_facts は 2 件");
+    expect(prompt).toContain("おおむね7割以上");
+    expect(prompt).toContain("sourced_facts の反映が一部にとどまる");
+    expect(prompt).toContain("主要な数値の活用");
+  });
+
+  it("does not penalize Japanese recaps without sourced facts", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      sourcedFacts: [],
+    });
+
+    expect(prompt).toContain("sourced_facts は0件");
+    expect(prompt).toContain("反映度で下げず");
+    expect(prompt).not.toContain("おおむね7割以上");
+  });
+
+  it("limits sourced facts density scoring changes to Japanese recaps", () => {
+    const previewPrompt = buildQaContentPrompt("preview", "本文", "ja", {
+      ...matchContext,
+      sourcedFacts: [
+        {
+          confidence: "high",
+          fact: "Ireland won their last three matches.",
+          source_domain: "irishrugby.ie",
+          source_url: "https://www.irishrugby.ie/news/form",
+        },
+      ],
+    });
+    const englishRecapPrompt = buildQaContentPrompt("recap", "Body", "en", {
+      ...matchContext,
+      sourcedFacts: [
+        {
+          confidence: "high",
+          fact: "Ireland won their last three matches.",
+          source_domain: "irishrugby.ie",
+          source_url: "https://www.irishrugby.ie/news/form",
+        },
+      ],
+    });
+
+    expect(previewPrompt).not.toContain("recap sourced_facts 反映度チェック");
+    expect(englishRecapPrompt).not.toContain("recap sourced_facts 反映度チェック");
   });
 
   it("adds winner consistency checks only for recaps", () => {
