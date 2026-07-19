@@ -16,6 +16,7 @@ const authMocks = vi.hoisted(() => ({
 
 const competitionMocks = vi.hoisted(() => ({
   listFamilies: vi.fn(),
+  listSeasonsByFamilies: vi.fn(),
   listSeasonsByFamily: vi.fn(),
   selectLatestSeasonWithMatches: vi.fn(),
   sortHomepageCompetitionLinks: vi.fn(),
@@ -95,6 +96,7 @@ vi.mock("@/lib/auth/server", () => ({
 
 vi.mock("@/lib/db/queries/competitions", () => ({
   listFamilies: competitionMocks.listFamilies,
+  listSeasonsByFamilies: competitionMocks.listSeasonsByFamilies,
   listSeasonsByFamily: competitionMocks.listSeasonsByFamily,
   selectLatestSeasonWithMatches: competitionMocks.selectLatestSeasonWithMatches,
   sortHomepageCompetitionLinks: competitionMocks.sortHomepageCompetitionLinks,
@@ -180,6 +182,19 @@ describe("HomePage", () => {
     );
     competitionMocks.listFamilies.mockResolvedValue([]);
     competitionMocks.listSeasonsByFamily.mockResolvedValue([]);
+    competitionMocks.listSeasonsByFamilies.mockImplementation(
+      async (families: string[]) =>
+        new Map(
+          await Promise.all(
+            families.map(async (family) =>
+              [
+                family,
+                await competitionMocks.listSeasonsByFamily(family),
+              ] as const,
+            ),
+          ),
+        ),
+    );
     competitionMocks.selectLatestSeasonWithMatches.mockReturnValue(null);
     competitionMocks.sortHomepageCompetitionLinks.mockImplementation(
       (links) => links,
