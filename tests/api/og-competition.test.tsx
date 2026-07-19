@@ -339,21 +339,20 @@ describe("/api/og competition images", () => {
     );
   });
 
-  it("renders a stripe chip beside an SVG flag chip for New Zealand vs Ireland", async () => {
+  it.each([
+    ["Argentina", "アルゼンチン", "ARG", "argentina", "#74ACDF"],
+    ["Australia", "オーストラリア", "AUS", "australia", "#FFD700"],
+    ["Fiji", "フィジー", "FIJ", "fiji", "#68BFE5"],
+    ["New Zealand", "ニュージーランド", "NZL", "new-zealand", "#000000"],
+    ["South Africa", "南アフリカ", "RSA", "south-africa", "#007A4D"],
+  ])("renders two SVG flag chips for %s vs Ireland", async (name, nameJa, shortCode, slug, stripeColor) => {
     dbMock.singleRow = storyMatch({
-      away_team: {
-        flag_code: "🇮🇪",
-        name: "Ireland",
-        name_ja: "アイルランド",
-        short_code: "IRL",
-        slug: "ireland",
-      },
       home_team: {
-        flag_code: "🇳🇿",
-        name: "New Zealand",
-        name_ja: "ニュージーランド",
-        short_code: "NZL",
-        slug: "new-zealand",
+        flag_code: "🏉",
+        name,
+        name_ja: nameJa,
+        short_code: shortCode,
+        slug,
       },
     });
     const { GET } = await import("@/app/api/og/route");
@@ -365,12 +364,11 @@ describe("/api/og competition images", () => {
     );
     const element = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
 
-    expect(countSvgFlagImages(element)).toBe(1);
-    expect(hasStripeChip(element, ["#000000"])).toBe(true);
-    expect(getTextContent(element)).toContain("NZL");
+    expect(countSvgFlagImages(element)).toBe(2);
+    expect(hasStripeChip(element, [stripeColor])).toBe(false);
   });
 
-  it("renders two stripe chips without their short codes for text=none", async () => {
+  it("renders SVG flag chips without short codes for text=none", async () => {
     dbMock.singleRow = storyMatch({
       away_team: {
         flag_code: "🇿🇦",
@@ -403,11 +401,11 @@ describe("/api/og competition images", () => {
     );
     const textFreeElement = ogMocks.imageResponse.mock.calls.at(-1)?.[0];
 
-    expect(countSvgFlagImages(fullElement)).toBe(0);
-    expect(hasStripeChip(fullElement, ["#000000"])).toBe(true);
-    expect(hasStripeChip(fullElement, ["#007A4D", "#FFB612", "#000000"])).toBe(true);
-    expect(getTextContent(fullElement)).toContain("NZL");
-    expect(getTextContent(fullElement)).toContain("RSA");
+    expect(countSvgFlagImages(fullElement)).toBe(2);
+    expect(hasStripeChip(fullElement, ["#000000"])).toBe(false);
+    expect(hasStripeChip(fullElement, ["#007A4D", "#FFB612", "#000000"])).toBe(false);
+    expect(getTextContent(fullElement)).not.toContain("NZL");
+    expect(getTextContent(fullElement)).not.toContain("RSA");
     expect(getTextContent(textFreeElement)).toBe("trylinerugby.com");
     expect(getTextContent(textFreeElement)).not.toContain("NZL");
     expect(getTextContent(textFreeElement)).not.toContain("RSA");
