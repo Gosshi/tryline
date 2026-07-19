@@ -163,7 +163,7 @@ const PNC_CONDENSED_2026_HTML = `
 const NATIONS_CHAMPIONSHIP_HTML = `
 <div class="mw-heading mw-heading2"><h2 id="Fixtures">Fixtures</h2></div>
 <div class="mw-heading mw-heading3"><h3 id="Southern_Hemisphere_Series">Southern Hemisphere Series</h3></div>
-<div class="mw-heading mw-heading4"><h4 id="Round_1">Round 1</h4></div>
+<div class="mw-heading mw-heading4"><h4 id="Round_1">Round 1<span class="mw-editsection">[edit]</span></h4></div>
 <table>
   <tbody>
     <tr><th></th><th></th><th></th><th></th><th></th></tr>
@@ -183,7 +183,7 @@ const NATIONS_CHAMPIONSHIP_HTML = `
     </tr>
   </tbody>
 </table>
-<div class="mw-heading mw-heading4"><h4 id="Round_2">Round 2</h4></div>
+<div class="mw-heading mw-heading4"><h4 id="Round_2">Round 2<span class="mw-editsection">[edit]</span></h4></div>
 <table>
   <tbody>
     <tr><th></th><th></th><th></th><th></th><th></th></tr>
@@ -206,6 +206,27 @@ const NATIONS_CHAMPIONSHIP_HTML = `
   </tr></tbody></table>
   <table><tbody><tr><td><span class="location">Twickenham Stadium, London</span></td></tr></tbody></table>
 </div>
+`;
+
+const NATIONS_CHAMPIONSHIP_EDIT_SOURCE_HTML = `
+<div class="mw-heading mw-heading2"><h2 id="Fixtures">Fixtures<span class="mw-editsection">[edit source]</span></h2></div>
+<div class="mw-heading mw-heading4"><h4 id="Round_3">Round 3<span class="mw-editsection">[edit source]</span></h4></div>
+<table>
+  <tbody>
+    <tr><th></th><th></th><th></th><th></th><th></th></tr>
+    <tr><td>18 July 2026</td><td>Australia</td><td>57-10</td><td>Italy</td><td>Perth Stadium</td></tr>
+    <tr><td>18 July 2026</td><td>Fiji</td><td>17-33</td><td>Scotland</td><td>HFC Bank Stadium</td></tr>
+    <tr><td>18 July 2026</td><td>South Africa</td><td>43-0</td><td>Wales</td><td>Loftus Versfeld</td></tr>
+    <tr><td>18 July 2026</td><td>Argentina</td><td>24-31</td><td>England</td><td>Estadio Mario Alberto Kempes</td></tr>
+    <tr><td>18 July 2026</td><td>Japan</td><td>20-36</td><td>France</td><td>Japan National Stadium</td></tr>
+    <tr><td>18 July 2026</td><td>New Zealand</td><td>27-21</td><td>Ireland</td><td>Eden Park</td></tr>
+  </tbody>
+</table>
+`;
+
+const EMPTY_NATIONS_CHAMPIONSHIP_EDIT_SOURCE_HTML = `
+<div class="mw-heading mw-heading2"><h2 id="Fixtures">Fixtures<span class="mw-editsection">[edit source]</span></h2></div>
+<div class="mw-heading mw-heading4"><h4 id="Round_3">Round 3<span class="mw-editsection">[edit source]</span></h4></div>
 `;
 
 const NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD = {
@@ -706,6 +727,34 @@ describe("live competition source adapters", () => {
     ).toBe(false);
   });
 
+  it("parses Nations Championship round tables with edit source headings", () => {
+    const matches = parseNationsChampionshipLiveHtml(
+      NATIONS_CHAMPIONSHIP_EDIT_SOURCE_HTML,
+      [],
+      "https://en.wikipedia.org/wiki/2026_Nations_Championship",
+    );
+
+    expect(matches).toHaveLength(6);
+    expect(matches.every((match) => match.round === 3)).toBe(true);
+    expect(matches[0]).toMatchObject({
+      awayScore: 10,
+      awayTeamSlug: "italy",
+      homeScore: 57,
+      homeTeamSlug: "australia",
+      round: 3,
+      status: "finished",
+    });
+    expect(matches).toContainEqual(
+      expect.objectContaining({
+        awayScore: 31,
+        awayTeamSlug: "england",
+        homeScore: 24,
+        homeTeamSlug: "argentina",
+        round: 3,
+      }),
+    );
+  });
+
   it("overlays Nations Championship kickoff times from World Rugby by team pairing", () => {
     const kickoffTimes = parseWorldRugbyNationsChampionshipSchedulePayload(
       NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD,
@@ -803,6 +852,30 @@ describe("live competition source adapters", () => {
     warn.mockRestore();
   });
 
+  it("fetches six Nations Championship matches with edit source headings", async () => {
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(
+        new Response(NATIONS_CHAMPIONSHIP_EDIT_SOURCE_HTML),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD)),
+      );
+
+    const matches = await fetchNationsChampionship2026();
+
+    expect(matches).toHaveLength(6);
+    expect(matches.every((match) => match.round === 3)).toBe(true);
+    expect(matches).toContainEqual(
+      expect.objectContaining({
+        awayScore: 0,
+        awayTeamSlug: "wales",
+        homeScore: 43,
+        homeTeamSlug: "south-africa",
+        round: 3,
+      }),
+    );
+  });
+
   it("logs response and structural diagnostics without logging empty Wikipedia HTML", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     fetcherMock.fetchWithPolicy
@@ -854,6 +927,29 @@ describe("live competition source adapters", () => {
     );
     expect(diagnosticPayload).toHaveProperty("htmlByteLength");
     expect(diagnosticPayload).toHaveProperty("htmlSha256");
+
+    warn.mockRestore();
+  });
+
+  it("counts edit source round headings in empty parse diagnostics", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(
+        new Response(EMPTY_NATIONS_CHAMPIONSHIP_EDIT_SOURCE_HTML),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD)),
+      );
+
+    await expect(fetchNationsChampionship2026()).resolves.toEqual([]);
+
+    expect(warn).toHaveBeenCalledWith(
+      "Nations Championship 2026 Wikipedia diagnostics",
+      expect.objectContaining({
+        mwHeadingTexts: ["Fixtures[edit source]", "Round 3[edit source]"],
+        roundHeadingCount: 1,
+      }),
+    );
 
     warn.mockRestore();
   });
