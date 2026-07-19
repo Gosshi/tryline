@@ -29,6 +29,7 @@ import { parseSuperRugbyPacificLiveHtml } from "@/lib/ingestion/sources/wikipedi
 import { parseTop14LiveHtml } from "@/lib/ingestion/sources/wikipedia-top-14";
 import { parseUrcLiveHtml } from "@/lib/ingestion/sources/wikipedia-urc";
 import { parseWorldRugbyNationsChampionshipSchedulePayload } from "@/lib/ingestion/sources/world-rugby-nations-championship-times";
+import { FetchError } from "@/lib/scrapers/errors";
 
 const PREMIERSHIP_HTML = `
 <div class="mw-heading mw-heading2"><h2 id="Regular_season">Regular season</h2></div>
@@ -284,6 +285,10 @@ const NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD = {
     },
   ],
 };
+
+const EMPTY_NATIONS_CHAMPIONSHIP_HTML = `
+<section data-mw-section-id="1"><div class="mw-heading">Not a round</div></section>
+`;
 
 const NATIONS_CHAMPIONSHIP_PLACEHOLDER_WORLD_RUGBY_MATCHES = [
   ["NTH 6th", "STH 6th"],
@@ -791,6 +796,125 @@ describe("live competition source adapters", () => {
       kickoffAt: "2026-07-11T10:10:00.000Z",
       round: 2,
     });
+
+    warn.mockRestore();
+  });
+
+  it("logs response and structural diagnostics without logging empty Wikipedia HTML", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(
+        new Response(EMPTY_NATIONS_CHAMPIONSHIP_HTML, {
+          headers: {
+            age: "42",
+            "content-encoding": "gzip",
+            "content-length": "84",
+            "content-type": "text/html; charset=utf-8",
+            etag: '"diagnostic-etag"',
+            "last-modified": "Sat, 18 Jul 2026 00:00:00 GMT",
+            vary: "Accept-Encoding",
+            "x-cache": "HIT",
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD)),
+      );
+
+    await expect(fetchNationsChampionship2026()).resolves.toEqual([]);
+
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn).toHaveBeenCalledWith(
+      "Nations Championship 2026 Wikipedia diagnostics",
+      expect.objectContaining({
+        age: "42",
+        contentEncoding: "gzip",
+        contentLength: "84",
+        contentType: "text/html; charset=utf-8",
+        headingFollowedByDivWithTableCount: 0,
+        headingFollowedByTableCount: 0,
+        httpStatus: 200,
+        mwHeadingCount: 1,
+        reason: "empty-parse-result",
+        roundHeadingCount: 0,
+        sectionWithMwSectionIdCount: 1,
+        source: "wikipedia",
+        xCache: "HIT",
+      }),
+    );
+
+    const diagnosticPayload = warn.mock.calls[0]?.[1];
+
+    expect(JSON.stringify(diagnosticPayload)).not.toContain(
+      EMPTY_NATIONS_CHAMPIONSHIP_HTML,
+    );
+    expect(diagnosticPayload).toHaveProperty("htmlByteLength");
+    expect(diagnosticPayload).toHaveProperty("htmlSha256");
+
+    warn.mockRestore();
+  });
+
+  it("identifies whether a missing page came from Wikipedia or World Rugby", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const wikipediaUrl =
+      "https://en.wikipedia.org/wiki/2026_Nations_Championship";
+    const worldRugbyUrl = "https://api.example.test/nations-championship";
+
+    fetcherMock.fetchWithPolicy
+      .mockRejectedValueOnce(
+        new FetchError({ attempt: 1, status: 404, url: wikipediaUrl }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD)),
+      );
+
+    await expect(fetchNationsChampionship2026()).resolves.toEqual([]);
+    expect(warn).toHaveBeenLastCalledWith(
+      "Nations Championship 2026 Wikipedia diagnostics",
+      expect.objectContaining({
+        htmlByteLength: null,
+        htmlSha256: null,
+        httpStatus: 404,
+        requestUrl: wikipediaUrl,
+        source: "wikipedia",
+      }),
+    );
+
+    fetcherMock.fetchWithPolicy.mockReset();
+    warn.mockClear();
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(new Response(NATIONS_CHAMPIONSHIP_HTML))
+      .mockRejectedValueOnce(
+        new FetchError({ attempt: 1, status: 404, url: worldRugbyUrl }),
+      );
+
+    await expect(fetchNationsChampionship2026()).resolves.toEqual([]);
+    expect(warn).toHaveBeenLastCalledWith(
+      "Nations Championship 2026 source fetch diagnostics",
+      expect.objectContaining({
+        httpStatus: 404,
+        requestUrl: worldRugbyUrl,
+        source: "world-rugby",
+      }),
+    );
+
+    warn.mockRestore();
+  });
+
+  it("does not add diagnostic logs when Nations Championship matches are parsed", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(new Response(NATIONS_CHAMPIONSHIP_HTML))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD)),
+      );
+
+    await expect(fetchNationsChampionship2026()).resolves.toHaveLength(3);
+
+    expect(warn).not.toHaveBeenCalledWith(
+      "Nations Championship 2026 Wikipedia diagnostics",
+      expect.anything(),
+    );
 
     warn.mockRestore();
   });

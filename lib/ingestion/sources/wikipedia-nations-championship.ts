@@ -1,4 +1,5 @@
 import { load } from "cheerio";
+import { createHash } from "node:crypto";
 
 import {
   buildUtcIsoString,
@@ -10,6 +11,7 @@ import {
 } from "@/lib/ingestion/sources/live-source-utils";
 import { parseWikipediaSixNationsHtml } from "@/lib/ingestion/sources/wikipedia-six-nations";
 import { fetchNationsChampionship2026KickoffTimes } from "@/lib/ingestion/sources/world-rugby-nations-championship-times";
+import { FetchError } from "@/lib/scrapers/errors";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
@@ -46,6 +48,120 @@ function parseRoundNumber(value: string) {
   const matched = normalizeWhitespace(value).match(/^Round\s+(\d+)$/i);
 
   return matched?.[1] ? Number(matched[1]) : null;
+}
+
+function getHtmlStructureDiagnostics(html: string) {
+  const $ = load(html);
+  const headings = $("div.mw-heading").toArray();
+  let headingFollowedByDivWithTableCount = 0;
+  let headingFollowedByTableCount = 0;
+  let roundHeadingCount = 0;
+
+  for (const heading of headings) {
+    const roundName = normalizeWhitespace($(heading).text()).replace(
+      /\[edit\]$/i,
+      "",
+    );
+
+    if (!parseRoundNumber(roundName)) {
+      continue;
+    }
+
+    roundHeadingCount += 1;
+
+    const nextElement = $(heading).next();
+
+    if (nextElement.is("table")) {
+      headingFollowedByTableCount += 1;
+    }
+
+    if (nextElement.is("div") && nextElement.find("table").length > 0) {
+      headingFollowedByDivWithTableCount += 1;
+    }
+  }
+
+  return {
+    headingFollowedByDivWithTableCount,
+    headingFollowedByTableCount,
+    mwHeadingCount: headings.length,
+    roundHeadingCount,
+    sectionWithMwSectionIdCount: $("section[data-mw-section-id]").length,
+  };
+}
+
+function getRuntimeDiagnostics() {
+  return {
+    scraperUserAgentIncludesMobile: process.env.SCRAPER_USER_AGENT
+      ?.toLowerCase()
+      .includes("mobile") ?? false,
+    vercelGitCommitSha: process.env.VERCEL_GIT_COMMIT_SHA,
+    vercelRegion: process.env.VERCEL_REGION,
+  };
+}
+
+function getResponseHeaderDiagnostics(response: Response) {
+  return {
+    age: response.headers.get("age"),
+    contentEncoding: response.headers.get("content-encoding"),
+    contentLength: response.headers.get("content-length"),
+    contentType: response.headers.get("content-type"),
+    etag: response.headers.get("etag"),
+    lastModified: response.headers.get("last-modified"),
+    vary: response.headers.get("vary"),
+    xCache: response.headers.get("x-cache"),
+  };
+}
+
+function logEmptyWikipediaParse(response: Response, html: string) {
+  console.warn("Nations Championship 2026 Wikipedia diagnostics", {
+    ...getResponseHeaderDiagnostics(response),
+    ...getHtmlStructureDiagnostics(html),
+    ...getRuntimeDiagnostics(),
+    htmlByteLength: Buffer.byteLength(html, "utf8"),
+    htmlSha256: createHash("sha256").update(html).digest("hex"),
+    httpStatus: response.status,
+    reason: "empty-parse-result",
+    responseRedirected: response.redirected,
+    responseUrl: response.url,
+    source: "wikipedia",
+  });
+}
+
+function logMissingSource(source: "wikipedia" | "world-rugby", error: FetchError) {
+  if (source === "wikipedia") {
+    console.warn("Nations Championship 2026 Wikipedia diagnostics", {
+      age: null,
+      contentEncoding: null,
+      contentLength: null,
+      contentType: null,
+      etag: null,
+      headingFollowedByDivWithTableCount: null,
+      headingFollowedByTableCount: null,
+      htmlByteLength: null,
+      htmlSha256: null,
+      httpStatus: error.status,
+      lastModified: null,
+      mwHeadingCount: null,
+      reason: "missing-page",
+      requestUrl: error.url,
+      responseRedirected: null,
+      responseUrl: null,
+      roundHeadingCount: null,
+      sectionWithMwSectionIdCount: null,
+      source,
+      vary: null,
+      xCache: null,
+      ...getRuntimeDiagnostics(),
+    });
+    return;
+  }
+
+  console.warn("Nations Championship 2026 source fetch diagnostics", {
+    httpStatus: error.status,
+    reason: "missing-page",
+    requestUrl: error.url,
+    source,
+  });
 }
 
 function parseRoundTableMatches(
@@ -174,22 +290,39 @@ export async function fetchNationsChampionship2026(): Promise<
 > {
   const sourceUrl = buildWikipediaUrl("2026");
 
-  try {
-    const [response, kickoffTimes] = await Promise.all([
-      fetchWithPolicy(sourceUrl),
-      fetchNationsChampionship2026KickoffTimes(),
-    ]);
+  const [wikipediaResult, worldRugbyResult] = await Promise.allSettled([
+    fetchWithPolicy(sourceUrl),
+    fetchNationsChampionship2026KickoffTimes(),
+  ]);
 
-    return parseNationsChampionshipLiveHtml(
-      await response.text(),
-      kickoffTimes,
-      sourceUrl,
-    );
-  } catch (error) {
-    if (isMissingWikipediaPage(error)) {
+  if (wikipediaResult.status === "rejected") {
+    if (wikipediaResult.reason instanceof FetchError && isMissingWikipediaPage(wikipediaResult.reason)) {
+      logMissingSource("wikipedia", wikipediaResult.reason);
       return [];
     }
 
-    throw error;
+    throw wikipediaResult.reason;
   }
+
+  if (worldRugbyResult.status === "rejected") {
+    if (worldRugbyResult.reason instanceof FetchError && isMissingWikipediaPage(worldRugbyResult.reason)) {
+      logMissingSource("world-rugby", worldRugbyResult.reason);
+      return [];
+    }
+
+    throw worldRugbyResult.reason;
+  }
+
+  const html = await wikipediaResult.value.text();
+  const matches = parseNationsChampionshipLiveHtml(
+    html,
+    worldRugbyResult.value,
+    sourceUrl,
+  );
+
+  if (matches.length === 0) {
+    logEmptyWikipediaParse(wikipediaResult.value, html);
+  }
+
+  return matches;
 }
