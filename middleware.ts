@@ -1,8 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const SUPABASE_AUTH_COOKIE = /^sb-[a-z0-9]+-auth-token(?:\.\d+)?$/;
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
+
+  if (
+    !request.cookies
+      .getAll()
+      .some((cookie) => SUPABASE_AUTH_COOKIE.test(cookie.name))
+  ) {
+    return response;
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
