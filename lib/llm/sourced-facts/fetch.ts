@@ -294,15 +294,26 @@ export async function fetchSourcedFactsForMatch(options: {
   }
 
   const prompt = buildSearchPrompt(typedMatch, options.contentType);
-  const response = await createWebSearchJsonResponse({
-    model: MODELS.WEB_SEARCH,
-    input: prompt,
-    temperature: 0,
-  });
-  const rejectedFacts: SourcedFactRejection[] = [];
-  const facts = parseSourcedFactsResponse(response.text, {
-    rejected: rejectedFacts,
-  });
+  async function searchSourcedFacts() {
+    const response = await createWebSearchJsonResponse({
+      model: MODELS.WEB_SEARCH,
+      input: prompt,
+      temperature: 0,
+    });
+    const rejectedFacts: SourcedFactRejection[] = [];
+    const facts = parseSourcedFactsResponse(response.text, {
+      rejected: rejectedFacts,
+    });
+
+    return { facts, rejectedFacts, response };
+  }
+
+  let searchResult = await searchSourcedFacts();
+  if (options.contentType === "recap" && searchResult.facts.length === 0) {
+    searchResult = await searchSourcedFacts();
+  }
+
+  const { facts, rejectedFacts, response } = searchResult;
   const fetchedAt = now.toISOString();
   const rows = facts.slice(0, MAX_STORED_FACTS).map((fact) => ({
     confidence: fact.confidence,
