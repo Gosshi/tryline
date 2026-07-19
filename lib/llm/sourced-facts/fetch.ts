@@ -17,6 +17,8 @@ export const SEARCH_PROMPT_VERSION = "sourced-facts@1.3.0";
 const PREVIEW_REFRESH_WINDOW_HOURS = 72;
 const PREVIEW_FRESHNESS_HOURS = 24;
 const MAX_STORED_FACTS = 8;
+const STATISTICAL_FACT_PATTERN =
+  /\d+(?:\.\d+)?\s*%|\b(?:penalt\w*|tackles?|possession|territory|turnovers?|lineouts?|scrums?|carries|metres?|meters?)\b/i;
 
 type MatchForSourcedFacts = {
   id: string;
@@ -92,6 +94,10 @@ function shouldUseCachedFacts(params: {
 function getCachedPromptVersion(fact: StoredSourcedFact | undefined): string | null {
   const version = fact?.metadata?.prompt_version;
   return typeof version === "string" ? version : null;
+}
+
+function containsStatisticalFact(fact: string): boolean {
+  return STATISTICAL_FACT_PATTERN.test(fact);
 }
 
 export function buildSearchPrompt(
@@ -317,7 +323,11 @@ export async function fetchSourcedFactsForMatch(options: {
   }
 
   let searchResult = await searchSourcedFacts();
-  if (options.contentType === "recap" && searchResult.facts.length === 0) {
+  if (
+    options.contentType === "recap" &&
+    (searchResult.facts.length === 0 ||
+      !searchResult.facts.some((fact) => containsStatisticalFact(fact.fact)))
+  ) {
     searchResult = await searchSourcedFacts();
   }
 
