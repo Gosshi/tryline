@@ -15,7 +15,7 @@ import { TrackedLink } from "@/components/tracked-link";
 import { getUser, getUserProfile, isProfilePremium } from "@/lib/auth/server";
 import {
   listFamilies,
-  listSeasonsByFamily,
+  listSeasonsByFamilies,
   selectLatestSeasonWithMatches,
   sortHomepageCompetitionLinks,
 } from "@/lib/db/queries/competitions";
@@ -141,12 +141,13 @@ export default async function HomePage() {
     listAllTeams(),
     getSpoilerGuardEnabledForUser(user?.id),
   ]);
+  const seasonsByFamily = await listSeasonsByFamilies(families);
   const homepageCompetitionLinks = sortHomepageCompetitionLinks(
     (
       await Promise.all(
         families.map(async (family) => {
           const latestSeason = selectLatestSeasonWithMatches(
-            await listSeasonsByFamily(family),
+            seasonsByFamily.get(family) ?? [],
           );
 
           if (!latestSeason || latestSeason.matchCount === 0) {
