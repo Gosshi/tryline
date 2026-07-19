@@ -563,6 +563,94 @@ describe("fetchSourcedFactsForMatch", () => {
     ]);
   });
 
+  it("retries a recap search once when non-empty facts have no statistical fact", async () => {
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse
+      .mockResolvedValueOnce({
+        model: "gpt-4o-2024-11-20",
+        text: JSON.stringify({
+          facts: [
+            {
+              confidence: "medium",
+              fact: "The head coach praised Japan's response after halftime.",
+              source_url: "https://www.rugbypass.com/news/japan-recap",
+            },
+          ],
+        }),
+        usage: { inputTokens: 10, outputTokens: 10 },
+      })
+      .mockResolvedValueOnce({
+        model: "gpt-4o-2024-11-20",
+        text: JSON.stringify({
+          facts: [
+            {
+              confidence: "medium",
+              fact: "Japan made 82% of their tackles while France made 90%.",
+              source_url: "https://www.rugbypass.com/news/japan-stats",
+            },
+          ],
+        }),
+        usage: { inputTokens: 10, outputTokens: 10 },
+      });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "recap",
+      force: true,
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledTimes(2);
+    expect(result.facts).toEqual([
+      expect.objectContaining({
+        fact: "Japan made 82% of their tackles while France made 90%.",
+      }),
+    ]);
+  });
+
+  it("does not retry a recap search when one fact contains statistics", async () => {
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({
+        facts: [
+          {
+            confidence: "medium",
+            fact: "Japan conceded nine penalties in the first half.",
+            source_url: "https://www.rugbypass.com/news/japan-penalties",
+          },
+          {
+            confidence: "medium",
+            fact: "The coach praised the side's composure after halftime.",
+            source_url: "https://www.rugbypass.com/news/japan-coach",
+          },
+        ],
+      }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    await fetchSourcedFactsForMatch({
+      contentType: "recap",
+      force: true,
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
+  });
+
   it("returns an empty result after the recap retry also has no allowed facts", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
@@ -589,7 +677,7 @@ describe("fetchSourcedFactsForMatch", () => {
     expect(dbMock.upsert).not.toHaveBeenCalled();
   });
 
-  it("does not retry a preview search when it has no allowed facts", async () => {
+  it("does not retry a preview search when non-empty facts have no statistics", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
       if (table === "match_sourced_facts") {
@@ -599,7 +687,15 @@ describe("fetchSourcedFactsForMatch", () => {
     });
     openAIMock.createWebSearchJsonResponse.mockResolvedValue({
       model: "gpt-4o-2024-11-20",
-      text: JSON.stringify({ facts: [] }),
+      text: JSON.stringify({
+        facts: [
+          {
+            confidence: "medium",
+            fact: "The head coach praised the squad's preparation this week.",
+            source_url: "https://www.rugbypass.com/news/preview",
+          },
+        ],
+      }),
       usage: { inputTokens: 10, outputTokens: 10 },
     });
 
