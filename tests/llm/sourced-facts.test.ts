@@ -490,6 +490,102 @@ describe("fetchSourcedFactsForMatch", () => {
     );
   });
 
+  it("retries a recap search once when the first response has no allowed facts", async () => {
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse
+      .mockResolvedValueOnce({
+        model: "gpt-4o-2024-11-20",
+        text: JSON.stringify({ facts: [] }),
+        usage: { inputTokens: 10, outputTokens: 10 },
+      })
+      .mockResolvedValueOnce({
+        model: "gpt-4o-2024-11-20",
+        text: JSON.stringify({
+          facts: [
+            {
+              confidence: "medium",
+              fact: "Japan made fewer handling errors after halftime.",
+              source_url: "https://www.rugbypass.com/news/japan-recap",
+            },
+          ],
+        }),
+        usage: { inputTokens: 10, outputTokens: 10 },
+      });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "recap",
+      force: true,
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledTimes(2);
+    expect(openAIMock.createWebSearchJsonResponse.mock.calls[1]?.[0]).toEqual(
+      openAIMock.createWebSearchJsonResponse.mock.calls[0]?.[0],
+    );
+    expect(result.facts).toEqual([
+      expect.objectContaining({
+        fact: "Japan made fewer handling errors after halftime.",
+      }),
+    ]);
+  });
+
+  it("returns an empty result after the recap retry also has no allowed facts", async () => {
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "recap",
+      force: true,
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledTimes(2);
+    expect(result.facts).toEqual([]);
+    expect(dbMock.upsert).not.toHaveBeenCalled();
+  });
+
+  it("does not retry a preview search when it has no allowed facts", async () => {
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
+  });
+
   it("refetches cached facts with missing prompt version metadata", async () => {
     const cachedRows = [
       cachedFact({
@@ -518,7 +614,7 @@ describe("fetchSourcedFactsForMatch", () => {
 
     expect(result.cached).toBe(false);
     expect(result.fetched).toBe(true);
-    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledTimes(2);
   });
 
   it("keeps preview freshness expiry even when cached prompt version is current", async () => {
