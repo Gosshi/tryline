@@ -25,8 +25,8 @@ describe("FlagIcon", () => {
   });
 
   it("renders the emoji flag for a known team without an SVG flag", () => {
-    render(<FlagIcon slug="new-zealand" />);
+    render(<FlagIcon slug="canada" />);
 
-    expect(screen.getByText("🇳🇿")).toBeInTheDocument();
+    expect(screen.getByText("🇨🇦")).toBeInTheDocument();
   });
 });

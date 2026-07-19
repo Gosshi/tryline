@@ -34,11 +34,23 @@ describe("team identity formatter", () => {
     expect(getTeamFlag("saitama-wild-knights")).toBe("🏉");
   });
 
-  it("returns inline SVG flags and an empty fallback for unknown teams", () => {
+  it("returns inline SVG flags for supported international teams", () => {
     expect(getTeamFlagSvg("england")).toContain("<svg");
     expect(getTeamFlagSvg("japan")).toContain('circle cx="256.5"');
     expect(getTeamFlagSvg("wales")).toContain("viewBox");
-    expect(getTeamFlagSvg("new-zealand")).toBe("");
+    for (const slug of [
+      "argentina",
+      "australia",
+      "fiji",
+      "new-zealand",
+      "south-africa",
+    ]) {
+      expect(getTeamFlagSvg(slug)).toMatch(/^<svg/);
+    }
+  });
+
+  it("keeps the empty SVG fallback for unsupported teams", () => {
+    expect(getTeamFlagSvg("canada")).toBe("");
     expect(getTeamFlagSvg("bath")).toBe("");
     expect(getTeamFlagSvg("unknown")).toBe("");
   });

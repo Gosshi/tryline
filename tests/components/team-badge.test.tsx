@@ -22,10 +22,10 @@ describe("TeamBadge", () => {
   });
 
   it("keeps existing emoji flags for international teams without inline SVGs", () => {
-    render(<TeamBadge shortCode="NZL" size={28} slug="new-zealand" />);
+    render(<TeamBadge shortCode="CAN" size={28} slug="canada" />);
 
-    expect(screen.getByText("🇳🇿")).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: "NZL" })).not.toBeInTheDocument();
+    expect(screen.getByText("🇨🇦")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "CAN" })).not.toBeInTheDocument();
   });
 
   it("renders a generated club badge with dark text on light colors", () => {
