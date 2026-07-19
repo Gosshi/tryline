@@ -287,7 +287,10 @@ const NATIONS_CHAMPIONSHIP_WORLD_RUGBY_PAYLOAD = {
 };
 
 const EMPTY_NATIONS_CHAMPIONSHIP_HTML = `
-<section data-mw-section-id="1"><div class="mw-heading">Not a round</div></section>
+<section data-mw-section-id="1">
+  <div class="mw-heading">Fixtures</div>
+  <div class="mw-heading">Southern Hemisphere Series</div>
+</section>
 `;
 
 const NATIONS_CHAMPIONSHIP_PLACEHOLDER_WORLD_RUGBY_MATCHES = [
@@ -834,7 +837,8 @@ describe("live competition source adapters", () => {
         headingFollowedByDivWithTableCount: 0,
         headingFollowedByTableCount: 0,
         httpStatus: 200,
-        mwHeadingCount: 1,
+        mwHeadingCount: 2,
+        mwHeadingTexts: ["Fixtures", "Southern Hemisphere Series"],
         reason: "empty-parse-result",
         roundHeadingCount: 0,
         sectionWithMwSectionIdCount: 1,

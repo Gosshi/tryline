@@ -84,6 +84,9 @@ function getHtmlStructureDiagnostics(html: string) {
     headingFollowedByDivWithTableCount,
     headingFollowedByTableCount,
     mwHeadingCount: headings.length,
+    mwHeadingTexts: headings.map((heading) =>
+      normalizeWhitespace($(heading).text()),
+    ),
     roundHeadingCount,
     sectionWithMwSectionIdCount: $("section[data-mw-section-id]").length,
   };
@@ -142,6 +145,7 @@ function logMissingSource(source: "wikipedia" | "world-rugby", error: FetchError
       httpStatus: error.status,
       lastModified: null,
       mwHeadingCount: null,
+      mwHeadingTexts: null,
       reason: "missing-page",
       requestUrl: error.url,
       responseRedirected: null,

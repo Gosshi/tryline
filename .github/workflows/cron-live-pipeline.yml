@@ -5,6 +5,11 @@ on:
     # Every 6 hours: 00/06/12/18 UTC = 09/15/21/03 JST
     - cron: "0 0,6,12,18 * * *"
   workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Target URL (defaults to production)"
+        required: false
+        default: "https://tryline-six.vercel.app"
 
 jobs:
   pipeline:
@@ -15,18 +20,18 @@ jobs:
         run: |
           curl -f -X POST \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            https://tryline-six.vercel.app/api/cron/ingest-live-competitions
+            ${{ github.event.inputs.target_url || 'https://tryline-six.vercel.app' }}/api/cron/ingest-live-competitions
 
       - name: Fill League One playoff events
         if: ${{ always() }}
         run: |
           curl -f -X POST \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            https://tryline-six.vercel.app/api/cron/fill-league-one-playoff-events
+            ${{ github.event.inputs.target_url || 'https://tryline-six.vercel.app' }}/api/cron/fill-league-one-playoff-events
 
       - name: Orchestrate (preview/recap generation)
         if: ${{ always() }}
         run: |
           curl -f -X POST \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            https://tryline-six.vercel.app/api/cron/orchestrate
+            ${{ github.event.inputs.target_url || 'https://tryline-six.vercel.app' }}/api/cron/orchestrate
