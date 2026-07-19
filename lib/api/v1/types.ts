@@ -45,6 +45,7 @@ export type V1StoryItem = {
   premium_required: boolean;
   published_at: string;
   source_domain: string | null;
+  source_url: string | null;
   summary: string | null;
   title: string;
   type: V1StoryItemType;

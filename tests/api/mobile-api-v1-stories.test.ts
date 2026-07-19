@@ -132,6 +132,7 @@ describe("GET /api/v1/stories", () => {
       id: "match-1:preview",
       premium_required: false,
       source_domain: null,
+      source_url: null,
       title: "プレビュー｜日本 vs フランス",
     });
     expect(body.data.matches[0].items[1]).toMatchObject({
@@ -139,6 +140,7 @@ describe("GET /api/v1/stories", () => {
       id: "match-1:result",
       premium_required: false,
       source_domain: null,
+      source_url: null,
       summary: "日本 27-31 フランス",
       title: "試合結果｜日本 vs フランス",
     });
@@ -147,6 +149,7 @@ describe("GET /api/v1/stories", () => {
       id: "match-1:recap",
       premium_required: true,
       source_domain: null,
+      source_url: null,
       title: "レビュー｜日本 vs フランス",
     });
     expect(JSON.stringify(body)).not.toContain(LOCKED_SECRET);
@@ -197,6 +200,7 @@ describe("GET /api/v1/stories", () => {
         id: "third-latest",
         matchId: "match-1",
         sourceDomain: "third.example.com",
+        sourceUrl: "https://third.example.com/news",
       },
       {
         confidence: "high",
@@ -285,6 +289,7 @@ describe("GET /api/v1/stories", () => {
       premium_required: false,
       published_at: "2026-07-18T09:15:00.000Z",
       source_domain: "third.example.com",
+      source_url: "https://third.example.com/news",
       summary: "3番目に新しいニュースです。",
       title: "ニュース｜日本 vs フランス",
       type: "news",
@@ -309,6 +314,7 @@ describe("GET /api/v1/stories", () => {
         id: "medium-translated",
         matchId: "match-1",
         sourceDomain: "englandrugby.com",
+        sourceUrl: "https://www.englandrugby.com/news/front-row",
       },
       {
         confidence: "low",
@@ -332,6 +338,7 @@ describe("GET /api/v1/stories", () => {
     expect(newsItems).toHaveLength(1);
     expect(newsItems[0]).toMatchObject({
       id: "match-1:news:medium-translated",
+      source_url: "https://www.englandrugby.com/news/front-row",
       summary: "イングランドは土曜日の試合に向け、フロントローを変更した布陣を発表した。",
     });
     expect(JSON.stringify(newsItems)).not.toContain("low-translated");
