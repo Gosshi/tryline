@@ -50,6 +50,10 @@ function parseRoundNumber(value: string) {
   return matched?.[1] ? Number(matched[1]) : null;
 }
 
+function getRoundHeadingName(value: string) {
+  return normalizeWhitespace(value).replace(/\[edit(?:\s+\S+)*\]$/i, "");
+}
+
 function getHtmlStructureDiagnostics(html: string) {
   const $ = load(html);
   const headings = $("div.mw-heading").toArray();
@@ -58,10 +62,7 @@ function getHtmlStructureDiagnostics(html: string) {
   let roundHeadingCount = 0;
 
   for (const heading of headings) {
-    const roundName = normalizeWhitespace($(heading).text()).replace(
-      /\[edit\]$/i,
-      "",
-    );
+    const roundName = getRoundHeadingName($(heading).text());
 
     if (!parseRoundNumber(roundName)) {
       continue;
@@ -176,10 +177,7 @@ function parseRoundTableMatches(
   const matches: ParsedWikipediaMatch[] = [];
 
   for (const heading of $("div.mw-heading").toArray()) {
-    const roundName = normalizeWhitespace($(heading).text()).replace(
-      /\[edit\]$/i,
-      "",
-    );
+    const roundName = getRoundHeadingName($(heading).text());
     const round = parseRoundNumber(roundName);
 
     if (!round) {
