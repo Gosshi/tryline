@@ -14,6 +14,7 @@ export type StorySourcedFact = {
   id: string;
   matchId: string;
   sourceDomain: string;
+  sourceUrl: string;
 };
 
 async function countFactsForContentType(
@@ -57,7 +58,7 @@ export async function getStorySourcedFactsForMatches(
   const { data, error } = await client
     .from("match_sourced_facts")
     .select(
-      "id, match_id, content_type, confidence, fact, fact_ja, fetched_at, source_domain",
+      "id, match_id, content_type, confidence, fact, fact_ja, fetched_at, source_domain, source_url",
     )
     .in("match_id", matchIds)
     .in("content_type", ["preview", "shared"])
@@ -76,5 +77,6 @@ export async function getStorySourcedFactsForMatches(
     id: fact.id,
     matchId: fact.match_id,
     sourceDomain: fact.source_domain,
+    sourceUrl: fact.source_url,
   }));
 }
