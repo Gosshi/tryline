@@ -246,6 +246,7 @@ describe("buildSearchPrompt", () => {
     expect(prompt).toContain("both teams' values exactly as reported");
     expect(prompt).not.toContain("latest lineup changes");
     expect(prompt).not.toContain("Search intent:\n- latest team news");
+    expect(prompt).not.toContain("fact_ja");
   });
 
   it("adds scoreless previous-meeting context to the preview search intent only", () => {
@@ -268,6 +269,9 @@ describe("buildSearchPrompt", () => {
     expect(prompt).not.toContain("yellow/red cards");
     expect(prompt).not.toContain("sin-bins");
     expect(prompt).not.toContain("both teams' values exactly as reported");
+    expect(prompt).toContain('"fact_ja":"..."');
+    expect(prompt).toContain("natural Japanese news-style paraphrase");
+    expect(prompt).toContain("must only restate the information in fact");
 
     const recapPrompt = buildSearchPrompt(leagueOneMatch, "recap");
     expect(recapPrompt).not.toContain("how the previous meeting");
@@ -337,6 +341,29 @@ describe("parseSourcedFactsResponse", () => {
 
     expect(facts).toHaveLength(1);
     expect(facts[0]?.source_domain).toBe("rugbypass.com");
+  });
+
+  it("keeps a non-empty fact_ja and ignores blank fact_ja values", () => {
+    const facts = parseSourcedFactsResponse(
+      JSON.stringify({
+        facts: [
+          {
+            ...allowedFact,
+            fact_ja: "マルコム・マークスはハムストリング負傷により決勝戦を欠場する見込みだ。",
+          },
+          {
+            ...allowedFact,
+            fact: "A second eligible source reports an unchanged squad.",
+            fact_ja: "   ",
+          },
+        ],
+      }),
+    );
+
+    expect(facts[0]?.fact_ja).toBe(
+      "マルコム・マークスはハムストリング負傷により決勝戦を欠場する見込みだ。",
+    );
+    expect(facts[1]?.fact_ja).toBeUndefined();
   });
 
   it("extracts facts from a json code fence", () => {
@@ -722,6 +749,57 @@ describe("fetchSourcedFactsForMatch", () => {
           source_domain: "rugbypass.com",
         }),
       ],
+      { onConflict: "match_id,fact" },
+    );
+  });
+
+  it("stores preview fact_ja and normalizes missing or blank values to null", async () => {
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({
+        facts: [
+          {
+            confidence: "medium",
+            fact: "Malcolm Marx is expected to miss the final through injury.",
+            fact_ja: "マルコム・マークスは負傷により決勝戦を欠場する見込みだ。",
+            source_url: "https://www.rugbypass.com/news/marx",
+          },
+          {
+            confidence: "medium",
+            fact: "Kobe have named an unchanged squad for the final.",
+            fact_ja: " ",
+            source_url: "https://www.rugbypass.com/news/kobe-squad",
+          },
+        ],
+      }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(dbMock.upsert).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fact: "Malcolm Marx is expected to miss the final through injury.",
+          fact_ja: "マルコム・マークスは負傷により決勝戦を欠場する見込みだ。",
+        }),
+        expect.objectContaining({
+          fact: "Kobe have named an unchanged squad for the final.",
+          fact_ja: null,
+        }),
+      ]),
       { onConflict: "match_id,fact" },
     );
   });

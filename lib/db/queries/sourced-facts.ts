@@ -9,6 +9,7 @@ export type StorySourcedFact = {
   confidence: string;
   contentType: string;
   fact: string;
+  factJa: string | null;
   fetchedAt: string;
   id: string;
   matchId: string;
@@ -55,10 +56,12 @@ export async function getStorySourcedFactsForMatches(
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("match_sourced_facts")
-    .select("id, match_id, content_type, confidence, fact, fetched_at, source_domain")
+    .select(
+      "id, match_id, content_type, confidence, fact, fact_ja, fetched_at, source_domain",
+    )
     .in("match_id", matchIds)
     .in("content_type", ["preview", "shared"])
-    .eq("confidence", "high");
+    .in("confidence", ["high", "medium"]);
 
   if (error) {
     throw error;
@@ -68,6 +71,7 @@ export async function getStorySourcedFactsForMatches(
     confidence: fact.confidence,
     contentType: fact.content_type,
     fact: fact.fact,
+    factJa: fact.fact_ja,
     fetchedAt: fact.fetched_at,
     id: fact.id,
     matchId: fact.match_id,

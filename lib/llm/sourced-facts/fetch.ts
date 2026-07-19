@@ -36,6 +36,7 @@ type ParsedSourcedFactsResponse = {
   facts?: Array<{
     confidence?: unknown;
     fact?: unknown;
+    fact_ja?: unknown;
     source_url?: unknown;
   }>;
 };
@@ -129,7 +130,14 @@ export function buildSearchPrompt(
       ? [
           '- For numeric statistics, state the stat name and both teams\' values exactly as reported (e.g., "Possession: Glasgow 54% - Bulls 46%"). Never estimate or round.',
         ]
-      : [];
+      : [
+          "- For every fact, include fact_ja: a natural Japanese news-style paraphrase of fact, around 80-160 Japanese characters.",
+          "- fact_ja must only restate the information in fact. Do not add, infer, or embellish any detail.",
+        ];
+  const responseSchema =
+    contentType === "recap"
+      ? '{"facts":[{"fact":"...","source_url":"https://...","confidence":"high|medium|low"}]}'
+      : '{"facts":[{"fact":"...","fact_ja":"...","source_url":"https://...","confidence":"high|medium|low"}]}';
 
   return [
     "Find reliable rugby facts for Tryline match content using web search.",
@@ -152,7 +160,7 @@ export function buildSearchPrompt(
       "- Do not return article text or copyrighted prose.",
       ...contentTypeRules,
     ].join("\n"),
-    'Return JSON only: {"facts":[{"fact":"...","source_url":"https://...","confidence":"high|medium|low"}]}',
+    `Return JSON only: ${responseSchema}`,
   ].join("\n\n");
 }
 
@@ -319,6 +327,7 @@ export async function fetchSourcedFactsForMatch(options: {
     confidence: fact.confidence,
     content_type: options.contentType,
     fact: fact.fact,
+    fact_ja: fact.fact_ja ?? null,
     fetched_at: fetchedAt,
     match_id: options.matchId,
     metadata: metadataForFact({

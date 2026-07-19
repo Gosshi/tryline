@@ -122,6 +122,7 @@ export function filterAllowedSourcedFacts(
   facts: Array<{
     confidence?: unknown;
     fact?: unknown;
+    fact_ja?: unknown;
     source_url?: unknown;
   }>,
   options?: { rejected?: SourcedFactRejection[] },
@@ -136,6 +137,10 @@ export function filterAllowedSourcedFacts(
       }
 
       const fact = item.fact.replace(/\s+/g, " ").trim();
+      const factJa =
+        typeof item.fact_ja === "string"
+          ? item.fact_ja.replace(/\s+/g, " ").trim()
+          : "";
       const sourceUrl = item.source_url.trim();
       const sourceDomain = normalizeSourcedFactDomain(sourceUrl);
 
@@ -166,6 +171,7 @@ export function filterAllowedSourcedFacts(
       return {
         confidence,
         fact,
+        ...(factJa ? { fact_ja: factJa } : {}),
         source_domain: sourceDomain,
         source_url: sourceUrl,
       };

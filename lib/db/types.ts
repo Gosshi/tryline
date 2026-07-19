@@ -481,6 +481,7 @@ export type Database = {
           confidence: string;
           content_type: string;
           fact: string;
+          fact_ja: string | null;
           fetched_at: string;
           id: string;
           match_id: string;
@@ -493,6 +494,7 @@ export type Database = {
           confidence: string;
           content_type: string;
           fact: string;
+          fact_ja?: string | null;
           fetched_at?: string;
           id?: string;
           match_id: string;
@@ -505,6 +507,7 @@ export type Database = {
           confidence?: string;
           content_type?: string;
           fact?: string;
+          fact_ja?: string | null;
           fetched_at?: string;
           id?: string;
           match_id?: string;

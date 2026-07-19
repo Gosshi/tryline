@@ -4,6 +4,7 @@ export type SourcedFactConfidence = "high" | "medium" | "low";
 
 export type SourcedFact = {
   fact: string;
+  fact_ja?: string;
   source_url: string;
   source_domain: string;
   confidence: SourcedFactConfidence;

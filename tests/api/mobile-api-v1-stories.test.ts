@@ -219,7 +219,7 @@ describe("GET /api/v1/stories", () => {
       {
         confidence: "medium",
         contentType: "preview",
-        fact: "medium confidence は除外されます。",
+        fact: "Medium-confidence English-only fact is excluded.",
         fetchedAt: "2026-07-18T09:51:00.000Z",
         id: "medium",
         matchId: "match-1",
@@ -290,12 +290,51 @@ describe("GET /api/v1/stories", () => {
       type: "news",
     });
     expect(JSON.stringify(items)).not.toContain("English-only");
-    expect(JSON.stringify(items)).not.toContain("medium confidence");
+    expect(JSON.stringify(items)).not.toContain("Medium-confidence English-only");
     expect(JSON.stringify(items)).not.toContain("low confidence");
     expect(JSON.stringify(items)).not.toContain("キックオフ時刻と同時");
     expect(JSON.stringify(items)).not.toContain("レビュー用");
     expect(JSON.stringify(items)).not.toContain("4番目のニュース");
     expect(JSON.stringify(items)).not.toContain("同じ出典の古い");
+  });
+
+  it("uses fact_ja for eligible medium-confidence English news while excluding low confidence", async () => {
+    sourcedFactsMock.getStorySourcedFactsForMatches.mockResolvedValue([
+      {
+        confidence: "medium",
+        contentType: "preview",
+        fact: "England have named a changed front row for Saturday's match.",
+        factJa: "イングランドは土曜日の試合に向け、フロントローを変更した布陣を発表した。",
+        fetchedAt: "2026-07-18T09:30:00.000Z",
+        id: "medium-translated",
+        matchId: "match-1",
+        sourceDomain: "englandrugby.com",
+      },
+      {
+        confidence: "low",
+        contentType: "preview",
+        fact: "A low confidence item should remain excluded.",
+        factJa: "低確度の情報はニュース項目に含めない。",
+        fetchedAt: "2026-07-18T09:40:00.000Z",
+        id: "low-translated",
+        matchId: "match-1",
+        sourceDomain: "low.example.com",
+      },
+    ]);
+
+    const { GET } = await import("@/app/api/v1/stories/route");
+    const response = await GET(new Request("http://localhost/api/v1/stories"));
+    const body = await response.json();
+    const newsItems = body.data.matches[0].items.filter(
+      (item: { type: string }) => item.type === "news",
+    );
+
+    expect(newsItems).toHaveLength(1);
+    expect(newsItems[0]).toMatchObject({
+      id: "match-1:news:medium-translated",
+      summary: "イングランドは土曜日の試合に向け、フロントローを変更した布陣を発表した。",
+    });
+    expect(JSON.stringify(newsItems)).not.toContain("low-translated");
   });
 
   it("validates explicit inclusive JST date ranges", async () => {
