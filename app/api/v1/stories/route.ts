@@ -237,8 +237,11 @@ function buildNewsItems(
         candidate.matchId === match.id &&
         (candidate.contentType === "preview" ||
           candidate.contentType === "shared") &&
-        candidate.confidence === "high" &&
-        JAPANESE_CHARACTER_PATTERN.test(candidate.fact) &&
+        (candidate.confidence === "high" ||
+          candidate.confidence === "medium") &&
+        (JAPANESE_CHARACTER_PATTERN.test(candidate.fact) ||
+          (typeof candidate.factJa === "string" &&
+            candidate.factJa.trim().length > 0)) &&
         new Date(candidate.fetchedAt).getTime() < kickoffAt,
     )
     .sort(
@@ -272,7 +275,7 @@ function buildNewsItems(
       premium_required: false,
       published_at: fact.fetchedAt,
       source_domain: fact.sourceDomain,
-      summary: truncateAtSentenceBoundary(fact.fact, 160),
+      summary: truncateAtSentenceBoundary(fact.factJa ?? fact.fact, 160),
       title: `ニュース｜${matchupTitle(match)}`,
       type: "news",
     }));
