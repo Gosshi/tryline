@@ -916,6 +916,7 @@ export type Database = {
           external_ids: Json;
           id: string;
           name: string;
+          name_ja: string | null;
           position: string | null;
           slug: string;
           team_id: string;
@@ -929,6 +930,7 @@ export type Database = {
           external_ids?: Json;
           id?: string;
           name: string;
+          name_ja?: string | null;
           position?: string | null;
           slug?: string;
           team_id: string;
@@ -942,6 +944,7 @@ export type Database = {
           external_ids?: Json;
           id?: string;
           name?: string;
+          name_ja?: string | null;
           position?: string | null;
           slug?: string;
           team_id?: string;

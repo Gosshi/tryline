@@ -270,7 +270,7 @@ export type AssembledContentInput = {
   team_stats: MatchTeamStats;
   sourced_facts: SourcedFactInput[];
   japanese_name_glossary?: Array<{
-    kind: "competition" | "team";
+    kind: "competition" | "player" | "team";
     source: string;
     japanese: string;
   }>;
