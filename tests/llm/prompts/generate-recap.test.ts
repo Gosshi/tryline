@@ -771,7 +771,10 @@ describe("buildGenerateRecapPrompt", () => {
       [],
     );
 
-    expect(overseasPrompt).toContain("選手名は必ずカタカナで記載すること");
+    expect(overseasPrompt).toContain(
+      "日本語表記グロッサリにある場合は指定の漢字表記を必ず使うこと",
+    );
+    expect(overseasPrompt).toContain("グロッサリにない選手はカタカナで記載すること");
     expect(overseasPrompt).toContain("アルファベット表記は禁止");
     expect(overseasPrompt).toContain(
       "英語の人名はカタカナに変換し、姓名の間に中点（・）を入れること。",
@@ -802,6 +805,11 @@ describe("buildGenerateRecapPrompt", () => {
             kind: "competition",
             source: "URC",
           },
+          {
+            japanese: "石田 吉平",
+            kind: "player",
+            source: "Kippei Ishida",
+          },
         ],
       },
       [],
@@ -811,6 +819,8 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("【日本語表記グロッサリ】");
     expect(prompt).toContain("レンスター");
     expect(prompt).toContain("ユナイテッド・ラグビー・チャンピオンシップ");
+    expect(prompt).toContain("石田 吉平");
+    expect(prompt).toContain("チーム名・大会名・選手名");
     expect(prompt).toContain("source の英語表記は本文に出さないこと");
   });
 

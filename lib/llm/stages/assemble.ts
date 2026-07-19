@@ -453,19 +453,56 @@ async function loadCompetitionStandings(
   }));
 }
 
+type MatchEventPlayerName = {
+  player: { name: string; name_ja: string | null } | null;
+  teamSlug: string | null;
+};
+
+export function buildJapanesePlayerNameGlossary(
+  events: MatchEventPlayerName[],
+): NonNullable<AssembledContentInput["japanese_name_glossary"]> {
+  const seen = new Set<string>();
+
+  return events.flatMap((event) => {
+    if (
+      event.teamSlug !== "japan" ||
+      !event.player?.name_ja ||
+      seen.has(event.player.name)
+    ) {
+      return [];
+    }
+
+    seen.add(event.player.name);
+    return [
+      {
+        japanese: event.player.name_ja,
+        kind: "player" as const,
+        source: event.player.name,
+      },
+    ];
+  });
+}
+
 async function loadMatchEvents(
   matchId: string,
   status: string,
   language: ContentLanguage,
-): Promise<AssembledContentInput["match_events"]> {
+): Promise<{
+  events: AssembledContentInput["match_events"];
+  japanesePlayerNameGlossary: NonNullable<
+    AssembledContentInput["japanese_name_glossary"]
+  >;
+}> {
   if (status !== "finished") {
-    return [];
+    return { events: [], japanesePlayerNameGlossary: [] };
   }
 
   const db = getSupabaseServerClient();
   const { data, error } = await db
     .from("match_events")
-    .select("type, minute, metadata, team:teams(slug, name, english_name)")
+    .select(
+      "type, minute, metadata, player:players(name, name_ja), team:teams(slug, name, english_name)",
+    )
     .eq("match_id", matchId)
     .order("minute", { ascending: true, nullsFirst: false });
 
@@ -473,7 +510,8 @@ async function loadMatchEvents(
     throw error;
   }
 
-  return (data ?? []).map((event) => {
+  const rows = data ?? [];
+  const events = rows.map((event) => {
     const metadata = asJsonObject(event.metadata);
     const playerName = metadata.player_name;
     const isPenaltyTry = metadata.is_penalty_try;
@@ -494,6 +532,16 @@ async function loadMatchEvents(
       type: event.type,
     };
   });
+
+  return {
+    events,
+    japanesePlayerNameGlossary: buildJapanesePlayerNameGlossary(
+      rows.map((event) => ({
+        player: event.player,
+        teamSlug: event.team?.slug ?? null,
+      })),
+    ),
+  };
 }
 
 function mapTeamStatsRow(row: {
@@ -783,7 +831,7 @@ export async function assembleMatchContentInput(
     homeProjectedLineups,
     awayProjectedLineups,
     competitionStandings,
-    matchEvents,
+    loadedMatchEvents,
     sourcedFacts,
     teamStats,
   ] = await Promise.all([
@@ -800,6 +848,7 @@ export async function assembleMatchContentInput(
     }),
   ]);
 
+  const matchEvents = loadedMatchEvents.events;
   const homeFormStats = computeTeamFormStats(homeRecent, homeTeamName);
   const awayFormStats = computeTeamFormStats(awayRecent, awayTeamName);
   const matchStats = computeMatchStats(matchEvents, homeTeamName, awayTeamName);
@@ -905,6 +954,7 @@ export async function assembleMatchContentInput(
           source: match.away_team.name,
         }
       : null,
+    ...loadedMatchEvents.japanesePlayerNameGlossary,
   ].filter(
     (
       item,
