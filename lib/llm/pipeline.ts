@@ -30,6 +30,7 @@ import {
   isFactualGroundingHardBlock,
 } from "@/lib/llm/stages/qa";
 import { verifyNarrativeEntities } from "@/lib/llm/stages/verify-entities";
+import { evaluateStyleGuardShadow } from "@/lib/llm/style-guard";
 import { submitUrlsToIndexNow } from "@/lib/seo/indexnow";
 import { SITE_URL } from "@/lib/site";
 
@@ -604,6 +605,35 @@ export async function generateMatchContent(
     throw new Error("pipeline failed to produce qa result");
   }
 
+  let persistedQaScores: Json = finalQa;
+
+  if (language === "ja" && (contentType === "preview" || contentType === "recap")) {
+    const { data: recentContent, error: recentContentError } = await db
+      .from("match_content")
+      .select("id, content_md")
+      .eq("status", "published")
+      .eq("content_type", contentType)
+      .eq("language", language)
+      .order("generated_at", { ascending: false })
+      .limit(50);
+
+    if (recentContentError) {
+      throw recentContentError;
+    }
+
+    persistedQaScores = {
+      ...finalQa,
+      style_guard_shadow: evaluateStyleGuardShadow({
+        content: finalNarrative,
+        japaneseQuality: finalQa.scores.japanese_quality,
+        recentArticles: (recentContent ?? []).map((content) => ({
+          content: content.content_md,
+          id: content.id,
+        })),
+      }),
+    };
+  }
+
   const densityBlocked =
     contentType === "recap" &&
     language === "ja" &&
@@ -639,7 +669,7 @@ export async function generateMatchContent(
         model_version: modelVersion,
         prompt_version: promptVersion,
         status: persistedStatus,
-        qa_scores: finalQa,
+        qa_scores: persistedQaScores,
         generated_at: new Date().toISOString(),
       },
       {

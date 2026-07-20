@@ -45,7 +45,9 @@ const dbMock = vi.hoisted(() => ({
   existingContent: null as Record<string, unknown> | null,
   from: vi.fn(),
   insert: vi.fn(),
+  limit: vi.fn(),
   maybeSingle: vi.fn(),
+  order: vi.fn(),
   select: vi.fn(),
   upsert: vi.fn(),
 }));
@@ -167,8 +169,17 @@ describe("generateMatchContent published preservation", () => {
       eq: dbMock.eq,
       maybeSingle: dbMock.maybeSingle,
     };
+    const recentContentQuery = {
+      eq: vi.fn(),
+      order: dbMock.order,
+    };
+    recentContentQuery.eq.mockReturnValue(recentContentQuery);
+    dbMock.order.mockReturnValue({ limit: dbMock.limit });
+    dbMock.limit.mockResolvedValue({ data: [], error: null });
     dbMock.eq.mockReturnValue(existingContentQuery);
-    dbMock.select.mockReturnValue(existingContentQuery);
+    dbMock.select.mockImplementation((columns) =>
+      columns === "id, content_md" ? recentContentQuery : existingContentQuery,
+    );
     dbMock.upsert.mockImplementation(async (content) => {
       dbMock.existingContent = content as Record<string, unknown>;
       return { error: null };
