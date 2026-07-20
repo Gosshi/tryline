@@ -482,7 +482,7 @@ export default async function MatchDetailPage({
         type="application/ld+json"
       />
       <main className="min-h-screen bg-paper">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 overflow-hidden px-3 py-6 sm:px-6 sm:py-8 md:px-8">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 overflow-hidden px-3 py-6 sm:px-6 sm:py-8 md:px-8">
           <nav aria-label="パンくずリスト">
             <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
               <li>
