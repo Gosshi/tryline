@@ -299,6 +299,18 @@ describe("HomePage", () => {
     expect(heading).toHaveTextContent("今週の海外ラグビーを、日本時間で追う。");
     expect(heading?.querySelectorAll("wbr")).toHaveLength(3);
     expect(heading?.innerHTML).not.toContain("ラグビー<wbr>を");
+    expect(
+      Array.from(container.querySelectorAll("div")).filter((element) =>
+        element.classList.contains("max-w-[1536px]"),
+      ),
+    ).toHaveLength(2);
+
+    const recentReviewHeading = screen.getByRole("heading", {
+      name: "最近のレビュー",
+    });
+    expect(recentReviewHeading.parentElement?.querySelector("div")).toHaveClass(
+      "xl:grid-cols-2",
+    );
 
     expect(matchMocks.getRecentlyReviewedMatchById).toHaveBeenCalledWith(
       PRIMARY_SAMPLE_MATCH_ID,

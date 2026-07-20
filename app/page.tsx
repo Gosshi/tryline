@@ -244,11 +244,11 @@ export default async function HomePage() {
           <div className="bg-[var(--color-ink)]/60 absolute inset-0" />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
+        <div className="relative z-10 mx-auto max-w-[1536px] px-4 sm:px-6 md:px-8">
           <div
             className={
               homepageWeekMatches.length > 0
-                ? "grid grid-cols-[minmax(0,1fr)] items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px]"
+                ? "grid grid-cols-[minmax(0,1fr)] items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px] xl:grid-cols-[minmax(0,1.25fr)_minmax(460px,0.75fr)]"
                 : "max-w-3xl"
             }
           >
@@ -299,7 +299,7 @@ export default async function HomePage() {
 
       <HomepageFavoriteTeams allTeams={allTeams} />
 
-      <div className="mx-auto max-w-6xl space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
+      <div className="mx-auto max-w-[1536px] space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         <section className="space-y-3">
           <h2 className="font-serif text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
             注目大会
@@ -443,9 +443,9 @@ export default async function HomePage() {
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               最近のレビュー
             </h2>
-            <div className="space-y-5">
+            <div className="grid gap-5 xl:grid-cols-2">
               {shouldShowSampleReview && sampleMatch && (
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
                   <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-[#f8fafc] px-5 py-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
                       無料で読めるレビュー
@@ -466,7 +466,7 @@ export default async function HomePage() {
                         {sampleMatch.homeTeam.name} 対{" "}
                         {sampleMatch.awayTeam.name}
                       </p>
-                      <p className="line-clamp-7 mt-4 border-l-4 border-[var(--color-accent)] pl-4 text-sm leading-relaxed text-[var(--color-ink)]">
+                      <p className="line-clamp-7 mt-4 max-w-3xl border-l-4 border-[var(--color-accent)] pl-4 text-sm leading-relaxed text-[var(--color-ink)]">
                         {sampleMatch.recapExcerpt}
                       </p>
                     </div>
@@ -632,7 +632,7 @@ export default async function HomePage() {
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               最近レビューのある大会
             </h2>
-            <ul className="grid gap-3 sm:grid-cols-2">
+            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {reviewedFamilies.map((item) => (
                 <li key={item.family}>
                   <Link
