@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/cache/public-data", () => ({
+  PUBLIC_DATA_CACHE_TAGS: { standings: "public-data:standings" },
+  revalidatePublicData: vi.fn(),
+}));
+
 const standingsMock = vi.hoisted(() => ({
   ingestWeeklyStandings: vi.fn(),
 }));

@@ -1,3 +1,7 @@
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
+
+import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { getTeamDisplayName } from "@/lib/format/team";
 
@@ -39,7 +43,7 @@ type CompetitionStandingRow = {
   won: number;
 };
 
-export async function getStandingsForCompetition(
+async function loadStandingsForCompetition(
   competitionSlug: string,
 ): Promise<StandingRow[]> {
   const client = getSupabasePublicServerClient();
@@ -108,6 +112,13 @@ export async function getStandingsForCompetition(
     won: row.won,
   }));
 }
+
+export const getStandingsForCompetition = cache(
+  unstable_cache(loadStandingsForCompetition, ["public-data", "standings"], {
+    revalidate: 900,
+    tags: [PUBLIC_DATA_CACHE_TAGS.standings],
+  }),
+);
 
 type CompetitionPoolRow = {
   pool_name: string;
@@ -224,10 +235,11 @@ export async function getPoolStandingsForCompetition(
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([poolName, standings]) => ({
       poolName,
-      standings: [...standings].sort((left, right) => left.position - right.position),
+      standings: [...standings].sort(
+        (left, right) => left.position - right.position,
+      ),
     }));
 }
-
 
 type StandingPositionRow = {
   competition_id: string;
@@ -258,7 +270,8 @@ export async function getStandingPositionLookupForCompetitions(
 
   for (const row of (data ?? []) as StandingPositionRow[]) {
     const positions =
-      positionsByCompetition.get(row.competition_id) ?? new Map<string, number>();
+      positionsByCompetition.get(row.competition_id) ??
+      new Map<string, number>();
     positions.set(row.team_id, row.position);
     positionsByCompetition.set(row.competition_id, positions);
   }

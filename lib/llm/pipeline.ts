@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 
 import {
+  PUBLIC_DATA_CACHE_TAGS,
+  revalidatePublicData,
+} from "@/lib/cache/public-data";
+import {
   buildAllowedPersonEntities,
   buildKnownNonPersonNames,
 } from "@/lib/content/allowed-entities";
@@ -646,6 +650,11 @@ export async function generateMatchContent(
     if (upsertError) {
       throw upsertError;
     }
+
+    revalidatePublicData(
+      PUBLIC_DATA_CACHE_TAGS.content,
+      PUBLIC_DATA_CACHE_TAGS.matches,
+    );
   }
 
   if (persistedStatus === "published") {

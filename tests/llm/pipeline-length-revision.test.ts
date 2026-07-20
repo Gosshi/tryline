@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/cache/public-data", () => ({
+  PUBLIC_DATA_CACHE_TAGS: {
+    content: "public-data:content",
+    matches: "public-data:matches",
+  },
+  revalidatePublicData: vi.fn(),
+}));
+
 const assembleMock = vi.hoisted(() => ({
   assembleMatchContentInput: vi.fn(),
   computeScoreTimeline: vi.fn().mockReturnValue(null),

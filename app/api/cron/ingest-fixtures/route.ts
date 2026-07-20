@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import {
+  PUBLIC_DATA_CACHE_TAGS,
+  revalidatePublicData,
+} from "@/lib/cache/public-data";
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import {
   ingestRwc2027Fixtures,
@@ -34,6 +38,12 @@ export async function POST(request: Request) {
       body.competition === "rwc-2027"
         ? await ingestRwc2027Fixtures()
         : await ingestSixNations2027Fixtures();
+
+    revalidatePublicData(
+      PUBLIC_DATA_CACHE_TAGS.competitions,
+      PUBLIC_DATA_CACHE_TAGS.matches,
+      PUBLIC_DATA_CACHE_TAGS.teams,
+    );
 
     return NextResponse.json({
       status: "ok",
