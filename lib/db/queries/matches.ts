@@ -1,3 +1,7 @@
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
+
+import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import {
   getMatchBroadcastPresenceForMatches,
@@ -1072,7 +1076,7 @@ export async function getRecentLeagueOneEnglishRecaps(
     });
 }
 
-export async function getUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
+async function loadUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
   const client = getSupabasePublicServerClient();
   const now = new Date().toISOString();
   const { data, error } = await client
@@ -1131,6 +1135,13 @@ export async function getUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
       };
     });
 }
+
+export const getUpcomingMatches = cache(
+  unstable_cache(loadUpcomingMatches, ["public-data", "upcoming-matches"], {
+    revalidate: 300,
+    tags: [PUBLIC_DATA_CACHE_TAGS.matches],
+  }),
+);
 
 export async function getNextMatchForCompetition({
   family,

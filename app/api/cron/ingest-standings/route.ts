@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+import {
+  PUBLIC_DATA_CACHE_TAGS,
+  revalidatePublicData,
+} from "@/lib/cache/public-data";
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { ingestWeeklyStandings } from "@/lib/ingestion/weekly-standings";
 
@@ -12,6 +16,8 @@ export async function POST(request: Request) {
     assertCronAuthorized(request);
 
     const result = await ingestWeeklyStandings();
+
+    revalidatePublicData(PUBLIC_DATA_CACHE_TAGS.standings);
 
     return NextResponse.json({
       duration_ms: Date.now() - startedAt,

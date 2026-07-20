@@ -1,3 +1,7 @@
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
+
+import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { type MatchStatus } from "@/lib/format/status";
 
@@ -38,9 +42,7 @@ type TeamRow = {
 type TeamMatchRow = {
   away_score: number | null;
   away_team: { slug: string; name: string; short_code: string | null } | null;
-  competition:
-    | { slug: string; name: string; season: string }
-    | null;
+  competition: { slug: string; name: string; season: string } | null;
   external_ids: unknown;
   home_score: number | null;
   home_team: { slug: string; name: string; short_code: string | null } | null;
@@ -59,7 +61,8 @@ function getRoundFromExternalIds(externalIds: unknown): number | null {
     return null;
   }
 
-  const round = (externalIds as Record<string, unknown>).round ??
+  const round =
+    (externalIds as Record<string, unknown>).round ??
     (externalIds as Record<string, unknown>).wikipedia_round;
 
   return typeof round === "number" ? round : null;
@@ -168,7 +171,7 @@ async function loadMatchesByTeamId(params: {
   return (data as TeamMatchRow[]).map(mapTeamMatchRow);
 }
 
-export async function listAllTeams(): Promise<TeamSummary[]> {
+async function loadAllTeams(): Promise<TeamSummary[]> {
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("teams")
@@ -181,6 +184,13 @@ export async function listAllTeams(): Promise<TeamSummary[]> {
 
   return data ?? [];
 }
+
+export const listAllTeams = cache(
+  unstable_cache(loadAllTeams, ["public-data", "teams"], {
+    revalidate: 3600,
+    tags: [PUBLIC_DATA_CACHE_TAGS.teams],
+  }),
+);
 
 export async function getTeamBySlug(slug: string): Promise<TeamDetail | null> {
   const row = await loadTeamRowBySlug(slug);

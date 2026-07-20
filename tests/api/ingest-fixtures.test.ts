@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/cache/public-data", () => ({
+  PUBLIC_DATA_CACHE_TAGS: {
+    competitions: "public-data:competitions",
+    matches: "public-data:matches",
+    teams: "public-data:teams",
+  },
+  revalidatePublicData: vi.fn(),
+}));
+
 const fixturesMock = vi.hoisted(() => ({
   ingestSixNations2027Fixtures: vi.fn(),
 }));

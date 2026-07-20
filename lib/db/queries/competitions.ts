@@ -1,3 +1,7 @@
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
+
+import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 
 export type CompetitionRow = {
@@ -238,7 +242,7 @@ export async function getCompetitionBySlug(
   return data ? mapCompetitionRow(data as CompetitionDbRow) : null;
 }
 
-export async function getCompetitionGuide(
+async function loadCompetitionGuide(
   family: string,
 ): Promise<CompetitionGuide | null> {
   const client = getSupabasePublicServerClient();
@@ -261,7 +265,14 @@ export async function getCompetitionGuide(
     : null;
 }
 
-export async function listFamilies(): Promise<string[]> {
+export const getCompetitionGuide = cache(
+  unstable_cache(loadCompetitionGuide, ["public-data", "competition-guide"], {
+    revalidate: 3600,
+    tags: [PUBLIC_DATA_CACHE_TAGS.competitions],
+  }),
+);
+
+async function loadFamilies(): Promise<string[]> {
   const client = getSupabasePublicServerClient();
   const { data, error } = await client.from("competitions").select("family");
 
@@ -271,3 +282,10 @@ export async function listFamilies(): Promise<string[]> {
 
   return [...new Set((data ?? []).map((row) => row.family))].sort();
 }
+
+export const listFamilies = cache(
+  unstable_cache(loadFamilies, ["public-data", "competition-families"], {
+    revalidate: 3600,
+    tags: [PUBLIC_DATA_CACHE_TAGS.competitions],
+  }),
+);
