@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -26,6 +26,7 @@ vi.mock("@/components/match-card", () => ({
 
 describe("HomepageFavoriteTeams", () => {
   afterEach(() => {
+    cleanup();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
