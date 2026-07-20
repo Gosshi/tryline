@@ -104,7 +104,7 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
         }}
         type="application/ld+json"
       />
-      <main className="min-h-screen bg-paper">
+      <main className="bg-paper min-h-screen">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
           <nav aria-label="パンくずリスト">
             <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
@@ -140,7 +140,7 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
                   {data.teamA.name} 対 {data.teamB.name} 対戦成績
                 </h1>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Tryline 収録分の対戦を表示しています。全history
+                  Tryline収録分の対戦を表示しています。全対戦
                   の通算成績ではありません。
                 </p>
               </div>
@@ -277,10 +277,7 @@ function HeadToHeadMatchRow({
     >
       <span className="min-w-0">
         <span className="block text-xs font-semibold text-slate-500">
-          {formatCompetitionTitle(
-            match.competition,
-            match.competition.season,
-          )}
+          {formatCompetitionTitle(match.competition, match.competition.season)}
           {" · "}
           {formatKickoffJst(match.kickoffAt)}
         </span>

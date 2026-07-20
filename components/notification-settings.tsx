@@ -138,9 +138,11 @@ export function NotificationSettings({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm text-slate-700">recap 通知</span>
+        <span className="text-sm text-slate-700">レビュー公開通知</span>
         <button
-          aria-label={subscribed ? "recap 通知をオフ" : "recap 通知をオン"}
+          aria-label={
+            subscribed ? "レビュー公開通知をオフ" : "レビュー公開通知をオン"
+          }
           className={[
             "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
             subscribed

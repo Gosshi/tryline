@@ -37,14 +37,14 @@ export function FavoriteTeamsBanner({
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 md:px-8">
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--color-accent)]/35 bg-white px-5 py-5 shadow-sm sm:px-6">
+      <div className="border-[var(--color-accent)]/35 relative overflow-hidden rounded-2xl border bg-white px-5 py-5 shadow-sm sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--color-accent)]">
               Follow your team
             </p>
             <h2 className="mt-1 text-xl font-black text-[var(--color-ink)]">
-              応援チームを登録して、次の試合を逃さない
+              応援チームの試合を、すぐ見つける
             </h2>
             <p className="mt-2 text-sm leading-6 text-[var(--color-ink-muted)]">
               登録したチームの試合をトップページに優先表示します。最大3チームまで選べます。
@@ -71,10 +71,7 @@ export function FavoriteTeamsBanner({
         </div>
         {pickerOpen && (
           <div className="mt-4 max-w-md rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <TeamPicker
-              initialSelected={favoriteTeamSlugs}
-              teams={allTeams}
-            />
+            <TeamPicker initialSelected={favoriteTeamSlugs} teams={allTeams} />
           </div>
         )}
       </div>

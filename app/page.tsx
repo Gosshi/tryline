@@ -185,7 +185,7 @@ export default async function HomePage() {
   const featuredCompetitionStats = {
     nextMatchLabel: featuredCompetitionNextMatch
       ? `${formatKickoffJstDate(featuredCompetitionNextMatch.kickoffAt)} ${formatKickoffJstTime(featuredCompetitionNextMatch.kickoffAt)}`
-      : "次日程待ち",
+      : "次回日程を確認中",
     nextMatchSubLabel: featuredCompetitionNextMatch
       ? `${featuredCompetitionNextMatch.homeTeam.name} 対 ${featuredCompetitionNextMatch.awayTeam.name}`
       : "今季の予定は確認でき次第反映します",
@@ -471,7 +471,7 @@ export default async function HomePage() {
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
                       <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                        Ask After Match
+                        試合後に聞けること
                       </p>
                       <ul className="mt-3 space-y-2 text-sm font-semibold text-[var(--color-ink)]">
                         <li>勝敗を分けた場面はどこ？</li>

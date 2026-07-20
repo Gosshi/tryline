@@ -109,7 +109,7 @@ export default async function PricingPage() {
   const trialUrl = sample ? `/matches/${sampleMatchId}` : "/";
 
   return (
-    <main className="min-h-screen bg-paper">
+    <main className="bg-paper min-h-screen">
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(pricingVideoJsonLd),
@@ -277,10 +277,10 @@ export default async function PricingPage() {
 
         <section>
           <h2 className="mb-2 text-2xl font-black tracking-tight text-[var(--color-ink)] sm:text-3xl">
-            Premium ではこんな画面が読めます
+            Premiumで使える機能
           </h2>
           <p className="mb-10 text-sm text-[var(--color-ink-muted)]">
-            詳細な日本語レビューと、試合について何でも聞ける AI チャット。
+            詳細な日本語レビューと、試合データと公開レビューをもとに質問できるAIチャット。
           </p>
 
           <div className="space-y-12">
