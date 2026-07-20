@@ -30,11 +30,11 @@ describe("FeaturedCompetitionCard", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("heading", {
-        name: "ネーションズチャンピオンシップ 2026 を追う",
-      }),
-    ).toBeInTheDocument();
+    const headline = screen.getByRole("heading", {
+      name: "ネーションズチャンピオンシップ 2026 を追う",
+    });
+    expect(headline).toBeInTheDocument();
+    expect(headline).toHaveClass("text-balance");
     expect(screen.getByTestId("featured-competition-image")).toHaveAttribute(
       "data-src",
       "/visuals/default.jpg",
