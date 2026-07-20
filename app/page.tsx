@@ -15,6 +15,7 @@ import {
 import { SignupSuccessTracker } from "@/components/signup-success-tracker";
 import { TeamBadge } from "@/components/team-badge";
 import { TrackedLink } from "@/components/tracked-link";
+import { getCompetitionHeroImage } from "@/lib/competition-hero-images";
 import {
   listFamilies,
   listSeasonsByFamilies,
@@ -635,25 +636,39 @@ export default async function HomePage() {
               {reviewedFamilies.map((item) => (
                 <li key={item.family}>
                   <Link
-                    className="group flex h-full items-center justify-between rounded-xl border border-slate-200 bg-white py-4 pl-4 pr-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm active:scale-[0.98]"
-                    href={`/c/${item.family}/${item.competitionSeason}`}
-                    style={{
-                      borderLeftColor: getCompetitionFamilyColor(item.family),
-                      borderLeftWidth: "4px",
-                    }}
-                  >
-                    <div>
-                      <span className="block font-semibold text-[var(--color-ink)]">
-                        {formatFamilyName(item.family)}
+                      className="group grid h-full grid-cols-[6rem_minmax(0,1fr)_auto] overflow-hidden rounded-xl border border-slate-200 bg-white transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm active:scale-[0.98] sm:grid-cols-[8rem_minmax(0,1fr)_auto]"
+                      href={`/c/${item.family}/${item.competitionSeason}`}
+                    >
+                      <div className="relative min-h-[4.5rem] overflow-hidden sm:min-h-24">
+                        <Image
+                          alt=""
+                          className="object-cover transition-transform duration-200 group-hover:scale-105"
+                          fill
+                          sizes="(min-width: 640px) 128px, 96px"
+                          src={getCompetitionHeroImage(item.family)}
+                        />
+                        <div
+                          aria-hidden
+                          className="absolute inset-y-0 left-0 w-1"
+                          style={{
+                            backgroundColor: getCompetitionFamilyColor(
+                              item.family,
+                            ),
+                          }}
+                        />
+                      </div>
+                      <div className="min-w-0 self-center py-4 pl-4">
+                        <span className="block font-semibold text-[var(--color-ink)]">
+                          {formatFamilyName(item.family)}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-[var(--color-ink-muted)]">
+                          {item.competitionSeason}
+                        </span>
+                      </div>
+                      <span className="self-center px-4 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
+                        →
                       </span>
-                      <span className="mt-0.5 block text-xs text-[var(--color-ink-muted)]">
-                        {item.competitionSeason}
-                      </span>
-                    </div>
-                    <span className="text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
-                      →
-                    </span>
-                  </Link>
+                    </Link>
                 </li>
               ))}
             </ul>
