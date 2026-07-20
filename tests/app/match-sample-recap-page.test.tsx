@@ -237,7 +237,9 @@ describe("match sample recap page", () => {
       params: Promise.resolve({ id: sampleMatchId }),
     });
 
-    render(element);
+    const { container } = render(element);
+
+    expect(container.querySelector("main > div")).toHaveClass("max-w-6xl");
 
     expect(
       screen.getByText("サンプル全文だけに含まれる終盤分析。"),

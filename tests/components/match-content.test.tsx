@@ -101,6 +101,21 @@ describe("MatchContent", () => {
     expect(screen.getByText("2027-02-04 23:12 JST 更新")).toBeInTheDocument();
   });
 
+  it("keeps markdown within a readable inner column", () => {
+    render(
+      <MatchContent
+        content={{ ...baseContent, contentMdJa: "本文カラムの確認" }}
+        contentType="preview"
+        isPremium
+      />,
+    );
+
+    expect(screen.getByText("本文カラムの確認").parentElement).toHaveClass(
+      "mx-auto",
+      "max-w-3xl",
+    );
+  });
+
   it("shows the first section and locks content from the second top-level heading", () => {
     const visibleText = "無料で読める第1セクション本文";
     const lockedText = "プレミアム本文";

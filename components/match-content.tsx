@@ -369,7 +369,7 @@ export function MatchContent({
           </ol>
         </nav>
       )}
-      <div className="relative space-y-5 text-[var(--color-ink)]">
+      <div className="relative mx-auto max-w-3xl space-y-5 text-[var(--color-ink)]">
         {blocks.map(renderBlock)}
         {nextHeading && (
           <p className="relative z-10 text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
