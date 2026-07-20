@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { hostname: "images.unsplash.com", protocol: "https" },
+      { hostname: "i.ytimg.com", protocol: "https" },
     ],
   },
   reactStrictMode: true,
