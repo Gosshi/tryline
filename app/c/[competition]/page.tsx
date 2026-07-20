@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
 import { MatchCard } from "@/components/match-card";
+import { getCompetitionHeroImage } from "@/lib/competition-hero-images";
 import {
   getCompetitionGuide,
   listSeasonsByFamily,
@@ -22,20 +23,6 @@ import type { Metadata } from "next";
 type Props = {
   params: Promise<{ competition: string }>;
 };
-
-const COMPETITION_HERO_IMAGES: Record<string, string> = {
-  "autumn-nations": "/visuals/autumn-nations.jpg",
-  "league-one": "/visuals/league-one.jpg",
-  pnc: "/visuals/pnc.jpg",
-  premiership: "/visuals/premiership.jpg",
-  "rugby-championship": "/visuals/rugby-championship.jpg",
-  "six-nations": "/visuals/six-nations.jpg",
-  "super-rugby-pacific": "/visuals/super-rugby-pacific.jpg",
-  "top-14": "/visuals/top-14.jpg",
-  urc: "/visuals/urc.jpg",
-};
-
-const DEFAULT_COMPETITION_HERO = "/visuals/default.jpg";
 
 const COMPETITION_DESCRIPTIONS: Record<string, string> = {
   "six-nations":
@@ -114,7 +101,7 @@ export default async function CompetitionHubPage({ params }: Props) {
           fill
           priority
           sizes="100vw"
-          src={COMPETITION_HERO_IMAGES[competition] ?? DEFAULT_COMPETITION_HERO}
+          src={getCompetitionHeroImage(competition)}
         />
         <div className="absolute inset-0 bg-slate-950/60" />
         <div className="absolute inset-0 flex flex-col justify-end px-4 pb-6 sm:px-6 md:px-8">
