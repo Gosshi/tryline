@@ -476,6 +476,33 @@ export type Database = {
           },
         ];
       };
+      youtube_videos: {
+        Row: {
+          can_embed: boolean;
+          channel_id: string;
+          context: Json | null;
+          title: string | null;
+          verified_at: string;
+          video_id: string;
+        };
+        Insert: {
+          can_embed?: boolean;
+          channel_id: string;
+          context?: Json | null;
+          title?: string | null;
+          verified_at: string;
+          video_id: string;
+        };
+        Update: {
+          can_embed?: boolean;
+          channel_id?: string;
+          context?: Json | null;
+          title?: string | null;
+          verified_at?: string;
+          video_id?: string;
+        };
+        Relationships: [];
+      };
       match_sourced_facts: {
         Row: {
           confidence: string;
