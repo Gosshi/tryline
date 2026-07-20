@@ -131,7 +131,7 @@ export default async function CompetitionHubPage({ params }: Props) {
           </div>
         </div>
       </div>
-      <div className="mx-auto flex max-w-4xl flex-col gap-10 px-4 py-12 sm:px-6 md:px-8">
+      <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 sm:px-6 md:px-8">
         <Link
           className="group block rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-slate-300 active:scale-[0.98]"
           href={`/c/${competition}/${latestSeason.season}`}
@@ -147,11 +147,13 @@ export default async function CompetitionHubPage({ params }: Props) {
           </p>
         </Link>
 
-        <CompetitionViewingGuide
-          markdown={guide?.guideJa ?? null}
-          sourceUrl={guide?.sourceUrl ?? null}
-          verifiedAt={guide?.verifiedAt ?? null}
-        />
+        <div className="max-w-3xl">
+          <CompetitionViewingGuide
+            markdown={guide?.guideJa ?? null}
+            sourceUrl={guide?.sourceUrl ?? null}
+            verifiedAt={guide?.verifiedAt ?? null}
+          />
+        </div>
 
         {recentReviews.length > 0 && (
           <section className="space-y-3">
