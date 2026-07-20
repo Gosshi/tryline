@@ -81,7 +81,7 @@ describe("competition hub indexing", () => {
   });
 
   it("links the bare hub to the newest season with matches", async () => {
-    render(
+    const { container } = render(
       await CompetitionHubPage({
         params: Promise.resolve({ competition: "rwc" }),
       }),
@@ -92,6 +92,7 @@ describe("competition hub indexing", () => {
         name: /最新シーズン ラグビーワールドカップ2027/,
       }),
     ).toHaveAttribute("href", "/c/rwc/2027");
+    expect(container.querySelector("main > div.max-w-6xl")).toBeInTheDocument();
   });
 
   it("uses local key visuals when an image is available", async () => {
