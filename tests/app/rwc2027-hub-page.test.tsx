@@ -3,6 +3,12 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup, render, screen } from "@testing-library/react";
+import {
+  isValidElement,
+  Suspense,
+  type AnchorHTMLAttributes,
+  type ReactNode,
+} from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import RWC2027Page from "@/app/c/rwc/2027/page";
@@ -11,7 +17,6 @@ import type { MatchContentStatus } from "@/lib/db/queries/match-content";
 import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { PoolStanding, StandingRow } from "@/lib/db/queries/standings";
 import type { GroupKey } from "@/lib/format/match-groups";
-import type { AnchorHTMLAttributes, ReactNode } from "react";
 
 const competitionsMock = vi.hoisted(() => ({
   getCompetitionBySlug: vi.fn(),
@@ -79,6 +84,24 @@ const competition = {
   season: "2027",
   slug: "rwc-2027",
 };
+
+function containsSuspenseBoundary(node: ReactNode): boolean {
+  if (Array.isArray(node)) {
+    return node.some(containsSuspenseBoundary);
+  }
+
+  if (!isValidElement(node)) {
+    return false;
+  }
+
+  if (node.type === Suspense) {
+    return true;
+  }
+
+  return containsSuspenseBoundary(
+    (node.props as { children?: ReactNode }).children ?? null,
+  );
+}
 
 function buildStanding(poolIndex: number, teamIndex: number): StandingRow {
   const teamNumber = poolIndex * 4 + teamIndex + 1;
@@ -194,6 +217,16 @@ describe("RWC 2027 hub page", () => {
     expect(contentStatusMock.getContentStatusMap).toHaveBeenCalledWith(
       expect.arrayContaining(["rwc-match-1", "rwc-match-36"]),
     );
+  });
+
+  it("wraps the search-param client schedule in a suspense boundary", async () => {
+    matchesMock.listMatchesForCompetition.mockResolvedValue([
+      buildMatch(1, "scheduled"),
+    ]);
+
+    const page = await RWC2027Page();
+
+    expect(containsSuspenseBoundary(page)).toBe(true);
   });
 
   it("keeps the pending state when there are no matches", async () => {

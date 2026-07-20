@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AuthModal } from "@/components/auth-modal";
 import { HEADER_COMPETITIONS } from "@/components/competition-nav-dropdown";
@@ -9,17 +9,23 @@ import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { TrackedLink } from "@/components/tracked-link";
 import { UserMenu } from "@/components/user-menu";
+import {
+  getClientUserState,
+  type ClientUserState,
+} from "@/lib/auth/client";
 import { getCompetitionFamilyColor } from "@/lib/format/competition";
 
 import type { TeamOption } from "@/components/team-picker";
-import type { User } from "@supabase/supabase-js";
 
 type MobileHeaderMenuProps = {
   allTeams: TeamOption[];
-  favoriteTeamSlugs: string[];
-  initialSpoilerGuard?: boolean;
-  isPremium: boolean;
-  user: User | null;
+};
+
+const SIGNED_OUT_STATE: ClientUserState = {
+  favoriteTeamSlugs: [],
+  isPremium: false,
+  spoilerGuardEnabled: false,
+  user: null,
 };
 
 function MenuIcon() {
@@ -56,16 +62,32 @@ function CloseIcon() {
   );
 }
 
-export function MobileHeaderMenu({
-  allTeams,
-  favoriteTeamSlugs,
-  initialSpoilerGuard = false,
-  isPremium,
-  user,
-}: MobileHeaderMenuProps) {
+export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
   const [showAuth, setShowAuth] = useState(false);
   const [isCompetitionsOpen, setIsCompetitionsOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [userState, setUserState] =
+    useState<ClientUserState>(SIGNED_OUT_STATE);
+
+  useEffect(() => {
+    let active = true;
+
+    void getClientUserState()
+      .then((state) => {
+        if (active) {
+          setUserState(state);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setUserState(SIGNED_OUT_STATE);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function closeMenu() {
     setIsOpen(false);
@@ -160,7 +182,7 @@ export function MobileHeaderMenu({
                     カレンダー
                   </Link>
                 </li>
-                {!user && (
+                {!userState.user && (
                   <li>
                     <TrackedLink
                       analytics={{
@@ -206,13 +228,13 @@ export function MobileHeaderMenu({
               </ul>
 
               <div className="mt-2 border-t border-slate-200 pt-2">
-                {user ? (
+                {userState.user ? (
                   <UserMenu
                     allTeams={allTeams}
-                    favoriteTeamSlugs={favoriteTeamSlugs}
-                    initialSpoilerGuard={initialSpoilerGuard}
-                    isPremium={isPremium}
-                    user={user}
+                    favoriteTeamSlugs={userState.favoriteTeamSlugs}
+                    initialSpoilerGuard={userState.spoilerGuardEnabled}
+                    isPremium={userState.isPremium}
+                    user={userState.user}
                   />
                 ) : (
                   <button

@@ -12,6 +12,12 @@ vi.mock("@/components/user-menu", () => ({
 }));
 
 vi.mock("@/lib/auth/client", () => ({
+  getClientUserState: vi.fn().mockResolvedValue({
+    favoriteTeamSlugs: [],
+    isPremium: false,
+    spoilerGuardEnabled: false,
+    user: null,
+  }),
   getSupabaseBrowserClient: () => ({
     auth: {
       signInWithOAuth: vi.fn(),
@@ -29,9 +35,6 @@ describe("MobileHeaderMenu", () => {
     render(
       <MobileHeaderMenu
         allTeams={[]}
-        favoriteTeamSlugs={[]}
-        isPremium={false}
-        user={null}
       />,
     );
 
@@ -79,9 +82,6 @@ describe("MobileHeaderMenu", () => {
     render(
       <MobileHeaderMenu
         allTeams={[]}
-        favoriteTeamSlugs={[]}
-        isPremium={false}
-        user={null}
       />,
     );
 
@@ -97,9 +97,6 @@ describe("MobileHeaderMenu", () => {
     render(
       <MobileHeaderMenu
         allTeams={[]}
-        favoriteTeamSlugs={[]}
-        isPremium={false}
-        user={null}
       />,
     );
 

@@ -14,6 +14,10 @@ const authMocks = vi.hoisted(() => ({
   isProfilePremium: vi.fn(),
 }));
 
+const authClientMocks = vi.hoisted(() => ({
+  getClientUserState: vi.fn(),
+}));
+
 const competitionMocks = vi.hoisted(() => ({
   listFamilies: vi.fn(),
   listSeasonsByFamilies: vi.fn(),
@@ -92,6 +96,10 @@ vi.mock("@/lib/auth/server", () => ({
   getUser: authMocks.getUser,
   getUserProfile: authMocks.getUserProfile,
   isProfilePremium: authMocks.isProfilePremium,
+}));
+
+vi.mock("@/lib/auth/client", () => ({
+  getClientUserState: authClientMocks.getClientUserState,
 }));
 
 vi.mock("@/lib/db/queries/competitions", () => ({
@@ -180,6 +188,12 @@ describe("HomePage", () => {
         profile?.premium_until != null &&
         new Date(profile.premium_until).getTime() > Date.now(),
     );
+    authClientMocks.getClientUserState.mockResolvedValue({
+      favoriteTeamSlugs: [],
+      isPremium: false,
+      spoilerGuardEnabled: false,
+      user: null,
+    });
     competitionMocks.listFamilies.mockResolvedValue([]);
     competitionMocks.listSeasonsByFamily.mockResolvedValue([]);
     competitionMocks.listSeasonsByFamilies.mockImplementation(
@@ -277,6 +291,9 @@ describe("HomePage", () => {
 
   it("uses the configured free sample match for homepage sample links", async () => {
     const { container } = render(await HomePage());
+
+    expect(authMocks.getUser).not.toHaveBeenCalled();
+    expect(authMocks.getUserProfile).not.toHaveBeenCalled();
 
     const heading = container.querySelector("h1");
     expect(heading).toHaveTextContent("今週の海外ラグビーを、日本時間で追う。");

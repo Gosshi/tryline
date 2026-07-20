@@ -2,15 +2,29 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SiteHeader } from "@/components/site-header";
 
-vi.mock("@/lib/auth/server", () => ({
-  getUserProfile: vi.fn(() => null),
+const authServerMocks = vi.hoisted(() => ({
   getUser: vi.fn(() => null),
+  getUserProfile: vi.fn(() => null),
   isProfilePremium: vi.fn(() => false),
+}));
+
+const authClientMocks = vi.hoisted(() => ({
+  getClientUserState: vi.fn(),
+}));
+
+vi.mock("@/lib/auth/server", () => ({
+  getUserProfile: authServerMocks.getUserProfile,
+  getUser: authServerMocks.getUser,
+  isProfilePremium: authServerMocks.isProfilePremium,
+}));
+
+vi.mock("@/lib/auth/client", () => ({
+  getClientUserState: authClientMocks.getClientUserState,
 }));
 
 vi.mock("@/lib/db/queries/teams", () => ({
@@ -26,8 +40,27 @@ vi.mock("@/components/user-menu", () => ({
 }));
 
 describe("SiteHeader", () => {
-  it("does not render the dead standings anchor link", async () => {
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  it("renders its static shell without server-side auth calls", async () => {
+    authClientMocks.getClientUserState.mockResolvedValue({
+      favoriteTeamSlugs: [],
+      isPremium: false,
+      spoilerGuardEnabled: false,
+      user: null,
+    });
+
     render(await SiteHeader());
+
+    await waitFor(() => {
+      expect(authClientMocks.getClientUserState).toHaveBeenCalledTimes(2);
+    });
+
+    expect(authServerMocks.getUser).not.toHaveBeenCalled();
+    expect(authServerMocks.getUserProfile).not.toHaveBeenCalled();
 
     const matchesLink = screen.getByRole("link", { name: "試合" });
 

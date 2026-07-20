@@ -3,16 +3,18 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
-import { FavoriteTeamsBanner } from "@/components/favorite-teams-banner";
 import { FeaturedCompetitionCard } from "@/components/featured-competition-card";
 import { HeroTexture } from "@/components/hero-texture";
 import { HomeMatchdayBoard } from "@/components/home-matchday-board";
-import { MatchCard } from "@/components/match-card";
+import {
+  HomepageFavoriteTeams,
+  HomepagePremiumCta,
+  HomepageSpoilerScore,
+  HomepageUserStateProvider,
+} from "@/components/home-user-state";
 import { SignupSuccessTracker } from "@/components/signup-success-tracker";
-import { SpoilerScore } from "@/components/spoiler-score";
 import { TeamBadge } from "@/components/team-badge";
 import { TrackedLink } from "@/components/tracked-link";
-import { getUser, getUserProfile, isProfilePremium } from "@/lib/auth/server";
 import {
   listFamilies,
   listSeasonsByFamilies,
@@ -20,7 +22,6 @@ import {
   sortHomepageCompetitionLinks,
 } from "@/lib/db/queries/competitions";
 import {
-  getFavoriteTeamMatches,
   getMatchesInRange,
   getNextMatchForCompetition,
   getRecentlyReviewedFamilies,
@@ -28,7 +29,6 @@ import {
   getRecentlyReviewedMatchById,
   getUpcomingMatches,
 } from "@/lib/db/queries/matches";
-import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { getStandingPositionLookupForCompetitions } from "@/lib/db/queries/standings";
 import { listAllTeams } from "@/lib/db/queries/teams";
 import { FEATURED_COMPETITION } from "@/lib/featured-competition";
@@ -109,10 +109,6 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const user = await getUser();
-  const profile = user ? await getUserProfile(user.id) : null;
-  const premium = isProfilePremium(profile);
-  const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
   const weekRange = getCurrentJstWeekRangeUtc();
   const sampleMatchId = await getPrimarySampleMatchId();
   const [
@@ -123,9 +119,7 @@ export default async function HomePage() {
     weeklyMatches,
     upcomingMatches,
     featuredCompetitionNextMatch,
-    favoriteMatches,
     allTeams,
-    spoilerGuardEnabled,
   ] = await Promise.all([
     listFamilies(),
     getRecentlyReviewedFamilies(4),
@@ -137,9 +131,7 @@ export default async function HomePage() {
       family: FEATURED_COMPETITION.family,
       season: FEATURED_COMPETITION.season,
     }),
-    getFavoriteTeamMatches(favoriteTeamSlugs),
     listAllTeams(),
-    getSpoilerGuardEnabledForUser(user?.id),
   ]);
   const seasonsByFamily = await listSeasonsByFamilies(families);
   const homepageCompetitionLinks = sortHomepageCompetitionLinks(
@@ -200,9 +192,7 @@ export default async function HomePage() {
     publishedReviewCount: featuredCompetitionLink?.publishedContentCount ?? 0,
     weekMatchCount: featuredCompetitionMatches.length,
   };
-  const favoriteTeamPageSlug =
-    favoriteTeamSlugs.length === 1 ? (favoriteTeamSlugs[0] ?? null) : null;
-  const shouldShowSampleReview = !premium && Boolean(sampleMatch?.recapExcerpt);
+  const shouldShowSampleReview = Boolean(sampleMatch?.recapExcerpt);
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -230,6 +220,7 @@ export default async function HomePage() {
 
   return (
     <main className="bg-paper min-h-screen">
+      <HomepageUserStateProvider>
       <script
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         type="application/ld+json"
@@ -292,20 +283,7 @@ export default async function HomePage() {
                 >
                   今週の試合を見る
                 </TrackedLink>
-                {!premium && (
-                  <TrackedLink
-                    analytics={{
-                      cta_id: "home_hero_pricing",
-                      cta_location: "home_hero",
-                      destination: "pricing",
-                      label: "Premium無料体験",
-                    }}
-                    className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                    href="/pricing"
-                  >
-                    Premium無料体験
-                  </TrackedLink>
-                )}
+                <HomepagePremiumCta />
               </div>
             </div>
             <HomeMatchdayBoard
@@ -318,43 +296,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {user && favoriteTeamSlugs.length === 0 && (
-        <FavoriteTeamsBanner
-          allTeams={allTeams}
-          favoriteTeamSlugs={favoriteTeamSlugs}
-        />
-      )}
-
-      {favoriteMatches.length > 0 && (
-        <section
-          aria-labelledby="favorite-heading"
-          className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-8"
-        >
-          <div
-            className="mb-4 flex items-center justify-between gap-4"
-            id="favorite-heading"
-          >
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-[var(--color-accent)]">
-              応援チームの試合
-            </h2>
-            {favoriteTeamPageSlug && (
-              <Link
-                className="text-xs text-[var(--color-ink-muted)] transition-colors hover:text-[var(--color-ink)]"
-                href={`/teams/${favoriteTeamPageSlug}`}
-              >
-                チームページ →
-              </Link>
-            )}
-          </div>
-          <ul className="space-y-3">
-            {favoriteMatches.map((match) => (
-              <li key={match.id}>
-                <MatchCard match={match} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <HomepageFavoriteTeams allTeams={allTeams} />
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         <section className="space-y-3">
@@ -556,12 +498,11 @@ export default async function HomePage() {
                           </p>
                         </div>
                         <p className="shrink-0 font-number text-3xl font-black tabular-nums sm:text-4xl">
-                          <SpoilerScore
+                          <HomepageSpoilerScore
                             className="max-w-[8rem] text-white"
-                            enabled={spoilerGuardEnabled}
                           >
                             {match.homeScore}–{match.awayScore}
-                          </SpoilerScore>
+                          </HomepageSpoilerScore>
                         </p>
                       </div>
                       <span className="mt-4 inline-flex text-sm font-bold text-white/90 transition-transform group-hover:translate-x-1">
@@ -589,13 +530,12 @@ export default async function HomePage() {
                                     {compactMatch.homeTeam.shortCode}
                                   </span>
                                   <span className="shrink-0 font-number tabular-nums text-slate-500">
-                                    <SpoilerScore
+                                    <HomepageSpoilerScore
                                       className="max-w-[7rem]"
-                                      enabled={spoilerGuardEnabled}
                                     >
                                       {compactMatch.homeScore}–
                                       {compactMatch.awayScore}
-                                    </SpoilerScore>
+                                    </HomepageSpoilerScore>
                                   </span>
                                   <span className="truncate">
                                     {compactMatch.awayTeam.shortCode}
@@ -718,6 +658,7 @@ export default async function HomePage() {
           )}
         </section>
       </div>
+      </HomepageUserStateProvider>
     </main>
   );
 }

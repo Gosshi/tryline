@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { StandingsTable } from "@/components/standings-table";
@@ -165,11 +166,13 @@ export default async function RWC2027Page() {
           </section>
         )}
 
-        <SeasonMatchGroups
-          contentStatusMap={Object.fromEntries(contentStatusMap)}
-          family="rwc"
-          groupedMatches={groupedMatches}
-        />
+        <Suspense>
+          <SeasonMatchGroups
+            contentStatusMap={Object.fromEntries(contentStatusMap)}
+            family="rwc"
+            groupedMatches={groupedMatches}
+          />
+        </Suspense>
 
         {!tournamentStarted && (
           <PoolTeamGrid poolStandings={poolStandings} />
