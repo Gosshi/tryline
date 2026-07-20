@@ -256,17 +256,9 @@ export default async function HomePage() {
               <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
                 Rugby Analysis in Japanese
               </p>
-              <h1 className="break-keep font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
-                今週の
-                <wbr />
-                海外
-                <wbr />
-                ラグビーを、
-                <br className="hidden sm:block" />
-                日本時間
-                <wbr />
-                で追う。
-              </h1>
+              <h1 className="max-w-3xl text-balance font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
+                  今週の海外ラグビーを、日本時間で追う。
+                </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
                 PNC、Six
                 Nations、Premiership、URC。週末に重なる試合を、日程・結果・順位・日本語レビューまでひとつの流れで確認できます。

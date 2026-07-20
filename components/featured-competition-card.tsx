@@ -37,7 +37,7 @@ export function FeaturedCompetitionCard({
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-accent)]">
             Featured Competition
           </p>
-          <h3 className="mt-2 font-serif text-2xl font-bold leading-tight sm:text-3xl">
+          <h3 className="mt-2 text-balance font-serif text-2xl font-bold leading-tight sm:text-3xl">
             {FEATURED_COMPETITION.headline}
           </h3>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">
