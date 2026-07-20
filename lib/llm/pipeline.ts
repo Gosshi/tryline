@@ -8,7 +8,6 @@ import { getSupabaseServerClient } from "@/lib/db/server";
 import { hasConfirmedProjectedLineups } from "@/lib/llm/lineups";
 import { notifyContentRejected, notifyCostAlert } from "@/lib/llm/notify";
 import { calculateCostUsd } from "@/lib/llm/pricing";
-import { evaluateStyleGuardShadow } from "@/lib/llm/style-guard";
 import {
   assembleMatchContentInput,
   computeScoreTimeline,
@@ -27,6 +26,7 @@ import {
   isFactualGroundingHardBlock,
 } from "@/lib/llm/stages/qa";
 import { verifyNarrativeEntities } from "@/lib/llm/stages/verify-entities";
+import { evaluateStyleGuardShadow } from "@/lib/llm/style-guard";
 import { submitUrlsToIndexNow } from "@/lib/seo/indexnow";
 import { SITE_URL } from "@/lib/site";
 
