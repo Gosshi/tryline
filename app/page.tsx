@@ -312,59 +312,128 @@ export default async function HomePage() {
               今後の試合
             </h2>
             <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
-              {homepageUpcomingMatches.map((match) => {
-                const family = match.competition.slug.replace(
-                  /-\d{4}(-\d{2})?$/,
-                  "",
-                );
+              {homepageUpcomingMatches.map((match, index) => {
+                  const family = match.competition.slug.replace(
+                    /-\d{4}(-\d{2})?$/,
+                    "",
+                  );
 
-                return (
-                  <li key={match.id}>
-                    <Link
-                      className="flex flex-col gap-1.5 px-5 py-3.5 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:flex-row sm:items-center sm:gap-3"
-                      href={`/matches/${match.id}`}
-                    >
-                      <div className="shrink-0 sm:w-36">
-                        <time dateTime={match.kickoffAt}>
-                          <p className="text-xs font-semibold tabular-nums text-[var(--color-accent)]">
-                            {formatKickoffJstDate(match.kickoffAt)}
-                          </p>
-                          <p className="text-xs tabular-nums text-[var(--color-ink-muted)]">
-                            {formatKickoffJstTime(match.kickoffAt)}
-                          </p>
-                        </time>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-[var(--color-ink)]">
+                  if (index === 0) {
+                    return (
+                      <li className="relative overflow-hidden" key={match.id}>
+                        <span
+                          aria-hidden
+                          className="absolute inset-y-0 left-0 w-1"
+                          style={{
+                            backgroundColor: getTeamColor(match.homeTeam.slug),
+                          }}
+                        />
+                        <span
+                          aria-hidden
+                          className="absolute inset-y-0 right-0 w-1"
+                          style={{
+                            backgroundColor: getTeamColor(match.awayTeam.slug),
+                          }}
+                        />
+                        <Link
+                          className="block px-5 py-5 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:px-6"
+                          href={`/matches/${match.id}`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                                注目の次戦
+                              </p>
+                              <p className="mt-1 text-sm font-semibold tabular-nums text-[var(--color-ink)]">
+                                {formatKickoffJstDate(match.kickoffAt)}
+                              </p>
+                            </div>
+                            <time
+                              className="font-number text-2xl font-black tabular-nums text-[var(--color-ink)] sm:text-3xl"
+                              dateTime={match.kickoffAt}
+                            >
+                              {formatKickoffJstTime(match.kickoffAt)}
+                            </time>
+                          </div>
+                          <div className="mt-4 flex min-w-0 items-center justify-between gap-3">
+                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                              <TeamBadge
+                                shortCode={match.homeTeam.shortCode}
+                                size={44}
+                                slug={match.homeTeam.slug}
+                              />
+                              <span className="truncate text-base font-bold text-[var(--color-ink)] sm:text-lg">
+                                {match.homeTeam.name}
+                              </span>
+                            </div>
+                            <span className="shrink-0 text-sm font-semibold text-slate-400">
+                              対
+                            </span>
+                            <div className="flex min-w-0 flex-1 items-center justify-end gap-3 text-right">
+                              <span className="truncate text-base font-bold text-[var(--color-ink)] sm:text-lg">
+                                {match.awayTeam.name}
+                              </span>
+                              <TeamBadge
+                                shortCode={match.awayTeam.shortCode}
+                                size={44}
+                                slug={match.awayTeam.slug}
+                              />
+                            </div>
+                          </div>
+                          <span className="mt-4 inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                            {formatFamilyName(family)}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  }
+
+                  return (
+                    <li key={match.id}>
+                      <Link
+                        className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:gap-4"
+                        href={`/matches/${match.id}`}
+                      >
+                        <div className="shrink-0">
+                          <time dateTime={match.kickoffAt}>
+                            <p className="text-xs font-semibold tabular-nums text-[var(--color-accent)]">
+                              {formatKickoffJstDate(match.kickoffAt)}
+                            </p>
+                            <p className="text-xs tabular-nums text-[var(--color-ink-muted)]">
+                              {formatKickoffJstTime(match.kickoffAt)}
+                            </p>
+                          </time>
+                        </div>
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
                           <TeamBadge
                             shortCode={match.homeTeam.shortCode}
-                            size={18}
+                            size={30}
                             slug={match.homeTeam.slug}
                           />
-                          <span className="truncate">
+                          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--color-ink)]">
                             {match.homeTeam.shortCode}
-                          </span>
-                          <span className="shrink-0 font-normal text-slate-400">
-                            対
-                          </span>
+                            <span className="mx-1.5 font-normal text-slate-400">
+                              対
+                            </span>
+                            {match.awayTeam.shortCode}
+                          </p>
                           <TeamBadge
                             shortCode={match.awayTeam.shortCode}
-                            size={18}
+                            size={30}
                             slug={match.awayTeam.slug}
                           />
-                          <span className="truncate">
-                            {match.awayTeam.shortCode}
-                          </span>
-                        </p>
-                        <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                        </div>
+                        <span className="hidden shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 sm:inline-block">
                           {formatFamilyName(family)}
                         </span>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+                        <span className="sr-only">
+                          {formatFamilyName(family)}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
           </section>
         )}
 
