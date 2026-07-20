@@ -150,7 +150,7 @@ export function TeamStatsPanel({
                 </dd>
               </div>
               <p className="border-t border-slate-100 pt-3 text-xs text-[var(--color-ink-muted)]">
-                match_events 取得済み {scoring.matchCount} 試合
+                得点イベントを確認できた {scoring.matchCount} 試合から集計
               </p>
             </dl>
           )}

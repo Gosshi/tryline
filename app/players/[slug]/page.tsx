@@ -163,7 +163,7 @@ export default async function PlayerPage({ params }: Props) {
               通算成績
             </h2>
             <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
-              match_events とラインアップ登録から集計
+              得点イベントとラインアップ登録から集計
             </p>
           </div>
 

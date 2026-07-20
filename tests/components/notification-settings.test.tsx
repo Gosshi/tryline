@@ -59,7 +59,9 @@ describe("NotificationSettings", () => {
     render(<NotificationSettings initialTeamSlugs={["japan"]} />);
 
     fireEvent.click(screen.getByRole("button", { name: "ネタバレ防止モード" }));
-    fireEvent.click(screen.getByRole("button", { name: "recap 通知をオン" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "レビュー公開通知をオン" }),
+    );
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 
