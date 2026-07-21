@@ -14,7 +14,10 @@ import {
   listSeasonsByFamily,
 } from "@/lib/db/queries/competitions";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
-import { listMatchesForCompetition } from "@/lib/db/queries/matches";
+import {
+  getNextMatchForTeamSlug,
+  listMatchesForCompetition,
+} from "@/lib/db/queries/matches";
 import {
   getPoolStandingsForCompetition,
   getStandingsForCompetition,
@@ -148,10 +151,14 @@ function selectStandingsExcerpt<
 
 function SeasonSummaryBand({
   leaderLabel,
+  latestReviewMatch,
+  nextJapanCompetitionLabel,
   nextJapanMatch,
   nextMatch,
 }: {
   leaderLabel: string | null;
+  latestReviewMatch: MatchListItem | null;
+  nextJapanCompetitionLabel: string | null;
   nextJapanMatch: MatchListItem | null;
   nextMatch: MatchListItem | null;
 }) {
@@ -172,12 +179,25 @@ function SeasonSummaryBand({
           secondary: "最新順位表より",
         }
       : null,
+    latestReviewMatch
+      ? {
+          href: `/matches/${latestReviewMatch.id}`,
+          label: "最新レビュー",
+          primary: getMatchLabel(latestReviewMatch),
+          secondary: formatMatchKickoffJst(latestReviewMatch.kickoffAt),
+        }
+      : null,
     nextJapanMatch
       ? {
           href: `/matches/${nextJapanMatch.id}`,
           label: "日本代表の次戦",
           primary: getMatchLabel(nextJapanMatch),
-          secondary: formatMatchKickoffJst(nextJapanMatch.kickoffAt),
+          secondary: [
+            formatMatchKickoffJst(nextJapanMatch.kickoffAt),
+            nextJapanCompetitionLabel,
+          ]
+            .filter(Boolean)
+            .join(" · "),
         }
       : null,
   ].filter((item): item is NonNullable<typeof item> => item !== null);
@@ -189,7 +209,7 @@ function SeasonSummaryBand({
   return (
     <section
       aria-label="シーズン要約"
-      className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3"
+      className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4"
     >
       {items.map((item) => {
         const content = (
@@ -302,8 +322,37 @@ export default async function SeasonPage({ params }: Props) {
   const competitionTitle = formatCompetitionTitle(comp, comp.season);
   const familyTitle = formatFamilyName(family);
   const nextMatch = findNextScheduledMatch(matches);
-  const nextJapanMatch = findNextScheduledMatch(matches.filter(isJapanMatch));
   const hasJapanInSeason = matches.some(isJapanMatch);
+  const nextJapanMatchInSeason = findNextScheduledMatch(
+    matches.filter(isJapanMatch),
+  );
+  const nextJapanMatchAcrossCompetitions = hasJapanInSeason
+    ? await getNextMatchForTeamSlug("japan", new Date().toISOString())
+    : null;
+  const nextJapanMatch =
+    nextJapanMatchAcrossCompetitions &&
+    (!nextJapanMatchInSeason ||
+      nextJapanMatchAcrossCompetitions.kickoffAt <
+        nextJapanMatchInSeason.kickoffAt)
+      ? nextJapanMatchAcrossCompetitions
+      : nextJapanMatchInSeason;
+  const latestReviewMatch =
+    matches
+      .filter(
+        (match) =>
+          match.status === "finished" && contentStatusMap[match.id]?.hasRecap,
+      )
+      .sort((a, b) => b.kickoffAt.localeCompare(a.kickoffAt))[0] ?? null;
+  const nextJapanCompetitionLabel =
+    nextJapanMatchAcrossCompetitions &&
+    nextJapanMatch === nextJapanMatchAcrossCompetitions &&
+    (nextJapanMatchAcrossCompetitions.competition.family !== comp.family ||
+      nextJapanMatchAcrossCompetitions.competition.season !== comp.season)
+      ? formatCompetitionTitle(
+          nextJapanMatchAcrossCompetitions.competition,
+          nextJapanMatchAcrossCompetitions.competition.season,
+        )
+      : null;
   const leaderLabel =
     poolStandings.length > 0
       ? poolStandings
@@ -462,6 +511,8 @@ export default async function SeasonPage({ params }: Props) {
 
         <SeasonSummaryBand
           leaderLabel={leaderLabel}
+          latestReviewMatch={latestReviewMatch}
+          nextJapanCompetitionLabel={nextJapanCompetitionLabel}
           nextJapanMatch={hasJapanInSeason ? nextJapanMatch : null}
           nextMatch={nextMatch}
         />
