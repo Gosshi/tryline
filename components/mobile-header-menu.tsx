@@ -68,7 +68,7 @@ function NotificationQueryOpen({
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (searchParams.get("notifications") === "open") {
+    if (searchParams?.get("notifications") === "open") {
       onOpen(true);
     }
   }, [onOpen, searchParams]);
