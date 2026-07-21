@@ -8,6 +8,7 @@ import {
   buildAllowedPersonEntities,
   buildKnownNonPersonNames,
 } from "@/lib/content/allowed-entities";
+import { getRoundFromExternalIds } from "@/lib/db/queries/matches";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { hasConfirmedProjectedLineups } from "@/lib/llm/lineups";
 import { notifyContentRejected, notifyCostAlert } from "@/lib/llm/notify";
@@ -689,6 +690,25 @@ export async function generateMatchContent(
 
   if (persistedStatus === "published") {
     const urls = [`${SITE_URL}/matches/${matchId}`];
+    const competition = assembled.match.competition;
+
+    if (competition?.family && competition.season) {
+      const competitionUrl = `${SITE_URL}/c/${competition.family}/${competition.season}`;
+      urls.push(competitionUrl);
+
+      const { data: matchRow } = await db
+        .from("matches")
+        .select("external_ids")
+        .eq("id", matchId)
+        .maybeSingle();
+      const round = getRoundFromExternalIds(matchRow?.external_ids ?? null);
+
+      if (round !== null) {
+        urls.push(`${competitionUrl}/round/${round}`);
+      }
+    }
+
+    urls.push(`${SITE_URL}/calendar`);
 
     if (
       contentType === "recap" &&

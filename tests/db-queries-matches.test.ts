@@ -17,6 +17,7 @@ import {
   getMatchById,
   getNextMatchForTeamSlug,
   getNextMatchesForTeams,
+  getRoundFromExternalIds,
   getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedMatches,
   stripMarkdown,
@@ -44,6 +45,17 @@ Bath が前半で主導権を握った
 
   it("collapses triple newlines", () => {
     expect(stripMarkdown("本文\n\n\n\n次段落")).toBe("本文\n\n次段落");
+  });
+});
+
+describe("getRoundFromExternalIds", () => {
+  it.each([
+    [{ round: 3 }, 3],
+    [{ wikipedia_round: "12" }, 12],
+    [null, null],
+    [{ round: "R1" }, null],
+  ])("normalizes %j to %j", (externalIds, expected) => {
+    expect(getRoundFromExternalIds(externalIds)).toBe(expected);
   });
 });
 
