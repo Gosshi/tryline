@@ -14,6 +14,7 @@ export type TeamSummary = {
 export type TeamDetail = {
   country: string;
   name: string;
+  nameJa: string | null;
   shortCode: string | null;
   slug: string;
 };
@@ -35,6 +36,7 @@ type TeamRow = {
   country: string | null;
   id: string;
   name: string;
+  name_ja: string | null;
   short_code: string | null;
   slug: string;
 };
@@ -113,7 +115,7 @@ async function loadTeamRowBySlug(slug: string): Promise<TeamRow | null> {
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("teams")
-    .select("id, slug, name, short_code, country")
+    .select("id, slug, name, name_ja, short_code, country")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -126,12 +128,13 @@ async function loadTeamRowBySlug(slug: string): Promise<TeamRow | null> {
 
 async function loadMatchesByTeamId(params: {
   ascending: boolean;
+  afterIso?: string;
   limit: number;
   status: "finished" | "scheduled";
   teamId: string;
 }): Promise<TeamMatchItem[]> {
   const client = getSupabasePublicServerClient();
-  const { data, error } = await client
+  let query = client
     .from("matches")
     .select(
       `
@@ -160,7 +163,13 @@ async function loadMatchesByTeamId(params: {
       `,
     )
     .eq("status", params.status)
-    .or(`home_team_id.eq.${params.teamId},away_team_id.eq.${params.teamId}`)
+    .or(`home_team_id.eq.${params.teamId},away_team_id.eq.${params.teamId}`);
+
+  if (params.afterIso) {
+    query = query.gte("kickoff_at", params.afterIso);
+  }
+
+  const { data, error } = await query
     .order("kickoff_at", { ascending: params.ascending })
     .limit(params.limit);
 
@@ -202,6 +211,7 @@ export async function getTeamBySlug(slug: string): Promise<TeamDetail | null> {
   return {
     country: row.country ?? "",
     name: row.name,
+    nameJa: row.name_ja,
     shortCode: row.short_code,
     slug: row.slug,
   };
@@ -225,6 +235,7 @@ export async function getTeamUpcomingMatches(
 ): Promise<TeamMatchItem[]> {
   return loadMatchesByTeamId({
     ascending: true,
+    afterIso: new Date().toISOString(),
     limit,
     status: "scheduled",
     teamId,
@@ -252,6 +263,7 @@ export async function getTeamPageDataBySlug(slug: string): Promise<{
     team: {
       country: row.country ?? "",
       name: row.name,
+      nameJa: row.name_ja,
       shortCode: row.short_code,
       slug: row.slug,
     },
