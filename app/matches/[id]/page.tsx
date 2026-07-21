@@ -561,6 +561,23 @@ export default async function MatchDetailPage({
             )}
           </section>
 
+          <NextWatchSection
+            nextMatches={nextMatches}
+            relatedRecaps={relatedRecaps}
+            teams={[
+              {
+                id: match.homeTeamId,
+                name: match.homeTeam.name,
+                slug: match.homeTeam.slug,
+              },
+              {
+                id: match.awayTeamId,
+                name: match.awayTeam.name,
+                slug: match.awayTeam.slug,
+              },
+            ]}
+          />
+
           <MatchLineupsSection
             awayTeamName={match.awayTeam.name}
             homeTeamId={match.homeTeamId}
@@ -580,23 +597,6 @@ export default async function MatchDetailPage({
           />
 
           <PremiumMatchChat matchId={id} />
-
-          <NextWatchSection
-            nextMatches={nextMatches}
-            relatedRecaps={relatedRecaps}
-            teams={[
-              {
-                id: match.homeTeamId,
-                name: match.homeTeam.name,
-                slug: match.homeTeam.slug,
-              },
-              {
-                id: match.awayTeamId,
-                name: match.awayTeam.name,
-                slug: match.awayTeam.slug,
-              },
-            ]}
-          />
         </div>
       </main>
       </UserStateProvider>
