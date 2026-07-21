@@ -2,7 +2,6 @@ import Image from "next/image";
 
 import { TrackedLink } from "@/components/tracked-link";
 import { getCompetitionHeroImage } from "@/lib/competition-hero-images";
-import { FEATURED_COMPETITION } from "@/lib/featured-competition";
 
 export type FeaturedCompetitionStats = {
   nextMatchLabel: string;
@@ -12,13 +11,21 @@ export type FeaturedCompetitionStats = {
 };
 
 type FeaturedCompetitionCardProps = {
+  description: string;
+  family: string;
+  headline: string;
+  season: string;
   stats: FeaturedCompetitionStats;
 };
 
 export function FeaturedCompetitionCard({
+  description,
+  family,
+  headline,
+  season,
   stats,
 }: FeaturedCompetitionCardProps) {
-  const imageSrc = getCompetitionHeroImage(FEATURED_COMPETITION.family);
+  const imageSrc = getCompetitionHeroImage(family);
 
   return (
     <aside className="grid overflow-hidden rounded-[22px] bg-[var(--color-ink)] text-white shadow-sm ring-1 ring-slate-900/10 md:min-h-[236px] md:grid-cols-[minmax(260px,0.82fr)_minmax(0,1.18fr)]">
@@ -38,10 +45,10 @@ export function FeaturedCompetitionCard({
             Featured Competition
           </p>
           <h3 className="mt-2 text-balance font-serif text-2xl font-bold leading-tight sm:text-3xl">
-            {FEATURED_COMPETITION.headline}
+            {headline}
           </h3>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">
-            {FEATURED_COMPETITION.description}
+            {description}
           </p>
         </div>
         <dl className="grid gap-2 sm:grid-cols-[minmax(0,1.35fr)_minmax(82px,0.55fr)_minmax(82px,0.55fr)]">
@@ -73,10 +80,10 @@ export function FeaturedCompetitionCard({
               cta_id: "home_featured_competition",
               cta_location: "home_week_section",
               destination: "competition",
-              label: FEATURED_COMPETITION.headline,
+              label: headline,
             }}
             className="inline-flex rounded-full bg-white px-4 py-2 text-xs font-black text-[var(--color-ink)] transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            href={`/c/${FEATURED_COMPETITION.family}/${FEATURED_COMPETITION.season}`}
+            href={`/c/${family}/${season}`}
           >
             大会ページを見る →
           </TrackedLink>
