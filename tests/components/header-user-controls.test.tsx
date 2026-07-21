@@ -22,6 +22,10 @@ vi.mock("@/components/team-picker", () => ({
   TeamPicker: () => null,
 }));
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 describe("HeaderUserControls", () => {
   it("shows the signed-in user's premium badge and favorite teams after loading", async () => {
     authClientMocks.getClientUserState.mockResolvedValue({
@@ -40,13 +44,14 @@ describe("HeaderUserControls", () => {
     const menuButton = await screen.findByRole("button", { name: /fan/ });
 
     expect(screen.getByText("Premium")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "料金" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "料金" }),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(menuButton);
 
-    expect(screen.getByRole("link", { name: "日本 のページ →" })).toHaveAttribute(
-      "href",
-      "/teams/japan",
-    );
+    expect(
+      screen.getByRole("link", { name: "日本 のページ →" }),
+    ).toHaveAttribute("href", "/teams/japan");
   });
 });

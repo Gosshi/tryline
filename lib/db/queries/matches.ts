@@ -1213,6 +1213,68 @@ export async function getNextMatchForCompetition({
   };
 }
 
+export async function getNextUpcomingMatch(): Promise<UpcomingMatch | null> {
+  const client = getSupabasePublicServerClient();
+  const now = new Date().toISOString();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        id,
+        kickoff_at,
+        status,
+        home_score,
+        away_score,
+        venue,
+        external_ids,
+        home_team:teams!matches_home_team_id_fkey (
+          id,
+          slug,
+          name,
+          short_code,
+          world_ranking
+        ),
+        away_team:teams!matches_away_team_id_fkey (
+          id,
+          slug,
+          name,
+          short_code,
+          world_ranking
+        ),
+        competition:competitions!matches_competition_id_fkey!inner (
+          id,
+          family,
+          slug,
+          name,
+          season
+        )
+      `,
+    )
+    .eq("status", "scheduled")
+    .gte("kickoff_at", now)
+    .order("kickoff_at", { ascending: true })
+    .limit(1);
+
+  if (error) {
+    throw error;
+  }
+
+  const row = (data satisfies UpcomingMatchRow[])[0] ?? null;
+
+  if (!row) {
+    return null;
+  }
+
+  if (!row.competition) {
+    throw new Error("Next upcoming match is missing competition.");
+  }
+
+  return {
+    ...mapMatchRow(row),
+    competition: mapCompetitionRow(row.competition),
+  };
+}
+
 export async function getNextMatchesForTeams({
   afterIso,
   excludeMatchId,

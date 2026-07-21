@@ -11,6 +11,10 @@ vi.mock("@/components/user-menu", () => ({
   UserMenu: () => <div data-testid="user-menu" />,
 }));
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 vi.mock("@/lib/auth/client", () => ({
   getClientUserState: vi.fn().mockResolvedValue({
     favoriteTeamSlugs: [],
@@ -32,11 +36,7 @@ describe("MobileHeaderMenu", () => {
   });
 
   it("opens and closes the mobile drawer", () => {
-    render(
-      <MobileHeaderMenu
-        allTeams={[]}
-      />,
-    );
+    render(<MobileHeaderMenu allTeams={[]} />);
 
     const toggle = screen.getByRole("button", { name: "メニューを開く" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -79,11 +79,7 @@ describe("MobileHeaderMenu", () => {
   });
 
   it("opens the login modal from the drawer", async () => {
-    render(
-      <MobileHeaderMenu
-        allTeams={[]}
-      />,
-    );
+    render(<MobileHeaderMenu allTeams={[]} />);
 
     fireEvent.click(screen.getByRole("button", { name: "メニューを開く" }));
     fireEvent.click(screen.getByRole("button", { name: "ログイン" }));
@@ -94,11 +90,7 @@ describe("MobileHeaderMenu", () => {
   });
 
   it("shows evergreen Japanese competition hub links", () => {
-    render(
-      <MobileHeaderMenu
-        allTeams={[]}
-      />,
-    );
+    render(<MobileHeaderMenu allTeams={[]} />);
 
     fireEvent.click(screen.getByRole("button", { name: "メニューを開く" }));
     fireEvent.click(screen.getByRole("button", { name: "大会" }));

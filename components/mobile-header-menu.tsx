@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
 import { AuthModal } from "@/components/auth-modal";
 import { HEADER_COMPETITIONS } from "@/components/competition-nav-dropdown";
@@ -9,10 +10,7 @@ import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { TrackedLink } from "@/components/tracked-link";
 import { UserMenu } from "@/components/user-menu";
-import {
-  getClientUserState,
-  type ClientUserState,
-} from "@/lib/auth/client";
+import { getClientUserState, type ClientUserState } from "@/lib/auth/client";
 import { getCompetitionFamilyColor } from "@/lib/format/competition";
 
 import type { TeamOption } from "@/components/team-picker";
@@ -62,12 +60,27 @@ function CloseIcon() {
   );
 }
 
+function NotificationQueryOpen({
+  onOpen,
+}: {
+  onOpen: (open: boolean) => void;
+}) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams?.get("notifications") === "open") {
+      onOpen(true);
+    }
+  }, [onOpen, searchParams]);
+
+  return null;
+}
+
 export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
   const [showAuth, setShowAuth] = useState(false);
   const [isCompetitionsOpen, setIsCompetitionsOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [userState, setUserState] =
-    useState<ClientUserState>(SIGNED_OUT_STATE);
+  const [userState, setUserState] = useState<ClientUserState>(SIGNED_OUT_STATE);
 
   useEffect(() => {
     let active = true;
@@ -96,6 +109,9 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
 
   return (
     <>
+      <Suspense fallback={null}>
+        <NotificationQueryOpen onOpen={setIsOpen} />
+      </Suspense>
       {showAuth && (
         <AuthModal
           intent="login"
