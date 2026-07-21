@@ -332,7 +332,7 @@ describe("match sample recap page", () => {
     expect(authServerMocks.getUserProfile).not.toHaveBeenCalled();
   });
 
-  it("renders next matches and related recaps after the chat", async () => {
+  it("renders next matches and related recaps before lineups and chat", async () => {
     matchMocks.getNextMatchesForTeams.mockResolvedValue([
       {
         match: {
@@ -400,6 +400,26 @@ describe("match sample recap page", () => {
     expect(
       screen.getByRole("link", { name: "今週の全試合を見る" }),
     ).toHaveAttribute("href", "/calendar");
+    const nextWatchHeading = screen.getByRole("heading", { name: "次に見る" });
+    const mainContent = nextWatchHeading.closest("main");
+
+    expect(mainContent).toBeInTheDocument();
+    expect(
+      mainContent?.querySelector('[data-testid="match-lineups"]'),
+    ).not.toBeNull();
+    expect(
+      mainContent?.querySelector('[data-testid="premium-match-chat"]'),
+    ).not.toBeNull();
+    expect(
+      nextWatchHeading.compareDocumentPosition(
+        mainContent?.querySelector('[data-testid="match-lineups"]')!,
+      ),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(
+      nextWatchHeading.compareDocumentPosition(
+        mainContent?.querySelector('[data-testid="premium-match-chat"]')!,
+      ),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it("server-renders English sample recaps when English content exists", async () => {
