@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
+import { TrackedLink } from "@/components/tracked-link";
+import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import {
   getHeadToHeadPageData,
   listHeadToHeadPairs,
@@ -94,6 +96,19 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
     notFound();
   }
 
+  const contentStatusMap = await getContentStatusForMatches(
+    data.matches.map((match) => match.id),
+  );
+  const latestFinishedMatch = data.matches.find(
+    (match) => match.status === "finished",
+  );
+  const nextHeadToHeadMatch = data.matches
+    .filter(
+      (match) =>
+        match.status === "scheduled" &&
+        match.kickoffAt >= new Date().toISOString(),
+    )
+    .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt))[0];
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(data);
 
   return (
@@ -163,6 +178,26 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
             </p>
           )}
 
+          {(latestFinishedMatch || nextHeadToHeadMatch) && (
+            <section className="grid gap-3 sm:grid-cols-2">
+              {latestFinishedMatch && (
+                <LatestReviewCta
+                  contentStatus={contentStatusMap[latestFinishedMatch.id]}
+                  match={latestFinishedMatch}
+                  teamA={data.teamA}
+                  teamB={data.teamB}
+                />
+              )}
+              {nextHeadToHeadMatch && (
+                <NextMatchCta
+                  match={nextHeadToHeadMatch}
+                  teamA={data.teamA}
+                  teamB={data.teamB}
+                />
+              )}
+            </section>
+          )}
+
           <section className="space-y-3">
             <h2 className="font-heading text-xl font-bold text-slate-950">
               収録対戦リスト
@@ -214,6 +249,84 @@ function buildBreadcrumbJsonLd(data: HeadToHeadPageData) {
       },
     ],
   };
+}
+
+function LatestReviewCta({
+  contentStatus,
+  match,
+  teamA,
+  teamB,
+}: {
+  contentStatus: { hasRecap: boolean } | undefined;
+  match: HeadToHeadMatch;
+  teamA: HeadToHeadTeam;
+  teamB: HeadToHeadTeam;
+}) {
+  const teamAScore =
+    match.homeTeam.slug === teamA.slug ? match.homeScore : match.awayScore;
+  const teamBScore =
+    match.homeTeam.slug === teamB.slug ? match.homeScore : match.awayScore;
+
+  return (
+    <aside className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm shadow-slate-200/50">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        最新の対戦
+      </p>
+      <p className="mt-2 text-sm font-bold text-slate-950">
+        {teamA.name} {teamAScore ?? 0} - {teamBScore ?? 0} {teamB.name}
+      </p>
+      {contentStatus?.hasRecap && (
+        <TrackedLink
+          analytics={{
+            cta_id: "h2h_latest_review",
+            cta_location: "h2h_page",
+            destination: "match",
+            match_id: match.id,
+          }}
+          className="mt-3 inline-flex text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          href={`/matches/${match.id}`}
+        >
+          最新の対戦のレビューを読む →
+        </TrackedLink>
+      )}
+    </aside>
+  );
+}
+
+function NextMatchCta({
+  match,
+  teamA,
+  teamB,
+}: {
+  match: HeadToHeadMatch;
+  teamA: HeadToHeadTeam;
+  teamB: HeadToHeadTeam;
+}) {
+  return (
+    <aside className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm shadow-slate-200/50">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        次回対戦
+      </p>
+      <p className="mt-2 text-sm font-bold text-slate-950">
+        {teamA.name} 対 {teamB.name}
+      </p>
+      <p className="mt-1 text-sm text-slate-600">
+        {formatKickoffJst(match.kickoffAt)}
+      </p>
+      <TrackedLink
+        analytics={{
+          cta_id: "h2h_next_match",
+          cta_location: "h2h_page",
+          destination: "match",
+          match_id: match.id,
+        }}
+        className="mt-3 inline-flex text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+        href={`/matches/${match.id}`}
+      >
+        次回対戦の詳細を見る →
+      </TrackedLink>
+    </aside>
+  );
 }
 
 function TeamSummary({

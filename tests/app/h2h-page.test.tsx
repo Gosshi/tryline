@@ -2,8 +2,16 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const contentMocks = vi.hoisted(() => ({
+  getContentStatusForMatches: vi.fn(),
+}));
+
+const trackedLinkMocks = vi.hoisted(() => ({
+  calls: [] as Array<{ analytics: { cta_id: string; match_id?: string } }>,
+}));
 
 const matchesMock = vi.hoisted(() => ({
   getHeadToHeadPageData: vi.fn(),
@@ -32,12 +40,30 @@ const navigationMock = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/db/queries/matches", () => matchesMock);
+vi.mock("@/lib/db/queries/match-content", () => contentMocks);
+vi.mock("@/components/tracked-link", () => ({
+  TrackedLink: ({
+    analytics,
+    children,
+    href,
+  }: {
+    analytics: { cta_id: string; match_id?: string };
+    children: ReactNode;
+    href: string;
+  }) => {
+    trackedLinkMocks.calls.push({ analytics });
+
+    return <a href={href}>{children}</a>;
+  },
+}));
 vi.mock("next/navigation", () => navigationMock);
 
 import HeadToHeadPage, {
   generateMetadata,
   generateStaticParams,
 } from "@/app/h2h/[pair]/page";
+
+import type { ReactNode } from "react";
 
 const pageData = {
   canonicalSlug: "leinster-vs-toulouse",
@@ -71,6 +97,15 @@ const pageData = {
 describe("H2H page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-21T00:00:00.000Z"));
+    contentMocks.getContentStatusForMatches.mockResolvedValue({});
+    trackedLinkMocks.calls.length = 0;
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
   });
 
   it("generates static params from real stored pairs", async () => {
@@ -85,6 +120,9 @@ describe("H2H page", () => {
 
   it("renders Tryline-scoped H2H match links", async () => {
     matchesMock.getHeadToHeadPageData.mockResolvedValue(pageData);
+    contentMocks.getContentStatusForMatches.mockResolvedValue({
+      "match-1": { hasPreview: false, hasRecap: true },
+    });
 
     const element = await HeadToHeadPage({
       params: Promise.resolve({ pair: "leinster-vs-toulouse" }),
@@ -106,6 +144,69 @@ describe("H2H page", () => {
       container.textContent?.includes('"@type":"BreadcrumbList"'),
     ).toBe(true);
     expect(container.textContent).not.toContain("勝");
+    expect(
+      screen.getByRole("link", { name: "最新の対戦のレビューを読む →" }),
+    ).toHaveAttribute("href", "/matches/match-1");
+    expect(contentMocks.getContentStatusForMatches).toHaveBeenCalledWith([
+      "match-1",
+    ]);
+    expect(trackedLinkMocks.calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          analytics: expect.objectContaining({
+            cta_id: "h2h_latest_review",
+            match_id: "match-1",
+          }),
+        }),
+      ]),
+    );
+  });
+
+  it("shows the nearest future meeting with a tracked match link", async () => {
+    matchesMock.getHeadToHeadPageData.mockResolvedValue({
+      ...pageData,
+      matches: [
+        {
+          ...pageData.matches[0],
+          id: "next-later-match",
+          kickoffAt: "2026-08-15T13:45:00.000Z",
+          status: "scheduled",
+        },
+        {
+          ...pageData.matches[0],
+          id: "next-match",
+          kickoffAt: "2026-08-08T13:45:00.000Z",
+          status: "scheduled",
+        },
+        pageData.matches[0],
+      ],
+    });
+    contentMocks.getContentStatusForMatches.mockResolvedValue({
+      "match-1": { hasPreview: false, hasRecap: false },
+    });
+
+    const element = await HeadToHeadPage({
+      params: Promise.resolve({ pair: "leinster-vs-toulouse" }),
+    });
+    render(element);
+
+    expect(screen.getByText("次回対戦")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "次回対戦の詳細を見る →" }),
+    ).toHaveAttribute("href", "/matches/next-match");
+    expect(
+      screen.queryByRole("link", { name: "最新の対戦のレビューを読む →" }),
+    ).not.toBeInTheDocument();
+    expect(trackedLinkMocks.calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          analytics: expect.objectContaining({
+            cta_id: "h2h_next_match",
+            match_id: "next-match",
+          }),
+        }),
+      ]),
+    );
   });
 
   it("redirects reverse pair slugs to the canonical URL", async () => {
