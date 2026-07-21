@@ -15,6 +15,10 @@ const contentMocks = vi.hoisted(() => ({
   getContentStatusMap: vi.fn(),
 }));
 
+const broadcastMocks = vi.hoisted(() => ({
+  getMatchBroadcastsForMatches: vi.fn(),
+}));
+
 const playerMocks = vi.hoisted(() => ({
   getPlayersByTeamSlug: vi.fn(),
 }));
@@ -47,6 +51,8 @@ vi.mock("@/lib/db/queries/match-content", () => ({
   getContentStatusMap: contentMocks.getContentStatusMap,
 }));
 
+vi.mock("@/lib/db/queries/match-broadcasts", () => broadcastMocks);
+
 vi.mock("@/lib/db/queries/players", () => ({
   getPlayersByTeamSlug: playerMocks.getPlayersByTeamSlug,
 }));
@@ -65,11 +71,29 @@ describe("TeamPage", () => {
     playerMocks.getPlayersByTeamSlug.mockReset();
     statsMocks.getTeamStatsDataBySlug.mockReset();
     contentMocks.getContentStatusMap.mockReset();
+    broadcastMocks.getMatchBroadcastsForMatches.mockReset();
     authMocks.getUser.mockReset();
     authMocks.getUserProfile.mockReset();
     authMocks.getUser.mockResolvedValue(null);
     authMocks.getUserProfile.mockResolvedValue(null);
     contentMocks.getContentStatusMap.mockResolvedValue(new Map());
+    broadcastMocks.getMatchBroadcastsForMatches.mockResolvedValue(
+      new Map([
+        [
+          "match-2",
+          [
+            {
+              displayOrder: 0,
+              kind: "streaming",
+              serviceName: "J SPORTSオンデマンド",
+              sourceUrl: null,
+              url: "https://example.com/watch",
+              verifiedAt: "2026-07-20T00:00:00.000Z",
+            },
+          ],
+        ],
+      ]),
+    );
     playerMocks.getPlayersByTeamSlug.mockResolvedValue([
       {
         name: "Ben Spencer",
@@ -125,6 +149,7 @@ describe("TeamPage", () => {
       team: {
         country: "ENG",
         name: "Bath",
+        nameJa: "バース",
         shortCode: "BAT",
         slug: "bath",
       },
@@ -172,6 +197,11 @@ describe("TeamPage", () => {
     expect(
       screen.getAllByRole("link", { name: /Bath/ }).length,
     ).toBeGreaterThan(0);
+    expect(screen.getByText("J SPORTSオンデマンド")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /J SPORTSオンデマンド/ })).toHaveAttribute(
+      "target",
+      "_blank",
+    );
   });
 
   it("returns team metadata", async () => {
@@ -181,8 +211,8 @@ describe("TeamPage", () => {
       alternates: {
         canonical: "https://www.trylinerugby.com/teams/bath",
       },
-      description: "Bathの最近の試合と次戦の日程",
-      title: "Bath",
+      description: "バースの次戦・直近の試合結果・日程を掲載。日本語レビューも。",
+      title: "バース 次戦・日程・結果",
     });
   });
 

@@ -7,6 +7,7 @@ import { TeamBadge } from "@/components/team-badge";
 import { TeamPlayersSection } from "@/components/team-players-section";
 import { TeamStatsPanel } from "@/components/team-stats-panel";
 import { getUser, getUserProfile } from "@/lib/auth/server";
+import { getMatchBroadcastsForMatches } from "@/lib/db/queries/match-broadcasts";
 import { getContentStatusMap } from "@/lib/db/queries/match-content";
 import { getPlayersByTeamSlug } from "@/lib/db/queries/players";
 import { getTeamStatsDataBySlug } from "@/lib/db/queries/team-stats";
@@ -56,8 +57,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: `${SITE_URL}/teams/${data.team.slug}`,
     },
-    description: `${data.team.name}の最近の試合と次戦の日程`,
-    title: data.team.name,
+    description: `${data.team.nameJa ?? data.team.name}の次戦・直近の試合結果・日程を掲載。日本語レビューも。`,
+    title: `${data.team.nameJa ?? data.team.name} 次戦・日程・結果`,
   };
 }
 
@@ -75,10 +76,15 @@ export default async function TeamPage({ params }: Props) {
     notFound();
   }
 
-  const allMatches = [...data.recentMatches, ...data.upcomingMatches];
-  const contentStatusMap = await getContentStatusMap(
-    allMatches.map((match) => match.id),
+  const nowIso = new Date().toISOString();
+  const upcomingMatches = data.upcomingMatches.filter(
+    (match) => match.kickoffAt >= nowIso,
   );
+  const allMatches = [...data.recentMatches, ...upcomingMatches];
+  const [contentStatusMap, broadcastsByMatch] = await Promise.all([
+    getContentStatusMap(allMatches.map((match) => match.id)),
+    getMatchBroadcastsForMatches(upcomingMatches.map((match) => match.id)),
+  ]);
   const emptyStatus = { hasPreview: false, hasRecap: false };
   const teamColor = getTeamColor(data.team.slug);
   const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
@@ -168,18 +174,42 @@ export default async function TeamPage({ params }: Props) {
           )}
         </section>
 
-        {data.upcomingMatches.length > 0 && (
+        {upcomingMatches.length > 0 && (
           <section className="space-y-4">
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               次戦
             </h2>
             <div className="grid gap-4 md:grid-cols-2">
-              {data.upcomingMatches.map((match) => (
-                <MatchCard
-                  contentStatus={contentStatusMap.get(match.id) ?? emptyStatus}
-                  key={match.id}
-                  match={toMatchCardItem(match)}
-                />
+              {upcomingMatches.map((match) => (
+                <div className="space-y-2" key={match.id}>
+                  <MatchCard
+                    contentStatus={contentStatusMap.get(match.id) ?? emptyStatus}
+                    match={toMatchCardItem(match)}
+                  />
+                  {(broadcastsByMatch.get(match.id) ?? []).length > 0 && (
+                    <div className="flex flex-wrap gap-2 px-1">
+                      {(broadcastsByMatch.get(match.id) ?? []).map(
+                        (broadcast) => (
+                          <a
+                            className="inline-flex min-h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[var(--color-ink)] transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                            href={broadcast.url}
+                            key={`${broadcast.kind}:${broadcast.serviceName}`}
+                            rel="noopener noreferrer"
+                            target="_blank"
+                          >
+                            <span className="rounded-full bg-[var(--color-accent)]/10 px-2 py-0.5 text-[10px] text-[var(--color-accent)]">
+                              {broadcast.kind === "tv" ? "テレビ" : "配信"}
+                            </span>
+                            <span>{broadcast.serviceName}</span>
+                            <span aria-hidden className="text-[var(--color-accent)]">
+                              ↗
+                            </span>
+                          </a>
+                        ),
+                      )}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </section>
