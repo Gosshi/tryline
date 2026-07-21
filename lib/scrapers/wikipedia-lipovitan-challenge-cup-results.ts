@@ -132,7 +132,9 @@ function parseJapaneseTime(value: string | null) {
 }
 
 function parseVenue(value: string | null) {
-  return value?.match(/\[\[([^|\]]+)/)?.[1] ?? null;
+  const match = value?.match(/\[\[([^|\]]*)(?:\|([^\]]*))?\]\]/);
+
+  return match?.[2] || match?.[1] || null;
 }
 
 function parseScore(value: string | null) {

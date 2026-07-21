@@ -44,7 +44,8 @@ const JAPANESE_HTML = [
     date: "2026年9月5日(土)",
     home: "{{ru-rt|JPN}}",
     score: "",
-    stadium: "[[デンカビッグスワンスタジアム]] ([[新潟県]][[新潟市]])",
+    stadium:
+      "[[新潟スタジアム|デンカビッグスワンスタジアム]] ([[新潟県]][[新潟市]])",
     time: "14:50 [[日本標準時|JST]] ([[UTC+9]])",
   }),
   rugbyboxHtml({
