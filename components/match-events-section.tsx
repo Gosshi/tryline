@@ -211,8 +211,8 @@ export function MatchEventsSection({
                 : `${event.playerName} ${EVENT_TYPE_LABEL[event.type] ?? event.type}`;
               const teamColor = isHome ? homeColor : awayColor;
               const playerSlug = playerLinks[event.id];
-              const eventType =
-                EVENT_TYPE_LABEL[event.type] ?? event.type;
+              const eventType = EVENT_TYPE_LABEL[event.type] ?? event.type;
+
               const eventLabel = event.isPenaltyTry ? (
                 "ペナルティトライ"
               ) : (
