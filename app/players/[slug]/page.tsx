@@ -200,7 +200,6 @@ export default async function PlayerPage({ params }: Props) {
     player.teamId
       ? getNextMatchesForTeams({
           afterIso: new Date().toISOString(),
-          excludeMatchId: "",
           teamIds: [player.teamId],
         })
       : Promise.resolve([]),

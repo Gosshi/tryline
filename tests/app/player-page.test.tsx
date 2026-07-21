@@ -178,10 +178,12 @@ describe("PlayerPage", () => {
     ).not.toBeInTheDocument();
     expect(matchMocks.getNextMatchesForTeams).toHaveBeenCalledWith(
       expect.objectContaining({
-        excludeMatchId: "",
         teamIds: ["team-1"],
       }),
     );
+    expect(
+      matchMocks.getNextMatchesForTeams.mock.calls[0]?.[0],
+    ).not.toHaveProperty("excludeMatchId");
   });
 
   it("shows an unscheduled next-match state and hides an empty teammate list", async () => {

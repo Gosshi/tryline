@@ -1219,7 +1219,7 @@ export async function getNextMatchesForTeams({
   teamIds,
 }: {
   afterIso: string;
-  excludeMatchId: string;
+  excludeMatchId?: string;
   teamIds: string[];
 }): Promise<TeamNextMatch[]> {
   const uniqueTeamIds = [...new Set(teamIds)].filter(Boolean);
@@ -1235,7 +1235,7 @@ export async function getNextMatchesForTeams({
       `away_team_id.eq.${teamId}`,
     ])
     .join(",");
-  const { data, error } = await client
+  let query = client
     .from("matches")
     .select(
       `
@@ -1272,8 +1272,13 @@ export async function getNextMatchesForTeams({
         )
       `,
     )
-    .eq("status", "scheduled")
-    .neq("id", excludeMatchId)
+    .eq("status", "scheduled");
+
+  if (excludeMatchId) {
+    query = query.neq("id", excludeMatchId);
+  }
+
+  const { data, error } = await query
     .gte("kickoff_at", afterIso)
     .or(teamFilters)
     .order("kickoff_at", { ascending: true })
