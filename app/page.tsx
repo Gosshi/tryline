@@ -509,7 +509,11 @@ export default async function HomePage() {
 
                 return (
                   <div
-                    className="space-y-2"
+                    className={
+                      recentReviewGroups.length === 1
+                        ? "space-y-2 xl:col-span-2"
+                        : "space-y-2"
+                    }
                     key={`${group.competition.slug}-${group.latestReviewAt}`}
                   >
                     <div className="flex min-w-0 items-center justify-between gap-3">

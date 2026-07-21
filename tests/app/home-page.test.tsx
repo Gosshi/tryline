@@ -336,6 +336,10 @@ describe("HomePage", () => {
     expect(
       screen.getAllByText("これは無料で読めるレビュー本文です。").length,
     ).toBe(1);
+    expect(
+      container.querySelector('a[href="/matches/recent-review-not-sample"]')
+        ?.parentElement,
+    ).toHaveClass("xl:col-span-2");
     expect(screen.queryByLabelText("今週の注目試合")).not.toBeInTheDocument();
     expect(
       screen.queryByText("home_hero_sample_recap"),
@@ -531,6 +535,29 @@ describe("HomePage", () => {
     expect(
       screen.getByRole("link", { name: /NZL[\s\S]*26–18[\s\S]*FRA/ }),
     ).toHaveAttribute("href", "/matches/nz-france-compact");
+    expect(
+      screen.getByRole("link", { name: /South Africa[\s\S]*England/ })
+        .parentElement,
+    ).not.toHaveClass("xl:col-span-2");
+    expect(
+      screen.getByRole("link", { name: /Hurricanes[\s\S]*Chiefs/ })
+        .parentElement,
+    ).not.toHaveClass("xl:col-span-2");
+  });
+
+  it("keeps the sample review layout stable without recent review groups", async () => {
+    matchMocks.getRecentlyReviewedCompetitionGroups.mockResolvedValue([]);
+
+    const { container } = render(await HomePage());
+
+    expect(
+      container
+        .querySelector(`a[href="/matches/${PRIMARY_SAMPLE_MATCH_ID}"]`)
+        ?.closest(".xl\\:col-span-2"),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector('a[href="/matches/recent-review-not-sample"]'),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the RWC archive card on 2023 while adding the 2027 schedule link", async () => {
