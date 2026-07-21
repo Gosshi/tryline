@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { ScoreGraph } from "@/components/score-graph";
 import { deriveMatchEventHighlights } from "@/lib/format/match-key-moment";
 import { buildScoreTimeline } from "@/lib/format/match-timeline";
@@ -24,6 +26,7 @@ type MatchEventsSectionProps = {
   homeTeamId: string;
   homeTeamName: string;
   homeTeamSlug: string;
+  playerLinks?: Record<string, string>;
   variant?: "highlights" | "timeline";
 };
 
@@ -54,6 +57,7 @@ export function MatchEventsSection({
   homeTeamId,
   homeTeamName,
   homeTeamSlug,
+  playerLinks = {},
   variant = "highlights",
 }: MatchEventsSectionProps) {
   if (events.length === 0) {
@@ -206,6 +210,26 @@ export function MatchEventsSection({
                 ? "ペナルティトライ"
                 : `${event.playerName} ${EVENT_TYPE_LABEL[event.type] ?? event.type}`;
               const teamColor = isHome ? homeColor : awayColor;
+              const playerSlug = playerLinks[event.id];
+              const eventType = EVENT_TYPE_LABEL[event.type] ?? event.type;
+
+              const eventLabel = event.isPenaltyTry ? (
+                "ペナルティトライ"
+              ) : (
+                <>
+                  {playerSlug ? (
+                    <Link
+                      className="font-medium underline-offset-4 transition-colors hover:text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                      href={`/players/${playerSlug}`}
+                    >
+                      {event.playerName}
+                    </Link>
+                  ) : (
+                    event.playerName
+                  )}{" "}
+                  {eventType}
+                </>
+              );
 
               return (
                 <div
@@ -224,7 +248,7 @@ export function MatchEventsSection({
                     }
                     title={isHome ? label : ""}
                   >
-                    {isHome ? label : ""}
+                    {isHome ? eventLabel : ""}
                   </span>
                   <span className="text-center text-xs font-semibold tabular-nums text-[var(--color-ink-muted)]">
                     {event.minute !== null ? `${event.minute}'` : "—"}
@@ -241,7 +265,7 @@ export function MatchEventsSection({
                     }
                     title={!isHome ? label : ""}
                   >
-                    {!isHome ? label : ""}
+                    {!isHome ? eventLabel : ""}
                   </span>
                 </div>
               );

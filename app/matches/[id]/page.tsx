@@ -36,6 +36,7 @@ import {
   formatKickoffJstDate,
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
+import { buildMatchEventPlayerLinks } from "@/lib/format/match-event-player-links";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import {
   extractCoreSection,
@@ -372,6 +373,7 @@ export default async function MatchDetailPage({
     englishContent.preview !== null || englishContent.recap !== null;
   const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
   const hasConfirmedLineups = lineups.length > 0;
+  const eventPlayerLinks = buildMatchEventPlayerLinks(events, lineups);
   const isFreeSampleRecap =
     (await isSampleMatch(id)) && publishedContent.recap !== null;
   const recapSplit = publishedContent.recap
@@ -599,6 +601,7 @@ export default async function MatchDetailPage({
                         homeTeamId={match.homeTeamId}
                         homeTeamName={match.homeTeam.name}
                         homeTeamSlug={match.homeTeam.slug}
+                        playerLinks={eventPlayerLinks}
                         variant="timeline"
                       />
                     </>
@@ -613,6 +616,7 @@ export default async function MatchDetailPage({
                       homeTeamId={match.homeTeamId}
                       homeTeamName={match.homeTeam.name}
                       homeTeamSlug={match.homeTeam.slug}
+                      playerLinks={eventPlayerLinks}
                     />
                   }
                   content={publishedContent.recap}
@@ -640,6 +644,7 @@ export default async function MatchDetailPage({
                         homeTeamId={match.homeTeamId}
                         homeTeamName={match.homeTeam.name}
                         homeTeamSlug={match.homeTeam.slug}
+                        playerLinks={eventPlayerLinks}
                         variant="timeline"
                       />
                     </>
@@ -656,6 +661,7 @@ export default async function MatchDetailPage({
                       homeTeamId={match.homeTeamId}
                       homeTeamName={match.homeTeam.name}
                       homeTeamSlug={match.homeTeam.slug}
+                      playerLinks={eventPlayerLinks}
                     />
                   ) : null
                 }
