@@ -13,6 +13,7 @@ import {
   listFamilies,
   listSeasonsByFamily,
 } from "@/lib/db/queries/competitions";
+import { getMatchBroadcastPresenceForMatches } from "@/lib/db/queries/match-broadcasts";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import {
   getNextMatchForTeamSlug,
@@ -118,6 +119,76 @@ function isJapanMatch(match: MatchListItem): boolean {
 
 function getMatchLabel(match: MatchListItem): string {
   return `${match.homeTeam.name} 対 ${match.awayTeam.name}`;
+}
+
+type CompetitionHubState = "active" | "information" | "post" | "pre";
+
+function getCompetitionHubState(matches: MatchListItem[]): CompetitionHubState {
+  const activeMatches = matches.filter((match) => match.status !== "cancelled");
+
+  if (activeMatches.length === 0) {
+    return "information";
+  }
+
+  if (activeMatches.every((match) => match.status === "scheduled")) {
+    return "pre";
+  }
+
+  if (activeMatches.every((match) => match.status === "finished")) {
+    return "post";
+  }
+
+  return "active";
+}
+
+function getCompetitionHubMetadataCopy({
+  hasBroadcasts,
+  hasRecap,
+  hasStandings,
+  state,
+}: {
+  hasBroadcasts: boolean;
+  hasRecap: boolean;
+  hasStandings: boolean;
+  state: CompetitionHubState;
+}): { description: string; title: string } {
+  switch (state) {
+    case "information":
+      return {
+        description: "大会情報・見どころを掲載。",
+        title: "大会情報・見どころ",
+      };
+    case "pre":
+      return hasBroadcasts
+        ? {
+            description: "日程・放送予定・見どころを掲載。",
+            title: "日程・放送予定・見どころ",
+          }
+        : {
+            description: "日程・見どころを掲載。",
+            title: "日程・見どころ",
+          };
+    case "post":
+      return hasRecap
+        ? {
+            description: "全試合結果と日本語レビューを掲載。",
+            title: "全試合結果・日本語レビュー",
+          }
+        : {
+            description: "全試合結果を掲載。",
+            title: "全試合結果",
+          };
+    case "active":
+      return hasStandings
+        ? {
+            description: "最新結果・次戦・日程・順位を掲載。",
+            title: "最新結果・次戦・日程・順位",
+          }
+        : {
+            description: "最新結果・次戦・日程を掲載。",
+            title: "最新結果・次戦・日程",
+          };
+  }
 }
 
 function selectStandingsExcerpt<
@@ -255,13 +326,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Tryline" };
   }
 
+  const [matches, standings] = await Promise.all([
+    listMatchesForCompetition(comp.slug),
+    getStandingsForCompetition(comp.slug),
+  ]);
+  const matchIds = matches.map((match) => match.id);
+  const [broadcastMatchIds, contentStatusMap] = await Promise.all([
+    getMatchBroadcastPresenceForMatches(matchIds),
+    getContentStatusForMatches(matchIds),
+  ]);
+  const metadataCopy = getCompetitionHubMetadataCopy({
+    hasBroadcasts: broadcastMatchIds.size > 0,
+    hasRecap: Object.values(contentStatusMap).some((status) => status.hasRecap),
+    hasStandings: standings.length > 0,
+    state: getCompetitionHubState(matches),
+  });
   const competitionTitle = formatCompetitionTitle(comp, comp.season);
-  const title = `${competitionTitle} 順位表・日程・結果`;
+  const title = `${competitionTitle} ${metadataCopy.title}`;
   const competitionDescriptionTitle =
     comp.family === "six-nations"
       ? `${competitionTitle}（6カ国対抗）`
       : competitionTitle;
-  const description = `${competitionDescriptionTitle} の順位表・日程・試合結果・日本語レビューと、日本での視聴方法を掲載。`;
+  const description = `${competitionDescriptionTitle} の${metadataCopy.description}`;
 
   return {
     alternates: { canonical: `${SITE_URL}/c/${competition}/${season}` },
