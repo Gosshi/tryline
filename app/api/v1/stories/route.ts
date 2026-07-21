@@ -33,6 +33,7 @@ const DAY_MS = 24 * 60 * 60 * 1_000;
 const JST_OFFSET_MS = 9 * 60 * 60 * 1_000;
 const MATCH_LIMIT = 12;
 const MAX_NEWS_ITEMS_PER_MATCH = 3;
+const MAX_STORY_ITEMS_PER_MATCH = 9;
 const JAPANESE_CHARACTER_PATTERN = /[\p{Script=Hiragana}\p{Script=Katakana}]/u;
 
 function parseDate(value: string): number | null {
@@ -229,6 +230,7 @@ function buildResultItem(match: CalendarMatch): V1StoryItem | null {
 function buildNewsItems(
   match: CalendarMatch,
   facts: StorySourcedFact[],
+  phase: "post" | "pre",
 ): V1StoryItem[] {
   const kickoffAt = new Date(match.kickoffAt).getTime();
   const latestFactByDomain = new Map<string, StorySourcedFact>();
@@ -237,14 +239,16 @@ function buildNewsItems(
     .filter(
       (candidate) =>
         candidate.matchId === match.id &&
-        (candidate.contentType === "preview" ||
-          candidate.contentType === "shared") &&
-        (candidate.confidence === "high" ||
-          candidate.confidence === "medium") &&
+        (phase === "pre"
+          ? candidate.contentType === "preview" ||
+            candidate.contentType === "shared"
+          : candidate.contentType === "recap") &&
+        candidate.confidence === "high" &&
         (JAPANESE_CHARACTER_PATTERN.test(candidate.fact) ||
           (typeof candidate.factJa === "string" &&
             candidate.factJa.trim().length > 0)) &&
-        new Date(candidate.fetchedAt).getTime() < kickoffAt,
+        (phase === "post" ||
+          new Date(candidate.fetchedAt).getTime() < kickoffAt),
     )
     .sort(
       (left, right) =>
@@ -267,7 +271,7 @@ function buildNewsItems(
         left.id.localeCompare(right.id),
     )
     .map((fact) => ({
-      contains_result: false,
+      contains_result: phase === "post",
       destination: {
         type: "match",
         url: `${SITE_URL}/matches/${match.id}`,
@@ -307,7 +311,7 @@ async function buildMatchStories(
     );
   }
 
-  items.push(...buildNewsItems(match, sourcedFacts));
+  items.push(...buildNewsItems(match, sourcedFacts, "pre"));
 
   if (match.status !== "postponed") {
     const result = buildResultItem(match);
@@ -333,6 +337,8 @@ async function buildMatchStories(
         ),
       );
     }
+
+    items.push(...buildNewsItems(match, sourcedFacts, "post"));
   }
 
   if (items.length === 0) {
@@ -340,7 +346,7 @@ async function buildMatchStories(
   }
 
   return {
-    items,
+    items: items.slice(0, MAX_STORY_ITEMS_PER_MATCH),
     match: mapMatch(match),
     updated_at: items
       .map((item) => item.published_at)
