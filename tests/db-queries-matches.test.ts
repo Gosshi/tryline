@@ -15,6 +15,7 @@ vi.mock("@/lib/db/queries/match-broadcasts", () => broadcastsMock);
 
 import {
   getMatchById,
+  getNextMatchForTeamSlug,
   getNextMatchesForTeams,
   getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedMatches,
@@ -74,6 +75,12 @@ const nextMatchesQueryMock = {
   select: vi.fn().mockReturnThis(),
 };
 
+const teamBySlugQueryMock = {
+  eq: vi.fn().mockReturnThis(),
+  maybeSingle: vi.fn(),
+  select: vi.fn().mockReturnThis(),
+};
+
 describe("getNextMatchesForTeams", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -111,6 +118,100 @@ describe("getNextMatchesForTeams", () => {
       "id",
       "00000000-0000-0000-0000-000000000001",
     );
+  });
+});
+
+describe("getNextMatchForTeamSlug", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clientMock.from.mockImplementation((table: string) =>
+      table === "teams" ? teamBySlugQueryMock : nextMatchesQueryMock,
+    );
+    teamBySlugQueryMock.eq.mockReturnThis();
+    teamBySlugQueryMock.select.mockReturnThis();
+    nextMatchesQueryMock.eq.mockReturnThis();
+    nextMatchesQueryMock.gte.mockReturnThis();
+    nextMatchesQueryMock.or.mockReturnThis();
+    nextMatchesQueryMock.order.mockReturnThis();
+    nextMatchesQueryMock.select.mockReturnThis();
+  });
+
+  it("resolves a team slug and returns its nearest match after the supplied time", async () => {
+    teamBySlugQueryMock.maybeSingle.mockResolvedValue({
+      data: {
+        id: "japan-id",
+        name: "Japan",
+        short_code: "JPN",
+        slug: "japan",
+      },
+      error: null,
+    });
+    nextMatchesQueryMock.limit.mockResolvedValue({
+      data: [
+        {
+          away_score: null,
+          away_team: {
+            id: "australia-id",
+            name: "Australia",
+            short_code: "AUS",
+            slug: "australia",
+          },
+          away_team_id: "australia-id",
+          competition: {
+            family: "lipovitan-challenge-cup",
+            id: "lipovitan-2026-id",
+            name: "Lipovitan Challenge Cup",
+            name_ja: null,
+            season: "2026",
+            slug: "lipovitan-challenge-cup-2026",
+          },
+          external_ids: {},
+          home_score: null,
+          home_team: {
+            id: "japan-id",
+            name: "Japan",
+            short_code: "JPN",
+            slug: "japan",
+          },
+          home_team_id: "japan-id",
+          id: "japan-australia",
+          kickoff_at: "2026-08-08T10:00:00.000Z",
+          status: "scheduled",
+          venue: null,
+        },
+      ],
+      error: null,
+    });
+
+    const match = await getNextMatchForTeamSlug(
+      "japan",
+      "2026-07-21T00:00:00.000Z",
+    );
+
+    expect(teamBySlugQueryMock.eq).toHaveBeenCalledWith("slug", "japan");
+    expect(nextMatchesQueryMock.gte).toHaveBeenCalledWith(
+      "kickoff_at",
+      "2026-07-21T00:00:00.000Z",
+    );
+    expect(match).toMatchObject({
+      id: "japan-australia",
+      competition: {
+        family: "lipovitan-challenge-cup",
+        season: "2026",
+      },
+    });
+  });
+
+  it("returns null when the team slug is not found", async () => {
+    teamBySlugQueryMock.maybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    await expect(
+      getNextMatchForTeamSlug("missing", "2026-07-21T00:00:00.000Z"),
+    ).resolves.toBeNull();
+    expect(nextMatchesQueryMock.select).not.toHaveBeenCalled();
   });
 });
 

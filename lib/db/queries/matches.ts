@@ -1380,6 +1380,24 @@ export async function getNextMatchesForTeams({
     .filter((entry): entry is TeamNextMatch => entry !== undefined);
 }
 
+export async function getNextMatchForTeamSlug(
+  teamSlug: string,
+  afterIso: string,
+): Promise<UpcomingMatch | null> {
+  const team = await getHeadToHeadTeamBySlug(teamSlug);
+
+  if (!team) {
+    return null;
+  }
+
+  const [nextMatch] = await getNextMatchesForTeams({
+    afterIso,
+    teamIds: [team.id],
+  });
+
+  return nextMatch?.match ?? null;
+}
+
 export async function getRelatedPublishedRecapsForMatch({
   competitionSlug,
   excludeMatchId,

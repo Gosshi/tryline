@@ -39,6 +39,10 @@ const focusMocks = vi.hoisted(() => ({
   selectCalendarFocusMatchId: vi.fn(),
 }));
 
+const featuredCompetitionMocks = vi.hoisted(() => ({
+  getFeaturedCompetition: vi.fn(),
+}));
+
 const matchMocks = vi.hoisted(() => ({
   getFavoriteTeamMatches: vi.fn(),
   getMatchesInRange: vi.fn(),
@@ -123,6 +127,8 @@ vi.mock("@/lib/db/queries/teams", () => teamMocks);
 vi.mock("@/lib/format/calendar-focus", () => ({
   selectCalendarFocusMatchId: focusMocks.selectCalendarFocusMatchId,
 }));
+
+vi.mock("@/lib/featured-competition", () => featuredCompetitionMocks);
 
 vi.mock("@/lib/db/queries/matches", () => ({
   getFavoriteTeamMatches: matchMocks.getFavoriteTeamMatches,
@@ -249,6 +255,13 @@ describe("HomePage", () => {
     sampleMatchMocks.getPrimarySampleMatchId.mockResolvedValue(
       PRIMARY_SAMPLE_MATCH_ID,
     );
+    featuredCompetitionMocks.getFeaturedCompetition.mockResolvedValue({
+      description:
+        "7月・11月の代表戦を、日程・順位・結果・日本語レビューまでひとつのページで。",
+      family: "nations-championship",
+      headline: "ネーションズチャンピオンシップ 2026 を追う",
+      season: "2026",
+    });
     matchMocks.getRecentlyReviewedFamilies.mockResolvedValue([]);
     matchMocks.getRecentlyReviewedCompetitionGroups.mockResolvedValue([
       {
@@ -485,6 +498,60 @@ describe("HomePage", () => {
     expect(
       screen.queryByText(/GSC|クリック|平均順位|表示回数/),
     ).not.toBeInTheDocument();
+  });
+
+  it("uses the automatically selected competition for the featured card and stats", async () => {
+    featuredCompetitionMocks.getFeaturedCompetition.mockResolvedValue({
+      description:
+        "次戦はJapan 対 Australia（2026-08-08）。日程・結果・日本語レビューまでひとつのページで追えます。",
+      family: "lipovitan-challenge-cup",
+      headline: "リポビタンDチャレンジカップ 2026を追う",
+      season: "2026",
+    });
+    competitionMocks.listFamilies.mockResolvedValue([
+      "lipovitan-challenge-cup",
+    ]);
+    competitionMocks.listSeasonsByFamily.mockResolvedValue([
+      {
+        endDate: "2026-08-08",
+        matchCount: 1,
+        name: "Lipovitan Challenge Cup",
+        publishedContentCount: 0,
+        season: "2026",
+      },
+    ]);
+    competitionMocks.selectLatestSeasonWithMatches.mockImplementation(
+      (seasons) => seasons[0] ?? null,
+    );
+    matchMocks.getMatchesInRange.mockResolvedValue([
+      createCalendarMatch({
+        competition: {
+          family: "lipovitan-challenge-cup",
+          id: "lipovitan-challenge-cup-2026-id",
+          name: "Lipovitan Challenge Cup",
+          season: "2026",
+          slug: "lipovitan-challenge-cup-2026",
+        },
+        id: "japan-australia",
+        kickoffAt: "2026-07-18T10:30:00.000Z",
+      }),
+    ]);
+
+    render(await HomePage());
+
+    expect(featuredCompetitionMocks.getFeaturedCompetition).toHaveBeenCalled();
+    expect(matchMocks.getNextMatchForCompetition).toHaveBeenCalledWith({
+      family: "lipovitan-challenge-cup",
+      season: "2026",
+    });
+    expect(
+      screen.getByRole("link", { name: "大会ページを見る →" }),
+    ).toHaveAttribute("href", "/c/lipovitan-challenge-cup/2026");
+    expect(
+      screen.getByRole("heading", {
+        name: "リポビタンDチャレンジカップ 2026を追う",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("renders the next-match board and alternate hero copy when the current week is empty", async () => {

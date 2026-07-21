@@ -37,7 +37,7 @@ import {
   getStandingsForCompetition,
 } from "@/lib/db/queries/standings";
 import { listAllTeams } from "@/lib/db/queries/teams";
-import { FEATURED_COMPETITION } from "@/lib/featured-competition";
+import { getFeaturedCompetition } from "@/lib/featured-competition";
 import { selectCalendarFocusMatchId } from "@/lib/format/calendar-focus";
 import {
   formatCompetitionTitle,
@@ -83,12 +83,13 @@ function getHomeWeekLabel(weekStartJst: string): string {
   return String(month) + "月第" + Math.ceil((day ?? 1) / 7) + "週";
 }
 
-function isFeaturedCompetitionMatch(match: {
-  competition: { family: string; season: string };
-}) {
+function isFeaturedCompetitionMatch(
+  match: { competition: { family: string; season: string } },
+  featuredCompetition: { family: string; season: string },
+) {
   return (
-    match.competition.family === FEATURED_COMPETITION.family &&
-    match.competition.season === FEATURED_COMPETITION.season
+    match.competition.family === featuredCompetition.family &&
+    match.competition.season === featuredCompetition.season
   );
 }
 
@@ -117,6 +118,7 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const weekRange = getCurrentJstWeekRangeUtc();
   const sampleMatchId = await getPrimarySampleMatchId();
+  const featuredCompetition = await getFeaturedCompetition();
   const [
     families,
     reviewedFamilies,
@@ -134,8 +136,8 @@ export default async function HomePage() {
     getMatchesInRange(weekRange.startUtcIso, weekRange.endUtcIso),
     getUpcomingMatches(5),
     getNextMatchForCompetition({
-      family: FEATURED_COMPETITION.family,
-      season: FEATURED_COMPETITION.season,
+      family: featuredCompetition.family,
+      season: featuredCompetition.season,
     }),
     listAllTeams(),
   ]);
@@ -196,12 +198,12 @@ export default async function HomePage() {
     homepageStandingPositions,
   );
   const featuredCompetitionMatches = homepageWeekMatches.filter(
-    isFeaturedCompetitionMatch,
+    (match) => isFeaturedCompetitionMatch(match, featuredCompetition),
   );
   const featuredCompetitionLink = homepageCompetitionLinks.find(
     (competition) =>
-      competition.family === FEATURED_COMPETITION.family &&
-      competition.season === FEATURED_COMPETITION.season,
+      competition.family === featuredCompetition.family &&
+      competition.season === featuredCompetition.season,
   );
   const featuredCompetitionStats = {
     nextMatchLabel: featuredCompetitionNextMatch
@@ -327,7 +329,13 @@ export default async function HomePage() {
             <h2 className="font-serif text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
               注目大会
             </h2>
-            <FeaturedCompetitionCard stats={featuredCompetitionStats} />
+            <FeaturedCompetitionCard
+              description={featuredCompetition.description}
+              family={featuredCompetition.family}
+              headline={featuredCompetition.headline}
+              season={featuredCompetition.season}
+              stats={featuredCompetitionStats}
+            />
           </section>
 
           {homepageUpcomingMatches.length > 0 && (
