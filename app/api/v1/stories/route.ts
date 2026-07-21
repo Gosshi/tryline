@@ -243,7 +243,9 @@ function buildNewsItems(
           ? candidate.contentType === "preview" ||
             candidate.contentType === "shared"
           : candidate.contentType === "recap") &&
-        candidate.confidence === "high" &&
+        (phase === "pre"
+          ? candidate.confidence === "high" || candidate.confidence === "medium"
+          : candidate.confidence === "high") &&
         (JAPANESE_CHARACTER_PATTERN.test(candidate.fact) ||
           (typeof candidate.factJa === "string" &&
             candidate.factJa.trim().length > 0)) &&

@@ -293,15 +293,15 @@ describe("GET /api/v1/stories", () => {
     expect(JSON.stringify(items)).not.toContain("同じ出典の古い");
   });
 
-  it("uses fact_ja for eligible high-confidence English news while excluding lower confidence", async () => {
+  it("uses fact_ja for eligible medium-confidence English news while excluding low confidence", async () => {
     sourcedFactsMock.getStorySourcedFactsForMatches.mockResolvedValue([
       {
-        confidence: "high",
+        confidence: "medium",
         contentType: "preview",
         fact: "England have named a changed front row for Saturday's match.",
         factJa: "イングランドは土曜日の試合に向け、フロントローを変更した布陣を発表した。",
         fetchedAt: "2026-07-18T09:30:00.000Z",
-        id: "high-translated",
+        id: "medium-translated",
         matchId: "match-1",
         sourceDomain: "englandrugby.com",
         sourceUrl: "https://www.englandrugby.com/news/front-row",
@@ -327,7 +327,7 @@ describe("GET /api/v1/stories", () => {
 
     expect(newsItems).toHaveLength(1);
     expect(newsItems[0]).toMatchObject({
-      id: "match-1:news:high-translated",
+      id: "match-1:news:medium-translated",
       source_url: "https://www.englandrugby.com/news/front-row",
       summary: "イングランドは土曜日の試合に向け、フロントローを変更した布陣を発表した。",
     });
