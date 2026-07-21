@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const matchContentMocks = vi.hoisted(() => ({
@@ -21,13 +21,13 @@ const standingsMocks = vi.hoisted(() => ({
   getStandingsForCompetition: vi.fn(),
 }));
 
-const authMocks = vi.hoisted(() => ({
+const authServerMocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   getUserProfile: vi.fn(),
 }));
 
-const spoilerGuardMocks = vi.hoisted(() => ({
-  getSpoilerGuardEnabledForUser: vi.fn(),
+const authClientMocks = vi.hoisted(() => ({
+  getClientUserState: vi.fn(),
 }));
 
 const sourcedFactMocks = vi.hoisted(() => ({
@@ -92,7 +92,12 @@ vi.mock("@/components/match-events-section", () => ({
 }));
 
 vi.mock("@/components/match-header", () => ({
-  MatchHeader: () => <div data-testid="match-header" />,
+  MatchHeader: ({ spoilerGuardEnabled }: { spoilerGuardEnabled?: boolean }) => (
+    <div
+      data-spoiler-guard-enabled={String(spoilerGuardEnabled ?? false)}
+      data-testid="match-header"
+    />
+  ),
 }));
 
 vi.mock("@/components/match-lineups-section", () => ({
@@ -105,21 +110,19 @@ vi.mock("@/components/premium-match-chat", () => ({
 
 vi.mock("@/components/premium-recap-section", () => premiumRecapMocks);
 
-vi.mock("@/lib/auth/server", () => authMocks);
+vi.mock("@/lib/auth/client", () => authClientMocks);
+vi.mock("@/lib/auth/server", () => authServerMocks);
 vi.mock("@/lib/db/queries/match-content", () => matchContentMocks);
 vi.mock("@/lib/db/queries/match-events", () => matchEventMocks);
 vi.mock("@/lib/db/queries/match-lineups", () => matchLineupMocks);
 vi.mock("@/lib/db/queries/matches", () => matchMocks);
-vi.mock("@/lib/db/queries/spoiler-guard", () => spoilerGuardMocks);
 vi.mock("@/lib/db/queries/sourced-facts", () => sourcedFactMocks);
 vi.mock("@/lib/db/queries/standings", () => standingsMocks);
 vi.mock("@/lib/sample-matches", () => sampleMatchMocks);
 vi.mock("next/navigation", () => navigationMocks);
 
 import MatchEnglishPage from "@/app/matches/[id]/en/page";
-import MatchDetailPage, {
-  generateMetadata,
-} from "@/app/matches/[id]/page";
+import MatchDetailPage, { generateMetadata } from "@/app/matches/[id]/page";
 
 import type { PublishedMatchContentBundle } from "@/lib/db/queries/match-content";
 import type {
@@ -214,9 +217,12 @@ function setCommonMocks(params: {
   matchMocks.getNextMatchesForTeams.mockResolvedValue([]);
   matchMocks.getRelatedPublishedRecapsForMatch.mockResolvedValue([]);
   matchMocks.getPoolTeamsForMatch.mockResolvedValue([]);
-  authMocks.getUser.mockResolvedValue(null);
-  authMocks.getUserProfile.mockResolvedValue(null);
-  spoilerGuardMocks.getSpoilerGuardEnabledForUser.mockResolvedValue(false);
+  authClientMocks.getClientUserState.mockResolvedValue({
+    favoriteTeamSlugs: [],
+    isPremium: false,
+    spoilerGuardEnabled: false,
+    user: null,
+  });
   sampleMatchMocks.isSampleMatch.mockImplementation(
     async (matchId: string) => matchId === sampleMatchId,
   );
@@ -283,7 +289,9 @@ describe("match sample recap page", () => {
     expect(screen.getByTestId("premium-recap-content")).not.toHaveTextContent(
       "サンプル全文だけに含まれる終盤分析。",
     );
-    expect(screen.getByRole("heading", { name: "次に見る" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "次に見る" }),
+    ).toBeInTheDocument();
     expect(
       screen.getAllByRole("link", { name: "このチームを追う" }),
     ).toHaveLength(2);
@@ -293,10 +301,12 @@ describe("match sample recap page", () => {
     expect(previewDetails).toHaveTextContent("プレビュー本文");
   });
 
-  it("renders favorite follow buttons for signed-in users", async () => {
-    authMocks.getUser.mockResolvedValue({ id: "user-1" });
-    authMocks.getUserProfile.mockResolvedValue({
-      favorite_team_slugs: ["sample-away"],
+  it("uses client user state for spoiler guard and favorite team controls", async () => {
+    authClientMocks.getClientUserState.mockResolvedValue({
+      favoriteTeamSlugs: ["sample-away"],
+      isPremium: false,
+      spoilerGuardEnabled: true,
+      user: { id: "user-1" },
     });
 
     const element = await MatchDetailPage({
@@ -305,11 +315,21 @@ describe("match sample recap page", () => {
 
     render(element);
 
-    expect(screen.getAllByRole("button", { name: "サンプルホームを追う" })).toHaveLength(2);
-    expect(screen.getAllByRole("button", { name: "応援中" })).toHaveLength(2);
-    expect(
-      screen.queryByRole("link", { name: "このチームを追う" }),
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("match-header")).toHaveAttribute(
+        "data-spoiler-guard-enabled",
+        "true",
+      );
+      expect(
+        screen.getAllByRole("button", { name: "サンプルホームを追う" }),
+      ).toHaveLength(2);
+      expect(screen.getAllByRole("button", { name: "応援中" })).toHaveLength(2);
+      expect(
+        screen.queryByRole("link", { name: "このチームを追う" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(authServerMocks.getUser).not.toHaveBeenCalled();
+    expect(authServerMocks.getUserProfile).not.toHaveBeenCalled();
   });
 
   it("renders next matches and related recaps after the chat", async () => {

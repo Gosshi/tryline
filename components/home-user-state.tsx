@@ -1,15 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
-import { getClientUserState, type ClientUserState } from "@/lib/auth/client";
+import { useUserState } from "@/components/user-state-provider";
 
 import { FavoriteTeamsBanner } from "./favorite-teams-banner";
 import { MatchCard } from "./match-card";
@@ -19,44 +13,6 @@ import { TrackedLink } from "./tracked-link";
 import type { TeamOption } from "./team-picker";
 import type { FavoriteTeamMatch } from "@/lib/db/queries/matches";
 
-const HomeUserStateContext = createContext<ClientUserState | null>(null);
-
-type HomepageUserStateProviderProps = {
-  children: ReactNode;
-};
-
-export function HomepageUserStateProvider({
-  children,
-}: HomepageUserStateProviderProps) {
-  const [userState, setUserState] = useState<ClientUserState | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    void getClientUserState()
-      .then((state) => {
-        if (active) {
-          setUserState(state);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setUserState(null);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return (
-    <HomeUserStateContext.Provider value={userState}>
-      {children}
-    </HomeUserStateContext.Provider>
-  );
-}
-
 type HomepageFavoriteTeamsProps = {
   allTeams: TeamOption[];
 };
@@ -64,7 +20,7 @@ type HomepageFavoriteTeamsProps = {
 export function HomepageFavoriteTeams({
   allTeams,
 }: HomepageFavoriteTeamsProps) {
-  const userState = useContext(HomeUserStateContext);
+  const userState = useUserState();
   const [matches, setMatches] = useState<FavoriteTeamMatch[]>([]);
 
   useEffect(() => {
@@ -111,9 +67,7 @@ export function HomepageFavoriteTeams({
   }
 
   if (userState.favoriteTeamSlugs.length === 0) {
-    return (
-      <FavoriteTeamsBanner allTeams={allTeams} favoriteTeamSlugs={[]} />
-    );
+    return <FavoriteTeamsBanner allTeams={allTeams} favoriteTeamSlugs={[]} />;
   }
 
   if (matches.length === 0) {
@@ -158,7 +112,7 @@ export function HomepageFavoriteTeams({
 }
 
 export function HomepagePremiumCta() {
-  const userState = useContext(HomeUserStateContext);
+  const userState = useUserState();
 
   if (userState?.isPremium) {
     return null;
@@ -189,7 +143,7 @@ export function HomepageSpoilerScore({
   children,
   className,
 }: HomepageSpoilerScoreProps) {
-  const userState = useContext(HomeUserStateContext);
+  const userState = useUserState();
 
   return (
     <SpoilerScore

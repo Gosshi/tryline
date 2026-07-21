@@ -10,12 +10,12 @@ import {
   HomepageFavoriteTeams,
   HomepagePremiumCta,
   HomepageSpoilerScore,
-  HomepageUserStateProvider,
 } from "@/components/home-user-state";
 import { SignupSuccessTracker } from "@/components/signup-success-tracker";
 import { StandingsTable } from "@/components/standings-table";
 import { TeamBadge } from "@/components/team-badge";
 import { TrackedLink } from "@/components/tracked-link";
+import { UserStateProvider } from "@/components/user-state-provider";
 import { getCompetitionHeroImage } from "@/lib/competition-hero-images";
 import {
   listFamilies,
@@ -238,7 +238,7 @@ export default async function HomePage() {
 
   return (
     <main className="bg-paper min-h-screen">
-      <HomepageUserStateProvider>
+      <UserStateProvider>
       <script
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         type="application/ld+json"
@@ -831,7 +831,7 @@ export default async function HomePage() {
           )}
         </section>
       </div>
-      </HomepageUserStateProvider>
+      </UserStateProvider>
     </main>
   );
 }

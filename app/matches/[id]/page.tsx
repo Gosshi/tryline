@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { FavoriteTeamFollowButton } from "@/components/favorite-team-follow-button";
 import { LangToggle } from "@/components/lang-toggle";
 import { MatchContentSection } from "@/components/match-content-section";
 import { MatchContentTrustStrip } from "@/components/match-content-trust-strip";
+import {
+  MatchDetailHeader,
+  MatchFavoriteTeamControls,
+  NextWatchSection,
+} from "@/components/match-detail-user-state";
 import { MatchEventsSection } from "@/components/match-events-section";
-import { MatchHeader } from "@/components/match-header";
 import { MatchLineupsSection } from "@/components/match-lineups-section";
 import { PremiumMatchChat } from "@/components/premium-match-chat";
 import { PremiumRecapSection } from "@/components/premium-recap-section";
 import { SampleRecapCta } from "@/components/sample-recap-cta";
 import { StandingsTable } from "@/components/standings-table";
-import { getUser, getUserProfile } from "@/lib/auth/server";
+import { UserStateProvider } from "@/components/user-state-provider";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
@@ -25,17 +28,10 @@ import {
   getRelatedPublishedRecapsForMatch,
   listMatchIdsWithContent,
   normalizeHeadToHeadSlug,
-  type RecentlyReviewedMatch,
-  type TeamNextMatch,
 } from "@/lib/db/queries/matches";
 import { getSourcedFactCountsForMatch } from "@/lib/db/queries/sourced-facts";
-import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { getStandingsForCompetition } from "@/lib/db/queries/standings";
 import { formatCompetitionTitle } from "@/lib/format/competition";
-import {
-  formatKickoffJstDate,
-  formatKickoffJstTime,
-} from "@/lib/format/kickoff";
 import { buildMatchEventPlayerLinks } from "@/lib/format/match-event-player-links";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import {
@@ -77,131 +73,6 @@ function toEventStatus(status: MatchStatus): string {
     default:
       return "https://schema.org/EventScheduled";
   }
-}
-
-function NextWatchSection({
-  favoriteTeamSlugs,
-  isSignedIn,
-  nextMatches,
-  relatedRecaps,
-  teams,
-}: {
-  favoriteTeamSlugs: string[];
-  isSignedIn: boolean;
-  nextMatches: TeamNextMatch[];
-  relatedRecaps: RecentlyReviewedMatch[];
-  teams: Array<{ id: string; name: string; slug: string }>;
-}) {
-  const nextMatchByTeam = new Map(
-    nextMatches.map((entry) => [entry.teamId, entry.match]),
-  );
-
-  return (
-    <section className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
-      <div className="mb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Next
-        </p>
-        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
-          次に見る
-        </h2>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {teams.map((team) => {
-          const nextMatch = nextMatchByTeam.get(team.id) ?? null;
-
-          return (
-            <article
-              className="rounded-xl border border-slate-200 bg-slate-50 p-4"
-              key={team.id}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold text-[var(--color-ink-muted)]">
-                    {team.name} の次戦
-                  </p>
-                  {nextMatch ? (
-                    <Link
-                      className="mt-1 block text-sm font-bold text-[var(--color-ink)] transition-colors hover:text-[var(--color-accent)]"
-                      href={`/matches/${nextMatch.id}`}
-                    >
-                      {nextMatch.homeTeam.name} 対 {nextMatch.awayTeam.name}
-                    </Link>
-                  ) : (
-                    <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
-                      次戦は未定です
-                    </p>
-                  )}
-                </div>
-                {nextMatch && (
-                  <time
-                    className="shrink-0 text-right text-xs tabular-nums text-[var(--color-ink-muted)]"
-                    dateTime={nextMatch.kickoffAt}
-                  >
-                    <span className="block font-semibold text-[var(--color-accent)]">
-                      {formatKickoffJstDate(nextMatch.kickoffAt)}
-                    </span>
-                    {formatKickoffJstTime(nextMatch.kickoffAt)}
-                  </time>
-                )}
-              </div>
-              <div className="mt-3">
-                {isSignedIn ? (
-                  <FavoriteTeamFollowButton
-                    className="min-h-9 px-3 py-1.5"
-                    initialFavoriteTeamSlugs={favoriteTeamSlugs}
-                    source="match_detail_next_watch"
-                    teamName={team.name}
-                    teamSlug={team.slug}
-                  />
-                ) : (
-                  <Link
-                    className="inline-flex min-h-9 items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[var(--color-ink)] transition-colors hover:border-slate-300 hover:text-[var(--color-accent)]"
-                    href={`/teams/${team.slug}`}
-                  >
-                    このチームを追う
-                  </Link>
-                )}
-              </div>
-            </article>
-          );
-        })}
-      </div>
-
-      {relatedRecaps.length > 0 && (
-        <div className="mt-5 border-t border-slate-100 pt-4">
-          <h3 className="text-sm font-bold text-[var(--color-ink)]">
-            同じ大会のレビュー
-          </h3>
-          <ul className="mt-3 space-y-2">
-            {relatedRecaps.map((recap) => (
-              <li key={recap.id}>
-                <Link
-                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2 text-sm transition-colors hover:border-slate-200 hover:bg-slate-50"
-                  href={`/matches/${recap.id}`}
-                >
-                  <span className="min-w-0 truncate font-semibold text-[var(--color-ink)]">
-                    {recap.homeTeam.name} 対 {recap.awayTeam.name}
-                  </span>
-                  <span className="shrink-0 text-xs font-medium text-[var(--color-accent)]">
-                    読む →
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <Link
-        className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 sm:w-auto"
-        href="/calendar"
-      >
-        今週の全試合を見る
-      </Link>
-    </section>
-  );
 }
 
 function shouldNoIndexThinFutureMatch({
@@ -307,23 +178,13 @@ export default async function MatchDetailPage({
   params,
 }: MatchDetailPageProps) {
   const { id } = await params;
-  const user = await getUser();
-  const [
-    match,
-    publishedContent,
-    events,
-    lineups,
-    sourcedFactCounts,
-    spoilerGuardEnabled,
-    profile,
-  ] = await Promise.all([
+  const [match, publishedContent, events, lineups, sourcedFactCounts] =
+    await Promise.all([
       getMatchById(id),
       getPublishedContentForMatch(id),
       getMatchEventsForMatch(id),
       getMatchLineupsForMatch(id),
       getSourcedFactCountsForMatch(id),
-      getSpoilerGuardEnabledForUser(user?.id),
-      user ? getUserProfile(user.id) : null,
     ]);
 
   if (!match) {
@@ -371,7 +232,6 @@ export default async function MatchDetailPage({
       : null;
   const hasEnglishContent =
     englishContent.preview !== null || englishContent.recap !== null;
-  const favoriteTeamSlugs = profile?.favorite_team_slugs ?? [];
   const hasConfirmedLineups = lineups.length > 0;
   const eventPlayerLinks = buildMatchEventPlayerLinks(events, lineups);
   const isFreeSampleRecap =
@@ -483,6 +343,7 @@ export default async function MatchDetailPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         type="application/ld+json"
       />
+      <UserStateProvider>
       <main className="min-h-screen bg-paper">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 overflow-hidden px-3 py-6 sm:px-6 sm:py-8 md:px-8">
           <nav aria-label="パンくずリスト">
@@ -511,28 +372,27 @@ export default async function MatchDetailPage({
             </ol>
           </nav>
 
-          <MatchHeader
+          <MatchDetailHeader
             headToHeadHref={headToHeadHref}
             match={match}
-            spoilerGuardEnabled={spoilerGuardEnabled}
           />
 
-          {user && (
-            <div className="flex flex-wrap gap-2">
-              <FavoriteTeamFollowButton
-                initialFavoriteTeamSlugs={favoriteTeamSlugs}
-                source="match_detail_home_team"
-                teamName={match.homeTeam.name}
-                teamSlug={match.homeTeam.slug}
-              />
-              <FavoriteTeamFollowButton
-                initialFavoriteTeamSlugs={favoriteTeamSlugs}
-                source="match_detail_away_team"
-                teamName={match.awayTeam.name}
-                teamSlug={match.awayTeam.slug}
-              />
-            </div>
-          )}
+          <MatchFavoriteTeamControls
+            teams={[
+              {
+                id: match.homeTeamId,
+                name: match.homeTeam.name,
+                slug: match.homeTeam.slug,
+                source: "match_detail_home_team",
+              },
+              {
+                id: match.awayTeamId,
+                name: match.awayTeam.name,
+                slug: match.awayTeam.slug,
+                source: "match_detail_away_team",
+              },
+            ]}
+          />
 
           {hasEnglishContent && (
             <div className="flex items-center justify-end">
@@ -722,8 +582,6 @@ export default async function MatchDetailPage({
           <PremiumMatchChat matchId={id} />
 
           <NextWatchSection
-            favoriteTeamSlugs={favoriteTeamSlugs}
-            isSignedIn={Boolean(user)}
             nextMatches={nextMatches}
             relatedRecaps={relatedRecaps}
             teams={[
@@ -741,6 +599,7 @@ export default async function MatchDetailPage({
           />
         </div>
       </main>
+      </UserStateProvider>
     </>
   );
 }
