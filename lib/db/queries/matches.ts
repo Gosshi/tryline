@@ -488,7 +488,7 @@ function isMatchStatus(value: string): value is MatchStatus {
   ].includes(value);
 }
 
-function getRoundFromExternalIds(externalIds: Json): number | null {
+export function getRoundFromExternalIds(externalIds: Json): number | null {
   if (
     !externalIds ||
     typeof externalIds !== "object" ||

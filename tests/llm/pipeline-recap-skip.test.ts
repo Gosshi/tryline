@@ -332,6 +332,10 @@ describe("generateMatchContent recap event guard", () => {
   });
 
   it("submits published league-one recap urls to IndexNow after persistence", async () => {
+    dbMock.maybeSingle.mockResolvedValue({
+      data: { external_ids: { wikipedia_round: "3" } },
+      error: null,
+    });
     assembleMock.assembleMatchContentInput.mockResolvedValue({
       ...assembledWithoutEvents,
       match: {
@@ -385,6 +389,9 @@ describe("generateMatchContent recap event guard", () => {
     expect(dbMock.upsert).toHaveBeenCalled();
     expect(indexNowMock.submitUrlsToIndexNow).toHaveBeenCalledWith([
       "https://www.trylinerugby.com/matches/match-2",
+      "https://www.trylinerugby.com/c/league-one/2025-26",
+      "https://www.trylinerugby.com/c/league-one/2025-26/round/3",
+      "https://www.trylinerugby.com/calendar",
       "https://www.trylinerugby.com/matches/match-2/en",
     ]);
   });
