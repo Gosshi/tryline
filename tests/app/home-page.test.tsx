@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HomePage from "@/app/page";
@@ -28,6 +28,7 @@ const competitionMocks = vi.hoisted(() => ({
 
 const standingMocks = vi.hoisted(() => ({
   getStandingPositionLookupForCompetitions: vi.fn(),
+  getStandingsForCompetition: vi.fn(),
 }));
 
 const teamMocks = vi.hoisted(() => ({
@@ -113,6 +114,7 @@ vi.mock("@/lib/db/queries/competitions", () => ({
 vi.mock("@/lib/db/queries/standings", () => ({
   getStandingPositionLookupForCompetitions:
     standingMocks.getStandingPositionLookupForCompetitions,
+  getStandingsForCompetition: standingMocks.getStandingsForCompetition,
 }));
 
 vi.mock("@/lib/db/queries/teams", () => teamMocks);
@@ -177,6 +179,28 @@ function createCalendarMatch(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function createStanding(
+  position: number,
+  teamName: string,
+  teamShortCode: string,
+) {
+  return {
+    bonusPointsLosing: 0,
+    bonusPointsTry: 0,
+    drawn: 0,
+    lost: position === 1 ? 0 : 1,
+    played: 5,
+    pointsAgainst: 80,
+    pointsFor: 100,
+    position,
+    teamName,
+    teamShortCode,
+    totalPoints: 20 - position,
+    triesFor: 12,
+    won: position === 1 ? 5 : 4,
+  };
+}
+
 describe("HomePage", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -200,11 +224,12 @@ describe("HomePage", () => {
       async (families: string[]) =>
         new Map(
           await Promise.all(
-            families.map(async (family) =>
-              [
-                family,
-                await competitionMocks.listSeasonsByFamily(family),
-              ] as const,
+            families.map(
+              async (family) =>
+                [
+                  family,
+                  await competitionMocks.listSeasonsByFamily(family),
+                ] as const,
             ),
           ),
         ),
@@ -216,6 +241,7 @@ describe("HomePage", () => {
     standingMocks.getStandingPositionLookupForCompetitions.mockResolvedValue(
       new Map(),
     );
+    standingMocks.getStandingsForCompetition.mockResolvedValue([]);
     teamMocks.listAllTeams.mockResolvedValue([]);
     focusMocks.selectCalendarFocusMatchId.mockReturnValue(null);
     sampleMatchMocks.getPrimarySampleMatchId.mockResolvedValue(
@@ -337,8 +363,9 @@ describe("HomePage", () => {
       screen.getAllByText("これは無料で読めるレビュー本文です。").length,
     ).toBe(1);
     expect(
-      container.querySelector('a[href="/matches/recent-review-not-sample"]')
-        ?.parentElement,
+      container
+        .querySelector('a[href="/matches/recent-review-not-sample"]')
+        ?.closest(".xl\\:col-span-2"),
     ).toHaveClass("xl:col-span-2");
     expect(screen.queryByLabelText("今週の注目試合")).not.toBeInTheDocument();
     expect(
@@ -407,7 +434,9 @@ describe("HomePage", () => {
     expect(focusMocks.selectCalendarFocusMatchId).toHaveBeenCalled();
     expect(screen.getByLabelText("今週の注目試合")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Japan[\s\S]*Ireland/ }),
+      within(screen.getByLabelText("今週の注目試合")).getByRole("link", {
+        name: /Japan[\s\S]*Ireland/,
+      }),
     ).toHaveAttribute("href", "/matches/japan-match");
     expect(
       screen.queryByRole("heading", { name: "今週の試合" }),
@@ -421,19 +450,34 @@ describe("HomePage", () => {
       "/calendar",
     );
     expect(
-      screen.getByRole("link", { name: "大会ページを見る →" }),
-    ).toHaveAttribute("href", "/c/nations-championship/2026");
+      document.querySelector('a[href="/c/nations-championship/2026"]'),
+    ).toHaveTextContent("大会ページを見る →");
     expect(matchMocks.getNextMatchForCompetition).toHaveBeenCalledWith({
       family: "nations-championship",
       season: "2026",
     });
+    const featuredCompetition = screen
+      .getByText("ネーションズチャンピオンシップ 2026 を追う")
+      .closest("aside");
+
+    expect(featuredCompetition).toBeInTheDocument();
+    if (!featuredCompetition) {
+      throw new Error("Featured competition card was not rendered");
+    }
+
     expect(
-      screen.getByText("ネーションズチャンピオンシップ 2026 を追う"),
+      within(featuredCompetition).getByText(
+        "ネーションズチャンピオンシップ 2026 を追う",
+      ),
     ).toBeInTheDocument();
-    expect(screen.getByText("2026-07-18 (土) 19:30 JST")).toBeInTheDocument();
-    expect(screen.getByText("Japan 対 Ireland")).toBeInTheDocument();
-    expect(screen.getByText("12本")).toBeInTheDocument();
-    expect(screen.getByText("1試合")).toBeInTheDocument();
+    expect(
+      within(featuredCompetition).getByText("2026-07-18 (土) 19:30 JST"),
+    ).toBeInTheDocument();
+    expect(
+      within(featuredCompetition).getByText("Japan 対 Ireland"),
+    ).toBeInTheDocument();
+    expect(within(featuredCompetition).getByText("12本")).toBeInTheDocument();
+    expect(within(featuredCompetition).getByText("1試合")).toBeInTheDocument();
     expect(
       screen.queryByText(/GSC|クリック|平均順位|表示回数/),
     ).not.toBeInTheDocument();
@@ -543,6 +587,121 @@ describe("HomePage", () => {
       screen.getByRole("link", { name: /Hurricanes[\s\S]*Chiefs/ })
         .parentElement,
     ).not.toHaveClass("xl:col-span-2");
+    expect(standingMocks.getStandingsForCompetition).not.toHaveBeenCalled();
+    expect(matchMocks.getNextMatchForCompetition).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a competition status pane with highlighted standings and the next match for one review group", async () => {
+    standingMocks.getStandingsForCompetition.mockResolvedValue([
+      createStanding(1, "Recent Home", "RH"),
+      createStanding(2, "Table Team 2", "TT2"),
+      createStanding(3, "Table Team 3", "TT3"),
+      createStanding(4, "Table Team 4", "TT4"),
+      createStanding(5, "Table Team 5", "TT5"),
+      createStanding(6, "Recent Away", "RA"),
+    ]);
+    matchMocks.getNextMatchForCompetition.mockImplementation(
+      ({ family }: { family: string }) =>
+        Promise.resolve(
+          family === "urc"
+            ? createCalendarMatch({
+                awayTeam: {
+                  name: "Next Away",
+                  shortCode: "NAW",
+                  slug: "next-away",
+                },
+                homeTeam: {
+                  name: "Next Home",
+                  shortCode: "NHO",
+                  slug: "next-home",
+                },
+                id: "urc-next-match",
+              })
+            : null,
+        ),
+    );
+
+    render(await HomePage());
+
+    const statusHeading = screen.getByRole("heading", {
+      name: "大会の現在地",
+    });
+    const statusPane = statusHeading.closest("aside");
+
+    expect(statusPane).toBeInTheDocument();
+    if (!statusPane) {
+      throw new Error("Competition status pane was not rendered");
+    }
+
+    expect(statusPane?.parentElement).toHaveClass(
+      "lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]",
+    );
+    expect(
+      within(statusPane).getByRole("heading", { name: "現在の順位" }),
+    ).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByText("Recent Home")
+        .find((element) => element.closest("tr"))
+        ?.closest("tr"),
+    ).toHaveClass("bg-[var(--color-accent-subtle)]");
+    expect(
+      screen
+        .getAllByText("Recent Away")
+        .find((element) => element.closest("tr"))
+        ?.closest("tr"),
+    ).toHaveClass("bg-[var(--color-accent-subtle)]");
+    expect(
+      within(statusPane).getByRole("link", {
+        name: /Next Home[\s\S]*Next Away/,
+      }),
+    ).toHaveAttribute("href", "/matches/urc-next-match");
+    expect(
+      within(statusPane).getByRole("link", { name: "大会ページを見る →" }),
+    ).toHaveAttribute("href", "/c/urc/2025-26");
+    expect(standingMocks.getStandingsForCompetition).toHaveBeenCalledWith(
+      "urc-2025-26",
+    );
+    expect(matchMocks.getNextMatchForCompetition).toHaveBeenCalledWith({
+      family: "urc",
+      season: "2025-26",
+    });
+  });
+
+  it("keeps standings visible when the recent review competition has no next match", async () => {
+    standingMocks.getStandingsForCompetition.mockResolvedValue([
+      createStanding(1, "Recent Home", "RH"),
+    ]);
+
+    render(await HomePage());
+
+    const statusHeading = screen.getByRole("heading", {
+      name: "大会の現在地",
+    });
+    const statusPane = statusHeading.closest("aside");
+
+    expect(statusPane).toBeInTheDocument();
+    if (!statusPane) {
+      throw new Error("Competition status pane was not rendered");
+    }
+
+    expect(
+      within(statusPane).getByRole("heading", { name: "現在の順位" }),
+    ).toBeInTheDocument();
+    expect(within(statusPane).queryByText("次戦")).not.toBeInTheDocument();
+  });
+
+  it("falls back to the full-width review card when competition status data is unavailable", async () => {
+    const { container } = render(await HomePage());
+
+    expect(
+      screen.queryByRole("heading", { name: "大会の現在地" }),
+    ).not.toBeInTheDocument();
+    expect(
+      container
+        .querySelector('a[href="/matches/recent-review-not-sample"]')
+        ?.closest(".xl\\:col-span-2"),
+    ).toHaveClass("xl:col-span-2");
   });
 
   it("keeps the sample review layout stable without recent review groups", async () => {
