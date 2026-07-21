@@ -3,17 +3,25 @@ import { notFound, redirect } from "next/navigation";
 import { Fragment } from "react";
 
 import { PlayerAvatar } from "@/components/player-avatar";
+import { getNextMatchesForTeams } from "@/lib/db/queries/matches";
 import {
   getPlayerCareerStats,
   getMatchesForPlayer,
   getPlayerBySlug,
+  getPlayersByTeamSlug,
   isIndexablePlayer,
 } from "@/lib/db/queries/players";
 import { formatCompetitionTitle } from "@/lib/format/competition";
+import {
+  formatKickoffJstDate,
+  formatKickoffJstTime,
+} from "@/lib/format/kickoff";
 
+import type { UpcomingMatch } from "@/lib/db/queries/matches";
 import type {
   PlayerCareerStats,
   PlayerMatchRow,
+  TeamPlayerItem,
 } from "@/lib/db/queries/players";
 import type { Metadata } from "next";
 
@@ -57,6 +65,99 @@ function hasRecordedScoringStats(stats: PlayerCareerStats): boolean {
   );
 }
 
+function PlayerNextWatchSection({
+  nextMatch,
+  teammates,
+  teamName,
+  teamSlug,
+}: {
+  nextMatch: UpcomingMatch | null;
+  teammates: TeamPlayerItem[];
+  teamName: string;
+  teamSlug: string;
+}) {
+  if (!teamSlug) {
+    return null;
+  }
+
+  return (
+    <section className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
+      <div className="mb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+          Next
+        </p>
+        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
+          次に見る
+        </h2>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <article className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-xs font-semibold text-[var(--color-ink-muted)]">
+            {teamName} の次戦
+          </p>
+          {nextMatch ? (
+            <>
+              <Link
+                className="mt-1 block text-sm font-bold text-[var(--color-ink)] transition-colors hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                href={`/matches/${nextMatch.id}`}
+              >
+                {nextMatch.homeTeam.name} 対 {nextMatch.awayTeam.name}
+              </Link>
+              <time
+                className="mt-2 block text-xs tabular-nums text-[var(--color-ink-muted)]"
+                dateTime={nextMatch.kickoffAt}
+              >
+                <span className="font-semibold text-[var(--color-accent)]">
+                  {formatKickoffJstDate(nextMatch.kickoffAt)}
+                </span>{" "}
+                {formatKickoffJstTime(nextMatch.kickoffAt)}
+              </time>
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+              次戦は未定です
+            </p>
+          )}
+          <Link
+            className="mt-4 inline-flex min-h-9 items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[var(--color-ink)] transition-colors hover:border-slate-300 hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            href={`/teams/${teamSlug}`}
+          >
+            {teamName}を見る
+          </Link>
+        </article>
+
+        {teammates.length > 0 && (
+          <div className="min-w-0 rounded-xl border border-slate-200 p-4">
+            <h3 className="text-sm font-bold text-[var(--color-ink)]">
+              同じチームの選手
+            </h3>
+            <ul className="mt-3 grid gap-2 min-[420px]:grid-cols-2">
+              {teammates.map((teammate) => (
+                <li key={teammate.slug}>
+                  <Link
+                    className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm transition-colors hover:border-slate-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                    href={`/players/${teammate.slug}`}
+                  >
+                    <span className="truncate font-semibold text-[var(--color-ink)]">
+                      {teammate.name}
+                    </span>
+                    {teammate.position && (
+                      <span className="shrink-0 text-xs text-[var(--color-ink-muted)]">
+                        {teammate.position}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const player = await getPlayerBySlug(slug);
@@ -93,14 +194,36 @@ export default async function PlayerPage({ params }: Props) {
     redirect(`/players/${player.canonicalSlug}`);
   }
 
-  const [matches, careerStats] = await Promise.all([
+  const [matches, careerStats, nextMatches, teamPlayers] = await Promise.all([
     getMatchesForPlayer(player.id),
     getPlayerCareerStats(player.id),
+    player.teamId
+      ? getNextMatchesForTeams({
+          afterIso: new Date().toISOString(),
+          teamIds: [player.teamId],
+        })
+      : Promise.resolve([]),
+    player.teamSlug
+      ? getPlayersByTeamSlug(player.teamSlug)
+      : Promise.resolve([]),
   ]);
+  const nextMatch = nextMatches[0]?.match ?? null;
+  const teammates = teamPlayers
+    .filter((teamPlayer) => teamPlayer.slug !== player.slug)
+    .sort((left, right) => {
+      const leftMatchesPosition = left.position === player.position ? 1 : 0;
+      const rightMatchesPosition = right.position === player.position ? 1 : 0;
+
+      return (
+        rightMatchesPosition - leftMatchesPosition ||
+        left.name.localeCompare(right.name, "ja")
+      );
+    })
+    .slice(0, 4);
 
   return (
     <main className="bg-paper min-h-screen">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
         <nav aria-label="パンくずリスト">
           <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
             <li>
@@ -168,7 +291,7 @@ export default async function PlayerPage({ params }: Props) {
           </div>
 
           {hasRecordedScoringStats(careerStats) ? (
-            <dl className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50 sm:grid-cols-5">
+            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
               {[
                 ["出場", careerStats.appearances],
                 ["トライ", careerStats.tries],
@@ -176,7 +299,10 @@ export default async function PlayerPage({ params }: Props) {
                 ["PG", careerStats.penaltyGoals],
                 ["獲得ポイント", careerStats.points],
               ].map(([label, value]) => (
-                <div key={label} className="min-w-0">
+                <div
+                  className="min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm shadow-slate-200/50 sm:px-5 sm:py-4"
+                  key={label}
+                >
                   <dt className="text-xs font-semibold text-[var(--color-ink-muted)]">
                     {label}
                   </dt>
@@ -244,6 +370,13 @@ export default async function PlayerPage({ params }: Props) {
             </div>
           )}
         </section>
+
+        <PlayerNextWatchSection
+          nextMatch={nextMatch}
+          teammates={teammates}
+          teamName={player.teamName}
+          teamSlug={player.teamSlug}
+        />
       </div>
     </main>
   );

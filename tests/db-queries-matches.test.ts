@@ -15,6 +15,7 @@ vi.mock("@/lib/db/queries/match-broadcasts", () => broadcastsMock);
 
 import {
   getMatchById,
+  getNextMatchesForTeams,
   getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedMatches,
   stripMarkdown,
@@ -62,6 +63,56 @@ const standingsQueryMock = {
   in: vi.fn(),
   select: vi.fn().mockReturnThis(),
 };
+
+const nextMatchesQueryMock = {
+  eq: vi.fn().mockReturnThis(),
+  gte: vi.fn().mockReturnThis(),
+  limit: vi.fn(),
+  neq: vi.fn().mockReturnThis(),
+  or: vi.fn().mockReturnThis(),
+  order: vi.fn().mockReturnThis(),
+  select: vi.fn().mockReturnThis(),
+};
+
+describe("getNextMatchesForTeams", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clientMock.from.mockReturnValue(nextMatchesQueryMock);
+    nextMatchesQueryMock.eq.mockReturnThis();
+    nextMatchesQueryMock.gte.mockReturnThis();
+    nextMatchesQueryMock.neq.mockReturnThis();
+    nextMatchesQueryMock.or.mockReturnThis();
+    nextMatchesQueryMock.order.mockReturnThis();
+    nextMatchesQueryMock.select.mockReturnThis();
+    nextMatchesQueryMock.limit.mockResolvedValue({ data: [], error: null });
+  });
+
+  it("skips the UUID exclusion filter when no match is being excluded", async () => {
+    await getNextMatchesForTeams({
+      afterIso: "2026-07-21T00:00:00.000Z",
+      teamIds: ["team-1"],
+    });
+
+    expect(nextMatchesQueryMock.neq).not.toHaveBeenCalled();
+    expect(nextMatchesQueryMock.gte).toHaveBeenCalledWith(
+      "kickoff_at",
+      "2026-07-21T00:00:00.000Z",
+    );
+  });
+
+  it("keeps the exclusion filter for a supplied match ID", async () => {
+    await getNextMatchesForTeams({
+      afterIso: "2026-07-21T00:00:00.000Z",
+      excludeMatchId: "00000000-0000-0000-0000-000000000001",
+      teamIds: ["team-1"],
+    });
+
+    expect(nextMatchesQueryMock.neq).toHaveBeenCalledWith(
+      "id",
+      "00000000-0000-0000-0000-000000000001",
+    );
+  });
+});
 
 describe("getMatchById", () => {
   beforeEach(() => {
