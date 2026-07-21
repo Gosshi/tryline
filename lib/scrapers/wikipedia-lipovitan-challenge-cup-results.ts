@@ -26,19 +26,11 @@ const AUSTRALIA_JAPAN_WIKIPEDIA_URL =
   "https://en.wikipedia.org/wiki/2026_Australia%E2%80%93Japan_rugby_union_test_series";
 const JAPAN_FIJI_JRFU_URL = "https://www.rugby-japan.jp/news/54073";
 
-const TEAM_SLUG_BY_NAME: Record<string, string> = {
-  Australia: "australia",
-  Canada: "canada",
-  Fiji: "fiji",
-  Japan: "japan",
-  "オーストラリア": "australia",
-  オーストラリア代表: "australia",
-  カナダ: "canada",
-  カナダ代表: "canada",
-  フィジー: "fiji",
-  フィジー代表: "fiji",
-  日本: "japan",
-  日本代表: "japan",
+const TEAM_SLUG_BY_CODE: Record<string, string> = {
+  AUS: "australia",
+  CAN: "canada",
+  FIJ: "fiji",
+  JPN: "japan",
 };
 
 const MATCHUPS = [
@@ -64,20 +56,87 @@ function toKickoffAt(month: string, day: string, hour: string, minute: string) {
   ).toISOString();
 }
 
-function findTeams(rowText: string): [string, string] | null {
-  const names = Object.keys(TEAM_SLUG_BY_NAME)
-    .map((name) => ({ index: rowText.indexOf(name), name }))
-    .filter((entry) => entry.index >= 0)
-    .sort((left, right) => left.index - right.index);
-  const slugs = names
-    .map(({ name }) => TEAM_SLUG_BY_NAME[name]!)
-    .filter((slug, index, all) => index === 0 || slug !== all[index - 1]);
+type RugbyboxTemplate = {
+  params?: unknown;
+  target?: unknown;
+};
 
-  return slugs.length >= 2 ? [slugs[0]!, slugs[1]!] : null;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseScore(rowText: string) {
-  const score = rowText.match(/(?:^|\s)(\d+)\s*[–-]\s*(\d+)(?:\s|$)/);
+function getWt(value: unknown): string | null {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (isRecord(value) && typeof value.wt === "string") {
+    return value.wt;
+  }
+
+  return null;
+}
+
+function getTemplateTarget(template: RugbyboxTemplate): string {
+  return getWt(template.target) ?? "";
+}
+
+function collectRugbyboxTemplates(
+  value: unknown,
+  templates: RugbyboxTemplate[],
+): void {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectRugbyboxTemplates(item, templates);
+    }
+    return;
+  }
+
+  if (!isRecord(value)) {
+    return;
+  }
+
+  if (isRecord(value.template)) {
+    const template = value.template as RugbyboxTemplate;
+
+    if (/rugbybox/i.test(getTemplateTarget(template))) {
+      templates.push(template);
+    }
+  }
+
+  for (const nested of Object.values(value)) {
+    collectRugbyboxTemplates(nested, templates);
+  }
+}
+
+function parseDataMw(value: string): unknown | null {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function resolveTeamSlug(value: string | null) {
+  const code = value?.match(/\{\{\s*ru(?:-rt)?\s*\|\s*([A-Z]{3})\b/i)?.[1];
+
+  return code ? TEAM_SLUG_BY_CODE[code.toUpperCase()] ?? null : null;
+}
+
+function parseJapaneseDate(value: string | null) {
+  return value?.match(/2026年\s*(\d{1,2})月\s*(\d{1,2})日/) ?? null;
+}
+
+function parseJapaneseTime(value: string | null) {
+  return value?.match(/(\d{1,2}):(\d{2})/) ?? null;
+}
+
+function parseVenue(value: string | null) {
+  return value?.match(/\[\[([^|\]]+)/)?.[1] ?? null;
+}
+
+function parseScore(value: string | null) {
+  const score = value?.match(/(\d+)\s*[–-]\s*(\d+)/);
 
   if (!score) {
     return { awayScore: null, homeScore: null, status: "scheduled" as const };
@@ -103,38 +162,57 @@ function parseJapaneseFixtureRows(
   const $ = load(html);
   const fixtures = new Map<string, LipovitanChallengeCupMatchResult>();
 
-  $("table tr").each((_, row) => {
-    const rowElement = $(row);
-    const rowText = normalizeWhitespace(rowElement.text());
-    const date = rowText.match(/2026年\s*(\d{1,2})月\s*(\d{1,2})日/);
-    const time = rowText.match(/(?:^|\s)(\d{1,2}):(\d{2})(?:\s|$)/);
-    const teams = findTeams(rowText);
+  $("[data-mw]").each((_, element) => {
+    const dataMw = $(element).attr("data-mw");
 
-    if (!date || !time || !teams || !getMatchup(teams[0], teams[1])) {
+    if (!dataMw) {
       return;
     }
 
-    const [homeTeamSlug, awayTeamSlug] = teams;
-    const score = parseScore(rowText);
-    const venue = normalizeWhitespace(
-      rowElement.find("a").last().text() || rowElement.find("td").last().text(),
-    );
-    const kickoffAt = toKickoffAt(date[1]!, date[2]!, time[1]!, time[2]!);
-    const eventId = `${homeTeamSlug}-vs-${awayTeamSlug}-${kickoffAt.slice(0, 10)}`;
+    const parsed = parseDataMw(dataMw);
 
-    fixtures.set(eventId, {
-      away_score: score.awayScore,
-      away_team_slug: awayTeamSlug,
-      home_score: score.homeScore,
-      home_team_slug: homeTeamSlug,
-      kickoff_at: kickoffAt,
-      round: null,
-      season: 2026,
-      source_url: sourceUrl,
-      status: score.status,
-      venue: venue || null,
-      wikipedia_event_id: eventId,
-    });
+    if (!parsed) {
+      return;
+    }
+
+    const templates: RugbyboxTemplate[] = [];
+    collectRugbyboxTemplates(parsed, templates);
+
+    for (const template of templates) {
+      const params = isRecord(template.params) ? template.params : {};
+      const date = parseJapaneseDate(getWt(params.date));
+      const time = parseJapaneseTime(getWt(params.time));
+      const homeTeamSlug = resolveTeamSlug(getWt(params.home));
+      const awayTeamSlug = resolveTeamSlug(getWt(params.away));
+
+      if (
+        !date ||
+        !time ||
+        !homeTeamSlug ||
+        !awayTeamSlug ||
+        !getMatchup(homeTeamSlug, awayTeamSlug)
+      ) {
+        continue;
+      }
+
+      const score = parseScore(getWt(params.score));
+      const kickoffAt = toKickoffAt(date[1]!, date[2]!, time[1]!, time[2]!);
+      const eventId = `${homeTeamSlug}-vs-${awayTeamSlug}-${kickoffAt.slice(0, 10)}`;
+
+      fixtures.set(eventId, {
+        away_score: score.awayScore,
+        away_team_slug: awayTeamSlug,
+        home_score: score.homeScore,
+        home_team_slug: homeTeamSlug,
+        kickoff_at: kickoffAt,
+        round: null,
+        season: 2026,
+        source_url: sourceUrl,
+        status: score.status,
+        venue: parseVenue(getWt(params.stadium)),
+        wikipedia_event_id: eventId,
+      });
+    }
   });
 
   return [...fixtures.values()];
