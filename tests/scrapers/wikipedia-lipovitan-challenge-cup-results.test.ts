@@ -13,32 +13,58 @@ import {
   wikipediaLipovitanChallengeCupResultsScraper,
 } from "@/lib/scrapers/wikipedia-lipovitan-challenge-cup-results";
 
-const JAPANESE_HTML = `
-<table class="wikitable">
-  <tbody>
-    <tr><th>日時</th><th>ホーム</th><th>スコア</th><th>アウェイ</th><th>会場</th></tr>
-    <tr>
-      <td>2026年8月8日(土) 19:05</td>
-      <td><a>日本代表</a></td><td>-</td><td><a>オーストラリア代表</a></td>
-      <td><a>東大阪市花園ラグビー場</a></td>
-    </tr>
-    <tr>
-      <td>2026年9月5日(土) 14:50</td>
-      <td><a>日本代表</a></td><td>-</td><td><a>カナダ代表</a></td>
-      <td><a>デンカビッグスワンスタジアム</a></td>
-    </tr>
-    <tr>
-      <td>2026年10月24日(土) 14:50</td>
-      <td><a>日本代表</a></td><td>-</td><td><a>フィジー代表</a></td>
-      <td><a>秩父宮ラグビー場</a></td>
-    </tr>
-    <tr>
-      <td>2026年6月27日(土) 19:05</td>
-      <td><a>JAPAN XV</a></td><td>31-38</td><td><a>マオリ・オールブラックス</a></td>
-      <td><a>パロマ瑞穂スタジアム</a></td>
-    </tr>
-  </tbody>
-</table>`;
+function rugbyboxHtml(params: Record<string, string>) {
+  const dataMw = JSON.stringify({
+    parts: [
+      {
+        template: {
+          params: Object.fromEntries(
+            Object.entries(params).map(([key, wt]) => [key, { wt }]),
+          ),
+          target: { wt: "rugbybox\n" },
+        },
+      },
+    ],
+  });
+
+  return `<table data-mw='${dataMw}'><tbody><tr><td>レンダリング済みテキストには依存しない</td></tr></tbody></table>`;
+}
+
+const JAPANESE_HTML = [
+  rugbyboxHtml({
+    away: "{{RU|AUS}}",
+    date: "2026年8月8日(土)",
+    home: "{{ru-rt|JPN}}",
+    score: "",
+    stadium: "[[東大阪市花園ラグビー場]] ([[大阪府]][[東大阪市]])",
+    time: "19:05 [[日本標準時|JST]] ([[UTC+9]])",
+  }),
+  rugbyboxHtml({
+    away: "{{RU|CAN}}",
+    date: "2026年9月5日(土)",
+    home: "{{ru-rt|JPN}}",
+    score: "",
+    stadium:
+      "[[新潟スタジアム|デンカビッグスワンスタジアム]] ([[新潟県]][[新潟市]])",
+    time: "14:50 [[日本標準時|JST]] ([[UTC+9]])",
+  }),
+  rugbyboxHtml({
+    away: "{{RU|FIJ}}",
+    date: "2026年10月24日(土)",
+    home: "{{ru-rt|JPN}}",
+    score: "",
+    stadium: "[[秩父宮ラグビー場]] ([[東京都]][[港区 (東京都)|港区]])",
+    time: "14:50 [[日本標準時|JST]] ([[UTC+9]])",
+  }),
+  rugbyboxHtml({
+    away: "{{RU|MAB}}",
+    date: "2026年6月27日(土)",
+    home: "{{ru-rt|JXV}}",
+    score: "31-38&lt;br />&lt;small>24-前半-7&lt;/small>",
+    stadium: "[[パロマ瑞穂スタジアム]]",
+    time: "19:05 [[日本標準時|JST]] ([[UTC+9]])",
+  }),
+].join("\n");
 
 const AUSTRALIA_JAPAN_HTML = `
 <table class="wikitable">
@@ -63,7 +89,7 @@ describe("Lipovitan Challenge Cup Wikipedia scrapers", () => {
     fetcherMocks.fetchWithPolicy.mockReset();
   });
 
-  it("parses the three Japan-hosted fixtures and excludes JAPAN XV", () => {
+  it("parses data-mw rugbybox templates and excludes JAPAN XV", () => {
     const results = parseLipovitanChallengeCupResultsHtml(
       JAPANESE_HTML,
       "https://example.test/lipovitan",
@@ -89,6 +115,27 @@ describe("Lipovitan Challenge Cup Wikipedia scrapers", () => {
         away_team_slug: "fiji",
         kickoff_at: "2026-10-24T05:50:00.000Z",
         venue: "秩父宮ラグビー場",
+      }),
+    ]);
+  });
+
+  it("uses the first score in a rugbybox score parameter", () => {
+    const results = parseLipovitanChallengeCupResultsHtml(
+      rugbyboxHtml({
+        away: "{{RU|AUS}}",
+        date: "2026年8月8日(土)",
+        home: "{{ru-rt|JPN}}",
+        score: "18-12&lt;br />&lt;small>10-5&lt;/small>",
+        stadium: "[[東大阪市花園ラグビー場]]",
+        time: "19:05 [[日本標準時|JST]] ([[UTC+9]])",
+      }),
+    );
+
+    expect(results).toEqual([
+      expect.objectContaining({
+        away_score: 12,
+        home_score: 18,
+        status: "finished",
       }),
     ]);
   });
@@ -131,7 +178,15 @@ describe("Lipovitan Challenge Cup Wikipedia scrapers", () => {
         : url.includes("rugby-japan.jp")
           ? JAPAN_FIJI_JRFU_HTML
           : JAPANESE_HTML.replace(
-              /<tr>\s*<td>2026年10月24日[\s\S]*?<\/tr>/,
+              rugbyboxHtml({
+                away: "{{RU|FIJ}}",
+                date: "2026年10月24日(土)",
+                home: "{{ru-rt|JPN}}",
+                score: "",
+                stadium:
+                  "[[秩父宮ラグビー場]] ([[東京都]][[港区 (東京都)|港区]])",
+                time: "14:50 [[日本標準時|JST]] ([[UTC+9]])",
+              }),
               "",
             );
 
