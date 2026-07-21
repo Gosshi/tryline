@@ -82,6 +82,28 @@ describe("MatchEventsSection", () => {
     expect(screen.getByText("23'")).toBeInTheDocument();
   });
 
+  it("links an event scorer only when a player link is resolved", () => {
+    render(
+      <MatchEventsSection
+        awayTeamName="France"
+        awayTeamSlug="france"
+        events={[event]}
+        finalAwayScore={0}
+        finalHomeScore={5}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        homeTeamSlug="ireland"
+        playerLinks={{ "00000000-0000-0000-0000-000000000101": "home-scorer" }}
+        variant="timeline"
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Home Scorer" })).toHaveAttribute(
+      "href",
+      "/players/home-scorer",
+    );
+  });
+
   it("shows a no-score note for a team without events", () => {
     render(
       <MatchEventsSection
