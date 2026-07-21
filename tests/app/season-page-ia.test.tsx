@@ -319,6 +319,47 @@ describe("season page information architecture", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders the four Lipovitan Challenge Cup fixtures without standings", async () => {
+    const lipovitanCompetition = {
+      ...competition,
+      family: "lipovitan-challenge-cup",
+      matchCount: 4,
+      name: "Lipovitan-D Challenge Cup 2026",
+      nameJa: "リポビタンDチャレンジカップ2026",
+      season: "2026",
+      slug: "lipovitan-challenge-cup-2026",
+    };
+    const lipovitanMatches = [
+      match,
+      { ...match, id: "match-2", kickoffAt: "2026-08-15T05:00:00.000Z" },
+      { ...match, id: "match-3", kickoffAt: "2026-09-05T05:50:00.000Z" },
+      { ...match, id: "match-4", kickoffAt: "2026-10-24T05:50:00.000Z" },
+    ];
+    competitionMocks.getCompetitionBySlug.mockResolvedValue(
+      lipovitanCompetition,
+    );
+    competitionMocks.listSeasonsByFamily.mockResolvedValue([
+      lipovitanCompetition,
+    ]);
+    matchesMocks.listMatchesForCompetition.mockResolvedValue(lipovitanMatches);
+    contentMocks.getContentStatusForMatches.mockResolvedValue({});
+    standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
+    standingsMocks.getPoolStandingsForCompetition.mockResolvedValue([]);
+
+    const { container } = render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "lipovitan-challenge-cup",
+          season: "2026",
+        }),
+      }),
+    );
+
+    expect(screen.getByText("リポビタンDチャレンジカップ")).toBeInTheDocument();
+    expect(screen.getByTestId("season-match-groups")).toBeInTheDocument();
+    expect(container.querySelector("#standings")).toBeEmptyDOMElement();
+  });
+
   it("shows a standings excerpt while keeping the full table in collapsed markup", async () => {
     standingsMocks.getStandingsForCompetition.mockResolvedValue([
       { ...standing, position: 1, teamName: "Bath", teamShortCode: "BAT" },
