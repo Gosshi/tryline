@@ -11,7 +11,12 @@ const playerMocks = vi.hoisted(() => ({
   getMatchesForPlayer: vi.fn(),
   getPlayerCareerStats: vi.fn(),
   getPlayerBySlug: vi.fn(),
+  getPlayersByTeamSlug: vi.fn(),
   isIndexablePlayer: vi.fn(),
+}));
+
+const matchMocks = vi.hoisted(() => ({
+  getNextMatchesForTeams: vi.fn(),
 }));
 
 const navigationMocks = vi.hoisted(() => ({
@@ -25,6 +30,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/db/queries/players", () => playerMocks);
+vi.mock("@/lib/db/queries/matches", () => matchMocks);
 
 const player = {
   aliasTeams: [],
@@ -35,6 +41,7 @@ const player = {
   position: "Fly-half",
   slug: "takuro-matsunaga",
   teamName: "Kobelco Kobe Steelers",
+  teamId: "team-1",
   teamSlug: "kobelco-kobe-steelers",
 };
 
@@ -53,6 +60,7 @@ describe("PlayerPage", () => {
     });
     playerMocks.getPlayerBySlug.mockResolvedValue(player);
     playerMocks.getMatchesForPlayer.mockResolvedValue([]);
+    playerMocks.getPlayersByTeamSlug.mockResolvedValue([]);
     playerMocks.getPlayerCareerStats.mockResolvedValue({
       appearances: 2,
       conversions: 1,
@@ -60,6 +68,7 @@ describe("PlayerPage", () => {
       points: 10,
       tries: 1,
     });
+    matchMocks.getNextMatchesForTeams.mockResolvedValue([]);
   });
 
   it("renders career stats from match events", async () => {
@@ -98,5 +107,93 @@ describe("PlayerPage", () => {
     );
 
     expect(screen.getByText("記録なし")).toBeInTheDocument();
+  });
+
+  it("renders next team actions and prioritizes teammates in the same position", async () => {
+    matchMocks.getNextMatchesForTeams.mockResolvedValue([
+      {
+        match: {
+          awayScore: null,
+          awayTeam: {
+            name: "Saitama Wild Knights",
+            shortCode: "SAI",
+            slug: "saitama-wild-knights",
+          },
+          competition: {
+            family: "league-one",
+            name: "Japan Rugby League One",
+            season: "2026-27",
+            slug: "league-one-2026-27",
+          },
+          homeScore: null,
+          homeTeam: {
+            name: "Kobelco Kobe Steelers",
+            shortCode: "KOB",
+            slug: "kobelco-kobe-steelers",
+          },
+          id: "next-match",
+          kickoffAt: "2026-12-12T05:00:00.000Z",
+          poolName: null,
+          round: null,
+          roundName: null,
+          status: "scheduled",
+          venue: null,
+        },
+        teamId: "team-1",
+      },
+    ]);
+    playerMocks.getPlayersByTeamSlug.mockResolvedValue([
+      { name: "Other Forward", position: "Lock", slug: "other-forward" },
+      { name: "Same Position", position: "Fly-half", slug: "same-position" },
+      {
+        name: "Takuro Matsunaga",
+        position: "Fly-half",
+        slug: "takuro-matsunaga",
+      },
+    ]);
+
+    render(
+      await PlayerPage({
+        params: Promise.resolve({ slug: "takuro-matsunaga" }),
+      }),
+    );
+
+    expect(
+      screen.getByRole("heading", { level: 2, name: "次に見る" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Kobelco Kobe Steelersを見る" }),
+    ).toHaveAttribute("href", "/teams/kobelco-kobe-steelers");
+    expect(
+      screen.getByRole("link", {
+        name: "Kobelco Kobe Steelers 対 Saitama Wild Knights",
+      }),
+    ).toHaveAttribute("href", "/matches/next-match");
+    expect(screen.getByRole("link", { name: /Same Position/ })).toHaveAttribute(
+      "href",
+      "/players/same-position",
+    );
+    expect(
+      screen.queryByRole("link", { name: "Takuro Matsunaga" }),
+    ).not.toBeInTheDocument();
+    expect(matchMocks.getNextMatchesForTeams).toHaveBeenCalledWith(
+      expect.objectContaining({
+        excludeMatchId: "",
+        teamIds: ["team-1"],
+      }),
+    );
+  });
+
+  it("shows an unscheduled next-match state and hides an empty teammate list", async () => {
+    render(
+      await PlayerPage({
+        params: Promise.resolve({ slug: "takuro-matsunaga" }),
+      }),
+    );
+
+    expect(screen.getByText("次戦は未定です")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 3, name: "同じチームの選手" }),
+    ).not.toBeInTheDocument();
   });
 });

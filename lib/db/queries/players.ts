@@ -15,6 +15,7 @@ export type PlayerDetail = {
   position: string | null;
   slug: string;
   teamName: string;
+  teamId: string;
   teamSlug: string;
 };
 
@@ -53,7 +54,7 @@ type PlayerDetailRow = {
   name: string;
   position: string | null;
   slug: string;
-  team: { name: string; slug: string } | null;
+  team: { id: string; name: string; slug: string } | null;
 };
 
 type PlayerLineupRow = {
@@ -425,7 +426,7 @@ export async function getPlayerBySlug(
   const { data, error } = await client
     .from("players")
     .select(
-      "id, name, slug, position, canonical_player_id, team:teams!players_team_id_fkey ( name, slug )",
+      "id, name, slug, position, canonical_player_id, team:teams!players_team_id_fkey ( id, name, slug )",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -481,6 +482,7 @@ export async function getPlayerBySlug(
     position: row.position ?? null,
     slug: row.slug,
     teamName: row.team?.name ?? "",
+    teamId: row.team?.id ?? "",
     teamSlug: row.team?.slug ?? "",
   };
 }
