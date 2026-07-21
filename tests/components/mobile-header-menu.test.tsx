@@ -102,6 +102,9 @@ describe("MobileHeaderMenu", () => {
       screen.getByRole("link", { name: "ラグビーワールドカップ" }),
     ).toHaveAttribute("href", "/c/rwc");
     expect(
+      screen.getByRole("link", { name: "リポビタンDチャレンジカップ" }),
+    ).toHaveAttribute("href", "/c/lipovitan-challenge-cup");
+    expect(
       screen.getByRole("link", {
         name: "パシフィック・ネーションズカップ",
       }),

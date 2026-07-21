@@ -92,6 +92,11 @@ describe("CompetitionNavDropdown", () => {
         label: "オータムネーションズシリーズ",
       },
       {
+        family: "lipovitan-challenge-cup",
+        href: "/c/lipovitan-challenge-cup",
+        label: "リポビタンDチャレンジカップ",
+      },
+      {
         family: "pnc",
         href: "/c/pnc",
         label: "パシフィック・ネーションズカップ",
