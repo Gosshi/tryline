@@ -23,6 +23,7 @@ const contentMocks = vi.hoisted(() => ({
 }));
 
 const matchesMocks = vi.hoisted(() => ({
+  getNextMatchForTeamSlug: vi.fn(),
   listMatchesForCompetition: vi.fn(),
 }));
 
@@ -177,6 +178,7 @@ describe("season page information architecture", () => {
     });
     competitionMocks.listSeasonsByFamily.mockResolvedValue([competition]);
     matchesMocks.listMatchesForCompetition.mockResolvedValue([match]);
+    matchesMocks.getNextMatchForTeamSlug.mockResolvedValue(null);
     standingsMocks.getPoolStandingsForCompetition.mockResolvedValue([]);
     standingsMocks.getStandingsForCompetition.mockResolvedValue([standing]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({
@@ -477,6 +479,63 @@ describe("season page information architecture", () => {
     expect(follows(link!, schedule!)).toBe(true);
     expect(follows(screen.getByTestId("season-match-groups"), standings!)).toBe(
       true,
+    );
+  });
+
+  it("adds the newest published recap and chooses an earlier cross-competition Japan match", async () => {
+    const olderReview = {
+      ...japanMatch,
+      id: "older-review",
+      kickoffAt: "2026-01-15T09:00:00.000Z",
+      status: "finished",
+    };
+    const latestReview = {
+      ...japanMatch,
+      id: "latest-review",
+      kickoffAt: "2026-01-22T09:00:00.000Z",
+      status: "finished",
+    };
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      japanMatch,
+      olderReview,
+      latestReview,
+    ]);
+    matchesMocks.getNextMatchForTeamSlug.mockResolvedValue({
+      ...japanMatch,
+      competition: {
+        family: "lipovitan-challenge-cup",
+        name: "Lipovitan Challenge Cup",
+        season: "2026",
+        slug: "lipovitan-challenge-cup-2026",
+      },
+      id: "japan-australia",
+      kickoffAt: "2026-02-10T09:00:00.000Z",
+    });
+    contentMocks.getContentStatusForMatches.mockResolvedValue({
+      [olderReview.id]: { hasPreview: false, hasRecap: true },
+      [latestReview.id]: { hasPreview: false, hasRecap: true },
+    });
+
+    render(
+      await SeasonPage({
+        params: Promise.resolve({ competition: "pnc", season: "2026" }),
+      }),
+    );
+
+    expect(screen.getByText("最新レビュー").closest("a")).toHaveAttribute(
+      "href",
+      "/matches/latest-review",
+    );
+    const japanNext = screen.getByText("日本代表の次戦").closest("a");
+
+    expect(japanNext).toHaveAttribute("href", "/matches/japan-australia");
+    expect(japanNext).toHaveTextContent("Lipovitan Challenge Cup 2026");
+    expect(matchesMocks.getNextMatchForTeamSlug).toHaveBeenCalledWith(
+      "japan",
+      "2026-02-01T00:00:00.000Z",
+    );
+    expect(screen.getByLabelText("シーズン要約")).toHaveClass(
+      "lg:grid-cols-4",
     );
   });
 
