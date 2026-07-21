@@ -5,7 +5,9 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import SeasonPage from "@/app/c/[competition]/[season]/page";
+import SeasonPage, {
+  generateMetadata,
+} from "@/app/c/[competition]/[season]/page";
 
 import type { MatchContentStatus } from "@/lib/db/queries/match-content";
 import type { MatchListItem } from "@/lib/db/queries/matches";
@@ -20,6 +22,10 @@ const competitionMocks = vi.hoisted(() => ({
 
 const contentMocks = vi.hoisted(() => ({
   getContentStatusForMatches: vi.fn(),
+}));
+
+const broadcastMocks = vi.hoisted(() => ({
+  getMatchBroadcastPresenceForMatches: vi.fn(),
 }));
 
 const matchesMocks = vi.hoisted(() => ({
@@ -66,6 +72,7 @@ vi.mock("@/components/season-switcher", () => ({
 }));
 
 vi.mock("@/lib/db/queries/competitions", () => competitionMocks);
+vi.mock("@/lib/db/queries/match-broadcasts", () => broadcastMocks);
 vi.mock("@/lib/db/queries/match-content", () => contentMocks);
 vi.mock("@/lib/db/queries/matches", () => matchesMocks);
 vi.mock("@/lib/db/queries/standings", () => standingsMocks);
@@ -179,6 +186,9 @@ describe("season page information architecture", () => {
     competitionMocks.listSeasonsByFamily.mockResolvedValue([competition]);
     matchesMocks.listMatchesForCompetition.mockResolvedValue([match]);
     matchesMocks.getNextMatchForTeamSlug.mockResolvedValue(null);
+    broadcastMocks.getMatchBroadcastPresenceForMatches.mockResolvedValue(
+      new Set(),
+    );
     standingsMocks.getPoolStandingsForCompetition.mockResolvedValue([]);
     standingsMocks.getStandingsForCompetition.mockResolvedValue([standing]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({
@@ -534,9 +544,7 @@ describe("season page information architecture", () => {
       "japan",
       "2026-02-01T00:00:00.000Z",
     );
-    expect(screen.getByLabelText("シーズン要約")).toHaveClass(
-      "lg:grid-cols-4",
-    );
+    expect(screen.getByLabelText("シーズン要約")).toHaveClass("lg:grid-cols-4");
   });
 
   it("does not render the Japan match block when no scheduled Japan match exists", async () => {
@@ -578,5 +586,213 @@ describe("season page information architecture", () => {
         }),
       ]),
     );
+  });
+
+  it("uses the information title when there are no matches or every match is cancelled", async () => {
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([]);
+    contentMocks.getContentStatusForMatches.mockResolvedValue({});
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    ).resolves.toMatchObject({
+      title: "プレミアシップ 2025-26 大会情報・見どころ",
+    });
+
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      { ...match, status: "cancelled" },
+    ]);
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    ).resolves.toMatchObject({
+      title: "プレミアシップ 2025-26 大会情報・見どころ",
+    });
+  });
+
+  it("uses the pre-tournament title based on broadcast availability", async () => {
+    broadcastMocks.getMatchBroadcastPresenceForMatches.mockResolvedValue(
+      new Set([match.id]),
+    );
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    ).resolves.toMatchObject({
+      title: "プレミアシップ 2025-26 日程・放送予定・見どころ",
+    });
+
+    broadcastMocks.getMatchBroadcastPresenceForMatches.mockResolvedValue(
+      new Set(),
+    );
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    ).resolves.toMatchObject({
+      title: "プレミアシップ 2025-26 日程・見どころ",
+    });
+  });
+
+  it("treats scheduled and cancelled matches as pre-tournament", async () => {
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      match,
+      { ...match, id: "cancelled-match", status: "cancelled" },
+    ]);
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    ).resolves.toMatchObject({
+      title: "プレミアシップ 2025-26 日程・見どころ",
+    });
+  });
+
+  it("includes standings only for an active competition with standings", async () => {
+    competitionMocks.getCompetitionBySlug.mockResolvedValue({
+      ...competition,
+      family: "nations-championship",
+      name: "Nations Championship",
+      season: "2026",
+      slug: "nations-championship-2026",
+    });
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      { ...match, id: "finished-match", status: "finished" },
+      match,
+    ]);
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({
+          competition: "nations-championship",
+          season: "2026",
+        }),
+      }),
+    ).resolves.toMatchObject({
+      title: "ネーションズチャンピオンシップ 2026 最新結果・次戦・日程・順位",
+    });
+
+    standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({
+          competition: "nations-championship",
+          season: "2026",
+        }),
+      }),
+    ).resolves.toMatchObject({
+      title: "ネーションズチャンピオンシップ 2026 最新結果・次戦・日程",
+    });
+  });
+
+  it("does not include standings for the pre-tournament Lipovitan Challenge Cup", async () => {
+    competitionMocks.getCompetitionBySlug.mockResolvedValue({
+      ...competition,
+      family: "lipovitan-challenge-cup",
+      name: "Lipovitan-D Challenge Cup",
+      nameJa: "リポビタンDチャレンジカップ",
+      season: "2026",
+      slug: "lipovitan-challenge-cup-2026",
+    });
+    standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({
+          competition: "lipovitan-challenge-cup",
+          season: "2026",
+        }),
+      }),
+    ).resolves.toMatchObject({
+      title: "リポビタンDチャレンジカップ 2026 日程・見どころ",
+    });
+  });
+
+  it("treats finished and cancelled matches as post-tournament and only includes recaps when present", async () => {
+    const finishedMatch = {
+      ...match,
+      id: "finished-match",
+      status: "finished",
+    };
+
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      finishedMatch,
+      { ...match, id: "cancelled-match", status: "cancelled" },
+    ]);
+    contentMocks.getContentStatusForMatches.mockResolvedValue({
+      [finishedMatch.id]: { hasPreview: false, hasRecap: true },
+    });
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    ).resolves.toMatchObject({
+      title: "プレミアシップ 2025-26 全試合結果・日本語レビュー",
+    });
+
+    contentMocks.getContentStatusForMatches.mockResolvedValue({});
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    ).resolves.toMatchObject({ title: "プレミアシップ 2025-26 全試合結果" });
+  });
+
+  it("keeps the Six Nations label in the description and propagates broadcast query errors", async () => {
+    competitionMocks.getCompetitionBySlug.mockResolvedValue({
+      ...competition,
+      family: "six-nations",
+      name: "Six Nations",
+      season: "2026",
+      slug: "six-nations-2026",
+    });
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({ competition: "six-nations", season: "2026" }),
+      }),
+    ).resolves.toMatchObject({
+      description: expect.stringContaining("6カ国対抗"),
+    });
+
+    broadcastMocks.getMatchBroadcastPresenceForMatches.mockRejectedValue(
+      new Error("broadcast query failed"),
+    );
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({ competition: "six-nations", season: "2026" }),
+      }),
+    ).rejects.toThrow("broadcast query failed");
   });
 });
