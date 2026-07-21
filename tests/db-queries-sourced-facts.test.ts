@@ -54,6 +54,11 @@ describe("story sourced facts query", () => {
     expect(dbMock.sourcedFactsBuilder.in).toHaveBeenCalledWith("match_id", [
       "match-1",
     ]);
+    expect(dbMock.sourcedFactsBuilder.in).toHaveBeenCalledWith("content_type", [
+      "preview",
+      "recap",
+      "shared",
+    ]);
     expect(facts).toEqual([
       expect.objectContaining({
         sourceDomain: "englandrugby.com",

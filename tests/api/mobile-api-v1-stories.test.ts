@@ -247,15 +247,6 @@ describe("GET /api/v1/stories", () => {
         matchId: "match-1",
         sourceDomain: "at-kickoff.example.com",
       },
-      {
-        confidence: "high",
-        contentType: "recap",
-        fact: "レビュー用のニュースは除外されます。",
-        fetchedAt: "2026-07-18T09:55:00.000Z",
-        id: "recap",
-        matchId: "match-1",
-        sourceDomain: "recap.example.com",
-      },
     ]);
 
     const { GET } = await import("@/app/api/v1/stories/route");
@@ -298,7 +289,6 @@ describe("GET /api/v1/stories", () => {
     expect(JSON.stringify(items)).not.toContain("Medium-confidence English-only");
     expect(JSON.stringify(items)).not.toContain("low confidence");
     expect(JSON.stringify(items)).not.toContain("キックオフ時刻と同時");
-    expect(JSON.stringify(items)).not.toContain("レビュー用");
     expect(JSON.stringify(items)).not.toContain("4番目のニュース");
     expect(JSON.stringify(items)).not.toContain("同じ出典の古い");
   });
@@ -342,6 +332,124 @@ describe("GET /api/v1/stories", () => {
       summary: "イングランドは土曜日の試合に向け、フロントローを変更した布陣を発表した。",
     });
     expect(JSON.stringify(newsItems)).not.toContain("low-translated");
+  });
+
+  it("adds post-match recap news after the recap with spoiler metadata and a nine-item cap", async () => {
+    sourcedFactsMock.getStorySourcedFactsForMatches.mockResolvedValue([
+      {
+        confidence: "high",
+        contentType: "preview",
+        fact: "試合前ニュース1です。",
+        fetchedAt: "2026-07-18T09:00:00.000Z",
+        id: "pre-1",
+        matchId: "match-1",
+        sourceDomain: "pre-1.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "shared",
+        fact: "試合前ニュース2です。",
+        fetchedAt: "2026-07-18T09:10:00.000Z",
+        id: "pre-2",
+        matchId: "match-1",
+        sourceDomain: "pre-2.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "preview",
+        fact: "試合前ニュース3です。",
+        fetchedAt: "2026-07-18T09:20:00.000Z",
+        id: "pre-3",
+        matchId: "match-1",
+        sourceDomain: "pre-3.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "recap",
+        fact: "同じ出典の古い試合後ニュースです。",
+        fetchedAt: "2026-07-18T10:15:00.000Z",
+        id: "post-same-old",
+        matchId: "match-1",
+        sourceDomain: "post-same.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "recap",
+        fact: "同じ出典の新しい試合後ニュースです。",
+        factJa: "日本は後半に主導権を握り、主将が勝利の要因として守備の規律を挙げた。",
+        fetchedAt: "2026-07-18T11:15:00.000Z",
+        id: "post-same-latest",
+        matchId: "match-1",
+        sourceDomain: "post-same.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "recap",
+        fact: "試合後ニュース2です。",
+        fetchedAt: "2026-07-18T11:00:00.000Z",
+        id: "post-2",
+        matchId: "match-1",
+        sourceDomain: "post-2.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "recap",
+        fact: "試合後ニュース3です。",
+        fetchedAt: "2026-07-18T10:30:00.000Z",
+        id: "post-3",
+        matchId: "match-1",
+        sourceDomain: "post-3.example.com",
+      },
+      {
+        confidence: "high",
+        contentType: "recap",
+        fact: "4番目の試合後ニュースは上限で除外されます。",
+        fetchedAt: "2026-07-18T10:20:00.000Z",
+        id: "post-4",
+        matchId: "match-1",
+        sourceDomain: "post-4.example.com",
+      },
+      {
+        confidence: "medium",
+        contentType: "recap",
+        fact: "中確度の試合後ニュースは除外されます。",
+        fetchedAt: "2026-07-18T11:30:00.000Z",
+        id: "post-medium",
+        matchId: "match-1",
+        sourceDomain: "post-medium.example.com",
+      },
+    ]);
+
+    const { GET } = await import("@/app/api/v1/stories/route");
+    const response = await GET(new Request("http://localhost/api/v1/stories"));
+    const body = await response.json();
+    const items = body.data.matches[0].items;
+
+    expect(items).toHaveLength(9);
+    expect(items.map((item: { type: string }) => item.type)).toEqual([
+      "preview",
+      "news",
+      "news",
+      "news",
+      "result",
+      "recap",
+      "news",
+      "news",
+      "news",
+    ]);
+    expect(items.slice(1, 4).every((item: { contains_result: boolean }) => !item.contains_result)).toBe(true);
+    expect(items.slice(6).every((item: { contains_result: boolean }) => item.contains_result)).toBe(true);
+    expect(items.slice(6).map((item: { id: string }) => item.id)).toEqual([
+      "match-1:news:post-3",
+      "match-1:news:post-2",
+      "match-1:news:post-same-latest",
+    ]);
+    expect(items[8].summary).toBe(
+      "日本は後半に主導権を握り、主将が勝利の要因として守備の規律を挙げた。",
+    );
+    expect(JSON.stringify(items)).not.toContain("post-same-old");
+    expect(JSON.stringify(items)).not.toContain("post-medium");
+    expect(JSON.stringify(items)).not.toContain("4番目の試合後");
   });
 
   it("validates explicit inclusive JST date ranges", async () => {

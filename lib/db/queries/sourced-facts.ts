@@ -61,7 +61,7 @@ export async function getStorySourcedFactsForMatches(
       "id, match_id, content_type, confidence, fact, fact_ja, fetched_at, source_domain, source_url",
     )
     .in("match_id", matchIds)
-    .in("content_type", ["preview", "shared"])
+    .in("content_type", ["preview", "recap", "shared"])
     .in("confidence", ["high", "medium"]);
 
   if (error) {

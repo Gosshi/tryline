@@ -246,7 +246,9 @@ describe("buildSearchPrompt", () => {
     expect(prompt).toContain("both teams' values exactly as reported");
     expect(prompt).not.toContain("latest lineup changes");
     expect(prompt).not.toContain("Search intent:\n- latest team news");
-    expect(prompt).not.toContain("fact_ja");
+    expect(prompt).toContain('"fact_ja":"..."');
+    expect(prompt).toContain("natural Japanese news-style paraphrase");
+    expect(prompt).toContain("must only restate the information in fact");
   });
 
   it("adds scoreless previous-meeting context to the preview search intent only", () => {
@@ -849,7 +851,7 @@ describe("fetchSourcedFactsForMatch", () => {
     );
   });
 
-  it("stores preview fact_ja and normalizes missing or blank values to null", async () => {
+  it("stores recap fact_ja and normalizes missing or blank values to null", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
       if (table === "match_sourced_facts") {
@@ -879,7 +881,7 @@ describe("fetchSourcedFactsForMatch", () => {
     });
 
     await fetchSourcedFactsForMatch({
-      contentType: "preview",
+      contentType: "recap",
       force: true,
       matchId: "match-1",
       now: new Date("2026-06-09T18:00:00.000Z"),

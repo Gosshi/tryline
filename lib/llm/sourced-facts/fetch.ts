@@ -135,6 +135,8 @@ export function buildSearchPrompt(
     contentType === "recap"
       ? [
           '- For numeric statistics, state the stat name and both teams\' values exactly as reported (e.g., "Possession: Glasgow 54% - Bulls 46%"). Never estimate or round.',
+          "- For every fact, include fact_ja: a natural Japanese news-style paraphrase of fact, around 80-160 Japanese characters.",
+          "- fact_ja must only restate the information in fact. Do not add, infer, or embellish any detail.",
         ]
       : [
           "- For every fact, include fact_ja: a natural Japanese news-style paraphrase of fact, around 80-160 Japanese characters.",
@@ -142,7 +144,7 @@ export function buildSearchPrompt(
         ];
   const responseSchema =
     contentType === "recap"
-      ? '{"facts":[{"fact":"...","source_url":"https://...","confidence":"high|medium|low"}]}'
+      ? '{"facts":[{"fact":"...","fact_ja":"...","source_url":"https://...","confidence":"high|medium|low"}]}'
       : '{"facts":[{"fact":"...","fact_ja":"...","source_url":"https://...","confidence":"high|medium|low"}]}';
 
   return [
