@@ -33,6 +33,16 @@ export type {
   HistoricalMatchResult as AutumnNationsHistoricalMatchResult,
 } from "@/lib/scrapers/wikipedia-autumn-nations-results";
 export {
+  parseAustraliaJapanTestSeriesResultsHtml,
+  parseJapanFijiOfficialResultsHtml,
+  parseLipovitanChallengeCupResultsHtml,
+  wikipediaLipovitanChallengeCupResultsScraper,
+} from "@/lib/scrapers/wikipedia-lipovitan-challenge-cup-results";
+export type {
+  LipovitanChallengeCupMatchResult,
+  LipovitanChallengeCupResultScraper,
+} from "@/lib/scrapers/wikipedia-lipovitan-challenge-cup-results";
+export {
   parsePacificNationsCupResultsHtml,
   wikipediaPacificNationsCupResultsScraper,
 } from "@/lib/scrapers/wikipedia-pacific-nations-cup-results";

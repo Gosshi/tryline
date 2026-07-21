@@ -44,6 +44,8 @@ const COMPETITION_DESCRIPTIONS: Record<string, string> = {
   pnc: "パシフィック・ネーションズカップは日本・フィジー・サモア・トンガ・アメリカ・カナダなどが参加するアジア太平洋の国際大会。日本代表の重要な強化機会です。",
   "league-one":
     "ジャパンラグビー リーグワンは、日本の最高峰クラブが争う国内プロラグビーリーグです。シーズンを通じて上位進出と優勝を争います。",
+  "lipovitan-challenge-cup":
+    "リポビタンDチャレンジカップは大正製薬冠スポンサーの日本代表国内開催テストマッチシリーズ。2026年はオーストラリア・カナダ・フィジー代表と対戦します。",
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

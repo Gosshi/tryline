@@ -27,6 +27,12 @@ describe("formatFamilyName", () => {
     expect(formatFamilyName("league-one")).toBe("ジャパンラグビー リーグワン");
   });
 
+  it("formats the Lipovitan Challenge Cup family name in Japanese", () => {
+    expect(formatFamilyName("lipovitan-challenge-cup")).toBe(
+      "リポビタンDチャレンジカップ",
+    );
+  });
+
   it("formats League One competition titles in Japanese without changing slugs", () => {
     expect(formatCompetitionTitle("League One", "2025-26")).toBe(
       "ジャパンラグビー リーグワン 2025-26",

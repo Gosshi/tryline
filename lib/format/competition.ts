@@ -64,6 +64,7 @@ export const COMPETITION_FAMILY_COLORS: Record<string, string> = {
 const FAMILY_DISPLAY_NAMES: Record<string, string> = {
   "autumn-nations": "Autumn Nations",
   "league-one": "ジャパンラグビー リーグワン",
+  "lipovitan-challenge-cup": "リポビタンDチャレンジカップ",
   "nations-championship": "Nations Championship",
   "pacific-nations-cup": "Pacific Nations Cup",
   pnc: "Pacific Nations Cup",
