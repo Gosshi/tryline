@@ -26,6 +26,7 @@ import {
 import {
   getMatchesInRange,
   getNextMatchForCompetition,
+  getNextUpcomingMatch,
   getRecentlyReviewedFamilies,
   getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedMatchById,
@@ -179,6 +180,8 @@ export default async function HomePage() {
   const homepageWeekMatches = weeklyMatches
     .filter((match) => match.kickoffAt >= nowIso)
     .slice(0, 6);
+  const homepageNextUpcomingMatch =
+    homepageWeekMatches.length === 0 ? await getNextUpcomingMatch() : null;
   const homepageUpcomingMatches = upcomingMatches.filter(
     (match) =>
       !homepageWeekMatches.some((weekMatch) => weekMatch.id === match.id),
@@ -210,6 +213,8 @@ export default async function HomePage() {
     publishedReviewCount: featuredCompetitionLink?.publishedContentCount ?? 0,
     weekMatchCount: featuredCompetitionMatches.length,
   };
+  const hasHomeMatchBoard =
+    homepageWeekMatches.length > 0 || homepageNextUpcomingMatch !== null;
   const shouldShowSampleReview = Boolean(sampleMatch?.recapExcerpt);
   const jsonLd = [
     {
@@ -239,90 +244,99 @@ export default async function HomePage() {
   return (
     <main className="bg-paper min-h-screen">
       <UserStateProvider>
-      <script
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        type="application/ld+json"
-      />
-      <Suspense>
-        <CheckoutSuccessTracker />
-        <SignupSuccessTracker />
-      </Suspense>
-      <section className="relative overflow-hidden bg-[var(--color-ink)] py-16 sm:py-24">
-        <HeroTexture />
-        <div aria-hidden className="absolute inset-0 z-0">
-          <Image
-            alt=""
-            className="object-cover object-center opacity-25"
-            fill
-            priority
-            sizes="100vw"
-            src="/visuals/home-hero.jpg"
-          />
-          <div className="bg-[var(--color-ink)]/60 absolute inset-0" />
-        </div>
-
-        <div className="relative z-10 mx-auto max-w-[1536px] px-4 sm:px-6 md:px-8">
-          <div
-            className={
-              homepageWeekMatches.length > 0
-                ? "grid grid-cols-[minmax(0,1fr)] items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px] xl:grid-cols-[minmax(0,1.25fr)_minmax(460px,0.75fr)]"
-                : "max-w-3xl"
-            }
-          >
-            <div>
-              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
-                Rugby Analysis in Japanese
-              </p>
-              <h1 className="max-w-3xl text-balance font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
-                  今週の海外ラグビーを、日本時間で追う。
-                </h1>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
-                PNC、Six
-                Nations、Premiership、URC。週末に重なる試合を、日程・結果・順位・日本語レビューまでひとつの流れで確認できます。
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <TrackedLink
-                  analytics={{
-                    cta_id: "home_hero_calendar",
-                    cta_location: "home_hero",
-                    destination: "calendar",
-                    label: "今週の試合を見る",
-                  }}
-                  className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                  href="/calendar"
-                >
-                  今週の試合を見る
-                </TrackedLink>
-                <HomepagePremiumCta />
-              </div>
-            </div>
-            <HomeMatchdayBoard
-              focusMatchId={homepageFocusMatchId}
-              matches={homepageWeekMatches}
-              standingPositions={homepageStandingPositions}
-              weekLabel={getHomeWeekLabel(weekRange.weekStartJst)}
+        <script
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          type="application/ld+json"
+        />
+        <Suspense>
+          <CheckoutSuccessTracker />
+          <SignupSuccessTracker />
+        </Suspense>
+        <section className="relative overflow-hidden bg-[var(--color-ink)] py-16 sm:py-24">
+          <HeroTexture />
+          <div aria-hidden className="absolute inset-0 z-0">
+            <Image
+              alt=""
+              className="object-cover object-center opacity-25"
+              fill
+              priority
+              sizes="100vw"
+              src="/visuals/home-hero.jpg"
             />
+            <div className="bg-[var(--color-ink)]/60 absolute inset-0" />
           </div>
-        </div>
-      </section>
 
-      <HomepageFavoriteTeams allTeams={allTeams} />
-
-      <div className="mx-auto max-w-[1536px] space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <section className="space-y-3">
-          <h2 className="font-serif text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
-            注目大会
-          </h2>
-          <FeaturedCompetitionCard stats={featuredCompetitionStats} />
+          <div className="relative z-10 mx-auto max-w-[1536px] px-4 sm:px-6 md:px-8">
+            <div
+              className={
+                hasHomeMatchBoard
+                  ? "grid grid-cols-[minmax(0,1fr)] items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px] xl:grid-cols-[minmax(0,1.25fr)_minmax(460px,0.75fr)]"
+                  : "max-w-3xl"
+              }
+            >
+              <div>
+                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                  Rugby Analysis in Japanese
+                </p>
+                <h1 className="max-w-3xl text-balance font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
+                  {homepageWeekMatches.length > 0
+                    ? "今週の海外ラグビーを、日本時間で追う。"
+                    : "次の海外ラグビーを、日本時間で待つ。"}
+                </h1>
+                <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
+                  {homepageWeekMatches.length > 0
+                    ? "PNC、Six Nations、Premiership、URC。週末に重なる試合を、日程・結果・順位・日本語レビューまでひとつの流れで確認できます。"
+                    : "次のキックオフに備えて、日程と応援したいチームを確認。試合が始まれば、日本語レビューまでひとつの流れで追えます。"}
+                </p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <TrackedLink
+                    analytics={{
+                      cta_id: "home_hero_calendar",
+                      cta_location: "home_hero",
+                      destination: "calendar",
+                      label:
+                        homepageWeekMatches.length > 0
+                          ? "今週の試合を見る"
+                          : "試合カレンダーを見る",
+                    }}
+                    className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    href="/calendar"
+                  >
+                    {homepageWeekMatches.length > 0
+                      ? "今週の試合を見る"
+                      : "試合カレンダーを見る"}
+                  </TrackedLink>
+                  <HomepagePremiumCta />
+                </div>
+              </div>
+              <HomeMatchdayBoard
+                focusMatchId={homepageFocusMatchId}
+                matches={homepageWeekMatches}
+                nextUpcomingMatch={homepageNextUpcomingMatch}
+                standingPositions={homepageStandingPositions}
+                weekLabel={getHomeWeekLabel(weekRange.weekStartJst)}
+              />
+            </div>
+          </div>
         </section>
 
-        {homepageUpcomingMatches.length > 0 && (
+        <HomepageFavoriteTeams allTeams={allTeams} />
+
+        <div className="mx-auto max-w-[1536px] space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
           <section className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-              今後の試合
+            <h2 className="font-serif text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
+              注目大会
             </h2>
-            <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
-              {homepageUpcomingMatches.map((match, index) => {
+            <FeaturedCompetitionCard stats={featuredCompetitionStats} />
+          </section>
+
+          {homepageUpcomingMatches.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                今後の試合
+              </h2>
+              <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                {homepageUpcomingMatches.map((match, index) => {
                   const family = match.competition.slug.replace(
                     /-\d{4}(-\d{2})?$/,
                     "",
@@ -444,287 +458,283 @@ export default async function HomePage() {
                   );
                 })}
               </ul>
-          </section>
-        )}
+            </section>
+          )}
 
-        {(recentReviewGroups.length > 0 || shouldShowSampleReview) && (
-          <section className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-              最近のレビュー
-            </h2>
-            <div className="grid gap-5 xl:grid-cols-2">
-              {shouldShowSampleReview && sampleMatch && (
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
-                  <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-[#f8fafc] px-5 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                      無料で読めるレビュー
-                    </p>
-                    <span className="bg-[var(--color-accent)]/10 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
-                      Sample
-                    </span>
-                  </div>
-                  <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_240px]">
-                    <div>
-                      <p className="text-xs text-[var(--color-ink-muted)]">
-                        {formatCompetitionTitle(
-                          sampleMatch.competition,
-                          sampleMatch.competition.season,
-                        )}
+          {(recentReviewGroups.length > 0 || shouldShowSampleReview) && (
+            <section className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                最近のレビュー
+              </h2>
+              <div className="grid gap-5 xl:grid-cols-2">
+                {shouldShowSampleReview && sampleMatch && (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
+                    <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-[#f8fafc] px-5 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                        無料で読めるレビュー
                       </p>
-                      <p className="mt-0.5 text-sm font-bold text-[var(--color-ink)]">
-                        {sampleMatch.homeTeam.name} 対{" "}
-                        {sampleMatch.awayTeam.name}
-                      </p>
-                      <p className="line-clamp-7 mt-4 max-w-3xl border-l-4 border-[var(--color-accent)] pl-4 text-sm leading-relaxed text-[var(--color-ink)]">
-                        {sampleMatch.recapExcerpt}
-                      </p>
+                      <span className="bg-[var(--color-accent)]/10 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
+                        Sample
+                      </span>
                     </div>
-                    <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
-                      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                        試合後に聞けること
-                      </p>
-                      <ul className="mt-3 space-y-2 text-sm font-semibold text-[var(--color-ink)]">
-                        <li>勝敗を分けた場面はどこ？</li>
-                        <li>日本代表の次戦にどう影響する？</li>
-                        <li>この選手はどんなタイプ？</li>
-                      </ul>
+                    <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_240px]">
+                      <div>
+                        <p className="text-xs text-[var(--color-ink-muted)]">
+                          {formatCompetitionTitle(
+                            sampleMatch.competition,
+                            sampleMatch.competition.season,
+                          )}
+                        </p>
+                        <p className="mt-0.5 text-sm font-bold text-[var(--color-ink)]">
+                          {sampleMatch.homeTeam.name} 対{" "}
+                          {sampleMatch.awayTeam.name}
+                        </p>
+                        <p className="line-clamp-7 mt-4 max-w-3xl border-l-4 border-[var(--color-accent)] pl-4 text-sm leading-relaxed text-[var(--color-ink)]">
+                          {sampleMatch.recapExcerpt}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
+                        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                          試合後に聞けること
+                        </p>
+                        <ul className="mt-3 space-y-2 text-sm font-semibold text-[var(--color-ink)]">
+                          <li>勝敗を分けた場面はどこ？</li>
+                          <li>日本代表の次戦にどう影響する？</li>
+                          <li>この選手はどんなタイプ？</li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-4">
+                      <TrackedLink
+                        analytics={{
+                          content_type: "recap",
+                          cta_id: "home_recent_reviews_sample_recap",
+                          cta_location: "home_recent_reviews",
+                          destination: "sample_match",
+                          is_sample: true,
+                          label: "無料サンプルを読む",
+                          match_id: sampleMatch.id,
+                        }}
+                        className="text-xs font-semibold text-[var(--color-accent)] hover:underline"
+                        href={`/matches/${sampleMatch.id}`}
+                      >
+                        無料サンプルを読む →
+                      </TrackedLink>
+                      <TrackedLink
+                        analytics={{
+                          cta_id: "home_recent_reviews_pricing",
+                          cta_location: "home_recent_reviews",
+                          destination: "pricing",
+                          label: "他のレビューも7日間無料で読む",
+                        }}
+                        className="rounded-full bg-[var(--color-accent)] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90"
+                        href="/pricing"
+                      >
+                        他のレビューも7日間無料で読む
+                      </TrackedLink>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-4">
-                    <TrackedLink
-                      analytics={{
-                        content_type: "recap",
-                        cta_id: "home_recent_reviews_sample_recap",
-                        cta_location: "home_recent_reviews",
-                        destination: "sample_match",
-                        is_sample: true,
-                        label: "無料サンプルを読む",
-                        match_id: sampleMatch.id,
-                      }}
-                      className="text-xs font-semibold text-[var(--color-accent)] hover:underline"
-                      href={`/matches/${sampleMatch.id}`}
-                    >
-                      無料サンプルを読む →
-                    </TrackedLink>
-                    <TrackedLink
-                      analytics={{
-                        cta_id: "home_recent_reviews_pricing",
-                        cta_location: "home_recent_reviews",
-                        destination: "pricing",
-                        label: "他のレビューも7日間無料で読む",
-                      }}
-                      className="rounded-full bg-[var(--color-accent)] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90"
-                      href="/pricing"
-                    >
-                      他のレビューも7日間無料で読む
-                    </TrackedLink>
-                  </div>
-                </div>
-              )}
-              {recentReviewGroups.map((group) => {
-                const match = group.hero;
-                const shouldShowStatusPane =
-                  recentReviewGroups.length === 1 &&
-                  shouldShowRecentReviewStatusPane;
+                )}
+                {recentReviewGroups.map((group) => {
+                  const match = group.hero;
+                  const shouldShowStatusPane =
+                    recentReviewGroups.length === 1 &&
+                    shouldShowRecentReviewStatusPane;
 
-                return (
-                  <div
-                    className={
-                      recentReviewGroups.length === 1
-                        ? "xl:col-span-2"
-                        : undefined
-                    }
-                    key={`${group.competition.slug}-${group.latestReviewAt}`}
-                  >
+                  return (
                     <div
                       className={
-                        shouldShowStatusPane
-                          ? "grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]"
-                          : "space-y-2"
+                        recentReviewGroups.length === 1
+                          ? "xl:col-span-2"
+                          : undefined
                       }
+                      key={`${group.competition.slug}-${group.latestReviewAt}`}
                     >
-                      <div className="min-w-0 space-y-2">
-                        <div className="flex min-w-0 items-center justify-between gap-3">
-                          <h3 className="truncate text-sm font-black text-[var(--color-ink)]">
-                            {formatCompetitionTitle(
-                              group.competition,
-                              group.competition.season,
-                            )}
-                          </h3>
-                          <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[var(--color-ink-muted)] ring-1 ring-slate-200">
-                            最新節
-                          </span>
-                        </div>
-                        <Link
-                          className="group block overflow-hidden rounded-2xl px-5 py-5 text-white shadow-[0_18px_36px_rgb(15_23_42/0.18)] transition-all duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.98]"
-                          href={`/matches/${match.id}`}
-                          style={{
-                            background: `linear-gradient(180deg, rgb(12 16 28 / 12%), rgb(12 16 28 / 34%)), linear-gradient(120deg, ${getTeamColor(match.homeTeam.slug)}, ${getTeamColor(match.awayTeam.slug)})`,
-                          }}
-                        >
-                          <p className="bg-white/18 inline-flex rounded-full px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur-sm">
-                            {formatCompetitionTitle(
-                              match.competition,
-                              match.competition.season,
-                            )}
-                          </p>
-                          <div className="mt-4 flex min-w-0 items-center justify-between gap-4">
-                            <div className="min-w-0">
-                              <p className="flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
-                                <TeamBadge
-                                  shortCode={match.homeTeam.shortCode}
-                                  size={24}
-                                  slug={match.homeTeam.slug}
-                                />
-                                <span className="truncate">
-                                  {match.homeTeam.name}
-                                </span>
-                              </p>
-                              <p className="mt-2 flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
-                                <TeamBadge
-                                  shortCode={match.awayTeam.shortCode}
-                                  size={24}
-                                  slug={match.awayTeam.slug}
-                                />
-                                <span className="truncate">
-                                  {match.awayTeam.name}
-                                </span>
-                              </p>
-                            </div>
-                            <p className="shrink-0 font-number text-3xl font-black tabular-nums sm:text-4xl">
-                              <HomepageSpoilerScore
-                                className="max-w-[8rem] text-white"
-                              >
-                                {match.homeScore}–{match.awayScore}
-                              </HomepageSpoilerScore>
-                            </p>
-                          </div>
-                          <span className="mt-4 inline-flex text-sm font-bold text-white/90 transition-transform group-hover:translate-x-1">
-                            レビューを読む →
-                          </span>
-                        </Link>
-
-                        {group.compact.length > 0 && (
-                          <ul className="divide-y divide-slate-200 rounded-xl bg-white px-1 shadow-sm shadow-slate-200/40 ring-1 ring-slate-200">
-                            {group.compact.map((compactMatch) => (
-                              <li key={compactMatch.id}>
-                                <Link
-                                  className="group flex items-center justify-between gap-3 px-3 py-3 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
-                                  href={`/matches/${compactMatch.id}`}
-                                >
-                                  <div className="min-w-0">
-                                    <p className="truncate text-[11px] font-medium text-[var(--color-ink-muted)]">
-                                      {formatCompetitionTitle(
-                                        compactMatch.competition,
-                                        compactMatch.competition.season,
-                                      )}
-                                    </p>
-                                    <p className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden text-sm font-semibold text-[var(--color-ink)]">
-                                      <span className="truncate">
-                                        {compactMatch.homeTeam.shortCode}
-                                      </span>
-                                      <span className="shrink-0 font-number tabular-nums text-slate-500">
-                                        <HomepageSpoilerScore
-                                          className="max-w-[7rem]"
-                                        >
-                                          {compactMatch.homeScore}–
-                                          {compactMatch.awayScore}
-                                        </HomepageSpoilerScore>
-                                      </span>
-                                      <span className="truncate">
-                                        {compactMatch.awayTeam.shortCode}
-                                      </span>
-                                    </p>
-                                  </div>
-                                  <span className="shrink-0 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
-                                    →
-                                  </span>
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-
-                      {shouldShowStatusPane && (
-                        <aside className="min-w-0 border-t border-[var(--color-rule)] pt-5 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-                          <div className="flex items-center justify-between gap-3">
-                            <h3 className="text-sm font-black text-[var(--color-ink)]">
-                              大会の現在地
-                            </h3>
-                            <span className="text-[11px] font-semibold text-[var(--color-ink-muted)]">
+                      <div
+                        className={
+                          shouldShowStatusPane
+                            ? "grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]"
+                            : "space-y-2"
+                        }
+                      >
+                        <div className="min-w-0 space-y-2">
+                          <div className="flex min-w-0 items-center justify-between gap-3">
+                            <h3 className="truncate text-sm font-black text-[var(--color-ink)]">
                               {formatCompetitionTitle(
                                 group.competition,
                                 group.competition.season,
                               )}
+                            </h3>
+                            <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[var(--color-ink-muted)] ring-1 ring-slate-200">
+                              最新節
                             </span>
                           </div>
-                          {recentReviewStandings.length > 0 && (
-                            <div className="mt-3">
-                              <StandingsTable
-                                excerptThreshold={5}
-                                highlightedTeams={[
-                                  match.homeTeam.name,
-                                  match.awayTeam.name,
-                                ]}
-                                standings={recentReviewStandings}
-                                title="現在の順位"
-                              />
-                            </div>
-                          )}
-                          {recentReviewNextMatch && (
-                            <Link
-                              className="group mt-3 flex items-center justify-between gap-3 border-t border-[var(--color-rule)] pt-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                              href={`/matches/${recentReviewNextMatch.id}`}
-                            >
+                          <Link
+                            className="group block overflow-hidden rounded-2xl px-5 py-5 text-white shadow-[0_18px_36px_rgb(15_23_42/0.18)] transition-all duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.98]"
+                            href={`/matches/${match.id}`}
+                            style={{
+                              background: `linear-gradient(180deg, rgb(12 16 28 / 12%), rgb(12 16 28 / 34%)), linear-gradient(120deg, ${getTeamColor(match.homeTeam.slug)}, ${getTeamColor(match.awayTeam.slug)})`,
+                            }}
+                          >
+                            <p className="bg-white/18 inline-flex rounded-full px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur-sm">
+                              {formatCompetitionTitle(
+                                match.competition,
+                                match.competition.season,
+                              )}
+                            </p>
+                            <div className="mt-4 flex min-w-0 items-center justify-between gap-4">
                               <div className="min-w-0">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-                                  次戦
+                                <p className="flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
+                                  <TeamBadge
+                                    shortCode={match.homeTeam.shortCode}
+                                    size={24}
+                                    slug={match.homeTeam.slug}
+                                  />
+                                  <span className="truncate">
+                                    {match.homeTeam.name}
+                                  </span>
                                 </p>
-                                <p className="mt-1 truncate text-sm font-bold text-[var(--color-ink)] transition-colors group-hover:text-[var(--color-accent)]">
-                                  {recentReviewNextMatch.homeTeam.name} 対{" "}
-                                  {recentReviewNextMatch.awayTeam.name}
+                                <p className="mt-2 flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
+                                  <TeamBadge
+                                    shortCode={match.awayTeam.shortCode}
+                                    size={24}
+                                    slug={match.awayTeam.slug}
+                                  />
+                                  <span className="truncate">
+                                    {match.awayTeam.name}
+                                  </span>
                                 </p>
                               </div>
-                              <time
-                                className="shrink-0 text-right text-xs tabular-nums text-[var(--color-ink-muted)]"
-                                dateTime={recentReviewNextMatch.kickoffAt}
-                              >
-                                {formatKickoffJstDate(
-                                  recentReviewNextMatch.kickoffAt,
-                                )}
-                                <br />
-                                {formatKickoffJstTime(
-                                  recentReviewNextMatch.kickoffAt,
-                                )}
-                              </time>
-                            </Link>
-                          )}
-                          <Link
-                            className="mt-4 inline-flex text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                            href={`/c/${group.competition.family}/${group.competition.season}`}
-                          >
-                            大会ページを見る →
+                              <p className="shrink-0 font-number text-3xl font-black tabular-nums sm:text-4xl">
+                                <HomepageSpoilerScore className="max-w-[8rem] text-white">
+                                  {match.homeScore}–{match.awayScore}
+                                </HomepageSpoilerScore>
+                              </p>
+                            </div>
+                            <span className="mt-4 inline-flex text-sm font-bold text-white/90 transition-transform group-hover:translate-x-1">
+                              レビューを読む →
+                            </span>
                           </Link>
-                        </aside>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
 
-        {reviewedFamilies.length > 0 && (
-          <section>
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-              最近レビューのある大会
-            </h2>
-            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {reviewedFamilies.map((item) => (
-                <li key={item.family}>
-                  <Link
+                          {group.compact.length > 0 && (
+                            <ul className="divide-y divide-slate-200 rounded-xl bg-white px-1 shadow-sm shadow-slate-200/40 ring-1 ring-slate-200">
+                              {group.compact.map((compactMatch) => (
+                                <li key={compactMatch.id}>
+                                  <Link
+                                    className="group flex items-center justify-between gap-3 px-3 py-3 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
+                                    href={`/matches/${compactMatch.id}`}
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="truncate text-[11px] font-medium text-[var(--color-ink-muted)]">
+                                        {formatCompetitionTitle(
+                                          compactMatch.competition,
+                                          compactMatch.competition.season,
+                                        )}
+                                      </p>
+                                      <p className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden text-sm font-semibold text-[var(--color-ink)]">
+                                        <span className="truncate">
+                                          {compactMatch.homeTeam.shortCode}
+                                        </span>
+                                        <span className="shrink-0 font-number tabular-nums text-slate-500">
+                                          <HomepageSpoilerScore className="max-w-[7rem]">
+                                            {compactMatch.homeScore}–
+                                            {compactMatch.awayScore}
+                                          </HomepageSpoilerScore>
+                                        </span>
+                                        <span className="truncate">
+                                          {compactMatch.awayTeam.shortCode}
+                                        </span>
+                                      </p>
+                                    </div>
+                                    <span className="shrink-0 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
+                                      →
+                                    </span>
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+
+                        {shouldShowStatusPane && (
+                          <aside className="min-w-0 border-t border-[var(--color-rule)] pt-5 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+                            <div className="flex items-center justify-between gap-3">
+                              <h3 className="text-sm font-black text-[var(--color-ink)]">
+                                大会の現在地
+                              </h3>
+                              <span className="text-[11px] font-semibold text-[var(--color-ink-muted)]">
+                                {formatCompetitionTitle(
+                                  group.competition,
+                                  group.competition.season,
+                                )}
+                              </span>
+                            </div>
+                            {recentReviewStandings.length > 0 && (
+                              <div className="mt-3">
+                                <StandingsTable
+                                  excerptThreshold={5}
+                                  highlightedTeams={[
+                                    match.homeTeam.name,
+                                    match.awayTeam.name,
+                                  ]}
+                                  standings={recentReviewStandings}
+                                  title="現在の順位"
+                                />
+                              </div>
+                            )}
+                            {recentReviewNextMatch && (
+                              <Link
+                                className="group mt-3 flex items-center justify-between gap-3 border-t border-[var(--color-rule)] pt-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                                href={`/matches/${recentReviewNextMatch.id}`}
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                                    次戦
+                                  </p>
+                                  <p className="mt-1 truncate text-sm font-bold text-[var(--color-ink)] transition-colors group-hover:text-[var(--color-accent)]">
+                                    {recentReviewNextMatch.homeTeam.name} 対{" "}
+                                    {recentReviewNextMatch.awayTeam.name}
+                                  </p>
+                                </div>
+                                <time
+                                  className="shrink-0 text-right text-xs tabular-nums text-[var(--color-ink-muted)]"
+                                  dateTime={recentReviewNextMatch.kickoffAt}
+                                >
+                                  {formatKickoffJstDate(
+                                    recentReviewNextMatch.kickoffAt,
+                                  )}
+                                  <br />
+                                  {formatKickoffJstTime(
+                                    recentReviewNextMatch.kickoffAt,
+                                  )}
+                                </time>
+                              </Link>
+                            )}
+                            <Link
+                              className="mt-4 inline-flex text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                              href={`/c/${group.competition.family}/${group.competition.season}`}
+                            >
+                              大会ページを見る →
+                            </Link>
+                          </aside>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {reviewedFamilies.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                最近レビューのある大会
+              </h2>
+              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {reviewedFamilies.map((item) => (
+                  <li key={item.family}>
+                    <Link
                       className="group grid h-full grid-cols-[6rem_minmax(0,1fr)_auto] overflow-hidden rounded-xl border border-slate-200 bg-white transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm active:scale-[0.98] sm:grid-cols-[8rem_minmax(0,1fr)_auto]"
                       href={`/c/${item.family}/${item.competitionSeason}`}
                     >
@@ -758,79 +768,79 @@ export default async function HomePage() {
                         →
                       </span>
                     </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-            大会アーカイブ
-          </h2>
-          {homepageCompetitionLinks.length === 0 ? (
-            <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-sm text-[var(--color-ink-muted)]">
-              表示できる大会はありません
-            </p>
-          ) : (
-            <ul className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {homepageCompetitionLinks.map((competition, index) => {
-                const accent = getCompetitionFamilyColor(competition.family);
-                const isFeatured = index === 0;
-
-                return (
-                  <li
-                    className={isFeatured ? "w-44 shrink-0" : "w-32 shrink-0"}
-                    key={`${competition.family}-${competition.season}`}
-                  >
-                    <Link
-                      aria-label={`${formatFamilyName(competition.family)} ${competition.season} 最新シーズン`}
-                      className="group flex h-24 flex-col justify-between overflow-hidden rounded-2xl px-4 py-3 text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.98]"
-                      href={`/c/${competition.family}/${competition.season}`}
-                      style={{
-                        background: `linear-gradient(160deg, color-mix(in srgb, ${accent} 92%, #111827), ${accent})`,
-                      }}
-                    >
-                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 shadow-sm ring-1 ring-white/40">
-                        <Image
-                          alt=""
-                          aria-hidden="true"
-                          className="h-7 w-7 object-contain"
-                          height={28}
-                          src={getCompetitionLogoSrc(competition.family)}
-                          width={28}
-                        />
-                      </span>
-                      <span>
-                        <span className="line-clamp-2 text-sm font-black leading-tight">
-                          {formatFamilyName(competition.family)}
-                        </span>
-                        <span className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-white/75">
-                          {competition.season}
-                          <span className="sr-only"> 最新シーズン</span>
-                          {competition.family === "league-one" && (
-                            <span className="bg-white/18 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/85">
-                              EN
-                            </span>
-                          )}
-                        </span>
-                      </span>
-                    </Link>
-                    {competition.family === "rwc" && (
-                      <Link
-                        className="mt-2 block rounded-lg px-1 text-xs font-medium text-[var(--color-accent)] underline underline-offset-4 transition-colors hover:text-[var(--color-accent-strong)]"
-                        href="/c/rwc/2027"
-                      >
-                        2027年大会（オーストラリア開催）の日程はこちら →
-                      </Link>
-                    )}
                   </li>
-                );
-              })}
-            </ul>
+                ))}
+              </ul>
+            </section>
           )}
-        </section>
-      </div>
+
+          <section className="space-y-3">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              大会アーカイブ
+            </h2>
+            {homepageCompetitionLinks.length === 0 ? (
+              <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-sm text-[var(--color-ink-muted)]">
+                表示できる大会はありません
+              </p>
+            ) : (
+              <ul className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {homepageCompetitionLinks.map((competition, index) => {
+                  const accent = getCompetitionFamilyColor(competition.family);
+                  const isFeatured = index === 0;
+
+                  return (
+                    <li
+                      className={isFeatured ? "w-44 shrink-0" : "w-32 shrink-0"}
+                      key={`${competition.family}-${competition.season}`}
+                    >
+                      <Link
+                        aria-label={`${formatFamilyName(competition.family)} ${competition.season} 最新シーズン`}
+                        className="group flex h-24 flex-col justify-between overflow-hidden rounded-2xl px-4 py-3 text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.98]"
+                        href={`/c/${competition.family}/${competition.season}`}
+                        style={{
+                          background: `linear-gradient(160deg, color-mix(in srgb, ${accent} 92%, #111827), ${accent})`,
+                        }}
+                      >
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 shadow-sm ring-1 ring-white/40">
+                          <Image
+                            alt=""
+                            aria-hidden="true"
+                            className="h-7 w-7 object-contain"
+                            height={28}
+                            src={getCompetitionLogoSrc(competition.family)}
+                            width={28}
+                          />
+                        </span>
+                        <span>
+                          <span className="line-clamp-2 text-sm font-black leading-tight">
+                            {formatFamilyName(competition.family)}
+                          </span>
+                          <span className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-white/75">
+                            {competition.season}
+                            <span className="sr-only"> 最新シーズン</span>
+                            {competition.family === "league-one" && (
+                              <span className="bg-white/18 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/85">
+                                EN
+                              </span>
+                            )}
+                          </span>
+                        </span>
+                      </Link>
+                      {competition.family === "rwc" && (
+                        <Link
+                          className="mt-2 block rounded-lg px-1 text-xs font-medium text-[var(--color-accent)] underline underline-offset-4 transition-colors hover:text-[var(--color-accent-strong)]"
+                          href="/c/rwc/2027"
+                        >
+                          2027年大会（オーストラリア開催）の日程はこちら →
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </div>
       </UserStateProvider>
     </main>
   );

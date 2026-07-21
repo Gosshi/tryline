@@ -234,4 +234,40 @@ describe("getMatchesInRange", () => {
       kickoffAt: "2026-09-12T07:00:00.000Z",
     });
   });
+
+  it("loads the earliest scheduled match across competitions for a no-match homepage", async () => {
+    dbMock.matchRows = [
+      createMatchRow({
+        competitionName: "Rugby Championship",
+        competitionSeason: "2026",
+        id: "earliest-upcoming-match",
+        kickoffAt: "2026-08-15T07:00:00.000Z",
+        status: "scheduled",
+      }),
+    ];
+    const { getNextUpcomingMatch } = await import("@/lib/db/queries/matches");
+
+    const match = await getNextUpcomingMatch();
+
+    expect(dbMock.matchesBuilder.eq).toHaveBeenCalledWith(
+      "status",
+      "scheduled",
+    );
+    expect(dbMock.matchesBuilder.gte).toHaveBeenCalledWith(
+      "kickoff_at",
+      expect.any(String),
+    );
+    expect(dbMock.matchesBuilder.order).toHaveBeenCalledWith("kickoff_at", {
+      ascending: true,
+    });
+    expect(dbMock.matchesBuilder.limit).toHaveBeenCalledWith(1);
+    expect(dbMock.matchesBuilder.eq).not.toHaveBeenCalledWith(
+      "competition.family",
+      expect.anything(),
+    );
+    expect(match).toMatchObject({
+      id: "earliest-upcoming-match",
+      kickoffAt: "2026-08-15T07:00:00.000Z",
+    });
+  });
 });

@@ -2,16 +2,20 @@ import Link from "next/link";
 
 import { TeamBadge } from "@/components/team-badge";
 import { formatCompetitionTitle } from "@/lib/format/competition";
-import { formatKickoffJstTime } from "@/lib/format/kickoff";
+import {
+  formatKickoffJstDate,
+  formatKickoffJstTime,
+} from "@/lib/format/kickoff";
 import { getTeamColor } from "@/lib/format/team-identity";
 
-import type { CalendarMatch } from "@/lib/db/queries/matches";
+import type { CalendarMatch, UpcomingMatch } from "@/lib/db/queries/matches";
 import type { StandingPositionLookup } from "@/lib/db/queries/standings";
 import type { ReactNode } from "react";
 
 type HomeMatchdayBoardProps = {
   focusMatchId: string | null;
   matches: CalendarMatch[];
+  nextUpcomingMatch: UpcomingMatch | null;
   standingPositions: StandingPositionLookup;
   weekLabel: string;
 };
@@ -20,6 +24,38 @@ type BoardMetric = {
   label: string;
   value: ReactNode;
 };
+
+const DAY_MS = 24 * 60 * 60 * 1_000;
+const JST_OFFSET_MS = 9 * 60 * 60 * 1_000;
+
+function getJstStartOfDay(date: Date): number {
+  const jstDate = new Date(date.getTime() + JST_OFFSET_MS);
+
+  return Date.UTC(
+    jstDate.getUTCFullYear(),
+    jstDate.getUTCMonth(),
+    jstDate.getUTCDate(),
+  );
+}
+
+export function getNextMatchCountdownLabel(
+  kickoffAt: string,
+  now = new Date(),
+): string {
+  const daysUntilKickoff = Math.ceil(
+    (getJstStartOfDay(new Date(kickoffAt)) - getJstStartOfDay(now)) / DAY_MS,
+  );
+
+  if (daysUntilKickoff <= 0) {
+    return "次の試合は今日";
+  }
+
+  if (daysUntilKickoff === 1) {
+    return "次の試合は明日";
+  }
+
+  return `次の試合まであと${daysUntilKickoff}日`;
+}
 
 function getContentLabel(match: CalendarMatch): string {
   if (match.hasRecap) {
@@ -87,11 +123,112 @@ function MatchMiniRow({ match }: { match: CalendarMatch }) {
 export function HomeMatchdayBoard({
   focusMatchId,
   matches,
+  nextUpcomingMatch,
   standingPositions,
   weekLabel,
 }: HomeMatchdayBoardProps) {
   if (matches.length === 0) {
-    return null;
+    if (!nextUpcomingMatch) {
+      return null;
+    }
+
+    const competitionTitle = formatCompetitionTitle(
+      nextUpcomingMatch.competition,
+      nextUpcomingMatch.competition.season,
+    );
+
+    return (
+      <aside
+        aria-label="次の試合"
+        className="border-white/12 rounded-[22px] border bg-white/[0.08] p-4 shadow-2xl shadow-black/25 backdrop-blur-md sm:p-5"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--color-accent)]">
+            Next Kickoff
+          </p>
+          <p className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold text-white/70">
+            {getNextMatchCountdownLabel(nextUpcomingMatch.kickoffAt)}
+          </p>
+        </div>
+
+        <div
+          className="mt-4 overflow-hidden rounded-2xl p-4 text-white shadow-lg shadow-black/20"
+          style={{
+            background: `linear-gradient(160deg, rgb(12 16 28 / 42%), rgb(12 16 28 / 20%)), linear-gradient(135deg, ${getTeamColor(nextUpcomingMatch.homeTeam.slug)}33, ${getTeamColor(nextUpcomingMatch.awayTeam.slug)}33)`,
+          }}
+        >
+          <Link
+            className="bg-white/16 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold text-white/85 backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            href={`/matches/${nextUpcomingMatch.id}`}
+          >
+            {competitionTitle}
+          </Link>
+          <div className="mt-5 grid min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <Link
+              className="min-w-0 text-right focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              href={`/teams/${nextUpcomingMatch.homeTeam.slug}`}
+            >
+              <span className="flex min-w-0 items-center justify-end gap-2 overflow-hidden text-base font-black leading-tight">
+                <span className="truncate">
+                  {nextUpcomingMatch.homeTeam.name}
+                </span>
+                <TeamBadge
+                  shortCode={nextUpcomingMatch.homeTeam.shortCode}
+                  size={24}
+                  slug={nextUpcomingMatch.homeTeam.slug}
+                />
+              </span>
+            </Link>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-[var(--color-ink)] shadow-sm">
+              対
+            </span>
+            <Link
+              className="min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              href={`/teams/${nextUpcomingMatch.awayTeam.slug}`}
+            >
+              <span className="flex min-w-0 items-center gap-2 overflow-hidden text-base font-black leading-tight">
+                <TeamBadge
+                  shortCode={nextUpcomingMatch.awayTeam.shortCode}
+                  size={24}
+                  slug={nextUpcomingMatch.awayTeam.slug}
+                />
+                <span className="truncate">
+                  {nextUpcomingMatch.awayTeam.name}
+                </span>
+              </span>
+            </Link>
+          </div>
+          <p className="mt-4 text-center text-xs font-bold text-white/75">
+            {formatKickoffJstDate(nextUpcomingMatch.kickoffAt)}{" "}
+            {formatKickoffJstTime(nextUpcomingMatch.kickoffAt)}
+          </p>
+        </div>
+
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <Link
+            className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            href={`/matches/${nextUpcomingMatch.id}`}
+          >
+            試合の詳細を見る
+          </Link>
+          <Link
+            className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            href="/calendar"
+          >
+            カレンダーを見る
+          </Link>
+          <Link
+            className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            href="/?notifications=open"
+          >
+            通知設定を開く
+          </Link>
+        </div>
+        <p className="mt-3 text-center text-[11px] leading-5 text-white/55">
+          応援したいチームを選ぶと、チームページからお気に入りに登録できます。
+        </p>
+      </aside>
+    );
   }
 
   const focusMatch =
@@ -115,7 +252,7 @@ export function HomeMatchdayBoard({
   return (
     <aside
       aria-label="今週の注目試合"
-      className="rounded-[22px] border border-white/12 bg-white/[0.08] p-4 shadow-2xl shadow-black/25 backdrop-blur-md sm:p-5"
+      className="border-white/12 rounded-[22px] border bg-white/[0.08] p-4 shadow-2xl shadow-black/25 backdrop-blur-md sm:p-5"
     >
       <div className="flex items-center justify-between gap-3">
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--color-accent)]">
@@ -133,7 +270,7 @@ export function HomeMatchdayBoard({
           background: `linear-gradient(160deg, rgb(12 16 28 / 42%), rgb(12 16 28 / 20%)), linear-gradient(135deg, ${getTeamColor(focusMatch.homeTeam.slug)}33, ${getTeamColor(focusMatch.awayTeam.slug)}33)`,
         }}
       >
-        <span className="inline-flex rounded-full bg-white/16 px-2.5 py-1 text-[10px] font-bold text-white/85 backdrop-blur-sm">
+        <span className="bg-white/16 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold text-white/85 backdrop-blur-sm">
           {formatCompetitionTitle(
             focusMatch.competition,
             focusMatch.competition.season,

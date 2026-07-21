@@ -43,6 +43,7 @@ const matchMocks = vi.hoisted(() => ({
   getFavoriteTeamMatches: vi.fn(),
   getMatchesInRange: vi.fn(),
   getNextMatchForCompetition: vi.fn(),
+  getNextUpcomingMatch: vi.fn(),
   getRecentlyReviewedCompetitionGroups: vi.fn(),
   getRecentlyReviewedFamilies: vi.fn(),
   getRecentlyReviewedMatchById: vi.fn(),
@@ -127,6 +128,7 @@ vi.mock("@/lib/db/queries/matches", () => ({
   getFavoriteTeamMatches: matchMocks.getFavoriteTeamMatches,
   getMatchesInRange: matchMocks.getMatchesInRange,
   getNextMatchForCompetition: matchMocks.getNextMatchForCompetition,
+  getNextUpcomingMatch: matchMocks.getNextUpcomingMatch,
   getRecentlyReviewedCompetitionGroups:
     matchMocks.getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedFamilies: matchMocks.getRecentlyReviewedFamilies,
@@ -304,6 +306,7 @@ describe("HomePage", () => {
     });
     matchMocks.getMatchesInRange.mockResolvedValue([]);
     matchMocks.getNextMatchForCompetition.mockResolvedValue(null);
+    matchMocks.getNextUpcomingMatch.mockResolvedValue(null);
     matchMocks.getUpcomingMatches.mockResolvedValue([]);
     matchMocks.getFavoriteTeamMatches.mockResolvedValue([]);
     spoilerGuardMocks.getSpoilerGuardEnabledForUser.mockResolvedValue(false);
@@ -322,7 +325,7 @@ describe("HomePage", () => {
     expect(authMocks.getUserProfile).not.toHaveBeenCalled();
 
     const heading = container.querySelector("h1");
-    expect(heading).toHaveTextContent("今週の海外ラグビーを、日本時間で追う。");
+    expect(heading).toHaveTextContent("次の海外ラグビーを、日本時間で待つ。");
     expect(heading).toHaveClass("text-balance");
     expect(heading?.querySelectorAll("wbr")).toHaveLength(0);
     expect(heading?.querySelector("br")).not.toBeInTheDocument();
@@ -372,7 +375,7 @@ describe("HomePage", () => {
       screen.queryByText("home_hero_sample_recap"),
     ).not.toBeInTheDocument();
     const heroLinks = screen.getAllByRole("link").slice(0, 2);
-    expect(heroLinks[0]).toHaveTextContent("今週の試合を見る");
+    expect(heroLinks[0]).toHaveTextContent("試合カレンダーを見る");
     expect(heroLinks[0]).toHaveAttribute("href", "/calendar");
     expect(heroLinks[1]).toHaveTextContent("Premium無料体験");
     expect(heroLinks[1]).toHaveAttribute("href", "/pricing");
@@ -456,6 +459,7 @@ describe("HomePage", () => {
       family: "nations-championship",
       season: "2026",
     });
+    expect(matchMocks.getNextUpcomingMatch).not.toHaveBeenCalled();
     const featuredCompetition = screen
       .getByText("ネーションズチャンピオンシップ 2026 を追う")
       .closest("aside");
@@ -481,6 +485,45 @@ describe("HomePage", () => {
     expect(
       screen.queryByText(/GSC|クリック|平均順位|表示回数/),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders the next-match board and alternate hero copy when the current week is empty", async () => {
+    matchMocks.getNextUpcomingMatch.mockResolvedValue(
+      createCalendarMatch({
+        awayTeam: { name: "Ireland", shortCode: "IRE", slug: "ireland" },
+        competition: {
+          family: "nations-championship",
+          id: "nations-championship-2026-id",
+          name: "Nations Championship",
+          season: "2026",
+          slug: "nations-championship-2026",
+        },
+        homeTeam: { name: "Japan", shortCode: "JPN", slug: "japan" },
+        id: "next-match",
+        kickoffAt: "2026-07-20T10:30:00.000Z",
+      }),
+    );
+
+    render(await HomePage());
+
+    expect(
+      screen.getByRole("heading", {
+        name: "次の海外ラグビーを、日本時間で待つ。",
+      }),
+    ).toBeInTheDocument();
+    const board = screen.getByLabelText("次の試合");
+
+    expect(within(board).getByText("次の試合まであと3日")).toBeInTheDocument();
+    expect(
+      within(board).getByRole("link", { name: "JapanJPN" }),
+    ).toHaveAttribute("href", "/teams/japan");
+    expect(
+      within(board).getByRole("link", { name: "IREIreland" }),
+    ).toHaveAttribute("href", "/teams/ireland");
+    expect(
+      within(board).getByRole("link", { name: "通知設定を開く" }),
+    ).toHaveAttribute("href", "/?notifications=open");
+    expect(matchMocks.getNextUpcomingMatch).toHaveBeenCalledTimes(1);
   });
 
   it("renders multiple recent review competition blocks", async () => {
