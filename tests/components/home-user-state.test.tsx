@@ -5,10 +5,8 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  HomepageFavoriteTeams,
-  HomepageUserStateProvider,
-} from "@/components/home-user-state";
+import { HomepageFavoriteTeams } from "@/components/home-user-state";
+import { UserStateProvider } from "@/components/user-state-provider";
 
 import type { User } from "@supabase/supabase-js";
 
@@ -69,16 +67,15 @@ describe("HomepageFavoriteTeams", () => {
     );
 
     render(
-      <HomepageUserStateProvider>
+      <UserStateProvider>
         <HomepageFavoriteTeams allTeams={[]} />
-      </HomepageUserStateProvider>,
+      </UserStateProvider>,
     );
 
     expect(await screen.findByText("応援チームの試合")).toBeInTheDocument();
     expect(screen.getByText("japan-france")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "チームページ →" })).toHaveAttribute(
-      "href",
-      "/teams/japan",
-    );
+    expect(
+      screen.getByRole("link", { name: "チームページ →" }),
+    ).toHaveAttribute("href", "/teams/japan");
   });
 });
