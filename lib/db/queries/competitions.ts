@@ -33,6 +33,10 @@ export type CompetitionGuide = {
   verifiedAt: string | null;
 };
 
+type CompetitionStartDateRow = {
+  start_date: string | null;
+};
+
 type CompetitionDbRow = {
   champion: string | null;
   id: string;
@@ -167,6 +171,25 @@ export async function listSeasonsByFamily(
     (seasonsResult.data ?? []) as CompetitionDbRow[],
     countByCompetitionId,
   );
+}
+
+export async function getCompetitionStartDateByFamilyAndSeason(
+  family: string,
+  season: string,
+): Promise<string | null> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("competitions")
+    .select("start_date")
+    .eq("family", family)
+    .eq("season", season)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data as CompetitionStartDateRow | null) ?? null)?.start_date ?? null;
 }
 
 export async function listSeasonsByFamilies(

@@ -19,6 +19,11 @@ export type TeamDetail = {
   slug: string;
 };
 
+export type TeamWorldRanking = {
+  worldRanking: number | null;
+  worldRankingUpdatedAt: string | null;
+};
+
 export type TeamMatchItem = {
   awayScore: number | null;
   awayTeam: { slug: string; name: string; shortCode: string | null };
@@ -39,6 +44,11 @@ type TeamRow = {
   name_ja: string | null;
   short_code: string | null;
   slug: string;
+};
+
+type TeamWorldRankingRow = {
+  world_ranking: number | null;
+  world_ranking_updated_at: string | null;
 };
 
 type TeamMatchRow = {
@@ -215,6 +225,30 @@ export async function getTeamBySlug(slug: string): Promise<TeamDetail | null> {
     shortCode: row.short_code,
     slug: row.slug,
   };
+}
+
+export async function getTeamWorldRankingBySlug(
+  slug: string,
+): Promise<TeamWorldRanking | null> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("teams")
+    .select("world_ranking, world_ranking_updated_at")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  const row = (data as TeamWorldRankingRow | null) ?? null;
+
+  return row
+    ? {
+        worldRanking: row.world_ranking,
+        worldRankingUpdatedAt: row.world_ranking_updated_at,
+      }
+    : null;
 }
 
 export async function getTeamRecentMatches(
