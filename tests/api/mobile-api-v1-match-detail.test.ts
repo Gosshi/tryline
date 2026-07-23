@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const matchesMock = vi.hoisted(() => ({
   getMatchById: vi.fn(),
+  getNextMatchesForTeams: vi.fn(),
+  getRelatedPublishedRecapsForMatch: vi.fn(),
 }));
 
 const eventsMock = vi.hoisted(() => ({
@@ -66,6 +68,8 @@ describe("GET /api/v1/matches/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     matchesMock.getMatchById.mockResolvedValue(match);
+    matchesMock.getNextMatchesForTeams.mockResolvedValue([]);
+    matchesMock.getRelatedPublishedRecapsForMatch.mockResolvedValue([]);
     eventsMock.getMatchEventsForMatch.mockResolvedValue([
       {
         id: "event-1",
@@ -171,6 +175,8 @@ describe("GET /api/v1/matches/[id]", () => {
               player_name: "山田 太郎",
             },
           ],
+          next_team_matches: [],
+          related_recaps: [],
         },
       },
       error: null,
@@ -197,6 +203,51 @@ describe("GET /api/v1/matches/[id]", () => {
       success: false,
     });
     expect(eventsMock.getMatchEventsForMatch).not.toHaveBeenCalled();
+  });
+
+  it("returns related recaps before deduplicated next matches", async () => {
+    const relatedRecap = {
+      ...match,
+      id: "related-recap",
+      kickoffAt: "2026-07-17T10:00:00.000Z",
+    };
+    const nextMatch = {
+      ...match,
+      id: "next-match",
+      kickoffAt: "2026-07-25T10:00:00.000Z",
+    };
+    matchesMock.getRelatedPublishedRecapsForMatch.mockResolvedValue([
+      relatedRecap,
+      match,
+    ]);
+    matchesMock.getNextMatchesForTeams.mockResolvedValue([
+      { match: relatedRecap, teamId: "home-id" },
+      { match: nextMatch, teamId: "home-id" },
+      { match: nextMatch, teamId: "away-id" },
+    ]);
+    const { GET } = await import("@/app/api/v1/matches/[id]/route");
+    const response = await GET(
+      new Request("http://localhost/api/v1/matches/match-1"),
+      { params: Promise.resolve({ id: "match-1" }) },
+    );
+    const body = await response.json();
+
+    expect(matchesMock.getRelatedPublishedRecapsForMatch).toHaveBeenCalledWith({
+      competitionSlug: "six-nations-2027",
+      excludeMatchId: "match-1",
+      round: 1,
+    });
+    expect(matchesMock.getNextMatchesForTeams).toHaveBeenCalledWith({
+      afterIso: "2026-07-18T10:00:00.000Z",
+      excludeMatchId: "match-1",
+      teamIds: ["home-id", "away-id"],
+    });
+    expect(body.data.match.related_recaps).toEqual([
+      expect.objectContaining({ has_recap: true, id: "related-recap" }),
+    ]);
+    expect(body.data.match.next_team_matches).toEqual([
+      expect.objectContaining({ has_recap: false, id: "next-match" }),
+    ]);
   });
 
   it("returns only the requested match's pre and post related news", async () => {
