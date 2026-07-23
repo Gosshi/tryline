@@ -7,9 +7,11 @@ import {
   getBroadcastUrlsForMatches,
   getV1BroadcastsForMatches,
 } from "@/lib/api/v1/server";
+import { buildNewsItems } from "@/lib/api/v1/stories";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
 import { getMatchById } from "@/lib/db/queries/matches";
+import { getStorySourcedFactsForMatches } from "@/lib/db/queries/sourced-facts";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
 
 import type { V1MatchDetailData } from "@/lib/api/v1/types";
@@ -25,12 +27,14 @@ export async function GET(
     return apiError("match not found", 404, PUBLIC_CACHE_CONTROL);
   }
 
-  const [events, lineups, broadcastUrls, broadcasts] = await Promise.all([
-    getMatchEventsForMatch(id),
-    getMatchLineupsForMatch(id),
-    getBroadcastUrlsForMatches([id]),
-    getV1BroadcastsForMatches([id]),
-  ]);
+  const [events, lineups, broadcastUrls, broadcasts, sourcedFacts] =
+    await Promise.all([
+      getMatchEventsForMatch(id),
+      getMatchLineupsForMatch(id),
+      getBroadcastUrlsForMatches([id]),
+      getV1BroadcastsForMatches([id]),
+      getStorySourcedFactsForMatches([id]),
+    ]);
   const data: V1MatchDetailData = {
     match: {
       away_team: {
@@ -79,6 +83,10 @@ export async function GET(
         team_id: player.teamId,
       })),
       pool_name: match.poolName,
+      related_news: [
+        ...buildNewsItems(match, sourcedFacts, "pre"),
+        ...buildNewsItems(match, sourcedFacts, "post"),
+      ],
       round: match.round,
       round_name: match.roundName,
       status: match.status,

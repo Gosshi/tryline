@@ -98,6 +98,7 @@ export type V1MatchDetail = {
   kickoff_utc: string;
   lineups: V1MatchLineupPlayer[];
   pool_name: string | null;
+  related_news: V1StoryItem[];
   round: number | null;
   round_name: string | null;
   status: string;
