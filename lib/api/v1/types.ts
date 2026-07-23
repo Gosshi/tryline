@@ -174,3 +174,9 @@ export type V1MeDeleteData = {
 export type V1FavoritesData = {
   favorite_team_slugs: string[];
 };
+
+export type V1Rwc2027StatusData = {
+  japan_ranking: number | null;
+  japan_ranking_updated_at: string | null;
+  kickoff_date: string | null;
+};
