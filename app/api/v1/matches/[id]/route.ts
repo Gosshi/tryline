@@ -9,10 +9,44 @@ import {
 } from "@/lib/api/v1/server";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
-import { getMatchById } from "@/lib/db/queries/matches";
+import {
+  getMatchById,
+  getNextMatchesForTeams,
+  getRelatedPublishedRecapsForMatch,
+  type RecentlyReviewedMatch,
+  type UpcomingMatch,
+} from "@/lib/db/queries/matches";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
 
-import type { V1MatchDetailData } from "@/lib/api/v1/types";
+import type { V1MatchDetailData, V1NextReadMatch } from "@/lib/api/v1/types";
+
+function mapNextReadMatch(
+  match: RecentlyReviewedMatch | UpcomingMatch,
+  hasRecap: boolean,
+): V1NextReadMatch {
+  return {
+    away_team: {
+      flag_code: match.awayTeam.flagCode ?? null,
+      id: match.awayTeam.id ?? null,
+      name: match.awayTeam.name,
+      score: match.awayScore,
+      short_code: match.awayTeam.shortCode,
+      slug: match.awayTeam.slug,
+    },
+    competition_name: getCompetitionDisplayName(match.competition),
+    has_recap: hasRecap,
+    home_team: {
+      flag_code: match.homeTeam.flagCode ?? null,
+      id: match.homeTeam.id ?? null,
+      name: match.homeTeam.name,
+      score: match.homeScore,
+      short_code: match.homeTeam.shortCode,
+      slug: match.homeTeam.slug,
+    },
+    id: match.id,
+    kickoff_utc: match.kickoffAt,
+  };
+}
 
 export async function GET(
   _request: Request,
@@ -25,12 +59,51 @@ export async function GET(
     return apiError("match not found", 404, PUBLIC_CACHE_CONTROL);
   }
 
-  const [events, lineups, broadcastUrls, broadcasts] = await Promise.all([
+  const [
+    events,
+    lineups,
+    broadcastUrls,
+    broadcasts,
+    relatedRecaps,
+    nextTeamMatches,
+  ] = await Promise.all([
     getMatchEventsForMatch(id),
     getMatchLineupsForMatch(id),
     getBroadcastUrlsForMatches([id]),
     getV1BroadcastsForMatches([id]),
+    getRelatedPublishedRecapsForMatch({
+      competitionSlug: match.competition.slug,
+      excludeMatchId: id,
+      round: match.round,
+    }),
+    getNextMatchesForTeams({
+      afterIso: match.kickoffAt,
+      excludeMatchId: id,
+      teamIds: [match.homeTeamId, match.awayTeamId],
+    }),
   ]);
+  const relatedRecapMatches = relatedRecaps.filter(
+    (relatedMatch) => relatedMatch.id !== id,
+  );
+  const relatedRecapIds = new Set(
+    relatedRecapMatches.map((relatedMatch) => relatedMatch.id),
+  );
+  const nextTeamMatchIds = new Set<string>();
+  const uniqueNextTeamMatches = nextTeamMatches
+    .map((entry) => entry.match)
+    .filter((nextMatch) => {
+      if (
+        nextMatch.id === id ||
+        relatedRecapIds.has(nextMatch.id) ||
+        nextTeamMatchIds.has(nextMatch.id)
+      ) {
+        return false;
+      }
+
+      nextTeamMatchIds.add(nextMatch.id);
+
+      return true;
+    });
   const data: V1MatchDetailData = {
     match: {
       away_team: {
@@ -78,7 +151,13 @@ export async function GET(
         position: player.position,
         team_id: player.teamId,
       })),
+      next_team_matches: uniqueNextTeamMatches.map((nextMatch) =>
+        mapNextReadMatch(nextMatch, false),
+      ),
       pool_name: match.poolName,
+      related_recaps: relatedRecapMatches.map((relatedMatch) =>
+        mapNextReadMatch(relatedMatch, true),
+      ),
       round: match.round,
       round_name: match.roundName,
       status: match.status,

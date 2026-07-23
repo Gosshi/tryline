@@ -87,6 +87,15 @@ export type V1MatchBroadcast = {
   url: string;
 };
 
+export type V1NextReadMatch = {
+  away_team: V1TeamSummary;
+  competition_name: string;
+  has_recap: boolean;
+  home_team: V1TeamSummary;
+  id: string;
+  kickoff_utc: string;
+};
+
 export type V1MatchDetail = {
   away_team: V1TeamSummary & { english_name: string | null };
   broadcast_jp_url: string | null;
@@ -97,7 +106,9 @@ export type V1MatchDetail = {
   id: string;
   kickoff_utc: string;
   lineups: V1MatchLineupPlayer[];
+  next_team_matches: V1NextReadMatch[];
   pool_name: string | null;
+  related_recaps: V1NextReadMatch[];
   round: number | null;
   round_name: string | null;
   status: string;
