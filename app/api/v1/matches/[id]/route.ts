@@ -7,6 +7,7 @@ import {
   getBroadcastUrlsForMatches,
   getV1BroadcastsForMatches,
 } from "@/lib/api/v1/server";
+import { buildNewsItems } from "@/lib/api/v1/stories";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
 import {
@@ -16,6 +17,7 @@ import {
   type RecentlyReviewedMatch,
   type UpcomingMatch,
 } from "@/lib/db/queries/matches";
+import { getStorySourcedFactsForMatches } from "@/lib/db/queries/sourced-facts";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
 
 import type { V1MatchDetailData, V1NextReadMatch } from "@/lib/api/v1/types";
@@ -66,6 +68,7 @@ export async function GET(
     broadcasts,
     relatedRecaps,
     nextTeamMatches,
+    sourcedFacts,
   ] = await Promise.all([
     getMatchEventsForMatch(id),
     getMatchLineupsForMatch(id),
@@ -81,6 +84,7 @@ export async function GET(
       excludeMatchId: id,
       teamIds: [match.homeTeamId, match.awayTeamId],
     }),
+    getStorySourcedFactsForMatches([id]),
   ]);
   const relatedRecapMatches = relatedRecaps.filter(
     (relatedMatch) => relatedMatch.id !== id,
@@ -155,6 +159,10 @@ export async function GET(
         mapNextReadMatch(nextMatch, false),
       ),
       pool_name: match.poolName,
+      related_news: [
+        ...buildNewsItems(match, sourcedFacts, "pre"),
+        ...buildNewsItems(match, sourcedFacts, "post"),
+      ],
       related_recaps: relatedRecapMatches.map((relatedMatch) =>
         mapNextReadMatch(relatedMatch, true),
       ),

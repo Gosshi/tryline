@@ -3,6 +3,7 @@ import {
   apiSuccess,
   PUBLIC_CACHE_CONTROL,
 } from "@/lib/api/v1/response";
+import { buildNewsItems } from "@/lib/api/v1/stories";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchesInRange, type CalendarMatch } from "@/lib/db/queries/matches";
 import {
@@ -32,9 +33,7 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 24 * 60 * 60 * 1_000;
 const JST_OFFSET_MS = 9 * 60 * 60 * 1_000;
 const MATCH_LIMIT = 12;
-const MAX_NEWS_ITEMS_PER_MATCH = 3;
 const MAX_STORY_ITEMS_PER_MATCH = 9;
-const JAPANESE_CHARACTER_PATTERN = /[\p{Script=Hiragana}\p{Script=Katakana}]/u;
 
 function parseDate(value: string): number | null {
   if (!DATE_PATTERN.test(value)) {
@@ -225,69 +224,6 @@ function buildResultItem(match: CalendarMatch): V1StoryItem | null {
     title: `試合結果｜${matchupTitle(match)}`,
     type: "result",
   };
-}
-
-function buildNewsItems(
-  match: CalendarMatch,
-  facts: StorySourcedFact[],
-  phase: "post" | "pre",
-): V1StoryItem[] {
-  const kickoffAt = new Date(match.kickoffAt).getTime();
-  const latestFactByDomain = new Map<string, StorySourcedFact>();
-
-  for (const fact of [...facts]
-    .filter(
-      (candidate) =>
-        candidate.matchId === match.id &&
-        (phase === "pre"
-          ? candidate.contentType === "preview" ||
-            candidate.contentType === "shared"
-          : candidate.contentType === "recap") &&
-        (phase === "pre"
-          ? candidate.confidence === "high" || candidate.confidence === "medium"
-          : candidate.confidence === "high") &&
-        (JAPANESE_CHARACTER_PATTERN.test(candidate.fact) ||
-          (typeof candidate.factJa === "string" &&
-            candidate.factJa.trim().length > 0)) &&
-        (phase === "post" ||
-          new Date(candidate.fetchedAt).getTime() < kickoffAt),
-    )
-    .sort(
-      (left, right) =>
-        right.fetchedAt.localeCompare(left.fetchedAt) ||
-        right.id.localeCompare(left.id),
-    )) {
-    if (!latestFactByDomain.has(fact.sourceDomain)) {
-      latestFactByDomain.set(fact.sourceDomain, fact);
-    }
-
-    if (latestFactByDomain.size === MAX_NEWS_ITEMS_PER_MATCH) {
-      break;
-    }
-  }
-
-  return [...latestFactByDomain.values()]
-    .sort(
-      (left, right) =>
-        left.fetchedAt.localeCompare(right.fetchedAt) ||
-        left.id.localeCompare(right.id),
-    )
-    .map((fact) => ({
-      contains_result: phase === "post",
-      destination: {
-        type: "match",
-        url: `${SITE_URL}/matches/${match.id}`,
-      },
-      id: `${match.id}:news:${fact.id}`,
-      image: buildImageUrls(match.id, "news", fact.fetchedAt),
-      premium_required: false,
-      published_at: fact.fetchedAt,
-      source_domain: fact.sourceDomain,
-      source_url: fact.sourceUrl,
-      summary: truncateAtSentenceBoundary(fact.factJa ?? fact.fact, 160),
-      title: `ニュース｜${matchupTitle(match)}`,
-      type: "news",
-    }));
 }
 
 async function buildMatchStories(

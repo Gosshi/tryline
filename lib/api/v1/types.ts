@@ -108,6 +108,7 @@ export type V1MatchDetail = {
   lineups: V1MatchLineupPlayer[];
   next_team_matches: V1NextReadMatch[];
   pool_name: string | null;
+  related_news: V1StoryItem[];
   related_recaps: V1NextReadMatch[];
   round: number | null;
   round_name: string | null;
@@ -184,4 +185,10 @@ export type V1MeDeleteData = {
 
 export type V1FavoritesData = {
   favorite_team_slugs: string[];
+};
+
+export type V1Rwc2027StatusData = {
+  japan_ranking: number | null;
+  japan_ranking_updated_at: string | null;
+  kickoff_date: string | null;
 };

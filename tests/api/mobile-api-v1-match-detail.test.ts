@@ -19,10 +19,15 @@ const serverMock = vi.hoisted(() => ({
   getV1BroadcastsForMatches: vi.fn(),
 }));
 
+const sourcedFactsMock = vi.hoisted(() => ({
+  getStorySourcedFactsForMatches: vi.fn(),
+}));
+
 vi.mock("@/lib/db/queries/matches", () => matchesMock);
 vi.mock("@/lib/db/queries/match-events", () => eventsMock);
 vi.mock("@/lib/db/queries/match-lineups", () => lineupsMock);
 vi.mock("@/lib/api/v1/server", () => serverMock);
+vi.mock("@/lib/db/queries/sourced-facts", () => sourcedFactsMock);
 
 const match = {
   awayScore: 17,
@@ -108,6 +113,7 @@ describe("GET /api/v1/matches/[id]", () => {
         ],
       ]),
     );
+    sourcedFactsMock.getStorySourcedFactsForMatches.mockResolvedValue([]);
   });
 
   it("returns match details with events, lineups and broadcast information", async () => {
@@ -242,5 +248,78 @@ describe("GET /api/v1/matches/[id]", () => {
     expect(body.data.match.next_team_matches).toEqual([
       expect.objectContaining({ has_recap: false, id: "next-match" }),
     ]);
+  });
+
+  it("returns only the requested match's pre and post related news", async () => {
+    sourcedFactsMock.getStorySourcedFactsForMatches.mockResolvedValue([
+      {
+        confidence: "high",
+        contentType: "preview",
+        fact: "試合前の日本語ニュースです。",
+        factJa: null,
+        fetchedAt: "2026-07-18T09:00:00.000Z",
+        id: "pre-fact",
+        matchId: "match-1",
+        sourceDomain: "preview.example.com",
+        sourceUrl: "https://preview.example.com/news",
+      },
+      {
+        confidence: "high",
+        contentType: "recap",
+        fact: "試合後の日本語ニュースです。",
+        factJa: null,
+        fetchedAt: "2026-07-18T12:00:00.000Z",
+        id: "post-fact",
+        matchId: "match-1",
+        sourceDomain: "recap.example.com",
+        sourceUrl: "https://recap.example.com/news",
+      },
+      {
+        confidence: "high",
+        contentType: "preview",
+        fact: "別試合のニュースです。",
+        factJa: null,
+        fetchedAt: "2026-07-18T09:00:00.000Z",
+        id: "other-match-fact",
+        matchId: "other-match",
+        sourceDomain: "other.example.com",
+        sourceUrl: "https://other.example.com/news",
+      },
+    ]);
+    const { GET } = await import("@/app/api/v1/matches/[id]/route");
+    const response = await GET(
+      new Request("http://localhost/api/v1/matches/match-1"),
+      { params: Promise.resolve({ id: "match-1" }) },
+    );
+    const body = await response.json();
+
+    expect(sourcedFactsMock.getStorySourcedFactsForMatches).toHaveBeenCalledWith(
+      ["match-1"],
+    );
+    expect(body.data.match.related_news).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          contains_result: false,
+          id: "match-1:news:pre-fact",
+          source_url: "https://preview.example.com/news",
+        }),
+        expect.objectContaining({
+          contains_result: true,
+          id: "match-1:news:post-fact",
+          source_url: "https://recap.example.com/news",
+        }),
+      ]),
+    );
+    expect(body.data.match.related_news).toHaveLength(2);
+  });
+
+  it("returns an empty related_news array when the match has no news", async () => {
+    const { GET } = await import("@/app/api/v1/matches/[id]/route");
+    const response = await GET(
+      new Request("http://localhost/api/v1/matches/match-1"),
+      { params: Promise.resolve({ id: "match-1" }) },
+    );
+
+    expect((await response.json()).data.match.related_news).toEqual([]);
   });
 });
