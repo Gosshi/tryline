@@ -2222,11 +2222,13 @@ export async function listMatchesForCompetition(
         home_team:teams!matches_home_team_id_fkey (
           slug,
           name,
+          flag_code,
           short_code
         ),
         away_team:teams!matches_away_team_id_fkey (
           slug,
           name,
+          flag_code,
           short_code
         )
       `,

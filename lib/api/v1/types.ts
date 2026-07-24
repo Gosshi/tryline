@@ -146,6 +146,10 @@ export type V1CompetitionsData = {
   competitions: V1Competition[];
 };
 
+export type V1CompetitionMatchesData = {
+  matches: V1CalendarMatch[];
+};
+
 export type V1Standing = {
   bonus_points_losing: number;
   bonus_points_try: number;
