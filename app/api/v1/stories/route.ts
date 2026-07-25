@@ -5,7 +5,11 @@ import {
 } from "@/lib/api/v1/response";
 import { buildNewsItems } from "@/lib/api/v1/stories";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
-import { getMatchesInRange, type CalendarMatch } from "@/lib/db/queries/matches";
+import {
+  getMatchesInRange,
+  getSingleNationCompetitionIds,
+  type CalendarMatch,
+} from "@/lib/db/queries/matches";
 import {
   getStorySourcedFactsForMatches,
   type StorySourcedFact,
@@ -95,10 +99,13 @@ function resolveRange(
   };
 }
 
-function mapMatch(match: CalendarMatch): V1CalendarMatch {
+function mapMatch(
+  match: CalendarMatch,
+  suppressFlags: boolean,
+): V1CalendarMatch {
   return {
     away_team: {
-      flag_code: match.awayTeam.flagCode ?? null,
+      flag_code: suppressFlags ? null : (match.awayTeam.flagCode ?? null),
       id: match.awayTeam.id ?? null,
       name: match.awayTeam.name,
       score: match.awayScore,
@@ -115,7 +122,7 @@ function mapMatch(match: CalendarMatch): V1CalendarMatch {
     has_preview: match.hasPreview,
     has_recap: match.hasRecap,
     home_team: {
-      flag_code: match.homeTeam.flagCode ?? null,
+      flag_code: suppressFlags ? null : (match.homeTeam.flagCode ?? null),
       id: match.homeTeam.id ?? null,
       name: match.homeTeam.name,
       score: match.homeScore,
@@ -229,6 +236,7 @@ function buildResultItem(match: CalendarMatch): V1StoryItem | null {
 async function buildMatchStories(
   match: CalendarMatch,
   sourcedFacts: StorySourcedFact[],
+  singleNationCompetitionIds: Set<string>,
 ): Promise<V1MatchStories | null> {
   if (match.status === "cancelled") {
     return null;
@@ -285,7 +293,11 @@ async function buildMatchStories(
 
   return {
     items: items.slice(0, MAX_STORY_ITEMS_PER_MATCH),
-    match: mapMatch(match),
+    match: mapMatch(
+      match,
+      match.competition.id !== undefined &&
+        singleNationCompetitionIds.has(match.competition.id),
+    ),
     updated_at: items
       .map((item) => item.published_at)
       .sort((a, b) => b.localeCompare(a))[0]!,
@@ -319,12 +331,19 @@ export async function GET(request: Request) {
 
   const matches = await getMatchesInRange(range.startUtcIso, range.endUtcIso);
   const candidates = matches.filter(isStoryCandidate).slice(0, MATCH_LIMIT);
-  const sourcedFacts = await getStorySourcedFactsForMatches(
-    candidates.map((match) => match.id),
-  );
+  const [sourcedFacts, singleNationCompetitionIds] = await Promise.all([
+    getStorySourcedFactsForMatches(candidates.map((match) => match.id)),
+    getSingleNationCompetitionIds(
+      candidates.flatMap((match) =>
+        match.competition.id ? [match.competition.id] : [],
+      ),
+    ),
+  ]);
   const matchStories = (
     await Promise.all(
-      candidates.map((match) => buildMatchStories(match, sourcedFacts)),
+      candidates.map((match) =>
+        buildMatchStories(match, sourcedFacts, singleNationCompetitionIds),
+      ),
     )
   ).filter((story): story is V1MatchStories => story !== null);
   const data: V1StoriesData = {

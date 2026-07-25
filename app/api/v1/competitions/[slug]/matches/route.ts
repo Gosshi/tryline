@@ -9,7 +9,10 @@ import {
 } from "@/lib/api/v1/server";
 import { getCompetitionBySlug } from "@/lib/db/queries/competitions";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
-import { listMatchesForCompetition } from "@/lib/db/queries/matches";
+import {
+  getSingleNationCompetitionIds,
+  listMatchesForCompetition,
+} from "@/lib/db/queries/matches";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
 
 import type {
@@ -30,17 +33,24 @@ export async function GET(
 
   const matches = await listMatchesForCompetition(slug);
   const matchIds = matches.map((match) => match.id);
-  const [contentStatuses, broadcastUrls, broadcasts] = await Promise.all([
+  const [
+    contentStatuses,
+    broadcastUrls,
+    broadcasts,
+    singleNationCompetitionIds,
+  ] = await Promise.all([
     getContentStatusForMatches(matchIds),
     getBroadcastUrlsForMatches(matchIds),
     getV1BroadcastsForMatches(matchIds),
+    getSingleNationCompetitionIds([competition.id]),
   ]);
+  const suppressFlags = singleNationCompetitionIds.has(competition.id);
   const responseMatches: V1CalendarMatch[] = matches.map((match) => {
     const contentStatus = contentStatuses[match.id];
 
     return {
       away_team: {
-        flag_code: match.awayTeam.flagCode ?? null,
+        flag_code: suppressFlags ? null : (match.awayTeam.flagCode ?? null),
         id: match.awayTeam.id ?? null,
         name: match.awayTeam.name,
         score: match.awayScore,
@@ -57,7 +67,7 @@ export async function GET(
       has_preview: contentStatus?.hasPreview ?? false,
       has_recap: contentStatus?.hasRecap ?? false,
       home_team: {
-        flag_code: match.homeTeam.flagCode ?? null,
+        flag_code: suppressFlags ? null : (match.homeTeam.flagCode ?? null),
         id: match.homeTeam.id ?? null,
         name: match.homeTeam.name,
         score: match.homeScore,

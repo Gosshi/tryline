@@ -4,6 +4,7 @@ const matchesMock = vi.hoisted(() => ({
   getMatchById: vi.fn(),
   getNextMatchesForTeams: vi.fn(),
   getRelatedPublishedRecapsForMatch: vi.fn(),
+  getSingleNationCompetitionIds: vi.fn(),
 }));
 
 const eventsMock = vi.hoisted(() => ({
@@ -41,6 +42,7 @@ const match = {
   awayTeamId: "away-id",
   competition: {
     family: "six-nations",
+    id: "competition-1",
     name: "Six Nations",
     nameJa: "シックスネーションズ",
     season: "2027",
@@ -70,6 +72,7 @@ describe("GET /api/v1/matches/[id]", () => {
     matchesMock.getMatchById.mockResolvedValue(match);
     matchesMock.getNextMatchesForTeams.mockResolvedValue([]);
     matchesMock.getRelatedPublishedRecapsForMatch.mockResolvedValue([]);
+    matchesMock.getSingleNationCompetitionIds.mockResolvedValue(new Set());
     eventsMock.getMatchEventsForMatch.mockResolvedValue([
       {
         id: "event-1",
@@ -203,6 +206,26 @@ describe("GET /api/v1/matches/[id]", () => {
       success: false,
     });
     expect(eventsMock.getMatchEventsForMatch).not.toHaveBeenCalled();
+  });
+
+  it("suppresses flags for a single-nation match competition", async () => {
+    matchesMock.getSingleNationCompetitionIds.mockResolvedValue(
+      new Set(["competition-1"]),
+    );
+    const { GET } = await import("@/app/api/v1/matches/[id]/route");
+    const response = await GET(
+      new Request("http://localhost/api/v1/matches/match-1"),
+      { params: Promise.resolve({ id: "match-1" }) },
+    );
+    const body = await response.json();
+
+    expect(matchesMock.getSingleNationCompetitionIds).toHaveBeenCalledWith([
+      "competition-1",
+    ]);
+    expect(body.data.match).toMatchObject({
+      away_team: { flag_code: null },
+      home_team: { flag_code: null },
+    });
   });
 
   it("returns related recaps before deduplicated next matches", async () => {

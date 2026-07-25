@@ -241,12 +241,19 @@ type MatchDetailRow = BaseMatchRow & {
   home_team_id: string;
   away_team_id: string;
   competition: {
+    id?: string;
     family?: string;
     slug: string;
     name: string;
     name_ja?: string | null;
     season: string;
   } | null;
+};
+
+type CompetitionTeamCountryRow = {
+  competition_id: string;
+  home_team: { country: string | null } | null;
+  away_team: { country: string | null } | null;
 };
 
 type LatestCompetitionRow = {
@@ -1600,6 +1607,54 @@ export async function getMatchesInRange(
   );
 }
 
+export async function getSingleNationCompetitionIds(
+  competitionIds: string[],
+): Promise<Set<string>> {
+  const uniqueCompetitionIds = [...new Set(competitionIds)].filter(
+    (competitionId) => competitionId.length > 0,
+  );
+
+  if (uniqueCompetitionIds.length === 0) {
+    return new Set();
+  }
+
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        competition_id,
+        home_team:teams!matches_home_team_id_fkey ( country ),
+        away_team:teams!matches_away_team_id_fkey ( country )
+      `,
+    )
+    .in("competition_id", uniqueCompetitionIds);
+
+  if (error) {
+    throw error;
+  }
+
+  const countriesByCompetition = new Map<string, Set<string>>();
+
+  for (const row of (data ?? []) as CompetitionTeamCountryRow[]) {
+    const countries =
+      countriesByCompetition.get(row.competition_id) ?? new Set();
+    countriesByCompetition.set(row.competition_id, countries);
+
+    for (const team of [row.home_team, row.away_team]) {
+      if (team?.country) {
+        countries.add(team.country);
+      }
+    }
+  }
+
+  return new Set(
+    [...countriesByCompetition].flatMap(([competitionId, countries]) =>
+      countries.size === 1 ? [competitionId] : [],
+    ),
+  );
+}
+
 export async function getFavoriteTeamMatches(
   teamSlugs: string[],
   limit = 5,
@@ -2339,6 +2394,7 @@ export async function getMatchById(
           flag_code
         ),
         competition:competitions!matches_competition_id_fkey (
+          id,
           slug,
           name,
           season
@@ -2375,6 +2431,7 @@ export async function getMatchById(
     awayTeamId: row.away_team_id,
     broadcasts: broadcastsByMatch.get(matchId) ?? [],
     competition: {
+      id: competition!.id,
       family:
         competition?.family ??
         competition!.slug.replace(/-\d{4}(-\d{2})?$/, ""),

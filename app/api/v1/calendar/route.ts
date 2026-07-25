@@ -8,7 +8,10 @@ import {
   getV1BroadcastsForMatches,
 } from "@/lib/api/v1/server";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
-import { getMatchesInRange } from "@/lib/db/queries/matches";
+import {
+  getMatchesInRange,
+  getSingleNationCompetitionIds,
+} from "@/lib/db/queries/matches";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
 import { getCurrentJstWeekRangeUtc } from "@/lib/format/week";
 
@@ -74,17 +77,29 @@ export async function GET(request: Request) {
 
   const matches = await getMatchesInRange(range.startUtcIso, range.endUtcIso);
   const matchIds = matches.map((match) => match.id);
-  const [contentStatuses, broadcastUrls, broadcasts] = await Promise.all([
+  const competitionIds = matches.flatMap((match) =>
+    match.competition.id ? [match.competition.id] : [],
+  );
+  const [
+    contentStatuses,
+    broadcastUrls,
+    broadcasts,
+    singleNationCompetitionIds,
+  ] = await Promise.all([
     getContentStatusForMatches(matchIds),
     getBroadcastUrlsForMatches(matchIds),
     getV1BroadcastsForMatches(matchIds),
+    getSingleNationCompetitionIds(competitionIds),
   ]);
   const responseMatches: V1CalendarMatch[] = matches.map((match) => {
     const contentStatus = contentStatuses[match.id];
+    const suppressFlags =
+      match.competition.id !== undefined &&
+      singleNationCompetitionIds.has(match.competition.id);
 
     return {
       away_team: {
-        flag_code: match.awayTeam.flagCode ?? null,
+        flag_code: suppressFlags ? null : (match.awayTeam.flagCode ?? null),
         id: match.awayTeam.id ?? null,
         name: match.awayTeam.name,
         score: match.awayScore,
@@ -101,7 +116,7 @@ export async function GET(request: Request) {
       has_preview: contentStatus?.hasPreview ?? false,
       has_recap: contentStatus?.hasRecap ?? false,
       home_team: {
-        flag_code: match.homeTeam.flagCode ?? null,
+        flag_code: suppressFlags ? null : (match.homeTeam.flagCode ?? null),
         id: match.homeTeam.id ?? null,
         name: match.homeTeam.name,
         score: match.homeScore,
