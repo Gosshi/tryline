@@ -5,6 +5,7 @@ const competitionsMock = vi.hoisted(() => ({
 }));
 
 const matchesMock = vi.hoisted(() => ({
+  getSingleNationCompetitionIds: vi.fn(),
   listMatchesForCompetition: vi.fn(),
 }));
 
@@ -67,6 +68,7 @@ describe("GET /api/v1/competitions/[slug]/matches", () => {
     vi.clearAllMocks();
     competitionsMock.getCompetitionBySlug.mockResolvedValue(competition);
     matchesMock.listMatchesForCompetition.mockResolvedValue([match]);
+    matchesMock.getSingleNationCompetitionIds.mockResolvedValue(new Set());
     contentMock.getContentStatusForMatches.mockResolvedValue({
       "match-1": { hasPreview: true, hasRecap: true },
     });
@@ -151,6 +153,23 @@ describe("GET /api/v1/competitions/[slug]/matches", () => {
     const response = await requestMatches();
 
     expect((await response.json()).data.matches).toEqual([]);
+  });
+
+  it("suppresses flags for a single-nation competition", async () => {
+    matchesMock.getSingleNationCompetitionIds.mockResolvedValue(
+      new Set(["competition-1"]),
+    );
+
+    const response = await requestMatches();
+    const body = await response.json();
+
+    expect(matchesMock.getSingleNationCompetitionIds).toHaveBeenCalledWith([
+      "competition-1",
+    ]);
+    expect(body.data.matches[0]).toMatchObject({
+      away_team: { flag_code: null },
+      home_team: { flag_code: null },
+    });
   });
 
   it("returns an enveloped 404 for an unknown competition", async () => {

@@ -14,6 +14,7 @@ import {
   getMatchById,
   getNextMatchesForTeams,
   getRelatedPublishedRecapsForMatch,
+  getSingleNationCompetitionIds,
   type RecentlyReviewedMatch,
   type UpcomingMatch,
 } from "@/lib/db/queries/matches";
@@ -25,10 +26,11 @@ import type { V1MatchDetailData, V1NextReadMatch } from "@/lib/api/v1/types";
 function mapNextReadMatch(
   match: RecentlyReviewedMatch | UpcomingMatch,
   hasRecap: boolean,
+  suppressFlags: boolean,
 ): V1NextReadMatch {
   return {
     away_team: {
-      flag_code: match.awayTeam.flagCode ?? null,
+      flag_code: suppressFlags ? null : (match.awayTeam.flagCode ?? null),
       id: match.awayTeam.id ?? null,
       name: match.awayTeam.name,
       score: match.awayScore,
@@ -38,7 +40,7 @@ function mapNextReadMatch(
     competition_name: getCompetitionDisplayName(match.competition),
     has_recap: hasRecap,
     home_team: {
-      flag_code: match.homeTeam.flagCode ?? null,
+      flag_code: suppressFlags ? null : (match.homeTeam.flagCode ?? null),
       id: match.homeTeam.id ?? null,
       name: match.homeTeam.name,
       score: match.homeScore,
@@ -108,11 +110,25 @@ export async function GET(
 
       return true;
     });
+  const competitionIds = [
+    match.competition.id,
+    ...relatedRecapMatches.map((relatedMatch) => relatedMatch.competition.id),
+    ...uniqueNextTeamMatches.map((nextMatch) => nextMatch.competition.id),
+  ].filter(
+    (competitionId): competitionId is string => competitionId !== undefined,
+  );
+  const singleNationCompetitionIds =
+    await getSingleNationCompetitionIds(competitionIds);
+  const suppressMatchFlags =
+    match.competition.id !== undefined &&
+    singleNationCompetitionIds.has(match.competition.id);
   const data: V1MatchDetailData = {
     match: {
       away_team: {
         english_name: match.awayTeam.englishName,
-        flag_code: match.awayTeam.flagCode ?? null,
+        flag_code: suppressMatchFlags
+          ? null
+          : (match.awayTeam.flagCode ?? null),
         id: match.awayTeamId,
         name: match.awayTeam.name,
         score: match.awayScore,
@@ -138,7 +154,9 @@ export async function GET(
       })),
       home_team: {
         english_name: match.homeTeam.englishName,
-        flag_code: match.homeTeam.flagCode ?? null,
+        flag_code: suppressMatchFlags
+          ? null
+          : (match.homeTeam.flagCode ?? null),
         id: match.homeTeamId,
         name: match.homeTeam.name,
         score: match.homeScore,
@@ -156,7 +174,12 @@ export async function GET(
         team_id: player.teamId,
       })),
       next_team_matches: uniqueNextTeamMatches.map((nextMatch) =>
-        mapNextReadMatch(nextMatch, false),
+        mapNextReadMatch(
+          nextMatch,
+          false,
+          nextMatch.competition.id !== undefined &&
+            singleNationCompetitionIds.has(nextMatch.competition.id),
+        ),
       ),
       pool_name: match.poolName,
       related_news: [
@@ -164,7 +187,12 @@ export async function GET(
         ...buildNewsItems(match, sourcedFacts, "post"),
       ],
       related_recaps: relatedRecapMatches.map((relatedMatch) =>
-        mapNextReadMatch(relatedMatch, true),
+        mapNextReadMatch(
+          relatedMatch,
+          true,
+          relatedMatch.competition.id !== undefined &&
+            singleNationCompetitionIds.has(relatedMatch.competition.id),
+        ),
       ),
       round: match.round,
       round_name: match.roundName,

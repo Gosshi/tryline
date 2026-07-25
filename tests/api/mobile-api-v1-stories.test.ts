@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const matchesMock = vi.hoisted(() => ({
   getMatchesInRange: vi.fn(),
+  getSingleNationCompetitionIds: vi.fn(),
 }));
 
 const contentMock = vi.hoisted(() => ({
@@ -55,6 +56,7 @@ function match(overrides: Record<string, unknown> = {}) {
     broadcastJpUrl: null,
     competition: {
       family: "nations-championship",
+      id: "nations-championship-2026",
       name: "Nations Championship",
       nameJa: "ネーションズチャンピオンシップ",
       season: "2026",
@@ -89,6 +91,7 @@ describe("GET /api/v1/stories", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-17T03:00:00.000Z"));
     matchesMock.getMatchesInRange.mockResolvedValue([match()]);
+    matchesMock.getSingleNationCompetitionIds.mockResolvedValue(new Set());
     contentMock.getPublishedContentForMatch.mockResolvedValue({
       preview,
       recap,
@@ -161,6 +164,23 @@ describe("GET /api/v1/stories", () => {
     );
     expect(body.data.matches[0].items[0].image.portrait_url).not.toContain("27");
     expect(body.data.matches[0].items[0].image.portrait_url).not.toContain("31");
+  });
+
+  it("suppresses story match flags for a single-nation competition", async () => {
+    matchesMock.getSingleNationCompetitionIds.mockResolvedValue(
+      new Set(["nations-championship-2026"]),
+    );
+    const { GET } = await import("@/app/api/v1/stories/route");
+    const response = await GET(new Request("http://localhost/api/v1/stories"));
+    const body = await response.json();
+
+    expect(matchesMock.getSingleNationCompetitionIds).toHaveBeenCalledWith([
+      "nations-championship-2026",
+    ]);
+    expect(body.data.matches[0].match).toMatchObject({
+      away_team: { flag_code: null },
+      home_team: { flag_code: null },
+    });
   });
 
   it("adds up to three eligible news items in fetched order with one sourced facts query", async () => {

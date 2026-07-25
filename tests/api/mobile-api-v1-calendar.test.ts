@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const matchesMock = vi.hoisted(() => ({
   getMatchesInRange: vi.fn(),
+  getSingleNationCompetitionIds: vi.fn(),
 }));
 
 const contentMock = vi.hoisted(() => ({
@@ -28,6 +29,7 @@ const match = {
   },
   competition: {
     family: "six-nations",
+    id: "six-nations-2027",
     name: "Six Nations",
     nameJa: "シックスネーションズ",
     season: "2027",
@@ -58,6 +60,7 @@ describe("GET /api/v1/calendar", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-14T03:00:00.000Z"));
     matchesMock.getMatchesInRange.mockResolvedValue([match]);
+    matchesMock.getSingleNationCompetitionIds.mockResolvedValue(new Set());
     contentMock.getContentStatusForMatches.mockResolvedValue({
       "match-1": { hasPreview: true, hasRecap: true },
     });
@@ -149,6 +152,66 @@ describe("GET /api/v1/calendar", () => {
       broadcast_jp_url: "https://example.com/watch",
       has_broadcasts: false,
     });
+  });
+
+  it("suppresses flags only for single-nation competitions in a mixed calendar", async () => {
+    const leagueOneMatch = {
+      ...match,
+      competition: {
+        ...match.competition,
+        id: "league-one-2026",
+        name: "Japan Rugby League One",
+        nameJa: "リーグワン",
+        slug: "league-one-2026",
+      },
+      id: "league-one-match",
+    };
+    const superRugbyMatch = {
+      ...match,
+      awayTeam: { ...match.awayTeam, flagCode: "🇳🇿" },
+      competition: {
+        ...match.competition,
+        id: "super-rugby-pacific-2026",
+        name: "Super Rugby Pacific",
+        nameJa: "スーパーラグビー・パシフィック",
+        slug: "super-rugby-pacific-2026",
+      },
+      homeTeam: { ...match.homeTeam, flagCode: "🇳🇿" },
+      id: "super-rugby-match",
+    };
+    matchesMock.getMatchesInRange.mockResolvedValue([
+      leagueOneMatch,
+      superRugbyMatch,
+    ]);
+    matchesMock.getSingleNationCompetitionIds.mockResolvedValue(
+      new Set(["league-one-2026"]),
+    );
+    contentMock.getContentStatusForMatches.mockResolvedValue({});
+    serverMock.getBroadcastUrlsForMatches.mockResolvedValue(new Map());
+    serverMock.getV1BroadcastsForMatches.mockResolvedValue(new Map());
+
+    const { GET } = await import("@/app/api/v1/calendar/route");
+    const response = await GET(new Request("http://localhost/api/v1/calendar"));
+    const body = await response.json();
+
+    expect(matchesMock.getSingleNationCompetitionIds).toHaveBeenCalledWith([
+      "league-one-2026",
+      "super-rugby-pacific-2026",
+    ]);
+    expect(body.data.matches).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "league-one-match",
+          away_team: expect.objectContaining({ flag_code: null }),
+          home_team: expect.objectContaining({ flag_code: null }),
+        }),
+        expect.objectContaining({
+          id: "super-rugby-match",
+          away_team: expect.objectContaining({ flag_code: "🇳🇿" }),
+          home_team: expect.objectContaining({ flag_code: "🇳🇿" }),
+        }),
+      ]),
+    );
   });
 
   it("converts an explicit inclusive JST date range to UTC", async () => {

@@ -20,6 +20,7 @@ import {
   getRoundFromExternalIds,
   getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedMatches,
+  getSingleNationCompetitionIds,
   stripMarkdown,
 } from "@/lib/db/queries/matches";
 
@@ -92,6 +93,76 @@ const teamBySlugQueryMock = {
   maybeSingle: vi.fn(),
   select: vi.fn().mockReturnThis(),
 };
+
+const singleNationQueryMock = {
+  in: vi.fn(),
+  select: vi.fn().mockReturnThis(),
+};
+
+describe("getSingleNationCompetitionIds", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clientMock.from.mockReturnValue(singleNationQueryMock);
+    singleNationQueryMock.select.mockReturnThis();
+    singleNationQueryMock.in.mockResolvedValue({
+      data: [
+        {
+          away_team: { country: "Japan" },
+          competition_id: "league-one",
+          home_team: { country: "Japan" },
+        },
+        {
+          away_team: { country: null },
+          competition_id: "league-one",
+          home_team: { country: "Japan" },
+        },
+        {
+          away_team: { country: "New Zealand" },
+          competition_id: "super-rugby-pacific",
+          home_team: { country: "New Zealand" },
+        },
+        {
+          away_team: { country: "Australia" },
+          competition_id: "super-rugby-pacific",
+          home_team: { country: "Fiji" },
+        },
+        {
+          away_team: { country: "France" },
+          competition_id: "six-nations",
+          home_team: { country: "Ireland" },
+        },
+      ],
+      error: null,
+    });
+  });
+
+  it("returns only competitions whose participating teams have one country", async () => {
+    await expect(
+      getSingleNationCompetitionIds([
+        "league-one",
+        "super-rugby-pacific",
+        "six-nations",
+        "league-one",
+      ]),
+    ).resolves.toEqual(new Set(["league-one"]));
+
+    expect(clientMock.from).toHaveBeenCalledWith("matches");
+    expect(singleNationQueryMock.select).toHaveBeenCalledWith(
+      expect.stringContaining("competition_id"),
+    );
+    expect(singleNationQueryMock.in).toHaveBeenCalledWith("competition_id", [
+      "league-one",
+      "super-rugby-pacific",
+      "six-nations",
+    ]);
+  });
+
+  it("does not query when no competition IDs are supplied", async () => {
+    await expect(getSingleNationCompetitionIds([])).resolves.toEqual(new Set());
+
+    expect(clientMock.from).not.toHaveBeenCalled();
+  });
+});
 
 describe("getNextMatchesForTeams", () => {
   beforeEach(() => {
