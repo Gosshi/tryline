@@ -17,6 +17,11 @@ import type { SourcedFactConfidence } from "@/lib/llm/sourced-facts/types";
 
 export const WEEKLY_NEWS_PROMPT_VERSION = "weekly-news@1.0.0";
 
+const WEEKLY_NEWS_SEARCH_FOCUSES = ["player", "competition"] as const;
+
+export type WeeklyNewsSearchFocus =
+  (typeof WEEKLY_NEWS_SEARCH_FOCUSES)[number];
+
 const WEEKLY_NEWS_CATEGORIES = [
   "transfer",
   "quote",
@@ -105,16 +110,28 @@ function extractJsonObjectText(text: string): string | null {
     : candidate.slice(firstBrace, lastBrace + 1);
 }
 
-export function buildWeeklyNewsSearchPrompt(weekFrom: string, weekTo: string) {
+export function buildWeeklyNewsSearchPrompt(
+  weekFrom: string,
+  weekTo: string,
+  focus: WeeklyNewsSearchFocus,
+) {
+  const searchIntent = focus === "player"
+    ? [
+        "Search intent (player focus):",
+        "- player transfers and contract news",
+        "- player or coach comments",
+      ]
+    : [
+        "Search intent (competition focus):",
+        "- competition news and tournament developments",
+        "- injuries that materially affect upcoming rugby",
+      ];
+
   return [
     "Find reliable rugby news for Tryline's weekly shared news feed using web search.",
     `week: ${weekFrom} through ${weekTo} (JST)`,
     [
-      "Search intent:",
-      "- player transfers and contract news",
-      "- player or coach comments",
-      "- competition news and tournament developments",
-      "- injuries that materially affect upcoming rugby",
+      ...searchIntent,
       "- cover Six Nations, Premiership, URC, Top 14, Super Rugby Pacific, and Rugby World Cup / Nations Championship",
       `- only include news published within the target week (${weekFrom} through ${weekTo}, JST); exclude older news even if it remains relevant`,
     ].join("\n"),
@@ -192,6 +209,10 @@ function metadataForWeeklyNews(prompt: string): Json {
   };
 }
 
+function normalizeWeeklyNewsSourceUrl(sourceUrl: string): string {
+  return sourceUrl.trim().toLowerCase().replace(/\/+$/, "");
+}
+
 export async function fetchWeeklyNews(options?: {
   now?: Date;
   weekFrom?: string;
@@ -202,28 +223,44 @@ export async function fetchWeeklyNews(options?: {
     : getCurrentJstWeekRangeUtc(now);
   const weekFrom = week.weekStartJst;
   const weekTo = week.weekEndJst;
-  const prompt = buildWeeklyNewsSearchPrompt(weekFrom, weekTo);
-  const response = await createWebSearchJsonResponse({
-    input: prompt,
-    model: MODELS.WEB_SEARCH,
-    temperature: 0,
-  });
   const fetchedAt = now.toISOString();
-  const items = parseWeeklyNewsResponse(response.text, weekFrom, now).map((item) => ({
-    category: item.category,
-    confidence: item.confidence,
-    fetched_at: fetchedAt,
-    model_version: response.model,
-    source_domain: item.source_domain,
-    source_url: item.source_url,
-    status: "draft" as const,
-    summary_ja: item.summary_ja,
-    title_ja: item.title_ja,
-    week_from: weekFrom,
-    week_to: weekTo,
-    ...(item.published_at ? { published_at: item.published_at } : {}),
-    metadata: metadataForWeeklyNews(prompt),
-  }));
+  const results = await Promise.all(
+    WEEKLY_NEWS_SEARCH_FOCUSES.map(async (focus) => {
+      const prompt = buildWeeklyNewsSearchPrompt(weekFrom, weekTo, focus);
+      const response = await createWebSearchJsonResponse({
+        input: prompt,
+        model: MODELS.WEB_SEARCH,
+        temperature: 0,
+      });
+
+      return parseWeeklyNewsResponse(response.text, weekFrom, now).map((item) => ({
+        category: item.category,
+        confidence: item.confidence,
+        fetched_at: fetchedAt,
+        model_version: response.model,
+        source_domain: item.source_domain,
+        source_url: item.source_url,
+        status: "draft" as const,
+        summary_ja: item.summary_ja,
+        title_ja: item.title_ja,
+        week_from: weekFrom,
+        week_to: weekTo,
+        ...(item.published_at ? { published_at: item.published_at } : {}),
+        metadata: metadataForWeeklyNews(prompt),
+      }));
+    }),
+  );
+  const seenSourceUrls = new Set<string>();
+  const items = results.flat().filter((item) => {
+    const sourceUrl = normalizeWeeklyNewsSourceUrl(item.source_url);
+
+    if (seenSourceUrls.has(sourceUrl)) {
+      return false;
+    }
+
+    seenSourceUrls.add(sourceUrl);
+    return true;
+  });
 
   if (items.length > 0) {
     const db = getSupabaseServerClient();
