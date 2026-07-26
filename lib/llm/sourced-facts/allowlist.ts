@@ -19,10 +19,8 @@ const OFFICIAL_DOMAINS = [
 
 const MEDIA_DOMAINS = [
   "rugbyasia247.com",
-  "skysports.com",
   "rugby-rp.com",
   "onrugby.it",
-  "news.yahoo.co.jp",
   "therugbypaper.co.uk",
 ] as const;
 

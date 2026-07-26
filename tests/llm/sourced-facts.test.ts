@@ -98,10 +98,8 @@ describe("sourced facts allowlist", () => {
     expect(isAllowedSourcedFactDomain("www.rugby.com.au")).toBe(true);
     expect(isAllowedSourcedFactDomain("news.allblacks.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.englandrugby.com")).toBe(true);
-    expect(isAllowedSourcedFactDomain("www.skysports.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.rugby-rp.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.onrugby.it")).toBe(true);
-    expect(isAllowedSourcedFactDomain("news.yahoo.co.jp")).toBe(true);
     expect(isAllowedSourcedFactDomain("sportytrader.com")).toBe(false);
   });
 
@@ -118,6 +116,8 @@ describe("sourced facts allowlist", () => {
       "espn.com",
       "nbcsports.com",
       "sports.yahoo.com",
+      "skysports.com",
+      "news.yahoo.co.jp",
     ];
 
     for (const domain of removedDomains) {
