@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
 
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { addJstDays, getCurrentJstWeekRangeUtc } from "@/lib/format/week";
+import {
+  getCurrentJstWeekRangeUtc,
+  getJstWeekRangeUtc,
+} from "@/lib/format/week";
 import { MODELS } from "@/lib/llm/models";
 import { createWebSearchJsonResponse } from "@/lib/llm/openai";
 import {
@@ -113,6 +116,7 @@ export function buildWeeklyNewsSearchPrompt(weekFrom: string, weekTo: string) {
       "- competition news and tournament developments",
       "- injuries that materially affect upcoming rugby",
       "- cover Six Nations, Premiership, URC, Top 14, Super Rugby Pacific, and Rugby World Cup / Nations Championship",
+      `- only include news published within the target week (${weekFrom} through ${weekTo}, JST); exclude older news even if it remains relevant`,
     ].join("\n"),
     [
       "Rules:",
@@ -128,8 +132,15 @@ export function buildWeeklyNewsSearchPrompt(weekFrom: string, weekTo: string) {
   ].join("\n\n");
 }
 
-export function parseWeeklyNewsResponse(text: string): ParsedWeeklyNewsItem[] {
+export function parseWeeklyNewsResponse(
+  text: string,
+  weekFrom: string,
+  now = new Date(),
+): ParsedWeeklyNewsItem[] {
   const jsonText = extractJsonObjectText(text);
+  const weekStartUtc = new Date(
+    getJstWeekRangeUtc(weekFrom, now).startUtcIso,
+  ).getTime();
 
   if (!jsonText) {
     return [];
@@ -145,15 +156,24 @@ export function parseWeeklyNewsResponse(text: string): ParsedWeeklyNewsItem[] {
       const sourceDomain = sourceUrl
         ? normalizeSourcedFactDomain(sourceUrl)
         : null;
+      const publishedAt = normalizePublishedAt(item.published_at);
 
-      if (!title || !summary || !sourceUrl || !sourceDomain || !isAllowedSourcedFactDomain(sourceDomain)) {
+      if (
+        !title ||
+        !summary ||
+        !sourceUrl ||
+        !sourceDomain ||
+        !publishedAt ||
+        new Date(publishedAt).getTime() < weekStartUtc ||
+        !isAllowedSourcedFactDomain(sourceDomain)
+      ) {
         return [];
       }
 
       return [{
         category: normalizeCategory(item.category),
         confidence: normalizeConfidence(item.confidence),
-        published_at: normalizePublishedAt(item.published_at),
+        published_at: publishedAt,
         source_domain: sourceDomain,
         source_url: sourceUrl,
         summary_ja: summary,
@@ -177,9 +197,11 @@ export async function fetchWeeklyNews(options?: {
   weekFrom?: string;
 }): Promise<FetchWeeklyNewsResult> {
   const now = options?.now ?? new Date();
-  const currentWeek = getCurrentJstWeekRangeUtc(now);
-  const weekFrom = options?.weekFrom ?? currentWeek.weekStartJst;
-  const weekTo = addJstDays(weekFrom, 6);
+  const week = options?.weekFrom
+    ? getJstWeekRangeUtc(options.weekFrom, now)
+    : getCurrentJstWeekRangeUtc(now);
+  const weekFrom = week.weekStartJst;
+  const weekTo = week.weekEndJst;
   const prompt = buildWeeklyNewsSearchPrompt(weekFrom, weekTo);
   const response = await createWebSearchJsonResponse({
     input: prompt,
@@ -187,7 +209,7 @@ export async function fetchWeeklyNews(options?: {
     temperature: 0,
   });
   const fetchedAt = now.toISOString();
-  const items = parseWeeklyNewsResponse(response.text).map((item) => ({
+  const items = parseWeeklyNewsResponse(response.text, weekFrom, now).map((item) => ({
     category: item.category,
     confidence: item.confidence,
     fetched_at: fetchedAt,
