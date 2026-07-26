@@ -21,8 +21,9 @@ describe("weekly news fetch", () => {
     dbMock.insert.mockResolvedValue({ error: null });
   });
 
-  it("performs one weekly search and stores only allowlisted draft items", async () => {
-    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+  it("performs two focused searches and stores only allowlisted draft items", async () => {
+    openAIMock.createWebSearchJsonResponse
+      .mockResolvedValueOnce({
       model: "gpt-4o",
       text: JSON.stringify({
         items: [
@@ -35,15 +36,8 @@ describe("weekly news fetch", () => {
             title_ja: "新加入を発表",
           },
           {
-            category: "unexpected-category",
-            confidence: "unknown",
-            published_at: "2026-07-17T01:00:00Z",
-            source_url: "https://premiershiprugby.com/news/comment",
-            summary_ja: "監督が週末に向けたコメントを発表した。",
-            title_ja: "監督のコメント",
-          },
-          {
             category: "injury",
+            published_at: "2026-07-17T01:00:00Z",
             confidence: "high",
             source_url: "https://disallowed.example/news/injury",
             summary_ja: "保存してはいけない項目。",
@@ -52,20 +46,54 @@ describe("weekly news fetch", () => {
         ],
       }),
       usage: { inputTokens: 20, outputTokens: 30 },
-    });
+      })
+      .mockResolvedValueOnce({
+        model: "gpt-4o",
+        text: JSON.stringify({
+          items: [
+            {
+              category: "unexpected-category",
+              confidence: "unknown",
+              published_at: "2026-07-17T01:00:00Z",
+              source_url: "https://premiershiprugby.com/news/comment",
+              summary_ja: "監督が週末に向けたコメントを発表した。",
+              title_ja: "監督のコメント",
+            },
+            {
+              category: "injury",
+              confidence: "high",
+              published_at: "2026-07-17T01:00:00Z",
+              source_url: "https://disallowed.example/news/injury",
+              summary_ja: "保存してはいけない項目。",
+              title_ja: "対象外の出典",
+            },
+          ],
+        }),
+        usage: { inputTokens: 20, outputTokens: 30 },
+      });
     const { fetchWeeklyNews } = await import("@/lib/llm/weekly-news/fetch");
 
     const result = await fetchWeeklyNews({
       now: new Date("2026-07-17T03:00:00.000Z"),
     });
 
-    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
-    const input = openAIMock.createWebSearchJsonResponse.mock.calls[0]?.[0]
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledTimes(2);
+    const playerInput = openAIMock.createWebSearchJsonResponse.mock.calls[0]?.[0]
       ?.input as string;
-    expect(input).toContain("Do not include quotes longer than 15 words");
-    expect(input).toContain("Do not reproduce article text or copyrighted prose");
-    expect(input).toContain("Include source_url for every item");
-    expect(input).toContain("only include news published within the target week");
+    const competitionInput = openAIMock.createWebSearchJsonResponse.mock.calls[1]?.[0]
+      ?.input as string;
+    expect(playerInput).toContain("player transfers and contract news");
+    expect(playerInput).toContain("player or coach comments");
+    expect(playerInput).not.toContain("competition news and tournament developments");
+    expect(playerInput).not.toContain("injuries that materially affect upcoming rugby");
+    expect(competitionInput).toContain("competition news and tournament developments");
+    expect(competitionInput).toContain("injuries that materially affect upcoming rugby");
+    expect(competitionInput).not.toContain("player transfers and contract news");
+    expect(competitionInput).not.toContain("player or coach comments");
+    expect(playerInput).toContain("Do not include quotes longer than 15 words");
+    expect(competitionInput).toContain("Do not reproduce article text or copyrighted prose");
+    expect(playerInput).toContain("Include source_url for every item");
+    expect(competitionInput).toContain("only include news published within the target week");
     expect(result.week).toEqual({ from: "2026-07-13", to: "2026-07-19" });
     expect(result.items).toHaveLength(2);
     expect(result.items[1]).toMatchObject({
@@ -112,6 +140,47 @@ describe("weekly news fetch", () => {
     ).resolves.toMatchObject({ fetched: true, items: [] });
     expect(dbMock.from).not.toHaveBeenCalled();
     expect(dbMock.insert).not.toHaveBeenCalled();
+  });
+
+  it("deduplicates source URLs across the two focused searches", async () => {
+    openAIMock.createWebSearchJsonResponse
+      .mockResolvedValueOnce({
+        model: "gpt-4o",
+        text: JSON.stringify({
+          items: [{
+            category: "transfer",
+            confidence: "high",
+            published_at: "2026-07-15T10:00:00Z",
+            source_url: "HTTPS://WWW.THERUGBYPAPER.CO.UK/news/same/",
+            summary_ja: "同じ出典の移籍ニュース。",
+            title_ja: "移籍ニュース",
+          }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        model: "gpt-4o",
+        text: JSON.stringify({
+          items: [{
+            category: "competition",
+            confidence: "medium",
+            published_at: "2026-07-16T10:00:00Z",
+            source_url: "https://www.therugbypaper.co.uk/news/same",
+            summary_ja: "同じ出典の大会ニュース。",
+            title_ja: "大会ニュース",
+          }],
+        }),
+      });
+    const { fetchWeeklyNews } = await import("@/lib/llm/weekly-news/fetch");
+
+    const result = await fetchWeeklyNews({
+      now: new Date("2026-07-17T03:00:00.000Z"),
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({ title_ja: "移籍ニュース" });
+    expect(dbMock.insert).toHaveBeenCalledWith([
+      expect.objectContaining({ title_ja: "移籍ニュース" }),
+    ]);
   });
 
   it("filters items without a valid publication date or published before the target week", async () => {
