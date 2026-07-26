@@ -4,6 +4,7 @@ import {
   filterAllowedSourcedFacts,
   getDbAuthoritativeFactRejectionReason,
   isAllowedSourcedFactDomain,
+  SOURCED_FACT_ALLOWED_DOMAINS,
 } from "@/lib/llm/sourced-facts/allowlist";
 import {
   SEARCH_PROMPT_VERSION,
@@ -84,30 +85,45 @@ function cachedFact(overrides: Record<string, unknown> = {}) {
     fetched_at: "2026-06-09T12:00:00.000Z",
     metadata: { prompt_version: SEARCH_PROMPT_VERSION },
     model_version: "gpt-4o",
-    source_domain: "rugbypass.com",
-    source_url: "https://www.rugbypass.com/news/marx",
+    source_domain: "therugbypaper.co.uk",
+    source_url: "https://www.therugbypaper.co.uk/news/marx",
     ...overrides,
   };
 }
 
 describe("sourced facts allowlist", () => {
   it("allows configured domains and subdomains only", () => {
-    expect(isAllowedSourcedFactDomain("www.rugbypass.com")).toBe(true);
-    expect(isAllowedSourcedFactDomain("news.world.rugby")).toBe(true);
-    expect(isAllowedSourcedFactDomain("bbc.com")).toBe(true);
-    expect(isAllowedSourcedFactDomain("www.bbc.co.uk")).toBe(true);
+    expect(isAllowedSourcedFactDomain("www.therugbypaper.co.uk")).toBe(true);
     expect(isAllowedSourcedFactDomain("rugby-japan.jp")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.rugby.com.au")).toBe(true);
     expect(isAllowedSourcedFactDomain("news.allblacks.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.englandrugby.com")).toBe(true);
-    expect(isAllowedSourcedFactDomain("www.espn.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.skysports.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.rugby-rp.com")).toBe(true);
-    expect(isAllowedSourcedFactDomain("www.nbcsports.com")).toBe(true);
-    expect(isAllowedSourcedFactDomain("sports.yahoo.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.onrugby.it")).toBe(true);
     expect(isAllowedSourcedFactDomain("news.yahoo.co.jp")).toBe(true);
     expect(isAllowedSourcedFactDomain("sportytrader.com")).toBe(false);
+  });
+
+  it("rejects every removed domain", () => {
+    const removedDomains = [
+      "world.rugby",
+      "rugbyworldcup.com",
+      "sixnationsrugby.com",
+      "rugbychampionship.com",
+      "rugbypass.com",
+      "planetrugby.com",
+      "bbc.com",
+      "bbc.co.uk",
+      "espn.com",
+      "nbcsports.com",
+      "sports.yahoo.com",
+    ];
+
+    for (const domain of removedDomains) {
+      expect(SOURCED_FACT_ALLOWED_DOMAINS).not.toContain(domain);
+      expect(isAllowedSourcedFactDomain(`www.${domain}`)).toBe(false);
+    }
   });
 
   it("hard-filters non-allowlisted sources after extraction", () => {
@@ -115,7 +131,7 @@ describe("sourced facts allowlist", () => {
       {
         confidence: "medium",
         fact: "Malcolm Marx is expected to miss the final through injury.",
-        source_url: "https://www.rugbypass.com/news/example",
+        source_url: "https://www.therugbypaper.co.uk/news/example",
       },
       {
         confidence: "high",
@@ -125,7 +141,7 @@ describe("sourced facts allowlist", () => {
     ]);
 
     expect(facts).toHaveLength(1);
-    expect(facts[0]?.source_domain).toBe("rugbypass.com");
+    expect(facts[0]?.source_domain).toBe("therugbypaper.co.uk");
     expect(facts[0]?.confidence).toBe("medium");
   });
 
@@ -148,7 +164,7 @@ describe("sourced facts allowlist", () => {
         {
           confidence: "high",
           fact: "Kubota Spears defeated Kobelco Kobe 33-28 in their December meeting.",
-          source_url: "https://www.rugbypass.com/news/result",
+          source_url: "https://www.therugbypaper.co.uk/news/result",
         },
       ],
       { rejected },
@@ -171,7 +187,7 @@ describe("sourced facts allowlist", () => {
       {
         confidence: "high",
         fact: "In their most recent meeting, the Wallabies missed a match-winning penalty in the final minute.",
-        source_url: "https://www.rugbypass.com/news/recent",
+        source_url: "https://www.therugbypaper.co.uk/news/recent",
       },
     ]);
 
@@ -211,12 +227,12 @@ describe("sourced facts allowlist", () => {
       {
         confidence: "medium",
         fact: "Player X is out with a hamstring injury.",
-        source_url: "https://www.rugbypass.com/news/injury",
+        source_url: "https://www.therugbypaper.co.uk/news/injury",
       },
       {
         confidence: "medium",
         fact: "Kobe lineup features Retallick, Savea.",
-        source_url: "https://www.rugbypass.com/news/lineup",
+        source_url: "https://www.therugbypaper.co.uk/news/lineup",
       },
     ]);
 
@@ -333,7 +349,7 @@ describe("parseSourcedFactsResponse", () => {
   const allowedFact = {
     confidence: "medium",
     fact: "Malcolm Marx is expected to miss the final through injury.",
-    source_url: "https://www.rugbypass.com/news/marx",
+    source_url: "https://www.therugbypaper.co.uk/news/marx",
   };
 
   it("extracts facts from a plain JSON string", () => {
@@ -342,7 +358,7 @@ describe("parseSourcedFactsResponse", () => {
     );
 
     expect(facts).toHaveLength(1);
-    expect(facts[0]?.source_domain).toBe("rugbypass.com");
+    expect(facts[0]?.source_domain).toBe("therugbypaper.co.uk");
   });
 
   it("keeps a non-empty fact_ja and ignores blank fact_ja values", () => {
@@ -412,7 +428,7 @@ describe("parseSourcedFactsResponse", () => {
     );
 
     expect(facts).toHaveLength(1);
-    expect(facts[0]?.source_domain).toBe("rugbypass.com");
+    expect(facts[0]?.source_domain).toBe("therugbypaper.co.uk");
   });
 });
 
@@ -491,7 +507,7 @@ describe("fetchSourcedFactsForMatch", () => {
           {
             confidence: "medium",
             fact: "Japan and Ireland both conceded nine penalties.",
-            source_url: "https://www.rugbypass.com/news/penalties",
+            source_url: "https://www.therugbypaper.co.uk/news/penalties",
           },
         ],
       }),
@@ -540,7 +556,7 @@ describe("fetchSourcedFactsForMatch", () => {
             {
               confidence: "medium",
               fact: "Japan made fewer handling errors after halftime.",
-              source_url: "https://www.rugbypass.com/news/japan-recap",
+              source_url: "https://www.therugbypaper.co.uk/news/japan-recap",
             },
           ],
         }),
@@ -581,7 +597,7 @@ describe("fetchSourcedFactsForMatch", () => {
             {
               confidence: "medium",
               fact: "The head coach praised Japan's response after halftime.",
-              source_url: "https://www.rugbypass.com/news/japan-recap",
+              source_url: "https://www.therugbypaper.co.uk/news/japan-recap",
             },
           ],
         }),
@@ -594,7 +610,7 @@ describe("fetchSourcedFactsForMatch", () => {
             {
               confidence: "medium",
               fact: "Japan made 82% of their tackles while France made 90%.",
-              source_url: "https://www.rugbypass.com/news/japan-stats",
+              source_url: "https://www.therugbypaper.co.uk/news/japan-stats",
             },
           ],
         }),
@@ -631,12 +647,12 @@ describe("fetchSourcedFactsForMatch", () => {
           {
             confidence: "medium",
             fact: "Japan conceded nine penalties in the first half.",
-            source_url: "https://www.rugbypass.com/news/japan-penalties",
+            source_url: "https://www.therugbypaper.co.uk/news/japan-penalties",
           },
           {
             confidence: "medium",
             fact: "The coach praised the side's composure after halftime.",
-            source_url: "https://www.rugbypass.com/news/japan-coach",
+            source_url: "https://www.therugbypaper.co.uk/news/japan-coach",
           },
         ],
       }),
@@ -694,7 +710,7 @@ describe("fetchSourcedFactsForMatch", () => {
           {
             confidence: "medium",
             fact: "The head coach praised the squad's preparation this week.",
-            source_url: "https://www.rugbypass.com/news/preview",
+            source_url: "https://www.therugbypaper.co.uk/news/preview",
           },
         ],
       }),
@@ -819,7 +835,7 @@ describe("fetchSourcedFactsForMatch", () => {
           {
             confidence: "medium",
             fact: "Malcolm Marx is expected to miss the final through injury.",
-            source_url: "https://www.rugbypass.com/news/marx",
+            source_url: "https://www.therugbypaper.co.uk/news/marx",
           },
           {
             confidence: "high",
@@ -844,7 +860,7 @@ describe("fetchSourcedFactsForMatch", () => {
       [
         expect.objectContaining({
           fact: "Malcolm Marx is expected to miss the final through injury.",
-          source_domain: "rugbypass.com",
+          source_domain: "therugbypaper.co.uk",
         }),
       ],
       { onConflict: "match_id,fact" },
@@ -867,13 +883,13 @@ describe("fetchSourcedFactsForMatch", () => {
             confidence: "medium",
             fact: "Malcolm Marx is expected to miss the final through injury.",
             fact_ja: "マルコム・マークスは負傷により決勝戦を欠場する見込みだ。",
-            source_url: "https://www.rugbypass.com/news/marx",
+            source_url: "https://www.therugbypaper.co.uk/news/marx",
           },
           {
             confidence: "medium",
             fact: "Kobe have named an unchanged squad for the final.",
             fact_ja: " ",
-            source_url: "https://www.rugbypass.com/news/kobe-squad",
+            source_url: "https://www.therugbypaper.co.uk/news/kobe-squad",
           },
         ],
       }),
