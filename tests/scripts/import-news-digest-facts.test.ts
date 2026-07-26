@@ -75,7 +75,7 @@ describe("import-news-digest-facts", () => {
 ## X reply素材候補
 
 - **事実**: これは取り込まない。
-  確度: 単一ソース報道／出典: [BBC](https://www.bbc.com/sport/rugby-union/example)／確認日時: 2026-07-10（JST）
+  確度: 単一ソース報道／出典: [The Rugby Paper](https://www.therugbypaper.co.uk/news/example)／確認日時: 2026-07-10（JST）
 `);
 
     expect(facts).toHaveLength(1);
@@ -107,27 +107,27 @@ describe("import-news-digest-facts", () => {
 ## 3. オーストラリア vs フランス（7/11、ブリスベン）
 
 - **事実**: フランスは主将アントワーヌ・デュポンが負傷離脱中で今節も不在。
-  確度: 複数ソース一致（PlanetRugby、RugbyPass）／出典: [PlanetRugby](https://www.planetrugby.com/news/france-team-v-wallabies-romain-ntamack-and-matthieu-jalibert-start-with-top-14s-best)／確認日時: 2026-07-10（JST）
+  確度: 複数ソース一致（The Rugby Paper）／出典: [The Rugby Paper](https://www.therugbypaper.co.uk/news/france-team-v-wallabies)／確認日時: 2026-07-10（JST）
 `);
 
     expect(facts).toHaveLength(1);
     expect(facts[0]).toMatchObject({
       heading: "3. オーストラリア vs フランス（7/11、ブリスベン）",
       sourceUrl:
-        "https://www.planetrugby.com/news/france-team-v-wallabies-romain-ntamack-and-matthieu-jalibert-start-with-top-14s-best",
+        "https://www.therugbypaper.co.uk/news/france-team-v-wallabies",
       teamA: "オーストラリア",
       teamB: "フランス",
     });
   });
 
-  it("dry-runs newly allowed official facts without excluding them", async () => {
+  it("dry-runs allowlisted facts without excluding them", async () => {
     const file = await writeDigest(`
 ## 日本 vs アイルランド
 
 キックオフ: 2026-07-12 19:00 JST
 
 - **事実**: Japan named Warner Dearns in the starting lineup for Ireland.
-  確度: 単一ソース報道／出典: [BBC](https://www.bbc.com/sport/rugby-union/example)／確認日時: 2026-07-10（JST）
+  確度: 単一ソース報道／出典: [The Rugby Paper](https://www.therugbypaper.co.uk/news/example)／確認日時: 2026-07-10（JST）
 - **事実**: 日本代表の先発は、主将LOワーナー・ディアンズを含む。
   確度: 公式発表／出典: [日本ラグビーフットボール協会](https://www.rugby-japan.jp/news/54051)／確認日時: 2026-07-10（JST）
 `);
@@ -169,7 +169,7 @@ describe("import-news-digest-facts", () => {
 ## 日本 vs アイルランド
 
 - **事実**: Japan named Warner Dearns in the starting lineup for Ireland.
-  確度: 複数ソース一致／出典: [BBC](https://www.bbc.com/sport/rugby-union/example)／確認日時: 2026-07-10（JST）
+  確度: 複数ソース一致／出典: [The Rugby Paper](https://www.therugbypaper.co.uk/news/example)／確認日時: 2026-07-10（JST）
 `);
 
     const result = await runImportNewsDigestFacts({
@@ -189,8 +189,8 @@ describe("import-news-digest-facts", () => {
           fact: "Japan named Warner Dearns in the starting lineup for Ireland.",
           match_id: "match-japan-ireland",
           model_version: "news-digest-import@1.0.0",
-          source_domain: "bbc.com",
-          source_url: "https://www.bbc.com/sport/rugby-union/example",
+          source_domain: "therugbypaper.co.uk",
+          source_url: "https://www.therugbypaper.co.uk/news/example",
         }),
       ],
       { onConflict: "match_id,fact" },
@@ -202,7 +202,7 @@ describe("import-news-digest-facts", () => {
 ## 日本 vs アイルランド
 
 - **事実**: Japan named Warner Dearns in the starting lineup for Ireland.
-  確度: 複数ソース一致／出典: [BBC](https://www.bbc.com/sport/rugby-union/example)／確認日時: 2026-07-10（JST）
+  確度: 複数ソース一致／出典: [The Rugby Paper](https://www.therugbypaper.co.uk/news/example)／確認日時: 2026-07-10（JST）
 `);
     const getPublishedContent = vi.fn();
     const generatePreview = vi.fn();
@@ -232,7 +232,7 @@ describe("import-news-digest-facts", () => {
 ## 日本 vs アイルランド
 
 - **事実**: Japan named Warner Dearns in the starting lineup for Ireland.
-  確度: 複数ソース一致／出典: [BBC](https://www.bbc.com/sport/rugby-union/example)／確認日時: 2026-07-10（JST）
+  確度: 複数ソース一致／出典: [The Rugby Paper](https://www.therugbypaper.co.uk/news/example)／確認日時: 2026-07-10（JST）
 `);
     const logger = { error: vi.fn(), log: vi.fn(), warn: vi.fn() };
     const getPublishedContent = vi.fn().mockResolvedValue({
@@ -268,7 +268,7 @@ describe("import-news-digest-facts", () => {
 ## 日本 vs アイルランド
 
 - **事実**: Japan named Warner Dearns in the starting lineup for Ireland.
-  確度: 複数ソース一致／出典: [BBC](https://www.bbc.com/sport/rugby-union/example)／確認日時: 2026-07-10（JST）
+  確度: 複数ソース一致／出典: [The Rugby Paper](https://www.therugbypaper.co.uk/news/example)／確認日時: 2026-07-10（JST）
 `);
     const getPublishedContent = vi.fn().mockResolvedValue({
       preview: null,
@@ -319,12 +319,12 @@ describe("import-news-digest-facts", () => {
 ## 日本 vs アイルランド
 
 - **事実**: Japan named Warner Dearns in the starting lineup for Ireland.
-  確度: 複数ソース一致／出典: [BBC](https://www.bbc.com/sport/rugby-union/example)／確認日時: 2026-07-10（JST）
+  確度: 複数ソース一致／出典: [The Rugby Paper](https://www.therugbypaper.co.uk/news/example)／確認日時: 2026-07-10（JST）
 
 ## オーストラリア vs フランス
 
 - **事実**: France confirmed a revised midfield combination for Australia.
-  確度: 複数ソース一致／出典: [PlanetRugby](https://www.planetrugby.com/news/example)／確認日時: 2026-07-10（JST）
+  確度: 複数ソース一致／出典: [The Rugby Paper](https://www.therugbypaper.co.uk/news/example)／確認日時: 2026-07-10（JST）
 `);
     const logger = { error: vi.fn(), log: vi.fn(), warn: vi.fn() };
     const getPublishedContent = vi.fn().mockResolvedValue({

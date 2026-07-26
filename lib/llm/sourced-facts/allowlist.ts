@@ -6,15 +6,11 @@ import type {
 } from "@/lib/llm/sourced-facts/types";
 
 const OFFICIAL_DOMAINS = [
-  "world.rugby",
-  "rugbyworldcup.com",
-  "sixnationsrugby.com",
   "premiershiprugby.com",
   "unitedrugby.com",
   "lnr.fr",
   "super.rugby",
   "league-one.jp",
-  "rugbychampionship.com",
   "rugby-japan.jp",
   "rugby.com.au",
   "allblacks.com",
@@ -22,18 +18,12 @@ const OFFICIAL_DOMAINS = [
 ] as const;
 
 const MEDIA_DOMAINS = [
-  "rugbypass.com",
-  "planetrugby.com",
   "rugbyasia247.com",
-  "bbc.com",
-  "bbc.co.uk",
-  "espn.com",
   "skysports.com",
   "rugby-rp.com",
-  "nbcsports.com",
-  "sports.yahoo.com",
   "onrugby.it",
   "news.yahoo.co.jp",
+  "therugbypaper.co.uk",
 ] as const;
 
 export const SOURCED_FACT_ALLOWED_DOMAINS = [
