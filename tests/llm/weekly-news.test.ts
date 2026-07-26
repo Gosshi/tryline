@@ -37,6 +37,7 @@ describe("weekly news fetch", () => {
           {
             category: "unexpected-category",
             confidence: "unknown",
+            published_at: "2026-07-17T01:00:00Z",
             source_url: "https://premiershiprugby.com/news/comment",
             summary_ja: "監督が週末に向けたコメントを発表した。",
             title_ja: "監督のコメント",
@@ -64,6 +65,7 @@ describe("weekly news fetch", () => {
     expect(input).toContain("Do not include quotes longer than 15 words");
     expect(input).toContain("Do not reproduce article text or copyrighted prose");
     expect(input).toContain("Include source_url for every item");
+    expect(input).toContain("only include news published within the target week");
     expect(result.week).toEqual({ from: "2026-07-13", to: "2026-07-19" });
     expect(result.items).toHaveLength(2);
     expect(result.items[1]).toMatchObject({
@@ -110,5 +112,65 @@ describe("weekly news fetch", () => {
     ).resolves.toMatchObject({ fetched: true, items: [] });
     expect(dbMock.from).not.toHaveBeenCalled();
     expect(dbMock.insert).not.toHaveBeenCalled();
+  });
+
+  it("filters items without a valid publication date or published before the target week", async () => {
+    const { parseWeeklyNewsResponse } = await import(
+      "@/lib/llm/weekly-news/fetch"
+    );
+
+    const items = parseWeeklyNewsResponse(
+      JSON.stringify({
+        items: [
+          {
+            category: "transfer",
+            confidence: "high",
+            published_at: "2026-06-30T12:00:00Z",
+            source_url: "https://www.therugbypaper.co.uk/news/old-transfer",
+            summary_ja: "対象週より前に公開されたニュース。",
+            title_ja: "古い移籍ニュース",
+          },
+          {
+            category: "quote",
+            confidence: "medium",
+            published_at: null,
+            source_url: "https://www.premiershiprugby.com/news/missing-date",
+            summary_ja: "公開日時がないニュース。",
+            title_ja: "公開日なし",
+          },
+          {
+            category: "competition",
+            confidence: "medium",
+            published_at: "not-a-date",
+            source_url: "https://www.unitedrugby.com/news/invalid-date",
+            summary_ja: "不正な公開日時のニュース。",
+            title_ja: "不正な公開日",
+          },
+          {
+            category: "injury",
+            confidence: "medium",
+            published_at: "2026-07-20T00:00:00+09:00",
+            source_url: "https://www.englandrugby.com/news/current-week",
+            summary_ja: "対象週の開始時刻に公開されたニュース。",
+            title_ja: "対象週のニュース",
+          },
+          {
+            category: "other",
+            confidence: "medium",
+            published_at: "2026-07-27T00:00:00+09:00",
+            source_url: "https://www.rugby.com.au/news/future-date",
+            summary_ja: "週末より未来の日時は今回許容する。",
+            title_ja: "未来日のニュース",
+          },
+        ],
+      }),
+      "2026-07-20",
+      new Date("2026-07-26T03:00:00.000Z"),
+    );
+
+    expect(items.map((item) => item.title_ja)).toEqual([
+      "対象週のニュース",
+      "未来日のニュース",
+    ]);
   });
 });
