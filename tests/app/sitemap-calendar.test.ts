@@ -16,8 +16,8 @@ vi.mock("@/lib/db/queries/teams", () => ({
   listAllTeams: vi.fn().mockResolvedValue([]),
 }));
 
-describe("sitemap calendar route", () => {
-  it("includes /calendar", async () => {
+describe("sitemap static routes", () => {
+  it("includes /calendar and /news", async () => {
     const { default: sitemap } = await import("@/app/sitemap");
 
     const entries = await sitemap();
@@ -28,6 +28,11 @@ describe("sitemap calendar route", () => {
           changeFrequency: "daily",
           priority: 0.8,
           url: "https://www.trylinerugby.com/calendar",
+        }),
+        expect.objectContaining({
+          changeFrequency: "daily",
+          priority: 0.6,
+          url: "https://www.trylinerugby.com/news",
         }),
       ]),
     );
