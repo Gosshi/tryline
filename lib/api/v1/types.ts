@@ -119,6 +119,10 @@ export type V1NextReadMatch = {
   kickoff_utc: string;
 };
 
+export type V1NextMatchesData = {
+  matches: V1NextReadMatch[];
+};
+
 export type V1MatchDetail = {
   away_team: V1TeamSummary & { english_name: string | null };
   broadcast_jp_url: string | null;
