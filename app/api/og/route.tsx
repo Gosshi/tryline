@@ -21,12 +21,6 @@ const STORY_IMAGE_CACHE_CONTROL =
 
 type StoryItemType = "preview" | "news" | "result" | "recap";
 type StoryTextMode = "full" | "none";
-type WeeklyNewsCategory =
-  | "transfer"
-  | "quote"
-  | "competition"
-  | "injury"
-  | "other";
 
 type StoryOgMatchRow = {
   away_score: number | null;
@@ -93,153 +87,6 @@ function parseStoryItemType(value: string | null): StoryItemType | null {
 
 function parseStoryTextMode(value: string | null): StoryTextMode {
   return value === "none" ? "none" : "full";
-}
-
-function parseWeeklyNewsCategory(value: string | null): WeeklyNewsCategory {
-  return value === "transfer" ||
-    value === "quote" ||
-    value === "competition" ||
-    value === "injury"
-    ? value
-    : "other";
-}
-
-function weeklyNewsTone(category: WeeklyNewsCategory) {
-  switch (category) {
-    case "transfer":
-      return { accent: "#F59E0B", label: "移籍", start: "#3A2503" };
-    case "quote":
-      return { accent: "#38BDF8", label: "コメント", start: "#082F49" };
-    case "competition":
-      return { accent: "#A78BFA", label: "大会", start: "#2E1065" };
-    case "injury":
-      return { accent: "#FB7185", label: "負傷", start: "#4C0519" };
-    default:
-      return { accent: "#34D399", label: "ニュース", start: "#064E3B" };
-  }
-}
-
-function weeklyNewsImage(
-  category: WeeklyNewsCategory,
-  fontData: ArrayBuffer,
-  fontName: string,
-  orientation: "landscape" | "portrait",
-  textMode: StoryTextMode,
-) {
-  const isPortrait = orientation === "portrait";
-  const width = isPortrait ? 1080 : 1200;
-  const height = isPortrait ? 1920 : 630;
-  const tone = weeklyNewsTone(category);
-
-  return new ImageResponse(
-    <div
-      style={{
-        background: `linear-gradient(145deg, ${tone.start} 0%, #0B1628 62%, #06111F 100%)`,
-        color: "#f8fafc",
-        display: "flex",
-        fontFamily: "Inter, Geist, sans-serif",
-        height: `${height}px`,
-        overflow: "hidden",
-        position: "relative",
-        width: `${width}px`,
-      }}
-    >
-      <div
-        style={{
-          background: `radial-gradient(circle at 8% 12%, ${tone.accent} 0%, transparent 33%), radial-gradient(circle at 88% 86%, ${tone.accent} 0%, transparent 38%)`,
-          display: "flex",
-          inset: 0,
-          opacity: 0.46,
-          position: "absolute",
-        }}
-      />
-      <div
-        style={{
-          border: `${isPortrait ? 34 : 22}px solid ${tone.accent}`,
-          borderRadius: "999px",
-          display: "flex",
-          height: isPortrait ? "580px" : "360px",
-          opacity: 0.32,
-          position: "absolute",
-          right: isPortrait ? "-190px" : "-96px",
-          top: isPortrait ? "-210px" : "-132px",
-          width: isPortrait ? "580px" : "360px",
-        }}
-      />
-      <div
-        style={{
-          background: tone.accent,
-          display: "flex",
-          height: isPortrait ? "16px" : "10px",
-          left: 0,
-          position: "absolute",
-          right: 0,
-          top: 0,
-        }}
-      />
-      {textMode === "full" && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: isPortrait ? "30px" : "18px",
-            left: isPortrait ? "84px" : "64px",
-            position: "absolute",
-            top: isPortrait ? "110px" : "72px",
-          }}
-        >
-          <div
-            style={{
-              color: tone.accent,
-              display: "flex",
-              fontSize: isPortrait ? "40px" : "26px",
-              fontWeight: 900,
-              letterSpacing: "0.12em",
-            }}
-          >
-            WEEKLY NEWS
-          </div>
-          <div
-            style={{
-              color: "#f8fafc",
-              display: "flex",
-              fontSize: isPortrait ? "96px" : "62px",
-              fontWeight: 950,
-              letterSpacing: "0.02em",
-            }}
-          >
-            {tone.label}
-          </div>
-        </div>
-      )}
-      <div
-        style={{
-          bottom: isPortrait ? "82px" : "42px",
-          color: "rgba(248,250,252,0.58)",
-          display: "flex",
-          fontSize: isPortrait ? "30px" : "20px",
-          fontWeight: 800,
-          position: "absolute",
-          right: isPortrait ? "78px" : "64px",
-        }}
-      >
-        trylinerugby.com
-      </div>
-    </div>,
-    {
-      fonts: [
-        {
-          data: fontData,
-          name: fontName,
-          style: "normal",
-          weight: 700,
-        },
-      ],
-      headers: { "Cache-Control": STORY_IMAGE_CACHE_CONTROL },
-      height,
-      width,
-    },
-  );
 }
 
 function teamColorRgba(color: string, opacity: number): string {
@@ -905,21 +752,6 @@ export async function GET(request: Request) {
     return match && item
       ? storyImage(match, item, fontData, fontName, orientation, textMode)
       : storyFallbackImage(fontData, fontName, orientation);
-  }
-
-  if (searchParams.get("type") === "weekly-news") {
-    const orientation =
-      searchParams.get("orientation") === "landscape"
-        ? "landscape"
-        : "portrait";
-
-    return weeklyNewsImage(
-      parseWeeklyNewsCategory(searchParams.get("category")),
-      fontData,
-      fontName,
-      orientation,
-      parseStoryTextMode(searchParams.get("text")),
-    );
   }
 
   if (searchParams.get("type") === "competition") {
