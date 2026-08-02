@@ -20,6 +20,7 @@ import type { GroupKey } from "@/lib/format/match-groups";
 
 const competitionsMock = vi.hoisted(() => ({
   getCompetitionBySlug: vi.fn(),
+  getCompetitionGuide: vi.fn(),
 }));
 
 const contentStatusMock = vi.hoisted(() => ({
@@ -168,6 +169,11 @@ describe("RWC 2027 hub page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     competitionsMock.getCompetitionBySlug.mockResolvedValue(competition);
+    competitionsMock.getCompetitionGuide.mockResolvedValue({
+      guideJa: "日本での視聴方法は公式案内を確認してください。",
+      sourceUrl: "https://www.rugbyworldcup.com/2027/en",
+      verifiedAt: "2026-07-09T00:00:00.000Z",
+    });
     standingsMock.getPoolStandingsForCompetition.mockResolvedValue(
       buildPoolStandings(),
     );
@@ -216,6 +222,86 @@ describe("RWC 2027 hub page", () => {
     ).toBeTruthy();
     expect(contentStatusMock.getContentStatusMap).toHaveBeenCalledWith(
       expect.arrayContaining(["rwc-match-1", "rwc-match-36"]),
+    );
+  });
+
+  it("renders unique venues, the viewing guide, and FAQPage structured data", async () => {
+    const matches = Array.from({ length: 36 }, (_, index) => {
+      const match = buildMatch(index + 1, "scheduled");
+
+      return index === 0
+        ? {
+            ...match,
+            homeTeam: {
+              ...match.homeTeam,
+              name: "Japan",
+              slug: "japan",
+            },
+            kickoffAt: "2027-10-01T08:00:00.000Z",
+            venue: `Venue ${index % 8}`,
+          }
+        : { ...match, venue: `Venue ${index % 8}` };
+    });
+    matchesMock.listMatchesForCompetition.mockResolvedValue(matches);
+
+    const { container } = render(await RWC2027Page());
+
+    expect(
+      screen.getByRole("heading", { name: "開催都市・会場" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/^Venue [0-7]$/)).toHaveLength(8);
+    expect(
+      screen.getByRole("heading", { name: "大会ガイド" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("最終確認日: 2026-07-09")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "参照元" })).toHaveAttribute(
+      "href",
+      "https://www.rugbyworldcup.com/2027/en",
+    );
+
+    const jsonLd = container.querySelector('script[type="application/ld+json"]');
+    expect(jsonLd).not.toBeNull();
+    expect(JSON.parse(jsonLd?.textContent ?? "")).toEqual({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: expect.arrayContaining([
+        expect.objectContaining({
+          name: "ラグビーワールドカップ2027はいつ開催されますか？",
+        }),
+        expect.objectContaining({
+          name: "ラグビーワールドカップ2027はどこで開催されますか？",
+        }),
+        expect.objectContaining({
+          name: "ラグビーワールドカップ2027はどこで見られますか？",
+        }),
+        expect.objectContaining({
+          acceptedAnswer: expect.objectContaining({
+            text: expect.stringContaining("Japan 対 Away 1"),
+          }),
+          name: "日本代表の次の試合はいつですか（日本時間）？",
+        }),
+      ]),
+    });
+  });
+
+  it("uses the Japan FAQ fallback when no future Japan fixture is available", async () => {
+    matchesMock.listMatchesForCompetition.mockResolvedValue([
+      buildMatch(1, "finished"),
+    ]);
+
+    const { container } = render(await RWC2027Page());
+    const jsonLd = container.querySelector('script[type="application/ld+json"]');
+    const structuredData = JSON.parse(jsonLd?.textContent ?? "") as {
+      mainEntity: Array<{ acceptedAnswer: { text: string }; name: string }>;
+    };
+
+    expect(structuredData.mainEntity).toContainEqual(
+      expect.objectContaining({
+        acceptedAnswer: expect.objectContaining({
+          text: "日本代表の次の試合は、対戦カードと日程の確定後にこのページでお知らせします。",
+        }),
+        name: "日本代表の次の試合はいつですか（日本時間）？",
+      }),
     );
   });
 
