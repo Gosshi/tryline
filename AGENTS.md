@@ -130,6 +130,38 @@ Tryline は、海外ラグビーリーグ（Six Nations、Premiership、URC、To
   - `pnpm lint` / `pnpm typecheck` / `pnpm test` の実行結果
 - マージは Owner が行う。Codex は push / PR 作成までで停止する
 
+### Owner の恒久運用方針
+
+- このリポジトリでは常に `AGENTS.md` に従って作業する
+- Owner が `docs/codex-prompts/*.md` または `specs/*.md` を指定した場合、着手前に該当ファイルを読み、その内容を実装する。PR には実装コードだけでなく、指定された指示書・仕様書も含める
+- 実装依頼は、Owner が別途停止を指示しない限り、PR 作成まで完了させる。PR は通常 PR とし、draft にするのは Owner が明示した場合だけとする
+- ローカルの未関係差分・未追跡ファイルは巻き込まず、PR 対象として確認したファイルだけをコミットする
+- 検証は仕様書の指定を最優先とする。指定がない場合は `pnpm lint`、`pnpm typecheck`、関連テスト、`pnpm build` を実行する
+- CI・Vercel の完了待ちは不要。結果を PR 作成後に待機・監視しない
+- マージは Owner が明示的に「マージして」と指示した場合だけ行う
+
+### Git / PR 運用
+
+#### 通常手順
+
+- 作業開始時とコミット前に `git status --short` を確認し、既存の差分・未追跡ファイルは Owner のものとして扱う。対象外のファイルを変更・ステージ・コミットしない
+- `main` から作業する場合は `codex/<仕様書スラッグ>` を作成する。PR は通常 PR とし、draft にするのは Owner が明示した場合だけとする
+- 混在した作業ツリーでは `git add -A` を使わず、PR 対象のファイルを明示してステージする。コミット前に `git diff --cached --check` と変更ファイル一覧を確認する
+- 指定された検証を完了してから、通常の `git commit` / `git push -u origin <branch>` / PR 作成を行う。CI・Vercel の完了待ちは Owner 指示がない限り不要
+- PR 作成後は、base・head・draft 状態・コミット数・変更ファイル一覧を確認し、想定外のファイルが含まれないことを確認する
+
+#### `.git` が書き込み不可の実行環境
+
+実行環境のサンドボックスにより `.git/refs/heads` や index へ書き込めず、ローカルでブランチ・コミット・push を作れないことがある。この場合は以下を守る。
+
+1. 実行環境が `.git` の書き込み不可を示している、または最初のブランチ作成・コミットが `Operation not permitted` で失敗した時点で、ローカルの `git switch` / `git commit` / `git push` を再試行しない。権限・ACL・Git 設定を変更したり、強制操作で回避したりしない
+2. Owner が PR 作成まで明示的に依頼している場合に限り、`mktemp -d` 配下にリモートのデフォルトブランチをcloneして代替する。単なるローカル実装依頼ではリモート書き込みを行わない
+3. 一時cloneには、確認済みの対象ファイルだけをステージしたローカルindexから `git diff --cached --binary | git -C <temp-clone> apply --index -` で適用する。未関係のローカル差分・未追跡ファイルをコピーしない
+4. 一時clone上で `codex/<仕様書スラッグ>` を作成し、対象差分だけをコミット・通常の `git push -u origin <branch>` で公開する。パッチがリモート最新にcleanに適用できない場合は、無理に解決せずOwnerへ報告する
+5. PR 作成後に、リモートコミットと PR の変更ファイル一覧が意図した対象だけであること、通常 PR 指定時はdraftではないことを確認する
+
+この代替はローカル Git が利用不能なときだけ使う。`git push --force`、`git reset --hard`、ブランチ削除、Owner の明示指示がないマージは従来どおり禁止する。
+
 ### 仕様書と食い違う実装が必要と判明したとき
 
 1. 実装を停止する
