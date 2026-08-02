@@ -62,29 +62,6 @@ export type V1StoriesData = {
   week: { from: string; label: string; to: string };
 };
 
-export type V1WeeklyNewsItemCategory =
-  | "transfer"
-  | "quote"
-  | "competition"
-  | "injury"
-  | "other";
-
-export type V1WeeklyNewsItem = {
-  category: V1WeeklyNewsItemCategory;
-  id: string;
-  image: { landscape_url: string; portrait_url: string };
-  published_at: string | null;
-  source_domain: string;
-  source_url: string;
-  summary: string;
-  title: string;
-};
-
-export type V1WeeklyNewsData = {
-  items: V1WeeklyNewsItem[];
-  week: { from: string; label: string; to: string };
-};
-
 export type V1MatchEvent = {
   id: string;
   is_penalty_try: boolean;

@@ -503,60 +503,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      weekly_news_items: {
-        Row: {
-          category: string;
-          confidence: string;
-          created_at: string;
-          fetched_at: string;
-          id: string;
-          metadata: Json | null;
-          model_version: string | null;
-          published_at: string | null;
-          source_domain: string;
-          source_url: string;
-          status: string;
-          summary_ja: string;
-          title_ja: string;
-          week_from: string;
-          week_to: string;
-        };
-        Insert: {
-          category: string;
-          confidence: string;
-          created_at?: string;
-          fetched_at: string;
-          id?: string;
-          metadata?: Json | null;
-          model_version?: string | null;
-          published_at?: string | null;
-          source_domain: string;
-          source_url: string;
-          status?: string;
-          summary_ja: string;
-          title_ja: string;
-          week_from: string;
-          week_to: string;
-        };
-        Update: {
-          category?: string;
-          confidence?: string;
-          created_at?: string;
-          fetched_at?: string;
-          id?: string;
-          metadata?: Json | null;
-          model_version?: string | null;
-          published_at?: string | null;
-          source_domain?: string;
-          source_url?: string;
-          status?: string;
-          summary_ja?: string;
-          title_ja?: string;
-          week_from?: string;
-          week_to?: string;
-        };
-        Relationships: [];
-      };
       match_sourced_facts: {
         Row: {
           confidence: string;
