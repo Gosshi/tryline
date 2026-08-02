@@ -8,6 +8,7 @@ const thirdPartyServices = [
   ["Supabase, Inc.", "メールアドレス", "認証・データ管理"],
   ["Stripe, Inc.", "決済に必要な情報", "決済処理"],
   ["Google LLC", "アクセスログ", "アクセス解析"],
+  ["Expo Technologies, Inc.", "Push Token", "プッシュ通知配信基盤"],
 ] as const;
 
 export default function PrivacyPage() {
@@ -55,6 +56,12 @@ export default function PrivacyPage() {
             ページ閲覧履歴、参照元 URL、ブラウザ種別、IP アドレス等（Google
             Analytics 4 経由で収集）
           </li>
+          <li>
+            <span className="font-semibold text-[var(--color-ink)]">
+              モバイルアプリの利用情報:
+            </span>{" "}
+            iOSアプリ利用時、プッシュ通知配信のためのPush Token、お気に入りチームの選択、通知設定（試合前通知・コンテンツ公開通知）、ネタバレ防止設定を収集します
+          </li>
         </ul>
       </section>
 
@@ -68,6 +75,8 @@ export default function PrivacyPage() {
           <li>サブスクリプション決済の処理</li>
           <li>ユーザーサポートへの対応</li>
           <li>サービスの利用状況の分析</li>
+          <li>プッシュ通知の配信</li>
+          <li>ユーザー設定（お気に入りチーム・通知設定・ネタバレ防止設定）の同期</li>
         </ul>
       </section>
 
@@ -156,7 +165,7 @@ export default function PrivacyPage() {
       </section>
 
       <p className="text-xs text-[var(--color-ink-muted)]">
-        最終更新日: 2026年5月
+        最終更新日: 2026年8月2日
       </p>
     </article>
   );
