@@ -2,6 +2,11 @@ export type ApiEnvelope<T> =
   | { data: T; error: null; success: true }
   | { data: null; error: string; success: false };
 
+export type V1DemoReviewSessionData = {
+  access_token: string;
+  refresh_token: string;
+};
+
 export type V1CompetitionSummary = {
   name: string;
   season: string;
