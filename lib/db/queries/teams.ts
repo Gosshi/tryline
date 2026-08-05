@@ -265,7 +265,7 @@ export async function getTeamRecentMatches(
 
 export async function getTeamUpcomingMatches(
   teamId: string,
-  limit = 5,
+  limit = 30,
 ): Promise<TeamMatchItem[]> {
   return loadMatchesByTeamId({
     ascending: true,

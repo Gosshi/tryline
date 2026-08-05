@@ -2,8 +2,8 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import TeamPage, { generateMetadata } from "@/app/teams/[slug]/page";
 
@@ -62,6 +62,10 @@ vi.mock("@/lib/db/queries/team-stats", () => ({
 }));
 
 describe("TeamPage", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   beforeEach(() => {
     navigationMocks.notFound.mockReset();
     navigationMocks.notFound.mockImplementation(() => {
@@ -74,8 +78,8 @@ describe("TeamPage", () => {
     broadcastMocks.getMatchBroadcastsForMatches.mockReset();
     authMocks.getUser.mockReset();
     authMocks.getUserProfile.mockReset();
-    authMocks.getUser.mockResolvedValue(null);
-    authMocks.getUserProfile.mockResolvedValue(null);
+    authMocks.getUser.mockResolvedValue({ id: "user-1" });
+    authMocks.getUserProfile.mockResolvedValue({ favorite_team_slugs: [] });
     contentMocks.getContentStatusMap.mockResolvedValue(new Map());
     broadcastMocks.getMatchBroadcastsForMatches.mockResolvedValue(
       new Map([
@@ -178,19 +182,28 @@ describe("TeamPage", () => {
     });
   });
 
-  it("renders the team page with breadcrumbs and match sections", async () => {
-    render(await TeamPage({ params: Promise.resolve({ slug: "bath" }) }));
+  it("renders Japanese team names and upcoming matches before recent matches", async () => {
+    const { container } = render(
+      await TeamPage({ params: Promise.resolve({ slug: "bath" }) }),
+    );
 
     expect(screen.getByRole("link", { name: "Tryline" })).toHaveAttribute(
       "href",
       "/",
     );
     expect(
-      screen.getByRole("heading", { level: 1, name: "Bath" }),
+      screen.getByLabelText("パンくずリスト"),
+    ).toHaveTextContent("バース");
+    expect(
+      screen.getByRole("heading", { level: 1, name: "バース" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "バースを追う" })).toBeInTheDocument();
     expect(screen.getByText("ENG")).toBeInTheDocument();
-    expect(screen.getByText("直近の試合")).toBeInTheDocument();
-    expect(screen.getByText("次戦")).toBeInTheDocument();
+    const upcomingHeading = screen.getByText("次戦");
+    const recentHeading = screen.getByText("直近の試合");
+    expect(upcomingHeading.compareDocumentPosition(recentHeading)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
     expect(screen.getByText("チームスタッツ")).toBeInTheDocument();
     expect(screen.getByText("Finn Russell")).toBeInTheDocument();
     expect(screen.getByText("Ben Spencer")).toBeInTheDocument();
@@ -202,6 +215,32 @@ describe("TeamPage", () => {
       "target",
       "_blank",
     );
+    expect(container.querySelector("a a")).toBeNull();
+  });
+
+  it("falls back to the English team name and hides empty upcoming matches", async () => {
+    authMocks.getUser.mockResolvedValue({ id: "user-1" });
+    authMocks.getUserProfile.mockResolvedValue({ favorite_team_slugs: [] });
+    teamMocks.getTeamPageDataBySlug.mockResolvedValue({
+      recentMatches: [],
+      team: {
+        country: "ENG",
+        name: "Bath",
+        nameJa: null,
+        shortCode: "BAT",
+        slug: "bath",
+      },
+      upcomingMatches: [],
+    });
+
+    render(await TeamPage({ params: Promise.resolve({ slug: "bath" }) }));
+
+    expect(screen.getByLabelText("パンくずリスト")).toHaveTextContent("Bath");
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Bath" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bathを追う" })).toBeInTheDocument();
+    expect(screen.queryByText("次戦")).not.toBeInTheDocument();
   });
 
   it("returns team metadata", async () => {

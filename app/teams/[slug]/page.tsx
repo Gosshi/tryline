@@ -105,7 +105,9 @@ export default async function TeamPage({ params }: Props) {
             <li aria-hidden className="select-none">
               /
             </li>
-            <li className="text-[var(--color-ink)]">{data.team.name}</li>
+            <li className="text-[var(--color-ink)]">
+              {data.team.nameJa ?? data.team.name}
+            </li>
           </ol>
         </nav>
 
@@ -127,7 +129,7 @@ export default async function TeamPage({ params }: Props) {
               />
               <div className="min-w-0">
                 <h1 className="font-serif text-3xl font-bold tracking-tight text-[var(--color-ink)] sm:text-4xl">
-                  {data.team.name}
+                  {data.team.nameJa ?? data.team.name}
                 </h1>
                 <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
                   {data.team.country || "Unknown"}
@@ -138,7 +140,7 @@ export default async function TeamPage({ params }: Props) {
               <FavoriteTeamFollowButton
                 initialFavoriteTeamSlugs={favoriteTeamSlugs}
                 source="team_page"
-                teamName={data.team.name}
+                teamName={data.team.nameJa ?? data.team.name}
                 teamSlug={data.team.slug}
               />
             )}
@@ -152,27 +154,6 @@ export default async function TeamPage({ params }: Props) {
             topScorers={stats.topScorers}
           />
         )}
-
-        <section className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-            直近の試合
-          </h2>
-          {data.recentMatches.length === 0 ? (
-            <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
-              試合データがありません
-            </p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {data.recentMatches.map((match) => (
-                <MatchCard
-                  contentStatus={contentStatusMap.get(match.id) ?? emptyStatus}
-                  key={match.id}
-                  match={toMatchCardItem(match)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
 
         {upcomingMatches.length > 0 && (
           <section className="space-y-4">
@@ -214,6 +195,27 @@ export default async function TeamPage({ params }: Props) {
             </div>
           </section>
         )}
+
+        <section className="space-y-4">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+            直近の試合
+          </h2>
+          {data.recentMatches.length === 0 ? (
+            <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
+              試合データがありません
+            </p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {data.recentMatches.map((match) => (
+                <MatchCard
+                  contentStatus={contentStatusMap.get(match.id) ?? emptyStatus}
+                  key={match.id}
+                  match={toMatchCardItem(match)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
 
         <section className="space-y-4">
           <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
