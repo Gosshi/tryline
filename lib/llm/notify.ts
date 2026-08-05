@@ -1,5 +1,6 @@
 import { getServerEnv, hasConfiguredValue } from "@/lib/env";
 
+import type { BroadcastIngestResult } from "@/lib/broadcasts/ingest";
 import type { DataIntegrityAuditReport } from "@/lib/data-integrity/audit";
 import type { ContentType, QaResult } from "@/lib/llm/types";
 
@@ -32,7 +33,10 @@ async function postToSlack(text: string): Promise<void> {
       });
     }
   } catch (error) {
-    console.error("[content-pipeline] failed to send slack notification", error);
+    console.error(
+      "[content-pipeline] failed to send slack notification",
+      error,
+    );
   }
 }
 
@@ -96,6 +100,45 @@ export async function notifyDataIntegrityReport(
     `4. draft滞留: total=${report.draftBacklog.total} recent7d=${report.draftBacklog.recent7Days}`,
     `5. 順位表 stale: competitions=${report.staleStandings.count} ${staleStandings}`,
     "対応: 異常値がある場合は該当データを確認し、修正は個別specで対応してください",
+  ].join("\n");
+
+  await postToSlack(message);
+}
+
+export async function notifyBroadcastIngestReport(
+  result: BroadcastIngestResult,
+): Promise<void> {
+  const linked =
+    result.linked.length === 0
+      ? "なし"
+      : result.linked
+          .map((broadcast) => `${broadcast.label}: ${broadcast.serviceName}`)
+          .join(" / ");
+  const unknownServices =
+    result.unknownServices.length === 0
+      ? "なし"
+      : result.unknownServices
+          .map((broadcast) => broadcast.serviceName)
+          .join(" / ");
+  const missingMatches =
+    result.matchesStillMissing.length === 0
+      ? "なし"
+      : result.matchesStillMissing
+          .map((match) => `${match.label} (${match.kickoffAt})`)
+          .join(" / ");
+  const unlinkedPages =
+    result.unlinkedPages.length === 0
+      ? "なし"
+      : result.unlinkedPages
+          .map((page) => `${page.dateLabel}: ${page.reason}`)
+          .join(" / ");
+  const message = [
+    "📺 放送情報 自動取得",
+    `生成日時: ${result.generatedAt}`,
+    `1. 投入候補: ${result.linked.length}件 ${linked}`,
+    `2. 未対応サービス: ${result.unknownServices.length}件 ${unknownServices}`,
+    `3. 紐付け不可ページ: ${result.unlinkedPages.length}件 ${unlinkedPages}`,
+    `4. 14日以内で放送情報なし: ${result.matchesStillMissing.length}件 ${missingMatches}`,
   ].join("\n");
 
   await postToSlack(message);
