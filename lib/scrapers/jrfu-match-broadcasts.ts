@@ -42,9 +42,16 @@ export function parseJrfuScheduleHtml(html: string): JrfuSchedule {
     }
   });
 
-  const selectedYear = parseScheduleYear(
-    $("select option[selected]").first().text(),
-  );
+  const selectedYear =
+    $("select option[selected]")
+      .toArray()
+      .map((element) => {
+        const value = $(element).attr("value");
+        const match = value?.match(/^\/schedule\/\?y=(\d{4})$/);
+
+        return match ? Number(match[1]) : parseScheduleYear($(element).text());
+      })
+      .find((year): year is number => year !== null) ?? null;
 
   return {
     matchUrls: [...matchUrls],

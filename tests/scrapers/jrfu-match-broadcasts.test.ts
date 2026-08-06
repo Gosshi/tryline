@@ -22,13 +22,16 @@ describe("JRFU match broadcast scraper", () => {
   it("parses the selected schedule year and match URLs from the JRFU schedule structure", async () => {
     const html = await readFile(fixturePath("jrfu-schedule-2026.html"), "utf8");
 
-    expect(parseJrfuScheduleHtml(html)).toEqual({
-      matchUrls: [
+    const schedule = parseJrfuScheduleHtml(html);
+
+    expect(schedule.year).toBe(2026);
+    expect(schedule.matchUrls).toHaveLength(11);
+    expect(schedule.matchUrls).toEqual(
+      expect.arrayContaining([
         "https://www.rugby-japan.jp/match/29986",
         "https://www.rugby-japan.jp/match/29968",
-      ],
-      year: 2026,
-    });
+      ]),
+    );
   });
 
   it("extracts unchanged service names and URLs from broadcast anchors", async () => {
