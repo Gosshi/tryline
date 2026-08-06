@@ -18,6 +18,7 @@ export function SiteFooter() {
   ];
   const serviceLinks = [
     { href: "/pricing", label: "料金プラン" },
+    { href: "/support", label: "サポート・お問い合わせ" },
     { href: "/legal/privacy", label: "プライバシーポリシー" },
     { href: "/legal/tokusho", label: "特定商取引法に基づく表記" },
     { href: "/legal/terms", label: "利用規約" },

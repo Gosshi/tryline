@@ -29,4 +29,14 @@ describe("SiteFooter", () => {
     expect(noteLink).toHaveAttribute("target", "_blank");
     expect(noteLink).toHaveAttribute("rel", "noopener noreferrer");
   });
+
+  it("links to the support page from the service navigation", () => {
+    render(<SiteFooter />);
+
+    expect(
+      screen
+        .getAllByRole("link", { name: "サポート・お問い合わせ" })
+        .every((link) => link.getAttribute("href") === "/support"),
+    ).toBe(true);
+  });
 });
