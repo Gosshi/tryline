@@ -9,6 +9,7 @@ const serverEnvSchema = publicEnvSchema.extend({
   CRON_SECRET: z.string(),
   DISCORD_WEBHOOK_EN: z.string().url().optional(),
   DISCORD_WEBHOOK_JA: z.string().url().optional(),
+  DISCORD_WEBHOOK_OPS: z.string().url().optional(),
   DISCORD_WEBHOOK_WEEKLY_DIGEST: z.string().url().optional(),
   OPENAI_API_KEY: z.string(),
   SCRAPER_USER_AGENT: z.string(),
@@ -17,7 +18,6 @@ const serverEnvSchema = publicEnvSchema.extend({
   VAPID_PUBLIC_KEY: z.string(),
   VAPID_SUBJECT: z.string(),
   WIKIPEDIA_SQUAD_URL: z.string().url(),
-  SLACK_WEBHOOK_URL: z.string().url().optional(),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
