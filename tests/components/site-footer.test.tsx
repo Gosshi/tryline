@@ -2,12 +2,16 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { SiteFooter } from "@/components/site-footer";
 
 describe("SiteFooter", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("renders the X follow link", () => {
     render(<SiteFooter />);
 
@@ -28,5 +32,15 @@ describe("SiteFooter", () => {
     );
     expect(noteLink).toHaveAttribute("target", "_blank");
     expect(noteLink).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("links to the support page from the service navigation", () => {
+    render(<SiteFooter />);
+
+    expect(
+      screen
+        .getAllByRole("link", { name: "サポート・お問い合わせ" })
+        .every((link) => link.getAttribute("href") === "/support"),
+    ).toBe(true);
   });
 });
