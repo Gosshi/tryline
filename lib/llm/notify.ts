@@ -9,34 +9,44 @@ type ContentRejectedNotificationOptions = {
   preservedPublished?: boolean;
 };
 
-async function postToSlack(text: string): Promise<void> {
-  const { SLACK_WEBHOOK_URL } = getServerEnv();
+const DISCORD_MESSAGE_CONTENT_LIMIT = 2_000;
+const DISCORD_TRUNCATION_SUFFIX = "\n…(切り詰め)";
 
-  if (!SLACK_WEBHOOK_URL || !hasConfiguredValue(SLACK_WEBHOOK_URL)) {
-    console.warn("[content-pipeline] slack webhook is not configured");
+function truncateDiscordMessageContent(text: string): string {
+  if (text.length <= DISCORD_MESSAGE_CONTENT_LIMIT) {
+    return text;
+  }
+
+  return `${text
+    .slice(0, DISCORD_MESSAGE_CONTENT_LIMIT - DISCORD_TRUNCATION_SUFFIX.length)
+    .trimEnd()}${DISCORD_TRUNCATION_SUFFIX}`;
+}
+
+async function postOpsAlert(text: string): Promise<void> {
+  const { DISCORD_WEBHOOK_OPS } = getServerEnv();
+
+  if (!DISCORD_WEBHOOK_OPS || !hasConfiguredValue(DISCORD_WEBHOOK_OPS)) {
+    console.error("[content-pipeline] DISCORD_WEBHOOK_OPS is not configured");
     return;
   }
 
   try {
-    const response = await fetch(SLACK_WEBHOOK_URL, {
+    const response = await fetch(DISCORD_WEBHOOK_OPS, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ content: truncateDiscordMessageContent(text) }),
     });
 
     if (!response.ok) {
-      console.error("[content-pipeline] failed to send slack notification", {
+      console.error("[content-pipeline] failed to send Discord ops alert", {
         status: response.status,
         statusText: response.statusText,
       });
     }
   } catch (error) {
-    console.error(
-      "[content-pipeline] failed to send slack notification",
-      error,
-    );
+    console.error("[content-pipeline] failed to send Discord ops alert", error);
   }
 }
 
@@ -60,7 +70,7 @@ export async function notifyContentRejected(
     "対応: Supabase Studio の match_content テーブルで status を確認し、必要に応じて published に変更してください",
   ].join("\n");
 
-  await postToSlack(message);
+  await postOpsAlert(message);
 }
 
 export async function notifyCostAlert(
@@ -76,7 +86,7 @@ export async function notifyCostAlert(
     "pipeline_runs テーブルを確認し、異常なトークン消費がないか調査してください",
   ].join("\n");
 
-  await postToSlack(message);
+  await postOpsAlert(message);
 }
 
 export async function notifyDataIntegrityReport(
@@ -102,7 +112,7 @@ export async function notifyDataIntegrityReport(
     "対応: 異常値がある場合は該当データを確認し、修正は個別specで対応してください",
   ].join("\n");
 
-  await postToSlack(message);
+  await postOpsAlert(message);
 }
 
 export async function notifyBroadcastIngestReport(
@@ -141,5 +151,5 @@ export async function notifyBroadcastIngestReport(
     `4. 14日以内で放送情報なし: ${result.matchesStillMissing.length}件 ${missingMatches}`,
   ].join("\n");
 
-  await postToSlack(message);
+  await postOpsAlert(message);
 }

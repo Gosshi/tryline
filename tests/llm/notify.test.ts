@@ -37,28 +37,30 @@ describe("llm notify", () => {
     vi.stubGlobal("fetch", vi.fn());
   });
 
-  it("skips notification when webhook URL is not configured", async () => {
-    getServerEnvMock.mockReturnValue({ SLACK_WEBHOOK_URL: undefined });
-    const warnSpy = vi
-      .spyOn(console, "warn")
+  it("skips notification when the ops webhook URL is not configured", async () => {
+    getServerEnvMock.mockReturnValue({ DISCORD_WEBHOOK_OPS: undefined });
+    const errorSpy = vi
+      .spyOn(console, "error")
       .mockImplementation(() => undefined);
 
     await notifyContentRejected("match-1", "preview", qaResult);
 
     expect(fetch).not.toHaveBeenCalled();
-    expect(warnSpy).toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("DISCORD_WEBHOOK_OPS"),
+    );
   });
 
-  it("posts rejected content notification to configured webhook", async () => {
+  it("posts rejected content notification to the configured Discord ops webhook", async () => {
     getServerEnvMock.mockReturnValue({
-      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C",
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
     });
     vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
 
     await notifyContentRejected("match-1", "preview", qaResult);
 
     expect(fetch).toHaveBeenCalledWith(
-      "https://hooks.slack.com/services/T/B/C",
+      "https://discord.com/api/webhooks/1/ops",
       expect.objectContaining({
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,18 +69,18 @@ describe("llm notify", () => {
 
     const request = vi.mocked(fetch).mock.calls[0]?.[1];
     expect(request).toBeDefined();
-    expect(String((request as RequestInit).body)).toContain(
-      "⚠️ コンテンツ却下 [preview]",
-    );
-    expect(String((request as RequestInit).body)).toContain("試合ID: match-1");
-    expect(String((request as RequestInit).body)).toContain(
+    const payload = JSON.parse(String((request as RequestInit).body));
+    expect(payload).toEqual({ content: expect.any(String) });
+    expect(payload.content).toContain("⚠️ コンテンツ却下 [preview]");
+    expect(payload.content).toContain("試合ID: match-1");
+    expect(payload.content).toContain(
       "問題点: tone_mismatch / insufficient_evidence",
     );
   });
 
   it("includes preservation context and generated length for rejected refreshes", async () => {
     getServerEnvMock.mockReturnValue({
-      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C",
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
     });
     vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
 
@@ -88,7 +90,7 @@ describe("llm notify", () => {
     });
 
     const request = vi.mocked(fetch).mock.calls[0]?.[1];
-    const body = String((request as RequestInit).body);
+    const body = JSON.parse(String((request as RequestInit).body)).content;
 
     expect(body).toContain("既存 published を温存");
     expect(body).toContain("生成本文: 700字");
@@ -97,7 +99,7 @@ describe("llm notify", () => {
 
   it("does not throw when fetch fails", async () => {
     getServerEnvMock.mockReturnValue({
-      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C",
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
     });
     vi.mocked(fetch).mockRejectedValue(new Error("network error"));
     const errorSpy = vi
@@ -113,7 +115,7 @@ describe("llm notify", () => {
 
   it("posts data integrity report with all five audit sections", async () => {
     getServerEnvMock.mockReturnValue({
-      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C",
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
     });
     vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
 
@@ -139,7 +141,7 @@ describe("llm notify", () => {
     });
 
     const request = vi.mocked(fetch).mock.calls[0]?.[1];
-    const body = String((request as RequestInit).body);
+    const body = JSON.parse(String((request as RequestInit).body)).content;
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(body).toContain("1. 重複イベント");
@@ -152,7 +154,7 @@ describe("llm notify", () => {
 
   it("posts broadcast ingest unknown services, unlinked reasons, and missing matches", async () => {
     getServerEnvMock.mockReturnValue({
-      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C",
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
     });
     vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
 
@@ -190,11 +192,80 @@ describe("llm notify", () => {
     });
 
     const request = vi.mocked(fetch).mock.calls[0]?.[1];
-    const body = String((request as RequestInit).body);
+    const body = JSON.parse(String((request as RequestInit).body)).content;
 
     expect(body).toContain("日本 対 オーストラリア: BS日テレ");
     expect(body).toContain("新しい配信サービス");
     expect(body).toContain("08.09 Sun: 一致する日本代表戦が0件です");
     expect(body).toContain("フランス 対 イングランド");
+  });
+
+  it("truncates content over Discord's 2000 character limit with a visible suffix", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyContentRejected("match-1", "preview", {
+      ...qaResult,
+      issues: ["x".repeat(2_500)],
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const content = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(content).toHaveLength(2_000);
+    expect(content).toMatch(/…\(切り詰め\)$/);
+  });
+
+  it("does not truncate content at exactly Discord's 2000 character limit", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyContentRejected("match-1", "preview", {
+      ...qaResult,
+      issues: [""],
+    });
+    const initialRequest = vi.mocked(fetch).mock.calls[0]?.[1];
+    const initialContent = JSON.parse(
+      String((initialRequest as RequestInit).body),
+    ).content;
+    vi.mocked(fetch).mockClear();
+
+    await notifyContentRejected("match-1", "preview", {
+      ...qaResult,
+      issues: ["x".repeat(2_000 - initialContent.length)],
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const content = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(content).toHaveLength(2_000);
+    expect(content).not.toContain("…(切り詰め)");
+  });
+
+  it("logs a non-2xx Discord response without throwing", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 400,
+      statusText: "Bad Request",
+    } as Response);
+    const errorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    await expect(
+      notifyCostAlert("match-1", "recap", 0.52, 0.2),
+    ).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[content-pipeline] failed to send Discord ops alert",
+      expect.objectContaining({ status: 400 }),
+    );
   });
 });
