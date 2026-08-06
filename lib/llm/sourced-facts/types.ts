@@ -12,11 +12,14 @@ export type SourcedFact = {
 
 export type SourcedFactRejectionReason =
   | "db_authoritative_score"
-  | "db_authoritative_relative_recency";
+  | "db_authoritative_relative_recency"
+  | "domain_not_allowed"
+  | "unrelated_fixture";
 
 export type SourcedFactRejection = {
   fact: string;
   reason: SourcedFactRejectionReason;
+  source_domain?: string;
 };
 
 export type StoredSourcedFact = SourcedFact & {

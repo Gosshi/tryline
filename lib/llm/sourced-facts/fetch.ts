@@ -3,7 +3,10 @@ import { createHash } from "node:crypto";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { MODELS } from "@/lib/llm/models";
 import { createWebSearchJsonResponse } from "@/lib/llm/openai";
-import { filterAllowedSourcedFacts } from "@/lib/llm/sourced-facts/allowlist";
+import {
+  filterAllowedSourcedFacts,
+  SOURCED_FACT_ALLOWED_DOMAINS,
+} from "@/lib/llm/sourced-facts/allowlist";
 
 import type { Json } from "@/lib/db/types";
 import type {
@@ -13,7 +16,7 @@ import type {
 } from "@/lib/llm/sourced-facts/types";
 import type { ContentType } from "@/lib/llm/types";
 
-export const SEARCH_PROMPT_VERSION = "sourced-facts@1.3.0";
+export const SEARCH_PROMPT_VERSION = "sourced-facts@1.4.0";
 const PREVIEW_REFRESH_WINDOW_HOURS = 72;
 const PREVIEW_FRESHNESS_HOURS = 24;
 const MAX_STORED_FACTS = 8;
@@ -22,8 +25,16 @@ const STATISTICAL_FACT_PATTERN =
 
 type MatchForSourcedFacts = {
   id: string;
-  away_team: { english_name: string | null; name: string } | null;
-  home_team: { english_name: string | null; name: string } | null;
+  away_team: {
+    english_name: string | null;
+    name: string;
+    name_ja: string | null;
+  } | null;
+  home_team: {
+    english_name: string | null;
+    name: string;
+    name_ja: string | null;
+  } | null;
   competition: {
     family: string | null;
     name: string;
@@ -91,7 +102,9 @@ function shouldUseCachedFacts(params: {
   return true;
 }
 
-function getCachedPromptVersion(fact: StoredSourcedFact | undefined): string | null {
+function getCachedPromptVersion(
+  fact: StoredSourcedFact | undefined,
+): string | null {
   const version = fact?.metadata?.prompt_version;
   return typeof version === "string" ? version : null;
 }
@@ -103,6 +116,7 @@ function containsStatisticalFact(fact: string): boolean {
 export function buildSearchPrompt(
   match: MatchForSourcedFacts,
   contentType: ContentType,
+  allowedDomains: readonly string[] = SOURCED_FACT_ALLOWED_DOMAINS,
 ) {
   const homeTeam = resolveDisplayName(match.home_team);
   const awayTeam = resolveDisplayName(match.away_team);
@@ -146,6 +160,7 @@ export function buildSearchPrompt(
     contentType === "recap"
       ? '{"facts":[{"fact":"...","fact_ja":"...","source_url":"https://...","confidence":"high|medium|low"}]}'
       : '{"facts":[{"fact":"...","fact_ja":"...","source_url":"https://...","confidence":"high|medium|low"}]}';
+  const allowedDomainList = allowedDomains.join(", ");
 
   return [
     "Find reliable rugby facts for Tryline match content using web search.",
@@ -157,7 +172,7 @@ export function buildSearchPrompt(
     [
       "Rules:",
       "- Return facts only. Do not invent, infer, or summarize unsupported claims.",
-      "- Prefer official competition/club sources and RugbyPass/Planet Rugby/RugbyAsia247.",
+      `- Only return facts from these allowed source domains: ${allowedDomainList}. Sources outside this list will not be accepted.`,
       "- Include source_url for every fact.",
       "- Use high only for official-source facts or facts confirmed by at least two sources.",
       "- Use medium for a single trusted third-party source.",
@@ -192,7 +207,7 @@ function extractJsonObjectText(text: string): string | null {
 
 export function parseSourcedFactsResponse(
   text: string,
-  options?: { rejected?: SourcedFactRejection[] },
+  options?: Parameters<typeof filterAllowedSourcedFacts>[1],
 ): SourcedFact[] {
   const jsonText = extractJsonObjectText(text);
   if (!jsonText) {
@@ -263,8 +278,8 @@ export async function fetchSourcedFactsForMatch(options: {
         status,
         external_ids,
         competition:competitions(name, season, family),
-        home_team:teams!matches_home_team_id_fkey(name, english_name),
-        away_team:teams!matches_away_team_id_fkey(name, english_name)
+        home_team:teams!matches_home_team_id_fkey(name, name_ja, english_name),
+        away_team:teams!matches_away_team_id_fkey(name, name_ja, english_name)
       `,
     )
     .eq("id", options.matchId)
@@ -310,6 +325,16 @@ export async function fetchSourcedFactsForMatch(options: {
   }
 
   const prompt = buildSearchPrompt(typedMatch, options.contentType);
+  const relevance = {
+    kickoffAt: typedMatch.kickoff_at,
+    teamNames: [typedMatch.home_team, typedMatch.away_team].flatMap((team) =>
+      team
+        ? [team.name, team.name_ja, team.english_name].filter(
+            (name): name is string => Boolean(name),
+          )
+        : [],
+    ),
+  };
   async function searchSourcedFacts() {
     const response = await createWebSearchJsonResponse({
       model: MODELS.WEB_SEARCH,
@@ -319,6 +344,7 @@ export async function fetchSourcedFactsForMatch(options: {
     const rejectedFacts: SourcedFactRejection[] = [];
     const facts = parseSourcedFactsResponse(response.text, {
       rejected: rejectedFacts,
+      relevance,
     });
 
     return { facts, rejectedFacts, response };
@@ -330,10 +356,36 @@ export async function fetchSourcedFactsForMatch(options: {
     (searchResult.facts.length === 0 ||
       !searchResult.facts.some((fact) => containsStatisticalFact(fact.fact)))
   ) {
-    searchResult = await searchSourcedFacts();
+    const retryResult = await searchSourcedFacts();
+    searchResult = {
+      ...retryResult,
+      rejectedFacts: [
+        ...searchResult.rejectedFacts,
+        ...retryResult.rejectedFacts,
+      ],
+    };
   }
 
   const { facts, rejectedFacts, response } = searchResult;
+  const rejectedDomainCounts = rejectedFacts.reduce<Record<string, number>>(
+    (counts, rejection) => {
+      if (
+        rejection.reason === "domain_not_allowed" &&
+        rejection.source_domain
+      ) {
+        counts[rejection.source_domain] =
+          (counts[rejection.source_domain] ?? 0) + 1;
+      }
+      return counts;
+    },
+    {},
+  );
+  if (Object.keys(rejectedDomainCounts).length > 0) {
+    console.info(
+      "Sourced facts rejected by disallowed domain",
+      rejectedDomainCounts,
+    );
+  }
   const fetchedAt = now.toISOString();
   const rows = facts.slice(0, MAX_STORED_FACTS).map((fact) => ({
     confidence: fact.confidence,
@@ -368,7 +420,7 @@ export async function fetchSourcedFactsForMatch(options: {
     fetched: true,
     skippedReason:
       rejectedFacts.length > 0
-        ? `db_authoritative_filtered:${[
+        ? `sourced_facts_filtered:${[
             ...new Set(rejectedFacts.map((item) => item.reason)),
           ].join(",")}`
         : null,
