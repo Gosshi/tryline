@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  extractSourcedFactDates,
   filterAllowedSourcedFacts,
   getDbAuthoritativeFactRejectionReason,
   isAllowedSourcedFactDomain,
@@ -54,14 +55,22 @@ function createSourcedFactsBuilder(cachedRows: unknown[] = []) {
 }
 
 const leagueOneMatch = {
-  away_team: { english_name: "Kubota Spears", name: "Kubota Spears" },
+  away_team: {
+    english_name: "Kubota Spears",
+    name: "Kubota Spears",
+    name_ja: "クボタスピアーズ",
+  },
   competition: {
     family: "league-one",
     name: "Japan Rugby League One",
     season: "2025-26",
   },
   external_ids: { round_name: "Final" },
-  home_team: { english_name: "Kobe Steelers", name: "Kobe Steelers" },
+  home_team: {
+    english_name: "Kobe Steelers",
+    name: "Kobe Steelers",
+    name_ja: "コベルコ神戸スティーラーズ",
+  },
   id: "match-1",
   kickoff_at: "2026-06-10T09:00:00.000Z",
   status: "scheduled",
@@ -143,6 +152,42 @@ describe("sourced facts allowlist", () => {
     expect(facts).toHaveLength(1);
     expect(facts[0]?.source_domain).toBe("therugbypaper.co.uk");
     expect(facts[0]?.confidence).toBe("medium");
+  });
+
+  it("records rejected non-allowlisted sources by domain", () => {
+    const rejected: SourcedFactRejection[] = [];
+
+    const facts = filterAllowedSourcedFacts(
+      [
+        {
+          confidence: "high",
+          fact: "A betting site has published unrelated squad rumours.",
+          source_url: "https://www.rugbypass.com/news/japan-squad",
+        },
+      ],
+      {
+        rejected,
+        relevance: {
+          kickoffAt: "2026-08-08T10:05:00.000Z",
+          teamNames: [
+            "Japan",
+            "日本",
+            "日本代表",
+            "Australia",
+            "オーストラリア",
+          ],
+        },
+      },
+    );
+
+    expect(facts).toEqual([]);
+    expect(rejected).toEqual([
+      {
+        fact: "A betting site has published unrelated squad rumours.",
+        reason: "domain_not_allowed",
+        source_domain: "rugbypass.com",
+      },
+    ]);
   });
 
   it("promotes official-source facts to high confidence", () => {
@@ -242,11 +287,102 @@ describe("sourced facts allowlist", () => {
       "Kobe lineup features Retallick, Savea.",
     ]);
   });
+
+  it("rejects facts unrelated to the match teams or kickoff date", () => {
+    const rejected: SourcedFactRejection[] = [];
+    const facts = filterAllowedSourcedFacts(
+      [
+        {
+          confidence: "medium",
+          fact: "2026年6月25日、リポビタンDチャレンジカップ2026のマオリ・オールブラックス戦に出場する JAPAN XV の試合登録メンバーが発表されました。",
+          source_url: "https://www.rugby-japan.jp/news/japan-xv",
+        },
+        {
+          confidence: "medium",
+          fact: "Japan will meet Australia on 2026年8月8日 after a squad update on 2026年6月25日.",
+          source_url: "https://www.rugby-japan.jp/news/japan-australia",
+        },
+        {
+          confidence: "medium",
+          fact: "2026年6月26日、名古屋でマオリ・オールブラックス戦に向けたキャプテンズランが行われました。",
+          source_url: "https://www.rugby-rp.com/news/captains-run",
+        },
+      ],
+      {
+        rejected,
+        relevance: {
+          kickoffAt: "2026-08-08T10:05:00.000Z",
+          teamNames: [
+            "Japan",
+            "日本",
+            "日本代表",
+            "Australia",
+            "オーストラリア",
+          ],
+        },
+      },
+    );
+
+    expect(facts).toEqual([]);
+    expect(rejected).toEqual([
+      expect.objectContaining({ reason: "unrelated_fixture" }),
+      expect.objectContaining({ reason: "unrelated_fixture" }),
+      expect.objectContaining({ reason: "unrelated_fixture" }),
+    ]);
+  });
+
+  it("keeps team-name variants and accepts either fact language", () => {
+    const rejected: SourcedFactRejection[] = [];
+    const facts = filterAllowedSourcedFacts(
+      [
+        {
+          confidence: "medium",
+          fact: "JAPAN XV have named a training squad for the upcoming fixture.",
+          source_url: "https://www.rugby-japan.jp/news/japan-xv",
+        },
+        {
+          confidence: "medium",
+          fact: "The squad announcement is available.",
+          fact_ja: "日本代表はオーストラリア戦に向けてメンバーを発表した。",
+          source_url: "https://www.rugby-japan.jp/news/japan-australia",
+        },
+        {
+          confidence: "medium",
+          fact: "Japan released a squad update on 2026年7月25日.",
+          source_url: "https://www.rugby-japan.jp/news/japan-squad",
+        },
+      ],
+      {
+        rejected,
+        relevance: {
+          kickoffAt: "2026-08-08T10:05:00.000Z",
+          teamNames: [
+            "Japan",
+            "日本",
+            "日本代表",
+            "Australia",
+            "オーストラリア",
+          ],
+        },
+      },
+    );
+
+    expect(facts).toHaveLength(3);
+    expect(rejected).toEqual([]);
+  });
+
+  it("uses every extracted date when checking the relevance window", () => {
+    expect(
+      extractSourcedFactDates(
+        "Japan play Australia on 2026年8月8日 after a June 25, 2026 squad announcement.",
+      ).map((date) => date.toISOString()),
+    ).toEqual(["2026-08-08T00:00:00.000Z", "2026-06-25T00:00:00.000Z"]);
+  });
 });
 
 describe("buildSearchPrompt", () => {
-  it("uses sourced facts prompt version 1.3.0", () => {
-    expect(SEARCH_PROMPT_VERSION).toBe("sourced-facts@1.3.0");
+  it("uses sourced facts prompt version 1.4.0", () => {
+    expect(SEARCH_PROMPT_VERSION).toBe("sourced-facts@1.4.0");
   });
 
   it("targets post-match statistics, incidents, and official awards for recaps", () => {
@@ -293,6 +429,29 @@ describe("buildSearchPrompt", () => {
 
     const recapPrompt = buildSearchPrompt(leagueOneMatch, "recap");
     expect(recapPrompt).not.toContain("how the previous meeting");
+  });
+
+  it("derives allowed source domains from the supplied allowlist", () => {
+    const defaultPrompt = buildSearchPrompt(leagueOneMatch, "preview");
+    const reducedDomains = SOURCED_FACT_ALLOWED_DOMAINS.slice(0, -1);
+    const reducedPrompt = buildSearchPrompt(
+      leagueOneMatch,
+      "preview",
+      reducedDomains,
+    );
+    const extendedPrompt = buildSearchPrompt(leagueOneMatch, "preview", [
+      ...SOURCED_FACT_ALLOWED_DOMAINS,
+      "example-rugby.test",
+    ]);
+
+    expect(defaultPrompt).toContain(SOURCED_FACT_ALLOWED_DOMAINS.join(", "));
+    expect(defaultPrompt).not.toContain("rugbypass.com");
+    expect(defaultPrompt).not.toContain("planetrugby.com");
+    expect(reducedPrompt).not.toContain(
+      SOURCED_FACT_ALLOWED_DOMAINS[SOURCED_FACT_ALLOWED_DOMAINS.length - 1] ??
+        "",
+    );
+    expect(extendedPrompt).toContain("example-rugby.test");
   });
 });
 
@@ -367,7 +526,8 @@ describe("parseSourcedFactsResponse", () => {
         facts: [
           {
             ...allowedFact,
-            fact_ja: "マルコム・マークスはハムストリング負傷により決勝戦を欠場する見込みだ。",
+            fact_ja:
+              "マルコム・マークスはハムストリング負傷により決勝戦を欠場する見込みだ。",
           },
           {
             ...allowedFact,
@@ -506,7 +666,7 @@ describe("fetchSourcedFactsForMatch", () => {
         facts: [
           {
             confidence: "medium",
-            fact: "Japan and Ireland both conceded nine penalties.",
+            fact: "Kobe Steelers and Kubota Spears both conceded nine penalties.",
             source_url: "https://www.therugbypaper.co.uk/news/penalties",
           },
         ],
@@ -555,7 +715,7 @@ describe("fetchSourcedFactsForMatch", () => {
           facts: [
             {
               confidence: "medium",
-              fact: "Japan made fewer handling errors after halftime.",
+              fact: "Kobe Steelers made fewer handling errors after halftime.",
               source_url: "https://www.therugbypaper.co.uk/news/japan-recap",
             },
           ],
@@ -576,7 +736,7 @@ describe("fetchSourcedFactsForMatch", () => {
     );
     expect(result.facts).toEqual([
       expect.objectContaining({
-        fact: "Japan made fewer handling errors after halftime.",
+        fact: "Kobe Steelers made fewer handling errors after halftime.",
       }),
     ]);
   });
@@ -596,7 +756,7 @@ describe("fetchSourcedFactsForMatch", () => {
           facts: [
             {
               confidence: "medium",
-              fact: "The head coach praised Japan's response after halftime.",
+              fact: "The head coach praised Kobe Steelers' response after halftime.",
               source_url: "https://www.therugbypaper.co.uk/news/japan-recap",
             },
           ],
@@ -609,7 +769,7 @@ describe("fetchSourcedFactsForMatch", () => {
           facts: [
             {
               confidence: "medium",
-              fact: "Japan made 82% of their tackles while France made 90%.",
+              fact: "Kobe Steelers made 82% of their tackles while Kubota Spears made 90%.",
               source_url: "https://www.therugbypaper.co.uk/news/japan-stats",
             },
           ],
@@ -627,7 +787,7 @@ describe("fetchSourcedFactsForMatch", () => {
     expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledTimes(2);
     expect(result.facts).toEqual([
       expect.objectContaining({
-        fact: "Japan made 82% of their tackles while France made 90%.",
+        fact: "Kobe Steelers made 82% of their tackles while Kubota Spears made 90%.",
       }),
     ]);
   });
@@ -646,12 +806,12 @@ describe("fetchSourcedFactsForMatch", () => {
         facts: [
           {
             confidence: "medium",
-            fact: "Japan conceded nine penalties in the first half.",
+            fact: "Kobe Steelers conceded nine penalties in the first half.",
             source_url: "https://www.therugbypaper.co.uk/news/japan-penalties",
           },
           {
             confidence: "medium",
-            fact: "The coach praised the side's composure after halftime.",
+            fact: "The coach praised Kobe Steelers' composure after halftime.",
             source_url: "https://www.therugbypaper.co.uk/news/japan-coach",
           },
         ],
@@ -709,7 +869,7 @@ describe("fetchSourcedFactsForMatch", () => {
         facts: [
           {
             confidence: "medium",
-            fact: "The head coach praised the squad's preparation this week.",
+            fact: "The head coach praised Kobe Steelers' preparation this week.",
             source_url: "https://www.therugbypaper.co.uk/news/preview",
           },
         ],
@@ -821,6 +981,9 @@ describe("fetchSourcedFactsForMatch", () => {
   });
 
   it("stores only allowlisted web-search facts", async () => {
+    const consoleInfo = vi
+      .spyOn(console, "info")
+      .mockImplementation(() => undefined);
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
       if (table === "match_sourced_facts") {
@@ -834,7 +997,7 @@ describe("fetchSourcedFactsForMatch", () => {
         facts: [
           {
             confidence: "medium",
-            fact: "Malcolm Marx is expected to miss the final through injury.",
+            fact: "Kobe Steelers expect Malcolm Marx to miss the final through injury.",
             source_url: "https://www.therugbypaper.co.uk/news/marx",
           },
           {
@@ -859,12 +1022,17 @@ describe("fetchSourcedFactsForMatch", () => {
     expect(dbMock.upsert).toHaveBeenCalledWith(
       [
         expect.objectContaining({
-          fact: "Malcolm Marx is expected to miss the final through injury.",
+          fact: "Kobe Steelers expect Malcolm Marx to miss the final through injury.",
           source_domain: "therugbypaper.co.uk",
         }),
       ],
       { onConflict: "match_id,fact" },
     );
+    expect(consoleInfo).toHaveBeenCalledWith(
+      "Sourced facts rejected by disallowed domain",
+      { "sportytrader.com": 1 },
+    );
+    consoleInfo.mockRestore();
   });
 
   it("stores recap fact_ja and normalizes missing or blank values to null", async () => {
@@ -881,8 +1049,9 @@ describe("fetchSourcedFactsForMatch", () => {
         facts: [
           {
             confidence: "medium",
-            fact: "Malcolm Marx is expected to miss the final through injury.",
-            fact_ja: "マルコム・マークスは負傷により決勝戦を欠場する見込みだ。",
+            fact: "Kobe Steelers expect Malcolm Marx to miss the final through injury.",
+            fact_ja:
+              "コベルコ神戸スティーラーズは、マルコム・マークスが負傷により決勝戦を欠場する見込みだとした。",
             source_url: "https://www.therugbypaper.co.uk/news/marx",
           },
           {
@@ -906,8 +1075,9 @@ describe("fetchSourcedFactsForMatch", () => {
     expect(dbMock.upsert).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({
-          fact: "Malcolm Marx is expected to miss the final through injury.",
-          fact_ja: "マルコム・マークスは負傷により決勝戦を欠場する見込みだ。",
+          fact: "Kobe Steelers expect Malcolm Marx to miss the final through injury.",
+          fact_ja:
+            "コベルコ神戸スティーラーズは、マルコム・マークスが負傷により決勝戦を欠場する見込みだとした。",
         }),
         expect.objectContaining({
           fact: "Kobe have named an unchanged squad for the final.",
