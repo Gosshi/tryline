@@ -12,6 +12,7 @@ vi.mock("@/lib/env", async () => {
 
 import {
   notifyContentRejected,
+  notifyBroadcastIngestReport,
   notifyCostAlert,
   notifyDataIntegrityReport,
 } from "@/lib/llm/notify";
@@ -38,7 +39,9 @@ describe("llm notify", () => {
 
   it("skips notification when webhook URL is not configured", async () => {
     getServerEnvMock.mockReturnValue({ SLACK_WEBHOOK_URL: undefined });
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const warnSpy = vi
+      .spyOn(console, "warn")
+      .mockImplementation(() => undefined);
 
     await notifyContentRejected("match-1", "preview", qaResult);
 
@@ -47,7 +50,9 @@ describe("llm notify", () => {
   });
 
   it("posts rejected content notification to configured webhook", async () => {
-    getServerEnvMock.mockReturnValue({ SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C" });
+    getServerEnvMock.mockReturnValue({
+      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C",
+    });
     vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
 
     await notifyContentRejected("match-1", "preview", qaResult);
@@ -62,13 +67,19 @@ describe("llm notify", () => {
 
     const request = vi.mocked(fetch).mock.calls[0]?.[1];
     expect(request).toBeDefined();
-    expect(String((request as RequestInit).body)).toContain("⚠️ コンテンツ却下 [preview]");
+    expect(String((request as RequestInit).body)).toContain(
+      "⚠️ コンテンツ却下 [preview]",
+    );
     expect(String((request as RequestInit).body)).toContain("試合ID: match-1");
-    expect(String((request as RequestInit).body)).toContain("問題点: tone_mismatch / insufficient_evidence");
+    expect(String((request as RequestInit).body)).toContain(
+      "問題点: tone_mismatch / insufficient_evidence",
+    );
   });
 
   it("includes preservation context and generated length for rejected refreshes", async () => {
-    getServerEnvMock.mockReturnValue({ SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C" });
+    getServerEnvMock.mockReturnValue({
+      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C",
+    });
     vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
 
     await notifyContentRejected("match-1", "recap", qaResult, {
@@ -85,11 +96,17 @@ describe("llm notify", () => {
   });
 
   it("does not throw when fetch fails", async () => {
-    getServerEnvMock.mockReturnValue({ SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C" });
+    getServerEnvMock.mockReturnValue({
+      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C",
+    });
     vi.mocked(fetch).mockRejectedValue(new Error("network error"));
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const errorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
 
-    await expect(notifyCostAlert("match-1", "recap", 0.52, 0.2)).resolves.toBeUndefined();
+    await expect(
+      notifyCostAlert("match-1", "recap", 0.52, 0.2),
+    ).resolves.toBeUndefined();
 
     expect(errorSpy).toHaveBeenCalled();
   });
@@ -131,5 +148,53 @@ describe("llm notify", () => {
     expect(body).toContain("4. draft滞留");
     expect(body).toContain("5. 順位表 stale");
     expect(body).toContain("premiership-2025-26 (9日 stale)");
+  });
+
+  it("posts broadcast ingest unknown services, unlinked reasons, and missing matches", async () => {
+    getServerEnvMock.mockReturnValue({
+      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/C",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyBroadcastIngestReport({
+      generatedAt: "2026-08-06T00:00:00.000Z",
+      linked: [
+        {
+          kind: "tv",
+          label: "日本 対 オーストラリア",
+          matchId: "match-1",
+          serviceName: "BS日テレ",
+        },
+      ],
+      matchesStillMissing: [
+        {
+          kickoffAt: "2026-08-08T10:05:00.000Z",
+          label: "フランス 対 イングランド",
+          matchId: "match-2",
+        },
+      ],
+      unknownServices: [
+        {
+          serviceName: "新しい配信サービス",
+          sourceUrl: "https://www.rugby-japan.jp/match/1",
+          url: "https://example.com/live",
+        },
+      ],
+      unlinkedPages: [
+        {
+          dateLabel: "08.09 Sun",
+          reason: "一致する日本代表戦が0件です",
+          sourceUrl: "https://www.rugby-japan.jp/match/2",
+        },
+      ],
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = String((request as RequestInit).body);
+
+    expect(body).toContain("日本 対 オーストラリア: BS日テレ");
+    expect(body).toContain("新しい配信サービス");
+    expect(body).toContain("08.09 Sun: 一致する日本代表戦が0件です");
+    expect(body).toContain("フランス 対 イングランド");
   });
 });

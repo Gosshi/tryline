@@ -1,0 +1,18 @@
+name: Cron ingest broadcasts
+
+on:
+  schedule:
+    - cron: "15 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  ingest-broadcasts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ingest broadcasts
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://tryline-six.vercel.app/api/cron/ingest-broadcasts
