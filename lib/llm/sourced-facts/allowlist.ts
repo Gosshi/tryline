@@ -8,13 +8,10 @@ import type {
 const OFFICIAL_DOMAINS = [
   "premiershiprugby.com",
   "unitedrugby.com",
-  "lnr.fr",
   "super.rugby",
   "league-one.jp",
   "rugby-japan.jp",
   "rugby.com.au",
-  "allblacks.com",
-  "englandrugby.com",
 ] as const;
 
 const MEDIA_DOMAINS = [
@@ -53,13 +50,20 @@ function domainMatches(domain: string, allowedDomain: string) {
   return domain === allowedDomain || domain.endsWith(`.${allowedDomain}`);
 }
 
-export function isAllowedSourcedFactDomain(domain: string): boolean {
+export function isAllowedSourcedFactDomain(
+  domain: string | null | undefined,
+  allowedDomains: readonly string[] = SOURCED_FACT_ALLOWED_DOMAINS,
+): boolean {
+  if (typeof domain !== "string") {
+    return false;
+  }
+
   const normalized = normalizeSourcedFactDomain(domain);
   if (!normalized) {
     return false;
   }
 
-  return SOURCED_FACT_ALLOWED_DOMAINS.some((allowedDomain) =>
+  return allowedDomains.some((allowedDomain) =>
     domainMatches(normalized, allowedDomain),
   );
 }

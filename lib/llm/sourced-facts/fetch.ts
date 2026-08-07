@@ -5,6 +5,7 @@ import { MODELS } from "@/lib/llm/models";
 import { createWebSearchJsonResponse } from "@/lib/llm/openai";
 import {
   filterAllowedSourcedFacts,
+  isAllowedSourcedFactDomain,
   SOURCED_FACT_ALLOWED_DOMAINS,
 } from "@/lib/llm/sourced-facts/allowlist";
 
@@ -257,7 +258,19 @@ export async function loadSourcedFactsForMatch(
     throw error;
   }
 
-  return (data ?? []) as unknown as StoredSourcedFact[];
+  const rows = (data ?? []) as unknown as StoredSourcedFact[];
+  const allowedRows = rows.filter((row) =>
+    isAllowedSourcedFactDomain(row.source_domain),
+  );
+  const excludedCount = rows.length - allowedRows.length;
+
+  if (excludedCount > 0) {
+    console.warn(
+      `[sourced-facts] Excluded ${excludedCount} non-allowlisted cached fact(s) for match_id=${matchId}.`,
+    );
+  }
+
+  return allowedRows;
 }
 
 export async function fetchSourcedFactsForMatch(options: {
