@@ -31,7 +31,7 @@ const authClientMocks = vi.hoisted(() => ({
 }));
 
 const sourcedFactMocks = vi.hoisted(() => ({
-  getSourcedFactCountsForMatch: vi.fn(),
+  getSourcedFactSummaryForMatch: vi.fn(),
 }));
 
 const sampleMatchMocks = vi.hoisted(() => ({
@@ -208,9 +208,11 @@ function setCommonMocks(params: {
   );
   matchEventMocks.getMatchEventsForMatch.mockResolvedValue([]);
   matchLineupMocks.getMatchLineupsForMatch.mockResolvedValue([]);
-  sourcedFactMocks.getSourcedFactCountsForMatch.mockResolvedValue({
+  sourcedFactMocks.getSourcedFactSummaryForMatch.mockResolvedValue({
     preview: 0,
+    previewSources: [],
     recap: 0,
+    recapSources: [],
   });
   standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
   matchMocks.countHeadToHeadMatches.mockResolvedValue(0);

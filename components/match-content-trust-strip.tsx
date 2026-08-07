@@ -1,18 +1,31 @@
 type MatchContentTrustStripProps = {
   hasConfirmedLineups: boolean;
-  sourcedFactCount: number;
+  sourcedFactSources: Array<{
+    domain: string;
+    sourceUrl: string | null;
+  }>;
 };
 
 export function MatchContentTrustStrip({
   hasConfirmedLineups,
-  sourcedFactCount,
+  sourcedFactSources,
 }: MatchContentTrustStripProps) {
-  const signals = [
-    hasConfirmedLineups ? "ラインアップ確認済み" : null,
-    sourcedFactCount > 0 ? `参照元${sourcedFactCount}件` : null,
-  ].filter(Boolean);
+  const sourcesByDomain = new Map<
+    string,
+    { domain: string; sourceUrl: string | null }
+  >();
 
-  if (signals.length === 0) {
+  for (const source of sourcedFactSources) {
+    const existing = sourcesByDomain.get(source.domain);
+
+    if (!existing || (!existing.sourceUrl && source.sourceUrl)) {
+      sourcesByDomain.set(source.domain, source);
+    }
+  }
+
+  const sources = [...sourcesByDomain.values()];
+
+  if (!hasConfirmedLineups && sources.length === 0) {
     return null;
   }
 
@@ -20,18 +33,36 @@ export function MatchContentTrustStrip({
     <div className="mt-6 border-t border-[var(--color-rule)] pt-4">
       <dl className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs font-semibold leading-relaxed text-[var(--color-ink-muted)]">
         <dt className="sr-only">この記事の根拠</dt>
-        {signals.map((signal, index) => (
-          <div className="contents" key={signal}>
+        {hasConfirmedLineups && (
+          <dd className="rounded-full bg-[var(--color-accent-subtle)] px-3 py-1">
+            ラインアップ確認済み
+          </dd>
+        )}
+        {hasConfirmedLineups && sources.length > 0 && (
+          <span aria-hidden className="text-[var(--color-rule)]">
+            ・
+          </span>
+        )}
+        {sources.map((source, index) => (
+          <div className="contents" key={source.domain}>
             {index > 0 && (
-              <span
-                aria-hidden
-                className="text-[var(--color-rule)]"
-              >
+              <span aria-hidden className="text-[var(--color-rule)]">
                 ・
               </span>
             )}
             <dd className="rounded-full bg-[var(--color-accent-subtle)] px-3 py-1">
-              {signal}
+              {source.sourceUrl ? (
+                <a
+                  className="underline decoration-[var(--color-accent)] underline-offset-2 hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                  href={source.sourceUrl}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  出典: {source.domain}
+                </a>
+              ) : (
+                <>出典: {source.domain}</>
+              )}
             </dd>
           </div>
         ))}

@@ -1,8 +1,19 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
+import { isAllowedSourcedFactDomain } from "@/lib/llm/sourced-facts/allowlist";
 
 export type SourcedFactCounts = {
   preview: number;
   recap: number;
+};
+
+export type SourcedFactSource = {
+  domain: string;
+  sourceUrl: string | null;
+};
+
+export type SourcedFactSummary = SourcedFactCounts & {
+  previewSources: SourcedFactSource[];
+  recapSources: SourcedFactSource[];
 };
 
 export type StorySourcedFact = {
@@ -17,34 +28,65 @@ export type StorySourcedFact = {
   sourceUrl: string;
 };
 
-async function countFactsForContentType(
+function addFactToSummary(
+  summary: { count: number; sources: SourcedFactSource[] },
+  fact: { source_domain: string | null; source_url: string | null },
+) {
+  if (!isAllowedSourcedFactDomain(fact.source_domain)) {
+    return;
+  }
+
+  summary.count += 1;
+  const domain = fact.source_domain!;
+  const source = summary.sources.find((item) => item.domain === domain);
+
+  if (source) {
+    if (!source.sourceUrl && fact.source_url) {
+      source.sourceUrl = fact.source_url;
+    }
+    return;
+  }
+
+  summary.sources.push({
+    domain,
+    sourceUrl: fact.source_url,
+  });
+}
+
+export async function getSourcedFactSummaryForMatch(
   matchId: string,
-  contentType: "preview" | "recap",
-): Promise<number> {
+): Promise<SourcedFactSummary> {
   const client = getSupabasePublicServerClient();
-  const { count, error } = await client
+  const { data, error } = await client
     .from("match_sourced_facts")
-    .select("id", { count: "exact", head: true })
+    .select("content_type, source_domain, source_url")
     .eq("match_id", matchId)
-    .in("content_type", [contentType, "shared"])
+    .in("content_type", ["preview", "recap", "shared"])
     .in("confidence", ["high", "medium"]);
 
   if (error) {
     throw error;
   }
 
-  return count ?? 0;
-}
+  const preview = { count: 0, sources: [] as SourcedFactSource[] };
+  const recap = { count: 0, sources: [] as SourcedFactSource[] };
 
-export async function getSourcedFactCountsForMatch(
-  matchId: string,
-): Promise<SourcedFactCounts> {
-  const [preview, recap] = await Promise.all([
-    countFactsForContentType(matchId, "preview"),
-    countFactsForContentType(matchId, "recap"),
-  ]);
+  for (const fact of data ?? []) {
+    if (fact.content_type === "preview" || fact.content_type === "shared") {
+      addFactToSummary(preview, fact);
+    }
 
-  return { preview, recap };
+    if (fact.content_type === "recap" || fact.content_type === "shared") {
+      addFactToSummary(recap, fact);
+    }
+  }
+
+  return {
+    preview: preview.count,
+    previewSources: preview.sources,
+    recap: recap.count,
+    recapSources: recap.sources,
+  };
 }
 
 export async function getStorySourcedFactsForMatches(

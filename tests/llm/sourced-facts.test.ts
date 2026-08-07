@@ -107,6 +107,8 @@ describe("sourced facts allowlist", () => {
     expect(isAllowedSourcedFactDomain("rugby-japan.jp")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.rugby.com.au")).toBe(true);
     expect(isAllowedSourcedFactDomain("stats.unitedrugby.com")).toBe(true);
+    expect(isAllowedSourcedFactDomain("en.wikipedia.org")).toBe(true);
+    expect(isAllowedSourcedFactDomain("ja.wikipedia.org")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.rugby-rp.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.onrugby.it")).toBe(true);
     expect(isAllowedSourcedFactDomain("sportytrader.com")).toBe(false);
@@ -214,6 +216,21 @@ describe("sourced facts allowlist", () => {
     ]);
 
     expect(facts[0]?.confidence).toBe("high");
+  });
+
+  it("keeps single-source Wikipedia facts at medium confidence", () => {
+    const facts = filterAllowedSourcedFacts([
+      {
+        confidence: "medium",
+        fact: "Wikipedia lists the competition's inaugural season.",
+        source_url: "https://en.wikipedia.org/wiki/Rugby_union",
+      },
+    ]);
+
+    expect(facts[0]).toMatchObject({
+      confidence: "medium",
+      source_domain: "en.wikipedia.org",
+    });
   });
 
   it("rejects DB-authoritative score facts", () => {
@@ -459,6 +476,7 @@ describe("buildSearchPrompt", () => {
     ]);
 
     expect(defaultPrompt).toContain(SOURCED_FACT_ALLOWED_DOMAINS.join(", "));
+    expect(defaultPrompt).toContain("wikipedia.org");
     expect(defaultPrompt).not.toContain("rugbypass.com");
     expect(defaultPrompt).not.toContain("planetrugby.com");
     expect(reducedPrompt).not.toContain(

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const dbMock = vi.hoisted(() => ({
   from: vi.fn(),
   sourcedFactsBuilder: {
+    eq: vi.fn().mockReturnThis(),
     in: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     then: vi.fn(),
@@ -31,8 +32,8 @@ describe("story sourced facts query", () => {
               fetched_at: "2026-07-19T01:00:00.000Z",
               id: "fact-1",
               match_id: "match-1",
-              source_domain: "englandrugby.com",
-              source_url: "https://www.englandrugby.com/news/front-row",
+              source_domain: "en.wikipedia.org",
+              source_url: "https://en.wikipedia.org/wiki/England_national_rugby_union_team",
             },
           ],
           error: null,
@@ -61,8 +62,8 @@ describe("story sourced facts query", () => {
     ]);
     expect(facts).toEqual([
       expect.objectContaining({
-        sourceDomain: "englandrugby.com",
-        sourceUrl: "https://www.englandrugby.com/news/front-row",
+        sourceDomain: "en.wikipedia.org",
+        sourceUrl: "https://en.wikipedia.org/wiki/England_national_rugby_union_team",
       }),
     ]);
   });
@@ -73,5 +74,56 @@ describe("story sourced facts query", () => {
 
     await expect(getStorySourcedFactsForMatches([])).resolves.toEqual([]);
     expect(dbMock.from).not.toHaveBeenCalled();
+  });
+
+  it("groups allowed sourced facts by content type and domain", async () => {
+    dbMock.sourcedFactsBuilder.then.mockImplementation((resolve) =>
+      Promise.resolve(
+        resolve({
+          data: [
+            {
+              confidence: "medium",
+              content_type: "preview",
+              source_domain: "en.wikipedia.org",
+              source_url: "https://en.wikipedia.org/wiki/Rugby_union",
+            },
+            {
+              confidence: "high",
+              content_type: "preview",
+              source_domain: "en.wikipedia.org",
+              source_url: "https://en.wikipedia.org/wiki/Rugby_union_history",
+            },
+            {
+              confidence: "medium",
+              content_type: "shared",
+              source_domain: "rugby-japan.jp",
+              source_url: null,
+            },
+            {
+              confidence: "medium",
+              content_type: "recap",
+              source_domain: "rugbypass.com",
+              source_url: "https://www.rugbypass.com/example",
+            },
+          ],
+          error: null,
+        }),
+      ),
+    );
+    const { getSourcedFactSummaryForMatch } =
+      await import("@/lib/db/queries/sourced-facts");
+
+    await expect(getSourcedFactSummaryForMatch("match-1")).resolves.toEqual({
+      preview: 3,
+      previewSources: [
+        {
+          domain: "en.wikipedia.org",
+          sourceUrl: "https://en.wikipedia.org/wiki/Rugby_union",
+        },
+        { domain: "rugby-japan.jp", sourceUrl: null },
+      ],
+      recap: 1,
+      recapSources: [{ domain: "rugby-japan.jp", sourceUrl: null }],
+    });
   });
 });

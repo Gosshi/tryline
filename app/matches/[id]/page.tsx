@@ -29,7 +29,7 @@ import {
   listMatchIdsWithContent,
   normalizeHeadToHeadSlug,
 } from "@/lib/db/queries/matches";
-import { getSourcedFactCountsForMatch } from "@/lib/db/queries/sourced-facts";
+import { getSourcedFactSummaryForMatch } from "@/lib/db/queries/sourced-facts";
 import { getStandingsForCompetition } from "@/lib/db/queries/standings";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { buildMatchEventPlayerLinks } from "@/lib/format/match-event-player-links";
@@ -178,13 +178,13 @@ export default async function MatchDetailPage({
   params,
 }: MatchDetailPageProps) {
   const { id } = await params;
-  const [match, publishedContent, events, lineups, sourcedFactCounts] =
+  const [match, publishedContent, events, lineups, sourcedFactSummary] =
     await Promise.all([
       getMatchById(id),
       getPublishedContentForMatch(id),
       getMatchEventsForMatch(id),
       getMatchLineupsForMatch(id),
-      getSourcedFactCountsForMatch(id),
+      getSourcedFactSummaryForMatch(id),
     ]);
 
   if (!match) {
@@ -407,7 +407,7 @@ export default async function MatchDetailPage({
                   publishedContent.preview ? (
                     <MatchContentTrustStrip
                       hasConfirmedLineups={hasConfirmedLineups}
-                      sourcedFactCount={sourcedFactCounts.preview}
+                      sourcedFactSources={sourcedFactSummary.previewSources}
                     />
                   ) : null
                 }
@@ -450,7 +450,7 @@ export default async function MatchDetailPage({
                     <>
                       <MatchContentTrustStrip
                         hasConfirmedLineups={hasConfirmedLineups}
-                        sourcedFactCount={sourcedFactCounts.recap}
+                        sourcedFactSources={sourcedFactSummary.recapSources}
                       />
                       <MatchEventsSection
                         awayTeamName={match.awayTeam.name}
@@ -493,7 +493,7 @@ export default async function MatchDetailPage({
                     <>
                       <MatchContentTrustStrip
                         hasConfirmedLineups={hasConfirmedLineups}
-                        sourcedFactCount={sourcedFactCounts.recap}
+                        sourcedFactSources={sourcedFactSummary.recapSources}
                       />
                       <MatchEventsSection
                         awayTeamName={match.awayTeam.name}
@@ -547,7 +547,7 @@ export default async function MatchDetailPage({
                     afterBody={
                       <MatchContentTrustStrip
                         hasConfirmedLineups={hasConfirmedLineups}
-                        sourcedFactCount={sourcedFactCounts.preview}
+                        sourcedFactSources={sourcedFactSummary.previewSources}
                       />
                     }
                     content={publishedContent.preview}
