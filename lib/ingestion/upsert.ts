@@ -72,6 +72,29 @@ function buildMatchUpdate(
 
 async function findExistingMatch(candidate: ResolvedMatchCandidate) {
   const client = getSupabaseServerClient();
+  const wikipediaEventId = candidate.externalIds.wikipedia_event_id;
+
+  if (typeof wikipediaEventId === "string" && wikipediaEventId.length > 0) {
+    const matchByWikipediaEventId = await client
+      .from("matches")
+      .select(
+        "id, competition_id, home_team_id, away_team_id, kickoff_at, status, venue, home_score, away_score, external_ids",
+      )
+      .eq("competition_id", candidate.competitionId)
+      .contains("external_ids", {
+        wikipedia_event_id: wikipediaEventId,
+      })
+      .maybeSingle();
+
+    if (matchByWikipediaEventId.error) {
+      throw matchByWikipediaEventId.error;
+    }
+
+    if (matchByWikipediaEventId.data) {
+      return matchByWikipediaEventId.data;
+    }
+  }
+
   const exactMatch = await client
     .from("matches")
     .select(
@@ -89,6 +112,13 @@ async function findExistingMatch(candidate: ResolvedMatchCandidate) {
 
   if (exactMatch.data) {
     return exactMatch.data;
+  }
+
+  // Wikipedia's event ID identifies repeated fixtures with the same teams.
+  // Do not collapse a new event onto another scheduled match just because the
+  // teams are identical.
+  if (typeof wikipediaEventId === "string" && wikipediaEventId.length > 0) {
+    return null;
   }
 
   const scheduledMatch = await client
