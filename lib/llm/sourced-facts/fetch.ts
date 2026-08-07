@@ -339,7 +339,6 @@ export async function fetchSourcedFactsForMatch(options: {
     const response = await createWebSearchJsonResponse({
       model: MODELS.WEB_SEARCH,
       input: prompt,
-      temperature: 0,
     });
     const rejectedFacts: SourcedFactRejection[] = [];
     const facts = parseSourcedFactsResponse(response.text, {

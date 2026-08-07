@@ -203,8 +203,7 @@ describe("/api/cron/weekly-digest", () => {
     expect(body).toEqual({ chunks: 2, matches: 1, status: "ok" });
     expect(openAiMock.create).toHaveBeenCalledTimes(1);
     expect(openAiMock.create.mock.calls[0]?.[0]).toMatchObject({
-      model: "gpt-4o",
-      temperature: 0.4,
+      model: "gpt-5.6-terra",
     });
     expect(openAiMock.create.mock.calls[0]?.[0].messages[1].content).toContain(
       "Ireland 24–17 France",

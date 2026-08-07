@@ -88,7 +88,6 @@ export async function generateImpressionTweet(
         },
       ],
       model: MODELS.FAST,
-      temperature: 0.9,
     });
 
     const text = response.choices[0]?.message?.content?.trim();

@@ -210,7 +210,6 @@ export async function POST(request: Request) {
         },
       ],
       model: MODELS.NARRATIVE,
-      temperature: 0.4,
     });
     const digest = response.choices[0]?.message?.content?.trim();
 

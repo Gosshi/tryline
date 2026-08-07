@@ -1,5 +1,6 @@
 export const MODELS = {
-  FAST: "gpt-4o-mini",
-  NARRATIVE: "gpt-4o",
-  WEB_SEARCH: "gpt-4o",
+  CHAT: "gpt-4o-mini",
+  FAST: "gpt-5.6-luna",
+  NARRATIVE: "gpt-5.6-terra",
+  WEB_SEARCH: "gpt-5.6-terra",
 } as const;

@@ -19,7 +19,7 @@ const extractFactsMock = vi.hoisted(() => ({
 
 const generateNarrativeMock = vi.hoisted(() => ({
   generateNarrative: vi.fn(),
-  NARRATIVE_TEMPERATURE_SEQUENCE: [0.7],
+  NARRATIVE_GENERATION_ATTEMPTS: 1,
   reviseNarrativeLength: vi.fn(),
 }));
 
@@ -221,7 +221,6 @@ describe("generateMatchContent recap event guard", () => {
       content: "# recap",
       modelVersion: "gpt-4o",
       promptVersion: "1.0.0",
-      temperature: 0.7,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
     qaMock.evaluateNarrativeQuality.mockResolvedValue({
@@ -303,7 +302,6 @@ describe("generateMatchContent recap event guard", () => {
       content: "# recap",
       modelVersion: "gpt-4o",
       promptVersion: "1.0.0",
-      temperature: 0.7,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
     qaMock.evaluateNarrativeQuality.mockResolvedValue({
@@ -365,7 +363,6 @@ describe("generateMatchContent recap event guard", () => {
       content: "# recap",
       modelVersion: "gpt-4o",
       promptVersion: "1.0.0",
-      temperature: 0.7,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
     qaMock.evaluateNarrativeQuality.mockResolvedValue({
@@ -417,7 +414,6 @@ describe("generateMatchContent recap event guard", () => {
       content: "# recap",
       modelVersion: "gpt-4o",
       promptVersion: "1.0.0",
-      temperature: 0.7,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
     qaMock.evaluateNarrativeQuality.mockResolvedValue({

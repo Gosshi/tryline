@@ -103,10 +103,9 @@ export async function POST(
   const stream = await getOpenAIClient().chat.completions.create({
     max_tokens: 1024,
     messages,
-    model: MODELS.FAST,
+    model: MODELS.CHAT,
     stream: true,
     stream_options: { include_usage: true },
-    temperature: 0.5,
   });
   const encoder = new TextEncoder();
 

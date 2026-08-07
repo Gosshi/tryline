@@ -110,7 +110,7 @@ describe("generateNarrative", () => {
     expect(result.content).toContain("preview");
   });
 
-  it("switches temperature 0.7 -> 0.9 -> 0.4", async () => {
+  it("uses GPT-5.6 Terra for each retry", async () => {
     openAIMock.createTextResponse.mockResolvedValue({
       text: "ok",
       model: "gpt-4o-2024-11-20",
@@ -141,15 +141,15 @@ describe("generateNarrative", () => {
 
     expect(openAIMock.createTextResponse).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ temperature: 0.7 }),
+      expect.objectContaining({ model: "gpt-5.6-terra" }),
     );
     expect(openAIMock.createTextResponse).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ temperature: 0.9 }),
+      expect.objectContaining({ model: "gpt-5.6-terra" }),
     );
     expect(openAIMock.createTextResponse).toHaveBeenNthCalledWith(
       3,
-      expect.objectContaining({ temperature: 0.4 }),
+      expect.objectContaining({ model: "gpt-5.6-terra" }),
     );
   });
 
@@ -303,7 +303,6 @@ describe("generateNarrative", () => {
     expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
       expect.objectContaining({
         input: expect.stringContaining("字数下限未満です"),
-        temperature: 0.6,
       }),
     );
     expect(openAIMock.createTextResponse).toHaveBeenCalledWith(

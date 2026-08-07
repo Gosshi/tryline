@@ -637,7 +637,6 @@ export async function evaluateNarrativeQuality(options: {
     const response = await createTextResponse({
       model: MODELS.FAST,
       input: prompt,
-      temperature: 0,
       jsonMode: true,
     });
 
