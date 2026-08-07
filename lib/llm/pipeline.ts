@@ -51,6 +51,7 @@ export type PipelineResult = {
   contentType: ContentType;
   status: "published" | "draft" | "skipped";
   qa: QaResult | null;
+  cacheRevalidationSkipped?: boolean;
 };
 
 function hashInput(input: unknown) {
@@ -119,10 +120,8 @@ export async function generateMatchContent(
     );
 
     if (timeline) {
-      const homeDelta =
-        timeline.final_home - (assembled.match.home_score ?? 0);
-      const awayDelta =
-        timeline.final_away - (assembled.match.away_score ?? 0);
+      const homeDelta = timeline.final_home - (assembled.match.home_score ?? 0);
+      const awayDelta = timeline.final_away - (assembled.match.away_score ?? 0);
 
       if (homeDelta !== 0 || awayDelta !== 0) {
         console.warn("[score-integrity] event total mismatch", {
@@ -495,8 +494,7 @@ export async function generateMatchContent(
         inputTokens: revisionEntityVerification.usage.inputTokens,
         outputTokens: revisionEntityVerification.usage.outputTokens,
       });
-      totalCostUsd +=
-        revisionQaCostUsd + revisionEntityVerificationCostUsd;
+      totalCostUsd += revisionQaCostUsd + revisionEntityVerificationCostUsd;
 
       await logPipelineRun({
         matchId,
@@ -524,10 +522,7 @@ export async function generateMatchContent(
         finalQa = {
           ...baselineQa,
           issues: [
-            ...new Set([
-              ...baselineQa.issues,
-              FACTUAL_REVISION_FALLBACK_ISSUE,
-            ]),
+            ...new Set([...baselineQa.issues, FACTUAL_REVISION_FALLBACK_ISSUE]),
           ],
           verdict: "publish",
         };
@@ -608,7 +603,10 @@ export async function generateMatchContent(
 
   let persistedQaScores: Json = finalQa;
 
-  if (language === "ja" && (contentType === "preview" || contentType === "recap")) {
+  if (
+    language === "ja" &&
+    (contentType === "preview" || contentType === "recap")
+  ) {
     const { data: recentContent, error: recentContentError } = await db
       .from("match_content")
       .select("id, content_md")
@@ -643,6 +641,7 @@ export async function generateMatchContent(
     finalQa.verdict === "publish" && !densityBlocked ? "published" : "draft";
 
   let preservedPublished = false;
+  let cacheRevalidationSkipped = false;
 
   if (persistedStatus === "draft") {
     const { data: existingContent, error: existingContentError } = await db
@@ -682,10 +681,11 @@ export async function generateMatchContent(
       throw upsertError;
     }
 
-    revalidatePublicData(
+    const revalidation = revalidatePublicData(
       PUBLIC_DATA_CACHE_TAGS.content,
       PUBLIC_DATA_CACHE_TAGS.matches,
     );
+    cacheRevalidationSkipped = (revalidation?.skippedTags.length ?? 0) > 0;
   }
 
   if (persistedStatus === "published") {
@@ -760,5 +760,6 @@ export async function generateMatchContent(
     contentType,
     status: persistedStatus,
     qa: finalQa,
+    ...(cacheRevalidationSkipped ? { cacheRevalidationSkipped: true } : {}),
   };
 }

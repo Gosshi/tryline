@@ -11,8 +11,29 @@ export const PUBLIC_DATA_CACHE_TAGS = {
 export type PublicDataCacheTag =
   (typeof PUBLIC_DATA_CACHE_TAGS)[keyof typeof PUBLIC_DATA_CACHE_TAGS];
 
-export function revalidatePublicData(...tags: PublicDataCacheTag[]) {
+export type PublicDataRevalidationResult = {
+  revalidatedTags: PublicDataCacheTag[];
+  skippedTags: PublicDataCacheTag[];
+};
+
+export function revalidatePublicData(
+  ...tags: PublicDataCacheTag[]
+): PublicDataRevalidationResult {
+  const revalidatedTags: PublicDataCacheTag[] = [];
+  const skippedTags: PublicDataCacheTag[] = [];
+
   for (const tag of new Set(tags)) {
-    revalidateTag(tag);
+    try {
+      revalidateTag(tag);
+      revalidatedTags.push(tag);
+    } catch (error) {
+      skippedTags.push(tag);
+      console.warn("[public-data-cache] revalidation skipped", {
+        error,
+        tag,
+      });
+    }
   }
+
+  return { revalidatedTags, skippedTags };
 }

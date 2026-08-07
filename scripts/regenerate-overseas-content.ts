@@ -42,6 +42,7 @@ export type RegenerateOverseasContentResult = {
   draft: number;
   failed: number;
   published: number;
+  revalidationSkipped: number;
   regenerated: number;
   skipped: number;
   skippedCurrentVersion: number;
@@ -86,8 +87,12 @@ export function estimateRegenerationCost(
   targetCount: number,
 ): RegenerationCostEstimate {
   return {
-    maxUsd: Number((targetCount * ESTIMATED_COST_PER_TARGET_USD.max).toFixed(2)),
-    minUsd: Number((targetCount * ESTIMATED_COST_PER_TARGET_USD.min).toFixed(2)),
+    maxUsd: Number(
+      (targetCount * ESTIMATED_COST_PER_TARGET_USD.max).toFixed(2),
+    ),
+    minUsd: Number(
+      (targetCount * ESTIMATED_COST_PER_TARGET_USD.min).toFixed(2),
+    ),
     targetCount,
   };
 }
@@ -409,6 +414,7 @@ export async function runRegenerateOverseasContent({
     draft: 0,
     failed: 0,
     published: 0,
+    revalidationSkipped: 0,
     regenerated: 0,
     skipped: 0,
     skippedCurrentVersion,
@@ -439,6 +445,9 @@ export async function runRegenerateOverseasContent({
       const generated = await generateContent(target.matchId, contentType);
       result.regenerated += 1;
       result[generated.status] += 1;
+      if (generated.cacheRevalidationSkipped) {
+        result.revalidationSkipped += 1;
+      }
       logger.log(
         `Regenerated ${contentType} for ${target.matchId}: ${generated.status} (${target.promptVersion} -> ${currentVersion})`,
       );
@@ -452,8 +461,14 @@ export async function runRegenerateOverseasContent({
   }
 
   logger.log(
-    `Overseas ${contentType} regeneration complete: regenerated=${result.regenerated} published=${result.published} draft=${result.draft} skipped=${result.skipped} failed=${result.failed}`,
+    `Overseas ${contentType} regeneration complete: regenerated=${result.regenerated} published=${result.published} draft=${result.draft} skipped=${result.skipped} failed=${result.failed} revalidation_skipped=${result.revalidationSkipped}`,
   );
+
+  if (result.revalidationSkipped > 0) {
+    logger.warn(
+      `[regenerate-overseas-content] Cache revalidation was skipped for ${result.revalidationSkipped} regenerated content item(s). The production site may not yet show the updated content; run cache revalidation separately.`,
+    );
+  }
 
   return result;
 }
