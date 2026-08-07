@@ -153,4 +153,54 @@ describe("upsertMatches", () => {
       wikipedia_round: 1,
     });
   });
+
+  it("keeps repeated Wikipedia fixtures between the same teams distinct", async () => {
+    const fixturePath = path.join(
+      process.cwd(),
+      "tests/fixtures/wikipedia-six-nations-2027.html",
+    );
+    const html = readFileSync(fixturePath, "utf8");
+    const [baseCandidate] = await resolveMatches(
+      parseWikipediaSixNations2027Html(html),
+    );
+    const service = getSupabaseServerClient();
+    const eventIds = ["First_test", "Second_test", "Third_test", "Fourth_test"];
+    const kickoffDates = ["22", "29", "05", "12"];
+    const repeatedCandidates = eventIds.map((eventId, index) => ({
+      ...baseCandidate!,
+      externalIds: {
+        wikipedia_event_id: eventId,
+      },
+      kickoffAt:
+        index < 2
+          ? `2029-08-${kickoffDates[index]}T15:10:00.000Z`
+          : `2029-09-${kickoffDates[index]}T15:10:00.000Z`,
+      status: "scheduled" as const,
+    }));
+
+    const firstRun = await upsertMatches(repeatedCandidates);
+    const secondRun = await upsertMatches(repeatedCandidates);
+
+    expect(firstRun.matchesInserted).toBe(4);
+    expect(firstRun.matchesUpdated).toBe(0);
+    expect(secondRun.matchesInserted).toBe(0);
+    expect(secondRun.matchesUpdated).toBe(4);
+
+    const repeatedMatches = await service
+      .from("matches")
+      .select("kickoff_at, external_ids")
+      .eq("competition_id", baseCandidate!.competitionId)
+      .eq("home_team_id", baseCandidate!.homeTeamId)
+      .eq("away_team_id", baseCandidate!.awayTeamId)
+      .in("kickoff_at", repeatedCandidates.map((candidate) => candidate.kickoffAt));
+
+    expect(repeatedMatches.error).toBeNull();
+    expect(repeatedMatches.data).toHaveLength(4);
+    expect(
+      repeatedMatches.data?.map(
+        (match) =>
+          (match.external_ids as Record<string, Json>).wikipedia_event_id,
+      ),
+    ).toEqual(expect.arrayContaining(eventIds));
+  });
 });
