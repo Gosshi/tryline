@@ -84,7 +84,6 @@ ${webContext}
       },
     ],
     model: "gpt-4o",
-    temperature: 0.3,
   });
 
   const raw = response.choices[0]?.message?.content ?? "";

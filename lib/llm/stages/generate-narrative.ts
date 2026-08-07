@@ -21,7 +21,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const NARRATIVE_TEMPERATURE_SEQUENCE = [0.7, 0.9, 0.4] as const;
+export const NARRATIVE_GENERATION_ATTEMPTS = 3;
 const ENGLISH_PREVIEW_PROMPT_VERSION = "preview@2.0.0-en";
 const ENGLISH_RECAP_PROMPT_VERSION = "recap@2.2.0-en";
 const LENGTH_REVISION_PROMPT_VERSION = "length-revision@1.0.0";
@@ -34,7 +34,6 @@ export type NarrativeResponse = {
     inputTokens: number;
     outputTokens: number;
   };
-  temperature: number;
 };
 
 export function stripWrappingCodeFence(text: string): string {
@@ -57,9 +56,6 @@ export async function generateNarrative(options: {
   entityViolationSurfaces?: string[];
   language?: ContentLanguage;
 }): Promise<NarrativeResponse> {
-  const temperature =
-    NARRATIVE_TEMPERATURE_SEQUENCE[options.attempt] ??
-    NARRATIVE_TEMPERATURE_SEQUENCE[0];
   const isPreview = options.contentType === "preview";
   const basePromptVersion = isPreview
     ? PREVIEW_PROMPT_VERSION
@@ -73,7 +69,6 @@ export async function generateNarrative(options: {
   const response = await createTextResponse({
     model: MODELS.NARRATIVE,
     input: prompt,
-    temperature,
   });
 
   return {
@@ -86,7 +81,6 @@ export async function generateNarrative(options: {
           : ENGLISH_RECAP_PROMPT_VERSION
         : basePromptVersion,
     usage: response.usage,
-    temperature,
   };
 }
 
@@ -101,14 +95,21 @@ export async function reviseNarrativeLength(options: {
   tacticalPoints: TacticalPoint[];
 }): Promise<NarrativeResponse> {
   const language = options.language ?? "ja";
-  const requirement = getContentLengthRequirement(options.contentType, language);
+  const requirement = getContentLengthRequirement(
+    options.contentType,
+    language,
+  );
   const currentLength = measureContentLength(
     options.currentContent,
     requirement,
   );
   const prompt =
     language === "en"
-      ? buildEnglishLengthRevisionPrompt(options, requirement.min, currentLength)
+      ? buildEnglishLengthRevisionPrompt(
+          options,
+          requirement.min,
+          currentLength,
+        )
       : buildJapaneseLengthRevisionPrompt(
           options,
           requirement.min,
@@ -118,7 +119,6 @@ export async function reviseNarrativeLength(options: {
   const response = await createTextResponse({
     model: MODELS.NARRATIVE,
     input: prompt,
-    temperature: 0.6,
   });
 
   return {
@@ -126,7 +126,6 @@ export async function reviseNarrativeLength(options: {
     modelVersion: response.model,
     promptVersion: `${options.promptVersion}+${LENGTH_REVISION_PROMPT_VERSION}`,
     usage: response.usage,
-    temperature: 0.6,
   };
 }
 
@@ -200,7 +199,8 @@ function buildJapaneseLengthRevisionPrompt(
   minLength: number,
   currentLength: number,
 ) {
-  const contentLabel = options.contentType === "preview" ? "プレビュー" : "レビュー";
+  const contentLabel =
+    options.contentType === "preview" ? "プレビュー" : "レビュー";
   const signalsBlock =
     options.additionalSignals.length === 0
       ? ""

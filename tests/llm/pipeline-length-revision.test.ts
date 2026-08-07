@@ -19,7 +19,7 @@ const extractFactsMock = vi.hoisted(() => ({
 
 const generateNarrativeMock = vi.hoisted(() => ({
   generateNarrative: vi.fn(),
-  NARRATIVE_TEMPERATURE_SEQUENCE: [0.7, 0.9, 0.4],
+  NARRATIVE_GENERATION_ATTEMPTS: 3,
   reviseNarrativeLength: vi.fn(),
 }));
 
@@ -217,14 +217,12 @@ describe("generateMatchContent length revision", () => {
       content: "# short",
       modelVersion: "gpt-4o",
       promptVersion: "preview@3.6.0",
-      temperature: 0.7,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
     generateNarrativeMock.reviseNarrativeLength.mockResolvedValue({
       content: `# revised\n${"あ".repeat(1500)}`,
       modelVersion: "gpt-4o",
       promptVersion: "preview@3.6.0+length-revision@1.0.0",
-      temperature: 0.6,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
   });
@@ -380,7 +378,6 @@ describe("generateMatchContent length revision", () => {
       content: "# still short",
       modelVersion: "gpt-4o",
       promptVersion: "preview@3.6.0+length-revision@1.0.0",
-      temperature: 0.6,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
     qaMock.evaluateNarrativeQuality
@@ -534,7 +531,6 @@ describe("generateMatchContent length revision", () => {
       content: "# still short",
       modelVersion: "gpt-4o",
       promptVersion: "preview@3.6.0+length-revision@1.0.0",
-      temperature: 0.6,
       usage: { inputTokens: 1, outputTokens: 1 },
     });
     qaMock.evaluateNarrativeQuality

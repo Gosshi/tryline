@@ -106,7 +106,6 @@ export async function POST(
     model: MODELS.FAST,
     stream: true,
     stream_options: { include_usage: true },
-    temperature: 0.5,
   });
   const encoder = new TextEncoder();
 

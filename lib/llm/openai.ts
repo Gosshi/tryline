@@ -25,7 +25,6 @@ type OpenAINonStreamingResponse = {
 export async function createTextResponse(options: {
   model: string;
   input: string;
-  temperature?: number;
   jsonMode?: boolean;
 }): Promise<OpenAITextResponse> {
   const client = getOpenAIClient();
@@ -33,7 +32,6 @@ export async function createTextResponse(options: {
   const response = await client.responses.create({
     model: options.model,
     input: options.input,
-    temperature: options.temperature,
     ...(options.jsonMode ? { text: { format: { type: "json_object" } } } : {}),
   });
 
@@ -50,14 +48,12 @@ export async function createTextResponse(options: {
 export async function createWebSearchJsonResponse(options: {
   model: string;
   input: string;
-  temperature?: number;
 }): Promise<OpenAITextResponse> {
   const client = getOpenAIClient();
 
   const response = (await client.responses.create({
     model: options.model,
     input: options.input,
-    temperature: options.temperature ?? 0,
     tools: [{ type: "web_search_preview" }],
   } as Parameters<ResponsesCreate>[0])) as OpenAINonStreamingResponse;
 

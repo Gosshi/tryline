@@ -20,7 +20,7 @@ import {
 import { extractTacticalPoints } from "@/lib/llm/stages/extract-facts";
 import {
   generateNarrative,
-  NARRATIVE_TEMPERATURE_SEQUENCE,
+  NARRATIVE_GENERATION_ATTEMPTS,
   reviseNarrativeLength,
 } from "@/lib/llm/stages/generate-narrative";
 import {
@@ -254,11 +254,7 @@ export async function generateMatchContent(
     };
   }
 
-  for (
-    let attempt = 0;
-    attempt < NARRATIVE_TEMPERATURE_SEQUENCE.length;
-    attempt += 1
-  ) {
+  for (let attempt = 0; attempt < NARRATIVE_GENERATION_ATTEMPTS; attempt += 1) {
     const stage3StartedAt = Date.now();
     const narrative = await generateNarrative({
       assembled,
@@ -293,7 +289,6 @@ export async function generateMatchContent(
         additionalSignals: [],
       }),
       output: {
-        temperature: narrative.temperature,
         content: narrative.content,
       },
       costUsd: stage3CostUsd,
@@ -431,7 +426,6 @@ export async function generateMatchContent(
           content: revised.content,
           lengthRevisionAttempts,
           reason: "content_length_under_minimum",
-          temperature: revised.temperature,
         },
         costUsd: revisionCostUsd,
         durationMs: Date.now() - revisionStartedAt,

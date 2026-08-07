@@ -56,9 +56,8 @@ describe("generatePreviewThread", () => {
     expect(openAIMock.create).toHaveBeenCalledWith(
       expect.objectContaining({
         max_tokens: 300,
-        model: "gpt-4o-mini",
+        model: "gpt-5.6-luna",
         response_format: { type: "json_object" },
-        temperature: 0.7,
       }),
     );
   });

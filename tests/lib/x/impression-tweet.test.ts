@@ -46,8 +46,7 @@ describe("generateImpressionTweet", () => {
     expect(openAIMock.create).toHaveBeenCalledWith(
       expect.objectContaining({
         max_tokens: 120,
-        model: "gpt-4o-mini",
-        temperature: 0.9,
+        model: "gpt-5.6-luna",
       }),
     );
   });
