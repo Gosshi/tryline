@@ -12,6 +12,7 @@ import {
   buildSearchPrompt,
   fetchSourcedFactsForMatch,
   isSourcedFactsEnabledForMatch,
+  loadSourcedFactsForMatch,
   parseSourcedFactsResponse,
 } from "@/lib/llm/sourced-facts/fetch";
 
@@ -105,11 +106,11 @@ describe("sourced facts allowlist", () => {
     expect(isAllowedSourcedFactDomain("www.therugbypaper.co.uk")).toBe(true);
     expect(isAllowedSourcedFactDomain("rugby-japan.jp")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.rugby.com.au")).toBe(true);
-    expect(isAllowedSourcedFactDomain("news.allblacks.com")).toBe(true);
-    expect(isAllowedSourcedFactDomain("www.englandrugby.com")).toBe(true);
+    expect(isAllowedSourcedFactDomain("stats.unitedrugby.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.rugby-rp.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.onrugby.it")).toBe(true);
     expect(isAllowedSourcedFactDomain("sportytrader.com")).toBe(false);
+    expect(isAllowedSourcedFactDomain(null)).toBe(false);
   });
 
   it("rejects every removed domain", () => {
@@ -127,6 +128,9 @@ describe("sourced facts allowlist", () => {
       "sports.yahoo.com",
       "skysports.com",
       "news.yahoo.co.jp",
+      "allblacks.com",
+      "englandrugby.com",
+      "lnr.fr",
     ];
 
     for (const domain of removedDomains) {
@@ -188,6 +192,16 @@ describe("sourced facts allowlist", () => {
         source_domain: "rugbypass.com",
       },
     ]);
+  });
+
+  it("uses the supplied allowlist when evaluating a domain", () => {
+    expect(isAllowedSourcedFactDomain("rugbypass.com")).toBe(false);
+    expect(
+      isAllowedSourcedFactDomain("rugbypass.com", [
+        ...SOURCED_FACT_ALLOWED_DOMAINS,
+        "rugbypass.com",
+      ]),
+    ).toBe(true);
   });
 
   it("promotes official-source facts to high confidence", () => {
@@ -618,6 +632,35 @@ describe("fetchSourcedFactsForMatch", () => {
     expect(result.cached).toBe(true);
     expect(result.facts).toHaveLength(1);
     expect(openAIMock.createWebSearchJsonResponse).not.toHaveBeenCalled();
+  });
+
+  it("excludes non-allowlisted cached facts and logs their count", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const cachedRows = [
+      cachedFact(),
+      cachedFact({ source_domain: "allblacks.com" }),
+      cachedFact({ source_domain: "" }),
+      cachedFact({ source_domain: null }),
+    ];
+    dbMock.from.mockReturnValue(createSourcedFactsBuilder(cachedRows));
+
+    await expect(
+      loadSourcedFactsForMatch("match-1", "preview"),
+    ).resolves.toEqual([cachedRows[0]]);
+    expect(warn).toHaveBeenCalledWith(
+      "[sourced-facts] Excluded 3 non-allowlisted cached fact(s) for match_id=match-1.",
+    );
+
+    warn.mockRestore();
+  });
+
+  it("returns no cached facts when every source is excluded", async () => {
+    const cachedRows = [cachedFact({ source_domain: "allblacks.com" })];
+    dbMock.from.mockReturnValue(createSourcedFactsBuilder(cachedRows));
+
+    await expect(
+      loadSourcedFactsForMatch("match-1", "preview"),
+    ).resolves.toEqual([]);
   });
 
   it("uses current-version recap cached facts without calling web search", async () => {
