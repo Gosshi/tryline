@@ -10,6 +10,10 @@ import { LIVE_COMPETITION_SOURCES } from "@/lib/ingestion/live-competitions";
 import { parseLeagueOneLiveHtml } from "@/lib/ingestion/sources/league-one-live";
 import { parseAutumnNationsLiveHtml } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
 import {
+  fetchGreatestRivalry2026,
+  parseGreatestRivalryLiveHtml,
+} from "@/lib/ingestion/sources/wikipedia-greatest-rivalry";
+import {
   fetchNationsChampionship2026,
   parseNationsChampionshipLiveHtml,
 } from "@/lib/ingestion/sources/wikipedia-nations-championship";
@@ -534,6 +538,25 @@ describe("live competition source adapters", () => {
       family: "nations-championship",
       fetch: fetchNationsChampionship2026,
       fetchEventMatches: fetchNationsChampionship2026EventMatches,
+      season: "2026",
+      sourceLabel: "wikipedia",
+    });
+  });
+
+  it("registers Greatest Rivalry 2026 after Nations Championship", () => {
+    const nationsChampionshipIndex = LIVE_COMPETITION_SOURCES.findIndex(
+      (source) => source.competitionSlug === "nations-championship-2026",
+    );
+    const greatestRivalryIndex = LIVE_COMPETITION_SOURCES.findIndex(
+      (source) => source.competitionSlug === "greatest-rivalry-2026",
+    );
+
+    expect(greatestRivalryIndex).toBe(nationsChampionshipIndex + 1);
+    expect(LIVE_COMPETITION_SOURCES[greatestRivalryIndex]).toMatchObject({
+      competitionName: "Greatest Rivalry 2026",
+      competitionNameJa: "グレイテスト・ライバルリー・ツアー",
+      family: "greatest-rivalry",
+      fetch: fetchGreatestRivalry2026,
       season: "2026",
       sourceLabel: "wikipedia",
     });
@@ -1139,6 +1162,12 @@ describe("live competition source adapters", () => {
       )[0],
     ).toMatchObject({ wikipediaUrl: rugbyChampionshipUrl });
     expect(
+      parseGreatestRivalryLiveHtml(
+        RUGBY_CHAMPIONSHIP_HTML,
+        rugbyChampionshipUrl,
+      )[0],
+    ).toMatchObject({ wikipediaUrl: rugbyChampionshipUrl });
+    expect(
       parseNationsChampionshipEventHtml(
         SIX_NATIONS_2027_HTML,
         NATIONS_CHAMPIONSHIP_SOUTHERN_HEMISPHERE_URL,
@@ -1146,5 +1175,16 @@ describe("live competition source adapters", () => {
     ).toMatchObject({
       wikipediaUrl: NATIONS_CHAMPIONSHIP_SOUTHERN_HEMISPHERE_URL,
     });
+  });
+
+  it("returns an empty array when the Greatest Rivalry page is missing", async () => {
+    const sourceUrl =
+      "https://en.wikipedia.org/wiki/2026_New_Zealand_rugby_union_tour_of_South_Africa";
+    fetcherMock.fetchWithPolicy.mockRejectedValueOnce(
+      new FetchError({ attempt: 1, status: 404, url: sourceUrl }),
+    );
+
+    await expect(fetchGreatestRivalry2026()).resolves.toEqual([]);
+    expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledWith(sourceUrl);
   });
 });

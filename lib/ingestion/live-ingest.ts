@@ -14,6 +14,7 @@ import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
 
 export type LiveCompetitionSource = {
   competitionName: string;
+  competitionNameJa?: string;
   competitionSlug: string;
   family: string;
   fetch: () => Promise<ParsedLiveMatch[]>;
@@ -51,6 +52,9 @@ async function upsertCompetition(
         end_date: dates.at(-1) ?? null,
         family: source.family,
         name: source.competitionName,
+        ...(source.competitionNameJa
+          ? { name_ja: source.competitionNameJa }
+          : {}),
         season: source.season,
         slug: source.competitionSlug,
         start_date: dates[0] ?? null,

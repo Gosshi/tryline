@@ -369,7 +369,8 @@ describe("season page information architecture", () => {
 
     expect(screen.getByText("リポビタンDチャレンジカップ")).toBeInTheDocument();
     expect(screen.getByTestId("season-match-groups")).toBeInTheDocument();
-    expect(container.querySelector("#standings")).toBeEmptyDOMElement();
+    expect(container.querySelector("#standings")).toBeNull();
+    expect(screen.queryByRole("link", { name: "順位" })).not.toBeInTheDocument();
   });
 
   it("shows a standings excerpt while keeping the full table in collapsed markup", async () => {
