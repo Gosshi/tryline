@@ -3,6 +3,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import OpenAI from "openai";
 
+import { MODELS } from "@/lib/llm/models";
+
 const FAMILIES: Array<{ family: string; nameJa: string; context?: string }> = [
   { family: "six-nations", nameJa: "シックスネイションズ" },
   { family: "premiership", nameJa: "プレミアシップ" },
@@ -83,7 +85,7 @@ ${webContext}
         role: "user",
       },
     ],
-    model: "gpt-4o",
+    model: MODELS.NARRATIVE,
   });
 
   const raw = response.choices[0]?.message?.content ?? "";
