@@ -19,6 +19,7 @@ const MEDIA_DOMAINS = [
   "rugby-rp.com",
   "onrugby.it",
   "therugbypaper.co.uk",
+  "wikipedia.org",
 ] as const;
 
 export const SOURCED_FACT_ALLOWED_DOMAINS = [
