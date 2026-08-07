@@ -5,6 +5,7 @@ import {
 } from "@/lib/ingestion/live-ingest";
 import { fetchLeagueOne202526 } from "@/lib/ingestion/sources/league-one-live";
 import { fetchAutumnNations2026 } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
+import { fetchGreatestRivalry2026 } from "@/lib/ingestion/sources/wikipedia-greatest-rivalry";
 import { fetchNationsChampionship2026 } from "@/lib/ingestion/sources/wikipedia-nations-championship";
 import { fetchNationsChampionship2026EventMatches } from "@/lib/ingestion/sources/wikipedia-nations-championship-events";
 import { fetchPnc2026 } from "@/lib/ingestion/sources/wikipedia-pnc";
@@ -54,6 +55,15 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
     family: "nations-championship",
     fetch: fetchNationsChampionship2026,
     fetchEventMatches: fetchNationsChampionship2026EventMatches,
+    season: "2026",
+    sourceLabel: "wikipedia",
+  },
+  {
+    competitionName: "Greatest Rivalry 2026",
+    competitionNameJa: "グレイテスト・ライバルリー・ツアー",
+    competitionSlug: "greatest-rivalry-2026",
+    family: "greatest-rivalry",
+    fetch: fetchGreatestRivalry2026,
     season: "2026",
     sourceLabel: "wikipedia",
   },

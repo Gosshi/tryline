@@ -10,6 +10,7 @@ const TIMEZONE_OFFSETS: Record<string, number> = {
   BST: 1,
   CEST: 2,
   CET: 1,
+  EDT: -4,
   FJT: 12,
   GMT: 0,
   JST: 9,

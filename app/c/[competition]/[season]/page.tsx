@@ -513,6 +513,9 @@ export default async function SeasonPage({ params }: Props) {
       name: faq.question,
     })),
   };
+  const hasStandings =
+    standings.length > 0 ||
+    poolStandings.some((pool) => pool.standings.length > 0);
   function renderStandingsBlock(rows: StandingRow[], title?: string) {
     if (rows.length === 0) {
       return null;
@@ -613,12 +616,14 @@ export default async function SeasonPage({ params }: Props) {
           >
             日程・結果
           </a>
-          <a
-            className="shrink-0 rounded-full px-4 py-2 text-[var(--color-ink-muted)] transition-colors hover:bg-slate-50 hover:text-[var(--color-ink)]"
-            href="#standings"
-          >
-            順位
-          </a>
+          {hasStandings && (
+            <a
+              className="shrink-0 rounded-full px-4 py-2 text-[var(--color-ink-muted)] transition-colors hover:bg-slate-50 hover:text-[var(--color-ink)]"
+              href="#standings"
+            >
+              順位
+            </a>
+          )}
           <a
             className="shrink-0 rounded-full px-4 py-2 text-[var(--color-ink-muted)] transition-colors hover:bg-slate-50 hover:text-[var(--color-ink)]"
             href="#guide"
@@ -676,15 +681,17 @@ export default async function SeasonPage({ params }: Props) {
           )}
         </section>
 
-        <section className="scroll-mt-4 space-y-4" id="standings">
-          {poolStandings.length > 0
-            ? poolStandings.map((pool) => (
-                <div key={pool.poolName}>
-                  {renderStandingsBlock(pool.standings, pool.poolName)}
-                </div>
-              ))
-            : renderStandingsBlock(standings)}
-        </section>
+        {hasStandings && (
+          <section className="scroll-mt-4 space-y-4" id="standings">
+            {poolStandings.length > 0
+              ? poolStandings.map((pool) => (
+                  <div key={pool.poolName}>
+                    {renderStandingsBlock(pool.standings, pool.poolName)}
+                  </div>
+                ))
+              : renderStandingsBlock(standings)}
+          </section>
+        )}
 
         <div
           className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6"
