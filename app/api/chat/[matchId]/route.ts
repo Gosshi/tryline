@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth/server";
 import { assembleMatchContext } from "@/lib/chat/context";
 import { getOpenAIClient } from "@/lib/llm/client";
+import { MODELS } from "@/lib/llm/models";
 
 import type { Database } from "@/lib/db/types";
 import type OpenAI from "openai";
@@ -102,7 +103,7 @@ export async function POST(
   const stream = await getOpenAIClient().chat.completions.create({
     max_tokens: 1024,
     messages,
-    model: "gpt-4o-mini",
+    model: MODELS.CHAT,
     stream: true,
     stream_options: { include_usage: true },
   });
