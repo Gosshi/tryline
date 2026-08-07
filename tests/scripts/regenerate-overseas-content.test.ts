@@ -24,6 +24,7 @@ function pipelineResult(
   matchId: string,
   status: PipelineResult["status"],
   contentType: PipelineResult["contentType"] = "recap",
+  cacheRevalidationSkipped = false,
 ): PipelineResult {
   return {
     contentType,
@@ -42,6 +43,7 @@ function pipelineResult(
             verdict: status === "published" ? "publish" : "retry",
           },
     status,
+    ...(cacheRevalidationSkipped ? { cacheRevalidationSkipped: true } : {}),
   };
 }
 
@@ -418,6 +420,47 @@ describe("regenerate-overseas-content", () => {
       skippedFamily: 1,
       targets: 2,
     });
+  });
+
+  it("reports saved content separately when cache revalidation is skipped", async () => {
+    const db = createMockDb([
+      {
+        family: "pnc",
+        matchId: "match-1",
+        promptVersion: "recap@1.5.0",
+      },
+    ]);
+    const logger = {
+      error: vi.fn(),
+      log: vi.fn(),
+      warn: vi.fn(),
+    };
+
+    const result = await runRegenerateOverseasContent({
+      contentType: "recap",
+      currentVersion: "recap@1.6.0",
+      db,
+      dryRun: false,
+      family: null,
+      fromVersion: null,
+      generateContent: vi
+        .fn()
+        .mockResolvedValue(
+          pipelineResult("match-1", "published", "recap", true),
+        ),
+      logger,
+      ownerApproved: true,
+    });
+
+    expect(result).toMatchObject({
+      failed: 0,
+      published: 1,
+      regenerated: 1,
+      revalidationSkipped: 1,
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[regenerate-overseas-content] Cache revalidation was skipped for 1 regenerated content item(s). The production site may not yet show the updated content; run cache revalidation separately.",
+    );
   });
 
   it("blocks non-dry-run regeneration until Owner approval is confirmed", async () => {
