@@ -8,15 +8,19 @@ import type {
   SourcedFactInput,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.5.0";
+export const PROMPT_VERSION = "qa@2.6.0";
 
 export type TeamFormStats = {
+  avg_points_against_last_5?: number | null;
+  avg_points_for_last_5?: number | null;
+  record_last_5?: string | null;
   win_rate_last_5: number | null;
 };
 
 export type QaMatchContext = {
   awayScore: number | null;
   awayTeam: string;
+  competitionName?: string | null;
   derivedStats?: DerivedMatchStats | null;
   formStats?: {
     away: TeamFormStats | null;
@@ -26,6 +30,7 @@ export type QaMatchContext = {
   homeTeam: string;
   sourcedFacts?: SourcedFactInput[];
   teamStats?: MatchTeamStats;
+  venue?: string | null;
 };
 
 export function buildQaContentPrompt(
@@ -147,6 +152,44 @@ export function buildQaContentPrompt(
         "ただし、この一覧に無いチームスタッツや成功率を本文が述べている場合は factual_grounding を下げること。",
         JSON.stringify(matchContext.teamStats),
       ].join("\n");
+  const matchMetadata = {
+    ...(matchContext.competitionName
+      ? { competition_name: matchContext.competitionName }
+      : {}),
+    ...(matchContext.venue ? { venue: matchContext.venue } : {}),
+  };
+  const matchMetadataBlock =
+    Object.keys(matchMetadata).length === 0
+      ? ""
+      : [
+          "## match_metadata grounding",
+          "以下は試合に紐づく実データです。本文がこれらの大会名・会場に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+          JSON.stringify(matchMetadata),
+        ].join("\n");
+  const formStats = Object.fromEntries(
+    [
+      ["away", matchContext.formStats?.away],
+      ["home", matchContext.formStats?.home],
+    ].flatMap(([side, stats]) => {
+      const values = stats
+        ? Object.fromEntries(
+            Object.entries(stats).filter(
+              ([, value]) => value !== null && value !== undefined,
+            ),
+          )
+        : {};
+
+      return Object.keys(values).length > 0 ? [[side, values]] : [];
+    }),
+  );
+  const formStatsBlock =
+    Object.keys(formStats).length === 0
+      ? ""
+      : [
+          "## form_stats grounding",
+          "以下は直近の試合データから機械的に算出された実数値です。本文がこれらの直近フォーム（戦績・平均得点）に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+          JSON.stringify(formStats),
+        ].join("\n");
 
   return [
     `あなたは編集デスクです。以下の${languageLabel}コンテンツを品質評価してください。`,
@@ -183,6 +226,8 @@ export function buildQaContentPrompt(
     recapSourcedFactsDensityBlock,
     derivedStatsBlock,
     teamStatsBlock,
+    matchMetadataBlock,
+    formStatsBlock,
     'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[],"statedWinner":"home"|"away"|"unclear","statedPlayerStats":[{"playerName":string,"tries"?:number,"conversions"?:number,"penaltyGoals"?:number,"totalPoints"?:number}]}',
     `本文: ${narrative}`,
   ].join("\n\n");
