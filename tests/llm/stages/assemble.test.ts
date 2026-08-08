@@ -138,6 +138,90 @@ describe("assembleMatchContentInput", () => {
     expect(result.competition_standings).toEqual([]);
   });
 
+  it("builds a player glossary from team rosters for scheduled matches without events or lineups", async () => {
+    const { matchId, homeTeamId, awayTeamId, service } =
+      await insertMatchFixture();
+
+    await service.from("players").insert([
+      {
+        team_id: homeTeamId,
+        name: "Kippei Ishida",
+        name_ja: "石田 吉平",
+      },
+      {
+        team_id: awayTeamId,
+        name: "Dylan Riley",
+        name_ja: null,
+      },
+    ]);
+
+    const result = await assembleMatchContentInput(matchId);
+
+    expect(result.match_events).toEqual([]);
+    expect(result.projected_lineups.confirmed).toEqual({
+      away: false,
+      home: false,
+    });
+    expect(
+      result.japanese_name_glossary?.filter((entry) => entry.kind === "player"),
+    ).toEqual([
+      {
+        japanese: "石田 吉平",
+        kind: "player",
+        source: "Kippei Ishida",
+      },
+    ]);
+  });
+
+  it("deduplicates player glossary entries shared by event, lineup, and roster sources", async () => {
+    const { matchId, homeTeamId, service } = await insertMatchFixture();
+
+    const { data: player, error: playerError } = await service
+      .from("players")
+      .insert({
+        team_id: homeTeamId,
+        name: "Kippei Ishida",
+        name_ja: "石田 吉平",
+      })
+      .select("id")
+      .single();
+
+    expect(playerError).toBeNull();
+
+    await service.from("match_lineups").insert({
+      match_id: matchId,
+      team_id: homeTeamId,
+      player_id: player!.id,
+      jersey_number: 9,
+      source_url: "https://example.com/lineup",
+    });
+    await service.from("match_events").insert({
+      match_id: matchId,
+      minute: 10,
+      player_id: player!.id,
+      team_id: homeTeamId,
+      type: "try",
+    });
+    await service
+      .from("matches")
+      .update({ away_score: 0, home_score: 5, status: "finished" })
+      .eq("id", matchId);
+
+    const result = await assembleMatchContentInput(matchId);
+
+    expect(
+      result.japanese_name_glossary?.filter(
+        (entry) => entry.kind === "player" && entry.source === "Kippei Ishida",
+      ),
+    ).toEqual([
+      {
+        japanese: "石田 吉平",
+        kind: "player",
+        source: "Kippei Ishida",
+      },
+    ]);
+  });
+
   it("derives playoff final phase from match external ids", async () => {
     const { matchId, service } = await insertMatchFixture();
 

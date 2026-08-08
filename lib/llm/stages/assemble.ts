@@ -348,12 +348,13 @@ async function loadProjectedLineup(
 ): Promise<{
   confirmed: boolean;
   entries: AssembledContentInput["projected_lineups"]["home"];
+  playerNameReferences: PlayerNameReference[];
 }> {
   const db = getSupabaseServerClient();
 
   const { data: matchLineups, error: lineupsError } = await db
     .from("match_lineups")
-    .select("jersey_number, is_starter, player:players(name, position)")
+    .select("jersey_number, is_starter, player:players(name, name_ja, position)")
     .eq("match_id", matchId)
     .eq("team_id", teamId)
     .order("jersey_number", { ascending: true });
@@ -370,6 +371,9 @@ async function loadProjectedLineup(
         position: item.player?.position ?? null,
         jersey_number: item.jersey_number,
         is_starter: item.is_starter,
+      })),
+      playerNameReferences: matchLineups.map((item) => ({
+        player: item.player,
       })),
     };
   }
@@ -392,6 +396,7 @@ async function loadProjectedLineup(
       jersey_number: null,
       is_starter: null,
     })),
+    playerNameReferences: [],
   };
 }
 
@@ -453,34 +458,46 @@ async function loadCompetitionStandings(
   }));
 }
 
-type MatchEventPlayerName = {
+type PlayerNameReference = {
   player: { name: string; name_ja: string | null } | null;
-  teamSlug: string | null;
 };
 
 export function buildJapanesePlayerNameGlossary(
-  events: MatchEventPlayerName[],
+  playerNameReferences: PlayerNameReference[],
 ): NonNullable<AssembledContentInput["japanese_name_glossary"]> {
   const seen = new Set<string>();
 
-  return events.flatMap((event) => {
-    if (
-      event.teamSlug !== "japan" ||
-      !event.player?.name_ja ||
-      seen.has(event.player.name)
-    ) {
+  return playerNameReferences.flatMap(({ player }) => {
+    if (!player?.name_ja || seen.has(player.name)) {
       return [];
     }
 
-    seen.add(event.player.name);
+    seen.add(player.name);
     return [
       {
-        japanese: event.player.name_ja,
+        japanese: player.name_ja,
         kind: "player" as const,
-        source: event.player.name,
+        source: player.name,
       },
     ];
   });
+}
+
+async function loadTeamRosterPlayerNameReferences(
+  teamIds: string[],
+): Promise<PlayerNameReference[]> {
+  const db = getSupabaseServerClient();
+  const { data, error } = await db
+    .from("players")
+    .select("name, name_ja")
+    .in("team_id", teamIds)
+    .not("name_ja", "is", null);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((player) => ({ player }));
 }
 
 async function loadMatchEvents(
@@ -489,12 +506,10 @@ async function loadMatchEvents(
   language: ContentLanguage,
 ): Promise<{
   events: AssembledContentInput["match_events"];
-  japanesePlayerNameGlossary: NonNullable<
-    AssembledContentInput["japanese_name_glossary"]
-  >;
+  playerNameReferences: PlayerNameReference[];
 }> {
   if (status !== "finished") {
-    return { events: [], japanesePlayerNameGlossary: [] };
+    return { events: [], playerNameReferences: [] };
   }
 
   const db = getSupabaseServerClient();
@@ -535,12 +550,7 @@ async function loadMatchEvents(
 
   return {
     events,
-    japanesePlayerNameGlossary: buildJapanesePlayerNameGlossary(
-      rows.map((event) => ({
-        player: event.player,
-        teamSlug: event.team?.slug ?? null,
-      })),
-    ),
+    playerNameReferences: rows.map((event) => ({ player: event.player })),
   };
 }
 
@@ -832,6 +842,7 @@ export async function assembleMatchContentInput(
     awayProjectedLineups,
     competitionStandings,
     loadedMatchEvents,
+    rosterPlayerNameReferences,
     sourcedFacts,
     teamStats,
   ] = await Promise.all([
@@ -839,6 +850,7 @@ export async function assembleMatchContentInput(
     loadProjectedLineup(matchId, awayTeamId),
     loadCompetitionStandings(match.competition_id, language),
     loadMatchEvents(matchId, match.status, language),
+    loadTeamRosterPlayerNameReferences([homeTeamId, awayTeamId]),
     loadSourcedFactsForMatch(matchId, contentType),
     loadTeamStats({
       awayTeamId,
@@ -954,7 +966,12 @@ export async function assembleMatchContentInput(
           source: match.away_team.name,
         }
       : null,
-    ...loadedMatchEvents.japanesePlayerNameGlossary,
+    ...buildJapanesePlayerNameGlossary([
+      ...loadedMatchEvents.playerNameReferences,
+      ...homeProjectedLineups.playerNameReferences,
+      ...awayProjectedLineups.playerNameReferences,
+      ...rosterPlayerNameReferences,
+    ]),
   ].filter(
     (
       item,
