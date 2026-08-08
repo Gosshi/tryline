@@ -36,7 +36,12 @@ import { submitUrlsToIndexNow } from "@/lib/seo/indexnow";
 import { SITE_URL } from "@/lib/site";
 
 import type { Json } from "@/lib/db/types";
-import type { ContentLanguage, ContentType, QaResult } from "@/lib/llm/types";
+import type {
+  AssembledContentInput,
+  ContentLanguage,
+  ContentType,
+  QaResult,
+} from "@/lib/llm/types";
 
 const COST_ALERT_THRESHOLD_USD = 0.2;
 const MAX_LENGTH_REVISION_ATTEMPTS = 1;
@@ -45,6 +50,47 @@ const LENGTH_REVISION_FALLBACK_ISSUE =
 const FACTUAL_REVISION_FALLBACK_ISSUE =
   "加筆リトライで事実根拠が低下したため短い正確な版を採用しました";
 const ENTITY_VERIFICATION_FAILED_ISSUE = "entity_verification_failed";
+
+function buildRecentFormRecord(
+  recentMatches: AssembledContentInput["recent_form"]["home"],
+  teamName: string,
+): string | null {
+  let wins = 0;
+  let losses = 0;
+  let draws = 0;
+
+  for (const match of recentMatches) {
+    const isHome = match.home_team_name === teamName;
+    const isAway = match.away_team_name === teamName;
+    if (!isHome && !isAway) {
+      continue;
+    }
+
+    const scored = isHome ? match.home_score : match.away_score;
+    const conceded = isHome ? match.away_score : match.home_score;
+    if (scored === null || conceded === null) {
+      continue;
+    }
+
+    if (scored > conceded) {
+      wins += 1;
+    } else if (scored < conceded) {
+      losses += 1;
+    } else {
+      draws += 1;
+    }
+  }
+
+  if (wins === 0 && losses === 0 && draws === 0) {
+    return null;
+  }
+
+  return [
+    wins > 0 ? `${wins}勝` : "",
+    losses > 0 ? `${losses}敗` : "",
+    draws > 0 ? `${draws}分` : "",
+  ].join("");
+}
 
 export type PipelineResult = {
   matchId: string;
@@ -218,12 +264,29 @@ export async function generateMatchContent(
         matchContext: {
           awayScore: assembled.match.away_score,
           awayTeam: assembled.match.away_team?.name ?? "Away",
+          competitionName: assembled.match.competition?.name ?? null,
           derivedStats: assembled.derived_stats,
           formStats: {
             away: {
+              avg_points_against_last_5:
+                assembled.key_stats.away.avg_points_against_last_5,
+              avg_points_for_last_5:
+                assembled.key_stats.away.avg_points_for_last_5,
+              record_last_5: buildRecentFormRecord(
+                assembled.recent_form.away,
+                assembled.match.away_team?.name ?? "Away",
+              ),
               win_rate_last_5: assembled.key_stats.away.win_rate_last_5,
             },
             home: {
+              avg_points_against_last_5:
+                assembled.key_stats.home.avg_points_against_last_5,
+              avg_points_for_last_5:
+                assembled.key_stats.home.avg_points_for_last_5,
+              record_last_5: buildRecentFormRecord(
+                assembled.recent_form.home,
+                assembled.match.home_team?.name ?? "Home",
+              ),
               win_rate_last_5: assembled.key_stats.home.win_rate_last_5,
             },
           },
@@ -231,6 +294,7 @@ export async function generateMatchContent(
           homeTeam: assembled.match.home_team?.name ?? "Home",
           sourcedFacts: assembled.sourced_facts,
           teamStats: assembled.team_stats,
+          venue: assembled.match.venue,
         },
         hasEvents,
         hasLineups,

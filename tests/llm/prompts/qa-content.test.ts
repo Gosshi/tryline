@@ -14,8 +14,8 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.5.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.5.0");
+  it("uses qa prompt version 2.6.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.6.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -299,6 +299,89 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).toContain("## team_stats grounding");
     expect(prompt).toContain("公式サイトから取得した実データ");
     expect(prompt).toContain('"possession_pct":58');
+  });
+
+  it("adds match metadata as allowed grounding context", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      competitionName: "グレイテスト・ライバルリー2026",
+      venue: "ケープタウン・スタジアム",
+    });
+
+    expect(prompt).toContain("## match_metadata grounding");
+    expect(prompt).toContain("入力データに基づく正当な記述");
+    expect(prompt).toContain('"competition_name":"グレイテスト・ライバルリー2026"');
+    expect(prompt).toContain('"venue":"ケープタウン・スタジアム"');
+  });
+
+  it("omits match metadata values and block when unavailable", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      competitionName: null,
+      venue: null,
+    });
+
+    expect(prompt).not.toContain("## match_metadata grounding");
+  });
+
+  it("omits unavailable individual match metadata values", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      competitionName: null,
+      venue: "ケープタウン・スタジアム",
+    });
+
+    expect(prompt).toContain("## match_metadata grounding");
+    expect(prompt).toContain('"venue":"ケープタウン・スタジアム"');
+    expect(prompt).not.toContain('"competition_name"');
+  });
+
+  it("adds recent form records and averages as allowed grounding context", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      formStats: {
+        away: {
+          avg_points_against_last_5: 24.6,
+          avg_points_for_last_5: 38.4,
+          record_last_5: "4勝1敗",
+          win_rate_last_5: 0.8,
+        },
+        home: {
+          avg_points_against_last_5: 18.2,
+          avg_points_for_last_5: 21.4,
+          record_last_5: "2勝2敗1分",
+          win_rate_last_5: 0.4,
+        },
+      },
+    });
+
+    expect(prompt).toContain("## form_stats grounding");
+    expect(prompt).toContain("入力データに基づく正当な記述");
+    expect(prompt).toContain('"record_last_5":"4勝1敗"');
+    expect(prompt).toContain('"record_last_5":"2勝2敗1分"');
+    expect(prompt).toContain('"avg_points_for_last_5":38.4');
+  });
+
+  it("omits the form stats block when no form values are available", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      formStats: {
+        away: {
+          avg_points_against_last_5: null,
+          avg_points_for_last_5: null,
+          record_last_5: null,
+          win_rate_last_5: null,
+        },
+        home: {
+          avg_points_against_last_5: null,
+          avg_points_for_last_5: null,
+          record_last_5: null,
+          win_rate_last_5: null,
+        },
+      },
+    });
+
+    expect(prompt).not.toContain("## form_stats grounding");
   });
 
   it("omits turning point section checks when events are absent", () => {

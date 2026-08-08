@@ -266,6 +266,131 @@ describe("generateMatchContent length revision", () => {
     expect(verifyEntitiesMock.verifyNarrativeEntities).toHaveBeenCalledTimes(2);
   });
 
+  it("passes the same assembled match metadata and form values to QA", async () => {
+    const assembledWithForm: AssembledContentInput = {
+      ...assembled,
+      key_stats: {
+        ...assembled.key_stats,
+        away: {
+          ...assembled.key_stats.away,
+          avg_points_against_last_5: 24.6,
+          avg_points_for_last_5: 38.4,
+          win_rate_last_5: 0.8,
+        },
+        home: {
+          ...assembled.key_stats.home,
+          avg_points_against_last_5: 18.2,
+          avg_points_for_last_5: 21.4,
+          win_rate_last_5: 0.4,
+        },
+      },
+      match: {
+        ...assembled.match,
+        away_team: {
+          country: "New Zealand",
+          english_name: "New Zealand",
+          id: "away-team",
+          name: "New Zealand",
+          name_ja: null,
+          short_code: "NZL",
+        },
+        competition: {
+          family: null,
+          id: "competition-1",
+          name: "グレイテスト・ライバルリー2026",
+          name_ja: null,
+          season: "2026",
+          slug: null,
+        },
+        home_team: {
+          country: "South Africa",
+          english_name: "Stormers",
+          id: "home-team",
+          name: "Stormers",
+          name_ja: null,
+          short_code: "STO",
+        },
+        venue: "ケープタウン・スタジアム",
+      },
+      recent_form: {
+        away: [
+          {
+            away_score: 17,
+            away_team_name: "New Zealand",
+            home_score: 47,
+            home_team_name: "Italy",
+            kickoff_at: "2026-07-01T00:00:00.000Z",
+            match_id: "away-win",
+            status: "finished",
+          },
+          {
+            away_score: 33,
+            away_team_name: "New Zealand",
+            home_score: 19,
+            home_team_name: "England",
+            kickoff_at: "2026-06-01T00:00:00.000Z",
+            match_id: "away-loss",
+            status: "finished",
+          },
+        ],
+        home: [
+          {
+            away_score: 20,
+            away_team_name: "Bulls",
+            home_score: 20,
+            home_team_name: "Stormers",
+            kickoff_at: "2026-07-01T00:00:00.000Z",
+            match_id: "home-draw",
+            status: "finished",
+          },
+          {
+            away_score: 12,
+            away_team_name: "Lions",
+            home_score: 28,
+            home_team_name: "Stormers",
+            kickoff_at: "2026-06-01T00:00:00.000Z",
+            match_id: "home-win",
+            status: "finished",
+          },
+        ],
+      },
+    };
+    assembleMock.assembleMatchContentInput.mockResolvedValue(assembledWithForm);
+    qaMock.evaluateNarrativeQuality.mockResolvedValueOnce({
+      modelVersion: "gpt-4o-mini",
+      result: { issues: [], scores: qaScores, verdict: "publish" },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    await generateMatchContent("match-1", "preview", "ja");
+
+    expect(generateNarrativeMock.generateNarrative).toHaveBeenCalledWith(
+      expect.objectContaining({ assembled: assembledWithForm }),
+    );
+    expect(qaMock.evaluateNarrativeQuality).toHaveBeenCalledWith(
+      expect.objectContaining({
+        matchContext: expect.objectContaining({
+          competitionName: assembledWithForm.match.competition?.name,
+          formStats: {
+            away: {
+              avg_points_against_last_5: 24.6,
+              avg_points_for_last_5: 38.4,
+              record_last_5: "1勝1敗",
+              win_rate_last_5: 0.8,
+            },
+            home: {
+              avg_points_against_last_5: 18.2,
+              avg_points_for_last_5: 21.4,
+              record_last_5: "1勝1分",
+              win_rate_last_5: 0.4,
+            },
+          },
+          venue: assembledWithForm.match.venue,
+        }),
+      }),
+    );
+  });
+
   it("blocks publishing when entity verification finds ungrounded names", async () => {
     verifyEntitiesMock.verifyNarrativeEntities.mockResolvedValue({
       attempts: 1,
