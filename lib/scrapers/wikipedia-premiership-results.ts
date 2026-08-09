@@ -1,7 +1,7 @@
 import { load } from "cheerio";
-import { parse } from "date-fns";
 
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
+import { parsePremiershipKickoffAt } from "@/lib/scrapers/premiership-kickoff";
 
 export type HistoricalMatchResult = {
   season: string;
@@ -67,79 +67,6 @@ function resolveTeamSlug(teamName: string) {
   }
 
   return slug;
-}
-
-function lastSundayOfMonthUtc(year: number, monthIndex: number) {
-  const date = new Date(Date.UTC(year, monthIndex + 1, 0));
-  date.setUTCDate(date.getUTCDate() - date.getUTCDay());
-
-  return date;
-}
-
-function isBritishSummerTime(date: Date) {
-  const year = date.getUTCFullYear();
-  const startsAt = lastSundayOfMonthUtc(year, 2);
-  startsAt.setUTCHours(1, 0, 0, 0);
-
-  const endsAt = lastSundayOfMonthUtc(year, 9);
-  endsAt.setUTCHours(1, 0, 0, 0);
-
-  return date >= startsAt && date < endsAt;
-}
-
-function parseKickoffAt(value: string) {
-  const normalized = normalizeWhitespace(value);
-  const matched = normalized.match(
-    /(\d{1,2} [A-Za-z]+ \d{4})\s*(\d{1,2}:\d{2})/,
-  );
-
-  if (!matched) {
-    throw new Error(`Unable to locate Premiership kickoff text: ${normalized}`);
-  }
-
-  const dateText = matched[1]!;
-  const timeText = matched[2]!;
-  const parsedDate = parse(dateText, "d MMMM yyyy", new Date());
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    throw new Error(`Unable to parse Premiership fixture date: ${dateText}`);
-  }
-
-  const [hoursText, minutesText] = timeText.split(":");
-  const hours = Number(hoursText);
-  const minutes = Number(minutesText);
-
-  if (
-    Number.isNaN(hours) ||
-    Number.isNaN(minutes) ||
-    hours < 0 ||
-    hours > 23 ||
-    minutes < 0 ||
-    minutes > 59
-  ) {
-    throw new Error(`Unable to parse Premiership fixture time: ${timeText}`);
-  }
-
-  const localDateAsUtc = new Date(
-    Date.UTC(
-      parsedDate.getFullYear(),
-      parsedDate.getMonth(),
-      parsedDate.getDate(),
-      hours,
-      minutes,
-    ),
-  );
-  const timezoneOffset = isBritishSummerTime(localDateAsUtc) ? 1 : 0;
-
-  return new Date(
-    Date.UTC(
-      parsedDate.getFullYear(),
-      parsedDate.getMonth(),
-      parsedDate.getDate(),
-      hours - timezoneOffset,
-      minutes,
-    ),
-  ).toISOString();
 }
 
 function parseScore(scoreText: string) {
@@ -239,12 +166,21 @@ export function parsePremiershipResultsHtml(
       );
     }
 
+    const kickoffAt = parsePremiershipKickoffAt(dateTable.text());
+
+    if (!kickoffAt) {
+      console.warn(
+        `Skipping Premiership result with unparseable kickoff: ${homeTeamName} vs ${awayTeamName}`,
+      );
+      continue;
+    }
+
     results.push({
       away_score: score.awayScore,
       away_team_slug: resolveTeamSlug(awayTeamName),
       home_score: score.homeScore,
       home_team_slug: resolveTeamSlug(homeTeamName),
-      kickoff_at: parseKickoffAt(dateTable.text()),
+      kickoff_at: kickoffAt,
       round: parseRoundFromHeading($, block),
       season: parsedSeason,
       source_url: sourceUrl,
