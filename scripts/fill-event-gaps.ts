@@ -352,7 +352,7 @@ export async function loadGapMatches(
     )
     .eq("status", "finished")
     .is("match_events.id", null)
-    .order("kickoff_at", { ascending: true })
+    .order("kickoff_at", { ascending: false })
     .limit(limit);
 
   if (error) {

@@ -124,7 +124,7 @@ export async function POST(request: Request) {
     .select("id, home_team_id, away_team_id, external_ids, match_events!left(id)")
     .eq("status", "finished")
     .is("match_events.id", null)
-    .order("kickoff_at", { ascending: true });
+    .order("kickoff_at", { ascending: false });
 
   if (body.matchIds) {
     query = query.in("id", body.matchIds);

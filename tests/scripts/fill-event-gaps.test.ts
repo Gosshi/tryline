@@ -248,7 +248,7 @@ describe("buildLeagueOneEnglishUrl", () => {
 });
 
 describe("loadGapMatches", () => {
-  it("filters gaps in the database and orders them from oldest kickoff", async () => {
+  it("filters gaps in the database and orders them from most recent kickoff", async () => {
     const query = {
       eq: vi.fn().mockReturnThis(),
       is: vi.fn().mockReturnThis(),
@@ -281,7 +281,9 @@ describe("loadGapMatches", () => {
       expect.stringContaining("match_events!left(id)"),
     );
     expect(query.is).toHaveBeenCalledWith("match_events.id", null);
-    expect(query.order).toHaveBeenCalledWith("kickoff_at", { ascending: true });
+    expect(query.order).toHaveBeenCalledWith("kickoff_at", {
+      ascending: false,
+    });
     expect(query.limit).toHaveBeenCalledWith(50);
   });
 });

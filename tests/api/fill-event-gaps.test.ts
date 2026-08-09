@@ -69,7 +69,9 @@ describe("/api/cron/fill-event-gaps", () => {
       "id, home_team_id, away_team_id, external_ids, match_events!left(id)",
     );
     expect(query.is).toHaveBeenCalledWith("match_events.id", null);
-    expect(query.order).toHaveBeenCalledWith("kickoff_at", { ascending: true });
+    expect(query.order).toHaveBeenCalledWith("kickoff_at", {
+      ascending: false,
+    });
   });
 
   it("does not apply the scheduled batch limit to requested match ids", async () => {
