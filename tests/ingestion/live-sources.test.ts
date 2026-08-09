@@ -13,6 +13,7 @@ import {
   fetchGreatestRivalry2026,
   parseGreatestRivalryLiveHtml,
 } from "@/lib/ingestion/sources/wikipedia-greatest-rivalry";
+import { fetchLipovitanChallengeCup2026 } from "@/lib/ingestion/sources/wikipedia-lipovitan-challenge-cup";
 import {
   fetchNationsChampionship2026,
   parseNationsChampionshipLiveHtml,
@@ -557,6 +558,20 @@ describe("live competition source adapters", () => {
       competitionNameJa: "グレイテスト・ライバルリー・ツアー",
       family: "greatest-rivalry",
       fetch: fetchGreatestRivalry2026,
+      season: "2026",
+      sourceLabel: "wikipedia",
+    });
+  });
+
+  it("registers Lipovitan Challenge Cup 2026 for live ingestion", () => {
+    expect(
+      LIVE_COMPETITION_SOURCES.find(
+        (source) => source.competitionSlug === "lipovitan-challenge-cup-2026",
+      ),
+    ).toMatchObject({
+      competitionName: "Lipovitan-D Challenge Cup 2026",
+      family: "lipovitan-challenge-cup",
+      fetch: fetchLipovitanChallengeCup2026,
       season: "2026",
       sourceLabel: "wikipedia",
     });
