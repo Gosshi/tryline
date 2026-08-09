@@ -13,7 +13,7 @@ import type { Json } from "@/lib/db/types";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const CRON_BATCH_SIZE = 25;
+const CRON_BATCH_SIZE = 10;
 
 type MatchGapRow = {
   away_team_id: string;
@@ -119,22 +119,11 @@ export async function POST(request: Request) {
 
   const client = getSupabaseServerClient();
 
-  const { data: eventedRows, error: eventedError } = await client
-    .from("match_events")
-    .select("match_id");
-
-  if (eventedError) {
-    return NextResponse.json({ error: eventedError.message }, { status: 500 });
-  }
-
-  const matchIdsWithEvents = new Set(
-    (eventedRows ?? []).map((row) => row.match_id),
-  );
-
   let query = client
     .from("matches")
-    .select("id, home_team_id, away_team_id, external_ids")
+    .select("id, home_team_id, away_team_id, external_ids, match_events!left(id)")
     .eq("status", "finished")
+    .is("match_events.id", null)
     .order("kickoff_at", { ascending: false });
 
   if (body.matchIds) {
@@ -150,9 +139,7 @@ export async function POST(request: Request) {
   }
 
   const gaps = ((data ?? []) as MatchGapRow[]).filter(
-    (match) =>
-      !matchIdsWithEvents.has(match.id) &&
-      getWikipediaSource(match.external_ids) !== null,
+    (match) => getWikipediaSource(match.external_ids) !== null,
   );
   let filled = 0;
   const errors: string[] = [];
