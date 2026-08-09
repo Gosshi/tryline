@@ -26,6 +26,7 @@ const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
   "Leicester Tigers": "leicester-tigers",
   Newcastle: "newcastle-falcons",
   "Newcastle Falcons": "newcastle-falcons",
+  "Newcastle Red Bulls": "newcastle-falcons",
   Northampton: "northampton-saints",
   "Northampton Saints": "northampton-saints",
   Sale: "sale-sharks",
@@ -93,6 +94,9 @@ export function parsePremiershipLiveHtml(
     const awayTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[awayTeamName];
 
     if (!homeTeamName || !awayTeamName || !homeTeamSlug || !awayTeamSlug) {
+      console.warn(
+        `Skipping live match with unknown team: ${homeTeamName} vs ${awayTeamName}`,
+      );
       continue;
     }
 
