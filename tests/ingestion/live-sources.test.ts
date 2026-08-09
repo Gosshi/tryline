@@ -25,15 +25,24 @@ import {
   parseNationsChampionshipEventHtml,
 } from "@/lib/ingestion/sources/wikipedia-nations-championship-events";
 import { parsePncLiveHtml } from "@/lib/ingestion/sources/wikipedia-pnc";
-import { parsePremiershipLiveHtml } from "@/lib/ingestion/sources/wikipedia-premiership";
+import {
+  fetchPremiership,
+  parsePremiershipLiveHtml,
+} from "@/lib/ingestion/sources/wikipedia-premiership";
 import { parseRugbyChampionshipLiveHtml } from "@/lib/ingestion/sources/wikipedia-rugby-championship";
 import {
   fetchSixNations2027,
   parseSixNations2027LiveHtml,
 } from "@/lib/ingestion/sources/wikipedia-six-nations-2027-live";
 import { parseSuperRugbyPacificLiveHtml } from "@/lib/ingestion/sources/wikipedia-super-rugby-pacific";
-import { parseTop14LiveHtml } from "@/lib/ingestion/sources/wikipedia-top-14";
-import { parseUrcLiveHtml } from "@/lib/ingestion/sources/wikipedia-urc";
+import {
+  fetchTop14,
+  parseTop14LiveHtml,
+} from "@/lib/ingestion/sources/wikipedia-top-14";
+import {
+  fetchUrc,
+  parseUrcLiveHtml,
+} from "@/lib/ingestion/sources/wikipedia-urc";
 import { parseWorldRugbyNationsChampionshipSchedulePayload } from "@/lib/ingestion/sources/world-rugby-nations-championship-times";
 import { FetchError } from "@/lib/scrapers/errors";
 
@@ -493,6 +502,32 @@ const TOP_14_HTML = `
 </div>
 `;
 
+const PREMIERSHIP_FUTURE_ZERO_HTML = `
+<div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
+<div class="vevent summary" id="Bath_v_Saracens">
+  <table><tbody><tr><td>1 January 2030<br />15:00</td></tr></tbody></table>
+  <table><tbody><tr><td><a>Bath</a></td><td>0–0</td><td><a>Saracens</a></td></tr></tbody></table>
+  <table><tbody><tr><td><span class="location">The Recreation Ground</span></td></tr></tbody></table>
+</div>
+`;
+
+const URC_FUTURE_ZERO_HTML = `
+<div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
+<table class="mw-collapsible mw-collapsed"><tbody>
+  <tr><td>1 January 2030</td><td><a>Leinster</a></td><td>0–0</td><td><a>Munster</a></td><td>Aviva Stadium</td></tr>
+  <tr><td>15:00</td></tr>
+</tbody></table>
+`;
+
+const TOP_14_FUTURE_ZERO_HTML = `
+<div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
+<div class="vevent summary" id="Toulouse_v_Bayonne">
+  <table><tbody><tr><td>1 January 2030<br />15:00</td></tr></tbody></table>
+  <table><tbody><tr><td><a>Toulouse</a></td><td>0–0</td><td><a>Bayonne</a></td></tr></tbody></table>
+  <table><tbody><tr><td><span class="location">Stade Ernest-Wallon</span></td></tr></tbody></table>
+</div>
+`;
+
 const RUGBY_CHAMPIONSHIP_HTML = `
 <div class="mw-heading mw-heading2"><h2 id="Fixtures">Fixtures</h2></div>
 <div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
@@ -577,6 +612,99 @@ describe("live competition source adapters", () => {
       season: "2026",
       sourceLabel: "wikipedia",
     });
+  });
+
+  it("registers the three European club competitions for 2026-27 only", () => {
+    expect(LIVE_COMPETITION_SOURCES).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          competitionName: "Premiership 2026-27",
+          competitionSlug: "premiership-2026-27",
+          family: "premiership",
+          season: "2026-27",
+          sourceLabel: "wikipedia",
+        }),
+        expect.objectContaining({
+          competitionName: "URC 2026-27",
+          competitionSlug: "urc-2026-27",
+          family: "urc",
+          season: "2026-27",
+          sourceLabel: "wikipedia",
+        }),
+        expect.objectContaining({
+          competitionName: "Top 14 2026-27",
+          competitionSlug: "top-14-2026-27",
+          family: "top-14",
+          season: "2026-27",
+          sourceLabel: "wikipedia",
+        }),
+      ]),
+    );
+    expect(
+      LIVE_COMPETITION_SOURCES.some((source) =>
+        [
+          "premiership-2025-26",
+          "top-14-2025-26",
+          "urc-2025-26",
+        ].includes(source.competitionSlug),
+      ),
+    ).toBe(false);
+  });
+
+  it("uses the requested European club season and clears future 0-0 scores", async () => {
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(new Response(PREMIERSHIP_FUTURE_ZERO_HTML))
+      .mockResolvedValueOnce(new Response(URC_FUTURE_ZERO_HTML))
+      .mockResolvedValueOnce(new Response(TOP_14_FUTURE_ZERO_HTML));
+
+    await expect(fetchPremiership("2026-27")).resolves.toEqual([
+      expect.objectContaining({
+        awayScore: null,
+        homeScore: null,
+        status: "scheduled",
+      }),
+    ]);
+    await expect(fetchUrc("2026-27")).resolves.toEqual([
+      expect.objectContaining({
+        awayScore: null,
+        homeScore: null,
+        status: "scheduled",
+      }),
+    ]);
+    await expect(fetchTop14("2026-27")).resolves.toEqual([
+      expect.objectContaining({
+        awayScore: null,
+        homeScore: null,
+        status: "scheduled",
+      }),
+    ]);
+
+    expect(fetcherMock.fetchWithPolicy).toHaveBeenNthCalledWith(
+      1,
+      "https://en.wikipedia.org/wiki/2026–27_Premiership_Rugby",
+    );
+    expect(fetcherMock.fetchWithPolicy).toHaveBeenNthCalledWith(
+      2,
+      "https://en.wikipedia.org/wiki/2026–27_United_Rugby_Championship",
+    );
+    expect(fetcherMock.fetchWithPolicy).toHaveBeenNthCalledWith(
+      3,
+      "https://en.wikipedia.org/wiki/2026–27_Top_14_season",
+    );
+  });
+
+  it("returns an empty array when a European club season page is missing", async () => {
+    fetcherMock.fetchWithPolicy.mockRejectedValue(
+      new FetchError({
+        attempt: 1,
+        status: 404,
+        url: "https://en.wikipedia.org/wiki/missing",
+      }),
+    );
+
+    await expect(fetchPremiership("2027-28")).resolves.toEqual([]);
+    await expect(fetchUrc("2027-28")).resolves.toEqual([]);
+    await expect(fetchTop14("2027-28")).resolves.toEqual([]);
   });
 
   it("keeps Six Nations 2027 scheduled and finished matches with per-match HTML", () => {

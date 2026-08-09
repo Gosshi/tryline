@@ -2,6 +2,7 @@ import { load } from "cheerio";
 
 import {
   buildUtcIsoString,
+  clearFutureZeroScores,
   isMissingWikipediaPage,
   normalizeWhitespace,
   parseScoreText,
@@ -160,12 +161,12 @@ export function parseUrcLiveHtml(
   return results;
 }
 
-export async function fetchUrc202526(): Promise<ParsedLiveMatch[]> {
-  const sourceUrl = buildWikipediaUrl("2025-26");
+export async function fetchUrc(season: string): Promise<ParsedLiveMatch[]> {
+  const sourceUrl = buildWikipediaUrl(season);
 
   try {
     const response = await fetchWithPolicy(sourceUrl);
-    return parseUrcLiveHtml(await response.text(), sourceUrl);
+    return clearFutureZeroScores(parseUrcLiveHtml(await response.text(), sourceUrl));
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
       return [];
