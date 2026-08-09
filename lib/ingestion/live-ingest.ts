@@ -228,6 +228,7 @@ function buildParsedMatchKey(match: ParsedLiveMatch | undefined) {
 export async function ingestLiveCompetition(
   source: LiveCompetitionSource,
 ): Promise<LiveIngestResult> {
+  const client = getSupabaseServerClient();
   const parsedMatches = await source.fetch();
   const eventMatchByKey = new Map<string, ParsedLiveMatch>();
 
@@ -302,11 +303,34 @@ export async function ingestLiveCompetition(
   );
 
   let eventsInserted = 0;
-  const newlyFinishedMatches = result.records.filter(
-    (record) => record.statusChangedToFinished,
+  const finishedRecordIds = result.records
+    .filter((record) => record.status === "finished")
+    .map((record) => record.id);
+  const eventedMatchIds = new Set<string>();
+
+  if (finishedRecordIds.length > 0) {
+    const { data, error } = await client
+      .from("match_events")
+      .select("match_id")
+      .in("match_id", finishedRecordIds);
+
+    if (error) {
+      throw error;
+    }
+
+    for (const event of data) {
+      eventedMatchIds.add(event.match_id);
+    }
+  }
+
+  const eventMatches = result.records.filter(
+    (record) =>
+      record.status === "finished" &&
+      !eventedMatchIds.has(record.id) &&
+      (record.statusChangedToFinished || source.fetchEventMatches !== undefined),
   );
 
-  for (const record of newlyFinishedMatches) {
+  for (const record of eventMatches) {
     const match = resolvedMatches[record.candidateIndex];
     const parsedMatch = parsedMatches[record.candidateIndex];
     const eventMatch =
@@ -314,6 +338,11 @@ export async function ingestLiveCompetition(
     const rawHtml = eventMatch?.rawHtml ?? match?.rawHtml;
 
     if (!match || !rawHtml) {
+      if (match) {
+        console.info(
+          `[${source.competitionSlug}] no event HTML for finished match ${record.id}; will retry on the next ingest.`,
+        );
+      }
       continue;
     }
 
@@ -326,15 +355,20 @@ export async function ingestLiveCompetition(
         matchId: record.id,
       });
 
-      if (events.length > 0) {
-        const upserted = await upsertMatchEvents({
-          awayTeamId: match.awayTeamId,
-          events,
-          homeTeamId: match.homeTeamId,
-          matchId: record.id,
-        });
-        eventsInserted += upserted.inserted;
+      if (events.length === 0) {
+        console.info(
+          `[${source.competitionSlug}] no events parsed for finished match ${record.id}; will retry on the next ingest.`,
+        );
+        continue;
       }
+
+      const upserted = await upsertMatchEvents({
+        awayTeamId: match.awayTeamId,
+        events,
+        homeTeamId: match.homeTeamId,
+        matchId: record.id,
+      });
+      eventsInserted += upserted.inserted;
     } catch (error) {
       console.warn(
         `[${source.competitionSlug}] event parse failed for match ${record.id}:`,

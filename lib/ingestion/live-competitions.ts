@@ -7,6 +7,7 @@ import { fetchLeagueOne202526 } from "@/lib/ingestion/sources/league-one-live";
 import { fetchAutumnNations2026 } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
 import { fetchGreatestRivalry2026 } from "@/lib/ingestion/sources/wikipedia-greatest-rivalry";
 import { fetchLipovitanChallengeCup2026 } from "@/lib/ingestion/sources/wikipedia-lipovitan-challenge-cup";
+import { fetchLipovitanChallengeCup2026EventMatches } from "@/lib/ingestion/sources/wikipedia-lipovitan-challenge-cup-events";
 import { fetchNationsChampionship2026 } from "@/lib/ingestion/sources/wikipedia-nations-championship";
 import { fetchNationsChampionship2026EventMatches } from "@/lib/ingestion/sources/wikipedia-nations-championship-events";
 import { fetchPnc2026 } from "@/lib/ingestion/sources/wikipedia-pnc";
@@ -73,6 +74,7 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
     competitionSlug: "lipovitan-challenge-cup-2026",
     family: "lipovitan-challenge-cup",
     fetch: fetchLipovitanChallengeCup2026,
+    fetchEventMatches: fetchLipovitanChallengeCup2026EventMatches,
     season: "2026",
     sourceLabel: "wikipedia",
   },
