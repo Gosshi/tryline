@@ -189,4 +189,142 @@ describe("Six Nations 2027 live ingestion", () => {
       },
     });
   });
+
+  it("retries event parsing for a finished record when an event source is available", async () => {
+    const rawHtml = `
+      <div class="vevent summary" id="Ireland_v_England">
+        <table>
+          <tr>
+            <td class="vcard"><span class="fn org">Ireland</span></td>
+            <td>10–7</td>
+            <td class="vcard"><span class="fn org">England</span></td>
+          </tr>
+          <tr style="font-size:85%">
+            <td><b>Try:</b> <a>Irish Scorer</a> 12'</td>
+            <td></td>
+            <td><b>Try:</b> <a>English Scorer</a> 20'</td>
+          </tr>
+        </table>
+      </div>
+    `;
+    ingestionMocks.upsertMatches.mockResolvedValueOnce({
+      matchesInserted: 0,
+      matchesUpdated: 1,
+      records: [
+        {
+          awayTeamId: "team-england",
+          candidateIndex: 0,
+          externalIds: {},
+          homeTeamId: "team-ireland",
+          id: "match-1",
+          previousStatus: "finished",
+          status: "finished",
+          statusChangedToFinished: false,
+        },
+      ],
+    });
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+    const fetchEventMatches = vi.fn().mockResolvedValue([
+      {
+        awayScore: 7,
+        awayTeamName: "England",
+        homeScore: 10,
+        homeTeamName: "Ireland",
+        kickoffAt: "2027-02-05T20:10:00.000Z",
+        lineupTableHtml: null,
+        rawHtml,
+        round: 1,
+        roundName: null,
+        status: "finished",
+        venue: "Aviva Stadium",
+        wikipediaUrl:
+          "https://en.wikipedia.org/wiki/2027_Six_Nations_Championship",
+      },
+    ]);
+
+    await ingestLiveCompetition({
+      competitionName: "Six Nations 2027",
+      competitionSlug: "six-nations-2027",
+      family: "six-nations",
+      fetch: vi.fn().mockResolvedValue([
+        {
+          awayScore: 7,
+          awayTeamName: "England",
+          homeScore: 10,
+          homeTeamName: "Ireland",
+          kickoffAt: "2027-02-05T20:10:00.000Z",
+          lineupTableHtml: null,
+          rawHtml: "",
+          round: 1,
+          roundName: null,
+          status: "finished",
+          venue: "Aviva Stadium",
+          wikipediaUrl:
+            "https://en.wikipedia.org/wiki/2027_Six_Nations_Championship",
+        },
+      ]),
+      fetchEventMatches,
+      season: "2027",
+      sourceLabel: "wikipedia",
+    });
+
+    expect(fetchEventMatches).toHaveBeenCalledTimes(1);
+    expect(ingestionMocks.upsertMatchEvents).toHaveBeenCalledWith(
+      expect.objectContaining({ matchId: "match-1" }),
+    );
+  });
+
+  it("logs an event retry when the event source has no HTML yet", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    ingestionMocks.upsertMatches.mockResolvedValueOnce({
+      matchesInserted: 0,
+      matchesUpdated: 1,
+      records: [
+        {
+          awayTeamId: "team-england",
+          candidateIndex: 0,
+          externalIds: {},
+          homeTeamId: "team-ireland",
+          id: "match-1",
+          previousStatus: "finished",
+          status: "finished",
+          statusChangedToFinished: false,
+        },
+      ],
+    });
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+    const finishedMatch = {
+      awayScore: 7,
+      awayTeamName: "England",
+      homeScore: 10,
+      homeTeamName: "Ireland",
+      kickoffAt: "2027-02-05T20:10:00.000Z",
+      lineupTableHtml: null,
+      rawHtml: "",
+      round: 1,
+      roundName: null,
+      status: "finished" as const,
+      venue: "Aviva Stadium",
+      wikipediaUrl:
+        "https://en.wikipedia.org/wiki/2027_Six_Nations_Championship",
+    };
+
+    await ingestLiveCompetition({
+      competitionName: "Six Nations 2027",
+      competitionSlug: "six-nations-2027",
+      family: "six-nations",
+      fetch: vi.fn().mockResolvedValue([finishedMatch]),
+      fetchEventMatches: vi.fn().mockResolvedValue([finishedMatch]),
+      season: "2027",
+      sourceLabel: "wikipedia",
+    });
+
+    expect(ingestionMocks.upsertMatchEvents).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalledWith(
+      expect.stringContaining("no event HTML for finished match match-1"),
+    );
+    info.mockRestore();
+  });
 });
