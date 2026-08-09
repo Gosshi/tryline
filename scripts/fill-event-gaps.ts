@@ -329,8 +329,10 @@ export function eventTotalsExceedFinalScore(
   };
 }
 
-async function loadGapMatches(limit: number): Promise<MatchGapRow[]> {
-  const client = getSupabaseServerClient();
+export async function loadGapMatches(
+  limit: number,
+  client = getSupabaseServerClient(),
+): Promise<MatchGapRow[]> {
   const { data, error } = await client
     .from("matches")
     .select(
@@ -345,10 +347,12 @@ async function loadGapMatches(limit: number): Promise<MatchGapRow[]> {
         competition:competitions!matches_competition_id_fkey(family, season),
         home_team:teams!matches_home_team_id_fkey(name, english_name),
         away_team:teams!matches_away_team_id_fkey(name, english_name),
-        match_events(id)
+        match_events!left(id)
       `,
     )
     .eq("status", "finished")
+    .is("match_events.id", null)
+    .order("kickoff_at", { ascending: true })
     .limit(limit);
 
   if (error) {
@@ -356,9 +360,7 @@ async function loadGapMatches(limit: number): Promise<MatchGapRow[]> {
   }
 
   return ((data ?? []) as MatchGapRow[]).filter(
-    (match) =>
-      match.match_events.length === 0 &&
-      getWikipediaSource(match) !== null,
+    (match) => getWikipediaSource(match) !== null,
   );
 }
 

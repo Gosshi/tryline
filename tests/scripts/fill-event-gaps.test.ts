@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   buildLeagueOneEnglishUrl,
   eventTotalsExceedFinalScore,
   extractEventHtml,
   findEventBlockByTeams,
+  loadGapMatches,
 } from "@/scripts/fill-event-gaps";
 
 import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
@@ -243,5 +244,44 @@ describe("buildLeagueOneEnglishUrl", () => {
 
   it("returns null for unexpected season formats", () => {
     expect(buildLeagueOneEnglishUrl("2024")).toBeNull();
+  });
+});
+
+describe("loadGapMatches", () => {
+  it("filters gaps in the database and orders them from oldest kickoff", async () => {
+    const query = {
+      eq: vi.fn().mockReturnThis(),
+      is: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
+        Promise.resolve(
+          resolve({
+            data: [
+              {
+                external_ids: {
+                  wikipedia_url: "https://en.wikipedia.org/wiki/example",
+                },
+                match_events: [],
+              },
+            ],
+            error: null,
+          }),
+        ),
+    };
+    const client = {
+      from: vi.fn(() => query),
+    };
+
+    await expect(loadGapMatches(50, client as never)).resolves.toHaveLength(1);
+
+    expect(client.from).toHaveBeenCalledWith("matches");
+    expect(query.select).toHaveBeenCalledWith(
+      expect.stringContaining("match_events!left(id)"),
+    );
+    expect(query.is).toHaveBeenCalledWith("match_events.id", null);
+    expect(query.order).toHaveBeenCalledWith("kickoff_at", { ascending: true });
+    expect(query.limit).toHaveBeenCalledWith(50);
   });
 });
