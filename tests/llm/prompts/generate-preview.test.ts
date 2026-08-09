@@ -54,8 +54,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.9.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.9.0");
+  it("uses preview prompt version 3.10.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.10.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -508,9 +508,17 @@ describe("buildGeneratePreviewPrompt", () => {
     );
 
     expect(overseasPrompt).toContain(
-      "日本語表記グロッサリにある場合は指定の漢字表記を必ず使うこと",
+      "日本語表記グロッサリにある場合は、入力データと表記が異なる場合も指定の漢字表記を必ず使うこと",
     );
-    expect(overseasPrompt).toContain("グロッサリにない選手はカタカナで記載すること");
+    expect(overseasPrompt).toContain(
+      "グロッサリにない選手でも、入力データ（projected_lineups・match_events・sourced_facts）に日本語表記がある場合はその表記をそのまま使い、漢字をカタカナに変換しないこと",
+    );
+    expect(overseasPrompt).toContain(
+      "どちらにも日本語表記がない選手はカタカナで記載すること",
+    );
+    expect(overseasPrompt).toContain(
+      "姓名の語順は入力データの表記から変えないこと",
+    );
     expect(overseasPrompt).toContain("アルファベット表記は禁止");
     expect(overseasPrompt).toContain(
       "英語の人名はカタカナに変換し、姓名の間に中点（・）を入れること。",
@@ -521,8 +529,9 @@ describe("buildGeneratePreviewPrompt", () => {
       "チーム名・大会名は日本語表記グロッサリまたは試合データ内の日本語名を使うこと",
     );
     expect(overseasPrompt).toContain("英語表記のまま出力しないこと");
-    expect(leagueOnePrompt).toContain("選手名は日本語表記を使用すること");
-    expect(leagueOnePrompt).toContain("外国人選手は英語の人名をカタカナに変換");
+    expect(leagueOnePrompt).toContain(
+      "選手名は日本語表記を使用すること。外国人選手は英語の人名をカタカナに変換し、姓名の間に中点（・）を入れること。チーム名は日本語または通称表記を使用すること。",
+    );
     expect(leagueOnePrompt).not.toContain("Brodie Retallick");
   });
 

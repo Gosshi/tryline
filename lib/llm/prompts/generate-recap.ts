@@ -7,6 +7,7 @@ import {
   buildPersona,
   buildSignalsBlock,
   buildStandingsBlock,
+  NON_LEAGUE_ONE_PLAYER_NAME_STYLE_INSTRUCTION,
   PROHIBITIONS_BLOCK,
 } from "./shared-prompt-blocks";
 
@@ -17,7 +18,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.14.0";
+export const PROMPT_VERSION = "recap@4.15.0";
 
 const CORE_SECTION_INSTRUCTION = [
   "- この試合の核心: 150-250字。定型句を使わず、この試合固有の事実（最終スコア・決勝点のシチュエーション・試合の転換点）から書き始めること。",
@@ -288,12 +289,7 @@ export function buildGenerateRecapPrompt(
   const nameStyleInstruction =
     assembled.match.competition?.family === "league-one"
       ? "選手名は日本語表記を使用すること。外国人選手は英語の人名をカタカナに変換し、姓名の間に中点（・）を入れること。チーム名は日本語または通称表記を使用すること。"
-      : [
-          "選手名は、日本語表記グロッサリにある場合は指定の漢字表記を必ず使うこと。グロッサリにない選手はカタカナで記載すること。アルファベット表記は禁止。",
-          "英語の人名はカタカナに変換し、姓名の間に中点（・）を入れること。",
-          "アポストロフィ、van/de などの小辞、複合姓は日本語として自然な読みを優先すること。",
-          "チーム名・大会名は日本語表記グロッサリまたは試合データ内の日本語名を使うこと。英語表記のまま出力しないこと。",
-        ].join("");
+      : NON_LEAGUE_ONE_PLAYER_NAME_STYLE_INSTRUCTION;
 
   return [
     persona,
