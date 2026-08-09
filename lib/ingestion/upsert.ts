@@ -57,15 +57,25 @@ function buildMatchUpdate(
   existing: ExistingMatch | null,
   candidate: ResolvedMatchCandidate,
 ) {
+  const keepExistingFinishedScore =
+    existing?.status === "finished" &&
+    existing.home_score !== null &&
+    existing.away_score !== null &&
+    (candidate.homeScore === null || candidate.awayScore === null);
+
   return {
-    away_score: candidate.awayScore,
+    away_score: keepExistingFinishedScore
+      ? existing.away_score
+      : candidate.awayScore,
     external_ids: {
       ...asJsonObject(existing?.external_ids ?? {}),
       ...candidate.externalIds,
     },
-    home_score: candidate.homeScore,
+    home_score: keepExistingFinishedScore
+      ? existing.home_score
+      : candidate.homeScore,
     kickoff_at: candidate.kickoffAt,
-    status: candidate.status,
+    status: keepExistingFinishedScore ? "finished" : candidate.status,
     venue: candidate.venue,
   };
 }

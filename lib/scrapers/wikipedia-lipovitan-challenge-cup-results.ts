@@ -22,7 +22,7 @@ export interface LipovitanChallengeCupResultScraper {
 
 const JAPANESE_WIKIPEDIA_URL =
   "https://ja.wikipedia.org/wiki/%E3%83%AA%E3%83%9D%E3%83%93%E3%82%BF%E3%83%B3D%E3%83%81%E3%83%A3%E3%83%AC%E3%83%B3%E3%82%B8%E3%82%AB%E3%83%83%E3%83%972026";
-const AUSTRALIA_JAPAN_WIKIPEDIA_URL =
+export const AUSTRALIA_JAPAN_WIKIPEDIA_URL =
   "https://en.wikipedia.org/wiki/2026_Australia%E2%80%93Japan_rugby_union_test_series";
 const JAPAN_FIJI_JRFU_URL = "https://www.rugby-japan.jp/news/54073";
 

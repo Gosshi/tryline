@@ -203,4 +203,52 @@ describe("upsertMatches", () => {
       ),
     ).toEqual(expect.arrayContaining(eventIds));
   });
+
+  it("preserves finished scores when a later source has no score", async () => {
+    const [baseCandidate] = await resolveMatches(
+      parseWikipediaSixNations2027Html(
+        readFileSync(
+          path.join(
+            process.cwd(),
+            "tests/fixtures/wikipedia-six-nations-2027.html",
+          ),
+          "utf8",
+        ),
+      ),
+    );
+    const service = getSupabaseServerClient();
+    const finishedCandidate = {
+      ...baseCandidate!,
+      awayScore: 35,
+      externalIds: { wikipedia_event_id: "lipovitan-score-preservation" },
+      homeScore: 32,
+      kickoffAt: "2030-08-08T10:05:00.000Z",
+      status: "finished" as const,
+    };
+
+    await upsertMatches([finishedCandidate]);
+    await upsertMatches([
+      {
+        ...finishedCandidate,
+        awayScore: null,
+        homeScore: null,
+        status: "scheduled",
+      },
+    ]);
+
+    const { data, error } = await service
+      .from("matches")
+      .select("away_score, home_score, status")
+      .contains("external_ids", {
+        wikipedia_event_id: "lipovitan-score-preservation",
+      })
+      .single();
+
+    expect(error).toBeNull();
+    expect(data).toMatchObject({
+      away_score: 35,
+      home_score: 32,
+      status: "finished",
+    });
+  });
 });
