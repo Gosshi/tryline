@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
+import { PROMPT_VERSION as PREVIEW_PROMPT_VERSION } from "@/lib/llm/prompts/generate-preview";
+import { PROMPT_VERSION as RECAP_PROMPT_VERSION } from "@/lib/llm/prompts/generate-recap";
 import {
   estimateRegenerationCost,
   getCurrentPromptVersion,
@@ -164,8 +166,8 @@ describe("regenerate-overseas-content", () => {
   });
 
   it("exposes current prompt versions", () => {
-    expect(getCurrentPromptVersion("preview")).toBe("preview@3.9.0");
-    expect(getCurrentPromptVersion("recap")).toBe("recap@4.14.0");
+    expect(getCurrentPromptVersion("preview")).toBe(PREVIEW_PROMPT_VERSION);
+    expect(getCurrentPromptVersion("recap")).toBe(RECAP_PROMPT_VERSION);
   });
 
   it("reports dry-run targets by family and excludes League One", async () => {
