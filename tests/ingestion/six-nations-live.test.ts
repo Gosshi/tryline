@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const dbMocks = vi.hoisted(() => ({
   competitionUpsert: vi.fn(),
   getSupabaseServerClient: vi.fn(),
+  eventedMatchIds: [] as string[],
   teamRows: [
     { id: "team-ireland", name: "Ireland", slug: "ireland" },
     { id: "team-england", name: "England", slug: "england" },
@@ -50,10 +51,23 @@ function createTeamsQuery() {
   return query;
 }
 
+function createMatchEventsQuery() {
+  return {
+    in: vi.fn(() =>
+      Promise.resolve({
+        data: dbMocks.eventedMatchIds.map((match_id) => ({ match_id })),
+        error: null,
+      }),
+    ),
+    select: vi.fn().mockReturnThis(),
+  };
+}
+
 describe("Six Nations 2027 live ingestion", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
+    dbMocks.eventedMatchIds = [];
 
     dbMocks.getSupabaseServerClient.mockImplementation(() => ({
       from: vi.fn((table: string) => {
@@ -63,6 +77,10 @@ describe("Six Nations 2027 live ingestion", () => {
 
         if (table === "teams") {
           return createTeamsQuery();
+        }
+
+        if (table === "match_events") {
+          return createMatchEventsQuery();
         }
 
         throw new Error(`Unexpected table: ${table}`);
@@ -326,5 +344,38 @@ describe("Six Nations 2027 live ingestion", () => {
       expect.stringContaining("no event HTML for finished match match-1"),
     );
     info.mockRestore();
+  });
+
+  it("does not reparse finished records that already have events", async () => {
+    dbMocks.eventedMatchIds = ["match-1"];
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+    const finishedMatch = {
+      awayScore: 7,
+      awayTeamName: "England",
+      homeScore: 10,
+      homeTeamName: "Ireland",
+      kickoffAt: "2027-02-05T20:10:00.000Z",
+      lineupTableHtml: null,
+      rawHtml: "",
+      round: 1,
+      roundName: null,
+      status: "finished" as const,
+      venue: "Aviva Stadium",
+      wikipediaUrl:
+        "https://en.wikipedia.org/wiki/2027_Six_Nations_Championship",
+    };
+
+    await ingestLiveCompetition({
+      competitionName: "Six Nations 2027",
+      competitionSlug: "six-nations-2027",
+      family: "six-nations",
+      fetch: vi.fn().mockResolvedValue([finishedMatch]),
+      fetchEventMatches: vi.fn().mockResolvedValue([finishedMatch]),
+      season: "2027",
+      sourceLabel: "wikipedia",
+    });
+
+    expect(ingestionMocks.upsertMatchEvents).not.toHaveBeenCalled();
   });
 });

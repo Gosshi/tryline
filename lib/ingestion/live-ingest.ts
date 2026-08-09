@@ -228,6 +228,7 @@ function buildParsedMatchKey(match: ParsedLiveMatch | undefined) {
 export async function ingestLiveCompetition(
   source: LiveCompetitionSource,
 ): Promise<LiveIngestResult> {
+  const client = getSupabaseServerClient();
   const parsedMatches = await source.fetch();
   const eventMatchByKey = new Map<string, ParsedLiveMatch>();
 
@@ -302,10 +303,31 @@ export async function ingestLiveCompetition(
   );
 
   let eventsInserted = 0;
+  const finishedRecordIds = result.records
+    .filter((record) => record.status === "finished")
+    .map((record) => record.id);
+  const eventedMatchIds = new Set<string>();
+
+  if (finishedRecordIds.length > 0) {
+    const { data, error } = await client
+      .from("match_events")
+      .select("match_id")
+      .in("match_id", finishedRecordIds);
+
+    if (error) {
+      throw error;
+    }
+
+    for (const event of data) {
+      eventedMatchIds.add(event.match_id);
+    }
+  }
+
   const eventMatches = result.records.filter(
     (record) =>
-      record.statusChangedToFinished ||
-      (source.fetchEventMatches !== undefined && record.status === "finished"),
+      record.status === "finished" &&
+      !eventedMatchIds.has(record.id) &&
+      (record.statusChangedToFinished || source.fetchEventMatches !== undefined),
   );
 
   for (const record of eventMatches) {
