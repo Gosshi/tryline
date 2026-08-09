@@ -2,6 +2,7 @@ import { load } from "cheerio";
 
 import {
   buildUtcIsoString,
+  clearFutureZeroScores,
   isMissingWikipediaPage,
   normalizeWhitespace,
   parseDmyDate,
@@ -184,12 +185,14 @@ export function parseTop14LiveHtml(
   return results;
 }
 
-export async function fetchTop14202526(): Promise<ParsedLiveMatch[]> {
-  const sourceUrl = buildWikipediaUrl("2025-26");
+export async function fetchTop14(season: string): Promise<ParsedLiveMatch[]> {
+  const sourceUrl = buildWikipediaUrl(season);
 
   try {
     const response = await fetchWithPolicy(sourceUrl);
-    return parseTop14LiveHtml(await response.text(), sourceUrl);
+    return clearFutureZeroScores(
+      parseTop14LiveHtml(await response.text(), sourceUrl),
+    );
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
       return [];

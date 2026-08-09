@@ -11,12 +11,12 @@ import { fetchLipovitanChallengeCup2026EventMatches } from "@/lib/ingestion/sour
 import { fetchNationsChampionship2026 } from "@/lib/ingestion/sources/wikipedia-nations-championship";
 import { fetchNationsChampionship2026EventMatches } from "@/lib/ingestion/sources/wikipedia-nations-championship-events";
 import { fetchPnc2026 } from "@/lib/ingestion/sources/wikipedia-pnc";
-import { fetchPremiership202526 } from "@/lib/ingestion/sources/wikipedia-premiership";
+import { fetchPremiership } from "@/lib/ingestion/sources/wikipedia-premiership";
 import { fetchRugbyChampionship2026 } from "@/lib/ingestion/sources/wikipedia-rugby-championship";
 import { fetchSixNations2027 } from "@/lib/ingestion/sources/wikipedia-six-nations-2027-live";
 import { fetchSuperRugbyPacific2026 } from "@/lib/ingestion/sources/wikipedia-super-rugby-pacific";
-import { fetchTop14202526 } from "@/lib/ingestion/sources/wikipedia-top-14";
-import { fetchUrc202526 } from "@/lib/ingestion/sources/wikipedia-urc";
+import { fetchTop14 } from "@/lib/ingestion/sources/wikipedia-top-14";
+import { fetchUrc } from "@/lib/ingestion/sources/wikipedia-urc";
 
 export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
   {
@@ -87,27 +87,27 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
     sourceLabel: "wikipedia",
   },
   {
-    competitionName: "Premiership 2025-26",
-    competitionSlug: "premiership-2025-26",
+    competitionName: "Premiership 2026-27",
+    competitionSlug: "premiership-2026-27",
     family: "premiership",
-    fetch: fetchPremiership202526,
-    season: "2025-26",
+    fetch: () => fetchPremiership("2026-27"),
+    season: "2026-27",
     sourceLabel: "wikipedia",
   },
   {
-    competitionName: "URC 2025-26",
-    competitionSlug: "urc-2025-26",
+    competitionName: "URC 2026-27",
+    competitionSlug: "urc-2026-27",
     family: "urc",
-    fetch: fetchUrc202526,
-    season: "2025-26",
+    fetch: () => fetchUrc("2026-27"),
+    season: "2026-27",
     sourceLabel: "wikipedia",
   },
   {
-    competitionName: "Top 14 2025-26",
-    competitionSlug: "top-14-2025-26",
+    competitionName: "Top 14 2026-27",
+    competitionSlug: "top-14-2026-27",
     family: "top-14",
-    fetch: fetchTop14202526,
-    season: "2025-26",
+    fetch: () => fetchTop14("2026-27"),
+    season: "2026-27",
     sourceLabel: "wikipedia",
   },
   {

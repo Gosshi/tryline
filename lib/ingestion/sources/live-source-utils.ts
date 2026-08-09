@@ -33,6 +33,29 @@ export function parseScoreText(scoreText: string) {
   };
 }
 
+export function clearFutureZeroScores(
+  matches: ParsedLiveMatch[],
+  now = new Date(),
+): ParsedLiveMatch[] {
+  return matches.map((match) => {
+    if (
+      match.status !== "finished" ||
+      match.homeScore !== 0 ||
+      match.awayScore !== 0 ||
+      new Date(match.kickoffAt) <= now
+    ) {
+      return match;
+    }
+
+    return {
+      ...match,
+      awayScore: null,
+      homeScore: null,
+      status: "scheduled" as const,
+    };
+  });
+}
+
 export function parseDmyDate(dateText: string) {
   const parsedDate = parse(dateText, "d MMMM yyyy", new Date());
 
