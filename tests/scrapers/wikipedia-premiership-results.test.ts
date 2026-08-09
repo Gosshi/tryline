@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { parsePremiershipResultsHtml } from "@/lib/scrapers/wikipedia-premiership-results";
 
@@ -118,5 +118,50 @@ describe("parsePremiershipResultsHtml", () => {
       round: 11,
     });
     expect(results[1]?.kickoff_at).toBe("2025-01-04T17:30:00.000Z");
+  });
+
+  it("keeps parseable multiday results when another kickoff is TBC", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const results = parsePremiershipResultsHtml(
+      `
+        <div class="mw-heading"><h2 id="Regular_season">Regular season</h2></div>
+        <div class="mw-heading"><h3 id="Round_10">Round 10</h3></div>
+        <div class="vevent summary">
+          <table><tbody><tr><td>22/23/24 January 2027</td></tr></tbody></table>
+          <table><tbody><tr><td><a>Bath</a></td><td>20–15</td><td><a>Northampton Saints</a></td></tr></tbody></table>
+          <table><tbody><tr><td><span class="location">The Recreation Ground</span></td></tr></tbody></table>
+        </div>
+        <div class="vevent summary">
+          <table><tbody><tr><td>TBC</td></tr></tbody></table>
+          <table><tbody><tr><td><a>Exeter Chiefs</a></td><td>18–12</td><td><a>Bristol Bears</a></td></tr></tbody></table>
+          <table><tbody><tr><td><span class="location">Sandy Park</span></td></tr></tbody></table>
+        </div>
+        <div class="vevent summary">
+          <table><tbody><tr><td>25 January 2027 15:00</td></tr></tbody></table>
+          <table><tbody><tr><td><a>Harlequins</a></td><td>22–19</td><td><a>Leicester Tigers</a></td></tr></tbody></table>
+          <table><tbody><tr><td><span class="location">Twickenham Stoop</span></td></tr></tbody></table>
+        </div>
+      `,
+      "2026-27",
+    );
+
+    expect(results).toHaveLength(2);
+    expect(results).toMatchObject([
+      {
+        away_team_slug: "northampton-saints",
+        home_team_slug: "bath",
+        kickoff_at: "2027-01-22T00:00:00.000Z",
+      },
+      {
+        away_team_slug: "leicester-tigers",
+        home_team_slug: "harlequins",
+        kickoff_at: "2027-01-25T15:00:00.000Z",
+      },
+    ]);
+    expect(warn).toHaveBeenCalledWith(
+      "Skipping Premiership result with unparseable kickoff: Exeter Chiefs vs Bristol Bears",
+    );
+
+    warn.mockRestore();
   });
 });

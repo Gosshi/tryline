@@ -1,14 +1,13 @@
 import { load } from "cheerio";
 
 import {
-  buildUtcIsoString,
   clearFutureZeroScores,
   isMissingWikipediaPage,
   normalizeWhitespace,
-  parseDmyDate,
   parseScoreText,
 } from "@/lib/ingestion/sources/live-source-utils";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
+import { parsePremiershipKickoffAt } from "@/lib/scrapers/premiership-kickoff";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
 
@@ -36,55 +35,6 @@ const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
 
 function buildWikipediaUrl(season: string) {
   return `https://en.wikipedia.org/wiki/${season.replace("-", "–")}_Premiership_Rugby`;
-}
-
-function lastSundayOfMonthUtc(year: number, monthIndex: number) {
-  const date = new Date(Date.UTC(year, monthIndex + 1, 0));
-  date.setUTCDate(date.getUTCDate() - date.getUTCDay());
-
-  return date;
-}
-
-function isBritishSummerTime(date: Date) {
-  const year = date.getUTCFullYear();
-  const startsAt = lastSundayOfMonthUtc(year, 2);
-  startsAt.setUTCHours(1, 0, 0, 0);
-
-  const endsAt = lastSundayOfMonthUtc(year, 9);
-  endsAt.setUTCHours(1, 0, 0, 0);
-
-  return date >= startsAt && date < endsAt;
-}
-
-function parseKickoffAt(value: string) {
-  const normalized = normalizeWhitespace(value);
-  const matched = normalized.match(
-    /(\d{1,2} [A-Za-z]+ \d{4})\s*(\d{1,2}:\d{2})/,
-  );
-
-  if (!matched) {
-    throw new Error(`Unable to locate Premiership kickoff text: ${normalized}`);
-  }
-
-  const dateText = matched[1]!;
-  const timeText = matched[2]!;
-  const parsedDate = parseDmyDate(dateText);
-  const [hoursText = "00", minutesText = "00"] = timeText.split(":");
-  const localDateAsUtc = new Date(
-    Date.UTC(
-      parsedDate.getFullYear(),
-      parsedDate.getMonth(),
-      parsedDate.getDate(),
-      Number(hoursText),
-      Number(minutesText),
-    ),
-  );
-
-  return buildUtcIsoString({
-    dateText,
-    offsetHours: isBritishSummerTime(localDateAsUtc) ? 1 : 0,
-    timeText,
-  });
 }
 
 function getHeadingInfo(
@@ -146,6 +96,15 @@ export function parsePremiershipLiveHtml(
       continue;
     }
 
+    const kickoffAt = parsePremiershipKickoffAt(dateTable.text());
+
+    if (!kickoffAt) {
+      console.warn(
+        `Skipping Premiership live match with unparseable kickoff: ${homeTeamName} vs ${awayTeamName}`,
+      );
+      continue;
+    }
+
     results.push({
       awayScore: score.awayScore,
       awayTeamName,
@@ -154,7 +113,7 @@ export function parsePremiershipLiveHtml(
       homeScore: score.homeScore,
       homeTeamName,
       homeTeamSlug,
-      kickoffAt: parseKickoffAt(dateTable.text()),
+      kickoffAt,
       lineupTableHtml: null,
       rawHtml: $.html(block),
       round,

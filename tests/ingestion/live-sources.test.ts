@@ -782,6 +782,47 @@ describe("live competition source adapters", () => {
     });
   });
 
+  it("keeps parseable multiday Premiership fixtures when another kickoff is TBC", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const matches = parsePremiershipLiveHtml(`
+      <div class="mw-heading"><h3 id="Round_10">Round 10</h3></div>
+      <div class="vevent summary">
+        <table><tbody><tr><td>22/23/24 January 2027</td></tr></tbody></table>
+        <table><tbody><tr><td><a>Bath</a></td><td>v</td><td><a>Northampton Saints</a></td></tr></tbody></table>
+        <table><tbody><tr><td><span class="location">The Recreation Ground</span></td></tr></tbody></table>
+      </div>
+      <div class="vevent summary">
+        <table><tbody><tr><td>TBC</td></tr></tbody></table>
+        <table><tbody><tr><td><a>Exeter Chiefs</a></td><td>v</td><td><a>Bristol Bears</a></td></tr></tbody></table>
+        <table><tbody><tr><td><span class="location">Sandy Park</span></td></tr></tbody></table>
+      </div>
+      <div class="vevent summary">
+        <table><tbody><tr><td>25 January 2027 15:00</td></tr></tbody></table>
+        <table><tbody><tr><td><a>Harlequins</a></td><td>v</td><td><a>Leicester Tigers</a></td></tr></tbody></table>
+        <table><tbody><tr><td><span class="location">Twickenham Stoop</span></td></tr></tbody></table>
+      </div>
+    `);
+
+    expect(matches).toHaveLength(2);
+    expect(matches).toMatchObject([
+      {
+        awayTeamName: "Northampton Saints",
+        homeTeamName: "Bath",
+        kickoffAt: "2027-01-22T00:00:00.000Z",
+      },
+      {
+        awayTeamName: "Leicester Tigers",
+        homeTeamName: "Harlequins",
+        kickoffAt: "2027-01-25T15:00:00.000Z",
+      },
+    ]);
+    expect(warn).toHaveBeenCalledWith(
+      "Skipping Premiership live match with unparseable kickoff: Exeter Chiefs vs Bristol Bears",
+    );
+
+    warn.mockRestore();
+  });
+
   it("returns Nations Cup scheduled matches without filtering to finished only", () => {
     const wikipediaUrl =
       "https://en.wikipedia.org/wiki/2026_World_Rugby_Pacific_Nations_Cup";
