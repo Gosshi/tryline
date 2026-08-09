@@ -782,6 +782,74 @@ describe("live competition source adapters", () => {
     });
   });
 
+  it("resolves Newcastle Red Bulls and the previous Newcastle Falcons name", () => {
+    const redBullsMatches = parsePremiershipLiveHtml(
+      PREMIERSHIP_HTML.replace(
+        "<a>Bristol Bears</a>",
+        "<a>Newcastle Red Bulls</a>",
+      ),
+    );
+    const falconsMatches = parsePremiershipLiveHtml(
+      PREMIERSHIP_HTML.replace(
+        "<a>Bristol Bears</a>",
+        "<a>Newcastle Falcons</a>",
+      ),
+    );
+
+    expect(redBullsMatches[0]).toMatchObject({
+      awayTeamName: "Newcastle Red Bulls",
+      awayTeamSlug: "newcastle-falcons",
+    });
+    expect(falconsMatches[0]).toMatchObject({
+      awayTeamName: "Newcastle Falcons",
+      awayTeamSlug: "newcastle-falcons",
+    });
+  });
+
+  it("warns and preserves the existing skip for unknown teams in every direct parser", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(
+      parsePremiershipLiveHtml(
+        PREMIERSHIP_HTML.replace("<a>Bath</a>", "<a>Unknown Premiership</a>"),
+      ),
+    ).toHaveLength(2);
+    expect(
+      parseSuperRugbyPacificLiveHtml({
+        regularHtml: SUPER_RUGBY_PACIFIC_HTML.replace(
+          "<a>Crusaders</a>",
+          "<a>Unknown SRP</a>",
+        ),
+        seasonHtml: "",
+      }),
+    ).toEqual([]);
+    expect(
+      parseTop14LiveHtml(
+        TOP_14_HTML.replace("<a>Toulouse</a>", "<a>Unknown Top 14</a>"),
+      ),
+    ).toEqual([]);
+    expect(
+      parseUrcLiveHtml(
+        URC_HTML.replace("<a href=\"/wiki/Leinster_Rugby\">Leinster</a>", "<a>Unknown URC</a>"),
+      ),
+    ).toEqual([]);
+
+    expect(warn).toHaveBeenCalledWith(
+      "Skipping live match with unknown team: Unknown Premiership vs Bristol Bears",
+    );
+    expect(warn).toHaveBeenCalledWith(
+      "Skipping live match with unknown team: Unknown SRP vs Hurricanes",
+    );
+    expect(warn).toHaveBeenCalledWith(
+      "Skipping live match with unknown team: Unknown Top 14 vs Bayonne",
+    );
+    expect(warn).toHaveBeenCalledWith(
+      "Skipping live match with unknown team: Unknown URC vs Munster",
+    );
+
+    warn.mockRestore();
+  });
+
   it("keeps parseable multiday Premiership fixtures when another kickoff is TBC", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const matches = parsePremiershipLiveHtml(`

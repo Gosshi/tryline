@@ -134,6 +134,9 @@ export function parseUrcLiveHtml(
     const awayTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[awayTeamName];
 
     if (!homeTeamName || !awayTeamName || !homeTeamSlug || !awayTeamSlug) {
+      console.warn(
+        `Skipping live match with unknown team: ${homeTeamName} vs ${awayTeamName}`,
+      );
       continue;
     }
 
