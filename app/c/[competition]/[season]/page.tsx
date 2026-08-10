@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
+import { NewsletterSignup } from "@/components/newsletter-signup";
 import { PremiumUpsellBanner } from "@/components/premium-upsell-banner";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
@@ -589,6 +590,9 @@ export default async function SeasonPage({ params }: Props) {
             >
               大会iCal URL
             </Link>
+          </div>
+          <div className="mt-5">
+            <NewsletterSignup source="competition" />
           </div>
         </header>
 

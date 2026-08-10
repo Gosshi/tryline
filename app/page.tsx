@@ -11,6 +11,7 @@ import {
   HomepagePremiumCta,
   HomepageSpoilerScore,
 } from "@/components/home-user-state";
+import { NewsletterSignup } from "@/components/newsletter-signup";
 import { SignupSuccessTracker } from "@/components/signup-success-tracker";
 import { StandingsTable } from "@/components/standings-table";
 import { TeamBadge } from "@/components/team-badge";
@@ -325,6 +326,8 @@ export default async function HomePage() {
         <HomepageFavoriteTeams allTeams={allTeams} />
 
         <div className="mx-auto max-w-[1536px] space-y-12 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
+          <NewsletterSignup source="home" />
+
           <section className="space-y-3">
             <h2 className="font-serif text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
               注目大会

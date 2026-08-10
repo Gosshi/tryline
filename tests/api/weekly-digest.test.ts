@@ -19,6 +19,14 @@ const openAiMock = vi.hoisted(() => ({
   create: vi.fn(),
 }));
 
+const newsletterMock = vi.hoisted(() => ({
+  sendWeeklyDigestEmails: vi.fn(),
+}));
+
+const notificationMock = vi.hoisted(() => ({
+  notifyNewsletterDelivery: vi.fn(),
+}));
+
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: () => ({
     from: () => {
@@ -62,6 +70,10 @@ vi.mock("@/lib/llm/client", () => ({
     },
   }),
 }));
+
+vi.mock("@/lib/newsletter", () => newsletterMock);
+
+vi.mock("@/lib/llm/notify", () => notificationMock);
 
 function setBaseEnv() {
   process.env.CRON_SECRET = "test-cron-secret";
@@ -112,6 +124,12 @@ describe("/api/cron/weekly-digest", () => {
     openAiMock.create.mockResolvedValue({
       choices: [{ message: { content: "# 【今週の海外ラグビーまとめ】" } }],
     });
+    newsletterMock.sendWeeklyDigestEmails.mockResolvedValue({
+      failed: 0,
+      sent: 0,
+      skipped: false,
+    });
+    notificationMock.notifyNewsletterDelivery.mockResolvedValue(undefined);
     global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 204 });
   });
 
@@ -200,7 +218,12 @@ describe("/api/cron/weekly-digest", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({ chunks: 2, matches: 1, status: "ok" });
+    expect(body).toEqual({
+      chunks: 2,
+      matches: 1,
+      newsletter: { failed: 0, sent: 0, skipped: false },
+      status: "ok",
+    });
     expect(openAiMock.create).toHaveBeenCalledTimes(1);
     expect(openAiMock.create.mock.calls[0]?.[0]).toMatchObject({
       model: "gpt-5.6-terra",
@@ -218,6 +241,14 @@ describe("/api/cron/weekly-digest", () => {
     );
     expect(firstPayload).toMatchObject({
       content: expect.stringContaining("📋 note 原稿（コピペ用）"),
+    });
+    expect(newsletterMock.sendWeeklyDigestEmails).toHaveBeenCalledWith(
+      `${"a".repeat(1900)}\n${"b".repeat(20)}`,
+    );
+    expect(notificationMock.notifyNewsletterDelivery).toHaveBeenCalledWith({
+      failed: 0,
+      sent: 0,
+      skipped: false,
     });
   });
 });

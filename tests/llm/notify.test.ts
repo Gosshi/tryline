@@ -15,6 +15,7 @@ import {
   notifyBroadcastIngestReport,
   notifyCostAlert,
   notifyDataIntegrityReport,
+  notifyNewsletterDelivery,
 } from "@/lib/llm/notify";
 
 import type { QaResult } from "@/lib/llm/types";
@@ -150,6 +151,21 @@ describe("llm notify", () => {
     expect(body).toContain("4. draft滞留");
     expect(body).toContain("5. 順位表 stale");
     expect(body).toContain("premiership-2025-26 (9日 stale)");
+  });
+
+  it("posts weekly newsletter delivery counts to Discord ops", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyNewsletterDelivery({ failed: 1, sent: 3, skipped: false });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String((request as RequestInit).body)).content;
+    expect(body).toContain("✉️ 週次ニュースレター配信");
+    expect(body).toContain("成功: 3件");
+    expect(body).toContain("失敗: 1件");
   });
 
   it("posts broadcast ingest unknown services, unlinked reasons, and missing matches", async () => {

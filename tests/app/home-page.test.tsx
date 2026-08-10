@@ -334,6 +334,8 @@ describe("HomePage", () => {
   it("uses the configured free sample match for homepage sample links", async () => {
     const { container } = render(await HomePage());
 
+    expect(screen.getByText("週次ニュースレター")).toBeInTheDocument();
+
     expect(authMocks.getUser).not.toHaveBeenCalled();
     expect(authMocks.getUserProfile).not.toHaveBeenCalled();
 

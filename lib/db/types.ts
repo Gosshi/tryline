@@ -127,6 +127,39 @@ export type Database = {
           },
         ];
       };
+      email_subscribers: {
+        Row: {
+          confirmation_token: string | null;
+          confirmed_at: string | null;
+          created_at: string;
+          email: string;
+          id: string;
+          source: string;
+          status: string;
+          unsubscribed_at: string | null;
+        };
+        Insert: {
+          confirmation_token?: string | null;
+          confirmed_at?: string | null;
+          created_at?: string;
+          email: string;
+          id?: string;
+          source: string;
+          status?: string;
+          unsubscribed_at?: string | null;
+        };
+        Update: {
+          confirmation_token?: string | null;
+          confirmed_at?: string | null;
+          created_at?: string;
+          email?: string;
+          id?: string;
+          source?: string;
+          status?: string;
+          unsubscribed_at?: string | null;
+        };
+        Relationships: [];
+      };
       competition_standings: {
         Row: {
           bonus_points_losing: number;
