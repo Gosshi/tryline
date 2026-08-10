@@ -57,7 +57,17 @@ premium_source text check (premium_source in ('stripe', 'apple', 'manual'))
 - `POST` のみ。`runtime = "nodejs"`
 - 認証: RevenueCat が送る `Authorization` ヘッダを環境変数 `REVENUECAT_WEBHOOK_SECRET` と定数時間比較する。不一致は 401
 - 扱うイベント種別: `INITIAL_PURCHASE` / `RENEWAL` / `PRODUCT_CHANGE` / `CANCELLATION` / `UNCANCELLATION` / `EXPIRATION` / `BILLING_ISSUE` / `SUBSCRIPTION_PAUSED` / `REFUND`
-- 反映ルール: イベントの `app_user_id` を Supabase の `user_id` として解決し、`expiration_at_ms` から `premium_until` を、`premium_source = 'apple'` を書き込む。失効系イベント（`EXPIRATION` / `REFUND`）は `premium_until` を当該時刻に設定する（過去日時になれば自動的に非 Premium になる）
+- 反映ルール: イベントの `app_user_id` を Supabase の `user_id` として解決し、`expiration_at_ms` から `premium_until` を、`premium_source = 'apple'` を書き込む
+- **失効系イベント（`EXPIRATION` / `REFUND`）は権利を必ず終了させる。** イベント種別ごとに次の通り扱う。
+
+  | 種別 | `premium_until` に書く値 |
+  |---|---|
+  | 継続系（`INITIAL_PURCHASE` / `RENEWAL` / `PRODUCT_CHANGE` / `UNCANCELLATION` / `CANCELLATION` / `BILLING_ISSUE` / `SUBSCRIPTION_PAUSED`） | `expiration_at_ms` をそのまま |
+  | **失効系（`EXPIRATION` / `REFUND`）** | **`min(expiration_at_ms, 現在時刻)`** |
+
+  失効系で `min()` を取る理由は、RevenueCat が `REFUND` に**元の契約満了日（未来の日時）**を入れて送る場合があるため。`expiration_at_ms` をそのまま書くと、**返金済みのユーザーが契約期間の終わりまで有料コンテンツを読み続けられる**。
+
+- **失効系イベントで `expiration_at_ms` が欠けている場合は skip せず、`premium_until = 現在時刻` を書いて失効させる。** 継続系で欠けている場合のみ skip してよい。失効の取りこぼしは課金トラブルに直結するため、判断に迷う場合は権利を止める側に倒す
 - `app_user_id` が Supabase の user_id として解決できない場合（匿名 ID のまま等）は **書き込まず 200 を返す**。RevenueCat に再送させない。同期はクライアント側の同期エンドポイントで回収する
 - **`premium_source = 'stripe'` かつ `premium_until` が未来の profile は上書きしない。** Stripe の権利を Apple のイベントで縮めないため。ログに記録して skip する
 - 書き込みは service role（`lib/db/server.ts`）
@@ -125,7 +135,12 @@ REVENUECAT_SECRET_API_KEY: z.string().optional(),
 3. 「購入を復元」で、同じ Apple ID の既存購入が復元される。
 4. `premium_source = 'stripe'` かつ有効期限が未来のユーザーに、購入 CTA が表示されない。
 5. RevenueCat webhook が `Authorization` ヘッダ不一致で 401 を返す。
-6. `EXPIRATION` / `REFUND` イベントで `premium_until` が失効時刻に更新され、以後 `isPremium` が false になる。
+6. `EXPIRATION` / `REFUND` イベントを処理した後、**`isProfilePremium` が false を返す**。以下の3ケースすべてで成立すること。
+   - `expiration_at_ms` が過去 → その時刻が書かれる
+   - **`expiration_at_ms` が未来** → 現在時刻が書かれる（未来の値をそのまま書かない）
+   - **`expiration_at_ms` が欠落** → 現在時刻が書かれる（skip しない）
+
+   テストは書き込み値の一致だけでなく、**書き込んだ `premium_until` を `isProfilePremium` に通して false になること**を検証する。
 7. webhook と同期エンドポイントのいずれも、`premium_source = 'stripe'` かつ有効期限が未来の profile を上書きしない。
 8. `app_user_id` を Supabase user として解決できない webhook イベントで、書き込みを行わず 200 を返す。
 9. 同じ webhook イベントを2回送っても結果が変わらない（冪等）。
