@@ -15,6 +15,7 @@ const HANDLED_EVENT_TYPES = new Set([
   "BILLING_ISSUE",
   "SUBSCRIPTION_PAUSED",
   "REFUND",
+  "TRANSFER",
 ]);
 
 const REVOCATION_EVENT_TYPES = new Set(["EXPIRATION", "REFUND"]);
@@ -23,6 +24,7 @@ type RevenueCatWebhookEvent = {
   app_user_id?: unknown;
   expiration_at_ms?: unknown;
   type?: string;
+  transferred_from?: unknown;
 };
 
 type RevenueCatWebhookPayload = {
@@ -92,6 +94,63 @@ function hasActiveStripeEntitlement(profile: {
   );
 }
 
+async function revokeTransferredEntitlements(
+  event: RevenueCatWebhookEvent,
+) {
+  if (!Array.isArray(event.transferred_from) || event.transferred_from.length === 0) {
+    return;
+  }
+
+  const supabase = getSupabaseServerClient();
+
+  // Skip only IDs that cannot be resolved. Database errors propagate so
+  // RevenueCat retries and every transferable Apple entitlement is revoked.
+  for (const appUserId of event.transferred_from) {
+    if (typeof appUserId !== "string" || !isSupabaseUserId(appUserId)) {
+      console.warn("[revenuecat] Skipping an unresolved transferred_from user.");
+      continue;
+    }
+
+    const { data: authUser, error: authUserError } =
+      await supabase.auth.admin.getUserById(appUserId);
+
+    if (!authUser?.user) {
+      if (authUserError && authUserError.status !== 404) {
+        throw authUserError;
+      }
+
+      console.warn("[revenuecat] Skipping an unresolved transferred_from user.");
+      continue;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("premium_source, premium_until")
+      .eq("id", authUser.user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      throw profileError;
+    }
+
+    if (profile?.premium_source !== "apple") {
+      continue;
+    }
+
+    const revokedAt = new Date().toISOString();
+    const { error: upsertError } = await supabase.from("user_profiles").upsert({
+      id: authUser.user.id,
+      premium_source: "apple",
+      premium_until: revokedAt,
+      updated_at: revokedAt,
+    });
+
+    if (upsertError) {
+      throw upsertError;
+    }
+  }
+}
+
 export async function POST(request: Request) {
   const { REVENUECAT_WEBHOOK_SECRET } = getServerEnv();
 
@@ -119,6 +178,11 @@ export async function POST(request: Request) {
   }
 
   if (!HANDLED_EVENT_TYPES.has(event.type)) {
+    return new Response("ok");
+  }
+
+  if (event.type === "TRANSFER") {
+    await revokeTransferredEntitlements(event);
     return new Response("ok");
   }
 

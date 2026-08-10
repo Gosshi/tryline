@@ -25,6 +25,7 @@ import { POST } from "@/app/api/revenuecat/webhook/route";
 import { isProfilePremium } from "@/lib/auth/server";
 
 const userId = "a3b24170-1253-4da5-aefc-2e00b47c0ad1";
+const secondUserId = "b3b24170-1253-4da5-aefc-2e00b47c0ad1";
 const expirationAtMs = Date.parse("2026-09-01T00:00:00.000Z");
 const now = new Date("2026-08-10T00:00:00.000Z");
 
@@ -139,22 +140,186 @@ describe("POST /api/revenuecat/webhook", () => {
   );
 
   it("writes the event expiration for a continuing event", async () => {
+    const response = await POST(
+      createRequest({
+        app_user_id: userId,
+        expiration_at_ms: expirationAtMs,
+        type: "RENEWAL",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(supabaseMocks.upsert).toHaveBeenCalledWith({
+      id: userId,
+      premium_source: "apple",
+      premium_until: "2026-09-01T00:00:00.000Z",
+      updated_at: "2026-08-10T00:00:00.000Z",
+    });
+  });
+
+  it("revokes a transferred Apple entitlement", async () => {
+    supabaseMocks.profileMaybeSingle.mockResolvedValue({
+      data: {
+        premium_source: "apple",
+        premium_until: "2026-09-01T00:00:00.000Z",
+      },
+      error: null,
+    });
+
+    const response = await POST(
+      createRequest({
+        transferred_from: [userId],
+        type: "TRANSFER",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(supabaseMocks.upsert).toHaveBeenCalledWith({
+      id: userId,
+      premium_source: "apple",
+      premium_until: now.toISOString(),
+      updated_at: now.toISOString(),
+    });
+    expect(
+      isProfilePremium(
+        { premium_until: now.toISOString() },
+        new Date(now),
+      ),
+    ).toBe(false);
+  });
+
+  it("revokes every resolved Apple entitlement in transferred_from", async () => {
+    supabaseMocks.authGetUserById.mockImplementation(async (id: string) => ({
+      data: { user: { id } },
+      error: null,
+    }));
+    supabaseMocks.profileMaybeSingle
+      .mockResolvedValueOnce({
+        data: { premium_source: "apple", premium_until: "2026-09-01T00:00:00.000Z" },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: { premium_source: "apple", premium_until: "2026-09-01T00:00:00.000Z" },
+        error: null,
+      });
+
+    const response = await POST(
+      createRequest({
+        transferred_from: [userId, secondUserId],
+        type: "TRANSFER",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(supabaseMocks.upsert).toHaveBeenCalledTimes(2);
+    expect(supabaseMocks.upsert).toHaveBeenNthCalledWith(1, {
+      id: userId,
+      premium_source: "apple",
+      premium_until: now.toISOString(),
+      updated_at: now.toISOString(),
+    });
+    expect(supabaseMocks.upsert).toHaveBeenNthCalledWith(2, {
+      id: secondUserId,
+      premium_source: "apple",
+      premium_until: now.toISOString(),
+      updated_at: now.toISOString(),
+    });
+  });
+
+  it.each(["stripe", "manual", null])(
+    "does not change a %s entitlement during a transfer",
+    async (premiumSource) => {
+      supabaseMocks.profileMaybeSingle.mockResolvedValue({
+        data: {
+          premium_source: premiumSource,
+          premium_until: "2026-09-01T00:00:00.000Z",
+        },
+        error: null,
+      });
+
       const response = await POST(
         createRequest({
-          app_user_id: userId,
-          expiration_at_ms: expirationAtMs,
-          type: "RENEWAL",
+          transferred_from: [userId],
+          type: "TRANSFER",
         }),
       );
 
       expect(response.status).toBe(200);
-      expect(supabaseMocks.upsert).toHaveBeenCalledWith({
-        id: userId,
+      expect(supabaseMocks.upsert).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([[], undefined])(
+    "acknowledges a transfer with transferred_from=%j without writing",
+    async (transferredFrom) => {
+      const response = await POST(
+        createRequest({
+          transferred_from: transferredFrom,
+          type: "TRANSFER",
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(supabaseMocks.authGetUserById).not.toHaveBeenCalled();
+      expect(supabaseMocks.upsert).not.toHaveBeenCalled();
+    },
+  );
+
+  it("processes resolved IDs when an anonymous ID is also transferred", async () => {
+    supabaseMocks.profileMaybeSingle.mockResolvedValue({
+      data: {
         premium_source: "apple",
         premium_until: "2026-09-01T00:00:00.000Z",
-        updated_at: "2026-08-10T00:00:00.000Z",
-      });
+      },
+      error: null,
     });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const response = await POST(
+      createRequest({
+        transferred_from: ["$RCAnonymousID:anonymous", userId],
+        type: "TRANSFER",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(supabaseMocks.authGetUserById).toHaveBeenCalledTimes(1);
+    expect(supabaseMocks.authGetUserById).toHaveBeenCalledWith(userId);
+    expect(supabaseMocks.upsert).toHaveBeenCalledWith({
+      id: userId,
+      premium_source: "apple",
+      premium_until: now.toISOString(),
+      updated_at: now.toISOString(),
+    });
+    warn.mockRestore();
+  });
+
+  it("keeps a transferred entitlement non-Premium when retried", async () => {
+    supabaseMocks.profileMaybeSingle.mockResolvedValue({
+      data: {
+        premium_source: "apple",
+        premium_until: "2026-09-01T00:00:00.000Z",
+      },
+      error: null,
+    });
+    const event = {
+      transferred_from: [userId],
+      type: "TRANSFER",
+    };
+
+    await POST(createRequest(event));
+    await POST(createRequest(event));
+
+    expect(supabaseMocks.upsert).toHaveBeenCalledTimes(2);
+    for (const [write] of supabaseMocks.upsert.mock.calls) {
+      expect(
+        isProfilePremium(
+          { premium_until: write.premium_until },
+          new Date(now),
+        ),
+      ).toBe(false);
+    }
+  });
 
   it("does not overwrite an active Stripe entitlement", async () => {
     const info = vi.spyOn(console, "info").mockImplementation(() => {});
