@@ -22,9 +22,11 @@ vi.mock("@/lib/db/server", () => ({
 }));
 
 import { POST } from "@/app/api/revenuecat/webhook/route";
+import { isProfilePremium } from "@/lib/auth/server";
 
 const userId = "a3b24170-1253-4da5-aefc-2e00b47c0ad1";
 const expirationAtMs = Date.parse("2026-09-01T00:00:00.000Z");
+const now = new Date("2026-08-10T00:00:00.000Z");
 
 function createRequest(
   event: Record<string, unknown>,
@@ -40,7 +42,7 @@ function createRequest(
 describe("POST /api/revenuecat/webhook", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-10T00:00:00.000Z"));
+    vi.setSystemTime(now);
     vi.clearAllMocks();
     envMocks.getServerEnv.mockReturnValue({
       REVENUECAT_WEBHOOK_SECRET: "revenuecat-webhook-secret",
@@ -85,13 +87,63 @@ describe("POST /api/revenuecat/webhook", () => {
   });
 
   it.each(["EXPIRATION", "REFUND"])(
-    "writes the event expiration for %s",
+    "%s always ends entitlement when expiration is past, future, or missing",
     async (type) => {
+      const cases = [
+        {
+          expected: "2026-08-01T00:00:00.000Z",
+          expiration_at_ms: Date.parse("2026-08-01T00:00:00.000Z"),
+          name: "past",
+        },
+        {
+          expected: now.toISOString(),
+          expiration_at_ms: expirationAtMs,
+          name: "future",
+        },
+        {
+          expected: now.toISOString(),
+          expiration_at_ms: undefined,
+          name: "missing",
+        },
+      ];
+
+      for (const testCase of cases) {
+        supabaseMocks.upsert.mockClear();
+        const event: Record<string, unknown> = {
+          app_user_id: userId,
+          type,
+        };
+
+        if (testCase.expiration_at_ms !== undefined) {
+          event.expiration_at_ms = testCase.expiration_at_ms;
+        }
+
+        const response = await POST(createRequest(event));
+
+        expect(response.status, testCase.name).toBe(200);
+        expect(supabaseMocks.upsert).toHaveBeenCalledWith({
+          id: userId,
+          premium_source: "apple",
+          premium_until: testCase.expected,
+          updated_at: now.toISOString(),
+        });
+        expect(
+          isProfilePremium(
+            { premium_until: testCase.expected },
+            new Date(now),
+          ),
+          testCase.name,
+        ).toBe(false);
+      }
+    },
+  );
+
+  it("writes the event expiration for a continuing event", async () => {
       const response = await POST(
         createRequest({
           app_user_id: userId,
           expiration_at_ms: expirationAtMs,
-          type,
+          type: "RENEWAL",
         }),
       );
 
@@ -102,8 +154,7 @@ describe("POST /api/revenuecat/webhook", () => {
         premium_until: "2026-09-01T00:00:00.000Z",
         updated_at: "2026-08-10T00:00:00.000Z",
       });
-    },
-  );
+    });
 
   it("does not overwrite an active Stripe entitlement", async () => {
     const info = vi.spyOn(console, "info").mockImplementation(() => {});

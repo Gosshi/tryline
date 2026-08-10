@@ -17,10 +17,12 @@ const HANDLED_EVENT_TYPES = new Set([
   "REFUND",
 ]);
 
+const REVOCATION_EVENT_TYPES = new Set(["EXPIRATION", "REFUND"]);
+
 type RevenueCatWebhookEvent = {
   app_user_id?: unknown;
   expiration_at_ms?: unknown;
-  type?: unknown;
+  type?: string;
 };
 
 type RevenueCatWebhookPayload = {
@@ -55,6 +57,24 @@ function parseExpiration(value: unknown) {
   const expiration = new Date(value);
 
   return Number.isNaN(expiration.getTime()) ? null : expiration.toISOString();
+}
+
+function getPremiumUntil(event: RevenueCatWebhookEvent) {
+  const expiration = parseExpiration(event.expiration_at_ms);
+
+  if (event.type === undefined || !REVOCATION_EVENT_TYPES.has(event.type)) {
+    return expiration;
+  }
+
+  const now = new Date();
+
+  if (!expiration) {
+    return now.toISOString();
+  }
+
+  return new Date(
+    Math.min(new Date(expiration).getTime(), now.getTime()),
+  ).toISOString();
 }
 
 function hasActiveStripeEntitlement(profile: {
@@ -107,7 +127,7 @@ export async function POST(request: Request) {
     return new Response("ok");
   }
 
-  const premiumUntil = parseExpiration(event.expiration_at_ms);
+  const premiumUntil = getPremiumUntil(event);
 
   if (!premiumUntil) {
     console.warn(
