@@ -190,6 +190,7 @@ export type V1MeData = {
   display_name: string | null;
   favorite_team_slugs: string[];
   isPremium: boolean;
+  premium_until: string | null;
 };
 
 export type V1MeDeleteData = {

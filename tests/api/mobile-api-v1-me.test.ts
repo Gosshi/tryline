@@ -109,6 +109,37 @@ describe("GET /api/v1/me", () => {
         display_name: "Gota",
         favorite_team_slugs: ["japan", "france"],
         isPremium: true,
+        premium_until: "2999-01-01T00:00:00.000Z",
+      },
+      error: null,
+      success: true,
+    });
+  });
+
+  it("returns a null premium_until for a non-Premium profile", async () => {
+    const { client } = createClient();
+    bearerMock.getUserFromBearer.mockResolvedValue({ id: "user-1" });
+    bearerMock.getSupabaseBearerClient.mockReturnValue(client);
+    serverMock.getMobileUserProfile.mockResolvedValue({
+      displayName: "Gota",
+      favoriteTeamSlugs: [],
+      premiumUntil: "2020-01-01T00:00:00.000Z",
+    });
+
+    const { GET } = await import("@/app/api/v1/me/route");
+    const response = await GET(
+      new Request("http://localhost/api/v1/me", {
+        headers: { Authorization: "Bearer valid-token" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      data: {
+        display_name: "Gota",
+        favorite_team_slugs: [],
+        isPremium: false,
+        premium_until: null,
       },
       error: null,
       success: true,
