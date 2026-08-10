@@ -8,6 +8,7 @@ import {
   listRoundHubParams,
 } from "@/lib/db/queries/matches";
 import { listIndexablePlayerSlugs } from "@/lib/db/queries/players";
+import { listStandingsPageParams } from "@/lib/db/queries/standings";
 import { listAllTeams } from "@/lib/db/queries/teams";
 import { SITE_URL } from "@/lib/site";
 
@@ -17,15 +18,23 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE_URL;
-  const [families, headToHeadPairs, matchIds, playerSlugs, roundHubs, teams] =
-    await Promise.all([
-      listFamilies(),
-      listHeadToHeadPairs(),
-      listMatchIdsWithContent(),
-      listIndexablePlayerSlugs(),
-      listRoundHubParams(),
-      listAllTeams(),
-    ]);
+  const [
+    families,
+    headToHeadPairs,
+    matchIds,
+    playerSlugs,
+    roundHubs,
+    standingsPageParams,
+    teams,
+  ] = await Promise.all([
+    listFamilies(),
+    listHeadToHeadPairs(),
+    listMatchIdsWithContent(),
+    listIndexablePlayerSlugs(),
+    listRoundHubParams(),
+    listStandingsPageParams(),
+    listAllTeams(),
+  ]);
   const seasonPages = (
     await Promise.all(
       families.map(async (family) => {
@@ -65,6 +74,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(roundHub.updatedAt),
     priority: 0.65,
     url: `${base}/c/${roundHub.competition}/${roundHub.season}/round/${roundHub.round}`,
+  }));
+  const standingsPages = standingsPageParams.map((standingsPage) => ({
+    changeFrequency: "daily" as const,
+    lastModified: new Date(standingsPage.updatedAt),
+    priority: 0.75,
+    url: `${base}/c/${standingsPage.competition}/${standingsPage.season}/standings`,
   }));
   const headToHeadPages = headToHeadPairs.map((pair) => ({
     changeFrequency: "monthly" as const,
@@ -109,6 +124,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...familyPages,
     ...seasonPages,
     ...roundHubPages,
+    ...standingsPages,
     ...headToHeadPages,
     ...matchPages,
     ...enMatchPages,

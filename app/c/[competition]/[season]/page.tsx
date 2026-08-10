@@ -690,6 +690,12 @@ export default async function SeasonPage({ params }: Props) {
                   </div>
                 ))
               : renderStandingsBlock(standings)}
+            <Link
+              className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:border-[var(--color-accent)] hover:bg-slate-50"
+              href={`/c/${competition}/${season}/standings`}
+            >
+              順位表をすべて見る →
+            </Link>
           </section>
         )}
 
