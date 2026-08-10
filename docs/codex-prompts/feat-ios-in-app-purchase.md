@@ -33,7 +33,8 @@
 - `Authorization` ヘッダの比較は**定数時間比較**にする。単純な `===` は使わない
 - `REVENUECAT_WEBHOOK_SECRET` が未設定の環境で webhook が呼ばれた場合の挙動を決める（未設定なら常に 401 が安全）
 - 同じイベントが2回届いても結果が変わらないこと。`premium_until` の上書きは冪等なので重複排除テーブルは作らない
-- `EXPIRATION` / `REFUND` は `premium_until` を**当該時刻に設定**する（null にするのではなく、過去日時になることで自動的に非 Premium になる）
+- **`EXPIRATION` / `REFUND` は権利を必ず終了させる。`premium_until` に `min(expiration_at_ms, 現在時刻)` を書く。** `expiration_at_ms` をそのまま書いてはならない。RevenueCat は `REFUND` に**元の契約満了日（未来）**を入れて送ることがあり、そのまま書くと**返金済みユーザーが期間終了まで有料コンテンツを読める**（null にするのではなく、過去日時にすることで非 Premium にする）
+- **失効系（`EXPIRATION` / `REFUND`）で `expiration_at_ms` が欠けている場合は skip せず、`premium_until = 現在時刻` を書いて失効させる。** 継続系イベントで欠けている場合のみ skip してよい。失効の取りこぼしは課金トラブルに直結するため、迷ったら権利を止める側に倒す
 - 扱うイベント種別は spec の「扱うイベント種別」のリスト。リストに無い種別が来ても 200 で握って落とさない
 
 やらないこと:
@@ -48,6 +49,7 @@
 完了の定義:
 - spec の受け入れ条件 5・6・7・8・9 を満たす（残りは Phase 2 で満たす）
 - webhook と同期エンドポイントの単体テストを書く。最低限、認証失敗401 / Stripe 権利の非上書き / 解決不能な `app_user_id` で200 / 冪等性 の4ケース
+- **加えて失効系の3ケース**: `EXPIRATION` / `REFUND` について、`expiration_at_ms` が (a) 過去 (b) **未来** (c) **欠落** の各パターンで、**書き込んだ `premium_until` を `isProfilePremium`（`lib/auth/server.ts`）に通して false になること**を検証する。書き込み値の一致だけを見るテストは不可（未来の日時を書いても「書けた」ことは検証できてしまうため）
 - `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build` clean
 - 変更ファイル一覧を報告する
 
