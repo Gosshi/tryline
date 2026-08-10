@@ -82,7 +82,20 @@ premium_source text check (premium_source in ('stripe', 'apple', 'manual'))
 - API キーは `REVENUECAT_SECRET_API_KEY`（サーバー専用。クライアントに渡さない）
 - webhook と同じく、`premium_source = 'stripe'` かつ有効期限が未来の場合は上書きしない
 
-### 3. 環境変数
+### 3. `/api/v1/me` に失効日を追加
+
+`lib/api/v1/types.ts` の `V1MeData`（189〜193行）は現在 `display_name` / `favorite_team_slugs` / `isPremium` のみで、**失効日を返していない**。設定画面で「Premium・失効日」を表示するには、これをレスポンスに含める必要がある。
+
+- `V1MeData` に **`premium_until: string | null`** を追加する（ISO 8601 の timestamptz。既存フィールドに合わせて snake_case）
+- `app/api/v1/me/route.ts` は既に `profile.premiumUntil` を取得して `isProfilePremium` に渡している（44行目）。**新しいクエリは不要**で、同じ値をレスポンスに載せるだけ
+- `isPremium` は残す。クライアントが期限比較を再実装しなくて済むようにするため。`premium_until` は表示専用で、**権利判定に使わせない**
+- 非 Premium ユーザーには `null` を返す
+
+**`tryline-mobile` 側の `reference/api-types.ts` と `src/api/types.ts` も同時に更新する。** `reference/api-types.ts` は本リポジトリ `lib/api/v1/types.ts` のスナップショットで、mobile の `AGENTS.md`「API コントラクトの正は tryline 本体」により mobile 側で独自に型を足すことは禁止されている。
+
+**この変更は Phase 1（web）の追補として先に入れる。** Phase 2 の設定画面はこのフィールドに依存する。
+
+### 4. 環境変数
 
 `lib/env.ts` に追加する。
 
@@ -166,7 +179,9 @@ Tryline の Premium は Web（Stripe）とアカウントを共有する multipl
 9. 同じ webhook イベントを2回送っても結果が変わらない（冪等）。
 10. アプリ内に外部決済ページへのリンク・Web で購入を促す文言が存在しない。
 11. 価格表示が RevenueCat から取得した文字列で、ハードコードされていない。
-12. Web / モバイル両リポジトリで `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build`（モバイルは該当するコマンド）が clean。
+12. `GET /api/v1/me` が Premium ユーザーに対して `premium_until` を ISO 8601 文字列で返し、非 Premium には `null` を返す。`tryline-mobile` の `reference/api-types.ts` が `lib/api/v1/types.ts` と一致している。
+13. 設定画面が `premium_until` を表示する（クライアント側で日付を推測・生成していない）。
+14. Web / モバイル両リポジトリで `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build`（モバイルは該当するコマンド）が clean。
 
 ## 未解決の質問
 
