@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { TrackedLink } from "@/components/tracked-link";
 import { listAllTeams } from "@/lib/db/queries/teams";
 
 import { CompetitionNavDropdown } from "./competition-nav-dropdown";
@@ -43,12 +44,18 @@ export async function SiteHeader() {
               <CompetitionNavDropdown />
             </li>
             <li>
-              <Link
+              <TrackedLink
+                analytics={{
+                  cta_id: "site_header_calendar",
+                  cta_location: "site_header",
+                  destination: "calendar",
+                  label: "カレンダー",
+                }}
                 className="-my-1.5 rounded px-3 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0 sm:py-1.5"
                 href="/calendar"
               >
                 カレンダー
-              </Link>
+              </TrackedLink>
             </li>
           </ul>
           <a

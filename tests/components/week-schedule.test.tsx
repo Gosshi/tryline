@@ -110,6 +110,29 @@ describe("WeekSchedule", () => {
     expect(screen.getByText("プレビュー")).toBeInTheDocument();
     expect(screen.getByText("24–19")).toBeInTheDocument();
     expect(screen.getByText("ライブ")).toBeInTheDocument();
+    const competitionLink = screen
+      .getAllByRole("link")
+      .find(
+        (link) => link.getAttribute("href") === "/c/league-one/2025-26",
+      );
+    const matchLink = screen.getByRole("link", { name: /00:30 JST/ });
+
+    expect(competitionLink).toBeDefined();
+    expect(matchLink.querySelector("a")).toBeNull();
+  });
+
+  it("keeps the competition hub link available in compact mode", () => {
+    render(<WeekSchedule compact matches={[baseMatch]} />);
+
+    expect(
+      screen
+        .getAllByRole("link")
+        .find(
+          (link) =>
+            link.getAttribute("href") ===
+            "/c/league-one/2025-26",
+        ),
+    ).toBeDefined();
   });
 
   it("renders an empty state", () => {

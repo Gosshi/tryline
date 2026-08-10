@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { WeekSchedule } from "@/components/calendar/week-schedule";
 import { NewsletterSignup } from "@/components/newsletter-signup";
+import { TrackedLink } from "@/components/tracked-link";
 import { getUser } from "@/lib/auth/server";
 import { getMatchesInRange } from "@/lib/db/queries/matches";
 import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
@@ -17,6 +18,7 @@ import {
 import { createCalendarOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
+import type { CalendarMatch } from "@/lib/db/queries/matches";
 import type { Metadata } from "next";
 
 export const revalidate = 1800;
@@ -132,6 +134,16 @@ export default async function CalendarPage({
   const standingPositions =
     await getStandingPositionLookupForCompetitions(competitionIds);
   const focusMatchId = selectCalendarFocusMatchId(matches, standingPositions);
+  const competitionsInWeek = Array.from(
+    matches.reduce((competitions, match) => {
+      const key = `${match.competition.family}:${match.competition.season}`;
+      if (!competitions.has(key)) {
+        competitions.set(key, match.competition);
+      }
+
+      return competitions;
+    }, new Map<string, CalendarMatch["competition"]>()),
+  ).map(([, competition]) => competition);
   const previousWeek = addJstDays(range.weekStartJst, -7);
   const nextWeek = addJstDays(range.weekStartJst, 7);
   const allCalendarFeedUrl = `${SITE_URL}/api/calendar/all.ics`;
@@ -176,6 +188,33 @@ export default async function CalendarPage({
               翌週
             </Link>
           </div>
+          {competitionsInWeek.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                大会別に見る
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {competitionsInWeek.map((competition) => (
+                  <TrackedLink
+                    analytics={{
+                      cta_id: "calendar_competition_list",
+                      cta_location: "calendar_header",
+                      destination: "competition_hub",
+                      label: formatCompetitionTitle(
+                        competition,
+                        competition.season,
+                      ),
+                    }}
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                    href={`/c/${competition.family}/${competition.season}`}
+                    key={`${competition.family}:${competition.season}`}
+                  >
+                    {formatCompetitionTitle(competition, competition.season)}
+                  </TrackedLink>
+                ))}
+              </div>
+            </div>
+          )}
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--color-ink-muted)]">
             月曜 00:00 JST から翌月曜 00:00 JST
             までの試合を、全大会横断で曜日ごとにまとめています。レビュー・プレビューが公開済みの試合にはバッジが付きます。

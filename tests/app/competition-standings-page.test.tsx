@@ -106,6 +106,9 @@ describe("competition standings page", () => {
     expect(
       screen.getByRole("link", { name: "日程・結果を見る" }),
     ).toHaveAttribute("href", "/c/six-nations/2026#schedule");
+    expect(
+      screen.getByRole("link", { name: "今週の全試合を見る →" }),
+    ).toHaveAttribute("href", "/calendar");
   });
 
   it("returns 404 instead of rendering a thin page without standings", async () => {

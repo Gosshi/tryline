@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { SpoilerScore } from "@/components/spoiler-score";
 import { TeamBadge } from "@/components/team-badge";
+import { TrackedLink } from "@/components/tracked-link";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import {
   formatKickoffJstDate,
@@ -109,18 +110,30 @@ function MatchRow({
 
   return (
     <div className={rowClassName}>
+      <TrackedLink
+        analytics={{
+          cta_id: "calendar_match_competition",
+          cta_location: "calendar_match_card",
+          destination: "competition_hub",
+          label: formatCompetitionTitle(
+            match.competition,
+            match.competition.season,
+          ),
+        }}
+        className="inline-flex text-xs font-medium text-[var(--color-ink-muted)] transition-colors hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+        href={`/c/${match.competition.family}/${match.competition.season}`}
+      >
+        {formatCompetitionTitle(match.competition, match.competition.season)}
+        <span aria-hidden className="ml-1">
+          →
+        </span>
+      </TrackedLink>
       <Link
         className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
         href={`/matches/${match.id}`}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium text-[var(--color-ink-muted)]">
-              {formatCompetitionTitle(
-                match.competition,
-                match.competition.season,
-              )}
-            </p>
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-[var(--color-ink)]">
               <span className="inline-flex min-w-0 items-center gap-1.5">
                 <TeamBadge

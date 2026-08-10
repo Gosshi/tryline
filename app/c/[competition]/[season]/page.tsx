@@ -8,6 +8,7 @@ import { PremiumUpsellBanner } from "@/components/premium-upsell-banner";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
 import { StandingsTable } from "@/components/standings-table";
+import { TrackedLink } from "@/components/tracked-link";
 import {
   getCompetitionBySlug,
   getCompetitionGuide,
@@ -590,6 +591,18 @@ export default async function SeasonPage({ params }: Props) {
             >
               大会iCal URL
             </Link>
+            <TrackedLink
+              analytics={{
+                cta_id: "hub_hero_calendar",
+                cta_location: "hub_hero",
+                destination: "calendar",
+                label: "今週の全試合を見る",
+              }}
+              className="inline-flex items-center px-1 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+              href="/calendar"
+            >
+              今週の全試合を見る →
+            </TrackedLink>
           </div>
           <div className="mt-5">
             <NewsletterSignup source="competition" />
@@ -681,6 +694,18 @@ export default async function SeasonPage({ params }: Props) {
                   roundHubBasePath={`/c/${competition}/${season}`}
                 />
               </Suspense>
+              <TrackedLink
+                analytics={{
+                  cta_id: "hub_schedule_calendar",
+                  cta_location: "hub_schedule",
+                  destination: "calendar",
+                  label: "他の大会も含めた今週の試合",
+                }}
+                className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:border-[var(--color-accent)] hover:bg-slate-50"
+                href="/calendar"
+              >
+                他の大会も含めた今週の試合 →
+              </TrackedLink>
             </>
           )}
         </section>
