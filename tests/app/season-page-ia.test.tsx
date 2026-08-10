@@ -271,6 +271,12 @@ describe("season page information architecture", () => {
       "href",
       "https://www.trylinerugby.com/api/calendar/premiership-2025-26.ics",
     );
+    expect(
+      screen.getByRole("link", { name: "今週の全試合を見る →" }),
+    ).toHaveAttribute("href", "/calendar");
+    expect(
+      screen.getByRole("link", { name: "他の大会も含めた今週の試合 →" }),
+    ).toHaveAttribute("href", "/calendar");
   });
 
   it("keeps standings and guide in the DOM when no matches are available", async () => {

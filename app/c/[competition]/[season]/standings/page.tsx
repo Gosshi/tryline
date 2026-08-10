@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { StandingsTable } from "@/components/standings-table";
+import { TrackedLink } from "@/components/tracked-link";
 import { getCompetitionBySlug } from "@/lib/db/queries/competitions";
 import {
   getPoolStandingsForCompetition,
@@ -205,6 +206,18 @@ export default async function CompetitionStandingsPage({ params }: Props) {
           >
             日程・結果を見る
           </Link>
+          <TrackedLink
+            analytics={{
+              cta_id: "standings_calendar",
+              cta_location: "standings_page",
+              destination: "calendar",
+              label: "今週の全試合を見る",
+            }}
+            className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-slate-300 hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            href="/calendar"
+          >
+            今週の全試合を見る →
+          </TrackedLink>
         </nav>
       </div>
     </main>

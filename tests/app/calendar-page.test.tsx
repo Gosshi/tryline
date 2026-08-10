@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CalendarMatch } from "@/lib/db/queries/matches";
@@ -207,6 +207,7 @@ describe("/calendar page", () => {
     expect(
       screen.getByRole("button", { name: "無料で受け取る" }),
     ).toBeInTheDocument();
+    expect(screen.queryByText("大会別に見る")).not.toBeInTheDocument();
     expect(
       screen.getByText(/この週に表示できる試合はありません/),
     ).toBeInTheDocument();
@@ -226,6 +227,41 @@ describe("/calendar page", () => {
       "2026-07-12T15:00:00.000Z",
       "2026-07-19T15:00:00.000Z",
     );
+  });
+
+  it("lists only the competitions that have matches in the selected week", async () => {
+    matchQueryMock.getMatchesInRange.mockResolvedValue([
+      createCalendarMatch(),
+      createCalendarMatch({ id: "match-duplicate" }),
+      createCalendarMatch({
+        competition: {
+          family: "six-nations",
+          id: "six-nations-id",
+          name: "Six Nations",
+          nameJa: null,
+          season: "2027",
+          slug: "six-nations-2027",
+        },
+        id: "match-2",
+      }),
+    ]);
+    const { default: CalendarPage } = await import("@/app/calendar/page");
+
+    render(await CalendarPage({}));
+
+    const competitionList = screen.getByText("大会別に見る").parentElement;
+
+    expect(competitionList).toBeInTheDocument();
+    expect(
+      within(competitionList!).getAllByRole("link", {
+        name: "ネーションズチャンピオンシップ 2026",
+      }),
+    ).toHaveLength(1);
+    expect(
+      within(competitionList!).getByRole("link", {
+        name: "シックスネイションズ 2027",
+      }),
+    ).toHaveAttribute("href", "/c/six-nations/2027");
   });
 
   it("falls back to current week for invalid week queries", async () => {
