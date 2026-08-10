@@ -10,7 +10,7 @@
 
 Apple のルールは、アプリ外で購入したコンテンツへのアクセスを認める条件として **同じものが IAP でも購入できること** を求めている（Guideline 3.1.3(b) Multiplatform Services）。したがって IAP を追加すれば、**既存の Web 契約者は再購入不要でログインするだけでよい**。
 
-`specs/feat-ios-app-mvp.md`（7行目・32行目）および `docs/decisions.md` の D014 では「v1 は IAP なし」「IAP / StoreKit は v1.1 で判断」としていた。本 spec がその v1.1 の判断にあたる。決定記録の更新が必要（未解決の質問を参照）。
+`specs/feat-ios-app-mvp.md` および `docs/decisions.md` の D014 では「v1 は IAP なし」「IAP / StoreKit は v1.1 で判断」としていた。本 spec がその判断にあたる。**決定記録は 2026-08-10 に更新済み**（`docs/decisions.md` の D015 が D014 決定4を撤回。`specs/feat-ios-app-mvp.md` の該当箇所にも参照を追記済み）。
 
 ### 既存 entitlement の構造
 
@@ -50,7 +50,9 @@ premium_source text check (premium_source in ('stripe', 'apple', 'manual'))
 
 ### 1. RevenueCat Webhook
 
-`app/api/webhooks/revenuecat/route.ts`
+`app/api/revenuecat/webhook/route.ts`
+
+既存の唯一の webhook である `app/api/stripe/webhook/route.ts` と同じ `app/api/<provider>/webhook/route.ts` の並びに揃える。本番の登録先 URL は `https://trylinerugby.com/api/revenuecat/webhook` になる。
 
 - `POST` のみ。`runtime = "nodejs"`
 - 認証: RevenueCat が送る `Authorization` ヘッダを環境変数 `REVENUECAT_WEBHOOK_SECRET` と定数時間比較する。不一致は 401
@@ -136,13 +138,14 @@ REVENUECAT_SECRET_API_KEY: z.string().optional(),
 1. **Owner の作業（実装完了だけでは審査に出せない）**
    - App Store Connect で自動更新サブスクリプションを作成する
    - Small Business Program に登録する（年間収益 $1M 未満なら手数料 30% → 15%）
-   - RevenueCat アカウントを作成し、App Store Connect と接続、商品をマッピング、webhook URL とシークレットを設定する
+   - RevenueCat アカウントを作成し、App Store Connect と接続、商品をマッピングする
+   - RevenueCat の webhook URL に `https://trylinerugby.com/api/revenuecat/webhook` を設定し、`Authorization` ヘッダに使うシークレットを決める（同じ値を Vercel の `REVENUECAT_WEBHOOK_SECRET` に入れる）
    - `REVENUECAT_WEBHOOK_SECRET` / `REVENUECAT_SECRET_API_KEY` を Vercel 本番に設定する
    - `EXPO_PUBLIC_REVENUECAT_IOS_KEY` を EAS に設定する（過去に EAS への env 登録漏れで事故があったため要注意）
 
 2. **iOS の価格を Web と揃えるか。** Web は ¥980/月。同額にすると Apple の手数料ぶん利益が減る。iOS のみ高く設定することは Apple のルール上問題ないが、ユーザーから見た不整合をどう扱うか。Owner の判断が必要で、実装はブロックしない（App Store Connect の設定値のため）。
 
-3. **`docs/decisions.md` の D014 更新。** 「v1 は IAP なし」から「審査 Guideline 3.1.1 のため IAP を実装。RevenueCat 経由」への変更記録が必要。`specs/feat-ios-app-mvp.md` の7行目・32行目も実態と食い違うため、追記か参照リンクが要る。
+3. ~~**`docs/decisions.md` の D014 更新。**~~ → **解決済み（2026-08-10）。** `docs/decisions.md` に **D015** を追記し、D014 決定4「v1 は IAP なし」を撤回した。`specs/feat-ios-app-mvp.md` の該当2箇所にも D015 への参照を追記済み。**この作業は完了しており、Codex の実装スコープには含まれない**（AGENTS.md:180-181 により Codex は `specs/*.md` と `docs/decisions.md` を書き換えられない）。
 
 4. **サポートページの解約手順との整合。** `specs/feat-support-page.md` で Premium の解約手順を記載する。iOS 側の手順は本 spec の実装確定後に具体化する。
 

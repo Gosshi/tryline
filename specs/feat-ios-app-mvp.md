@@ -4,7 +4,9 @@
 
 D014 で iOS アプリを正式プロダクトラインへ昇格。前提の p0（`feat-premium-entitlement-refactor` / `feat-mobile-api-v1`）は 2026-07-14 に本番稼働済みで、アプリが必要とする読み取り API・Bearer 認証・Premium ゲートは `/api/v1` に揃っている。
 
-本 spec は Expo（React Native）による iOS アプリ v1 を定義する。目標は 9 月中〜下旬の App Store 公開（11月オータムインターナショナル前）。**v1 は IAP なし**（Netflix 型: Web 購入済み Premium をログインで解錠）。
+本 spec は Expo（React Native）による iOS アプリ v1 を定義する。目標は 9 月中〜下旬の App Store 公開（11月オータムインターナショナル前）。
+
+> **【2026-08-10 追記・D015 で改訂】** 起票時は「v1 は IAP なし」（Netflix 型: Web 購入済み Premium をログインで解錠）としていたが、2026-08-06 の App Store 審査で **Guideline 3.1.1 によりリジェクト**された。Apple はアプリ外購入コンテンツへのアクセスを、同じものが IAP でも購入できることを条件に認める（Guideline 3.1.3(b)）。よって **v1 で IAP を実装する**。実装方式は RevenueCat。詳細は `specs/feat-ios-in-app-purchase.md`、判断の記録は `docs/decisions.md` の D015 を参照。本文中の「IAP なし」「IAP / StoreKit は v1.1 で判断」の記述はすべて D015 で上書きされている。
 
 対象リポジトリは 2 つ:
 - **tryline-mobile**（メイン）: アプリ本体。https://github.com/Gosshi/tryline-mobile（空リポジトリ作成済み）
@@ -29,7 +31,7 @@ D014 で iOS アプリを正式プロダクトラインへ昇格。前提の p0�
 対象外（v1 に含めない）:
 - push 通知 / APNs / 試合前通知（次の spec。ただし expo-router の URL 設計は通知からの遷移を想定して固定的に定義する）
 - Universal Links / AASA 配置（push spec とセットで対応）
-- IAP / StoreKit（v1.1 で判断）
+- ~~IAP / StoreKit（v1.1 で判断）~~ → **D015 により v1 で実装。`specs/feat-ios-in-app-purchase.md` を参照**
 - AI チャット
 - ウィジェット / Live Activities
 - Android ビルドの提出（コードは RN なので将来対応可能だが、v1 の成果物は iOS のみ）
