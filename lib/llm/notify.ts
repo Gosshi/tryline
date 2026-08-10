@@ -153,3 +153,16 @@ export async function notifyBroadcastIngestReport(
 
   await postOpsAlert(message);
 }
+
+export async function notifyNewsletterDelivery(
+  result: { failed: number; sent: number; skipped: boolean },
+): Promise<void> {
+  const message = [
+    "✉️ 週次ニュースレター配信",
+    `成功: ${result.sent}件`,
+    `失敗: ${result.failed}件`,
+    `Resend未設定のためスキップ: ${result.skipped ? "はい" : "いいえ"}`,
+  ].join("\n");
+
+  await postOpsAlert(message);
+}

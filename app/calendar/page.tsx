@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { WeekSchedule } from "@/components/calendar/week-schedule";
+import { NewsletterSignup } from "@/components/newsletter-signup";
 import { getUser } from "@/lib/auth/server";
 import { getMatchesInRange } from "@/lib/db/queries/matches";
 import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
@@ -179,24 +180,27 @@ export default async function CalendarPage({
             月曜 00:00 JST から翌月曜 00:00 JST
             までの試合を、全大会横断で曜日ごとにまとめています。レビュー・プレビューが公開済みの試合にはバッジが付きます。
           </p>
-          <div className="mt-6 border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4">
-            <p className="text-sm font-bold text-[var(--color-ink)]">
-              カレンダー購読
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link
-                className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
-                href={getWebcalUrl(allCalendarFeedUrl)}
-              >
-                全大会を購読
-              </Link>
-              <Link
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-                href={allCalendarFeedUrl}
-              >
-                iCal URL
-              </Link>
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <div className="border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4">
+              <p className="text-sm font-bold text-[var(--color-ink)]">
+                カレンダー購読
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
+                  href={getWebcalUrl(allCalendarFeedUrl)}
+                >
+                  全大会を購読
+                </Link>
+                <Link
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  href={allCalendarFeedUrl}
+                >
+                  iCal URL
+                </Link>
+              </div>
             </div>
+            <NewsletterSignup source="calendar" />
           </div>
         </div>
       </section>

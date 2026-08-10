@@ -5,6 +5,8 @@ import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
 import { getOpenAIClient } from "@/lib/llm/client";
 import { MODELS } from "@/lib/llm/models";
+import { notifyNewsletterDelivery } from "@/lib/llm/notify";
+import { sendWeeklyDigestEmails } from "@/lib/newsletter";
 
 export const maxDuration = 60;
 
@@ -230,9 +232,13 @@ export async function POST(request: Request) {
       }
     }
 
+    const newsletter = await sendWeeklyDigestEmails(digest);
+    await notifyNewsletterDelivery(newsletter);
+
     return NextResponse.json({
       chunks: chunks.length,
       matches: matches.length,
+      newsletter,
       status: "ok",
     });
   } catch (error) {

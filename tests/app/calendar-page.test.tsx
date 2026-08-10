@@ -203,6 +203,10 @@ describe("/calendar page", () => {
       "href",
       "https://www.trylinerugby.com/api/calendar/all.ics",
     );
+    expect(screen.getByText("週次ニュースレター")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "無料で受け取る" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(/この週に表示できる試合はありません/),
     ).toBeInTheDocument();
