@@ -229,6 +229,9 @@ describe("season page information architecture", () => {
       "href",
       "#standings",
     );
+    expect(
+      screen.getByRole("link", { name: "順位表をすべて見る →" }),
+    ).toHaveAttribute("href", "/c/premiership/2025-26/standings");
     expect(screen.getByRole("link", { name: "大会ガイド" })).toHaveAttribute(
       "href",
       "#guide",
@@ -370,7 +373,9 @@ describe("season page information architecture", () => {
     expect(screen.getByText("リポビタンDチャレンジカップ")).toBeInTheDocument();
     expect(screen.getByTestId("season-match-groups")).toBeInTheDocument();
     expect(container.querySelector("#standings")).toBeNull();
-    expect(screen.queryByRole("link", { name: "順位" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "順位" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows a standings excerpt while keeping the full table in collapsed markup", async () => {

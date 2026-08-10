@@ -28,6 +28,12 @@ export type PoolStanding = {
 
 export type StandingPositionLookup = Map<string, Map<string, number>>;
 
+export type StandingsPageParam = {
+  competition: string;
+  season: string;
+  updatedAt: string;
+};
+
 type CompetitionStandingRow = {
   bonus_points_losing: number;
   bonus_points_try: number;
@@ -118,6 +124,107 @@ export const getStandingsForCompetition = cache(
     revalidate: 900,
     tags: [PUBLIC_DATA_CACHE_TAGS.standings],
   }),
+);
+
+type StandingsPageParamRow = {
+  competition:
+    | { family: string; season: string }
+    | Array<{ family: string; season: string }>
+    | null;
+  updated_at: string;
+};
+
+async function loadStandingsPageParams(): Promise<StandingsPageParam[]> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("competition_standings")
+    .select(
+      "updated_at, competition:competitions!competition_standings_competition_id_fkey(family, season)",
+    );
+
+  if (error) {
+    throw error;
+  }
+
+  const latestByCompetition = new Map<string, StandingsPageParam>();
+
+  for (const row of (data ?? []) as StandingsPageParamRow[]) {
+    const competition = Array.isArray(row.competition)
+      ? (row.competition[0] ?? null)
+      : row.competition;
+
+    if (!competition) {
+      continue;
+    }
+
+    const key = `${competition.family}-${competition.season}`;
+    const existing = latestByCompetition.get(key);
+
+    if (!existing || row.updated_at > existing.updatedAt) {
+      latestByCompetition.set(key, {
+        competition: competition.family,
+        season: competition.season,
+        updatedAt: row.updated_at,
+      });
+    }
+  }
+
+  return [...latestByCompetition.values()];
+}
+
+export const listStandingsPageParams = cache(
+  unstable_cache(
+    loadStandingsPageParams,
+    ["public-data", "standings-page-params"],
+    {
+      revalidate: 900,
+      tags: [PUBLIC_DATA_CACHE_TAGS.standings],
+    },
+  ),
+);
+
+async function loadStandingsUpdatedAtForCompetition(
+  competitionSlug: string,
+): Promise<string | null> {
+  const client = getSupabasePublicServerClient();
+  const { data: competition, error: competitionError } = await client
+    .from("competitions")
+    .select("id")
+    .eq("slug", competitionSlug)
+    .maybeSingle();
+
+  if (competitionError) {
+    throw competitionError;
+  }
+
+  if (!competition) {
+    return null;
+  }
+
+  const { data, error } = await client
+    .from("competition_standings")
+    .select("updated_at")
+    .eq("competition_id", competition.id)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as { updated_at: string } | null)?.updated_at ?? null;
+}
+
+export const getStandingsUpdatedAtForCompetition = cache(
+  unstable_cache(
+    loadStandingsUpdatedAtForCompetition,
+    ["public-data", "standings-updated-at"],
+    {
+      revalidate: 900,
+      tags: [PUBLIC_DATA_CACHE_TAGS.standings],
+    },
+  ),
 );
 
 type CompetitionPoolRow = {
