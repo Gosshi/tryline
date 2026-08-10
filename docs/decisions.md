@@ -216,4 +216,29 @@ Reddit フィルタ（元の段階 3）は削除せず「承認後に差し込�
 
 **影響**: `specs/feat-premium-entitlement-refactor.md`・`specs/feat-mobile-api-v1.md` を同日起票（p0、Web 単体でも価値がありアプリ中止でも無駄にならない）。アプリ本体・APNs push・IAP の spec は p0 完了後に順次起票。Apple Developer Program 登録は Owner が開発と独立して先行申請する。
 
-**未解決の質問**: フェーズゲート（アプリ本体着手前の数値条件）は設けず 7/20 週着手を Owner が決定済み。IAP 導入可否と価格差（Web ¥980 との関係）は v1 の通知許可率・継続率を見て v1.1 で判断。
+**未解決の質問**: フェーズゲート（アプリ本体着手前の数値条件）は設けず 7/20 週着手を Owner が決定済み。IAP 導入可否と価格差（Web ¥980 との関係）は v1 の通知許可率・継続率を見て v1.1 で判断。→ **D015 で決着（審査却下により前倒し）。**
+
+## D015 — iOS の IAP を RevenueCat で実装（2026-08-10、D014 決定4を改訂）
+
+**背景**: 2026-08-02 に App Store へ審査提出し、2026-08-06 に **Guideline 3.1.1 でリジェクト**された。
+
+> The app accesses digital content purchased outside the app, such as Premium plan, but that content isn't available to purchase using In-App Purchase.
+
+D014 決定4の「v1 は IAP なし（Netflix 型）」は、Web 購入済み Premium をログインで解錠し、アプリ内販売・外部購入リンクを持たない構成だった。しかし Apple は、アプリ外で購入したコンテンツへのアクセスを認める条件として **同じものが IAP でも購入できること**（Guideline 3.1.3(b) Multiplatform Services）を求める。監査の結果、アプリ内に `/pricing` への誘導も価格表記も無く **anti-steering 違反は無い**。純粋に「IAP が無い」ことだけが却下理由である。
+
+したがって v1.1 まで待つ選択肢は無く、**IAP 実装が公開の必須条件**となった。
+
+**決定**:
+
+1. **D014 決定4の「v1 は IAP なし」を撤回し、v1 で IAP を実装する。** 判断時期を v1.1 から前倒しする理由は、通知許可率・継続率を見る前に審査が通らないため
+2. **実装方式は RevenueCat**。D014 が挙げていた StoreKit 2 + App Store Server Notifications V2 の直接実装を採らない。理由は、レシート検証・更新イベント・復元・将来の Android を1つの抽象で扱え、entitlement 同期の実装量が小さいこと
+3. **スキーマ変更は行わない。** `user_profiles.premium_until` / `premium_source` は既存で、`premium_source` の check 制約に `'apple'` が既に含まれている（`supabase/migrations/20260714084400_add_premium_entitlement_columns.sql`）。判定は `isProfilePremium`（`lib/auth/server.ts:67-75`）が期限のみを見て課金元に依存しないため、Apple 由来の権利をそのまま載せられる
+4. **Stripe と Apple の共存ルール**: `premium_source = 'stripe'` かつ有効期限が未来の profile は、RevenueCat の webhook・同期エンドポイントのいずれからも上書きしない。既存の Web 契約者は Guideline 3.1.3(b) により **再購入不要**で、アプリ内では購入 CTA を出さない
+5. **スマホソフトウェア競争促進法（2025-12 施行）による外部決済リンクでの IAP 恒久スキップは追わない。** D014 決定4が「v1.1 判断前に要調査」としていた論点だが、審査が現に止まっている以上、法制度の適用可否を待つ判断は取らない
+6. **Android / Google Play 課金は対象外。** RevenueCat は将来そのまま流用できるが本決定では扱わない
+
+**影響**: `specs/feat-ios-in-app-purchase.md` を 2026-08-09 起票、`docs/codex-prompts/feat-ios-in-app-purchase.md` を 2026-08-10 作成（web Phase 1 / mobile Phase 2 に分割、Phase 1 のマージが Phase 2 の前提）。`specs/feat-ios-app-mvp.md` の「v1 は IAP なし」の記述は本決定で上書きされる。`specs/feat-support-page.md` の Premium 解約手順の iOS 側は、本 spec の実装確定後に具体化する。App Store 再提出は実装完了後。
+
+**Owner 作業（実装完了だけでは審査に出せない）**: App Store Connect で自動更新サブスクリプションを作成 / Small Business Program 登録（年間収益 $1M 未満なら手数料 30% → 15%）/ RevenueCat アカウント作成・App Store Connect 接続・商品マッピング / RevenueCat の webhook URL に `https://trylinerugby.com/api/revenuecat/webhook` を設定 / `REVENUECAT_WEBHOOK_SECRET`・`REVENUECAT_SECRET_API_KEY` を Vercel 本番へ / `EXPO_PUBLIC_REVENUECAT_IOS_KEY` を EAS へ（過去に EAS への env 登録漏れで事故があるため要注意）。
+
+**未解決の質問**: iOS の価格を Web の ¥980/月 と揃えるか。同額にすると Apple 手数料ぶん利益が減る。iOS のみ高く設定することは Apple のルール上問題ないが、ユーザーから見た不整合をどう扱うか。App Store Connect の設定値のため**実装をブロックしない**。
