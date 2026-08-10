@@ -13,6 +13,8 @@ const serverEnvSchema = publicEnvSchema.extend({
   DISCORD_WEBHOOK_WEEKLY_DIGEST: z.string().url().optional(),
   OPENAI_API_KEY: z.string(),
   RESEND_API_KEY: z.string().min(1).optional(),
+  REVENUECAT_SECRET_API_KEY: z.string().optional(),
+  REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
   SCRAPER_USER_AGENT: z.string(),
   SUPABASE_SERVICE_ROLE_KEY: z.string(),
   VAPID_PRIVATE_KEY: z.string(),
