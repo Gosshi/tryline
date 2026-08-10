@@ -19,6 +19,29 @@
 
 **この3点だけが Phase 1 のコード変更範囲。** `docs/decisions.md` / `specs/*.md` の更新は 2026-08-10 に完了済みで、Codex は触らない。
 
+---
+
+### Phase 1 追補（2026-08-10 追加）— `/api/v1/me` に失効日を足す
+
+**上記3点はマージ済み（PR #682）。この追補だけを別 PR で実装する。**
+
+Phase 2 の設定画面が「Premium・失効日」を表示するが、`V1MeData`（`lib/api/v1/types.ts:189-193`）に失効日が無く、mobile 側で型を足すことは `tryline-mobile` の `AGENTS.md`「API コントラクトの正は tryline 本体」で禁止されている。
+
+1. `lib/api/v1/types.ts` の `V1MeData` に **`premium_until: string | null`** を追加（既存フィールドに合わせて snake_case）
+2. `app/api/v1/me/route.ts` の `data` に同フィールドを載せる。**`profile.premiumUntil` は44行目で既に取得済み。新しいクエリを足さない**
+3. 非 Premium ユーザーには `null` を返す
+4. `isPremium` は**削除しない**。クライアントに期限比較を再実装させないため
+
+やらないこと:
+- `premium_until` を権利判定に使う実装（判定は引き続き `isProfilePremium`）
+- `tryline-mobile` 側のファイル変更（`reference/api-types.ts` の同期は mobile 側の PR で行う）
+- `/api/v1/me` の他のフィールドの改名・削除
+
+完了の定義:
+- spec の受け入れ条件12を満たす
+- `/api/v1/me` の既存テストに `premium_until` の検証を追加（Premium あり / なしの2ケース）
+- `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build` clean
+
 参考にする既存パターン:
 - **webhook の骨格**: `app/api/stripe/webhook/route.ts`。`runtime = "nodejs"` の宣言（6行目）、service role クライアントの作り方（8〜11行目）、`user_profiles` への書き込み（80〜89行目）、失効時の更新（92〜102行目）をそのまま踏襲する
 - **ルート配置の規約**: webhook は `app/api/<provider>/webhook/route.ts`。`app/api/webhooks/` という別系統のディレクトリは作らない

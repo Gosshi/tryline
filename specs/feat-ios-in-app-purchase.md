@@ -82,7 +82,20 @@ premium_source text check (premium_source in ('stripe', 'apple', 'manual'))
 - API キーは `REVENUECAT_SECRET_API_KEY`（サーバー専用。クライアントに渡さない）
 - webhook と同じく、`premium_source = 'stripe'` かつ有効期限が未来の場合は上書きしない
 
-### 3. 環境変数
+### 3. `/api/v1/me` に失効日を追加
+
+`lib/api/v1/types.ts` の `V1MeData`（189〜193行）は現在 `display_name` / `favorite_team_slugs` / `isPremium` のみで、**失効日を返していない**。設定画面で「Premium・失効日」を表示するには、これをレスポンスに含める必要がある。
+
+- `V1MeData` に **`premium_until: string | null`** を追加する（ISO 8601 の timestamptz。既存フィールドに合わせて snake_case）
+- `app/api/v1/me/route.ts` は既に `profile.premiumUntil` を取得して `isProfilePremium` に渡している（44行目）。**新しいクエリは不要**で、同じ値をレスポンスに載せるだけ
+- `isPremium` は残す。クライアントが期限比較を再実装しなくて済むようにするため。`premium_until` は表示専用で、**権利判定に使わせない**
+- 非 Premium ユーザーには `null` を返す
+
+**`tryline-mobile` 側の `reference/api-types.ts` と `src/api/types.ts` も同時に更新する。** `reference/api-types.ts` は本リポジトリ `lib/api/v1/types.ts` のスナップショットで、mobile の `AGENTS.md`「API コントラクトの正は tryline 本体」により mobile 側で独自に型を足すことは禁止されている。
+
+**この変更は Phase 1（web）の追補として先に入れる。** Phase 2 の設定画面はこのフィールドに依存する。
+
+### 4. 環境変数
 
 `lib/env.ts` に追加する。
 
@@ -101,8 +114,11 @@ REVENUECAT_SECRET_API_KEY: z.string().optional(),
 
 `src/matches/ContentSection.tsx` の paywall（現行 109〜111行）に購入 CTA を追加する。
 
-- `isPremium` が false のとき: 「Premium に登録」ボタンを表示し、押下で RevenueCat の offering から現在の商品を取得して購入を開始する
+- `isPremium` が false のとき: 「Premium に登録」ボタンを表示する。押下時の挙動は**ログイン状態で分岐する**
+  - **未ログイン**: サインイン画面へ遷移する。購入フローは開始しない。ログイン成功後は元の試合画面へ戻し、続けて購入できる状態にする
+  - **ログイン済み**: RevenueCat の offering から現在の商品を取得して購入を開始する
 - `isPremium` が true のとき: 購入 CTA を出さず、コンテンツを表示する
+- **未ログイン時のボタン文言は、購入がすぐ始まると誤解させないものにする**（「Premium に登録」のままでよいが、遷移先がサインインであることが分かる補助文を添える）。ここでも Web の pricing ページや外部決済に触れてはならない
 - 価格は **RevenueCat から取得した `priceString` をそのまま表示する**。アプリ内にハードコードした価格を書かない（通貨・地域・改定に追従できなくなるため）
 
 ### 設定画面
@@ -110,15 +126,32 @@ REVENUECAT_SECRET_API_KEY: z.string().optional(),
 `app/(tabs)/settings.tsx` に次を追加する。
 
 - 現在の契約状態（未契約 / Premium・失効日）
-- 「購入を復元」ボタン（`Purchases.restorePurchases()`）。**Apple の必須要件**
+- 「購入を復元」ボタン（`Purchases.restorePurchases()`）。**Apple の必須要件**。**ログイン中のみ実行する**（未ログインで押された場合はサインインへ誘導し、復元を走らせない。匿名 ID に権利が付くと Supabase 側と紐付かないため）
 - 「サブスクリプションの管理」— iOS の設定アプリのサブスクリプション画面を開く
 - 既存の「Premium をお持ちの方はログインするとコンテンツを閲覧できます。」の文言は、購入導線ができたことに合わせて見直す。ただし **Web で購入するよう促す表現・外部サイトの決済ページへのリンクは入れない**（anti-steering 違反になる）
 
 ### ユーザー ID の扱い
 
-- 未ログインでも購入できるようにする。RevenueCat の匿名 ID のまま購入させる
-- ログイン成功時に `Purchases.logIn(supabaseUserId)` を呼んで匿名 ID を alias する
-- 購入完了時とログイン完了時の両方で、上記の entitlement 同期エンドポイントを呼ぶ
+**購入にはログインを必須とする。匿名購入は行わない。**
+
+- 未ログインで購入 CTA を押した場合、**先にサインイン画面へ誘導し、ログイン成功後に購入フローへ戻す**。未ログインのまま `Purchases.purchase*()` を呼ばない
+- ログイン成功時に `Purchases.logIn(supabaseUserId)` を呼ぶ。購入はこの後に開始するため、RevenueCat の `app_user_id` は常に Supabase の user_id になる
+- 購入完了時とログイン完了時の両方で、entitlement 同期エンドポイントを呼ぶ
+- 「購入を復元」は**ログイン中のみ**実行できる。未ログイン時はログインを促す
+
+**この設計にする理由（2026-08-10 改訂）:**
+
+初版は「未ログインでも購入でき、購入後にコンテンツが解放される」としていたが、**実装不能な矛盾があった**。
+
+- 同期エンドポイントはログイン必須（未ログインは 401）
+- webhook は `app_user_id` が Supabase user として解決できない場合、書き込まず 200 を返す（匿名 ID は解決できない）
+- Premium ゲートはサーバー側で、locked コンテンツの本文をレスポンスに含めない
+
+匿名購入ではサーバー側に権利が1件も記録されず、コンテンツを解放する手段が存在しない。
+
+「匿名購入 → 後からログイン誘導」も採らない。**支払い直後に何も読めない状態が生まれ**、ログインを放棄されると返金・低評価・審査での指摘に直結するため。
+
+Tryline の Premium は Web（Stripe）とアカウントを共有する multiplatform service であり、Guideline 3.1.3(b) が想定する形態そのものである。購入にアカウントを要求することは Apple のルール上問題ない。審査担当者は `feat-app-review-demo-login-bypass`（mobile PR #57）のデモログインで購入フローを検証できる。
 
 ### Stripe 契約者の扱い
 
@@ -130,9 +163,9 @@ REVENUECAT_SECRET_API_KEY: z.string().optional(),
 
 ## 受け入れ条件
 
-1. 未ログイン状態でアプリから Premium を購入でき、購入後にコンテンツが解放される。
-2. ログイン後に `Purchases.logIn` が呼ばれ、購入が Supabase の user と紐付く。紐付け後に別端末でログインしても Premium が有効になる。
-3. 「購入を復元」で、同じ Apple ID の既存購入が復元される。
+1. **未ログイン**で購入 CTA を押すと**サインイン画面に遷移し、購入フローは開始されない**（`Purchases.purchase*()` が呼ばれない）。ログイン成功後に購入へ進める。
+2. **ログイン済み**で購入すると、購入完了後にコンテンツが解放される。RevenueCat の `app_user_id` が Supabase の user_id になっており、webhook が権利を書き込む。別端末で同じアカウントにログインしても Premium が有効になる。
+3. 「購入を復元」がログイン中に動作し、同じ Apple ID の既存購入が復元される。**未ログイン時はログインを促し、復元を実行しない。**
 4. `premium_source = 'stripe'` かつ有効期限が未来のユーザーに、購入 CTA が表示されない。
 5. RevenueCat webhook が `Authorization` ヘッダ不一致で 401 を返す。
 6. `EXPIRATION` / `REFUND` イベントを処理した後、**`isProfilePremium` が false を返す**。以下の3ケースすべてで成立すること。
@@ -146,7 +179,9 @@ REVENUECAT_SECRET_API_KEY: z.string().optional(),
 9. 同じ webhook イベントを2回送っても結果が変わらない（冪等）。
 10. アプリ内に外部決済ページへのリンク・Web で購入を促す文言が存在しない。
 11. 価格表示が RevenueCat から取得した文字列で、ハードコードされていない。
-12. Web / モバイル両リポジトリで `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build`（モバイルは該当するコマンド）が clean。
+12. `GET /api/v1/me` が Premium ユーザーに対して `premium_until` を ISO 8601 文字列で返し、非 Premium には `null` を返す。`tryline-mobile` の `reference/api-types.ts` が `lib/api/v1/types.ts` と一致している。
+13. 設定画面が `premium_until` を表示する（クライアント側で日付を推測・生成していない）。
+14. Web / モバイル両リポジトリで `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build`（モバイルは該当するコマンド）が clean。
 
 ## 未解決の質問
 
@@ -157,6 +192,7 @@ REVENUECAT_SECRET_API_KEY: z.string().optional(),
    - RevenueCat の webhook URL に `https://trylinerugby.com/api/revenuecat/webhook` を設定し、`Authorization` ヘッダに使うシークレットを決める（同じ値を Vercel の `REVENUECAT_WEBHOOK_SECRET` に入れる）
    - `REVENUECAT_WEBHOOK_SECRET` / `REVENUECAT_SECRET_API_KEY` を Vercel 本番に設定する
    - `EXPO_PUBLIC_REVENUECAT_IOS_KEY` を EAS に設定する（過去に EAS への env 登録漏れで事故があったため要注意）
+   - **RevenueCat の transfer behavior（購入の移管挙動）を確認する。** 購入は常にログイン済みユーザーに紐づく設計のため、同一 Apple ID で別アカウントにログインして復元したときの扱い（移管する / 元のユーザーに残す）をダッシュボードで明示的に決めておく
 
 2. **iOS の価格を Web と揃えるか。** Web は ¥980/月。同額にすると Apple の手数料ぶん利益が減る。iOS のみ高く設定することは Apple のルール上問題ないが、ユーザーから見た不整合をどう扱うか。Owner の判断が必要で、実装はブロックしない（App Store Connect の設定値のため）。
 
