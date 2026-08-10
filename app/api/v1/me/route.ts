@@ -39,10 +39,12 @@ export async function GET(request: Request) {
     return apiError("profile not found", 404, PRIVATE_CACHE_CONTROL);
   }
 
+  const isPremium = isProfilePremium({ premium_until: profile.premiumUntil });
   const data: V1MeData = {
     display_name: profile.displayName,
     favorite_team_slugs: profile.favoriteTeamSlugs,
-    isPremium: isProfilePremium({ premium_until: profile.premiumUntil }),
+    isPremium,
+    premium_until: isPremium ? profile.premiumUntil : null,
   };
 
   return apiSuccess(data, PRIVATE_CACHE_CONTROL);
