@@ -53,7 +53,14 @@ function parseDate(value: string): number | null {
 function resolveRange(
   request: Request,
 ):
-  | { endUtcIso: string; from: string; label: string; startUtcIso: string; to: string }
+  | {
+      endUtcIso: string;
+      from: string;
+      isDefaultRange: boolean;
+      label: string;
+      startUtcIso: string;
+      to: string;
+    }
   | { error: string } {
   const url = new URL(request.url);
   const from = url.searchParams.get("from");
@@ -65,6 +72,7 @@ function resolveRange(
     return {
       endUtcIso: range.endUtcIso,
       from: range.weekStartJst,
+      isDefaultRange: true,
       label: formatJstWeekRangeLabel(range.weekStartJst),
       startUtcIso: range.startUtcIso,
       to: range.weekEndJst,
@@ -93,6 +101,7 @@ function resolveRange(
   return {
     endUtcIso: new Date(toMs + DAY_MS - JST_OFFSET_MS).toISOString(),
     from,
+    isDefaultRange: false,
     label: formatJstWeekRangeLabel(from),
     startUtcIso: new Date(fromMs - JST_OFFSET_MS).toISOString(),
     to,
@@ -322,6 +331,29 @@ function isStoryCandidate(match: CalendarMatch): boolean {
   );
 }
 
+function hasRecapStory(story: V1MatchStories): boolean {
+  return story.items.some((item) => item.type === "recap");
+}
+
+async function buildStoriesForMatches(matches: CalendarMatch[]) {
+  const [sourcedFacts, singleNationCompetitionIds] = await Promise.all([
+    getStorySourcedFactsForMatches(matches.map((match) => match.id)),
+    getSingleNationCompetitionIds(
+      matches.flatMap((match) =>
+        match.competition.id ? [match.competition.id] : [],
+      ),
+    ),
+  ]);
+
+  return (
+    await Promise.all(
+      matches.map((match) =>
+        buildMatchStories(match, sourcedFacts, singleNationCompetitionIds),
+      ),
+    )
+  ).filter((story): story is V1MatchStories => story !== null);
+}
+
 export async function GET(request: Request) {
   const range = resolveRange(request);
 
@@ -331,21 +363,30 @@ export async function GET(request: Request) {
 
   const matches = await getMatchesInRange(range.startUtcIso, range.endUtcIso);
   const candidates = matches.filter(isStoryCandidate).slice(0, MATCH_LIMIT);
-  const [sourcedFacts, singleNationCompetitionIds] = await Promise.all([
-    getStorySourcedFactsForMatches(candidates.map((match) => match.id)),
-    getSingleNationCompetitionIds(
-      candidates.flatMap((match) =>
-        match.competition.id ? [match.competition.id] : [],
-      ),
-    ),
-  ]);
-  const matchStories = (
-    await Promise.all(
-      candidates.map((match) =>
-        buildMatchStories(match, sourcedFacts, singleNationCompetitionIds),
-      ),
-    )
-  ).filter((story): story is V1MatchStories => story !== null);
+  const matchStories = await buildStoriesForMatches(candidates);
+
+  if (range.isDefaultRange && !matchStories.some(hasRecapStory)) {
+    const previousRangeStart = new Date(
+      new Date(range.startUtcIso).getTime() - 7 * DAY_MS,
+    ).toISOString();
+    const previousMatches = await getMatchesInRange(
+      previousRangeStart,
+      range.startUtcIso,
+    );
+    const carriedMatch = previousMatches
+      .filter((match) => isStoryCandidate(match) && match.hasRecap)
+      .at(-1);
+
+    if (carriedMatch) {
+      const carriedStories = await buildStoriesForMatches([carriedMatch]);
+      const carriedStory = carriedStories.find(hasRecapStory);
+
+      if (carriedStory) {
+        matchStories.push(carriedStory);
+      }
+    }
+  }
+
   const data: V1StoriesData = {
     matches: matchStories,
     week: {

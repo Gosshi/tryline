@@ -487,6 +487,141 @@ describe("GET /api/v1/stories", () => {
     );
   });
 
+  it("carries the most recent prior-week recap to the end of the default feed", async () => {
+    const currentMatch = match({
+      hasRecap: false,
+      id: "current-match",
+      kickoffAt: "2026-07-17T10:00:00.000Z",
+      status: "scheduled",
+    });
+    const carriedMatch = match({
+      id: "carried-match",
+      kickoffAt: "2026-07-11T10:00:00.000Z",
+    });
+    matchesMock.getMatchesInRange
+      .mockResolvedValueOnce([currentMatch])
+      .mockResolvedValueOnce([carriedMatch]);
+    contentMock.getPublishedContentForMatch.mockImplementation(
+      async (id: string) =>
+        id === "carried-match" ? { preview, recap } : { preview, recap: null },
+    );
+
+    const { GET } = await import("@/app/api/v1/stories/route");
+    const response = await GET(new Request("http://localhost/api/v1/stories"));
+    const body = await response.json();
+
+    expect(matchesMock.getMatchesInRange).toHaveBeenNthCalledWith(
+      1,
+      "2026-07-12T15:00:00.000Z",
+      "2026-07-19T15:00:00.000Z",
+    );
+    expect(matchesMock.getMatchesInRange).toHaveBeenNthCalledWith(
+      2,
+      "2026-07-05T15:00:00.000Z",
+      "2026-07-12T15:00:00.000Z",
+    );
+    expect(body.data.matches.map((story: { match: { id: string } }) => story.match.id)).toEqual([
+      "current-match",
+      "carried-match",
+    ]);
+    expect(body.data.matches.at(-1).items.map((item: { type: string }) => item.type)).toEqual([
+      "preview",
+      "result",
+      "recap",
+    ]);
+    expect(body.data.week).toEqual({
+      from: "2026-07-13",
+      label: "7月13日 - 19日 JST",
+      to: "2026-07-19",
+    });
+  });
+
+  it("chooses only the latest eligible recap from the previous seven days", async () => {
+    const currentMatch = match({ hasRecap: false, id: "current-match" });
+    const olderMatch = match({
+      id: "older-recap",
+      kickoffAt: "2026-07-06T10:00:00.000Z",
+    });
+    const latestMatch = match({
+      id: "latest-recap",
+      kickoffAt: "2026-07-11T10:00:00.000Z",
+    });
+    matchesMock.getMatchesInRange
+      .mockResolvedValueOnce([currentMatch])
+      .mockResolvedValueOnce([olderMatch, latestMatch]);
+    contentMock.getPublishedContentForMatch.mockImplementation(
+      async (id: string) =>
+        id === "latest-recap" ? { preview, recap } : { preview, recap: null },
+    );
+
+    const { GET } = await import("@/app/api/v1/stories/route");
+    const response = await GET(new Request("http://localhost/api/v1/stories"));
+    const body = await response.json();
+
+    expect(body.data.matches.map((story: { match: { id: string } }) => story.match.id)).toEqual([
+      "current-match",
+      "latest-recap",
+    ]);
+    expect(contentMock.getPublishedContentForMatch).not.toHaveBeenCalledWith(
+      "older-recap",
+    );
+  });
+
+  it("does not carry a prior recap when the current week already has one", async () => {
+    const { GET } = await import("@/app/api/v1/stories/route");
+    const response = await GET(new Request("http://localhost/api/v1/stories"));
+
+    expect(response.status).toBe(200);
+    expect(matchesMock.getMatchesInRange).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the response unchanged when no prior recap exists", async () => {
+    const currentMatch = match({ hasRecap: false, id: "current-match" });
+    matchesMock.getMatchesInRange
+      .mockResolvedValueOnce([currentMatch])
+      .mockResolvedValueOnce([]);
+    contentMock.getPublishedContentForMatch.mockResolvedValue({
+      preview,
+      recap: null,
+    });
+
+    const { GET } = await import("@/app/api/v1/stories/route");
+    const response = await GET(new Request("http://localhost/api/v1/stories"));
+    const body = await response.json();
+
+    expect(body.data.matches.map((story: { match: { id: string } }) => story.match.id)).toEqual([
+      "current-match",
+    ]);
+    expect(body.data.week).toEqual({
+      from: "2026-07-13",
+      label: "7月13日 - 19日 JST",
+      to: "2026-07-19",
+    });
+  });
+
+  it("does not carry prior recaps for an explicitly requested week", async () => {
+    const currentMatch = match({ hasRecap: false, id: "current-match" });
+    matchesMock.getMatchesInRange.mockResolvedValue([currentMatch]);
+    contentMock.getPublishedContentForMatch.mockResolvedValue({
+      preview,
+      recap: null,
+    });
+
+    const { GET } = await import("@/app/api/v1/stories/route");
+    const response = await GET(
+      new Request(
+        "http://localhost/api/v1/stories?from=2026-07-13&to=2026-07-19",
+      ),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(matchesMock.getMatchesInRange).toHaveBeenCalledTimes(1);
+    expect(body.data.matches.map((story: { match: { id: string } }) => story.match.id)).toEqual([
+      "current-match",
+    ]);
+  });
+
   it("uses competition slug fallback when name_ja is null", async () => {
     matchesMock.getMatchesInRange.mockResolvedValue([
       match({
@@ -591,6 +726,7 @@ describe("GET /api/v1/stories", () => {
     matchesMock.getMatchesInRange.mockResolvedValue(
       Array.from({ length: 13 }, (_, index) =>
         match({
+          hasRecap: false,
           id: `match-${String(index + 1).padStart(2, "0")}`,
           kickoffAt: `2026-07-18T${String(index).padStart(2, "0")}:00:00.000Z`,
         }),
