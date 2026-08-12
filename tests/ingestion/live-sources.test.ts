@@ -502,14 +502,15 @@ const TOP_14_HTML = `
 </div>
 `;
 
-const PREMIERSHIP_FUTURE_ZERO_HTML = `
-<div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
-<div class="vevent summary" id="Bath_v_Saracens">
-  <table><tbody><tr><td>1 January 2030<br />15:00</td></tr></tbody></table>
-  <table><tbody><tr><td><a>Bath</a></td><td>0–0</td><td><a>Saracens</a></td></tr></tbody></table>
-  <table><tbody><tr><td><span class="location">The Recreation Ground</span></td></tr></tbody></table>
-</div>
-`;
+const PREMIERSHIP_FUTURE_ZERO_WIKITEXT = `{{Rugbybox
+|id = Bath v Saracens
+|date = 1 January 2030
+|time = 15:00
+|home = [[Bath]]
+|score = 0–0
+|away = [[Saracens F.C.|Saracens]]
+|stadium = [[The Recreation Ground]]
+}}`;
 
 const URC_FUTURE_ZERO_HTML = `
 <div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
@@ -653,7 +654,7 @@ describe("live competition source adapters", () => {
 
   it("uses the requested European club season and clears future 0-0 scores", async () => {
     fetcherMock.fetchWithPolicy
-      .mockResolvedValueOnce(new Response(PREMIERSHIP_FUTURE_ZERO_HTML))
+      .mockResolvedValueOnce(new Response(PREMIERSHIP_FUTURE_ZERO_WIKITEXT))
       .mockResolvedValueOnce(new Response(URC_FUTURE_ZERO_HTML))
       .mockResolvedValueOnce(new Response(TOP_14_FUTURE_ZERO_HTML));
 
@@ -681,7 +682,7 @@ describe("live competition source adapters", () => {
 
     expect(fetcherMock.fetchWithPolicy).toHaveBeenNthCalledWith(
       1,
-      "https://en.wikipedia.org/wiki/2026–27_Premiership_Rugby",
+      "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premiership_Rugby?action=raw",
     );
     expect(fetcherMock.fetchWithPolicy).toHaveBeenNthCalledWith(
       2,

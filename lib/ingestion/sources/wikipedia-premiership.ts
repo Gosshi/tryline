@@ -6,7 +6,12 @@ import {
   normalizeWhitespace,
   parseScoreText,
 } from "@/lib/ingestion/sources/live-source-utils";
-import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
+import {
+  fetchWikipediaWikitext,
+  normalizeWikitextTeam,
+  parseWikitextTemplates,
+  stripWikitextMarkup,
+} from "@/lib/ingestion/sources/wikipedia-wikitext";
 import { parsePremiershipKickoffAt } from "@/lib/scrapers/premiership-kickoff";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
@@ -36,6 +41,10 @@ const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
 
 function buildWikipediaUrl(season: string) {
   return `https://en.wikipedia.org/wiki/${season.replace("-", "–")}_Premiership_Rugby`;
+}
+
+function buildWikipediaPageTitle(season: string) {
+  return `${season.replace("-", "–")} Premiership Rugby`;
 }
 
 function getHeadingInfo(
@@ -133,15 +142,84 @@ export function parsePremiershipLiveHtml(
   return results.sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
 }
 
+export function parsePremiershipLiveWikitext(
+  wikitext: string,
+  wikipediaUrl: string | null = null,
+): ParsedLiveMatch[] {
+  const rugbyboxes = parseWikitextTemplates(wikitext, "rugbybox");
+
+  if (rugbyboxes.length === 0) {
+    throw new Error("No rugbybox templates found in Premiership wikitext.");
+  }
+
+  const results: ParsedLiveMatch[] = [];
+
+  for (const rugbybox of rugbyboxes) {
+    const dateText = stripWikitextMarkup(rugbybox.params.date ?? "");
+    const timeText = stripWikitextMarkup(rugbybox.params.time ?? "");
+    const homeTeamName = normalizeWikitextTeam(
+      rugbybox.params.home ?? rugbybox.params.team1 ?? "",
+    );
+    const awayTeamName = normalizeWikitextTeam(
+      rugbybox.params.away ?? rugbybox.params.team2 ?? "",
+    );
+    const homeTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[homeTeamName];
+    const awayTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[awayTeamName];
+
+    if (!homeTeamName || !awayTeamName || !homeTeamSlug || !awayTeamSlug) {
+      console.warn(
+        `Skipping live match with unknown team: ${homeTeamName} vs ${awayTeamName}`,
+      );
+      continue;
+    }
+
+    const kickoffAt = parsePremiershipKickoffAt(
+      `${dateText} ${timeText}`.trim(),
+    );
+
+    if (!kickoffAt) {
+      console.warn(
+        `Skipping Premiership live match with unparseable kickoff: ${homeTeamName} vs ${awayTeamName}`,
+      );
+      continue;
+    }
+
+    const score = parseScoreText(stripWikitextMarkup(rugbybox.params.score ?? ""));
+
+    results.push({
+      awayScore: score.awayScore,
+      awayTeamName,
+      awayTeamSlug,
+      eventId: rugbybox.params.id ?? `${homeTeamSlug}_${awayTeamSlug}_${kickoffAt}`,
+      homeScore: score.homeScore,
+      homeTeamName,
+      homeTeamSlug,
+      kickoffAt,
+      lineupTableHtml: null,
+      rawHtml: "",
+      round: null,
+      roundName: null,
+      status: score.status,
+      venue: stripWikitextMarkup(rugbybox.params.stadium ?? "") || null,
+      wikipediaUrl,
+    });
+  }
+
+  return results.sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
+}
+
 export async function fetchPremiership(
   season: string,
 ): Promise<ParsedLiveMatch[]> {
   const sourceUrl = buildWikipediaUrl(season);
 
   try {
-    const response = await fetchWithPolicy(sourceUrl);
+    const wikitext = await fetchWikipediaWikitext([
+      buildWikipediaPageTitle(season),
+    ]);
+
     return clearFutureZeroScores(
-      parsePremiershipLiveHtml(await response.text(), sourceUrl),
+      parsePremiershipLiveWikitext(wikitext, sourceUrl),
     );
   } catch (error) {
     if (isMissingWikipediaPage(error)) {
