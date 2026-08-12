@@ -101,12 +101,12 @@ function preserveMatchEventHtml(
       rawHtmlByMatchKey.get(buildPremiershipMatchKey(match));
 
     if (!rawHtml) {
-      throw new Error(
-        `Unable to preserve event HTML for Premiership match: ${match.homeTeamName} vs ${match.awayTeamName} (${match.kickoffAt}).`,
+      console.warn(
+        `No event HTML for Premiership match: ${match.homeTeamName} vs ${match.awayTeamName} (${match.kickoffAt}); will retry on the next ingest.`,
       );
     }
 
-    return { ...match, rawHtml };
+    return { ...match, rawHtml: rawHtml ?? "" };
   });
 }
 
@@ -286,10 +286,18 @@ export async function fetchPremiership(
     const wikitext = await fetchWikipediaWikitext([
       buildWikipediaPageTitle(season),
     ]);
-    const response = await fetchWithPolicy(sourceUrl);
-    const html = await response.text();
     const wikitextMatches = parsePremiershipLiveWikitext(wikitext, sourceUrl);
-    const htmlMatches = parsePremiershipLiveHtml(html, sourceUrl);
+    let htmlMatches: ParsedLiveMatch[] = [];
+
+    try {
+      const response = await fetchWithPolicy(sourceUrl);
+      htmlMatches = parsePremiershipLiveHtml(await response.text(), sourceUrl);
+    } catch (error) {
+      console.warn(
+        `Unable to fetch event HTML for Premiership ${season}; continuing without event HTML.`,
+        error,
+      );
+    }
 
     return clearFutureZeroScores(
       preserveMatchEventHtml(wikitextMatches, htmlMatches),

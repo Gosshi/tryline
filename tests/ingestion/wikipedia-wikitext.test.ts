@@ -230,6 +230,44 @@ describe("Wikipedia wikitext ingestion", () => {
     );
   });
 
+  it("keeps match ingestion running when HTML misses event data", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(rawResponse(PREMIERSHIP_SALE_GLOUCESTER_RUGBYBOX))
+      .mockResolvedValueOnce(new Response("<main>No vevent blocks</main>"));
+
+    await expect(fetchPremiership("2025-26")).resolves.toEqual([
+      expect.objectContaining({
+        eventId: "Sale_v_Gloucester",
+        rawHtml: "",
+      }),
+    ]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      "No event HTML for Premiership match: Sale Sharks vs Gloucester (2025-09-25T18:45:00.000Z); will retry on the next ingest.",
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  it("keeps match ingestion running when the event HTML request fails", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(rawResponse(PREMIERSHIP_SALE_GLOUCESTER_RUGBYBOX))
+      .mockRejectedValueOnce(new Error("rendered HTML unavailable"));
+
+    await expect(fetchPremiership("2025-26")).resolves.toEqual([
+      expect.objectContaining({ rawHtml: "" }),
+    ]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      "Unable to fetch event HTML for Premiership 2025-26; continuing without event HTML.",
+      expect.any(Error),
+    );
+
+    warnSpy.mockRestore();
+  });
+
   it("joins multiple raw pages sequentially for later competition migrations", async () => {
     fetcherMock.fetchWithPolicy
       .mockResolvedValueOnce(rawResponse(PREMIERSHIP_RUGBYBOX))

@@ -175,6 +175,10 @@ if (!match || !rawHtml) { /* skip */ continue; }
 
 **イベント取り込みを維持すること。** 実現方法は実装者が選んでよい（例: イベント解析用に従来の HTML を別途取得する / wikitext の `try1` / `con1` / `pen1` から組み立てる）。**後者を選ぶ場合は本 spec のスコープを超えるため、実装前に停止して確認すること。**
 
+**ただし、イベント HTML が取れないことを致命的エラーにしてはならない。** イベントは副次的な情報であり、取れないことを理由に**試合データそのものの取り込みを失敗させない**。`live-ingest.ts` 自身が同じ状況を `no event HTML for finished match ...; will retry on the next ingest.` と記録して継続しており、その設計に合わせる。**警告ログを出して `rawHtml` を空のまま通し、次回以降の取り込みで再試行させること。**
+
+**この点は移行の目的に直結する。** 本移行の狙いは「レンダリング HTML への依存をやめる」ことにある。イベント用に HTML を併用すること自体は許容するが、**HTML パーサが1件取りこぼしただけで全体が停止する構造にすると、移行前より脆くなる**（従来は静かな欠落で済んでいたものが全断になる）。HTML 側は best-effort として扱う。
+
 #### 4-3. `round` / `roundName` を失わないこと
 
 `round` → `external_ids.wikipedia_round`、`roundName` → `external_ids.round_name` に入る。`external_ids` は spread マージなので**既存行の値は消えない**が、**新規挿入される試合はラウンド情報を持たない**。
@@ -214,6 +218,7 @@ wikitext には `=== Round 1 ===` 形式の見出しが25個あるので、**`{{
 17. **取得が `/wiki/{ページ名}?action=raw` で行われ、`fetchWithPolicy` を経由しており、`skipRobotsCheck` がどこにも使われていない。**
 19. **`eventId` が既存 DB の `wikipedia_event_id` と同形式**（`Sale_v_Gloucester`）で、`findExistingMatch` の第1段階で既存行に一致する。`id` を持たない3件の代替キーが再実行で不変である。
 20. **得点イベントの取り込みが維持されている。** `rawHtml` を空にしただけで終わらせず、Premiership の終了済み試合でイベントが入ることを確認する。
+20-b. **イベント HTML が取れない試合があっても例外を投げず、警告ログを出して継続する。** 試合データの取り込み自体は成功する。
 21. **`round` / `roundName` が取れている**（`=== Round N ===` 見出しから復元）。新規挿入される試合も `wikipedia_round` を持つ。
 22. `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build` clean。
 
