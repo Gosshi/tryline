@@ -242,3 +242,100 @@ D014 決定4の「v1 は IAP なし（Netflix 型）」は、Web 購入済み Pr
 **Owner 作業（実装完了だけでは審査に出せない）**: App Store Connect で自動更新サブスクリプションを作成 / Small Business Program 登録（年間収益 $1M 未満なら手数料 30% → 15%）/ RevenueCat アカウント作成・App Store Connect 接続・商品マッピング / RevenueCat の webhook URL に `https://trylinerugby.com/api/revenuecat/webhook` を設定 / `REVENUECAT_WEBHOOK_SECRET`・`REVENUECAT_SECRET_API_KEY` を Vercel 本番へ / `EXPO_PUBLIC_REVENUECAT_IOS_KEY` を EAS へ（過去に EAS への env 登録漏れで事故があるため要注意）。
 
 **未解決の質問**: iOS の価格を Web の ¥980/月 と揃えるか。同額にすると Apple 手数料ぶん利益が減る。iOS のみ高く設定することは Apple のルール上問題ないが、ユーザーから見た不整合をどう扱うか。App Store Connect の設定値のため**実装をブロックしない**。
+
+## D016 — Wikipedia 由来の取り込みを HTML パースから wikitext（`?action=raw`）へ移行（2026-08-12）
+
+**背景**: Top 14 のレギュラーシーズン欠落を調査した結果、Wikipedia 系パーサ15本が共通して抱える構造的な弱点が判明した。いずれも**レンダリング後の HTML**（見出し `id`、`div.mw-heading`、テーブルの列順）に依存しており、Wikipedia 側の表示形式が変わると壊れる。過去の事故（`[edit]` / `[edit source]` の表記ゆれで `matches_updated: 0`、Parsoid 対応、ja.wikipedia の書式非対応）はすべてこの層に起因する。
+
+**`{{rugbybox}}` は名前付きパラメータで試合を表現しており、`date` / `time` / チーム / `score` / `stadium` / `attendance` に加え、`try1` / `con1` / `pen1` に得点イベントを分単位で持つ。** 表示形式の変更や `[edit]` ノイズの影響を受けない。
+
+**チームのパラメータ名は `home` / `away` と `team1` / `team2` の2系統があり、大会ごとに分かれている**（Premiership・SRP・Rugby Championship・PNC が前者、URC・Six Nations・Nations Championship が後者）。テンプレート名も `Rugbybox` / `rugbybox` で揺れ、PNC は同一ページ内で混在する。**共通基盤は最初から両方に対応する必要がある。**
+
+### 取得経路は `?action=raw` を使う（robots.txt により MediaWiki API は使えない）
+
+**当初 MediaWiki API（`/w/api.php?action=query&prop=revisions`）を前提に起票したが、これは robots.txt 違反であり誤りだった。** 2026-08-12 に Codex が実装中に `RobotsDisallowedError` で停止し発覚。`en.wikipedia.org/robots.txt` の `User-agent: *` は次のとおり:
+
+```
+Allow: /w/api.php?action=mobileview&
+Allow: /w/load.php?
+Allow: /api/rest_v1/?doc
+Disallow: /w/
+Disallow: /api/
+```
+
+**`/w/` 配下の許可例外は `action=mobileview` だけで、`action=query` は含まれない。** REST API（`/api/rest_v1/`）も `Disallow: /api/` で塞がれている。`skipRobotsCheck` での回避は設計不変条件「robots.txt は常に尊重」に反するため採らない。
+
+**代わりに `/wiki/{ページ名}?action=raw` を使う。** `/wiki/` 配下は `Special:` 等を除き Disallow の対象外で、同一の wikitext が `text/x-wiki` で返る。実装が使っている `robots-parser` で各経路を検証した結果:
+
+| 経路 | 判定 |
+|---|---|
+| `/w/api.php?action=query&prop=revisions...` | **不可** |
+| `/api/rest_v1/page/html/...` | **不可** |
+| `/wiki/Special:Export/...` | **不可** |
+| **`/wiki/{ページ名}?action=raw`** | **可** |
+
+Premiership 2025-26 を `?action=raw` で取得して 200・159KB・`{{rugbybox}}` 93件を確認済みで、**API 経由で数えた件数と一致する**。取得できる内容は同じ。
+
+### 実測（2026-08-12、現行パーサが使う実ページで確認）
+
+| 大会 | `{{rugbybox}}` | DB | 判定 |
+|---|---|---|---|
+| URC 2025-26 | 151 | 150 | 対象 |
+| Premiership 2025-26 | **93** | **75** | 対象。差18の原因は HTML パースではなかった（下記） |
+| SRP 2026（`List of ...` ページ + 本文） | 77 + 6 = **83** | 83 | 対象 |
+| Nations Championship 2026（南北2ページ） | 18 + 18 = **36** | 36 | 対象 |
+| Autumn Nations 2025 | — | 32 | 対象。**ただし下記のとおりページ名が別問題** |
+| Six Nations 2026 | 15 | 15 | 対象 |
+| Rugby Championship 2025 | 12 | 12 | 対象 |
+| PNC 2025 | 11 | 11 | 対象 |
+| Greatest Rivalry 2026 | 8 | 8 | 対象 |
+| RWC 2023 Pool A | **0** | — | 対象外。別テンプレート形式 |
+| Top 14 2025-26 | 6 | 5 | 対象外。**日付が存在しない** |
+
+### Premiership の18件欠落は HTML パースが原因ではなかった（2026-08-13 訂正）
+
+**当初「HTML パーサが毎月1〜3試合ずつ黙って落としている」と結論し、それを移行の主たる根拠にしたが、誤りだった。** PR #689 で `parsePremiershipLiveHtml` に現在のページを直接渡すと **93件すべてを返す**ことが判明し、前提が崩れた。
+
+欠落18件を実データで特定した結果、**すべてニューカッスル戦だった**（18試合 = 10チームリーグでの1チームの全対戦数）。
+
+| シーズン | DB のニューカッスル戦 | Wikipedia 上の表記 |
+|---|---|---|
+| premiership-2024-25 | 18 | Newcastle Falcons |
+| **premiership-2025-26** | **0** | **Newcastle Red Bulls**（改称） |
+| premiership-2026-27 | 18 | Newcastle Falcons |
+
+**2025-26 シーズンだけクラブ名が Newcastle Red Bulls に変わっており、`TEAM_SLUG_BY_WIKIPEDIA_NAME` に対応が無かったためチーム解決に失敗し、`continue` で黙って捨てられていた。** 残り3件はプレーオフの未確定枠で、これは正常な挙動。
+
+対応が入ったのは `d69a9cf fix: warn on unknown live teams`（2026-08-10）。**ところが同日の `ae4d302` で live ソースの登録が `premiership-2025-26` から `premiership-2026-27` に切り替わっている。** 修正が入った日にそのシーズンの取り込みが止まったため、**18件は一度も再取得されていない。**
+
+**したがって wikitext 移行だけでは18件は復旧しない。** `premiership-2025-26` を一度だけ再取り込みする必要がある（下記「未解決の質問」(5)）。
+
+### Autumn Nations は「欠落」ではなく参照先ページが存在しない（2026-08-12 訂正）
+
+当初この表に「49 対 32 で17試合欠落」と記載したが、**49 という数字は現行パーサが参照していない別ページ（`2025 end-of-year rugby union internationals`）のもので、比較として成立していなかった**。
+
+`lib/ingestion/sources/wikipedia-autumn-nations.ts:38` の URL 生成は `${season}_Autumn_Nations_Series` だが、**2025 / 2024 / 2023 のいずれも 404**。つまりこのパーサは全シーズンで存在しないページを叩いており、`isMissingWikipediaPage` で黙って握り潰されている。DB にある32試合は別経路で入ったものとみられる。
+
+**これは wikitext 移行では直らない、参照先ページ名そのものの誤りである。** 移行と切り離して別途調査する（下記「未解決の質問」(4)）。
+
+**決定**:
+
+1. **`{{rugbybox}}` を持つ大会は、`/wiki/{ページ名}?action=raw` で wikitext を取得し、テンプレートのパラメータを読む方式へ移行する。** HTML は解析しない。**MediaWiki API と REST API は robots.txt で禁止されているため使わない**（上記参照）。取得は既存の `fetchWithPolicy` を通し、`skipRobotsCheck` は使わない
+2. **移行対象は9大会**: URC / Premiership / SRP / Nations Championship / Autumn Nations / Six Nations / Rugby Championship / PNC / Greatest Rivalry。**移行の価値は「表示形式の変更に壊されない」ことであって、欠落試合の復旧ではない**（Premiership の18件はチーム名改称、Autumn Nations はページ名誤りが原因で、どちらも移行では直らない）
+3. **RWC は対象外**。Pool ページに `{{rugbybox}}` が0件で、別テンプレート形式を使っている。移行するなら別途調査が必要
+4. **リーグワンは対象外**。`league-one.jp`（公式・許可ドメイン）から取得しており Wikipedia に依存していない。114試合×2シーズンで健全
+5. **Top 14 のレギュラーシーズンは Wikipedia では修復不能**と結論する。英語版は `Match_grid`（14×14 の成績表、スコアのみ）、フランス語版も `Résultats` が成績表で `Calendrier` は期間のみ。**試合単位の日付がどちらにも存在しない**。別ソースの確保（例: lnr.fr の規約監査）が必要で、本決定の範囲外とする
+6. **一度に全部移さない。** まず1〜2大会で移行し、実データで件数が増える／変わらないことを確認してから横展開する
+
+**調査上の教訓**:
+
+1. **カバレッジ調査は現行パーサが実際に使っている URL で行う。** 当初 SRP を「6/83 だから対象外」と判断したが、`List of {season} Super Rugby Pacific matches` という別ページを見ていなかった誤りだった。Nations Championship も南北2ページ構成で、推測したページ名では正しく測れなかった。Autumn Nations は逆に、**パーサの URL を確認しないまま実在する別ページの数字を使ってしまい、存在しない「17試合の欠落」を報告した**
+2. **外部ソースの取得方法を仕様に書くときは、robots.txt を先に読む。** 「公式 API だから許諾が明確」という一般論で MediaWiki API を選んだが、実際の robots.txt は逆に API を禁止し HTML 側を許可していた。**一般論ではなく当該ドメインの robots.txt が唯一の根拠。** 幸い Codex が `skipRobotsCheck` で回避せず停止したため、違反コードはマージされていない
+3. **外部データの構造は、対象そのもので確認してから仕様に書く。** `{{rugbybox}}` のパラメータ名を Six Nations の1例だけ見て `team1` / `team2` と断定したが、**移行対象の Premiership は `home` / `away`** で、そのまま実装すれば93件すべて解決できず取り込み0件になるところだった。同様に「テンプレート部分を取り出す」という指示も、リンクと `{{flagicon}}` が併存する URC では国コードを拾ってしまう誤りだった。**1例からの一般化をやめ、対象全ページでパラメータ名と値の書式を集計する。** この3件はいずれも Codex が実装中に発見しており、**仕様側で潰せていれば往復は起きなかった**
+4. **仕様に書いた件数は、書いた時点で検算する。** 「17試合の欠落」は 93 − 75 = 18 と合わず、月別内訳の再集計で18が正しいと判明した
+5. **差分の件数だけで原因を断定しない。** 「wikitext 93 対 DB 75」から「HTML パーサが落としている」と推論したが、**現行パーサを実際に走らせれば93件返ることはすぐ分かった**。欠落した18件が何かを1件ずつ突き合わせていれば、全部ニューカッスル戦であることも即座に見えた。**件数の差は症状であって原因ではない。原因は必ず個別レコードまで降りて確認する**
+6. **「移行すれば直る」を検証せずに移行の根拠にしない。** 誤った原因分析のまま進めたため、移行が完了しても18件は復旧しない。移行自体は表示形式変更への耐性という別の価値で正当化できるが、**根拠が入れ替わったことを記録しておく**
+
+**影響**: `specs/feat-wikitext-ingestion-migration.md` を同日起票。既存の週次監査 cron（`app/api/cron/audit-data-integrity/route.ts`）は5項目（イベント重複・スコア不一致・イベント0件・draft 滞留・順位表鮮度）を検査するが、**「取り込めた試合数が想定より少ない」を検知しない**。Premiership・Autumn Nations の欠落も URC 2024-25（150試合あるはずが7件）も、この盲点で見逃されていた。試合数の異常検知（同一大会の他シーズンとの比較方式）の追加を別途検討する。
+
+**未解決の質問**: (1) Top 14 の代替ソース。lnr.fr（公式リーグ）の robots.txt と AI 利用規約の監査が必要だが、2026-08-07 の監査では大手ほど禁止が多かった。取得不可なら現状維持か対象から外す判断になる。集客上の優先度は低い（GSC で Top 14 の検索需要は未確認）。(2) 過去シーズンのバックフィル。URC 2024-25 等の壊れたシーズンを再取り込みするかは、移行が安定してから判断する。(3) 得点イベントの統合。`try1` / `con1` / `pen1` から `match_events` を取れる見込みがあり、イベント汚染事故の再発防止にも効くが、影響範囲が大きいため別途起票する。(5) **`premiership-2025-26` の再取り込み**。ニューカッスル戦18件を復旧するには、このシーズンを一度だけ取り込み直す必要がある。live ソースの登録は 2026-08-10 に 2026-27 へ切り替わっているため、一時的に登録を戻すか、シーズン指定のバックフィルを回す。**同種の欠落が他大会・他シーズンにもある可能性が高い**（チーム改称は毎年起きる）ため、`TEAM_SLUG_BY_WIKIPEDIA_NAME` に無いチームで `continue` した件数を可視化する仕組み（週次監査への追加）も併せて検討する。(4) **Autumn Nations の参照先ページ**。`{season}_Autumn_Nations_Series` が全シーズン 404 で、DB の32試合がどの経路で入ったのかが未確認。正しいページ名の特定と、そもそもこのパーサが機能しているのかの調査が必要。**wikitext 移行とは独立した問題。**
