@@ -3,6 +3,7 @@ import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 export type WikitextTemplate = {
   params: Record<string, string>;
   raw: string;
+  startIndex: number;
 };
 
 function buildWikipediaRawUrl(pageTitle: string) {
@@ -150,6 +151,7 @@ export function parseWikitextTemplates(
     templates.push({
       params: parseTemplateParams(raw),
       raw,
+      startIndex: matched.index,
     });
     templateStart.lastIndex = endIndex;
   }

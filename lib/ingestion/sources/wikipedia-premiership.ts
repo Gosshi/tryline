@@ -12,6 +12,7 @@ import {
   parseWikitextTemplates,
   stripWikitextMarkup,
 } from "@/lib/ingestion/sources/wikipedia-wikitext";
+import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 import { parsePremiershipKickoffAt } from "@/lib/scrapers/premiership-kickoff";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
@@ -45,6 +46,68 @@ function buildWikipediaUrl(season: string) {
 
 function buildWikipediaPageTitle(season: string) {
   return `${season.replace("-", "–")} Premiership Rugby`;
+}
+
+function getWikitextRoundInfo(wikitext: string, beforeIndex: number) {
+  const headingPattern = /^===\s*([^=].*?)\s*===\s*$/gm;
+  let currentHeading: string | null = null;
+  let matched: RegExpExecArray | null;
+
+  while ((matched = headingPattern.exec(wikitext))) {
+    if (matched.index >= beforeIndex) {
+      break;
+    }
+
+    currentHeading = normalizeWhitespace(matched[1] ?? "");
+  }
+
+  if (!currentHeading) {
+    return { round: null, roundName: null };
+  }
+
+  const round = currentHeading.match(/^Round\s+(\d+)$/i);
+
+  if (round) {
+    return { round: Number(round[1]), roundName: null };
+  }
+
+  return { round: null, roundName: currentHeading };
+}
+
+function normalizeWikipediaEventId(eventId: string) {
+  return normalizeWhitespace(eventId).replace(/\s+/g, "_");
+}
+
+function buildPremiershipMatchKey(match: ParsedLiveMatch) {
+  return [match.homeTeamSlug, match.awayTeamSlug, match.kickoffAt].join(":");
+}
+
+function preserveMatchEventHtml(
+  wikitextMatches: ParsedLiveMatch[],
+  htmlMatches: ParsedLiveMatch[],
+) {
+  const rawHtmlByEventId = new Map(
+    htmlMatches.flatMap((match) =>
+      match.eventId ? [[match.eventId, match.rawHtml] as const] : [],
+    ),
+  );
+  const rawHtmlByMatchKey = new Map(
+    htmlMatches.map((match) => [buildPremiershipMatchKey(match), match.rawHtml]),
+  );
+
+  return wikitextMatches.map((match) => {
+    const rawHtml =
+      (match.eventId ? rawHtmlByEventId.get(match.eventId) : undefined) ??
+      rawHtmlByMatchKey.get(buildPremiershipMatchKey(match));
+
+    if (!rawHtml) {
+      throw new Error(
+        `Unable to preserve event HTML for Premiership match: ${match.homeTeamName} vs ${match.awayTeamName} (${match.kickoffAt}).`,
+      );
+    }
+
+    return { ...match, rawHtml };
+  });
 }
 
 function getHeadingInfo(
@@ -185,20 +248,26 @@ export function parsePremiershipLiveWikitext(
     }
 
     const score = parseScoreText(stripWikitextMarkup(rugbybox.params.score ?? ""));
+    const { round, roundName } = getWikitextRoundInfo(
+      wikitext,
+      rugbybox.startIndex,
+    );
 
     results.push({
       awayScore: score.awayScore,
       awayTeamName,
       awayTeamSlug,
-      eventId: rugbybox.params.id ?? `${homeTeamSlug}_${awayTeamSlug}_${kickoffAt}`,
+      eventId: rugbybox.params.id
+        ? normalizeWikipediaEventId(rugbybox.params.id)
+        : `${homeTeamSlug}_${awayTeamSlug}_${kickoffAt}`,
       homeScore: score.homeScore,
       homeTeamName,
       homeTeamSlug,
       kickoffAt,
       lineupTableHtml: null,
       rawHtml: "",
-      round: null,
-      roundName: null,
+      round,
+      roundName,
       status: score.status,
       venue: stripWikitextMarkup(rugbybox.params.stadium ?? "") || null,
       wikipediaUrl,
@@ -217,9 +286,13 @@ export async function fetchPremiership(
     const wikitext = await fetchWikipediaWikitext([
       buildWikipediaPageTitle(season),
     ]);
+    const response = await fetchWithPolicy(sourceUrl);
+    const html = await response.text();
+    const wikitextMatches = parsePremiershipLiveWikitext(wikitext, sourceUrl);
+    const htmlMatches = parsePremiershipLiveHtml(html, sourceUrl);
 
     return clearFutureZeroScores(
-      parsePremiershipLiveWikitext(wikitext, sourceUrl),
+      preserveMatchEventHtml(wikitextMatches, htmlMatches),
     );
   } catch (error) {
     if (isMissingWikipediaPage(error)) {

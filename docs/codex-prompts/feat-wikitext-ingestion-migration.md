@@ -71,6 +71,9 @@ URC（後続。チームのリンクと `{{flagicon}}` が併存）:
 - **スコアの `–` は en dash（U+2013）でハイフンではない。** 既存の `parseScoreText` が扱えるか確認する。未開催試合はスコアが空 → `null`
 - **タイムゾーンを自作しないこと。** Premiership の `time` は `15:05` のように時刻のみで、タイムゾーン表記がない（英国時間）。**既存の `parsePremiershipKickoffAt`（`lib/scrapers/premiership-kickoff.ts`）に `"11 October 2025 15:05"` の形で渡す。** BST/GMT 判定はこの関数が内部で持っている。時刻省略時は `00:00` 扱い
 - 値のマークアップ除去: `[[A]]` → `A`、`[[A|B]]` → `B`、`{{ru|IRE}}` / `{{ru-rt|FRA}}` / `{{Rut|Highlanders}}` → 第1引数、`<br />` と `<ref>...</ref>` の除去
+- **`eventId` は既存 DB と同形式にする（PR #689 の差し戻し理由その1）。** wikitext の `id` は `Sale v Gloucester`、既存 DB は `Sale_v_Gloucester`。**空白をアンダースコアに正規化する。** `upsert.ts` の `findExistingMatch` は `wikipedia_event_id` の完全一致で既存行を探し、外れると「大会+両チーム+キックオフ完全一致」に落ち、それも外れると `upsert.ts:130-132` が `null` を返して**新規挿入**する。キックオフが変わった試合が更新でなく重複行になる。`id` を持たないブロックが93件中3件あるので、代替キーは再実行で不変な値にすること
+- **`rawHtml` を空文字にしない（PR #689 の差し戻し理由その2）。** `live-ingest.ts:338-341` が `rawHtml` から得点イベントを解析しており、**Premiership は `fetchEventMatches` を持たないためここが唯一の経路**。空にすると以後の全試合がイベント0件になる（本番では現在75/75がイベントを持つ）。イベント解析用に従来の HTML を別途取得する等で維持すること。**wikitext の `try1`/`con1`/`pen1` から組み立てる案はスコープ外なので、採る場合は実装前に停止して確認すること**
+- **`round` / `roundName` を null 固定にしない（PR #689 の差し戻し理由その3）。** wikitext に `=== Round 1 ===` 形式の見出しが25個ある。`{{rugbybox}}` の走査中に直前のラウンド見出しを保持すれば復元できる
 - **`{{rugbybox}}` が0件ならエラーにする。** 空配列を返して正常終了しないこと。**これが2シーズン気づかれなかった原因**。ページ自体が無い場合（`isMissingWikipediaPage`）とは区別する
 - **共通ユーティリティは複数ページの wikitext を結合できる形にする。** 後続の SRP（`List of ...` + 本文）と Nations Championship（南北2ページ）が必要とする。`?action=raw` は1リクエスト1ページなので順に取得して結合する。**結合時もレート制限を守る**（`fetchWithPolicy` の既定3秒間隔）
 - **ページ名の URL 化**: 空白は `_`、非 ASCII は URL エンコード。**ダッシュは en dash（U+2013）**（`2025–26_Premiership_Rugby`）
@@ -85,7 +88,7 @@ URC（後続。チームのリンクと `{{flagicon}}` が併存）:
 - `docs/decisions.md` / `specs/*.md` / `CLAUDE.md` / `AGENTS.md` の変更（AGENTS.md:180-181 で禁止）
 
 完了の定義:
-- spec の受け入れ条件1〜18をすべて満たす
+- spec の受け入れ条件1〜22をすべて満たす
 - テストを追加する。最低限、次の10ケース。**フィクスチャは手作りせず、上記の実例をそのまま使う**（手作り HTML/wikitext は実データで壊れる前科がある）
   1. **`home` / `away` のブロックが解決される**（Premiership 形式）
   2. **`team1` / `team2` のブロックが解決される**（Six Nations 形式）
@@ -97,6 +100,9 @@ URC（後続。チームのリンクと `{{flagicon}}` が併存）:
   8. en dash のスコアが解釈され、空スコアが `null` になる
   9. **`{{rugbybox}}` が0件のときエラーになる**
   10. ページ不在時に `isMissingWikipediaPage` と同じ扱いになる
+  11. **`eventId` が `Sale_v_Gloucester` 形式**（空白がアンダースコアに正規化されている）
+  12. **`round` が `=== Round N ===` 見出しから取れている**
+  13. **`rawHtml` が空でなく、得点イベントの解析に渡せる**
 - `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build` clean
 - 変更ファイル一覧を報告する
 

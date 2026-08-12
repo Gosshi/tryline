@@ -145,6 +145,42 @@ wikitext から `{{rugbybox` を検出し、名前付きパラメータを抽出
 
 `wikipedia-premiership.ts` の**公開インターフェース（返り値 `ParsedLiveMatch[]`）は変えない**。呼び出し側（`lib/ingestion/live-ingest.ts` 等）に影響を出さないため、内部実装だけを差し替える。
 
+**型が同じでも、フィールドの中身が変わると下流が壊れる。** 2026-08-12 の PR #689 で以下3点の後退が見つかったため、明示的に条件化する（当初の spec に書いていなかった漏れ）。
+
+#### 4-1. `eventId` は既存 DB の形式と一致させる（重複挿入の防止）
+
+`lib/ingestion/upsert.ts` の `findExistingMatch` は、まず `external_ids.wikipedia_event_id` の完全一致で既存行を探す。ここが外れると次に「大会 + 両チーム + キックオフ完全一致」で探し、**それも外れると `upsert.ts:130-132` が `null` を返して新規挿入する**。
+
+| | 値 |
+|---|---|
+| 既存 DB（`premiership-2026-27` の90件すべて） | `Sale_v_Gloucester` |
+| wikitext の `id` パラメータ | `Sale v Gloucester` |
+
+**空白をアンダースコアに正規化して、既存の `wikipedia_event_id` と一致させること。** 正規化しないと、キックオフ時刻が変わった試合が**更新ではなく重複行になる**。シーズン中の時刻変更は日常的に起きるため、これは想定内の経路であり、event_id 突合は本来まさにこのための安全網である。
+
+**`id` パラメータを持たないブロックが93件中3件ある。** その場合の代替キーは、再実行しても同じ値になるものにすること。
+
+#### 4-2. 得点イベントの取り込みを止めないこと
+
+`ParsedLiveMatch.rawHtml` は `live-ingest.ts:338-341` で得点イベントの解析に使われる。
+
+```ts
+const rawHtml = eventMatch?.rawHtml ?? match?.rawHtml;
+if (!match || !rawHtml) { /* skip */ continue; }
+```
+
+**Premiership は `fetchEventMatches` を持たない**（定義があるのは Nations Championship と Lipovitan のみ）ため、**イベントの入手経路は `rawHtml` だけ**である。ここを空文字にすると、**以後 Premiership の全試合が恒久的にイベント0件になる**。
+
+本番実測（2026-08-12）: `premiership-2025-26` の終了済み75試合は**75/75 がイベントを持つ**。稼働中のソースは `premiership-2026-27`（2026年9月開幕）なので、影響は新シーズンの全試合に及び、週次監査の「イベント0件」検知にも毎回かかる。
+
+**イベント取り込みを維持すること。** 実現方法は実装者が選んでよい（例: イベント解析用に従来の HTML を別途取得する / wikitext の `try1` / `con1` / `pen1` から組み立てる）。**後者を選ぶ場合は本 spec のスコープを超えるため、実装前に停止して確認すること。**
+
+#### 4-3. `round` / `roundName` を失わないこと
+
+`round` → `external_ids.wikipedia_round`、`roundName` → `external_ids.round_name` に入る。`external_ids` は spread マージなので**既存行の値は消えない**が、**新規挿入される試合はラウンド情報を持たない**。
+
+wikitext には `=== Round 1 ===` 形式の見出しが25個あるので、**`{{rugbybox}}` を走査する際に直前のラウンド見出しを保持すれば復元できる。**
+
 ### 5. 0件時の扱い（重要）
 
 **`{{rugbybox}}` が1件も見つからなかった場合は、正常終了せずエラーとして扱う。** 現行パーサが「見つからなければ黙って `continue`」して2シーズン気づかれなかった原因を、ここで塞ぐ。ページ自体が存在しない場合（`isMissingWikipediaPage`）は従来どおり区別する。
@@ -176,7 +212,10 @@ wikitext から `{{rugbybox` を検出し、名前付きパラメータを抽出
 15. **Premiership 以外の大会の取り込み挙動が一切変わっていない。**
 16. 共通ユーティリティが**複数ページの wikitext を結合して扱える**（後続の SRP / Nations Championship を見据えた設計になっている）。
 17. **取得が `/wiki/{ページ名}?action=raw` で行われ、`fetchWithPolicy` を経由しており、`skipRobotsCheck` がどこにも使われていない。**
-18. `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build` clean。
+19. **`eventId` が既存 DB の `wikipedia_event_id` と同形式**（`Sale_v_Gloucester`）で、`findExistingMatch` の第1段階で既存行に一致する。`id` を持たない3件の代替キーが再実行で不変である。
+20. **得点イベントの取り込みが維持されている。** `rawHtml` を空にしただけで終わらせず、Premiership の終了済み試合でイベントが入ることを確認する。
+21. **`round` / `roundName` が取れている**（`=== Round N ===` 見出しから復元）。新規挿入される試合も `wikipedia_round` を持つ。
+22. `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build` clean。
 
 ## 未解決の質問
 

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const fetcherMock = vi.hoisted(() => ({
@@ -18,6 +20,7 @@ import {
   stripWikitextMarkup,
 } from "@/lib/ingestion/sources/wikipedia-wikitext";
 import { FetchError } from "@/lib/scrapers/errors";
+import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 
 const PREMIERSHIP_RUGBYBOX = `{{Rugbybox
 |id = Northampton v Leicester
@@ -47,6 +50,25 @@ const PREMIERSHIP_PLAYOFF_TEAM_VALUES = `{{Rugbybox
 |away = (4) [[Leicester Tigers]]
 }}`;
 
+const PREMIERSHIP_SALE_GLOUCESTER_RUGBYBOX = `=== Round 1 ===
+{{Rugbybox
+|id = Sale v Gloucester
+|date = 25 September 2025
+|time = 19:45
+|home = (1 BP) [[Sale Sharks]]
+|score = 27–10
+|away = [[Gloucester Rugby|Gloucester]]
+|stadium = [[CorpAcq Stadium]]
+}}`;
+
+const PREMIERSHIP_SALE_GLOUCESTER_HTML = readFileSync(
+  path.join(
+    process.cwd(),
+    "tests/fixtures/wikipedia-premiership-sale-gloucester.html",
+  ),
+  "utf8",
+);
+
 function rawResponse(wikitext: string) {
   return new Response(wikitext, {
     headers: { "Content-Type": "text/x-wiki" },
@@ -73,6 +95,30 @@ describe("Wikipedia wikitext ingestion", () => {
         status: "finished",
       }),
     ]);
+  });
+
+  it("normalizes event IDs, preserves a stable fallback, and restores round headings", () => {
+    const [withId] = parsePremiershipLiveWikitext(
+      PREMIERSHIP_SALE_GLOUCESTER_RUGBYBOX,
+    );
+    const withoutId = `${PREMIERSHIP_SALE_GLOUCESTER_RUGBYBOX.replace(
+      "|id = Sale v Gloucester\n",
+      "",
+    )}`;
+
+    expect(withId).toMatchObject({
+      eventId: "Sale_v_Gloucester",
+      round: 1,
+      roundName: null,
+    });
+    expect(parsePremiershipLiveWikitext(withoutId)[0]?.eventId).toBe(
+      "sale-sharks_gloucester_2025-09-25T18:45:00.000Z",
+    );
+    expect(
+      parsePremiershipLiveWikitext(
+        withoutId.replace("=== Round 1 ===", "=== Semi-finals ==="),
+      )[0],
+    ).toMatchObject({ round: null, roundName: "Semi-finals" });
   });
 
   it("accepts the team1 and team2 alias form used by Six Nations", () => {
@@ -165,11 +211,22 @@ describe("Wikipedia wikitext ingestion", () => {
   });
 
   it("fetches raw wikitext via the allowed wiki URL and common policy", async () => {
-    fetcherMock.fetchWithPolicy.mockResolvedValue(rawResponse(PREMIERSHIP_RUGBYBOX));
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(rawResponse(PREMIERSHIP_SALE_GLOUCESTER_RUGBYBOX))
+      .mockResolvedValueOnce(new Response(PREMIERSHIP_SALE_GLOUCESTER_HTML));
 
-    await expect(fetchPremiership("2025-26")).resolves.toHaveLength(1);
+    const [match] = await fetchPremiership("2025-26");
+
+    expect(match?.rawHtml).toContain('id="Sale_v_Gloucester"');
+    expect(parseMatchEventsFromVeventHtml(match?.rawHtml ?? "")).not.toEqual(
+      [],
+    );
     expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledWith(
       "https://en.wikipedia.org/wiki/2025%E2%80%9326_Premiership_Rugby?action=raw",
+    );
+    expect(fetcherMock.fetchWithPolicy).toHaveBeenNthCalledWith(
+      2,
+      "https://en.wikipedia.org/wiki/2025–26_Premiership_Rugby",
     );
   });
 
