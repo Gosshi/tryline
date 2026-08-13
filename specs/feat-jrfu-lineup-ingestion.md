@@ -1,132 +1,146 @@
-# 日本代表戦のラインアップを日本ラグビー協会公式から取り込む
+# 日本代表戦の試合登録メンバーを sourced_facts として取り込む
+
+> **2026-08-13 全面改稿。** 初版は「JRFU から `match_lineups` へ取り込む」内容だったが、**名寄せが成立しないことが本番実測で判明した**ため方針を変更した。PR #690 でマージされた `match_lineups` 書き込み経路は本 spec で撤去する。経緯は「背景」参照。
 
 ## 背景
 
-2026-08-13、8/15 オーストラリア戦（第2戦）のプレビューが生成されたが、**選手名が1人も出てこない**内容になった。直近5試合の平均得点・平均失点といったスタッツだけで構成されている。
+2026-08-13、8/15 オーストラリア戦のプレビューが**選手名ゼロ**で生成された。
 
-原因を追った結果、配線ではなくデータの欠落だった。
+配線もプロンプトも正常だった。`generate-preview.ts:162-169` はラインアップがあれば各チーム最低3名の実名を出す実装で、空のときは「選手名に言及しない」分岐に落ちる（`generate-preview.ts:223`）。**捏造防止として正しく機能している。** 問題は入力データが無かったこと。
+
+### 初版の方針が破綻した理由
+
+初版は JRFU 公式から `match_lineups` へ取り込む設計だった。PR #690 で実装・マージしたが、**本番で `{"error":"Failed to ingest lineups"}` を返した。**
+
+直接の原因は `players.slug` が NOT NULL なのに insert に含まれていなかったこと。しかしこれを直すと、**より深刻な問題が表面化する**ことが本番実測で判明した。
 
 ```
-orchestrate → ingestLineups → fetchSourcedFacts → generateContent
+日本代表の players 81名
+  name が非ASCII（漢字・カタカナ）    0名   ← 全員ローマ字表記
+  name_ja あり                       11名
 ```
 
-この順序は正しく動いている（`lib/cron/orchestrate.ts:252-270`）。プレビューのプロンプトも、ラインアップがあれば**各チーム最低3名の実名を本文に出す**よう指定している（`lib/llm/prompts/generate-preview.ts:162-169`）。ラインアップが空のときは「選手名に言及せず、チームの戦術・スコア・展開の描写に集中する」分岐に落ちる（同223行）。**捏造防止としては正しく機能している。**
+既存は `Haruto Kida` / `Dylan Riley` / `Ben Gunter` のようにローマ字で登録されている（slug も `haruto-kida`）。一方 JRFU が返すのは `木田晴斗` / `ディラン・ライリー`。
 
-問題は `match_lineups` が空であること。本番実測（2026-08-13）:
+`ensurePlayerIds` は `players.name` の完全一致で既存選手を探すため、**日本23名＋オーストラリア23名の計46名が新規作成され、既存選手と重複する。** `slug` の NOT NULL 違反は、結果的にこの重複を水際で止めていた。
 
-- 8/08 日本 vs オーストラリア（第1戦）: **0行**
-- 8/15 オーストラリア vs 日本（第2戦）: **0行**
+**Owner 判断（2026-08-13）: JRFU 経路で `players` を新規作成しない。`match_lineups` にも書かない。**
 
-### なぜ既存の取り込みでは埋まらないか
+### 代わりの経路
 
-`app/api/cron/ingest-lineups/route.ts` は `matches.external_ids.wikipedia_url` を取得して `parseMatchLineupFromHtml` に渡す。この試合の URL は `2026_Australia–Japan_rugby_union_test_series` だが、**このページにラインアップのデータが存在しない**（2026-08-13 実測）:
+**プレビューのプロンプトは、選手名の出所として `sourced_facts` も認めている。**
 
-| 検索語 | 出現数 |
-|---|---|
-| `Line-ups` / `Lineups` / `Line-ups_and_bench` | **0** |
-| `FB=` / `LW=` / `LP=`（ラインアップ用パラメータ） | **0** |
-| `rugbybox` | 2 |
+> 選手名は入力データ（projected_lineups・match_events・**sourced_facts**）に含まれるものだけを使用すること（`generate-preview.ts:223`）
 
-**パーサの不具合ではなく、ソースにデータが無い。** したがって `specs/feat-ingest-lineups-season-page-fallback.md`（実装済み、コミット `942f295`）や `specs/fix-lineup-ingestion-non-league-one.md` の延長では解決しない。**別ソースが要る。**
+そして**第1戦では実際に機能していた。** `match_sourced_facts` に `rugby-japan.jp` 由来・`confidence='high'` で先発情報が入っている（実測）:
 
-### なぜ優先度が高いか
+> 「日本代表FWは岡部崇人、江良颯、竹内柊平がフロントローを構成する。ジャック・コーネルセン、ワーナー・ディアンズがロック、バックローはベン・ガンター、下川甲嗣、マキシ・ファウルアとなった。」
 
-日本代表戦は年に数回しかない集客の山で、**メンバー発表はその週で最もニュース価値の高い情報**である。にもかかわらず、当日のプレビューが「直近5試合の平均得点」で終わっている。X や note からプレビューへ送客しても、読み手が期待する内容が無い。
+第2戦でこれが無かったのは、**取得経路が LLM の Web 検索頼み**（`lib/llm/sourced-facts/fetch.ts`）で、決まった URL を叩く仕組みが無いため。8/13 の発表を検索が拾えなかった。
+
+**この経路なら `player_id` の名寄せが不要**で、重複作成の問題が丸ごと消える。
 
 ## スコープ
 
 対象:
-- **日本ラグビー協会公式（`rugby-japan.jp`）から日本代表戦の試合登録メンバーを取り込み、`match_lineups` に保存する**
-- 日本・相手国の**両チーム**（公式ページに両方が載っている）
-- 既存の `ingest-lineups` 経路に、日本代表戦のときだけ使う分岐として組み込む
+- 日本代表が出場する試合で、**JRFU の試合登録メンバーページを決め打ちで取得し、`match_sourced_facts` に保存する**
+- PR #690 で入った **`match_lineups` への書き込み経路を撤去する**
 
 対象外:
-- Wikipedia 経由の既存取り込みの変更（他大会はそのまま）
-- プレビュー／レビューのプロンプト変更（**すでにラインアップを使う実装になっている**。データが入れば自動で効く）
+- `players` / `match_lineups` への書き込み（**Owner 判断で明示的に除外**）
+- Wikipedia 経由の既存取り込みの変更
+- プレビュー／レビューのプロンプト変更（すでに `sourced_facts` を使う実装）
 - 日本代表以外の試合
-- 選手の身長・体重・生年月日の取り込み（公式ページには載っているが、本 spec では扱わない）
-- 過去試合のバックフィル
+- **既存の LLM 検索経路の変更**（本 spec は決め打ち取得を「足す」だけ）
+- 選手の身長・体重・生年月日
 
 ## データモデル変更
 
-**なし。** 既存の `match_lineups` をそのまま使う（`match_id` / `team_id` / `player_id` / `jersey_number` / `is_starter` / `announced_at` / `source_url`）。
-
-`player_id` は NOT NULL なので、既存の `ensurePlayerIds` と同じく **`players` に無ければ作る**必要がある。
+**なし。** 既存の `match_sourced_facts` を使う（`match_id` / `content_type` / `fact` / `fact_ja` / `source_url` / `source_domain` / `confidence` / `fetched_at` / `metadata`）。
 
 ## API サーフェス
 
-**変更なし。** 既存の `POST /api/cron/ingest-lineups?match_id=...` の内部分岐として実装する。
+**変更なし。** `POST /api/cron/fetch-sourced-facts?match_id=...&content_type=preview` の内部処理に、日本代表戦向けの決め打ち取得を追加する。
 
 ## 実装詳細
 
-### 1. ソース URL の解決
-
-**ニュース記事の URL（`/news/54118` 等）は ID が日付から導出できないため使わない。** 代わりに次の2段で辿る。
+### 1. URL 解決（PR #690 の実装を流用）
 
 ```
-1. https://www.rugby-japan.jp/braveblossoms/match/{YYYYMMDD}   ← kickoff_at（JST）から生成
-2. そのページ内の「試合登録メンバー/試合記録はこちら」リンク → /match/{id}
-3. /match/{id} に両チームの23人が掲載されている
+1. https://www.rugby-japan.jp/braveblossoms/match/{YYYYMMDD}   ← kickoff_at を JST で整形
+2. ページ内の「試合登録メンバー/試合記録はこちら」リンク → /match/{id}
 ```
 
-2026-08-13 の実測で、第2戦は `/match/30035` に**両チームの23人**が「スターティングメンバー」「リザーブメンバー」に分かれて掲載されていることを確認済み（背番号・氏名・身長・体重・生年月日つき）。
+**この部分は PR #690 で実装済みかつ実ページで動作確認済み**（`lib/scrapers/jrfu-lineups.ts` の `buildJrfuBraveBlossomsMatchUrl` / `findJrfuMatchUrl`）。**再実装しないこと。**
 
-- **`/match/{id}` の ID は日付から導出できない。** 必ず `/braveblossoms/match/{YYYYMMDD}` から辿ること
-- **`www` を付ける。** `rugby-japan.jp` 直（`www` なし）は証明書エラーになる（2026-08-13 実測、既知の問題）
-- 取得は既存の `fetchWithPolicy` を通す。`rugby-japan.jp` は `lib/llm/sourced-facts/allowlist.ts` の許可ドメイン
+2026-08-13 実測: ランディングページに完全一致のアンカー `試合登録メンバー/試合記録はこちら` と `https://www.rugby-japan.jp/match/30035` が存在する。
 
-### 2. 適用条件
+### 2. fact の生成は LLM を使わない（重要）
 
-**日本代表が出場する試合のときだけこの経路を使う。** 判定はチームの slug（`japan`）で行う。ホーム・アウェイのどちらでもよい。
+**パース結果から決定的に文字列を組み立てる。** LLM に要約させない。
 
-該当しない試合では**既存の Wikipedia 経路のまま**。挙動を変えない。
+理由は2つある。**捏造の余地を無くすため**と、**追加の LLM コストを発生させないため**。
 
-### 3. 発表タイミング
+形式の例（チームごと・先発とリザーブで分ける）:
 
-公式ページに「**試合登録メンバーはキックオフ予定時刻の48時間前に発表**」と明記されている。
+```
+fact:    "日本代表の先発は1 岡部崇人、2 江良颯、3 竹内柊平、…、15 松永拓朗。"
+fact_ja: 同一文字列（すでに日本語のため）
+```
 
-- 発表前は当然取得できない。**その場合は既存と同じく `{ announced: false }` を返して正常終了する**（エラーにしない）
-- プレビュー生成窓は12〜48時間前（`lib/cron/orchestrate.ts:6-7`）なので、**窓の開始とほぼ同時に発表される**。窓の後半の実行で取得できる想定
+- `source_domain`: `rugby-japan.jp`
+- `confidence`: `high`（公式一次情報のため）
+- `content_type`: `preview`
+- `source_url`: 実際に取得した `/match/{id}`
+- **`metadata` に決め打ち取得であることを示す印を入れる**（LLM 検索由来と区別できるようにする）
 
-### 4. チームの対応付け
+### 3. 既存の検索結果との共存
 
-公式ページは「日本代表」と相手国名で並ぶ。`matches.home_team_id` / `away_team_id` のどちらに割り当てるかを、**チーム名から判定する**。
+**既存の LLM 検索経路は残す。** 決め打ち取得の結果を追加する形にする。
 
-- 日本側は `teams.slug = 'japan'` に対応付ける
-- 相手国は既存の `teams` から名前で解決する。**解決できない場合はその試合をスキップし、警告を出す**（誤ったチームに紐付けない）
+- **同じ試合で何度実行しても、決め打ち分が重複して増えないこと**（再実行は日常的に起きる）
+- 既存の `force` フラグの挙動と矛盾しないこと
 
-### 5. 選手の解決
+### 4. メンバー未発表のとき
 
-既存の `ensurePlayerIds`（`app/api/cron/ingest-lineups/route.ts:85`）と同じ方針で、`players` に無ければ作る。
+公式ページに「試合登録メンバーはキックオフ予定時刻の48時間前に発表」と明記されている。
 
-- **日本代表選手は漢字表記で登録する**（`specs/feat-japanese-player-kanji-names.md` で対応済み。カタカナに変換しない）
-- 公式ページの表記をそのまま使う
+**未発表・ページ不在・パース失敗のいずれでも、`fetch-sourced-facts` 全体を失敗させないこと。** 決め打ち取得が取れなくても、既存の検索経路の結果は保存される。警告ログを出して続行する。
+
+### 5. `match_lineups` 経路の撤去
+
+PR #690 で `app/api/cron/ingest-lineups/route.ts` に追加した日本代表分岐を**撤去し、元の Wikipedia 経路に戻す**。
+
+- `lib/scrapers/jrfu-lineups.ts` の**URL 解決とページのパースは残す**（本 spec で使う）
+- 撤去するのは `match_lineups` / `players` への書き込みに至る経路のみ
 
 ## UI サーフェス
 
-**変更なし。** 既存のラインアップ表示がそのまま使われる。
+**変更なし。**
 
 ## LLM 連携
 
-**プロンプトの変更なし。** `generate-preview.ts` / `generate-recap.ts` はすでに `projected_lineups` を使う実装になっており、**データが入れば自動で実名入りに変わる**。
+**プロンプトの変更なし。** `generate-preview.ts` はすでに `sourced_facts` を選手名の出所として認めている。データが入れば実名が出る。
+
+**決め打ち取得そのものは LLM を使わない**（上記2）。
 
 ## 受け入れ条件
 
-1. 8/15 オーストラリア vs 日本の試合で、`match_lineups` に**両チーム23人ずつ・計46行**が入る。
-2. `jersey_number` が1〜23で、1〜15が `is_starter = true`、16〜23が `false` になっている。
-3. `source_url` に実際に取得した `/match/{id}` の URL が入っている。
-4. **日本代表選手が漢字表記で `players` に入っている**（カタカナ変換されていない）。
-5. **相手チームが正しく解決されている**（日本側と入れ替わっていない）。
-6. 相手国のチームが `teams` で解決できない場合、**誤った紐付けをせずスキップし、警告を出す**。
-7. メンバー未発表（48時間前より前）のとき、**エラーにならず `{ announced: false }` を返す**。
-8. **日本代表が出場しない試合の挙動が一切変わっていない**（Wikipedia 経路のまま）。
+1. 8/15 オーストラリア vs 日本の試合で `fetch-sourced-facts` を実行すると、**`match_sourced_facts` に JRFU 由来の登録メンバーの fact が入る**（`source_domain='rugby-japan.jp'`、`confidence='high'`、`source_url` が `/match/{id}`）。
+2. fact の文面に**両チームの先発15名とリザーブ8名の氏名と背番号**が含まれる。
+3. **fact の生成に LLM を使っていない**（パース結果からの決定的な組み立て）。
+4. **同じ試合で2回実行しても、決め打ち分の fact が重複しない。**
+5. メンバー未発表・ページ不在・パース失敗のいずれでも、**`fetch-sourced-facts` 全体が失敗しない**（警告ログを出して続行）。
+6. **日本代表が出場しない試合の挙動が一切変わっていない。**
+7. **`players` と `match_lineups` への書き込みが発生しない**（PR #690 の経路が撤去されている）。
+8. `ingest-lineups` の日本代表分岐が撤去され、**日本代表戦でも従来の Wikipedia 経路に戻っている。**
 9. 取得が `fetchWithPolicy` を経由し、`skipRobotsCheck` を使っていない。URL に `www` が付いている。
 10. `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build` clean。
 
 ## 未解決の質問
 
-1. **相手国チーム名の表記ゆれ。** 公式ページの日本語表記（「オーストラリア代表」等）と `teams` の `name_ja` が一致するかは未検証。マッピングが必要な場合、対象は日本代表の対戦相手に限られるので数は多くない。**実装時に実データで確認し、必要ならマッピングを作ること。**
+1. **取得タイミングのズレは本 spec では解決しない。** メンバーは48時間前発表、プレビュー生成窓は12〜48時間前。**すでにプレビューが published の試合には `orchestrate` が何も実行しない**ため、発表後に自動で反映されない。手動で `fetch-sourced-facts` + `generate-content` を回す必要がある。**汎用の手動ワークフローが存在しない**（`grep -ln "ingest-lineups" .github/workflows/*.yml` が0件。雛形は `cron-ingest-league-one-lineups.yml`）。**別途 spec 化する。**
 
-2. **プレビュー再生成の扱い。** ラインアップが後から入っても、**すでに published のプレビューは自動では書き換わらない**。木曜21:05 の `cron-weekend-preview-refresh` が拾うかは未確認。拾わない場合、「ラインアップが新たに入った試合はプレビューを再生成する」というトリガーが別途要る。**本 spec では扱わない。**
+2. **相手チーム名の扱い。** `match_lineups` を使わないため team_id への紐付けは不要になったが、fact の文面に相手国名をどう書くかは実装判断。公式表記（「オーストラリア代表」）をそのまま使うのが安全。
 
-3. **リーグワンとの経路の重複。** リーグワンには専用の `ingest-league-one-lineups` があり、本 spec で3経路目になる。将来的にソース別パーサを整理する価値はあるが、**今は動くものを増やすことを優先する。**
+3. **長期的には `players` の日本語表記を整備すべきか。** 81名中 name_ja は11名のみ。整備すれば将来 `match_lineups` 経路も選べるようになるが、**本 spec では扱わない。**
