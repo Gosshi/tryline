@@ -4,6 +4,7 @@ import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 export type JrfuLineupPlayer = {
   is_starter: boolean;
+  jrfu_player_id: string | null;
   jersey_number: number;
   name: string;
 };
@@ -50,6 +51,8 @@ function parseJrfuTeamPlayers(
       const name = normalizeWhitespace(
         $(row).find("td").eq(2).find("a").text(),
       );
+      const playerHref = $(row).find("td").eq(2).find("a").attr("href");
+      const jrfuPlayerId = playerHref?.match(/^\/player\/(\d+)$/)?.[1] ?? null;
 
       if (
         !Number.isInteger(jerseyNumber) ||
@@ -60,7 +63,14 @@ function parseJrfuTeamPlayers(
         return [];
       }
 
-      return [{ is_starter: isStarter, jersey_number: jerseyNumber, name }];
+      return [
+        {
+          is_starter: isStarter,
+          jrfu_player_id: jrfuPlayerId,
+          jersey_number: jerseyNumber,
+          name,
+        },
+      ];
     });
 }
 

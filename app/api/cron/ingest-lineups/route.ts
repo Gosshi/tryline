@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
@@ -7,10 +8,12 @@ import { fetchJrfuMatchLineup } from "@/lib/scrapers/jrfu-lineups";
 import { parseMatchLineupFromHtml } from "@/lib/scrapers/wikipedia-lineups";
 
 import type { Json } from "@/lib/db/types";
+import type { JrfuLineupPlayer } from "@/lib/scrapers/jrfu-lineups";
 
 type JsonObject = Record<string, Json>;
 
 type LineupPlayer = {
+  external_ids?: JsonObject;
   is_starter?: boolean;
   jersey_number: number;
   name: string;
@@ -51,6 +54,28 @@ function matchesJrfuOpponentName(params: {
   return [params.teamName, params.teamNameJa]
     .filter((name): name is string => Boolean(name))
     .some((name) => normalizeJrfuTeamName(name) === officialName);
+}
+
+function buildLineupPlayerSlug(teamId: string, name: string): string {
+  const ascii = name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const hash = createHash("sha1")
+    .update(`${teamId}:${name}`)
+    .digest("hex")
+    .slice(0, 8);
+
+  return ascii ? `${ascii}-${hash}` : `player-${hash}`;
+}
+
+function withJrfuPlayerExternalId(player: JrfuLineupPlayer): LineupPlayer {
+  const externalIds: JsonObject = player.jrfu_player_id
+    ? { jrfu_player_id: player.jrfu_player_id }
+    : {};
+
+  return { ...player, external_ids: externalIds };
 }
 
 export async function POST(request: Request) {
@@ -123,12 +148,14 @@ export async function POST(request: Request) {
 
       lineup = {
         announced_at: jrfuLineup.announced_at,
-        away_players: japanIsAway
+        away_players: (japanIsAway
           ? jrfuLineup.japan_players
-          : jrfuLineup.opponent_players,
-        home_players: japanIsHome
+          : jrfuLineup.opponent_players
+        ).map(withJrfuPlayerExternalId),
+        home_players: (japanIsHome
           ? jrfuLineup.japan_players
-          : jrfuLineup.opponent_players,
+          : jrfuLineup.opponent_players
+        ).map(withJrfuPlayerExternalId),
         source_url: jrfuLineup.source_url,
       };
       usesJrfuLineup = true;
@@ -163,8 +190,12 @@ export async function POST(request: Request) {
 
     async function ensurePlayerIds(
       teamId: string,
-      names: string[],
+      lineupPlayers: LineupPlayer[],
     ): Promise<Map<string, string>> {
+      const playerByName = new Map(
+        lineupPlayers.map((player) => [player.name, player]),
+      );
+      const names = lineupPlayers.map((player) => player.name);
       const uniqueNames = [...new Set(names)];
       const { data: existing, error: existingError } = await db
         .from("players")
@@ -188,7 +219,9 @@ export async function POST(request: Request) {
           missingNames.map((name) => ({
             team_id: teamId,
             name,
-            external_ids: { wikipedia_title: name },
+            slug: buildLineupPlayerSlug(teamId, name),
+            external_ids:
+              playerByName.get(name)?.external_ids ?? { wikipedia_title: name },
           })),
         );
 
@@ -214,10 +247,14 @@ export async function POST(request: Request) {
       return existingByName;
     }
 
-    const homeNames = lineup.home_players.map((player) => player.name);
-    const awayNames = lineup.away_players.map((player) => player.name);
-    const homePlayerIds = await ensurePlayerIds(match.home_team_id, homeNames);
-    const awayPlayerIds = await ensurePlayerIds(match.away_team_id, awayNames);
+    const homePlayerIds = await ensurePlayerIds(
+      match.home_team_id,
+      lineup.home_players,
+    );
+    const awayPlayerIds = await ensurePlayerIds(
+      match.away_team_id,
+      lineup.away_players,
+    );
 
     const homeRows = lineup.home_players.flatMap((player) => {
       const playerId = homePlayerIds.get(player.name);

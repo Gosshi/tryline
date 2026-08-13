@@ -26,18 +26,32 @@ describe("JRFU match lineup parser", () => {
     expect(lineup?.opponent_players).toHaveLength(23);
     expect(lineup?.japan_players).toEqual(
       expect.arrayContaining([
-        { is_starter: true, jersey_number: 1, name: "岡部崇人" },
-        { is_starter: false, jersey_number: 17, name: "大塚壮二郎" },
+        expect.objectContaining({
+          is_starter: true,
+          jrfu_player_id: "510669",
+          jersey_number: 1,
+          name: "岡部崇人",
+        }),
+        expect.objectContaining({
+          is_starter: false,
+          jrfu_player_id: "510668",
+          jersey_number: 17,
+          name: "大塚壮二郎",
+        }),
       ]),
     );
     expect(lineup?.opponent_players).toEqual(
       expect.arrayContaining([
-        { is_starter: true, jersey_number: 1, name: "アンガス・ベル" },
-        {
+        expect.objectContaining({
+          is_starter: true,
+          jersey_number: 1,
+          name: "アンガス・ベル",
+        }),
+        expect.objectContaining({
           is_starter: false,
           jersey_number: 23,
           name: "フィリポ・ダウグヌ",
-        },
+        }),
       ]),
     );
     expect(lineup?.japan_players.map((player) => player.jersey_number)).toEqual(

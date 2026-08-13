@@ -93,6 +93,17 @@ describe("/api/cron/ingest-lineups", () => {
     expect(response.status).toBe(401);
   });
 
+  it("rejects a player insert without the required slug", async () => {
+    const { homeTeamId, service } = await insertMatchFixture();
+
+    const { error } = await service.from("players").insert({
+      name: "Slug Missing Player",
+      team_id: homeTeamId,
+    });
+
+    expect(error).toMatchObject({ code: "23502" });
+  });
+
   it("returns announced false when lineup is not published", async () => {
     const { matchId, service } = await insertMatchFixture();
     await service
@@ -167,18 +178,20 @@ describe("/api/cron/ingest-lineups", () => {
 
     const players = await service
       .from("players")
-      .select("team_id, name")
+      .select("team_id, name, slug")
       .in("name", ["Home New Player", "Away New Player"]);
     expect(players.error).toBeNull();
     expect(players.data).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          team_id: homeTeamId,
           name: "Home New Player",
+          slug: expect.stringMatching(/^home-new-player-[0-9a-f]{8}$/),
+          team_id: homeTeamId,
         }),
         expect.objectContaining({
-          team_id: awayTeamId,
           name: "Away New Player",
+          slug: expect.stringMatching(/^away-new-player-[0-9a-f]{8}$/),
+          team_id: awayTeamId,
         }),
       ]),
     );
@@ -231,7 +244,7 @@ describe("/api/cron/ingest-lineups", () => {
     const lineups = await service
       .from("match_lineups")
       .select(
-        "team_id, jersey_number, is_starter, source_url, player:players(name)",
+        "team_id, jersey_number, is_starter, source_url, player:players(name, slug, external_ids)",
       )
       .eq("match_id", matchId);
 
@@ -242,7 +255,11 @@ describe("/api/cron/ingest-lineups", () => {
         expect.objectContaining({
           is_starter: true,
           jersey_number: 1,
-          player: expect.objectContaining({ name: "岡部崇人" }),
+          player: expect.objectContaining({
+            external_ids: { jrfu_player_id: "510669" },
+            name: "岡部崇人",
+            slug: expect.stringMatching(/^player-[0-9a-f]{8}$/),
+          }),
           source_url: "https://www.rugby-japan.jp/match/30035",
           team_id: japanTeamId,
         }),
