@@ -8,6 +8,7 @@ import {
   isAllowedSourcedFactDomain,
   SOURCED_FACT_ALLOWED_DOMAINS,
 } from "@/lib/llm/sourced-facts/allowlist";
+import { fetchJrfuMatchLineup } from "@/lib/scrapers/jrfu-lineups";
 
 import type { Json } from "@/lib/db/types";
 import type {
@@ -21,6 +22,7 @@ export const SEARCH_PROMPT_VERSION = "sourced-facts@1.4.0";
 const PREVIEW_REFRESH_WINDOW_HOURS = 72;
 const PREVIEW_FRESHNESS_HOURS = 24;
 const MAX_STORED_FACTS = 8;
+const JRFU_LINEUP_MODEL_VERSION = "jrfu-lineups@1.0.0";
 const STATISTICAL_FACT_PATTERN =
   /\d+(?:\.\d+)?\s*%|\b(?:penalt\w*|tackles?|possession|territory|turnovers?|lineouts?|scrums?|carries|metres?|meters?)\b/i;
 
@@ -30,11 +32,13 @@ type MatchForSourcedFacts = {
     english_name: string | null;
     name: string;
     name_ja: string | null;
+    slug?: string | null;
   } | null;
   home_team: {
     english_name: string | null;
     name: string;
     name_ja: string | null;
+    slug?: string | null;
   } | null;
   competition: {
     family: string | null;
@@ -104,10 +108,86 @@ function shouldUseCachedFacts(params: {
 }
 
 function getCachedPromptVersion(
-  fact: StoredSourcedFact | undefined,
+  facts: StoredSourcedFact[],
 ): string | null {
-  const version = fact?.metadata?.prompt_version;
+  const version = facts
+    .map((fact) => fact.metadata?.prompt_version)
+    .find((value): value is string => typeof value === "string");
   return typeof version === "string" ? version : null;
+}
+
+function isJapanMatch(match: MatchForSourcedFacts) {
+  return match.home_team?.slug === "japan" || match.away_team?.slug === "japan";
+}
+
+function formatJrfuPlayers(
+  players: Array<{ jersey_number: number; name: string }>,
+) {
+  return players
+    .sort((first, second) => first.jersey_number - second.jersey_number)
+    .map((player) => `${player.jersey_number} ${player.name}`)
+    .join("、");
+}
+
+export function buildJrfuLineupSourcedFacts(lineup: Awaited<ReturnType<typeof fetchJrfuMatchLineup>>) {
+  if (!lineup) {
+    return [];
+  }
+
+  return [
+    { label: "日本代表", players: lineup.japan_players },
+    { label: lineup.opponent_name, players: lineup.opponent_players },
+  ].flatMap(({ label, players }) => {
+    const starters = formatJrfuPlayers(
+      players.filter((player) => player.is_starter),
+    );
+    const reserves = formatJrfuPlayers(
+      players.filter((player) => !player.is_starter),
+    );
+
+    return [
+      `${label}の先発は${starters}。`,
+      `${label}のリザーブは${reserves}。`,
+    ].map((fact) => ({
+      confidence: "high" as const,
+      fact,
+      fact_ja: fact,
+      source_domain: "rugby-japan.jp",
+      source_url: lineup.source_url,
+    }));
+  });
+}
+
+async function fetchJrfuLineupSourcedFacts(match: MatchForSourcedFacts) {
+  if (!isJapanMatch(match)) {
+    return [];
+  }
+
+  try {
+    const lineup = await fetchJrfuMatchLineup(match.kickoff_at);
+
+    if (!lineup) {
+      console.warn(
+        `[sourced-facts] JRFU lineup is unavailable for match_id=${match.id}; continuing with web search.`,
+      );
+      return [];
+    }
+
+    return buildJrfuLineupSourcedFacts(lineup);
+  } catch (error) {
+    console.warn(
+      `[sourced-facts] Failed to fetch JRFU lineup for match_id=${match.id}; continuing with web search.`,
+      error,
+    );
+    return [];
+  }
+}
+
+function metadataForJrfuLineupFact(): Json {
+  return {
+    deterministic: true,
+    source: "jrfu_match_lineup",
+  };
 }
 
 function containsStatisticalFact(fact: string): boolean {
@@ -291,8 +371,8 @@ export async function fetchSourcedFactsForMatch(options: {
         status,
         external_ids,
         competition:competitions(name, season, family),
-        home_team:teams!matches_home_team_id_fkey(name, name_ja, english_name),
-        away_team:teams!matches_away_team_id_fkey(name, name_ja, english_name)
+        home_team:teams!matches_home_team_id_fkey(name, name_ja, english_name, slug),
+        away_team:teams!matches_away_team_id_fkey(name, name_ja, english_name, slug)
       `,
     )
     .eq("id", options.matchId)
@@ -316,11 +396,37 @@ export async function fetchSourcedFactsForMatch(options: {
     options.matchId,
     options.contentType,
   );
-  const newestFetchedAt = cachedFacts[0]?.fetched_at ?? null;
-  const cachedPromptVersion = getCachedPromptVersion(cachedFacts[0]);
+  const jrfuFacts =
+    options.contentType === "preview"
+      ? await fetchJrfuLineupSourcedFacts(typedMatch)
+      : [];
+  const jrfuRows = jrfuFacts.map((fact) => ({
+    ...fact,
+    content_type: options.contentType,
+    fetched_at: now.toISOString(),
+    match_id: options.matchId,
+    metadata: metadataForJrfuLineupFact(),
+    model_version: JRFU_LINEUP_MODEL_VERSION,
+  }));
+
+  if (jrfuRows.length > 0) {
+    const { error: jrfuUpsertError } = await db
+      .from("match_sourced_facts")
+      .upsert(jrfuRows, { onConflict: "match_id,fact" });
+
+    if (jrfuUpsertError) {
+      throw jrfuUpsertError;
+    }
+  }
+
+  const cachedSearchFacts = cachedFacts.filter(
+    (fact) => typeof fact.metadata?.prompt_version === "string",
+  );
+  const newestFetchedAt = cachedSearchFacts[0]?.fetched_at ?? null;
+  const cachedPromptVersion = getCachedPromptVersion(cachedSearchFacts);
   if (
     !options.force &&
-    cachedFacts.length > 0 &&
+    cachedSearchFacts.length > 0 &&
     cachedPromptVersion === SEARCH_PROMPT_VERSION &&
     shouldUseCachedFacts({
       contentType: options.contentType,
@@ -331,7 +437,7 @@ export async function fetchSourcedFactsForMatch(options: {
   ) {
     return {
       cached: true,
-      facts: cachedFacts,
+      facts: [...jrfuRows, ...cachedFacts] as StoredSourcedFact[],
       fetched: false,
       skippedReason: null,
     };
@@ -428,7 +534,7 @@ export async function fetchSourcedFactsForMatch(options: {
 
   return {
     cached: false,
-    facts: rows as StoredSourcedFact[],
+    facts: [...jrfuRows, ...rows] as StoredSourcedFact[],
     fetched: true,
     skippedReason:
       rejectedFacts.length > 0

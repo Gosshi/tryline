@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -15,6 +17,7 @@ import {
   loadSourcedFactsForMatch,
   parseSourcedFactsResponse,
 } from "@/lib/llm/sourced-facts/fetch";
+import { parseJrfuMatchLineupHtml } from "@/lib/scrapers/jrfu-lineups";
 
 import type { SourcedFactRejection } from "@/lib/llm/sourced-facts/types";
 
@@ -29,10 +32,31 @@ const openAIMock = vi.hoisted(() => ({
   createWebSearchJsonResponse: vi.fn(),
 }));
 
+const jrfuMock = vi.hoisted(() => ({
+  fetchJrfuMatchLineup: vi.fn(),
+}));
+
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: () => dbMock,
 }));
 vi.mock("@/lib/llm/openai", () => openAIMock);
+vi.mock("@/lib/scrapers/jrfu-lineups", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/scrapers/jrfu-lineups")>()),
+  ...jrfuMock,
+}));
+
+const jrfuMatchHtml = readFileSync(
+  path.join(process.cwd(), "tests/fixtures/jrfu-match-30035-lineups.html"),
+  "utf8",
+);
+const jrfuLineup = parseJrfuMatchLineupHtml(
+  jrfuMatchHtml,
+  "https://www.rugby-japan.jp/match/30035",
+);
+
+if (!jrfuLineup) {
+  throw new Error("Expected the JRFU lineup fixture to parse.");
+}
 
 function createMatchBuilder() {
   return {
@@ -85,6 +109,24 @@ const nationsChampionshipMatch = {
     season: "2026",
   },
   external_ids: { round_name: "Round 1" },
+};
+
+const japanMatch = {
+  ...nationsChampionshipMatch,
+  away_team: {
+    english_name: "Australia",
+    name: "Australia",
+    name_ja: "オーストラリア",
+    slug: "australia",
+  },
+  home_team: {
+    english_name: "Japan",
+    name: "Japan",
+    name_ja: "日本",
+    slug: "japan",
+  },
+  id: "japan-match-1",
+  kickoff_at: "2026-08-15T06:15:00.000Z",
 };
 
 function cachedFact(overrides: Record<string, unknown> = {}) {
@@ -629,6 +671,7 @@ describe("fetchSourcedFactsForMatch", () => {
     vi.clearAllMocks();
     dbMock.matchSingle.mockResolvedValue({ data: leagueOneMatch, error: null });
     dbMock.upsert.mockResolvedValue({ error: null });
+    jrfuMock.fetchJrfuMatchLineup.mockResolvedValue(null);
   });
 
   it("uses cached facts without calling web search inside the freshness window", async () => {
@@ -650,6 +693,187 @@ describe("fetchSourcedFactsForMatch", () => {
     expect(result.cached).toBe(true);
     expect(result.facts).toHaveLength(1);
     expect(openAIMock.createWebSearchJsonResponse).not.toHaveBeenCalled();
+  });
+
+  it("stores deterministic JRFU lineup facts for both teams without touching players or match_lineups", async () => {
+    dbMock.matchSingle.mockResolvedValue({ data: japanMatch, error: null });
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    jrfuMock.fetchJrfuMatchLineup.mockResolvedValue(jrfuLineup);
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: japanMatch.id,
+      now: new Date("2026-08-13T00:00:00.000Z"),
+    });
+
+    expect(result.facts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          confidence: "high",
+          fact: expect.stringContaining("1 岡部崇人"),
+          fact_ja: expect.stringContaining("15 松永拓朗"),
+          metadata: {
+            deterministic: true,
+            source: "jrfu_match_lineup",
+          },
+          source_domain: "rugby-japan.jp",
+          source_url: "https://www.rugby-japan.jp/match/30035",
+        }),
+        expect.objectContaining({
+          fact: expect.stringContaining("16 原田衛"),
+          fact_ja: expect.stringContaining("23 植田和磨"),
+          source_domain: "rugby-japan.jp",
+        }),
+        expect.objectContaining({
+          fact: expect.stringContaining("1 アンガス・ベル"),
+          fact_ja: expect.stringContaining("15 トム・ライト"),
+          source_domain: "rugby-japan.jp",
+        }),
+        expect.objectContaining({
+          fact: expect.stringContaining("16 ブランドン・パエンガ＝アモサ"),
+          fact_ja: expect.stringContaining("23 フィリポ・ダウグヌ"),
+          source_domain: "rugby-japan.jp",
+        }),
+      ]),
+    );
+    expect(dbMock.upsert).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ model_version: "jrfu-lineups@1.0.0" }),
+      ]),
+      { onConflict: "match_id,fact" },
+    );
+    expect(dbMock.from.mock.calls.map(([table]) => table)).toEqual(
+      expect.not.arrayContaining(["players", "match_lineups"]),
+    );
+  });
+
+  it("upserts the same JRFU facts on repeat fetches instead of adding duplicates", async () => {
+    dbMock.matchSingle.mockResolvedValue({ data: japanMatch, error: null });
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    jrfuMock.fetchJrfuMatchLineup.mockResolvedValue(jrfuLineup);
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: japanMatch.id,
+      now: new Date("2026-08-13T00:00:00.000Z"),
+    });
+    await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: japanMatch.id,
+      now: new Date("2026-08-13T01:00:00.000Z"),
+    });
+
+    const jrfuUpserts = dbMock.upsert.mock.calls.filter(
+      ([rows]) => rows[0]?.model_version === "jrfu-lineups@1.0.0",
+    );
+    expect(jrfuUpserts).toHaveLength(2);
+    expect(
+      (jrfuUpserts[0]?.[0] as Array<{ fact: string }>).map(
+        ({ fact }) => fact,
+      ),
+    ).toEqual(
+      (jrfuUpserts[1]?.[0] as Array<{ fact: string }>).map(
+        ({ fact }) => fact,
+      ),
+    );
+    expect(jrfuUpserts.every(([, options]) => options.onConflict === "match_id,fact")).toBe(
+      true,
+    );
+  });
+
+  it("continues the existing web search when JRFU lineup parsing fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    dbMock.matchSingle.mockResolvedValue({ data: japanMatch, error: null });
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    const parseError = new Error("JRFU lineup parser returned no valid teams");
+    jrfuMock.fetchJrfuMatchLineup.mockRejectedValue(parseError);
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({
+        facts: [
+          {
+            confidence: "medium",
+            fact: "Japan have named a captain for the Australia test.",
+            source_url: "https://www.therugbypaper.co.uk/news/japan-captain",
+          },
+        ],
+      }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: japanMatch.id,
+      now: new Date("2026-08-13T00:00:00.000Z"),
+    });
+
+    expect(warn).toHaveBeenCalledWith(
+      `[sourced-facts] Failed to fetch JRFU lineup for match_id=${japanMatch.id}; continuing with web search.`,
+      parseError,
+    );
+    expect(result.facts).toEqual([
+      expect.objectContaining({
+        fact: "Japan have named a captain for the Australia test.",
+      }),
+    ]);
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
+    warn.mockRestore();
+  });
+
+  it("does not request a JRFU lineup for non-Japan matches", async () => {
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: leagueOneMatch.id,
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(jrfuMock.fetchJrfuMatchLineup).not.toHaveBeenCalled();
   });
 
   it("excludes non-allowlisted cached facts and logs their count", async () => {
