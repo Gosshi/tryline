@@ -19,6 +19,16 @@ export {
   parseSeasonPageLineupHtml,
   parseWikipediaLineupHtml,
 } from "@/lib/scrapers/wikipedia-lineups";
+export {
+  buildJrfuBraveBlossomsMatchUrl,
+  fetchJrfuMatchLineup,
+  findJrfuMatchUrl,
+  parseJrfuMatchLineupHtml,
+} from "@/lib/scrapers/jrfu-lineups";
+export type {
+  JrfuLineupPlayer,
+  JrfuMatchLineup,
+} from "@/lib/scrapers/jrfu-lineups";
 export { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 export {
   parseCompetitionStandingsHtml,
