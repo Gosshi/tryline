@@ -1,12 +1,66 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ensureSupabaseTestEnvironment, insertMatchFixture } from "@/tests/db/helpers";
+import {
+  ensureSupabaseTestEnvironment,
+  insertMatchFixture,
+} from "@/tests/db/helpers";
+
+import type { Database } from "@/lib/db/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const fetcherMock = vi.hoisted(() => ({
   fetchWithPolicy: vi.fn(),
 }));
 
 vi.mock("@/lib/scrapers/fetcher", () => fetcherMock);
+
+const JRFU_LANDING_HTML =
+  '<a href="https://www.rugby-japan.jp/match/30035">試合登録メンバー/試合記録はこちら</a>';
+const JRFU_MATCH_HTML = readFileSync(
+  path.join(process.cwd(), "tests/fixtures/jrfu-match-30035-lineups.html"),
+  "utf8",
+);
+
+async function assignJapanMatch(params: {
+  awaySlug?: "australia" | "france";
+  matchId: string;
+  service: SupabaseClient<Database>;
+}) {
+  const { data: teams, error: teamsError } = await params.service
+    .from("teams")
+    .select("id, slug")
+    .in("slug", ["japan", params.awaySlug ?? "australia"]);
+
+  if (teamsError) {
+    throw teamsError;
+  }
+
+  const japan = teams.find((team) => team.slug === "japan");
+  const away = teams.find(
+    (team) => team.slug === (params.awaySlug ?? "australia"),
+  );
+
+  if (!japan || !away) {
+    throw new Error("Expected Japan and opponent seed teams.");
+  }
+
+  const { error: matchError } = await params.service
+    .from("matches")
+    .update({
+      away_team_id: away.id,
+      home_team_id: japan.id,
+      kickoff_at: "2026-08-15T06:15:00.000Z",
+    })
+    .eq("id", params.matchId);
+
+  if (matchError) {
+    throw matchError;
+  }
+
+  return { awayTeamId: away.id, japanTeamId: japan.id };
+}
 
 describe("/api/cron/ingest-lineups", () => {
   beforeEach(() => {
@@ -23,27 +77,43 @@ describe("/api/cron/ingest-lineups", () => {
     process.env.VAPID_PUBLIC_KEY = "";
     process.env.VAPID_SUBJECT = "";
     process.env.CRON_SECRET = "test-cron-secret";
-    process.env.WIKIPEDIA_SQUAD_URL = "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
+    process.env.WIKIPEDIA_SQUAD_URL =
+      "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
   });
 
   it("returns 401 without bearer token", async () => {
     const { POST } = await import("@/app/api/cron/ingest-lineups/route");
-    const response = await POST(new Request("http://localhost/api/cron/ingest-lineups?match_id=00000000-0000-4000-8000-000000000000", { method: "POST" }));
+    const response = await POST(
+      new Request(
+        "http://localhost/api/cron/ingest-lineups?match_id=00000000-0000-4000-8000-000000000000",
+        { method: "POST" },
+      ),
+    );
 
     expect(response.status).toBe(401);
   });
 
   it("returns announced false when lineup is not published", async () => {
     const { matchId, service } = await insertMatchFixture();
-    await service.from("matches").update({ external_ids: { wikipedia_url: "https://en.wikipedia.org/wiki/match" } }).eq("id", matchId);
-    fetcherMock.fetchWithPolicy.mockResolvedValue(new Response("<h2>No lineups</h2>"));
+    await service
+      .from("matches")
+      .update({
+        external_ids: { wikipedia_url: "https://en.wikipedia.org/wiki/match" },
+      })
+      .eq("id", matchId);
+    fetcherMock.fetchWithPolicy.mockResolvedValue(
+      new Response("<h2>No lineups</h2>"),
+    );
 
     const { POST } = await import("@/app/api/cron/ingest-lineups/route");
     const response = await POST(
-      new Request(`http://localhost/api/cron/ingest-lineups?match_id=${matchId}`, {
-        method: "POST",
-        headers: { Authorization: "Bearer test-cron-secret" },
-      }),
+      new Request(
+        `http://localhost/api/cron/ingest-lineups?match_id=${matchId}`,
+        {
+          method: "POST",
+          headers: { Authorization: "Bearer test-cron-secret" },
+        },
+      ),
     );
     const body = await response.json();
 
@@ -53,8 +123,14 @@ describe("/api/cron/ingest-lineups", () => {
   });
 
   it("inserts missing players and upserts match_lineups", async () => {
-    const { matchId, homeTeamId, awayTeamId, service } = await insertMatchFixture();
-    await service.from("matches").update({ external_ids: { wikipedia_url: "https://en.wikipedia.org/wiki/match" } }).eq("id", matchId);
+    const { matchId, homeTeamId, awayTeamId, service } =
+      await insertMatchFixture();
+    await service
+      .from("matches")
+      .update({
+        external_ids: { wikipedia_url: "https://en.wikipedia.org/wiki/match" },
+      })
+      .eq("id", matchId);
 
     fetcherMock.fetchWithPolicy.mockResolvedValue(
       new Response(`
@@ -71,23 +147,39 @@ describe("/api/cron/ingest-lineups", () => {
 
     const { POST } = await import("@/app/api/cron/ingest-lineups/route");
     const response = await POST(
-      new Request(`http://localhost/api/cron/ingest-lineups?match_id=${matchId}`, {
-        method: "POST",
-        headers: { Authorization: "Bearer test-cron-secret" },
-      }),
+      new Request(
+        `http://localhost/api/cron/ingest-lineups?match_id=${matchId}`,
+        {
+          method: "POST",
+          headers: { Authorization: "Bearer test-cron-secret" },
+        },
+      ),
     );
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body).toMatchObject({ announced: true, home_count: 2, away_count: 1 });
+    expect(body).toMatchObject({
+      announced: true,
+      home_count: 2,
+      away_count: 1,
+    });
     expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledTimes(1);
 
-    const players = await service.from("players").select("team_id, name").in("name", ["Home New Player", "Away New Player"]);
+    const players = await service
+      .from("players")
+      .select("team_id, name")
+      .in("name", ["Home New Player", "Away New Player"]);
     expect(players.error).toBeNull();
     expect(players.data).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ team_id: homeTeamId, name: "Home New Player" }),
-        expect.objectContaining({ team_id: awayTeamId, name: "Away New Player" }),
+        expect.objectContaining({
+          team_id: homeTeamId,
+          name: "Home New Player",
+        }),
+        expect.objectContaining({
+          team_id: awayTeamId,
+          name: "Away New Player",
+        }),
       ]),
     );
 
@@ -101,11 +193,146 @@ describe("/api/cron/ingest-lineups", () => {
     expect(lineups.data?.length).toBe(3);
   });
 
+  it("ingests both official JRFU lineups without swapping Japan and Australia", async () => {
+    const { matchId, service } = await insertMatchFixture();
+    const { awayTeamId, japanTeamId } = await assignJapanMatch({
+      matchId,
+      service,
+    });
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(new Response(JRFU_LANDING_HTML))
+      .mockResolvedValueOnce(new Response(JRFU_MATCH_HTML));
+
+    const { POST } = await import("@/app/api/cron/ingest-lineups/route");
+    const response = await POST(
+      new Request(
+        `http://localhost/api/cron/ingest-lineups?match_id=${matchId}`,
+        {
+          method: "POST",
+          headers: { Authorization: "Bearer test-cron-secret" },
+        },
+      ),
+    );
+
+    expect(await response.json()).toMatchObject({
+      announced: true,
+      away_count: 23,
+      home_count: 23,
+    });
+    expect(fetcherMock.fetchWithPolicy).toHaveBeenNthCalledWith(
+      1,
+      "https://www.rugby-japan.jp/braveblossoms/match/20260815",
+    );
+    expect(fetcherMock.fetchWithPolicy).toHaveBeenNthCalledWith(
+      2,
+      "https://www.rugby-japan.jp/match/30035",
+    );
+
+    const lineups = await service
+      .from("match_lineups")
+      .select(
+        "team_id, jersey_number, is_starter, source_url, player:players(name)",
+      )
+      .eq("match_id", matchId);
+
+    expect(lineups.error).toBeNull();
+    expect(lineups.data).toHaveLength(46);
+    expect(lineups.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          is_starter: true,
+          jersey_number: 1,
+          player: expect.objectContaining({ name: "岡部崇人" }),
+          source_url: "https://www.rugby-japan.jp/match/30035",
+          team_id: japanTeamId,
+        }),
+        expect.objectContaining({
+          is_starter: false,
+          jersey_number: 17,
+          player: expect.objectContaining({ name: "大塚壮二郎" }),
+          team_id: japanTeamId,
+        }),
+        expect.objectContaining({
+          is_starter: true,
+          jersey_number: 1,
+          player: expect.objectContaining({ name: "アンガス・ベル" }),
+          team_id: awayTeamId,
+        }),
+      ]),
+    );
+    expect(
+      lineups.data?.filter((lineup) => lineup.team_id === japanTeamId),
+    ).toHaveLength(23);
+    expect(
+      lineups.data?.filter((lineup) => lineup.team_id === awayTeamId),
+    ).toHaveLength(23);
+    expect(lineups.data?.filter((lineup) => lineup.is_starter)).toHaveLength(
+      30,
+    );
+  });
+
+  it("skips JRFU lineups when the opponent cannot be resolved", async () => {
+    const { matchId, service } = await insertMatchFixture();
+    await assignJapanMatch({ awaySlug: "france", matchId, service });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(new Response(JRFU_LANDING_HTML))
+      .mockResolvedValueOnce(new Response(JRFU_MATCH_HTML));
+
+    const { POST } = await import("@/app/api/cron/ingest-lineups/route");
+    const response = await POST(
+      new Request(
+        `http://localhost/api/cron/ingest-lineups?match_id=${matchId}`,
+        {
+          method: "POST",
+          headers: { Authorization: "Bearer test-cron-secret" },
+        },
+      ),
+    );
+
+    expect(await response.json()).toEqual({ announced: false });
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[ingest-lineups] Skipping JRFU lineup because opponent could not be resolved: オーストラリア代表",
+    );
+
+    const lineups = await service
+      .from("match_lineups")
+      .select("id")
+      .eq("match_id", matchId);
+    expect(lineups.data).toEqual([]);
+
+    warnSpy.mockRestore();
+  });
+
+  it("returns announced false when JRFU match members are not published", async () => {
+    const { matchId, service } = await insertMatchFixture();
+    await assignJapanMatch({ matchId, service });
+    fetcherMock.fetchWithPolicy.mockResolvedValue(
+      new Response("<main></main>"),
+    );
+
+    const { POST } = await import("@/app/api/cron/ingest-lineups/route");
+    const response = await POST(
+      new Request(
+        `http://localhost/api/cron/ingest-lineups?match_id=${matchId}`,
+        {
+          method: "POST",
+          headers: { Authorization: "Bearer test-cron-secret" },
+        },
+      ),
+    );
+
+    expect(await response.json()).toEqual({ announced: false });
+    expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledTimes(1);
+  });
+
   it("falls back to season-page vevent adjacent lineup tables with a single fetch", async () => {
     const { matchId, service } = await insertMatchFixture();
     await service
       .from("matches")
-      .update({ external_ids: { wikipedia_url: "https://en.wikipedia.org/wiki/season" } })
+      .update({
+        external_ids: { wikipedia_url: "https://en.wikipedia.org/wiki/season" },
+      })
       .eq("id", matchId);
     const { data: match } = await service
       .from("matches")
@@ -141,15 +368,22 @@ describe("/api/cron/ingest-lineups", () => {
 
     const { POST } = await import("@/app/api/cron/ingest-lineups/route");
     const response = await POST(
-      new Request(`http://localhost/api/cron/ingest-lineups?match_id=${matchId}`, {
-        method: "POST",
-        headers: { Authorization: "Bearer test-cron-secret" },
-      }),
+      new Request(
+        `http://localhost/api/cron/ingest-lineups?match_id=${matchId}`,
+        {
+          method: "POST",
+          headers: { Authorization: "Bearer test-cron-secret" },
+        },
+      ),
     );
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body).toMatchObject({ announced: true, home_count: 2, away_count: 1 });
+    expect(body).toMatchObject({
+      announced: true,
+      home_count: 2,
+      away_count: 1,
+    });
     expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledTimes(1);
 
     const players = await service
