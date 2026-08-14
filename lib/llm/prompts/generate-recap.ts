@@ -1,3 +1,4 @@
+import { hasConfirmedSourcedFactLineup } from "@/lib/content/fabrication-guard";
 import {
   hasConfirmedProjectedLineups,
   sanitizeUnconfirmedProjectedLineups,
@@ -18,7 +19,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.15.0";
+export const PROMPT_VERSION = "recap@4.16.0";
 
 const CORE_SECTION_INSTRUCTION = [
   "- この試合の核心: 150-250字。定型句を使わず、この試合固有の事実（最終スコア・決勝点のシチュエーション・試合の転換点）から書き始めること。",
@@ -50,10 +51,14 @@ export function buildGenerateRecapPrompt(
 ): string {
   const hasEvents = assembled.match_events.length > 0;
   const hasLineups = hasConfirmedProjectedLineups(assembled.projected_lineups);
-  const isDataSparse = !hasEvents && !hasLineups;
+  const hasSourcedFactLineup = hasConfirmedSourcedFactLineup(
+    assembled.sourced_facts,
+  );
+  const hasPlayerReferenceData = hasLineups || hasSourcedFactLineup;
+  const isDataSparse = !hasEvents && !hasPlayerReferenceData;
   const sectionHeadingInstruction =
     "各セクションは # 見出し（H1）で開始すること。冒頭にタイトル行は不要。";
-  const structureInstruction = hasLineups
+  const structureInstruction = hasPlayerReferenceData
     ? [
         "出力するセクション（この順番・この見出し名のみ使用、変更・追加・省略は禁止）:",
         "# この試合の核心",
@@ -66,7 +71,7 @@ export function buildGenerateRecapPrompt(
         CORE_SECTION_INSTRUCTION,
         "- 試合全体像: 500-600字",
         "- ターニングポイント: 600-750字",
-        "- 注目選手: 400-500字。projected_lineups または match_events に存在する実名を使い、この試合での貢献・プレー内容を具体的に記述する",
+        "- 注目選手: 400-500字。projected_lineups・match_events・sourced_facts に存在する実名を使い、この試合での貢献・プレー内容を具体的に記述する",
         "- 次戦への示唆: 350-450字",
         "",
         "見出し行には「# セクション名」のみを書くこと。字数指示・説明文を見出し行に含めてはならない。",
@@ -233,7 +238,18 @@ export function buildGenerateRecapPrompt(
         "- 対面ポジションまたは役割が近い選手同士の実名マッチアップを最低1つ描くこと。",
         "- match_events に存在する得点者・カード対象者などの選手名も実在名として利用してよい。ただし projected_lineups・match_events に存在しない選手名、役職、引退・移籍などの外部文脈は創作しないこと。",
       ].join("\n")
-    : "";
+    : hasSourcedFactLineup
+      ? [
+          "【ラインアップ実名活用】sourced_facts に列挙された試合登録メンバーの実名は積極的に本文へ登場させること。",
+          "- sourced_facts に存在する選手名だけを使用し、そこにない選手名・役職・引退・移籍などの外部文脈は創作しないこと。",
+          "- 背番号と先発・リザーブの区分が sourced_facts にある場合だけ、その区分を本文で使ってよい。",
+          "- 片側のチームだけにラインアップ fact がある場合、実名への言及は掲載された側だけに限定し、もう一方の選手名を推測してはならない。",
+        ].join("\n")
+      : "";
+  const playerNameInstruction =
+    hasPlayerReferenceData || hasEvents
+      ? "選手名は入力データ（projected_lineups・match_events・sourced_facts）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。"
+      : "選手名は入力データ（projected_lineups・match_events・sourced_facts）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。";
   const matchPhaseBlock = (() => {
     const phase = assembled.match_phase;
     const homeScore = assembled.match.home_score;
@@ -299,7 +315,7 @@ export function buildGenerateRecapPrompt(
     "各セクションが指定字数の**下限**を下回ってはならない。下限未満なら具体的な事実・戦術分析・選手描写を追加して下限まで書き足すこと。「字数確認済み」などのメタコメントは出力禁止。",
     "事実は入力データと一致させること。直接引用は15語以内。",
     "事実は試合データと sourced_facts に含まれるものだけを使用すること。入力にない統計・スコア・負傷・欠場・発言・選手名を推測・創作してはならない。",
-    "選手名は入力データ（projected_lineups・match_events・sourced_facts）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。",
+    playerNameInstruction,
     lineupUsageBlock,
     "出力は日本語マークダウン本文のみ。",
     "強調記号（**、*、__、_）・コードブロック（```）は禁止。本文中で最も重要な一文だけを Markdown の引用（>）として1回使用し、それ以外の引用は禁止。見出し(#)と箇条書き(-)のみ使用すること。",

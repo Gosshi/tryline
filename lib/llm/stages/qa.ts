@@ -357,6 +357,7 @@ function applyDeterministicQaGuards(
   result: QaResult,
   options: {
     contentType: ContentType;
+    hasConfirmedSourcedFactLineup: boolean;
     hasEvents: boolean;
     hasLineups: boolean;
     language: ContentLanguage;
@@ -460,11 +461,11 @@ function applyDeterministicQaGuards(
   }
 
   if (
-    containsUngroundedPlayerReference(
-      options.narrative,
-      options.hasLineups,
-      options.hasEvents,
-    )
+    containsUngroundedPlayerReference(options.narrative, {
+      hasConfirmedSourcedFactLineup: options.hasConfirmedSourcedFactLineup,
+      hasEvents: options.hasEvents,
+      hasLineups: options.hasLineups,
+    })
   ) {
     guarded = {
       ...guarded,
@@ -552,6 +553,7 @@ function parseQaResponse(
   retryCount: number,
   options: {
     contentType: ContentType;
+    hasConfirmedSourcedFactLineup: boolean;
     hasEvents: boolean;
     hasLineups: boolean;
     language: ContentLanguage;
@@ -607,6 +609,7 @@ function parseQaResponse(
 export async function evaluateNarrativeQuality(options: {
   contentType: ContentType;
   entityViolations?: string[];
+  hasConfirmedSourcedFactLineup?: boolean;
   hasEvents?: boolean;
   hasLineups?: boolean;
   language?: ContentLanguage;
@@ -616,6 +619,8 @@ export async function evaluateNarrativeQuality(options: {
   retryCount: number;
 }): Promise<QaStageResponse> {
   const hasEvents = options.hasEvents ?? false;
+  const hasConfirmedSourcedFactLineup =
+    options.hasConfirmedSourcedFactLineup ?? false;
   const hasLineups = options.hasLineups ?? false;
   const playerStatNames =
     options.contentType === "recap" && hasEvents
@@ -643,6 +648,7 @@ export async function evaluateNarrativeQuality(options: {
     try {
       const result = parseQaResponse(response.text, options.retryCount, {
         contentType: options.contentType,
+        hasConfirmedSourcedFactLineup,
         hasEvents,
         hasLineups,
         language: options.language ?? "ja",

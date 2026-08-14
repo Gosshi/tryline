@@ -1,3 +1,5 @@
+import type { SourcedFactInput } from "@/lib/llm/types";
+
 export const UNSUPPORTED_STATISTIC_ISSUE = "データに存在しない統計値を含む";
 export const UNGROUNDED_PLAYER_REFERENCE_ISSUE =
   "ラインアップ不在にもかかわらず選手個別言及を含む";
@@ -29,6 +31,10 @@ const RUGBY_POSITION_PATTERN =
   /プロップ|フッカー|ロック|フランカー|ナンバー8|スクラムハーフ|フライハーフ|センター|ウイング|フルバック|PR|HO|LO|FL|No\.?\s*8|SH|SO|CTB|WTB|FB/;
 const PLAYER_WITH_POSITION_PATTERN =
   /[一-龥々ァ-ヶーA-Za-z][一-龥々ァ-ヶーA-Za-z・\s]{1,30}[（(]\s*(?:プロップ|フッカー|ロック|フランカー|ナンバー8|スクラムハーフ|フライハーフ|センター|ウイング|フルバック|PR|HO|LO|FL|No\.?\s*8|SH|SO|CTB|WTB|FB)\s*[）)]/;
+const LINEUP_FACT_PATTERN =
+  /先発|リザーブ|スタメン|出場メンバー|starting XV|replacements/i;
+const PERSON_LIKE_NAME_PATTERN =
+  /[一-龥々ぁ-んァ-ヶー]{2,}|[A-Z][a-z]+(?:[ -][A-Z][a-z]+)+/;
 
 const ZERO_CLAIM_STAT_FIELDS: Record<string, ZeroClaimStatField> = {
   エラー: "errors",
@@ -137,12 +143,46 @@ export function containsContradictedZeroStatClaim(
   });
 }
 
+function hasNumberedPlayerList(fact: string) {
+  return (fact.match(/\d+(?=\s*\S)/g) ?? []).length >= 3;
+}
+
+function hasCommaSeparatedPlayerList(fact: string) {
+  return (
+    fact
+      .split(/[、,，]/)
+      .filter((entry) => PERSON_LIKE_NAME_PATTERN.test(entry)).length >= 3
+  );
+}
+
+export function hasConfirmedSourcedFactLineup(
+  sourcedFacts: readonly SourcedFactInput[],
+): boolean {
+  return sourcedFacts.some((sourcedFact) => {
+    const fact = sourcedFact?.fact;
+
+    return (
+      sourcedFact?.confidence === "high" &&
+      typeof fact === "string" &&
+      LINEUP_FACT_PATTERN.test(fact) &&
+      (hasNumberedPlayerList(fact) || hasCommaSeparatedPlayerList(fact))
+    );
+  });
+}
+
 export function containsUngroundedPlayerReference(
   text: string,
-  hasLineups: boolean,
-  hasEvents: boolean,
+  options: {
+    hasConfirmedSourcedFactLineup: boolean;
+    hasEvents: boolean;
+    hasLineups: boolean;
+  },
 ): boolean {
-  if (hasLineups || hasEvents) {
+  if (
+    options.hasLineups ||
+    options.hasEvents ||
+    options.hasConfirmedSourcedFactLineup
+  ) {
     return false;
   }
 

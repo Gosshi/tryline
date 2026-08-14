@@ -1,3 +1,4 @@
+import { hasConfirmedSourcedFactLineup } from "@/lib/content/fabrication-guard";
 import {
   hasConfirmedProjectedLineups,
   sanitizeUnconfirmedProjectedLineups,
@@ -17,7 +18,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.10.0";
+export const PROMPT_VERSION = "preview@3.11.0";
 
 type CorePatternType = "context" | "form" | "numeric";
 
@@ -101,8 +102,13 @@ export function buildGeneratePreviewPrompt(
   additionalSignals: AdditionalSignal[],
 ): string {
   const hasLineups = hasConfirmedProjectedLineups(assembled.projected_lineups);
-  const isDataSparse = assembled.match_events.length === 0 && !hasLineups;
-  const structureInstruction = hasLineups
+  const hasSourcedFactLineup = hasConfirmedSourcedFactLineup(
+    assembled.sourced_facts,
+  );
+  const hasPlayerReferenceData = hasLineups || hasSourcedFactLineup;
+  const isDataSparse =
+    assembled.match_events.length === 0 && !hasPlayerReferenceData;
+  const structureInstruction = hasPlayerReferenceData
     ? [
         "構成: セクション0（この試合の核心）に続けて3セクション構成。",
         "文字数目安: 1セクション目400-500字、2セクション目600-700字、3セクション目300-400字。全体で1,500字以上を下限とし、下回ってはならない。",
@@ -168,7 +174,18 @@ export function buildGeneratePreviewPrompt(
         "- 対面ポジションまたは役割が近い選手同士の実名マッチアップを最低1つ描くこと。",
         "- match_events に存在する選手名も実在名として利用してよい。ただし projected_lineups・match_events に存在しない選手名、役職、引退・移籍などの外部文脈は創作しないこと。",
       ].join("\n")
-    : "";
+    : hasSourcedFactLineup
+      ? [
+          "【ラインアップ実名活用】sourced_facts に列挙された試合登録メンバーの実名は積極的に本文へ登場させること。",
+          "- sourced_facts に存在する選手名だけを使用し、そこにない選手名・役職・引退・移籍などの外部文脈は創作しないこと。",
+          "- 背番号と先発・リザーブの区分が sourced_facts にある場合だけ、その区分を本文で使ってよい。",
+          "- 片側のチームだけにラインアップ fact がある場合、実名への言及は掲載された側だけに限定し、もう一方の選手名を推測してはならない。",
+        ].join("\n")
+      : "";
+  const playerNameInstruction =
+    hasPlayerReferenceData || assembled.match_events.length > 0
+      ? "選手名は入力データ（projected_lineups・match_events・sourced_facts）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。"
+      : "選手名は入力データ（projected_lineups・match_events・sourced_facts）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。";
   const matchPhaseBlock = (() => {
     const phase = assembled.match_phase;
     const competitionLabel = [
@@ -216,11 +233,11 @@ export function buildGeneratePreviewPrompt(
     prohibitionsBlock,
     structureInstruction,
     matchPhaseBlock,
-    "各セクションが指定範囲の下限を下回った場合は、入力データにある recent_form・h2h_last_5・competition_standings・key_stats・projected_lineups・match_events から具体的な根拠を追加して書き足すこと。",
+    "各セクションが指定範囲の下限を下回った場合は、入力データにある recent_form・h2h_last_5・competition_standings・key_stats・projected_lineups・match_events・sourced_facts から具体的な根拠を追加して書き足すこと。",
     "全体が1,500字未満の場合は出力前に薄いセクションを加筆すること。水増し、同義反復、一般論、「字数確認済み」などのメタコメントは禁止。",
     "事実は入力データと一致させること。直接引用は15語以内。",
     "事実は試合データと sourced_facts に含まれるものだけを使用すること。入力にない統計・スコア・負傷・欠場・発言・選手名を推測・創作してはならない。",
-    "選手名は入力データ（projected_lineups・match_events・sourced_facts）に含まれるものだけを使用すること。データに存在しない選手名を推測・創作してはならない。ラインアップが空の場合は選手名に言及せず、チームの戦術・スコア・展開の描写に集中すること。",
+    playerNameInstruction,
     lineupUsageBlock,
     "出力は日本語マークダウン本文のみ。",
     "強調記号（**、*、__、_）・コードブロック（```）は禁止。本文中で最も重要な一文だけを Markdown の引用（>）として1回使用し、それ以外の引用は禁止。見出し(#)と箇条書き(-)のみ使用すること。",
