@@ -78,7 +78,27 @@ const KIND_BY_SERVICE_NAME: Readonly<Record<string, MatchBroadcastKind>> = {
   "J SPORTS 3": "tv",
   "J SPORTS 4": "tv",
   "J SPORTSオンデマンド": "streaming",
+  WOWOWライブ: "tv",
+  WOWOWオンデマンド: "streaming",
+  日本テレビ系全国ネット: "tv",
+  WOWOWプライム: "tv",
 };
+
+function removeServiceNameSpaces(serviceName: string) {
+  return serviceName.trim().replace(/[ \u3000]/g, "");
+}
+
+function resolveBroadcastService(serviceName: string) {
+  const normalizedName = removeServiceNameSpaces(serviceName);
+  const canonicalName = Object.keys(KIND_BY_SERVICE_NAME).find(
+    (name) => removeServiceNameSpaces(name) === normalizedName,
+  );
+
+  return {
+    kind: canonicalName ? KIND_BY_SERVICE_NAME[canonicalName] : undefined,
+    serviceName: canonicalName ?? normalizedName,
+  };
+}
 
 function getJstDate(value: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -273,11 +293,13 @@ export async function runBroadcastIngest(
       const match = candidates[0]!;
 
       for (const broadcast of page.broadcasts) {
-        const kind = KIND_BY_SERVICE_NAME[broadcast.serviceName];
+        const { kind, serviceName } = resolveBroadcastService(
+          broadcast.serviceName,
+        );
 
         if (!kind) {
           unknownServices.push({
-            serviceName: broadcast.serviceName,
+            serviceName,
             sourceUrl: page.sourceUrl,
             url: broadcast.url,
           });
@@ -287,7 +309,7 @@ export async function runBroadcastIngest(
         broadcastsToUpsert.push({
           kind,
           matchId: match.id,
-          serviceName: broadcast.serviceName,
+          serviceName,
           sourceUrl: page.sourceUrl,
           url: broadcast.url,
         });
@@ -295,7 +317,7 @@ export async function runBroadcastIngest(
           kind,
           label: getMatchLabel(match),
           matchId: match.id,
-          serviceName: broadcast.serviceName,
+          serviceName,
         });
       }
     } catch (error) {
