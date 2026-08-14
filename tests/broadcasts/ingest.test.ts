@@ -154,6 +154,74 @@ describe("runBroadcastIngest", () => {
     ]);
   });
 
+  it("maps the approved WOWOW and Nippon TV services", async () => {
+    const upserted: Array<{ kind: string; serviceName: string }> = [];
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchMatchPage: async () => ({
+          ...PAGE,
+          broadcasts: [
+            { serviceName: "WOWOWライブ", url: "https://example.com/live" },
+            {
+              serviceName: "WOWOWオンデマンド",
+              url: "https://example.com/ondemand",
+            },
+            {
+              serviceName: "日本テレビ系全国ネット",
+              url: "https://example.com/nittele",
+            },
+            {
+              serviceName: "WOWOWプライム",
+              url: "https://example.com/prime",
+            },
+          ],
+        }),
+        upsertBroadcasts: async (
+          broadcasts: Array<{ kind: string; serviceName: string }>,
+        ) => upserted.push(...broadcasts),
+      }),
+    );
+
+    expect(
+      upserted.map(({ kind, serviceName }) => ({ kind, serviceName })),
+    ).toEqual([
+      { kind: "tv", serviceName: "WOWOWライブ" },
+      { kind: "streaming", serviceName: "WOWOWオンデマンド" },
+      { kind: "tv", serviceName: "日本テレビ系全国ネット" },
+      { kind: "tv", serviceName: "WOWOWプライム" },
+    ]);
+    expect(result.unknownServices).toEqual([]);
+  });
+
+  it("normalizes half-width and full-width spaces before lookup and storage", async () => {
+    const upserted: Array<{ kind: string; serviceName: string }> = [];
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchMatchPage: async () => ({
+          ...PAGE,
+          broadcasts: [
+            {
+              serviceName: " J SPORTS オンデマンド　",
+              url: "https://jod.jsports.co.jp/program",
+            },
+          ],
+        }),
+        upsertBroadcasts: async (
+          broadcasts: Array<{ kind: string; serviceName: string }>,
+        ) => upserted.push(...broadcasts),
+      }),
+    );
+
+    expect(
+      upserted.map(({ kind, serviceName }) => ({ kind, serviceName })),
+    ).toEqual([{ kind: "streaming", serviceName: "J SPORTSオンデマンド" }]);
+    expect(result.linked).toEqual([
+      expect.objectContaining({
+        serviceName: "J SPORTSオンデマンド",
+      }),
+    ]);
+  });
+
   it("is idempotent when the same page is ingested twice", async () => {
     const stored = new Map<string, unknown>();
     const upsertBroadcasts = async (
