@@ -116,7 +116,7 @@ describe("/api/cron/ingest-lineups", () => {
 
     const players = await service
       .from("players")
-      .select("team_id, name")
+      .select("team_id, name, slug")
       .in("name", ["Home New Player", "Away New Player"]);
     expect(players.error).toBeNull();
     expect(players.data).toEqual(
@@ -124,10 +124,12 @@ describe("/api/cron/ingest-lineups", () => {
         expect.objectContaining({
           team_id: homeTeamId,
           name: "Home New Player",
+          slug: "home-new-player",
         }),
         expect.objectContaining({
           team_id: awayTeamId,
           name: "Away New Player",
+          slug: "away-new-player",
         }),
       ]),
     );

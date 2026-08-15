@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
+import { resolveAvailablePlayerSlugs } from "@/lib/db/player-slug";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 import { parseMatchLineupFromHtml } from "@/lib/scrapers/wikipedia-lineups";
@@ -112,10 +113,43 @@ export async function POST(request: Request) {
       );
 
       if (missingNames.length > 0) {
+        const slugs = await resolveAvailablePlayerSlugs(
+          missingNames,
+          async (candidates) => {
+            const { data: matchingCandidates, error: matchingCandidatesError } =
+              await db.from("players").select("slug").in("slug", candidates);
+
+            if (matchingCandidatesError) {
+              throw matchingCandidatesError;
+            }
+
+            if (matchingCandidates.length === 0) {
+              return [];
+            }
+
+            const slugFilters = matchingCandidates
+              .flatMap(({ slug }) => [
+                `slug.eq.${slug}`,
+                `slug.like.${slug}-%`,
+              ])
+              .join(",");
+            const { data: occupiedSlugs, error: occupiedSlugsError } = await db
+              .from("players")
+              .select("slug")
+              .or(slugFilters);
+
+            if (occupiedSlugsError) {
+              throw occupiedSlugsError;
+            }
+
+            return occupiedSlugs.map(({ slug }) => slug);
+          },
+        );
         const { error: insertError } = await db.from("players").insert(
-          missingNames.map((name) => ({
+          missingNames.map((name, index) => ({
             team_id: teamId,
             name,
+            slug: slugs[index],
             external_ids: { wikipedia_title: name },
           })),
         );
