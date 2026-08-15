@@ -54,8 +54,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.15.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.15.0");
+  it("uses recap prompt version 4.16.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.16.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -164,7 +164,9 @@ describe("buildGenerateRecapPrompt", () => {
       [],
     );
 
-    expect(prompt).toContain("本文の趣旨に沿うものはできるだけ多く反映すること");
+    expect(prompt).toContain(
+      "本文の趣旨に沿うものはできるだけ多く反映すること",
+    );
     expect(prompt).toContain("無理にこじつけて記述してはならない");
     expect(prompt).toContain("自分の日本語で言い換えること");
   });
@@ -198,7 +200,9 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("両チームの具体的な数値");
     expect(prompt).toContain("一般論で終わらせず");
     expect(prompt).toContain("数値→試合中の具体的な事象→結果");
-    expect(prompt).toContain("入力データに存在しない具体的なプレー描写を創作してはならず");
+    expect(prompt).toContain(
+      "入力データに存在しない具体的なプレー描写を創作してはならず",
+    );
     expect(prompt).toContain("キーが存在しない項目については");
     expect(prompt).toContain("ゼロを明示的に主張してよいのは");
     expect(prompt).toContain("実際に0として明示されている場合のみ");
@@ -335,9 +339,7 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain(
       "大会内での位置づけ（大会名・シーズン・順位表への影響、分かる場合はラウンド名）（80字程度）",
     );
-    expect(prompt).not.toContain(
-      "プレーオフという文脈と一発勝負の重み",
-    );
+    expect(prompt).not.toContain("プレーオフという文脈と一発勝負の重み");
     expect(prompt).not.toContain("敗者はそこでシーズン終了となる一発勝負");
   });
 
@@ -362,9 +364,7 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain(
       "大会内での位置づけ（大会名・シーズン・順位表への影響、分かる場合はラウンド名）（80字程度）",
     );
-    expect(prompt).not.toContain(
-      "プレーオフという文脈と一発勝負の重み",
-    );
+    expect(prompt).not.toContain("プレーオフという文脈と一発勝負の重み");
     expect(prompt).not.toContain("この試合はプレーオフ戦");
     expect(prompt).not.toContain("敗者はそこでシーズン終了となる一発勝負");
   });
@@ -865,5 +865,28 @@ describe("buildGenerateRecapPrompt", () => {
       "データに存在しない選手名を推測・創作してはならない",
     );
     expect(prompt).toContain("ラインアップが空の場合は選手名に言及せず");
+  });
+
+  it("uses confirmed sourced-fact lineups as player reference data", () => {
+    const prompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        sourced_facts: [
+          {
+            confidence: "high",
+            fact: "日本代表の先発は1 岡部崇人、2 江良颯、3 竹内柊平。",
+            source_domain: "rugby-japan.jp",
+            source_url: "https://www.rugby-japan.jp/match/30035",
+          },
+        ],
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).not.toContain("スコアラー・ラインアップデータは存在しない");
+    expect(prompt).toContain("【ラインアップ実名活用】sourced_facts");
+    expect(prompt).toContain("projected_lineups・match_events・sourced_facts");
+    expect(prompt).not.toContain("ラインアップが空の場合は選手名に言及せず");
   });
 });

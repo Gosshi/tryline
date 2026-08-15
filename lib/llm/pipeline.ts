@@ -8,6 +8,7 @@ import {
   buildAllowedPersonEntities,
   buildKnownNonPersonNames,
 } from "@/lib/content/allowed-entities";
+import { hasConfirmedSourcedFactLineup } from "@/lib/content/fabrication-guard";
 import { getRoundFromExternalIds } from "@/lib/db/queries/matches";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { hasConfirmedProjectedLineups } from "@/lib/llm/lineups";
@@ -201,6 +202,9 @@ export async function generateMatchContent(
 
   const hasEvents = assembled.match_events.length > 0;
   const hasLineups = hasConfirmedProjectedLineups(assembled.projected_lineups);
+  const hasSourcedFactLineup = hasConfirmedSourcedFactLineup(
+    assembled.sourced_facts,
+  );
   const allowedEntities = buildAllowedPersonEntities(assembled);
   const knownNonPersonNames = buildKnownNonPersonNames(assembled);
   let totalCostUsd = 0;
@@ -296,6 +300,7 @@ export async function generateMatchContent(
           teamStats: assembled.team_stats,
           venue: assembled.match.venue,
         },
+        hasConfirmedSourcedFactLineup: hasSourcedFactLineup,
         hasEvents,
         hasLineups,
         matchEvents: assembled.match_events,

@@ -54,8 +54,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.10.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.10.0");
+  it("uses preview prompt version 3.11.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.11.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -579,6 +579,30 @@ describe("buildGeneratePreviewPrompt", () => {
       "データに存在しない選手名を推測・創作してはならない",
     );
     expect(prompt).toContain("ラインアップが空の場合は選手名に言及せず");
+  });
+
+  it("uses confirmed sourced-fact lineups as player reference data", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        sourced_facts: [
+          {
+            confidence: "high",
+            fact: "日本代表の先発は1 岡部崇人、2 江良颯、3 竹内柊平。",
+            source_domain: "rugby-japan.jp",
+            source_url: "https://www.rugby-japan.jp/match/30035",
+          },
+        ],
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).not.toContain("ラインアップデータは存在しない");
+    expect(prompt).not.toContain("キープレイヤーセクションは省略すること");
+    expect(prompt).toContain("【ラインアップ実名活用】sourced_facts");
+    expect(prompt).toContain("片側のチームだけにラインアップ fact がある場合");
+    expect(prompt).not.toContain("ラインアップが空の場合は選手名に言及せず");
   });
 
   it("includes sourced facts with paraphrase and grounding guardrails", () => {
