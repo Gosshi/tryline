@@ -1,0 +1,253 @@
+name: Manual — Ingest Lineups and Regenerate Content
+
+# 手動起動限定: 本番書き込みとLLM課金が発生するため、定期実行にはしない。
+# 初回は1〜2件で試すこと。match_id は本番サイトの試合詳細URL末尾で確認できる。
+# 汎用ワークフローでは試合状態を安全に判定できないため、content_type に auto は用意しない。
+# 大会によってはパーサーがラインアップを返さないことがある。
+# 詳細: specs/fix-lineup-ingestion-non-league-one.md
+
+on:
+  workflow_dispatch:
+    inputs:
+      match_ids:
+        description: "対象 match_id（空白区切り、最大10件）"
+        required: true
+        type: string
+      content_type:
+        description: "コンテンツ種別"
+        type: choice
+        options: ["preview", "recap"]
+        default: "preview"
+      language:
+        description: "再生成する言語"
+        type: choice
+        options: ["ja", "en"]
+        default: "ja"
+      ingest_lineups:
+        description: "Wikipedia経由のラインアップ取込を実行する"
+        type: boolean
+        default: true
+      fetch_facts:
+        description: "sourced facts を再取得する（LLM課金あり）"
+        type: boolean
+        default: true
+      regenerate:
+        description: "コンテンツを再生成する（LLM課金あり）"
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  ingest-and-regenerate:
+    runs-on: ubuntu-latest
+    env:
+      BASE: ${{ secrets.PRODUCTION_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      INPUT_MATCH_IDS: ${{ inputs.match_ids }}
+      CONTENT_TYPE: ${{ inputs.content_type }}
+      LANGUAGE: ${{ inputs.language }}
+      INGEST_LINEUPS: ${{ inputs.ingest_lineups }}
+      FETCH_FACTS: ${{ inputs.fetch_facts }}
+      REGENERATE: ${{ inputs.regenerate }}
+    steps:
+      - name: Ingest lineups, fetch facts, and regenerate
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          uuid_pattern='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$'
+          normalized_ids=$(printf '%s' "$INPUT_MATCH_IDS" | xargs)
+
+          write_summary() {
+            {
+              echo "## Manual lineup ingest summary"
+              echo
+              echo "- 対象: ${target_count} 件（有効: ${valid_count} / 無効: ${invalid_count}）"
+              if [ "$INGEST_LINEUPS" = "true" ]; then
+                echo "- ingest: OK ${ingest_ok} / NO-DATA ${ingest_no_data} / SKIP ${ingest_skip} / FAIL ${ingest_fail}"
+              else
+                echo "- ingest: NOT RUN"
+              fi
+              if [ "$FETCH_FACTS" = "true" ]; then
+                echo "- facts: OK ${facts_ok} / FAIL ${facts_fail}"
+              else
+                echo "- facts: NOT RUN"
+              fi
+              echo "- regenerate: ${regenerate_status}"
+              echo "- failure total: ${failure_total}"
+            } | tee -a "$GITHUB_STEP_SUMMARY"
+          }
+
+          if [ -z "$normalized_ids" ]; then
+            echo "FAIL: match_ids is empty. At least one match_id is required."
+            target_count=0
+            valid_count=0
+            invalid_count=0
+            ingest_ok=0
+            ingest_no_data=0
+            ingest_skip=0
+            ingest_fail=0
+            facts_ok=0
+            facts_fail=0
+            regenerate_status="NOT RUN"
+            failure_total=1
+            write_summary
+            exit 1
+          fi
+
+          read -r -a requested_ids <<< "$normalized_ids"
+          target_count=${#requested_ids[@]}
+          if [ "$target_count" -gt 10 ]; then
+            echo "FAIL: ${target_count} match_ids were provided; the maximum is 10."
+            valid_count=0
+            invalid_count=0
+            ingest_ok=0
+            ingest_no_data=0
+            ingest_skip=0
+            ingest_fail=0
+            facts_ok=0
+            facts_fail=0
+            regenerate_status="NOT RUN"
+            failure_total=1
+            write_summary
+            exit 1
+          fi
+
+          valid_ids=()
+          invalid_count=0
+          for match_id in "${requested_ids[@]}"; do
+            if [[ "$match_id" =~ $uuid_pattern ]]; then
+              valid_ids+=("$match_id")
+            else
+              echo "FAIL: invalid match_id skipped: $match_id"
+              invalid_count=$((invalid_count + 1))
+            fi
+          done
+          valid_count=${#valid_ids[@]}
+
+          if [ "$FETCH_FACTS" = "true" ] || [ "$REGENERATE" = "true" ]; then
+            echo "Targets: ${valid_count} valid match_ids. LLM charges will apply."
+          else
+            echo "Targets: ${valid_count} valid match_ids. All LLM stages are disabled."
+          fi
+
+          ingest_ok=0
+          ingest_no_data=0
+          ingest_skip=0
+          ingest_fail=0
+          facts_ok=0
+          facts_fail=0
+          regenerate_status="NOT RUN"
+          failure_total=$invalid_count
+
+          request() {
+            local response_file=$1
+            shift
+            local http_code
+            http_code=$(curl --silent --show-error --output "$response_file" --write-out "%{http_code}" "$@")
+            local curl_status=$?
+            if [ "$curl_status" -ne 0 ]; then
+              echo "000"
+              return
+            fi
+            echo "$http_code"
+          }
+
+          if [ "$INGEST_LINEUPS" = "true" ]; then
+            for match_id in "${valid_ids[@]}"; do
+              response_file=$(mktemp)
+              echo "== ingest-lineups: $match_id =="
+              code=$(request "$response_file" -X POST "$BASE/api/cron/ingest-lineups?match_id=$match_id" -H "Authorization: Bearer $CRON_SECRET")
+              body=$(<"$response_file")
+              rm "$response_file"
+              echo "HTTP $code"
+              echo "$body"
+
+              if [ "$code" = "400" ]; then
+                echo "SKIP: wikipedia_url is not set for $match_id"
+                ingest_skip=$((ingest_skip + 1))
+              elif [ "$code" != "200" ]; then
+                echo "FAIL: ingest error for $match_id"
+                ingest_fail=$((ingest_fail + 1))
+                failure_total=$((failure_total + 1))
+              else
+                ingest_result=$(BODY="$body" node -e '
+                  try {
+                    const value = JSON.parse(process.env.BODY);
+                    if (value.announced === false) process.stdout.write("no-data");
+                    else if (value.announced === true && Number.isFinite(value.home_count) && Number.isFinite(value.away_count)) {
+                      process.stdout.write(value.home_count + value.away_count > 0 ? "ok" : "no-data");
+                    } else process.stdout.write("fail");
+                  } catch { process.stdout.write("fail"); }
+                ')
+                case "$ingest_result" in
+                  ok)
+                    echo "OK: lineup rows were ingested for $match_id"
+                    ingest_ok=$((ingest_ok + 1))
+                    ;;
+                  no-data)
+                    echo "NO-DATA: no announced lineup rows for $match_id"
+                    ingest_no_data=$((ingest_no_data + 1))
+                    ;;
+                  *)
+                    echo "FAIL: unexpected ingest response for $match_id"
+                    ingest_fail=$((ingest_fail + 1))
+                    failure_total=$((failure_total + 1))
+                    ;;
+                esac
+              fi
+            done
+          fi
+
+          if [ "$FETCH_FACTS" = "true" ]; then
+            for match_id in "${valid_ids[@]}"; do
+              response_file=$(mktemp)
+              echo "== fetch-sourced-facts ($CONTENT_TYPE): $match_id =="
+              code=$(request "$response_file" -X POST "$BASE/api/cron/fetch-sourced-facts?match_id=$match_id&content_type=$CONTENT_TYPE&force=true" -H "Authorization: Bearer $CRON_SECRET")
+              body=$(<"$response_file")
+              rm "$response_file"
+              echo "HTTP $code"
+              echo "$body"
+
+              if [ "$code" = "200" ]; then
+                facts_ok=$((facts_ok + 1))
+              else
+                echo "FAIL: sourced facts error for $match_id"
+                facts_fail=$((facts_fail + 1))
+                failure_total=$((failure_total + 1))
+              fi
+            done
+          fi
+
+          if [ "$REGENERATE" = "true" ] && [ "$valid_count" -gt 0 ]; then
+            match_ids_json=$(node -e 'process.stdout.write(JSON.stringify(process.argv.slice(1)))' "${valid_ids[@]}")
+            response_file=$(mktemp)
+            echo "== generate-content ($CONTENT_TYPE): ${valid_count} match_ids =="
+            code=$(request "$response_file" -X POST "$BASE/api/cron/generate-content" -H "Authorization: Bearer $CRON_SECRET" -H "Content-Type: application/json" --data "{\"contentType\":\"$CONTENT_TYPE\",\"matchIds\":$match_ids_json,\"language\":\"$LANGUAGE\"}")
+            body=$(<"$response_file")
+            rm "$response_file"
+            regenerate_status="HTTP $code"
+            echo "HTTP $code"
+            echo "$body"
+            if [ "$code" != "200" ]; then
+              echo "FAIL: content regeneration error"
+              failure_total=$((failure_total + 1))
+            fi
+          elif [ "$REGENERATE" = "true" ]; then
+            regenerate_status="NOT RUN (no valid match_ids)"
+          fi
+
+          if [ "$INGEST_LINEUPS" = "true" ] && [ "$ingest_ok" -eq 0 ]; then
+            echo "FAIL: no lineup rows were ingested."
+            failure_total=$((failure_total + 1))
+          fi
+
+          write_summary
+
+          if [ "$failure_total" -gt 0 ]; then
+            echo "FAIL: one or more stages did not complete successfully."
+            exit 1
+          fi
+
+          exit 0
