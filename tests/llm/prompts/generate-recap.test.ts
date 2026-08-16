@@ -54,8 +54,25 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.16.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.16.0");
+  it("uses recap prompt version 4.17.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.17.0");
+  });
+
+  it("does not disclose missing system data while allowing factual limits", () => {
+    const prompt = buildGenerateRecapPrompt(assembled, [], []);
+
+    expect(prompt).toContain("【本文でシステム内部のデータ不在を開示しない】");
+    expect(prompt).toContain("「入力データ」「提供されたデータ」");
+    expect(prompt).toContain(
+      "「確定できない」「判定できない」「断定できない」「示されていない」",
+    );
+    expect(prompt).toContain(
+      "根拠が足りず書けない話題は、その不在を報告せず話題自体に触れないこと",
+    );
+    expect(prompt).toContain(
+      "得点記録など観測できる事実だけから個々の守備対応を断定できない",
+    );
+    expect(prompt).toContain("取材・観戦の限界として分析の射程を述べることは許容する");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {

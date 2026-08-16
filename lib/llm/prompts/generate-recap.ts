@@ -19,7 +19,13 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.16.0";
+export const PROMPT_VERSION = "recap@4.17.0";
+
+const MISSING_DATA_DISCLOSURE_BLOCK = [
+  "【本文でシステム内部のデータ不在を開示しない】読者に向けて「入力データ」「提供されたデータ」等のシステム内部を指す語を出してはならない。",
+  "データ不足を理由に「確定できない」「判定できない」「断定できない」「示されていない」等と結論を保留する説明を書いてはならない。根拠が足りず書けない話題は、その不在を報告せず話題自体に触れないこと。",
+  "ただし、得点記録など観測できる事実だけから個々の守備対応を断定できない、のように、取材・観戦の限界として分析の射程を述べることは許容する。これはシステム内部のデータ不在を説明する文ではない。",
+].join("\n");
 
 const CORE_SECTION_INSTRUCTION = [
   "- この試合の核心: 150-250字。定型句を使わず、この試合固有の事実（最終スコア・決勝点のシチュエーション・試合の転換点）から書き始めること。",
@@ -310,6 +316,7 @@ export function buildGenerateRecapPrompt(
   return [
     persona,
     prohibitionsBlock,
+    MISSING_DATA_DISCLOSURE_BLOCK,
     structureInstruction,
     matchPhaseBlock,
     "各セクションが指定字数の**下限**を下回ってはならない。下限未満なら具体的な事実・戦術分析・選手描写を追加して下限まで書き足すこと。「字数確認済み」などのメタコメントは出力禁止。",
