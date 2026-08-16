@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { getSupabaseBrowserClient } from "@/lib/auth/client";
@@ -11,13 +11,65 @@ type AuthModalProps = {
   onClose: () => void;
 };
 
+const GENERIC_ERROR_MESSAGE = "エラーが発生しました。";
+
+function getAuthErrorMessage(error: unknown): string {
+  if (!error || typeof error !== "object") {
+    return GENERIC_ERROR_MESSAGE;
+  }
+
+  const { code, message, status } = error as {
+    code?: unknown;
+    message?: unknown;
+    status?: unknown;
+  };
+  const normalizedCode = typeof code === "string" ? code.toLowerCase() : "";
+  const normalizedMessage =
+    typeof message === "string" ? message.toLowerCase() : "";
+
+  if (
+    status === 400 &&
+    (normalizedCode.includes("invalid") ||
+      normalizedMessage.includes("invalid format") ||
+      normalizedMessage.includes("validate email"))
+  ) {
+    return "メールアドレスの形式が正しくありません。";
+  }
+
+  if (
+    status === 429 ||
+    normalizedCode.includes("rate") ||
+    normalizedMessage.includes("rate limit")
+  ) {
+    return "時間をおいてお試しください。";
+  }
+
+  if (
+    normalizedMessage.includes("network") ||
+    normalizedMessage.includes("failed to fetch")
+  ) {
+    return "通信に失敗しました。";
+  }
+
+  return GENERIC_ERROR_MESSAGE;
+}
+
+function isPlausibleEmail(email: string): boolean {
+  const atIndex = email.indexOf("@");
+
+  return atIndex > 0 && atIndex < email.length - 1 && !/\s/.test(email);
+}
+
 export function AuthModal({
   intent = "login",
   onClose,
 }: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sent" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState(GENERIC_ERROR_MESSAGE);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -25,26 +77,79 @@ export function AuthModal({
   }, []);
 
   async function submit() {
-    const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${location.origin}/auth/callback` },
-    });
+    const normalizedEmail = email.trim();
 
-    setState(error ? "error" : "sent");
+    setEmail(normalizedEmail);
+    if (!normalizedEmail) {
+      setErrorMessage("メールアドレスを入力してください。");
+      setState("error");
+      return;
+    }
+
+    if (!isPlausibleEmail(normalizedEmail)) {
+      setErrorMessage("メールアドレスの形式が正しくありません。");
+      setState("error");
+      return;
+    }
+
+    if (isSubmittingRef.current) {
+      return;
+    }
+
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+    setState("idle");
+    const supabase = getSupabaseBrowserClient();
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: normalizedEmail,
+        options: { emailRedirectTo: `${location.origin}/auth/callback` },
+      });
+
+      if (error) {
+        setErrorMessage(getAuthErrorMessage(error));
+        setState("error");
+      } else {
+        setState("sent");
+      }
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error));
+      setState("error");
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+    }
   }
 
   async function handleGoogleLogin() {
-    const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    if (isSubmittingRef.current) {
+      return;
+    }
 
-    if (error) {
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+    setState("idle");
+    const supabase = getSupabaseBrowserClient();
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        setErrorMessage(getAuthErrorMessage(error));
+        setState("error");
+      }
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error));
       setState("error");
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   }
 
@@ -72,11 +177,12 @@ export function AuthModal({
             <>
               {state === "error" && (
                 <p className="mb-3 mt-4 text-sm text-red-600">
-                  エラーが発生しました。
+                  {errorMessage}
                 </p>
               )}
               <button
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                disabled={isSubmitting}
                 onClick={() => void handleGoogleLogin()}
                 type="button"
               >
@@ -103,6 +209,7 @@ export function AuthModal({
               />
               <button
                 className="w-full rounded-lg bg-[var(--color-accent)] py-2 text-sm font-semibold text-white hover:opacity-90"
+                disabled={isSubmitting}
                 onClick={() => void submit()}
                 type="button"
               >
