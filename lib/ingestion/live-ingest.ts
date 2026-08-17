@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { pointsForMatchEvent } from "@/lib/format/match-event-points";
 import { upsertMatchEvents } from "@/lib/ingestion/events";
 import { reconcilePhantomNullMinuteScoringEvents } from "@/lib/ingestion/reconcile-phantom-events";
 import { upsertMatches } from "@/lib/ingestion/upsert";
@@ -221,8 +222,34 @@ function buildParsedMatchKey(match: ParsedLiveMatch | undefined) {
 
   const homeKey = match.homeTeamSlug ?? match.homeTeamName;
   const awayKey = match.awayTeamSlug ?? match.awayTeamName;
+  const kickoffDate = match.kickoffAt.slice(0, 10);
 
-  return `${homeKey}:${awayKey}`;
+  return `${kickoffDate}:${homeKey}:${awayKey}`;
+}
+
+function eventScores(events: ParsedMatchEvent[]) {
+  return events.reduce(
+    (scores, event) => {
+      const points = pointsForMatchEvent(event);
+
+      scores[event.teamSide] += points;
+      return scores;
+    },
+    { away: 0, home: 0 },
+  );
+}
+
+function eventScoresMatchFinalScore(
+  events: ParsedMatchEvent[],
+  homeScore: number | null,
+  awayScore: number | null,
+) {
+  if (homeScore === null || awayScore === null) {
+    return true;
+  }
+
+  const scores = eventScores(events);
+  return scores.home === homeScore && scores.away === awayScore;
 }
 
 export async function ingestLiveCompetition(
@@ -239,6 +266,13 @@ export async function ingestLiveCompetition(
       const key = buildParsedMatchKey(eventMatch);
 
       if (key) {
+        if (eventMatchByKey.has(key)) {
+          console.warn(
+            `[${source.competitionSlug}] duplicate event match key ${key}; keeping the first match.`,
+          );
+          continue;
+        }
+
         eventMatchByKey.set(key, eventMatch);
       }
     }
@@ -327,7 +361,8 @@ export async function ingestLiveCompetition(
     (record) =>
       record.status === "finished" &&
       !eventedMatchIds.has(record.id) &&
-      (record.statusChangedToFinished || source.fetchEventMatches !== undefined),
+      (record.statusChangedToFinished ||
+        source.fetchEventMatches !== undefined),
   );
 
   for (const record of eventMatches) {
@@ -358,6 +393,22 @@ export async function ingestLiveCompetition(
       if (events.length === 0) {
         console.info(
           `[${source.competitionSlug}] no events parsed for finished match ${record.id}; will retry on the next ingest.`,
+        );
+        continue;
+      }
+
+      if (
+        !eventScoresMatchFinalScore(events, match.homeScore, match.awayScore)
+      ) {
+        console.warn(
+          `[${source.competitionSlug}] event total mismatch; skipping event upsert for match ${record.id}.`,
+          {
+            eventTotals: eventScores(events),
+            expectedScore: {
+              away: match.awayScore,
+              home: match.homeScore,
+            },
+          },
         );
         continue;
       }
