@@ -54,8 +54,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.17.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.17.0");
+  it("uses recap prompt version 4.18.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.18.0");
   });
 
   it("does not disclose missing system data while allowing factual limits", () => {
@@ -72,7 +72,9 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain(
       "得点記録など観測できる事実だけから個々の守備対応を断定できない",
     );
-    expect(prompt).toContain("取材・観戦の限界として分析の射程を述べることは許容する");
+    expect(prompt).toContain(
+      "取材・観戦の限界として分析の射程を述べることは許容する",
+    );
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -663,6 +665,16 @@ describe("buildGenerateRecapPrompt", () => {
             { away: 35, home: 33, minute: 78, new_leader: "away" },
             { away: 35, home: 38, minute: 84, new_leader: "home" },
           ],
+          score_progression: [
+            {
+              away: 35,
+              home: 38,
+              minute: 84,
+              player: "森川由起乙",
+              team: "home",
+              type: "try",
+            },
+          ],
           winning_score: {
             minute: 84,
             player: "森川由起乙",
@@ -679,6 +691,16 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("前半終了時スコア: サントリー 27 — リコー 10");
     expect(prompt).toContain("78分: リコー 33—35");
     expect(prompt).toContain("84分: サントリー 38—35");
+    expect(prompt).toContain("全得点時点の累計スコア");
+    expect(prompt).toContain(
+      "本文で使うスコアはこの表の値をそのまま使い、自分で加算しないこと",
+    );
+    expect(prompt).toContain(
+      "表記順は常にホーム — アウェイ（ホーム: サントリー、アウェイ: リコー）",
+    );
+    expect(prompt).toContain(
+      "84分: サントリー 森川由起乙（try）→ サントリー 38 — リコー 35",
+    );
     expect(prompt).toContain(
       "勝利を決めた得点: 84分 サントリー 森川由起乙（try）",
     );
