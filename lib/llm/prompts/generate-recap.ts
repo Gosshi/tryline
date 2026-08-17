@@ -19,7 +19,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.17.0";
+export const PROMPT_VERSION = "recap@4.18.0";
 
 const MISSING_DATA_DISCLOSURE_BLOCK = [
   "【本文でシステム内部のデータ不在を開示しない】読者に向けて「入力データ」「提供されたデータ」等のシステム内部を指す語を出してはならない。",
@@ -166,14 +166,24 @@ export function buildGenerateRecapPrompt(
       return "";
     }
 
-    const { ht_home, ht_away, lead_changes, winning_score } =
+    const { ht_home, ht_away, lead_changes, score_progression, winning_score } =
       assembled.score_timeline;
     const homeTeam = assembled.match.home_team?.name ?? "ホーム";
     const awayTeam = assembled.match.away_team?.name ?? "アウェイ";
     const lines: string[] = [
       "スコア推移サマリー（# ターニングポイントの骨格として必ず使うこと）:",
       `- 前半終了時スコア: ${homeTeam} ${ht_home} — ${awayTeam} ${ht_away}`,
+      "- 全得点時点の累計スコア: 本文で使うスコアはこの表の値をそのまま使い、自分で加算しないこと。",
+      `- 表記順は常にホーム — アウェイ（ホーム: ${homeTeam}、アウェイ: ${awayTeam}）:`,
     ];
+
+    lines.push(
+      ...score_progression.map((score) => {
+        const team = score.team === "home" ? homeTeam : awayTeam;
+        const player = score.player ? ` ${score.player}` : "";
+        return `  - ${score.minute}分: ${team}${player}（${score.type}）→ ${homeTeam} ${score.home} — ${awayTeam} ${score.away}`;
+      }),
+    );
 
     if (lead_changes.length === 0) {
       lines.push("- リード変化: なし（一方が終始リード）");

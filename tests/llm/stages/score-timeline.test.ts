@@ -193,7 +193,203 @@ describe("computeScoreTimeline", () => {
       final_home: 7,
       ht_away: 5,
       ht_home: 7,
+      score_progression: [
+        {
+          away: 0,
+          home: 7,
+          minute: 12,
+          player: "Penalty try",
+          team: "home",
+          type: "try",
+        },
+        {
+          away: 5,
+          home: 7,
+          minute: 20,
+          player: "Normal try",
+          team: "away",
+          type: "try",
+        },
+      ],
     });
+  });
+
+  it("returns an event-by-event home-away progression without non-scoring events", () => {
+    const result = computeScoreTimeline(
+      [
+        {
+          minute: 5,
+          player_name: "Japan try",
+          team_name: "Japan",
+          type: "try",
+        },
+        {
+          minute: 7,
+          player_name: "Australia try",
+          team_name: "Australia",
+          type: "try",
+        },
+        {
+          minute: 8,
+          player_name: "Australia conversion",
+          team_name: "Australia",
+          type: "conversion",
+        },
+        {
+          minute: 17,
+          player_name: "Australia try",
+          team_name: "Australia",
+          type: "try",
+        },
+        {
+          minute: 18,
+          player_name: "Australia conversion",
+          team_name: "Australia",
+          type: "conversion",
+        },
+        {
+          minute: 26,
+          player_name: "Japan try",
+          team_name: "Japan",
+          type: "try",
+        },
+        {
+          minute: 27,
+          player_name: "Japan conversion",
+          team_name: "Japan",
+          type: "conversion",
+        },
+        {
+          minute: 34,
+          player_name: "Japan try",
+          team_name: "Japan",
+          type: "try",
+        },
+        {
+          minute: 39,
+          player_name: "Australia try",
+          team_name: "Australia",
+          type: "try",
+        },
+        {
+          minute: 40,
+          player_name: "Australia conversion",
+          team_name: "Australia",
+          type: "conversion",
+        },
+        {
+          minute: 51,
+          player_name: "Australia try",
+          team_name: "Australia",
+          type: "try",
+        },
+        {
+          minute: 52,
+          player_name: "Australia conversion",
+          team_name: "Australia",
+          type: "conversion",
+        },
+        {
+          minute: 55,
+          player_name: "Australia replacement",
+          team_name: "Australia",
+          type: "substitution",
+        },
+        {
+          minute: 58,
+          player_name: "Australia try",
+          team_name: "Australia",
+          type: "try",
+        },
+        {
+          minute: 59,
+          player_name: "Japan card",
+          team_name: "Japan",
+          type: "yellow_card",
+        },
+        {
+          minute: 60,
+          player_name: "Australia conversion",
+          team_name: "Australia",
+          type: "conversion",
+        },
+        {
+          minute: 73,
+          player_name: "Australia try",
+          team_name: "Australia",
+          type: "try",
+        },
+        {
+          minute: 74,
+          player_name: "Australia conversion",
+          team_name: "Australia",
+          type: "conversion",
+        },
+        {
+          minute: 75,
+          player_name: "Australia try",
+          team_name: "Australia",
+          type: "try",
+        },
+        {
+          minute: 76,
+          player_name: "Australia conversion",
+          team_name: "Australia",
+          type: "conversion",
+        },
+        {
+          minute: 81,
+          player_name: "Australia try",
+          team_name: "Australia",
+          type: "try",
+        },
+        {
+          minute: 82,
+          player_name: "Australia conversion",
+          team_name: "Australia",
+          type: "conversion",
+        },
+      ],
+      "Australia",
+      "Japan",
+    );
+
+    expect(result?.score_progression).toHaveLength(20);
+    expect(result?.score_progression).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          away: 17,
+          home: 14,
+          minute: 34,
+          team: "away",
+          type: "try",
+        }),
+        expect.objectContaining({
+          away: 17,
+          home: 19,
+          minute: 39,
+          team: "home",
+          type: "try",
+        }),
+        expect.objectContaining({
+          away: 17,
+          home: 21,
+          minute: 40,
+          team: "home",
+          type: "conversion",
+        }),
+      ]),
+    );
+    expect(result).toMatchObject({
+      final_away: 17,
+      final_home: 56,
+      ht_away: 17,
+      ht_home: 21,
+    });
+  });
+
+  it("returns null when there are no events", () => {
+    expect(computeScoreTimeline([], "Home", "Away")).toBeNull();
   });
 
   it("counts penalty_goal events in match penalty stats", () => {

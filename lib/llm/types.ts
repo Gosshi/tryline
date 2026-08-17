@@ -44,6 +44,14 @@ export type ScoreTimeline = {
   final_away: number;
   ht_home: number;
   ht_away: number;
+  score_progression: Array<{
+    minute: number;
+    home: number;
+    away: number;
+    team: "home" | "away";
+    type: string;
+    player: string | null;
+  }>;
   lead_changes: Array<{
     minute: number;
     home: number;

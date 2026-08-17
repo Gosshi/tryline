@@ -210,6 +210,7 @@ describe("generateMatchContent recap event guard", () => {
       ht_away: 0,
       ht_home: 5,
       lead_changes: [],
+      score_progression: [],
       winning_score: null,
     });
     extractFactsMock.extractTacticalPoints.mockResolvedValue({
@@ -291,6 +292,7 @@ describe("generateMatchContent recap event guard", () => {
       ht_away: 0,
       ht_home: 5,
       lead_changes: [],
+      score_progression: [],
       winning_score: null,
     });
     extractFactsMock.extractTacticalPoints.mockResolvedValue({

@@ -260,6 +260,14 @@ export function computeScoreTimeline(
     ht_away: htAway,
     ht_home: htHome,
     lead_changes: leadChanges,
+    score_progression: scoringSnapshots.map((snapshot) => ({
+      away: snapshot.away,
+      home: snapshot.home,
+      minute: snapshot.event.minute ?? 0,
+      player: snapshot.event.player_name || null,
+      team: snapshot.event.team_name === homeTeamName ? "home" : "away",
+      type: snapshot.event.type,
+    })),
     winning_score: winningScore,
   };
 }
@@ -354,7 +362,9 @@ async function loadProjectedLineup(
 
   const { data: matchLineups, error: lineupsError } = await db
     .from("match_lineups")
-    .select("jersey_number, is_starter, player:players(name, name_ja, position)")
+    .select(
+      "jersey_number, is_starter, player:players(name, name_ja, position)",
+    )
     .eq("match_id", matchId)
     .eq("team_id", teamId)
     .order("jersey_number", { ascending: true });
