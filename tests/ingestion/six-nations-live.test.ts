@@ -118,7 +118,7 @@ describe("Six Nations 2027 live ingestion", () => {
         <table>
           <tr>
             <td class="vcard"><span class="fn org">Ireland</span></td>
-            <td>10–7</td>
+            <td>5–5</td>
             <td class="vcard"><span class="fn org">England</span></td>
           </tr>
           <tr style="font-size:85%">
@@ -138,10 +138,10 @@ describe("Six Nations 2027 live ingestion", () => {
       family: "six-nations",
       fetch: vi.fn().mockResolvedValue([
         {
-          awayScore: 7,
+          awayScore: 5,
           awayTeamName: "England",
           eventId: "Ireland_v_England",
-          homeScore: 10,
+          homeScore: 5,
           homeTeamName: "Ireland",
           kickoffAt: "2027-02-05T20:10:00.000Z",
           lineupTableHtml: null,
@@ -214,7 +214,7 @@ describe("Six Nations 2027 live ingestion", () => {
         <table>
           <tr>
             <td class="vcard"><span class="fn org">Ireland</span></td>
-            <td>10–7</td>
+            <td>5–5</td>
             <td class="vcard"><span class="fn org">England</span></td>
           </tr>
           <tr style="font-size:85%">
@@ -245,9 +245,9 @@ describe("Six Nations 2027 live ingestion", () => {
       await import("@/lib/ingestion/live-ingest");
     const fetchEventMatches = vi.fn().mockResolvedValue([
       {
-        awayScore: 7,
+        awayScore: 5,
         awayTeamName: "England",
-        homeScore: 10,
+        homeScore: 5,
         homeTeamName: "Ireland",
         kickoffAt: "2027-02-05T20:10:00.000Z",
         lineupTableHtml: null,
@@ -267,9 +267,9 @@ describe("Six Nations 2027 live ingestion", () => {
       family: "six-nations",
       fetch: vi.fn().mockResolvedValue([
         {
-          awayScore: 7,
+          awayScore: 5,
           awayTeamName: "England",
-          homeScore: 10,
+          homeScore: 5,
           homeTeamName: "Ireland",
           kickoffAt: "2027-02-05T20:10:00.000Z",
           lineupTableHtml: null,
@@ -288,6 +288,250 @@ describe("Six Nations 2027 live ingestion", () => {
     });
 
     expect(fetchEventMatches).toHaveBeenCalledTimes(1);
+    expect(ingestionMocks.upsertMatchEvents).toHaveBeenCalledWith(
+      expect.objectContaining({ matchId: "match-1" }),
+    );
+  });
+
+  it("assigns separate event HTML to repeated fixtures on different dates", async () => {
+    ingestionMocks.upsertMatches.mockResolvedValueOnce({
+      matchesInserted: 0,
+      matchesUpdated: 2,
+      records: [
+        {
+          awayTeamId: "team-england",
+          candidateIndex: 0,
+          externalIds: {},
+          homeTeamId: "team-ireland",
+          id: "match-1",
+          previousStatus: "scheduled",
+          status: "finished",
+          statusChangedToFinished: true,
+        },
+        {
+          awayTeamId: "team-england",
+          candidateIndex: 1,
+          externalIds: {},
+          homeTeamId: "team-ireland",
+          id: "match-2",
+          previousStatus: "scheduled",
+          status: "finished",
+          statusChangedToFinished: true,
+        },
+      ],
+    });
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+    const firstEventHtml = `
+      <div class="vevent summary">
+        <table><tr style="font-size:85%"><td><b>Try:</b> <a>First Test Scorer</a> 12'</td><td></td><td></td></tr></table>
+      </div>
+    `;
+    const secondEventHtml = `
+      <div class="vevent summary">
+        <table><tr style="font-size:85%"><td></td><td></td><td><b>Try:</b> <a>Second Test Scorer</a> 20'</td></tr></table>
+      </div>
+    `;
+    const firstMatch = {
+      awayScore: 0,
+      awayTeamName: "England",
+      homeScore: 5,
+      homeTeamName: "Ireland",
+      kickoffAt: "2027-02-05T20:10:00.000Z",
+      lineupTableHtml: null,
+      rawHtml: "",
+      round: 1,
+      roundName: null,
+      status: "finished" as const,
+      venue: "Aviva Stadium",
+      wikipediaUrl: null,
+    };
+    const secondMatch = {
+      ...firstMatch,
+      awayScore: 5,
+      homeScore: 0,
+      kickoffAt: "2027-02-12T20:10:00.000Z",
+      round: 2,
+    };
+
+    await ingestLiveCompetition({
+      competitionName: "Six Nations 2027",
+      competitionSlug: "six-nations-2027",
+      family: "six-nations",
+      fetch: vi.fn().mockResolvedValue([firstMatch, secondMatch]),
+      fetchEventMatches: vi.fn().mockResolvedValue([
+        { ...firstMatch, rawHtml: firstEventHtml },
+        { ...secondMatch, rawHtml: secondEventHtml },
+      ]),
+      season: "2027",
+      sourceLabel: "wikipedia",
+    });
+
+    expect(ingestionMocks.upsertMatchEvents).toHaveBeenCalledTimes(2);
+    expect(ingestionMocks.upsertMatchEvents).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        events: expect.arrayContaining([
+          expect.objectContaining({ playerName: "First Test Scorer" }),
+        ]),
+        matchId: "match-1",
+      }),
+    );
+    expect(ingestionMocks.upsertMatchEvents).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        events: expect.arrayContaining([
+          expect.objectContaining({ playerName: "Second Test Scorer" }),
+        ]),
+        matchId: "match-2",
+      }),
+    );
+  });
+
+  it("keeps the first event match and warns when an event key collides", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+    const firstEventHtml = `
+      <div class="vevent summary">
+        <table><tr style="font-size:85%"><td><b>Try:</b> <a>First Scorer</a> 12'</td><td></td><td></td></tr></table>
+      </div>
+    `;
+    const secondEventHtml = `
+      <div class="vevent summary">
+        <table><tr style="font-size:85%"><td><b>Try:</b> <a>Second Scorer</a> 12'</td><td></td><td></td></tr></table>
+      </div>
+    `;
+    const finishedMatch = {
+      awayScore: 0,
+      awayTeamName: "England",
+      homeScore: 5,
+      homeTeamName: "Ireland",
+      kickoffAt: "2027-02-05T20:10:00.000Z",
+      lineupTableHtml: null,
+      rawHtml: "",
+      round: 1,
+      roundName: null,
+      status: "finished" as const,
+      venue: "Aviva Stadium",
+      wikipediaUrl: null,
+    };
+
+    await ingestLiveCompetition({
+      competitionName: "Six Nations 2027",
+      competitionSlug: "six-nations-2027",
+      family: "six-nations",
+      fetch: vi.fn().mockResolvedValue([finishedMatch]),
+      fetchEventMatches: vi.fn().mockResolvedValue([
+        { ...finishedMatch, rawHtml: firstEventHtml },
+        { ...finishedMatch, rawHtml: secondEventHtml },
+      ]),
+      season: "2027",
+      sourceLabel: "wikipedia",
+    });
+
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "[six-nations-2027] duplicate event match key 2027-02-05:Ireland:England",
+      ),
+    );
+    expect(ingestionMocks.upsertMatchEvents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        events: expect.arrayContaining([
+          expect.objectContaining({ playerName: "First Scorer" }),
+        ]),
+      }),
+    );
+    expect(ingestionMocks.upsertMatchEvents).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        events: expect.arrayContaining([
+          expect.objectContaining({ playerName: "Second Scorer" }),
+        ]),
+      }),
+    );
+    warn.mockRestore();
+  });
+
+  it("does not replace existing events when their totals differ from the final score", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+    const rawHtml = `
+      <div class="vevent summary">
+        <table><tr style="font-size:85%"><td><b>Try:</b> <a>Irish Scorer</a> 12'</td><td></td><td></td></tr></table>
+      </div>
+    `;
+
+    await ingestLiveCompetition({
+      competitionName: "Six Nations 2027",
+      competitionSlug: "six-nations-2027",
+      family: "six-nations",
+      fetch: vi.fn().mockResolvedValue([
+        {
+          awayScore: 7,
+          awayTeamName: "England",
+          homeScore: 10,
+          homeTeamName: "Ireland",
+          kickoffAt: "2027-02-05T20:10:00.000Z",
+          lineupTableHtml: null,
+          rawHtml,
+          round: 1,
+          roundName: null,
+          status: "finished",
+          venue: "Aviva Stadium",
+          wikipediaUrl: null,
+        },
+      ]),
+      season: "2027",
+      sourceLabel: "wikipedia",
+    });
+
+    expect(ingestionMocks.upsertMatchEvents).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "[six-nations-2027] event total mismatch; skipping event upsert for match match-1.",
+      ),
+      {
+        eventTotals: { away: 0, home: 5 },
+        expectedScore: { away: 7, home: 10 },
+      },
+    );
+    warn.mockRestore();
+  });
+
+  it("writes events when the final score is unavailable", async () => {
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+    const rawHtml = `
+      <div class="vevent summary">
+        <table><tr style="font-size:85%"><td><b>Try:</b> <a>Irish Scorer</a> 12'</td><td></td><td></td></tr></table>
+      </div>
+    `;
+
+    await ingestLiveCompetition({
+      competitionName: "Six Nations 2027",
+      competitionSlug: "six-nations-2027",
+      family: "six-nations",
+      fetch: vi.fn().mockResolvedValue([
+        {
+          awayScore: null,
+          awayTeamName: "England",
+          homeScore: null,
+          homeTeamName: "Ireland",
+          kickoffAt: "2027-02-05T20:10:00.000Z",
+          lineupTableHtml: null,
+          rawHtml,
+          round: 1,
+          roundName: null,
+          status: "finished",
+          venue: "Aviva Stadium",
+          wikipediaUrl: null,
+        },
+      ]),
+      season: "2027",
+      sourceLabel: "wikipedia",
+    });
+
     expect(ingestionMocks.upsertMatchEvents).toHaveBeenCalledWith(
       expect.objectContaining({ matchId: "match-1" }),
     );
@@ -314,9 +558,9 @@ describe("Six Nations 2027 live ingestion", () => {
     const { ingestLiveCompetition } =
       await import("@/lib/ingestion/live-ingest");
     const finishedMatch = {
-      awayScore: 7,
+      awayScore: 5,
       awayTeamName: "England",
-      homeScore: 10,
+      homeScore: 5,
       homeTeamName: "Ireland",
       kickoffAt: "2027-02-05T20:10:00.000Z",
       lineupTableHtml: null,
