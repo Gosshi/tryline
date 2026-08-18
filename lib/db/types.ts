@@ -1153,6 +1153,7 @@ export type Database = {
           external_ids: Json;
           flag_code: string | null;
           id: string;
+          kind: string;
           logo_url: string | null;
           name: string;
           name_ja: string | null;
@@ -1169,6 +1170,7 @@ export type Database = {
           external_ids?: Json;
           flag_code?: string | null;
           id?: string;
+          kind?: string;
           logo_url?: string | null;
           name: string;
           name_ja?: string | null;
@@ -1185,6 +1187,7 @@ export type Database = {
           external_ids?: Json;
           flag_code?: string | null;
           id?: string;
+          kind?: string;
           logo_url?: string | null;
           name?: string;
           name_ja?: string | null;

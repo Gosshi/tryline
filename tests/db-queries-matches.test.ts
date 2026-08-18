@@ -21,6 +21,7 @@ import {
   getRecentlyReviewedCompetitionGroups,
   getRecentlyReviewedMatches,
   getSingleNationCompetitionIds,
+  listMatchesForCompetition,
   stripMarkdown,
 } from "@/lib/db/queries/matches";
 
@@ -295,6 +296,67 @@ describe("getNextMatchForTeamSlug", () => {
       getNextMatchForTeamSlug("missing", "2026-07-21T00:00:00.000Z"),
     ).resolves.toBeNull();
     expect(nextMatchesQueryMock.select).not.toHaveBeenCalled();
+  });
+});
+
+describe("listMatchesForCompetition", () => {
+  it("includes each team's kind for schedule match classification", async () => {
+    const competitionQuery = {
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { id: "greatest-rivalry-2026-id" },
+        error: null,
+      }),
+      select: vi.fn().mockReturnThis(),
+    };
+    const matchesQuery = {
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({
+        data: [
+          {
+            away_score: null,
+            away_team: {
+              flag_code: "🇳🇿",
+              kind: "national",
+              name: "New Zealand",
+              short_code: "NZL",
+              slug: "new-zealand",
+            },
+            external_ids: {},
+            home_score: null,
+            home_team: {
+              flag_code: "🇿🇦",
+              kind: "club",
+              name: "Stormers",
+              short_code: "STO",
+              slug: "stormers",
+            },
+            id: "stormers-new-zealand",
+            kickoff_at: "2026-08-07T15:00:00.000Z",
+            status: "finished",
+            venue: "Cape Town Stadium",
+          },
+        ],
+        error: null,
+      }),
+      select: vi.fn().mockReturnThis(),
+    };
+    clientMock.from
+      .mockReturnValueOnce(competitionQuery)
+      .mockReturnValueOnce(matchesQuery);
+
+    await expect(
+      listMatchesForCompetition("greatest-rivalry-2026"),
+    ).resolves.toMatchObject([
+      {
+        awayTeam: { kind: "national" },
+        homeTeam: { kind: "club" },
+      },
+    ]);
+
+    expect(matchesQuery.select).toHaveBeenCalledWith(
+      expect.stringContaining("kind"),
+    );
   });
 });
 

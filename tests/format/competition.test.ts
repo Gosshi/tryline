@@ -63,6 +63,7 @@ describe("formatFamilyName", () => {
     expect(getCompetitionFamilyColor("super-rugby-pacific")).toBe("#0057B8");
     expect(getCompetitionFamilyColor("rugby-championship")).toBe("#C8102E");
     expect(getCompetitionFamilyColor("nations-championship")).toBe("#1A3A5C");
+    expect(getCompetitionFamilyColor("greatest-rivalry")).toBe("#007A4D");
     expect(getCompetitionFamilyColor("unknown-family")).toBe("#1e293b");
   });
 });

@@ -29,6 +29,8 @@ const ROUND_FILTERS = [
 
 type RoundFilterValue = (typeof ROUND_FILTERS)[number]["value"];
 
+type MatchClassification = "test" | "tour";
+
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -251,13 +253,9 @@ export function SeasonMatchGroups({
                   className={isOpen ? "grid gap-4 md:grid-cols-2" : "hidden"}
                 >
                   {roundMatches.map((match) => (
-                    <MatchCard
-                      contentStatus={
-                        contentStatusMap[match.id] ?? {
-                          hasPreview: false,
-                          hasRecap: false,
-                        }
-                      }
+                    <ClassifiedMatchCard
+                      contentStatus={contentStatusMap[match.id]}
+                      family={family}
                       key={match.id}
                       match={match}
                     />
@@ -279,13 +277,9 @@ export function SeasonMatchGroups({
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   {roundMatches.map((match) => (
-                    <MatchCard
-                      contentStatus={
-                        contentStatusMap[match.id] ?? {
-                          hasPreview: false,
-                          hasRecap: false,
-                        }
-                      }
+                    <ClassifiedMatchCard
+                      contentStatus={contentStatusMap[match.id]}
+                      family={family}
                       key={match.id}
                       match={match}
                     />
@@ -297,6 +291,76 @@ export function SeasonMatchGroups({
         );
       })}
     </>
+  );
+}
+
+export function getMatchClassification(
+  family: string | undefined,
+  match: MatchListItem,
+): MatchClassification | null {
+  if (family !== "greatest-rivalry") {
+    return null;
+  }
+
+  if (match.homeTeam.kind === "national" && match.awayTeam.kind === "national") {
+    return "test";
+  }
+
+  if (match.homeTeam.kind === "club" || match.awayTeam.kind === "club") {
+    return "tour";
+  }
+
+  return null;
+}
+
+function ClassifiedMatchCard({
+  contentStatus,
+  family,
+  match,
+}: {
+  contentStatus: MatchContentStatus | undefined;
+  family: string | undefined;
+  match: MatchListItem;
+}) {
+  const classification = getMatchClassification(family, match);
+  const defaultContentStatus = {
+    hasPreview: false,
+    hasRecap: false,
+  };
+
+  if (!classification) {
+    return <MatchCard contentStatus={contentStatus ?? defaultContentStatus} match={match} />;
+  }
+
+  const isTestMatch = classification === "test";
+
+  return (
+    <div
+      className={
+        isTestMatch
+          ? "rounded-xl border-2 border-[var(--color-accent)] bg-white p-1.5 shadow-md"
+          : "rounded-xl border border-slate-200 bg-slate-50 p-1"
+      }
+      data-match-type={classification}
+    >
+      <div className="flex items-center justify-between px-2 pb-1 pt-0.5">
+        <span
+          className={
+            isTestMatch
+              ? "rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[10px] font-black tracking-wide text-white"
+              : "rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[10px] font-bold tracking-wide text-slate-600"
+          }
+        >
+          {isTestMatch ? "テストマッチ" : "ツアー戦"}
+        </span>
+        {isTestMatch && (
+          <span className="text-[10px] font-semibold text-[var(--color-accent)]">
+            代表戦
+          </span>
+        )}
+      </div>
+      <MatchCard contentStatus={contentStatus ?? defaultContentStatus} match={match} />
+    </div>
   );
 }
 
