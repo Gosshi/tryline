@@ -115,10 +115,7 @@ export async function generateMetadata({
   }
 
   const competitionTitle = formatCompetitionTitle(
-    getCompetitionDisplayName(
-      match.competition,
-      match.competition.nameJa ? "ja" : "en",
-    ),
+    getCompetitionDisplayName(match.competition),
     match.competition.season,
   );
   const matchupTitle = `${match.homeTeam.name} 対 ${match.awayTeam.name}`;

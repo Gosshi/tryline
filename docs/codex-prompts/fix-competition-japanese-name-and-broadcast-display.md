@@ -64,11 +64,46 @@ verified_at が設定されている                1 / 12  （rwc のみ）
 2. **`competitionNameJa` に「2026」を入れない。** `formatCompetitionTitle` が `includes(season)` で分岐するため、入れると season が付かず数字が文中に残る
 3. **他 11 大会の `competitionNameJa` を変えない**
 4. **`removeUnverifiedBroadcastBlocks` を削除・無効化しない。** #526 の安全機構。**LLM 生成の視聴情報を無検証で出す方向へ戻さない**
-5. **試合ページのタイトルで英語名にフォールバックする実装にしない**（`name_ja` が null のときのフォールバックは別。それは必要）
+5. **`getCompetitionDisplayName` に `language` 引数を渡さない。** 既定の `"ja"` を使う（下記「フォールバックの段数」参照）
 6. **新しい表示名解決ロジックを書き起こさない。** `getCompetitionDisplayName` を使う
 7. **取り込みを実際に走らせない。** upsert に渡るペイロードを検証するテストにする
 8. ガイド生成プロンプト（`tools/generate-competition-guides.ts`）を触らない
 9. `match_broadcasts` にデータを投入しない（3試合分は投入済み）
+
+## フォールバックの段数を減らさないこと（PR #707 でここを踏んだ）
+
+`getCompetitionDisplayName`（`lib/format/competition.ts:13-29`）は **3 段階**でフォールバックする。
+
+```ts
+if (language === "en") return competition.name;          // ← "en" を渡すと即座に英語名
+const family = competition.family ?? inferCompetitionFamilyFromSlug(competition.slug);
+return competition.nameJa
+  ?? (family ? JAPANESE_COMPETITION_NAMES_BY_FAMILY[family] : undefined)
+  ?? competition.name;
+```
+
+**`nameJa` の有無で `"ja"` / `"en"` を切り替えてはならない。** `"en"` を渡すと 2 段目の家族マップを飛ばす。
+
+`JAPANESE_COMPETITION_NAMES_BY_FAMILY`（`lib/format/japanese-names.ts:82-95`）には **12 家族分が登録済み**で、`name_ja` が null でもここで日本語になる大会がある。
+
+**本番実測: `name_ja` が null の大会は 4 件、全件の family がマップに存在する。**
+
+```
+premiership-2026-27          → プレミアシップ                       90 試合
+nations-championship-2026    → ネーションズチャンピオンシップ         36 試合
+top-14-2026-27               → トップ14                             0 試合
+urc-2026-27                  → ユナイテッド・ラグビー・チャンピオンシップ  0 試合
+```
+
+**`"en"` を渡すと、この 126 試合のタイトルが日本語から英語に変わる（回帰）。**
+
+`greatest-rivalry` が英語だったのは、**この family がマップに無いから**。マップに載っている大会は変更前から日本語だった。
+
+**正しい呼び方:**
+
+```ts
+getCompetitionDisplayName(match.competition)   // 引数を渡さない
+```
 
 ## 特に注意すべき点
 
@@ -80,7 +115,8 @@ verified_at が設定されている                1 / 12  （rwc のみ）
 
 - `greatest-rivalry`（放送データあり）→ サービス名が出る
 - **放送データ 0 件の大会 → 従来どおり注意書きが出る（回帰防止）**
-- **`name_ja` が null の大会 → 試合ページのタイトルが英語名になる（フォールバック維持）**
+- **`name_ja` が null で family が日本語名マップにある大会 → 日本語名が出る**（例: `premiership-2026-27` → 「プレミアシップ」）。**回帰防止。ここが英語になったら失敗**
+- `name_ja` が null で family がマップにも無い大会 → 英語名になる（最終フォールバック）
 - upsert に渡る `name_ja` が新しい値であること（**実 API・実取り込みなし**）
 
 ## 完了の定義

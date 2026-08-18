@@ -560,7 +560,7 @@ describe("match sample recap page", () => {
     expect(String(metadata.description)).not.toContain("vs");
   });
 
-  it("falls back to the English competition name in metadata when name_ja is null", async () => {
+  it("uses the Japanese family name in metadata when name_ja is null", async () => {
     setCommonMocks({
       match: {
         competition: {
@@ -578,7 +578,29 @@ describe("match sample recap page", () => {
     });
 
     expect(metadata.title).toBe(
-      "サンプルホーム 対 サンプルアウェイ — Premiership Rugby 2025-26",
+      "サンプルホーム 対 サンプルアウェイ — プレミアシップ 2025-26",
+    );
+  });
+
+  it("falls back to the English competition name when name_ja and the family map are absent", async () => {
+    setCommonMocks({
+      match: {
+        competition: {
+          family: "greatest-rivalry",
+          name: "Greatest Rivalry 2026",
+          nameJa: null,
+          season: "2026",
+          slug: "greatest-rivalry-2026",
+        },
+      },
+    });
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    expect(metadata.title).toBe(
+      "サンプルホーム 対 サンプルアウェイ — Greatest Rivalry 2026",
     );
   });
 
