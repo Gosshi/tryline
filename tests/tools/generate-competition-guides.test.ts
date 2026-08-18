@@ -42,6 +42,9 @@ describe("generate-competition-guides", () => {
     );
     expect(greatestRivalry?.context).toContain("M&T Bank Stadium");
     expect(greatestRivalry?.context).toContain("J SPORTS");
+    expect(greatestRivalry?.context).toContain(
+      "ツアーの歴史ではなく両国の対戦史を扱う",
+    );
   });
 
   it("uses every family and the existing all-families output path without arguments", async () => {
