@@ -153,7 +153,12 @@ describe("sourced facts allowlist", () => {
     expect(isAllowedSourcedFactDomain("ja.wikipedia.org")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.rugby-rp.com")).toBe(true);
     expect(isAllowedSourcedFactDomain("www.onrugby.it")).toBe(true);
+    expect(isAllowedSourcedFactDomain("springboks.rugby")).toBe(true);
+    expect(
+      isAllowedSourcedFactDomain("https://www.springboks.rugby/news"),
+    ).toBe(true);
     expect(isAllowedSourcedFactDomain("sportytrader.com")).toBe(false);
+    expect(isAllowedSourcedFactDomain("allblacks.com")).toBe(false);
     expect(isAllowedSourcedFactDomain(null)).toBe(false);
   });
 
