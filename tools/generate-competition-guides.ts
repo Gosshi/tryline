@@ -5,7 +5,23 @@ import OpenAI from "openai";
 
 import { MODELS } from "@/lib/llm/models";
 
-const FAMILIES: Array<{ family: string; nameJa: string; context?: string }> = [
+export type CompetitionGuideFamily = {
+  family: string;
+  nameJa: string;
+  context?: string;
+};
+
+type Logger = Pick<Console, "log">;
+
+type GenerateGuide = (
+  client: OpenAI,
+  exa: Exa,
+  family: string,
+  nameJa: string,
+  context?: string,
+) => Promise<string>;
+
+export const FAMILIES: CompetitionGuideFamily[] = [
   { family: "six-nations", nameJa: "シックスネイションズ" },
   { family: "premiership", nameJa: "プレミアシップ" },
   {
@@ -36,6 +52,12 @@ const FAMILIES: Array<{ family: string; nameJa: string; context?: string }> = [
   },
   { family: "pnc", nameJa: "パシフィック・ネーションズカップ" },
   { family: "league-one", nameJa: "ジャパンラグビー リーグワン" },
+  {
+    family: "greatest-rivalry",
+    nameJa: "グレイテスト・ライバルリー・ツアー",
+    context:
+      "2026年8〜9月、オールブラックスが南アフリカに遠征する全8試合のツアー。内訳は南アフリカ代表とのテストマッチ4戦と、南アフリカのフランチャイズとのツアー戦4戦（ストーマーズ・シャークス・ブルズ・ライオンズ）。総合優勝チームという概念は無く、テストシリーズの勝敗で争う。最終戦（第4テスト）は米国ボルチモアのM&T Bank Stadiumで開催される。日本での視聴はJ SPORTS。「伝説の名場面・選手」セクションでは、オールブラックスとスプリングボクスの100年以上にわたるライバル関係で語り継がれる名場面・名選手のエピソードを書くこと。このツアー自体は2026年に始まったばかりなので、ツアーの歴史ではなく両国の対戦史を扱う。歴代王者や優勝チーム一覧は書かないこと。",
+  },
 ];
 
 async function searchContext(exa: Exa, nameJa: string): Promise<string> {
@@ -48,7 +70,7 @@ async function searchContext(exa: Exa, nameJa: string): Promise<string> {
     .join("\n\n");
 }
 
-async function generateGuide(
+export async function generateGuide(
   client: OpenAI,
   exa: Exa,
   family: string,
@@ -99,30 +121,110 @@ function escapeSql(str: string): string {
   return str.replace(/'/g, "''");
 }
 
-async function main() {
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const exa = new Exa(process.env.EXA_API_KEY);
+export function resolveTargetFamilies(
+  familyNames: readonly string[],
+): CompetitionGuideFamily[] {
+  if (familyNames.length === 0) {
+    return FAMILIES;
+  }
+
+  const selectedFamilies: CompetitionGuideFamily[] = [];
+  const seenFamilies = new Set<string>();
+
+  for (const familyName of familyNames) {
+    const family = FAMILIES.find((entry) => entry.family === familyName);
+
+    if (!family) {
+      throw new Error(
+        `Unknown competition family: ${familyName}. Valid families: ${FAMILIES.map((entry) => entry.family).join(", ")}`,
+      );
+    }
+
+    if (!seenFamilies.has(family.family)) {
+      selectedFamilies.push(family);
+      seenFamilies.add(family.family);
+    }
+  }
+
+  return selectedFamilies;
+}
+
+export function getOutputPath({
+  cwd = process.cwd(),
+  familyNames,
+}: {
+  cwd?: string;
+  familyNames: readonly string[];
+}): string {
+  const filename =
+    familyNames.length === 0
+      ? "competition-guides.sql"
+      : `competition-guides-${familyNames.join("-")}.sql`;
+
+  return path.join(cwd, "supabase/seeds", filename);
+}
+
+export async function generateCompetitionGuides({
+  client,
+  cwd,
+  exa,
+  familyNames,
+  generate = generateGuide,
+  logger = console,
+  mkdir = fs.mkdirSync,
+  writeFile = fs.writeFileSync,
+}: {
+  client: OpenAI;
+  cwd?: string;
+  exa: Exa;
+  familyNames: readonly string[];
+  generate?: GenerateGuide;
+  logger?: Logger;
+  mkdir?: typeof fs.mkdirSync;
+  writeFile?: typeof fs.writeFileSync;
+}): Promise<string> {
+  const targetFamilies = resolveTargetFamilies(familyNames);
   const inserts: string[] = [];
 
-  for (const { family, nameJa, context } of FAMILIES) {
-    console.log(`Generating: ${family}...`);
-    const guide = await generateGuide(client, exa, family, nameJa, context);
+  for (const { family, nameJa, context } of targetFamilies) {
+    logger.log(`Generating: ${family}...`);
+    const guide = await generate(client, exa, family, nameJa, context);
     inserts.push(
       `INSERT INTO competition_guides (family, guide_ja)\nVALUES ('${family}', '${escapeSql(guide)}')\nON CONFLICT (family) DO UPDATE SET guide_ja = EXCLUDED.guide_ja, updated_at = now();`,
     );
-    console.log(`  Done (${guide.length} chars)`);
+    logger.log(`  Done (${guide.length} chars)`);
   }
 
-  const outPath = path.join(
-    process.cwd(),
-    "supabase/seeds/competition-guides.sql",
-  );
-  fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, inserts.join("\n\n"), "utf-8");
-  console.log(`\nSaved: ${outPath}`);
-  console.log(
+  const outPath = getOutputPath({ cwd, familyNames });
+  mkdir(path.dirname(outPath), { recursive: true });
+  writeFile(outPath, inserts.join("\n\n"), "utf-8");
+  logger.log(`\nSaved: ${outPath}`);
+  logger.log(
     "Owner が内容を確認後、Supabase ダッシュボードで SQL を実行してください。",
   );
+
+  return outPath;
 }
 
-void main();
+export function shouldRunCompetitionGuideCli(argv = process.argv): boolean {
+  return argv[1]?.endsWith("generate-competition-guides.ts") ?? false;
+}
+
+export async function main(familyNames = process.argv.slice(2)) {
+  resolveTargetFamilies(familyNames);
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const exa = new Exa(process.env.EXA_API_KEY);
+
+  await generateCompetitionGuides({
+    client,
+    exa,
+    familyNames,
+  });
+}
+
+if (shouldRunCompetitionGuideCli()) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
