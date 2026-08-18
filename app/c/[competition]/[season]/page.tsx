@@ -15,7 +15,10 @@ import {
   listFamilies,
   listSeasonsByFamily,
 } from "@/lib/db/queries/competitions";
-import { getMatchBroadcastPresenceForMatches } from "@/lib/db/queries/match-broadcasts";
+import {
+  getMatchBroadcastPresenceForMatches,
+  getMatchBroadcastServicesForMatches,
+} from "@/lib/db/queries/match-broadcasts";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import {
   getNextMatchForTeamSlug,
@@ -395,9 +398,11 @@ export default async function SeasonPage({ params }: Props) {
       getCompetitionGuide(comp.family),
     ],
   );
-  const contentStatusMap = await getContentStatusForMatches(
-    matches.map((match) => match.id),
-  );
+  const matchIds = matches.map((match) => match.id);
+  const [contentStatusMap, broadcastServices] = await Promise.all([
+    getContentStatusForMatches(matchIds),
+    getMatchBroadcastServicesForMatches(matchIds),
+  ]);
   const hasAnyContent = Object.values(contentStatusMap).some(
     (status) => status.hasPreview || status.hasRecap,
   );
@@ -733,6 +738,7 @@ export default async function SeasonPage({ params }: Props) {
           id="guide"
         >
           <CompetitionViewingGuide
+            broadcastServices={broadcastServices}
             markdown={guide?.guideJa ?? null}
             sourceUrl={guide?.sourceUrl ?? null}
             verifiedAt={guide?.verifiedAt ?? null}

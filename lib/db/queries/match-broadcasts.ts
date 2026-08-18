@@ -11,6 +11,11 @@ export type MatchBroadcast = {
   verifiedAt: string;
 };
 
+export type MatchBroadcastService = Pick<
+  MatchBroadcast,
+  "displayOrder" | "kind" | "serviceName" | "url"
+>;
+
 type MatchBroadcastRow = {
   display_order: number;
   kind: string;
@@ -70,6 +75,32 @@ export async function getMatchBroadcastsForMatches(
   }
 
   return broadcastsByMatch;
+}
+
+export async function getMatchBroadcastServicesForMatches(
+  matchIds: string[],
+): Promise<MatchBroadcastService[]> {
+  const broadcastsByMatch = await getMatchBroadcastsForMatches(matchIds);
+  const servicesByName = new Map<string, MatchBroadcastService>();
+
+  for (const broadcasts of broadcastsByMatch.values()) {
+    for (const broadcast of broadcasts) {
+      if (!servicesByName.has(broadcast.serviceName)) {
+        servicesByName.set(broadcast.serviceName, {
+          displayOrder: broadcast.displayOrder,
+          kind: broadcast.kind,
+          serviceName: broadcast.serviceName,
+          url: broadcast.url,
+        });
+      }
+    }
+  }
+
+  return [...servicesByName.values()].sort(
+    (left, right) =>
+      left.displayOrder - right.displayOrder ||
+      left.serviceName.localeCompare(right.serviceName, "ja"),
+  );
 }
 
 export async function getMatchBroadcastPresenceForMatches(

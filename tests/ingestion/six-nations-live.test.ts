@@ -134,6 +134,8 @@ describe("Six Nations 2027 live ingestion", () => {
 
     const result = await ingestLiveCompetition({
       competitionName: "Six Nations 2027",
+      competitionNameJa:
+        "グレイテスト・ライバルリー・ツアー オールブラックス 南アフリカ遠征",
       competitionSlug: "six-nations-2027",
       family: "six-nations",
       fetch: vi.fn().mockResolvedValue([
@@ -161,6 +163,8 @@ describe("Six Nations 2027 live ingestion", () => {
     expect(dbMocks.competitionUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         family: "six-nations",
+        name_ja:
+          "グレイテスト・ライバルリー・ツアー オールブラックス 南アフリカ遠征",
         slug: "six-nations-2027",
       }),
       { onConflict: "slug" },

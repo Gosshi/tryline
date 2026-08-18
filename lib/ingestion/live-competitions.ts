@@ -62,7 +62,8 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
   },
   {
     competitionName: "Greatest Rivalry 2026",
-    competitionNameJa: "グレイテスト・ライバルリー・ツアー",
+    competitionNameJa:
+      "グレイテスト・ライバルリー・ツアー オールブラックス 南アフリカ遠征",
     competitionSlug: "greatest-rivalry-2026",
     family: "greatest-rivalry",
     fetch: fetchGreatestRivalry2026,

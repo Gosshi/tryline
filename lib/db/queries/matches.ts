@@ -2409,8 +2409,10 @@ export async function getMatchById(
         ),
         competition:competitions!matches_competition_id_fkey (
           id,
+          family,
           slug,
           name,
+          name_ja,
           season
         )
       `,
