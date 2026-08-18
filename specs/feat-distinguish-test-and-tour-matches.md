@@ -64,8 +64,32 @@ kind  text  not null  default 'club'
 **バックフィルの方針:**
 
 - **代表チームの判定に `world_ranking` を使わない**（上記の理由）
-- 既存の代表チームは、`competitions.family` が代表大会のもの（`six-nations` / `nations-championship` / `autumn-nations` / `pnc` / `rwc` / `rugby-championship` / `lipovitan-challenge-cup`）に出場している team、を起点に洗い出す
 - **洗い出した一覧を Owner が目視確認してから適用する。** 91 件は目視可能な件数
+
+### 判定は「2 つの明示リスト」で行う（重要）
+
+> **2026-08-18 追記。** 初版は結果（ambiguous 0 件）だけを書いて**算出方法を定義していなかった**。PR #705 でこの穴が実際に踏まれたため明文化する。
+
+**代表大会リストとクラブ大会リストの両方を明示的に列挙し、それぞれへの出場で判定すること。**
+
+```
+代表大会: six-nations / nations-championship / autumn-nations / pnc / rwc
+          rugby-championship / lipovitan-challenge-cup
+クラブ大会: premiership / urc / top-14 / super-rugby-pacific / league-one
+```
+
+- 代表大会にのみ出場 → `national`
+- クラブ大会にのみ出場 → `club`
+- **両方の明示リストに出場 → `ambiguous`**（Owner に確認。実データでは 0 件）
+- どちらにも出場しない（試合ゼロ）→ デフォルトの `club` のまま
+
+**「代表大会リストに無い大会への出場」を club の判定根拠にしてはならない。**
+
+`greatest-rivalry` は**代表とフランチャイズが混在する大会**であり、どちらのリストにも入らない。「代表リストに無い＝クラブ」と判定すると、**この大会に出場している南アフリカとニュージーランドが「クラブ出場あり」と誤カウントされ、`ambiguous` に落ちる。**
+
+その場合、両国は `kind` がデフォルトの `'club'` のまま残り、ハブでは**テストマッチ 4 戦がすべて「ツアー戦」と表示される**。本 spec の目的と正反対の結果になる。
+
+**同種の混在大会は今後も追加されうる**ため、判定は常に「明示リストへの出場」で行うこと。
 
 **2026-08-18 に本番で実測したところ、分類は機械的に確定する。**
 
@@ -117,6 +141,8 @@ kind  text  not null  default 'club'
 3. バックフィル対象の一覧が**出力され、Owner が確認できる形**になっている（適用前に一覧を提示すること）
 4. **`world_ranking` を判定根拠に使っていない**
 5. 本大会の 6 チームが正しく分類される: `south-africa` / `new-zealand` が `national`、`bulls` / `lions` / `sharks` / `stormers` が `club`
+5b. **判定が「代表大会リスト」「クラブ大会リスト」の 2 つの明示リストで行われている。**「代表リストに無い＝クラブ」という消去法を使っていない（上記「判定は 2 つの明示リストで行う」参照）
+5c. **クエリを本番で実行した実際の出力が PR 本文に貼られている。** 期待値のコメントだけでは不十分（PR #705 では期待値 `national 25 / club 66 / ambiguous 0` と実出力 `national 23 / club 66 / ambiguous 2` が食い違っていた）
 
 ### UI
 

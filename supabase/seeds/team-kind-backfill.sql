@@ -1,6 +1,8 @@
 -- Run this only after 20260818160000_add_team_kind.sql has been applied.
 -- Step 1: review the complete 91-team classification before making any update.
--- National teams are identified only by appearances in representative competitions.
+-- Team kinds are identified only by appearances in explicit representative and
+-- club competition lists. Do not infer that a team is a club from an
+-- appearance outside the representative list (for example, greatest-rivalry).
 -- Do not use teams.world_ranking as a classification signal.
 with representative_families(family) as (
   values
@@ -12,13 +14,21 @@ with representative_families(family) as (
     ('rugby-championship'),
     ('lipovitan-challenge-cup')
 ),
+club_families(family) as (
+  values
+    ('premiership'),
+    ('urc'),
+    ('top-14'),
+    ('super-rugby-pacific'),
+    ('league-one')
+),
 team_appearances as (
   select
     teams.id,
     teams.slug,
     teams.name,
     bool_or(representative_families.family is not null) as has_national_appearance,
-    bool_or(representative_families.family is null) as has_club_appearance
+    bool_or(club_families.family is not null) as has_club_appearance
   from public.teams
   left join public.matches
     on teams.id in (matches.home_team_id, matches.away_team_id)
@@ -26,6 +36,8 @@ team_appearances as (
     on competitions.id = matches.competition_id
   left join representative_families
     on representative_families.family = competitions.family
+  left join club_families
+    on club_families.family = competitions.family
   group by teams.id, teams.slug, teams.name
 )
 select
@@ -54,25 +66,35 @@ order by proposed_kind, slug;
 --     ('rugby-championship'),
 --     ('lipovitan-challenge-cup')
 -- ),
--- national_teams as (
---   select distinct teams.id
+-- club_families(family) as (
+--   values
+--     ('premiership'),
+--     ('urc'),
+--     ('top-14'),
+--     ('super-rugby-pacific'),
+--     ('league-one')
+-- ),
+-- team_appearances as (
+--   select
+--     teams.id,
+--     bool_or(representative_families.family is not null) as has_national_appearance,
+--     bool_or(club_families.family is not null) as has_club_appearance
 --   from public.teams
---   join public.matches
+--   left join public.matches
 --     on teams.id in (matches.home_team_id, matches.away_team_id)
---   join public.competitions
+--   left join public.competitions
 --     on competitions.id = matches.competition_id
---   join representative_families
+--   left join representative_families
 --     on representative_families.family = competitions.family
---   where not exists (
---     select 1
---     from public.matches club_matches
---     join public.competitions club_competitions
---       on club_competitions.id = club_matches.competition_id
---     left join representative_families club_families
---       on club_families.family = club_competitions.family
---     where teams.id in (club_matches.home_team_id, club_matches.away_team_id)
---       and club_families.family is null
---   )
+--   left join club_families
+--     on club_families.family = competitions.family
+--   group by teams.id
+-- ),
+-- national_teams as (
+--   select id
+--   from team_appearances
+--   where has_national_appearance
+--     and not coalesce(has_club_appearance, false)
 -- )
 -- update public.teams
 -- set kind = 'national'
