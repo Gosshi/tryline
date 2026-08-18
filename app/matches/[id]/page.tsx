@@ -31,7 +31,10 @@ import {
 } from "@/lib/db/queries/matches";
 import { getSourcedFactSummaryForMatch } from "@/lib/db/queries/sourced-facts";
 import { getStandingsForCompetition } from "@/lib/db/queries/standings";
-import { formatCompetitionTitle } from "@/lib/format/competition";
+import {
+  formatCompetitionTitle,
+  getCompetitionDisplayName,
+} from "@/lib/format/competition";
 import { buildMatchEventPlayerLinks } from "@/lib/format/match-event-player-links";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import {
@@ -112,7 +115,7 @@ export async function generateMetadata({
   }
 
   const competitionTitle = formatCompetitionTitle(
-    match.competition,
+    getCompetitionDisplayName(match.competition),
     match.competition.season,
   );
   const matchupTitle = `${match.homeTeam.name} 対 ${match.awayTeam.name}`;

@@ -123,6 +123,37 @@ match_broadcasts                match_id uuid / service_name text / url text
 
 **タイトルが長くなりすぎる場合の扱いは Codex の判断でよい**が、**英語名へフォールバックしないこと**。
 
+#### フォールバックの段数を減らさないこと（重要）
+
+> **2026-08-18 追記。** 初版の受け入れ条件 6 は「`name_ja` が null なら英語名にフォールバック（従来動作）」と書いていたが、**「従来動作」の記述が誤りだった**。PR #707 でこの穴が実際に踏まれたため明文化する。
+
+`getCompetitionDisplayName`（`lib/format/competition.ts:13-29`）は **3 段階**でフォールバックする。
+
+```ts
+if (language === "en") return competition.name;          // ← "en" を渡すと即座に英語名
+const family = competition.family ?? inferCompetitionFamilyFromSlug(competition.slug);
+return competition.nameJa
+  ?? (family ? JAPANESE_COMPETITION_NAMES_BY_FAMILY[family] : undefined)
+  ?? competition.name;
+```
+
+**`language` に `"en"` を渡すと 2 段目の家族マップを飛ばして英語名になる。**`nameJa` の有無で `"ja"` / `"en"` を切り替える実装にしてはならない。**引数を渡さず既定の `"ja"` を使うこと。**
+
+`JAPANESE_COMPETITION_NAMES_BY_FAMILY`（`lib/format/japanese-names.ts:82-95`）には **12 家族分の日本語名が登録済み**であり、`name_ja` が null でもここで日本語になる大会がある。
+
+**本番実測（2026-08-18）: `name_ja` が null の大会は 4 件で、全件の family がマップに存在する。**
+
+| 大会 | family | マップの日本語名 | 試合数 |
+|---|---|---|---|
+| `premiership-2026-27` | premiership | プレミアシップ | **90** |
+| `nations-championship-2026` | nations-championship | ネーションズチャンピオンシップ | **36** |
+| `top-14-2026-27` | top-14 | トップ14 | 0 |
+| `urc-2026-27` | urc | ユナイテッド・ラグビー・チャンピオンシップ | 0 |
+
+**`"en"` を渡す実装にすると、この 126 試合のページタイトルが日本語から英語に変わる。**
+
+なお `greatest-rivalry` のタイトルが英語だったのは、**この family がマップに無いため**であり、マップに載っている大会は変更前から日本語で表示されていた。
+
 ### 大会ハブ
 
 視聴情報の表示を、`match_broadcasts` に基づくものに変える。要件は以下。
@@ -153,7 +184,8 @@ match_broadcasts                match_id uuid / service_name text / url text
 ### 問題 2
 
 5. 試合ページの `generateMetadata` が大会名に `name_ja` を使う
-6. `name_ja` が null の大会では**英語名にフォールバックする**（従来動作。落ちない）
+6. **`getCompetitionDisplayName` に `language` 引数を渡さない**（既定の `"ja"` を使う）。`nameJa` → `JAPANESE_COMPETITION_NAMES_BY_FAMILY` → 英語名、の**3 段階フォールバックをすべて通すこと**
+6b. **`name_ja` が null でも、family が日本語名マップにある大会は日本語名が出る**（下記「フォールバックの段数」参照）
 7. 表示名の解決に既存の `getCompetitionDisplayName` を使っている
 8. `generateMetadata` に依存を足したことで**既存テストが壊れていない**（過去に PR #636 で実際に発生。同関数を呼ぶ既存テストのモック網羅を確認すること）
 
@@ -170,7 +202,8 @@ match_broadcasts                match_id uuid / service_name text / url text
 
 15. `greatest-rivalry`（放送データあり）でサービス名が表示されることのテスト
 16. 放送データが 0 件の大会で注意書きが出ることのテスト（**回帰防止**）
-17. `name_ja` が null の大会で試合ページのタイトルが英語名になることのテスト
+17. **`name_ja` が null で family が日本語名マップにある大会**（例: `premiership`）で、試合ページのタイトルが**日本語名になる**ことのテスト（**回帰防止。ここが英語になったら失敗**）
+17b. `name_ja` が null で family がマップにも無い大会で、英語名になることのテスト（最終フォールバック）
 18. `pnpm test` と型チェックが通る
 
 ### 検証（Owner）

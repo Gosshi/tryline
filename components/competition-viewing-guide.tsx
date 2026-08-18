@@ -5,6 +5,10 @@ import { parseMarkdown } from "@/lib/match-content/markdown";
 import type { MarkdownBlock } from "@/lib/match-content/markdown";
 
 type CompetitionViewingGuideProps = {
+  broadcastServices?: Array<{
+    serviceName: string;
+    url: string;
+  }>;
   markdown: string | null;
   sourceUrl?: string | null;
   verifiedAt?: string | null;
@@ -219,21 +223,28 @@ function formatVerifiedDate(value: string) {
 }
 
 export function CompetitionViewingGuide({
+  broadcastServices = [],
   markdown,
   sourceUrl,
   verifiedAt,
 }: CompetitionViewingGuideProps) {
   const rawContent = markdown?.trim();
 
-  if (!rawContent) {
+  if (!rawContent && broadcastServices.length === 0) {
     return null;
   }
 
-  const normalized = verifiedAt
-    ? { content: rawContent, removed: false }
-    : removeUnverifiedBroadcastBlocks(rawContent);
+  const normalized = rawContent
+    ? verifiedAt
+      ? { content: rawContent, removed: false }
+      : removeUnverifiedBroadcastBlocks(rawContent)
+    : { content: "", removed: false };
 
-  if (!normalized.content && !normalized.removed) {
+  if (
+    !normalized.content &&
+    !normalized.removed &&
+    broadcastServices.length === 0
+  ) {
     return null;
   }
 
@@ -263,11 +274,39 @@ export function CompetitionViewingGuide({
           )}
         </p>
       )}
-      {normalized.removed && (
+      {broadcastServices.length > 0 ? (
+        <section
+          aria-labelledby="broadcast-services-heading"
+          className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+        >
+          <h3
+            className="font-heading text-lg font-bold text-[var(--color-ink)]"
+            id="broadcast-services-heading"
+          >
+            日本での視聴方法
+          </h3>
+          <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+            放送・配信サービス
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {broadcastServices.map((service) => (
+              <a
+                className="rounded-full border border-[var(--color-accent)] bg-white px-3 py-1.5 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
+                href={service.url}
+                key={service.serviceName}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                {service.serviceName}
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : normalized.removed ? (
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
           放送・配信情報は確認中です。最新の視聴方法は各配信サービスの公式案内を確認してください。
         </p>
-      )}
+      ) : null}
       {normalized.content && (
         <div className="space-y-4 text-sm sm:text-base">
           {parseMarkdown(normalized.content).map(renderBlock)}

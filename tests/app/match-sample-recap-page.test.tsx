@@ -521,6 +521,7 @@ describe("match sample recap page", () => {
         competition: {
           family: "rwc",
           name: "Rugby World Cup 2027",
+          nameJa: "ラグビーワールドカップ",
           season: "2027",
           slug: "rwc-2027",
         },
@@ -557,6 +558,50 @@ describe("match sample recap page", () => {
     expect(metadata.description).toContain("スコットランド");
     expect(metadata.description).toContain("ポルトガル");
     expect(String(metadata.description)).not.toContain("vs");
+  });
+
+  it("uses the Japanese family name in metadata when name_ja is null", async () => {
+    setCommonMocks({
+      match: {
+        competition: {
+          family: "premiership",
+          name: "Premiership Rugby",
+          nameJa: null,
+          season: "2025-26",
+          slug: "premiership-2025-26",
+        },
+      },
+    });
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    expect(metadata.title).toBe(
+      "サンプルホーム 対 サンプルアウェイ — プレミアシップ 2025-26",
+    );
+  });
+
+  it("falls back to the English competition name when name_ja and the family map are absent", async () => {
+    setCommonMocks({
+      match: {
+        competition: {
+          family: "greatest-rivalry",
+          name: "Greatest Rivalry 2026",
+          nameJa: null,
+          season: "2026",
+          slug: "greatest-rivalry-2026",
+        },
+      },
+    });
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    expect(metadata.title).toBe(
+      "サンプルホーム 対 サンプルアウェイ — Greatest Rivalry 2026",
+    );
   });
 
   it("marks thin future match pages as noindex when content is missing", async () => {

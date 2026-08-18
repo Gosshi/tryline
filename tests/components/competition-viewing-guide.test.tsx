@@ -53,6 +53,45 @@ describe("CompetitionViewingGuide", () => {
     expect(screen.getByText(/放送・配信情報は確認中です/)).toBeInTheDocument();
   });
 
+  it("renders deduplicated verified match broadcast services instead of the notice", () => {
+    render(
+      <CompetitionViewingGuide
+        broadcastServices={[
+          { serviceName: "J SPORTS 3", url: "https://example.com/j-sports-3" },
+        ]}
+        markdown={
+          "## 見どころ\n\n強豪同士の対戦に注目です。\n\n## 日本での視聴方法\n\n- **DAZN**: 全試合ライブ配信。"
+        }
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "日本での視聴方法" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "J SPORTS 3" })).toHaveAttribute(
+      "href",
+      "https://example.com/j-sports-3",
+    );
+    expect(screen.queryByText(/放送・配信情報は確認中です/)).toBeNull();
+    expect(screen.queryByText(/全試合ライブ配信/)).toBeNull();
+  });
+
+  it("renders verified match broadcast services without a guide", () => {
+    render(
+      <CompetitionViewingGuide
+        broadcastServices={[
+          { serviceName: "J SPORTS 3", url: "https://example.com/j-sports-3" },
+        ]}
+        markdown={null}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "J SPORTS 3" })).toHaveAttribute(
+      "href",
+      "https://example.com/j-sports-3",
+    );
+  });
+
   it("formats verified dates in JST", () => {
     render(
       <CompetitionViewingGuide

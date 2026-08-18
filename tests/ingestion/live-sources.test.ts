@@ -600,7 +600,8 @@ describe("live competition source adapters", () => {
     expect(greatestRivalryIndex).toBe(nationsChampionshipIndex + 1);
     expect(LIVE_COMPETITION_SOURCES[greatestRivalryIndex]).toMatchObject({
       competitionName: "Greatest Rivalry 2026",
-      competitionNameJa: "グレイテスト・ライバルリー・ツアー",
+      competitionNameJa:
+        "グレイテスト・ライバルリー・ツアー オールブラックス 南アフリカ遠征",
       family: "greatest-rivalry",
       fetch: fetchGreatestRivalry2026,
       season: "2026",

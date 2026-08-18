@@ -26,6 +26,7 @@ const contentMocks = vi.hoisted(() => ({
 
 const broadcastMocks = vi.hoisted(() => ({
   getMatchBroadcastPresenceForMatches: vi.fn(),
+  getMatchBroadcastServicesForMatches: vi.fn(),
 }));
 
 const matchesMocks = vi.hoisted(() => ({
@@ -54,8 +55,21 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/components/competition-viewing-guide", () => ({
-  CompetitionViewingGuide: ({ markdown }: { markdown: string | null }) => (
-    <article data-testid="competition-guide">{markdown}</article>
+  CompetitionViewingGuide: ({
+    broadcastServices = [],
+    markdown,
+  }: {
+    broadcastServices?: Array<{ serviceName: string; url: string }>;
+    markdown: string | null;
+  }) => (
+    <article data-testid="competition-guide">
+      {markdown}
+      {broadcastServices.map((service) => (
+        <a href={service.url} key={service.serviceName}>
+          {service.serviceName}
+        </a>
+      ))}
+    </article>
   ),
 }));
 
@@ -189,6 +203,7 @@ describe("season page information architecture", () => {
     broadcastMocks.getMatchBroadcastPresenceForMatches.mockResolvedValue(
       new Set(),
     );
+    broadcastMocks.getMatchBroadcastServicesForMatches.mockResolvedValue([]);
     standingsMocks.getPoolStandingsForCompetition.mockResolvedValue([]);
     standingsMocks.getStandingsForCompetition.mockResolvedValue([standing]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({
@@ -277,6 +292,49 @@ describe("season page information architecture", () => {
     expect(
       screen.getByRole("link", { name: "他の大会も含めた今週の試合 →" }),
     ).toHaveAttribute("href", "/calendar");
+  });
+
+  it("passes aggregated broadcast services to the competition guide", async () => {
+    const greatestRivalryCompetition = {
+      ...competition,
+      family: "greatest-rivalry",
+      name: "Greatest Rivalry 2026",
+      nameJa:
+        "グレイテスト・ライバルリー・ツアー オールブラックス 南アフリカ遠征",
+      season: "2026",
+      slug: "greatest-rivalry-2026",
+    };
+    competitionMocks.getCompetitionBySlug.mockResolvedValue(
+      greatestRivalryCompetition,
+    );
+    competitionMocks.listSeasonsByFamily.mockResolvedValue([
+      greatestRivalryCompetition,
+    ]);
+    broadcastMocks.getMatchBroadcastServicesForMatches.mockResolvedValue([
+      {
+        displayOrder: 0,
+        kind: "tv",
+        serviceName: "J SPORTS 3",
+        url: "https://example.com/j-sports-3",
+      },
+    ]);
+
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "greatest-rivalry",
+          season: "2026",
+        }),
+      }),
+    );
+
+    expect(screen.getByRole("link", { name: "J SPORTS 3" })).toHaveAttribute(
+      "href",
+      "https://example.com/j-sports-3",
+    );
+    expect(
+      broadcastMocks.getMatchBroadcastServicesForMatches,
+    ).toHaveBeenCalledWith(["match-1"]);
   });
 
   it("keeps standings and guide in the DOM when no matches are available", async () => {

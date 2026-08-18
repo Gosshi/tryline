@@ -427,6 +427,9 @@ describe("getMatchById", () => {
       expect.stringContaining("broadcast_jp_url"),
     );
     expect(matchDetailQueryMock.select).toHaveBeenCalledWith(
+      expect.stringContaining("name_ja"),
+    );
+    expect(matchDetailQueryMock.select).toHaveBeenCalledWith(
       expect.stringContaining("flag_code"),
     );
     expect(matchDetailQueryMock.eq).toHaveBeenCalledWith("id", "match-detail");
