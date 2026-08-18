@@ -50,6 +50,7 @@ export function formatCompetitionName(name: string): string {
 
 export const COMPETITION_FAMILY_COLORS: Record<string, string> = {
   "autumn-nations": "#2D2D2D",
+  "greatest-rivalry": "#007A4D",
   "league-one": "#FF6B00",
   "nations-championship": "#1A3A5C",
   pnc: "#00539B",

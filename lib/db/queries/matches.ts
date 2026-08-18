@@ -26,6 +26,7 @@ export type MatchListItem = {
   homeTeam: {
     id?: string;
     flagCode?: string | null;
+    kind?: TeamKind;
     slug: string;
     name: string;
     nameJa?: string | null;
@@ -35,6 +36,7 @@ export type MatchListItem = {
   awayTeam: {
     id?: string;
     flagCode?: string | null;
+    kind?: TeamKind;
     slug: string;
     name: string;
     nameJa?: string | null;
@@ -48,6 +50,8 @@ export type MatchListItem = {
   roundName: string | null;
   poolName: string | null;
 };
+
+export type TeamKind = "club" | "national";
 
 export type MatchDetail = Omit<MatchListItem, "awayTeam" | "homeTeam"> & {
   broadcasts: MatchBroadcast[];
@@ -219,6 +223,7 @@ type BaseMatchRow = {
     id?: string;
     english_name?: string | null;
     flag_code?: string | null;
+    kind?: string | null;
     slug: string;
     name: string;
     name_ja?: string | null;
@@ -229,6 +234,7 @@ type BaseMatchRow = {
     id?: string;
     english_name?: string | null;
     flag_code?: string | null;
+    kind?: string | null;
     slug: string;
     name: string;
     name_ja?: string | null;
@@ -572,6 +578,7 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     awayTeam: {
       id: row.away_team.id,
       flagCode: row.away_team.flag_code ?? null,
+      kind: normalizeTeamKind(row.away_team.kind),
       name: awayDisplayName,
       nameJa: awayNameJa,
       shortCode:
@@ -583,6 +590,7 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     homeTeam: {
       id: row.home_team.id,
       flagCode: row.home_team.flag_code ?? null,
+      kind: normalizeTeamKind(row.home_team.kind),
       name: homeDisplayName,
       nameJa: homeNameJa,
       shortCode:
@@ -600,6 +608,10 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     status: row.status,
     venue: row.venue,
   };
+}
+
+function normalizeTeamKind(kind: string | null | undefined): TeamKind | undefined {
+  return kind === "club" || kind === "national" ? kind : undefined;
 }
 
 function mapEnglishContentRow(
@@ -2278,12 +2290,14 @@ export async function listMatchesForCompetition(
           slug,
           name,
           flag_code,
+          kind,
           short_code
         ),
         away_team:teams!matches_away_team_id_fkey (
           slug,
           name,
           flag_code,
+          kind,
           short_code
         )
       `,

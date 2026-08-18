@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   SeasonMatchGroups,
+  getMatchClassification,
   getDefaultOpenGroupIndex,
   getDefaultOpenGroupIndexes,
   shouldCollapseRoundGroups,
@@ -45,12 +46,23 @@ function buildMatch(
   id: string,
   kickoffAt: string,
   round: number,
+  kinds?: { away: "club" | "national"; home: "club" | "national" },
 ): MatchListItem {
   return {
     awayScore: null,
-    awayTeam: { name: `Away ${id}`, shortCode: `A${id}`, slug: `away-${id}` },
+    awayTeam: {
+      kind: kinds?.away,
+      name: `Away ${id}`,
+      shortCode: `A${id}`,
+      slug: `away-${id}`,
+    },
     homeScore: null,
-    homeTeam: { name: `Home ${id}`, shortCode: `H${id}`, slug: `home-${id}` },
+    homeTeam: {
+      kind: kinds?.home,
+      name: `Home ${id}`,
+      shortCode: `H${id}`,
+      slug: `home-${id}`,
+    },
     id,
     kickoffAt,
     poolName: null,
@@ -231,5 +243,82 @@ describe("season match groups", () => {
     expect(
       container.querySelector('a[href="/c/six-nations/2025/round/3"]'),
     ).toHaveTextContent("第3節の結果・日程");
+  });
+
+  it("distinguishes greatest-rivalry test matches from tour matches", () => {
+    const testMatch = buildMatch(
+      "test",
+      "2026-08-23T15:00:00.000Z",
+      1,
+      { away: "national", home: "national" },
+    );
+    const tourMatch = buildMatch(
+      "tour",
+      "2026-08-07T15:00:00.000Z",
+      1,
+      { away: "national", home: "club" },
+    );
+
+    const { container } = render(
+      <SeasonMatchGroups
+        contentStatusMap={{}}
+        family="greatest-rivalry"
+        groupedMatches={[
+          [{ round: 1, roundName: null, type: "round" }, [testMatch, tourMatch]],
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("テストマッチ")).toBeInTheDocument();
+    expect(screen.getByText("ツアー戦")).toBeInTheDocument();
+    expect(container.querySelector('[data-match-type="test"]')).toHaveClass(
+      "border-2",
+    );
+    expect(getMatchClassification("greatest-rivalry", testMatch)).toBe("test");
+    expect(getMatchClassification("greatest-rivalry", tourMatch)).toBe("tour");
+  });
+
+  it("classifies the existing greatest-rivalry teams as tests or tour matches", () => {
+    const testMatch = buildMatch(
+      "south-africa-new-zealand",
+      "2026-08-22T15:00:00.000Z",
+      1,
+      { away: "national", home: "national" },
+    );
+    testMatch.awayTeam.slug = "new-zealand";
+    testMatch.homeTeam.slug = "south-africa";
+
+    expect(getMatchClassification("greatest-rivalry", testMatch)).toBe("test");
+
+    for (const clubSlug of ["bulls", "lions", "sharks", "stormers"]) {
+      expect(
+        getMatchClassification("greatest-rivalry", {
+          ...testMatch,
+          id: `greatest-rivalry-${clubSlug}`,
+          homeTeam: { ...testMatch.homeTeam, kind: "club", slug: clubSlug },
+        }),
+      ).toBe("tour");
+    }
+  });
+
+  it.each([
+    ["six-nations", { away: "national", home: "national" }],
+    ["premiership", { away: "club", home: "club" }],
+  ] as const)("does not label matches for %s", (family, kinds) => {
+    render(
+      <SeasonMatchGroups
+        contentStatusMap={{}}
+        family={family}
+        groupedMatches={[
+          [
+            { round: 1, roundName: null, type: "round" },
+            [buildMatch(family, "2026-01-01T00:00:00.000Z", 1, kinds)],
+          ],
+        ]}
+      />,
+    );
+
+    expect(screen.queryByText("テストマッチ")).not.toBeInTheDocument();
+    expect(screen.queryByText("ツアー戦")).not.toBeInTheDocument();
   });
 });
