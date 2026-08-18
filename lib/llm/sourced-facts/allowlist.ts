@@ -12,6 +12,7 @@ const OFFICIAL_DOMAINS = [
   "league-one.jp",
   "rugby-japan.jp",
   "rugby.com.au",
+  "springboks.rugby",
 ] as const;
 
 const MEDIA_DOMAINS = [
