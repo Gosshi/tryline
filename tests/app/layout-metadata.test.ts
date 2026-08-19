@@ -20,4 +20,8 @@ describe("root metadata", () => {
       ],
     });
   });
+
+  it("declares the iOS Smart App Banner metadata", () => {
+    expect(metadata.itunes).toEqual({ appId: "6791587357" });
+  });
 });
