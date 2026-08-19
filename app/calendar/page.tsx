@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { WeekSchedule } from "@/components/calendar/week-schedule";
+import { IosAppCta } from "@/components/ios-app-cta";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { TrackedLink } from "@/components/tracked-link";
 import { getUser } from "@/lib/auth/server";
@@ -219,7 +220,7 @@ export default async function CalendarPage({
             月曜 00:00 JST から翌月曜 00:00 JST
             までの試合を、全大会横断で曜日ごとにまとめています。レビュー・プレビューが公開済みの試合にはバッジが付きます。
           </p>
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <div className="mt-6 grid gap-4 lg:grid-cols-3">
             <div className="border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4">
               <p className="text-sm font-bold text-[var(--color-ink)]">
                 カレンダー購読
@@ -240,6 +241,7 @@ export default async function CalendarPage({
               </div>
             </div>
             <NewsletterSignup source="calendar" />
+            <IosAppCta surface="calendar" />
           </div>
         </div>
       </section>

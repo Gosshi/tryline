@@ -236,6 +236,13 @@ describe("season page information architecture", () => {
     const guideFrame = guide.parentElement;
 
     expect(screen.getByLabelText("シーズン要約")).toHaveTextContent("次戦");
+    expect(screen.getByText("試合開始前に通知します")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "iOSアプリで通知を受け取る" }),
+    ).toHaveAttribute(
+      "href",
+      "https://apps.apple.com/jp/app/id6791587357?ct=hub",
+    );
     expect(screen.getByRole("link", { name: "日程・結果" })).toHaveAttribute(
       "href",
       "#schedule",

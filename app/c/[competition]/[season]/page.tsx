@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
+import { IosAppCta } from "@/components/ios-app-cta";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { PremiumUpsellBanner } from "@/components/premium-upsell-banner";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
@@ -627,6 +628,8 @@ export default async function SeasonPage({ params }: Props) {
           nextJapanMatch={hasJapanInSeason ? nextJapanMatch : null}
           nextMatch={nextMatch}
         />
+
+        <IosAppCta surface="hub" />
 
         <nav
           aria-label="シーズンページ内ナビ"

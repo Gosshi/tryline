@@ -248,6 +248,7 @@ describe("match sample recap page", () => {
     const { container } = render(element);
 
     expect(container.querySelector("main > div")).toHaveClass("max-w-6xl");
+    expect(screen.queryByText("試合開始前に通知します")).toBeNull();
 
     expect(
       screen.getByText("サンプル全文だけに含まれる終盤分析。"),

@@ -4,6 +4,7 @@ import { Outfit, Zen_Maru_Gothic } from "next/font/google";
 import { ReturnVisitTracker } from "@/components/return-visit-tracker";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { IOS_APP_ID } from "@/lib/ios-app";
 import { SITE_URL } from "@/lib/site";
 
 import type { Metadata, Viewport } from "next";
@@ -43,6 +44,9 @@ export const metadata: Metadata = {
   icons: {
     apple: [{ sizes: "192x192", url: "/icons/icon-192.png" }],
     icon: [{ sizes: "192x192", type: "image/png", url: "/icons/icon-192.png" }],
+  },
+  itunes: {
+    appId: IOS_APP_ID,
   },
   openGraph: {
     locale: "ja_JP",
