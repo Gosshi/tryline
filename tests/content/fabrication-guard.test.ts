@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  containsRosterEnumeration,
   containsContradictedZeroStatClaim,
   containsUngroundedPlayerReference,
   containsUnsupportedStatistic,
@@ -38,6 +39,12 @@ const noPlayerReferenceData = {
   hasEvents: false,
   hasLineups: false,
 };
+
+const rosterEnumerationSection = `
+## 前方の密度と9番・10番の選択が攻撃の輪郭を決める
+南アフリカは1番オックス・ンチェ、2番マルコム・マークス、3番ウィルコ・ラウを先発させ、4番エベン・エツベト、5番ルアン・ノーチェが続く。後方には9番グラント・ウィリアムズ、10番サーシャ・ファインバーグ＝ムンゴメズル、12番ダミアン・デアレンデ、13番ジェシー・クリエル、14番チェスリン・コルビ、15番ダミアン・ヴィレムセが並ぶ。ベンチには16番ヤン＝ヘンドリク・ウェッセルズ、22番コーバス・ライナッハ、23番マニー・リボックが控える構成だ。
+一方のニュージーランドは、1番イーサン・デ・グルート、2番コーディー・テイラー、3番タイレル・ローマックスを前列に置き、4番ジョシュ・ロードと5番ファビアン・ホランドを先発させる。後方には9番コルテス・ラティマ、10番ボーデン・バレット、12番ジョーディー・バレット、13番リーコ・イオアネ、14番ウィル・ジョーダン、15番ダミアン・マッケンジーが並ぶ。ベンチには16番サミソニ・タウケイアホ、20番ピーター・ラカイ、21番フィンレイ・クリスティー、22番クイン・トゥパエア、23番ジョシュ・ジャコムが控える。`;
+const rosterEnumerationArticle = rosterEnumerationSection.padEnd(1_944, "分析");
 
 describe("containsUngroundedPlayerReference", () => {
   it("detects key-player style player mentions when lineups and events are absent", () => {
@@ -154,6 +161,29 @@ describe("hasConfirmedSourcedFactLineup", () => {
         { confidence: "high", fact: "" } as unknown as SourcedFactInput,
         { confidence: "high", fact: null } as unknown as SourcedFactInput,
       ]),
+    ).toBe(false);
+  });
+});
+
+describe("containsRosterEnumeration", () => {
+  it("detects the published-style roster section when it occupies a material share of the article", () => {
+    expect(rosterEnumerationArticle.length).toBeGreaterThan(1_500);
+    expect(containsRosterEnumeration(rosterEnumerationArticle)).toBe(true);
+  });
+
+  it("does not detect two named players when each has an individual selection rationale", () => {
+    expect(
+      containsRosterEnumeration(
+        "9番グラント・ウィリアムズは素早い球出しで接点の優位を攻撃へつなぐ。10番サーシャ・ファインバーグ＝ムンゴメズルはキックで相手を自陣へ押し戻す役割を担う。",
+      ),
+    ).toBe(false);
+  });
+
+  it("does not detect copy without player names", () => {
+    expect(
+      containsRosterEnumeration(
+        "南アフリカは接点の圧力を起点にし、ニュージーランドはキックチェイスの精度で対抗する。",
+      ),
     ).toBe(false);
   });
 });

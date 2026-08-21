@@ -1,4 +1,5 @@
 import {
+  containsRosterEnumeration,
   containsContradictedZeroStatClaim,
   containsUngroundedPlayerReference,
   containsUnsupportedStatistic,
@@ -7,6 +8,7 @@ import {
   UNGROUNDED_PLAYER_REFERENCE_ISSUE,
   UNSUPPORTED_STATISTIC_ISSUE,
   PLAYER_STAT_MISMATCH_ISSUE,
+  ROSTER_ENUMERATION_ISSUE,
   WINNER_MISMATCH_ISSUE,
 } from "@/lib/content/fabrication-guard";
 import {
@@ -473,6 +475,21 @@ function applyDeterministicQaGuards(
       scores: {
         ...guarded.scores,
         factual_grounding: 1,
+      },
+    };
+  }
+
+  if (
+    options.contentType === "preview" &&
+    options.language === "ja" &&
+    containsRosterEnumeration(options.narrative)
+  ) {
+    guarded = {
+      ...guarded,
+      issues: appendIssue(guarded.issues, ROSTER_ENUMERATION_ISSUE),
+      scores: {
+        ...guarded.scores,
+        information_density: Math.min(guarded.scores.information_density, 2),
       },
     };
   }

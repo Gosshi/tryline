@@ -19,7 +19,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.13.0";
+export const PROMPT_VERSION = "preview@3.14.0";
 
 type CorePatternType = "context" | "form" | "numeric";
 
@@ -182,12 +182,14 @@ export function buildGeneratePreviewPrompt(
       : "";
   const lineupUsageBlock = hasLineups
     ? [
-        "【ラインアップ実名活用】projected_lineups に存在する選手名は積極的に本文へ登場させること。",
-        "- projected_lineups.home から最低3名、projected_lineups.away から最低3名の実名を本文に含めること。",
+        "【ラインアップ実名活用】projected_lineups に存在する選手名は、本文の論旨に必要な場合だけ登場させること。",
+        "- 先発一覧は試合ページに表として掲載されているため、背番号と実名を連続して並べる羅列を本文で繰り返してはならない。",
+        "- 選手名に言及する場合は、前戦の実績、負傷・復帰、起用変更の意味、対面との関係など、その選手固有の根拠を必ず添えること。根拠を書けない選手には言及しないこと。",
         "- キーポジション（9番、10番、11番・14番・15番、主将、2番など）を優先し、先発選手は「先発」として扱うこと。",
         "- is_starter が false の選手は「ベンチ」「リザーブ」「途中投入候補」として区別し、先発扱いしないこと。",
         "- 対面ポジションまたは役割が近い選手同士の実名マッチアップを最低1つ描くこと。",
         "- match_events に存在する選手名も実在名として利用してよい。ただし projected_lineups・match_events に存在しない選手名、役職、引退・移籍などの外部文脈は創作しないこと。",
+        "- 片側のチームだけに confirmed なラインアップがある場合、実名への言及は掲載された側だけに限定し、もう一方の選手名を推測してはならない。",
       ].join("\n")
     : hasSourcedFactLineup
       ? [
