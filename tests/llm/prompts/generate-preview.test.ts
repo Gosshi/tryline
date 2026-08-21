@@ -54,8 +54,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.11.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.11.0");
+  it("uses preview prompt version 3.12.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.12.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -144,6 +144,31 @@ describe("buildGeneratePreviewPrompt", () => {
 
     expect(prompt).toContain("sourced_facts: なし");
     expect(prompt).toContain("外部記事・モデル訓練データ由来");
+  });
+
+  it("uses sourced facts as the preview's concrete core without dropping form guidance", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        sourced_facts: [
+          {
+            confidence: "high",
+            fact: "主将はハムストリングを負傷した。",
+            source_domain: "springboks.rugby",
+            source_url: "https://www.springboks.rugby/news/injury",
+          },
+        ],
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("本文の趣旨に沿うものはできるだけ多く反映すること");
+    expect(prompt).toContain("【補強事実を軸にしたプレビュー】");
+    expect(prompt).toContain("統計比較だけで本文を構成してはならない");
+    expect(prompt).toContain("recent_form の直近5試合スコア");
+    expect(prompt).toContain("competition_standings の現在順位・勝ち点差");
+    expect(prompt).not.toContain("【データスパースモード】");
   });
 
   it("includes the minimum length instruction", () => {
