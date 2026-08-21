@@ -11,6 +11,7 @@ const assembled: AssembledContentInput = {
   match: {
     id: "f0b3b7ca-cf11-4b95-bec8-b04e1cb58889",
     kickoff_at: new Date().toISOString(),
+    kickoff_at_jst: "2026-01-01 (木) 09:00 JST",
     status: "finished",
     venue: "Tokyo",
     home_score: 31,
@@ -54,8 +55,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.18.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.18.0");
+  it("uses recap prompt version 4.19.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.19.0");
   });
 
   it("does not disclose missing system data while allowing factual limits", () => {
@@ -89,6 +90,8 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("入力データに無い統計");
     expect(prompt).toContain("「好調」");
     expect(prompt).toContain("「鍵となります」");
+    expect(prompt).toContain("試合データの kickoff_at_jst を必ず使うこと");
+    expect(prompt).toContain("kickoff_at は UTC");
     expect(prompt).toContain("「〜という圧倒的なスコアで」");
     expect(prompt).toContain("「〜というスコアが示すように」");
     expect(prompt).toContain("「〜というスコアが示す通り」");

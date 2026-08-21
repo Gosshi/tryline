@@ -148,6 +148,7 @@ export type AssembledContentInput = {
   match: {
     id: string;
     kickoff_at: string;
+    kickoff_at_jst: string;
     status: string;
     venue: string | null;
     home_score: number | null;

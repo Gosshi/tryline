@@ -34,6 +34,11 @@ export const PROHIBITIONS_BLOCK = [
   "- 「プレーオフの一発勝負」「一発勝負の意義」という冒頭定型句（具体的な意義・歴史・対戦構図から書き始めること）",
 ].join("\n");
 
+export const KICKOFF_TIMEZONE_INSTRUCTION = [
+  "【日時表記】試合の日付・時刻に言及する場合は、試合データの kickoff_at_jst を必ず使うこと。",
+  "- kickoff_at は UTC であり、これを日本時間として本文に書いてはならない。",
+].join("\n");
+
 export const NON_LEAGUE_ONE_PLAYER_NAME_STYLE_INSTRUCTION = [
   "選手名は、日本語表記グロッサリにある場合は、入力データと表記が異なる場合も指定の漢字表記を必ず使うこと。",
   "グロッサリにない選手でも、入力データ（projected_lineups・match_events・sourced_facts）に日本語表記がある場合はその表記をそのまま使い、漢字をカタカナに変換しないこと。",

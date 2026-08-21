@@ -60,6 +60,7 @@ function createAssembled(): AssembledContentInput {
       home_team: null,
       id: "match-1",
       kickoff_at: "2026-07-04T10:00:00.000Z",
+      kickoff_at_jst: "2026-07-04 (土) 19:00 JST",
       status: "scheduled",
       venue: null,
     },

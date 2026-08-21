@@ -8,6 +8,7 @@ import {
   buildPersona,
   buildSignalsBlock,
   buildStandingsBlock,
+  KICKOFF_TIMEZONE_INSTRUCTION,
   NON_LEAGUE_ONE_PLAYER_NAME_STYLE_INSTRUCTION,
   PROHIBITIONS_BLOCK,
 } from "./shared-prompt-blocks";
@@ -18,7 +19,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.12.0";
+export const PROMPT_VERSION = "preview@3.13.0";
 
 type CorePatternType = "context" | "form" | "numeric";
 
@@ -245,6 +246,7 @@ export function buildGeneratePreviewPrompt(
     persona,
     coreQuestionBlock,
     prohibitionsBlock,
+    KICKOFF_TIMEZONE_INSTRUCTION,
     structureInstruction,
     matchPhaseBlock,
     "各セクションが指定範囲の下限を下回った場合は、入力データにある recent_form・h2h_last_5・competition_standings・key_stats・projected_lineups・match_events・sourced_facts から具体的な根拠を追加して書き足すこと。",
