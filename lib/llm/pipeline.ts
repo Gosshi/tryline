@@ -296,6 +296,7 @@ export async function generateMatchContent(
           },
           homeScore: assembled.match.home_score,
           homeTeam: assembled.match.home_team?.name ?? "Home",
+          recent_form: assembled.recent_form,
           sourcedFacts: assembled.sourced_facts,
           teamStats: assembled.team_stats,
           venue: assembled.match.venue,

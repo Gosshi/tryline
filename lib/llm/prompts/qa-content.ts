@@ -1,6 +1,7 @@
 import { getContentLengthRequirement } from "@/lib/llm/content-length";
 
 import type {
+  AssembledContentInput,
   ContentLanguage,
   ContentType,
   DerivedMatchStats,
@@ -8,7 +9,7 @@ import type {
   SourcedFactInput,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.7.0";
+export const PROMPT_VERSION = "qa@2.8.0";
 
 export type TeamFormStats = {
   avg_points_against_last_5?: number | null;
@@ -28,6 +29,7 @@ export type QaMatchContext = {
   };
   homeScore: number | null;
   homeTeam: string;
+  recent_form?: AssembledContentInput["recent_form"];
   sourcedFacts?: SourcedFactInput[];
   teamStats?: MatchTeamStats;
   venue?: string | null;
@@ -191,6 +193,16 @@ export function buildQaContentPrompt(
           "以下は直近の試合データから機械的に算出された実数値です。本文がこれらの直近フォーム（戦績・平均得点）に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
           JSON.stringify(formStats),
         ].join("\n");
+  const recentFormBlock =
+    !matchContext.recent_form ||
+    (matchContext.recent_form.away.length === 0 &&
+      matchContext.recent_form.home.length === 0)
+      ? ""
+      : [
+          "## recent_form grounding",
+          "以下は直近5試合の個別結果です。本文がこれらの対戦相手・スコア・ホーム/アウェーに言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+          JSON.stringify(matchContext.recent_form),
+        ].join("\n");
 
   return [
     `あなたは編集デスクです。以下の${languageLabel}コンテンツを品質評価してください。`,
@@ -229,6 +241,7 @@ export function buildQaContentPrompt(
     teamStatsBlock,
     matchMetadataBlock,
     formStatsBlock,
+    recentFormBlock,
     'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[],"statedWinner":"home"|"away"|"unclear","statedPlayerStats":[{"playerName":string,"tries"?:number,"conversions"?:number,"penaltyGoals"?:number,"totalPoints"?:number}]}',
     `本文: ${narrative}`,
   ].join("\n\n");

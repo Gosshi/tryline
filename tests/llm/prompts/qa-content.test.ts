@@ -15,7 +15,7 @@ const matchContext: QaMatchContext = {
 
 describe("buildQaContentPrompt", () => {
   it("uses qa prompt version 2.7.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.7.0");
+    expect(PROMPT_VERSION).toBe("qa@2.8.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -397,6 +397,128 @@ describe("buildQaContentPrompt", () => {
     });
 
     expect(prompt).not.toContain("## form_stats grounding");
+  });
+
+  it("adds individual Japanese recent-form results as grounding", () => {
+    const recent_form: QaMatchContext["recent_form"] = {
+      away: [
+        {
+          away_score: 17,
+          away_team_name: "イタリア",
+          home_score: 47,
+          home_team_name: "ニュージーランド",
+          kickoff_at: "2026-07-11T10:00:00.000Z",
+          match_id: "nz-italy",
+          status: "finished",
+        },
+        {
+          away_score: 21,
+          away_team_name: "アイルランド",
+          home_score: 40,
+          home_team_name: "ニュージーランド",
+          kickoff_at: "2026-07-18T10:00:00.000Z",
+          match_id: "nz-ireland",
+          status: "finished",
+        },
+        {
+          away_score: 21,
+          away_team_name: "ニュージーランド",
+          home_score: 38,
+          home_team_name: "ストーマーズ",
+          kickoff_at: "2026-08-08T10:00:00.000Z",
+          match_id: "stormers-nz",
+          status: "finished",
+        },
+        {
+          away_score: 0,
+          away_team_name: "ニュージーランド",
+          home_score: 54,
+          home_team_name: "シャークス",
+          kickoff_at: "2026-08-12T10:00:00.000Z",
+          match_id: "sharks-nz",
+          status: "finished",
+        },
+        {
+          away_score: 19,
+          away_team_name: "ニュージーランド",
+          home_score: 50,
+          home_team_name: "ブルズ",
+          kickoff_at: "2026-08-16T10:00:00.000Z",
+          match_id: "bulls-nz",
+          status: "finished",
+        },
+      ],
+      home: [
+        {
+          away_score: 0,
+          away_team_name: "ウェールズ",
+          home_score: 43,
+          home_team_name: "南アフリカ",
+          kickoff_at: "2026-07-19T10:00:00.000Z",
+          match_id: "sa-wales-1",
+          status: "finished",
+        },
+        {
+          away_score: 28,
+          away_team_name: "スコットランド",
+          home_score: 42,
+          home_team_name: "南アフリカ",
+          kickoff_at: "2026-07-12T10:00:00.000Z",
+          match_id: "sa-scotland",
+          status: "finished",
+        },
+        {
+          away_score: 21,
+          away_team_name: "イングランド",
+          home_score: 45,
+          home_team_name: "南アフリカ",
+          kickoff_at: "2026-07-05T10:00:00.000Z",
+          match_id: "sa-england",
+          status: "finished",
+        },
+        {
+          away_score: 73,
+          away_team_name: "南アフリカ",
+          home_score: 0,
+          home_team_name: "ウェールズ",
+          kickoff_at: "2025-11-30T10:00:00.000Z",
+          match_id: "wales-sa",
+          status: "finished",
+        },
+        {
+          away_score: 24,
+          away_team_name: "南アフリカ",
+          home_score: 13,
+          home_team_name: "アイルランド",
+          kickoff_at: "2025-11-23T10:00:00.000Z",
+          match_id: "ireland-sa",
+          status: "finished",
+        },
+      ],
+    };
+    const prompt = buildQaContentPrompt("preview", "本文", "ja", {
+      ...matchContext,
+      recent_form,
+    });
+
+    expect(prompt).toContain("## recent_form grounding");
+    expect(prompt).toContain("対戦相手・スコア・ホーム/アウェー");
+    expect(prompt).toContain('"home_team_name":"南アフリカ"');
+    expect(prompt).toContain('"away_team_name":"ニュージーランド"');
+    expect(prompt).toContain('"home_score":43');
+    expect(prompt).toContain('"away_score":19');
+    expect(prompt).toContain('"away_team_name":"ウェールズ"');
+    expect(prompt).toContain('"home_team_name":"ストーマーズ"');
+  });
+
+  it("omits individual recent-form grounding when no results are supplied", () => {
+    const prompt = buildQaContentPrompt("preview", "本文", "ja", {
+      ...matchContext,
+      recent_form: { away: [], home: [] },
+    });
+
+    expect(prompt).not.toContain("## recent_form grounding");
+    expect(prompt).not.toContain('"home_score":43');
   });
 
   it("omits turning point section checks when events are absent", () => {
