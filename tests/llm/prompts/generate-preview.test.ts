@@ -134,6 +134,12 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("主将シヤ・コリシが負傷欠場");
     expect(prompt).toContain("この試合を最も特徴づける出来事を自ら1つ選び");
     expect(prompt).toContain("入力に根拠のない問いを立ててはならない");
+    expect(prompt).toContain(
+      "核心候補は後述の【出典付き補強事実 sourced_facts】から選ぶこと。",
+    );
+    const coreQuestionBlock = prompt.split("\n\n【絶対禁止表現")[0] ?? "";
+    expect(coreQuestionBlock).not.toContain("主将シヤ・コリシが負傷欠場");
+    expect(coreQuestionBlock).not.toContain('"source_domain":"springboks.rugby"');
     expect(prompt).not.toContain("【フォーム型で書くこと】");
     expect(prompt).not.toContain("5連勝中のBullsに");
   });

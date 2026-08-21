@@ -92,7 +92,7 @@ function buildCoreQuestionBlock(
     lines.push(
       "【核心の材料選択】以下の sourced_facts から、この試合を最も特徴づける出来事を自ら1つ選び、その事実を核心の問いの軸にすること。主将の欠場・初出場・負傷離脱・起用変更・シリーズの決着方式など、試合固有の出来事を優先して判断すること。",
       "連勝・連敗のような一般的なフォームだけを自動的に核心にせず、選んだ sourced_facts の事実と他の入力データの関係を問いにすること。選んでいない事実を推測で補ってはならない。",
-      `核心候補となる sourced_facts: ${JSON.stringify(assembled.sourced_facts)}`,
+      "核心候補は後述の【出典付き補強事実 sourced_facts】から選ぶこと。",
     );
   } else if (pattern === "form") {
     lines.push(
