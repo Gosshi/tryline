@@ -13,6 +13,7 @@ import {
   buildTeamStatsFactStrings,
   computeActualWinner,
   evaluateNarrativeQuality,
+  getDeterministicQaGuardIssues,
   isFactualGroundingHardBlock,
   resolveVerdict,
 } from "@/lib/llm/stages/qa";
@@ -318,6 +319,18 @@ describe("isFactualGroundingHardBlock", () => {
         verdict: "retry",
       }),
     ).toBe(true);
+  });
+});
+
+describe("getDeterministicQaGuardIssues", () => {
+  it("includes the roster enumeration guard introduced for Japanese previews", () => {
+    expect(
+      getDeterministicQaGuardIssues({
+        issues: [ROSTER_ENUMERATION_ISSUE],
+        scores: passingScores,
+        verdict: "retry",
+      }),
+    ).toEqual([ROSTER_ENUMERATION_ISSUE]);
   });
 });
 

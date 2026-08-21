@@ -68,12 +68,46 @@ type StatedPlayerStatClaim = {
   tries?: number;
 };
 
+const DETERMINISTIC_QA_GUARD_ISSUES = new Set([
+  CONTENT_LENGTH_ISSUE,
+  CONTRADICTED_ZERO_STAT_CLAIM_ISSUE,
+  PLAYER_STAT_MISMATCH_ISSUE,
+  ROSTER_ENUMERATION_ISSUE,
+  UNGROUNDED_ENTITY_ISSUE,
+  UNGROUNDED_PLAYER_REFERENCE_ISSUE,
+  UNSUPPORTED_STATISTIC_ISSUE,
+  WINNER_MISMATCH_ISSUE,
+]);
+
+const LLM_LENGTH_REFERENCE =
+  /(?:字数|文字数|目標字数|字数要件|本文の長さ|\d+\s*(?:字|文字|words?))/iu;
+
 function appendIssue(issues: string[], issue: string): string[] {
   return issues.includes(issue) ? issues : [...issues, issue];
 }
 
 export function isContentLengthIssue(result: QaResult): boolean {
   return result.issues.includes(CONTENT_LENGTH_ISSUE);
+}
+
+export function getDeterministicQaGuardIssues(result: QaResult): string[] {
+  return result.issues.filter((issue) =>
+    DETERMINISTIC_QA_GUARD_ISSUES.has(issue),
+  );
+}
+
+export function filterLlmLengthIssues(issues: unknown[]): string[] {
+  return issues.flatMap((issue) => {
+    if (typeof issue !== "string") {
+      return [];
+    }
+
+    if (!LLM_LENGTH_REFERENCE.test(issue)) {
+      return [issue];
+    }
+
+    return [];
+  });
 }
 
 export function isFactualGroundingHardBlock(result: QaResult): boolean {
@@ -590,8 +624,8 @@ function parseQaResponse(
   // the length issue on content that actually meets the minimum. The
   // deterministic guard below re-adds the issue from a real measurement, so
   // it is the single source of truth for content length.
-  const llmIssues = (Array.isArray(parsed.issues) ? parsed.issues : []).filter(
-    (issue) => issue !== CONTENT_LENGTH_ISSUE,
+  const llmIssues = filterLlmLengthIssues(
+    Array.isArray(parsed.issues) ? parsed.issues : [],
   );
   const statedPlayerStats = parseStatedPlayerStats(parsed.statedPlayerStats);
   const statedWinner = parseStatedWinner(parsed.statedWinner);

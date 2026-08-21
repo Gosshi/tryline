@@ -11,6 +11,8 @@ vi.mock("@/lib/env", async () => {
 });
 
 import {
+  getQaScoreRegressions,
+  notifyContentQualityRegression,
   notifyContentRejected,
   notifyBroadcastIngestReport,
   notifyCostAlert,
@@ -78,6 +80,43 @@ describe("llm notify", () => {
     expect(payload.content).toContain(
       "問題点: tone_mismatch / insufficient_evidence",
     );
+    expect(payload.content).toContain("戦術的深さ(tactical_depth) 2/5");
+  });
+
+  it("posts deterministic diagnostics before issues for rejected content", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyContentRejected("match-1", "preview", qaResult, {
+      diagnostics: {
+        contentLength: 1468,
+        contentLengthMinimum: 1500,
+        contentLengthUnit: "characters",
+        deterministicGuardIssues: ["本文が目標字数の下限未満です"],
+        kickoffAtJst: "2026-08-23 (日) 00:10 JST",
+        lineupCount: 0,
+        matchLabel: "南アフリカ 対 ニュージーランド",
+        sourcedFactsCount: 7,
+      },
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(body).toMatchInlineSnapshot(`
+      "⚠️ コンテンツ却下 [preview]
+      試合ID: match-1
+      試合: 南アフリカ 対 ニュージーランド
+      キックオフ: 2026-08-23 (日) 00:10 JST
+      QAスコア: 情報密度 2/5 / 日本語品質 3/5 / 事実根拠 4/5 / 戦術的深さ(tactical_depth) 2/5
+      本文: 1468字（下限: 1500字）
+      素材: sourced_facts 7件 / ラインアップ 0件
+      決定的ガード: 本文が目標字数の下限未満です
+      問題点: tone_mismatch / insufficient_evidence
+      対応: Supabase Studio の match_content テーブルで status を確認し、必要に応じて published に変更してください"
+    `);
   });
 
   it("includes preservation context and generated length for rejected refreshes", async () => {
@@ -250,16 +289,115 @@ describe("llm notify", () => {
     });
     vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
 
-    await notifyContentRejected("match-1", "preview", {
-      ...qaResult,
-      issues: ["x".repeat(2_500)],
-    });
+    await notifyContentRejected(
+      "match-1",
+      "preview",
+      {
+        ...qaResult,
+        issues: ["x".repeat(2_500)],
+      },
+      {
+        diagnostics: {
+          contentLength: 1468,
+          contentLengthMinimum: 1500,
+          contentLengthUnit: "characters",
+          deterministicGuardIssues: [],
+          kickoffAtJst: "2026-08-23 (日) 00:10 JST",
+          lineupCount: 0,
+          matchLabel: "南アフリカ 対 ニュージーランド",
+          sourcedFactsCount: 0,
+        },
+      },
+    );
 
     const request = vi.mocked(fetch).mock.calls[0]?.[1];
     const content = JSON.parse(String((request as RequestInit).body)).content;
 
     expect(content).toHaveLength(2_000);
     expect(content).toMatch(/…\(切り詰め\)$/);
+    expect(content).toContain("本文: 1468字（下限: 1500字）");
+    expect(content).toContain("素材: sourced_facts 0件 / ラインアップ 0件");
+  });
+
+  it("notifies only when a regenerated content score regresses", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyContentQualityRegression({
+      contentType: "preview",
+      currentContentLength: 1844,
+      currentScores: {
+        factual_grounding: 3,
+        information_density: 4,
+        japanese_quality: 4,
+        tactical_depth: 4,
+      },
+      kickoffAtJst: "2026-08-23 (日) 00:10 JST",
+      matchLabel: "南アフリカ 対 ニュージーランド",
+      previousContentLength: 1944,
+      previousScores: {
+        factual_grounding: 4,
+        information_density: 5,
+        japanese_quality: 4,
+        tactical_depth: 3,
+      },
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(body).toMatchInlineSnapshot(`
+      "⚠️ コンテンツ品質回帰 [preview]
+      試合: 南アフリカ 対 ニュージーランド
+      キックオフ: 2026-08-23 (日) 00:10 JST
+      QAスコア: 情報密度 5→4 / 日本語品質 4→4 / 事実根拠 4→3 / 戦術的深さ(tactical_depth) 3→4
+      本文: 1944字→1844字
+      低下項目: information_density / factual_grounding
+      対応: match_content の既存 published と今回の生成結果を比較してください"
+    `);
+
+    await notifyContentQualityRegression({
+      contentType: "preview",
+      currentContentLength: 1944,
+      currentScores: {
+        factual_grounding: 4,
+        information_density: 5,
+        japanese_quality: 5,
+        tactical_depth: 4,
+      },
+      kickoffAtJst: "2026-08-23 (日) 00:10 JST",
+      matchLabel: "南アフリカ 対 ニュージーランド",
+      previousContentLength: 1944,
+      previousScores: {
+        factual_grounding: 4,
+        information_density: 5,
+        japanese_quality: 4,
+        tactical_depth: 3,
+      },
+    });
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("identifies all and only score dimensions that decreased", () => {
+    expect(
+      getQaScoreRegressions(
+        {
+          factual_grounding: 4,
+          information_density: 5,
+          japanese_quality: 4,
+          tactical_depth: 3,
+        },
+        {
+          factual_grounding: 3,
+          information_density: 4,
+          japanese_quality: 4,
+          tactical_depth: 4,
+        },
+      ),
+    ).toEqual(["information_density", "factual_grounding"]);
   });
 
   it("does not truncate content at exactly Discord's 2000 character limit", async () => {

@@ -11,8 +11,20 @@ export type PrekickoffReadinessIssue = {
   matchLabel: string;
 };
 
+export type ContentNotificationDiagnostics = {
+  contentLength: number;
+  contentLengthMinimum: number;
+  contentLengthUnit: "characters" | "words";
+  deterministicGuardIssues: string[];
+  kickoffAtJst: string;
+  lineupCount: number;
+  matchLabel: string;
+  sourcedFactsCount: number;
+};
+
 type ContentRejectedNotificationOptions = {
   contentLength?: number;
+  diagnostics?: ContentNotificationDiagnostics;
   preservedPublished?: boolean;
 };
 
@@ -63,10 +75,26 @@ export async function notifyContentRejected(
   qaResult: QaResult,
   options: ContentRejectedNotificationOptions = {},
 ): Promise<void> {
+  const diagnostics = options.diagnostics;
+  const contentUnit =
+    diagnostics?.contentLengthUnit === "words" ? "語" : "字";
   const message = [
     `⚠️ コンテンツ却下 [${contentType}]`,
     `試合ID: ${matchId}`,
-    `QAスコア: 情報密度 ${qaResult.scores.information_density}/5 / 日本語品質 ${qaResult.scores.japanese_quality}/5 / 事実根拠 ${qaResult.scores.factual_grounding}/5`,
+    ...(diagnostics
+      ? [
+          `試合: ${diagnostics.matchLabel}`,
+          `キックオフ: ${diagnostics.kickoffAtJst}`,
+        ]
+      : []),
+    `QAスコア: 情報密度 ${qaResult.scores.information_density}/5 / 日本語品質 ${qaResult.scores.japanese_quality}/5 / 事実根拠 ${qaResult.scores.factual_grounding}/5 / 戦術的深さ(tactical_depth) ${qaResult.scores.tactical_depth}/5`,
+    ...(diagnostics
+      ? [
+          `本文: ${diagnostics.contentLength}${contentUnit}（下限: ${diagnostics.contentLengthMinimum}${contentUnit}）`,
+          `素材: sourced_facts ${diagnostics.sourcedFactsCount}件 / ラインアップ ${diagnostics.lineupCount}件`,
+          `決定的ガード: ${diagnostics.deterministicGuardIssues.length > 0 ? diagnostics.deterministicGuardIssues.join(" / ") : "発火なし"}`,
+        ]
+      : []),
     `問題点: ${qaResult.issues.join(" / ")}`,
     ...(options.preservedPublished
       ? [
@@ -96,6 +124,51 @@ export async function notifyPrekickoffReadinessAudit(
     `要対応: ${issues.length}試合`,
     ...details,
     "対応: preview・sourced_facts・match_lineups を確認し、必要な手動処理を実行してください",
+  ].join("\n");
+
+  await postOpsAlert(message);
+}
+
+export function getQaScoreRegressions(
+  previous: QaResult["scores"],
+  current: QaResult["scores"],
+): Array<keyof QaResult["scores"]> {
+  return (
+    [
+      "information_density",
+      "japanese_quality",
+      "factual_grounding",
+      "tactical_depth",
+    ] as const
+  ).filter((key) => current[key] < previous[key]);
+}
+
+export async function notifyContentQualityRegression(options: {
+  contentType: ContentType;
+  currentContentLength: number;
+  currentScores: QaResult["scores"];
+  kickoffAtJst: string;
+  matchLabel: string;
+  previousContentLength: number;
+  previousScores: QaResult["scores"];
+}): Promise<void> {
+  const regressions = getQaScoreRegressions(
+    options.previousScores,
+    options.currentScores,
+  );
+
+  if (regressions.length === 0) {
+    return;
+  }
+
+  const message = [
+    `⚠️ コンテンツ品質回帰 [${options.contentType}]`,
+    `試合: ${options.matchLabel}`,
+    `キックオフ: ${options.kickoffAtJst}`,
+    `QAスコア: 情報密度 ${options.previousScores.information_density}→${options.currentScores.information_density} / 日本語品質 ${options.previousScores.japanese_quality}→${options.currentScores.japanese_quality} / 事実根拠 ${options.previousScores.factual_grounding}→${options.currentScores.factual_grounding} / 戦術的深さ(tactical_depth) ${options.previousScores.tactical_depth}→${options.currentScores.tactical_depth}`,
+    `本文: ${options.previousContentLength}字→${options.currentContentLength}字`,
+    `低下項目: ${regressions.join(" / ")}`,
+    "対応: match_content の既存 published と今回の生成結果を比較してください",
   ].join("\n");
 
   await postOpsAlert(message);

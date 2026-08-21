@@ -11,8 +11,17 @@ import {
 import { hasConfirmedSourcedFactLineup } from "@/lib/content/fabrication-guard";
 import { getRoundFromExternalIds } from "@/lib/db/queries/matches";
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { formatKickoffJst } from "@/lib/format/kickoff";
+import {
+  getContentLengthRequirement,
+  measureContentLength,
+} from "@/lib/llm/content-length";
 import { hasConfirmedProjectedLineups } from "@/lib/llm/lineups";
-import { notifyContentRejected, notifyCostAlert } from "@/lib/llm/notify";
+import {
+  notifyContentQualityRegression,
+  notifyContentRejected,
+  notifyCostAlert,
+} from "@/lib/llm/notify";
 import { calculateCostUsd } from "@/lib/llm/pricing";
 import {
   assembleMatchContentInput,
@@ -28,6 +37,7 @@ import {
   applyEntityGroundingQaGuard,
   DENSITY_PUBLISH_MIN,
   evaluateNarrativeQuality,
+  getDeterministicQaGuardIssues,
   isContentLengthIssue,
   isFactualGroundingHardBlock,
 } from "@/lib/llm/stages/qa";
@@ -103,6 +113,35 @@ export type PipelineResult = {
 
 function hashInput(input: unknown) {
   return createHash("sha256").update(JSON.stringify(input)).digest("hex");
+}
+
+function getQaScores(value: Json | null): QaResult["scores"] | null {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return null;
+  }
+
+  const scores = (value as Record<string, unknown>).scores;
+  if (!scores || Array.isArray(scores) || typeof scores !== "object") {
+    return null;
+  }
+
+  const candidate = scores as Record<string, unknown>;
+  const keys = [
+    "information_density",
+    "japanese_quality",
+    "factual_grounding",
+    "tactical_depth",
+  ] as const;
+  if (!keys.every((key) => typeof candidate[key] === "number")) {
+    return null;
+  }
+
+  return {
+    factual_grounding: candidate.factual_grounding as number,
+    information_density: candidate.information_density as number,
+    japanese_quality: candidate.japanese_quality as number,
+    tactical_depth: candidate.tactical_depth as number,
+  };
 }
 
 async function logPipelineRun(entry: {
@@ -704,22 +743,22 @@ export async function generateMatchContent(
   const persistedStatus =
     finalQa.verdict === "publish" && !densityBlocked ? "published" : "draft";
 
+  const { data: existingContent, error: existingContentError } = await db
+    .from("match_content")
+    .select("status, qa_scores, content_md")
+    .eq("match_id", matchId)
+    .eq("content_type", contentType)
+    .eq("language", language)
+    .maybeSingle();
+
+  if (existingContentError) {
+    throw existingContentError;
+  }
+
   let preservedPublished = false;
   let cacheRevalidationSkipped = false;
 
   if (persistedStatus === "draft") {
-    const { data: existingContent, error: existingContentError } = await db
-      .from("match_content")
-      .select("status")
-      .eq("match_id", matchId)
-      .eq("content_type", contentType)
-      .eq("language", language)
-      .maybeSingle();
-
-    if (existingContentError) {
-      throw existingContentError;
-    }
-
     preservedPublished = existingContent?.status === "published";
   }
 
@@ -750,6 +789,39 @@ export async function generateMatchContent(
       PUBLIC_DATA_CACHE_TAGS.matches,
     );
     cacheRevalidationSkipped = (revalidation?.skippedTags.length ?? 0) > 0;
+  }
+
+  const contentLengthRequirement = getContentLengthRequirement(
+    contentType,
+    language,
+  );
+  const contentLength = measureContentLength(
+    finalNarrative,
+    contentLengthRequirement,
+  );
+  const matchLabel = `${assembled.match.home_team?.name ?? "ホーム不明"} 対 ${assembled.match.away_team?.name ?? "アウェイ不明"}`;
+  const kickoffAtJst = formatKickoffJst(assembled.match.kickoff_at);
+
+  if (
+    persistedStatus === "published" &&
+    existingContent?.status === "published"
+  ) {
+    const previousScores = getQaScores(existingContent.qa_scores);
+
+    if (previousScores) {
+      await notifyContentQualityRegression({
+        contentType,
+        currentContentLength: contentLength,
+        currentScores: finalQa.scores,
+        kickoffAtJst,
+        matchLabel,
+        previousContentLength: measureContentLength(
+          existingContent.content_md,
+          contentLengthRequirement,
+        ),
+        previousScores,
+      });
+    }
   }
 
   if (persistedStatus === "published") {
@@ -785,8 +857,6 @@ export async function generateMatchContent(
   }
 
   if (persistedStatus === "draft") {
-    const contentLength = Array.from(finalNarrative).length;
-
     if (preservedPublished) {
       console.warn(
         "[content-pipeline] preserved existing published content after rejection",
@@ -800,14 +870,23 @@ export async function generateMatchContent(
       );
     }
 
-    if (preservedPublished) {
-      await notifyContentRejected(matchId, contentType, finalQa, {
+    await notifyContentRejected(matchId, contentType, finalQa, {
+      contentLength,
+      diagnostics: {
         contentLength,
-        preservedPublished: true,
-      });
-    } else {
-      await notifyContentRejected(matchId, contentType, finalQa);
-    }
+        contentLengthMinimum: contentLengthRequirement.min,
+        contentLengthUnit: contentLengthRequirement.unit,
+        deterministicGuardIssues: getDeterministicQaGuardIssues(finalQa),
+        kickoffAtJst,
+        lineupCount: hasLineups
+          ? assembled.projected_lineups.home.length +
+            assembled.projected_lineups.away.length
+          : 0,
+        matchLabel,
+        sourcedFactsCount: assembled.sourced_facts.length,
+      },
+      ...(preservedPublished ? { preservedPublished: true } : {}),
+    });
   }
 
   if (totalCostUsd > COST_ALERT_THRESHOLD_USD) {
