@@ -19,7 +19,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.14.0";
+export const PROMPT_VERSION = "preview@3.15.0";
 
 type CorePatternType = "context" | "form" | "numeric";
 
@@ -81,25 +81,27 @@ function buildCoreQuestionBlock(
   const pattern = selectCorePattern(assembled);
   const lines = [
     "## セクション0（必須、200字以内）: # この試合の核心",
-    "この試合の本質的な争点を1文で表す問いを設定し、その根拠を数値・実績・文脈で示すこと。",
-    "以下の指定パターンだけを使うこと（パターン名は出力しない）:",
+    "この試合の本質的な争点を1文で表す問いを設定し、その根拠を入力にある数値・実績・文脈で示すこと。入力に根拠のない問いを立ててはならない。",
   ];
 
-  if (pattern === "form") {
-    lines.push(
-      "【フォーム型で書くこと】連勝/連敗ストリークや直近の状態変化を軸にする",
-      "例: 「5連勝中のBullsに、プレーオフ圏ギリギリのMunsterが土をつけられるか——フォームの差は数字ほど大きいか」",
-    );
-  } else if (pattern === "context") {
+  if (pattern === "context") {
     lines.push(
       "【大会文脈型で書くこと】プレーオフ進出・降格・Grand Slamなど大会的意味を軸にする",
-      "例: 「この一戦に勝てば自力でプレーオフ進出が決まるUlster——Glasgowの守備はその夢を断てるか」",
+    );
+  } else if (assembled.sourced_facts.length > 0) {
+    lines.push(
+      "【核心の材料選択】以下の sourced_facts から、この試合を最も特徴づける出来事を自ら1つ選び、その事実を核心の問いの軸にすること。主将の欠場・初出場・負傷離脱・起用変更・シリーズの決着方式など、試合固有の出来事を優先して判断すること。",
+      "連勝・連敗のような一般的なフォームだけを自動的に核心にせず、選んだ sourced_facts の事実と他の入力データの関係を問いにすること。選んでいない事実を推測で補ってはならない。",
+      "核心候補は後述の【出典付き補強事実 sourced_facts】から選ぶこと。",
+    );
+  } else if (pattern === "form") {
+    lines.push(
+      "【フォーム型で書くこと】連勝/連敗ストリークや直近の状態変化を軸にする",
     );
   } else {
     const axis = selectNumericAxis(matchId);
     lines.push(
       `【数値対決型で書くこと】${axis}を軸にする`,
-      "例: 「Leinsterの平均31得点アタック対Saracensの平均14失点ディフェンス——どちらの実力値が本物か」",
     );
   }
 

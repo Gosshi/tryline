@@ -55,8 +55,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.14.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.14.0");
+  it("uses preview prompt version 3.15.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.15.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -67,11 +67,11 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("# この試合の核心");
     expect(prompt).toContain("本質的な争点");
     expect(prompt).toContain("数値・実績・文脈");
-    expect(prompt).toContain("以下の指定パターンだけを使うこと");
+    expect(prompt).toContain("入力に根拠のない問いを立ててはならない");
     expect(prompt).toContain("【数値対決型で書くこと】");
     expect(prompt).not.toContain("【フォーム型で書くこと】");
     expect(prompt).not.toContain("【大会文脈型で書くこと】");
-    expect(prompt).toContain("パターン名は出力しない");
+    expect(prompt).not.toContain("5連勝中のBullsに");
     expect(prompt).toContain("【絶対禁止表現");
     expect(prompt).toContain("入力データに無い統計");
     expect(prompt).toContain("「好調」");
@@ -99,6 +99,49 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("【フォーム型で書くこと】");
     expect(prompt).not.toContain("【数値対決型で書くこと】");
     expect(prompt).not.toContain("【大会文脈型で書くこと】");
+    expect(prompt).not.toContain("5連勝中のBullsに");
+  });
+
+  it("lets sourced facts determine the core question instead of forcing the form pattern", () => {
+    const prompt = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        key_stats: {
+          ...assembled.key_stats,
+          away: {
+            ...assembled.key_stats.away,
+            result_streak: "winning",
+          },
+          home: {
+            ...assembled.key_stats.home,
+            result_streak: "winning",
+          },
+        },
+        sourced_facts: [
+          {
+            confidence: "high",
+            fact: "主将シヤ・コリシが負傷欠場し、ピーター＝ステフ・デュトイが主将を務める。",
+            source_domain: "springboks.rugby",
+            source_url: "https://www.springboks.rugby/news/captain",
+          },
+        ],
+      },
+      [],
+      [],
+    );
+
+    expect(prompt).toContain("【核心の材料選択】");
+    expect(prompt).toContain("主将シヤ・コリシが負傷欠場");
+    expect(prompt).toContain("この試合を最も特徴づける出来事を自ら1つ選び");
+    expect(prompt).toContain("入力に根拠のない問いを立ててはならない");
+    expect(prompt).toContain(
+      "核心候補は後述の【出典付き補強事実 sourced_facts】から選ぶこと。",
+    );
+    const coreQuestionBlock = prompt.split("\n\n【絶対禁止表現")[0] ?? "";
+    expect(coreQuestionBlock).not.toContain("主将シヤ・コリシが負傷欠場");
+    expect(coreQuestionBlock).not.toContain('"source_domain":"springboks.rugby"');
+    expect(prompt).not.toContain("【フォーム型で書くこと】");
+    expect(prompt).not.toContain("5連勝中のBullsに");
   });
 
   it("selects the competition-context core pattern for playoff matches", () => {
@@ -114,6 +157,7 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("【大会文脈型で書くこと】");
     expect(prompt).not.toContain("【数値対決型で書くこと】");
     expect(prompt).not.toContain("【フォーム型で書くこと】");
+    expect(prompt).not.toContain("【核心の材料選択】");
   });
 
   it("keeps numeric core pattern prompts to one deterministic axis", () => {
@@ -127,6 +171,18 @@ describe("buildGeneratePreviewPrompt", () => {
 
     expect(prompt).not.toContain("以下の3パターン");
     expect(includedAxes).toHaveLength(1);
+  });
+
+  it("keeps the three-pattern fallback when sourced facts are absent", () => {
+    const prompt = buildGeneratePreviewPrompt(assembled, [], []);
+    const fallbackPatterns = [
+      "【大会文脈型で書くこと】",
+      "【フォーム型で書くこと】",
+      "【数値対決型で書くこと】",
+    ].filter((pattern) => prompt.includes(pattern));
+
+    expect(fallbackPatterns).toHaveLength(1);
+    expect(prompt).not.toContain("【核心の材料選択】");
   });
 
   it("instructs the model to use final scores as the winner source", () => {
