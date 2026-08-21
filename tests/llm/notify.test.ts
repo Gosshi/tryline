@@ -16,6 +16,7 @@ import {
   notifyCostAlert,
   notifyDataIntegrityReport,
   notifyNewsletterDelivery,
+  notifyPrekickoffReadinessAudit,
 } from "@/lib/llm/notify";
 
 import type { QaResult } from "@/lib/llm/types";
@@ -166,6 +167,33 @@ describe("llm notify", () => {
     expect(body).toContain("✉️ 週次ニュースレター配信");
     expect(body).toContain("成功: 3件");
     expect(body).toContain("失敗: 1件");
+  });
+
+  it("posts pre-kickoff readiness issues with a summary before details", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyPrekickoffReadinessAudit([
+      {
+        issues: ["プレビュー未公開", "draft滞留", "ラインアップ未取り込み"],
+        kickoffAtJst: "2026-08-23 (日) 00:10 JST",
+        matchId: "match-1",
+        matchLabel: "南アフリカ 対 ニュージーランド",
+      },
+    ]);
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(body).toMatchInlineSnapshot(`
+      "🧭 キックオフ前準備点検
+      要対応: 1試合
+      1. 南アフリカ 対 ニュージーランド — 2026-08-23 (日) 00:10 JST
+         プレビュー未公開 / draft滞留 / ラインアップ未取り込み
+      対応: preview・sourced_facts・match_lineups を確認し、必要な手動処理を実行してください"
+    `);
   });
 
   it("posts broadcast ingest unknown services, unlinked reasons, and missing matches", async () => {
