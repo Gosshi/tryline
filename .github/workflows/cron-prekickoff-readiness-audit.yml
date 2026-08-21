@@ -1,0 +1,19 @@
+name: Cron pre-kickoff readiness audit
+
+on:
+  schedule:
+    # 22:05 JST: one hour after the Thu/Fri 21:05 JST preview refresh.
+    - cron: "5 13 * * *"
+  workflow_dispatch:
+
+jobs:
+  audit-prekickoff-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Audit pre-kickoff readiness
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://tryline-six.vercel.app/api/cron/audit-prekickoff-readiness

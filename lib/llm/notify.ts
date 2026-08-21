@@ -4,6 +4,13 @@ import type { BroadcastIngestResult } from "@/lib/broadcasts/ingest";
 import type { DataIntegrityAuditReport } from "@/lib/data-integrity/audit";
 import type { ContentType, QaResult } from "@/lib/llm/types";
 
+export type PrekickoffReadinessIssue = {
+  issues: string[];
+  kickoffAtJst: string;
+  matchId: string;
+  matchLabel: string;
+};
+
 type ContentRejectedNotificationOptions = {
   contentLength?: number;
   preservedPublished?: boolean;
@@ -68,6 +75,27 @@ export async function notifyContentRejected(
         ]
       : []),
     "対応: Supabase Studio の match_content テーブルで status を確認し、必要に応じて published に変更してください",
+  ].join("\n");
+
+  await postOpsAlert(message);
+}
+
+export async function notifyPrekickoffReadinessAudit(
+  issues: PrekickoffReadinessIssue[],
+): Promise<void> {
+  if (issues.length === 0) {
+    return;
+  }
+
+  const details = issues.map(
+    (issue, index) =>
+      `${index + 1}. ${issue.matchLabel} — ${issue.kickoffAtJst}\n   ${issue.issues.join(" / ")}`,
+  );
+  const message = [
+    "🧭 キックオフ前準備点検",
+    `要対応: ${issues.length}試合`,
+    ...details,
+    "対応: preview・sourced_facts・match_lineups を確認し、必要な手動処理を実行してください",
   ].join("\n");
 
   await postOpsAlert(message);
