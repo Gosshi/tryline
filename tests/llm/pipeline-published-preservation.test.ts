@@ -27,6 +27,7 @@ const qaMock = vi.hoisted(() => ({
   applyEntityGroundingQaGuard: vi.fn((result: unknown) => result),
   DENSITY_PUBLISH_MIN: 4,
   evaluateNarrativeQuality: vi.fn(),
+  getDeterministicQaGuardIssues: vi.fn(() => []),
   isContentLengthIssue: vi.fn(() => false),
   isFactualGroundingHardBlock: vi.fn(() => false),
 }));
@@ -234,19 +235,35 @@ describe("generateMatchContent published preservation", () => {
     expect(result.status).toBe("draft");
     expect(dbMock.existingContent).toEqual(before);
     expect(dbMock.upsert).not.toHaveBeenCalled();
+    const contentLength =
+      language === "en" ? 3 : Array.from(rejectedNarrative).length;
+    const contentLengthMinimum =
+      contentType === "preview"
+        ? language === "en"
+          ? 550
+          : 1_500
+        : language === "en"
+          ? 600
+          : 1_200;
     expect(notifyMock.notifyContentRejected).toHaveBeenCalledWith(
       "match-1",
       contentType,
       result.qa,
-      {
-        contentLength: Array.from(rejectedNarrative).length,
+      expect.objectContaining({
+        contentLength,
+        diagnostics: expect.objectContaining({
+          contentLength,
+          contentLengthMinimum,
+          contentLengthUnit: language === "en" ? "words" : "characters",
+          deterministicGuardIssues: [],
+        }),
         preservedPublished: true,
-      },
+      }),
     );
     expect(warnSpy).toHaveBeenCalledWith(
       "[content-pipeline] preserved existing published content after rejection",
       expect.objectContaining({
-        contentLength: Array.from(rejectedNarrative).length,
+        contentLength,
         issues: ["本文が目標字数の下限未満です"],
         language,
       }),
@@ -296,6 +313,11 @@ describe("generateMatchContent published preservation", () => {
       "match-1",
       "preview",
       result.qa,
+      expect.objectContaining({
+        diagnostics: expect.objectContaining({
+          deterministicGuardIssues: [],
+        }),
+      }),
     );
   });
 
@@ -325,6 +347,11 @@ describe("generateMatchContent published preservation", () => {
       "match-1",
       "recap",
       result.qa,
+      expect.objectContaining({
+        diagnostics: expect.objectContaining({
+          deterministicGuardIssues: [],
+        }),
+      }),
     );
   });
 });

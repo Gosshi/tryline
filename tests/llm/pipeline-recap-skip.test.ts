@@ -32,6 +32,7 @@ const qaMock = vi.hoisted(() => ({
   ),
   DENSITY_PUBLISH_MIN: 4,
   evaluateNarrativeQuality: vi.fn(),
+  getDeterministicQaGuardIssues: vi.fn(() => []),
   isContentLengthIssue: vi.fn(() => false),
   isFactualGroundingHardBlock: vi.fn(() => false),
 }));
