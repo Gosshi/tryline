@@ -385,10 +385,15 @@ describe("generateMatchContent length revision", () => {
               win_rate_last_5: 0.4,
             },
           },
+          recent_form: assembledWithForm.recent_form,
           venue: assembledWithForm.match.venue,
         }),
       }),
     );
+    expect(
+      qaMock.evaluateNarrativeQuality.mock.calls[0]?.[0].matchContext
+        .recent_form,
+    ).toBe(assembledWithForm.recent_form);
   });
 
   it("blocks publishing when entity verification finds ungrounded names", async () => {
