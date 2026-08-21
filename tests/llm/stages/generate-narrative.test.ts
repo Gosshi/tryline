@@ -16,6 +16,7 @@ const assembled = {
   match: {
     id: "f0b3b7ca-cf11-4b95-bec8-b04e1cb58889",
     kickoff_at: new Date().toISOString(),
+    kickoff_at_jst: "2026-01-01 (木) 09:00 JST",
     status: "scheduled",
     venue: "Tokyo",
     home_score: null,

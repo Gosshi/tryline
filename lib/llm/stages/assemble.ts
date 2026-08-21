@@ -4,6 +4,7 @@ import {
   JAPANESE_COMPETITION_NAMES_BY_FAMILY,
   JAPANESE_TEAM_NAMES_BY_SLUG,
 } from "@/lib/format/japanese-names";
+import { formatKickoffJst } from "@/lib/format/kickoff";
 import { pointsForMatchEvent } from "@/lib/format/match-event-points";
 import { getTeamDisplayName } from "@/lib/format/team";
 import { deriveTeamStatsFromSourcedFacts } from "@/lib/llm/sourced-facts/derive-team-stats";
@@ -994,6 +995,7 @@ export async function assembleMatchContentInput(
     match: {
       id: match.id,
       kickoff_at: match.kickoff_at,
+      kickoff_at_jst: formatKickoffJst(match.kickoff_at),
       status: match.status,
       venue: match.venue,
       home_score: match.home_score,

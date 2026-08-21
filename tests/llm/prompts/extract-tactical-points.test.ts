@@ -40,6 +40,7 @@ const assembled: AssembledContentInput = {
     home_team: null,
     id: "match-1",
     kickoff_at: "2026-05-23T00:00:00.000Z",
+    kickoff_at_jst: "2026-05-23 (土) 09:00 JST",
     status: "scheduled",
     venue: null,
   },

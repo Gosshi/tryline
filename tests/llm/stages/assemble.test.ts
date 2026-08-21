@@ -23,6 +23,33 @@ describe("assembleMatchContentInput", () => {
       "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
   });
 
+  it("adds the existing JST kickoff format without changing the stored UTC value", async () => {
+    const { matchId, service } = await insertMatchFixture();
+    const overnightUtc = "2026-08-22T15:10:00+00:00";
+
+    await service
+      .from("matches")
+      .update({ kickoff_at: overnightUtc })
+      .eq("id", matchId);
+
+    const overnight = await assembleMatchContentInput(matchId);
+
+    expect(overnight.match.kickoff_at).toBe(overnightUtc);
+    expect(overnight.match.kickoff_at_jst).toBe("2026-08-23 (日) 00:10 JST");
+    expect(overnight.match.kickoff_at_jst).not.toContain("2026-08-22");
+
+    const daytimeUtc = "2026-08-23T05:00:00+00:00";
+    await service
+      .from("matches")
+      .update({ kickoff_at: daytimeUtc })
+      .eq("id", matchId);
+
+    const daytime = await assembleMatchContentInput(matchId);
+
+    expect(daytime.match.kickoff_at).toBe(daytimeUtc);
+    expect(daytime.match.kickoff_at_jst).toBe("2026-08-23 (日) 14:00 JST");
+  });
+
   it("uses match_lineups when announced lineups exist", async () => {
     const { matchId, homeTeamId, awayTeamId, service } =
       await insertMatchFixture();

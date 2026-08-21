@@ -8,6 +8,7 @@ import {
   buildPersona,
   buildSignalsBlock,
   buildStandingsBlock,
+  KICKOFF_TIMEZONE_INSTRUCTION,
   NON_LEAGUE_ONE_PLAYER_NAME_STYLE_INSTRUCTION,
   PROHIBITIONS_BLOCK,
 } from "./shared-prompt-blocks";
@@ -19,7 +20,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.18.0";
+export const PROMPT_VERSION = "recap@4.19.0";
 
 const MISSING_DATA_DISCLOSURE_BLOCK = [
   "【本文でシステム内部のデータ不在を開示しない】読者に向けて「入力データ」「提供されたデータ」等のシステム内部を指す語を出してはならない。",
@@ -326,6 +327,7 @@ export function buildGenerateRecapPrompt(
   return [
     persona,
     prohibitionsBlock,
+    KICKOFF_TIMEZONE_INSTRUCTION,
     MISSING_DATA_DISCLOSURE_BLOCK,
     structureInstruction,
     matchPhaseBlock,

@@ -11,6 +11,7 @@ const assembled: AssembledContentInput = {
   match: {
     id: "f0b3b7ca-cf11-4b95-bec8-b04e1cb58889",
     kickoff_at: new Date().toISOString(),
+    kickoff_at_jst: "2026-01-01 (木) 09:00 JST",
     status: "scheduled",
     venue: "Tokyo",
     home_score: null,
@@ -54,8 +55,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.12.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.12.0");
+  it("uses preview prompt version 3.13.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.13.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -75,6 +76,8 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("入力データに無い統計");
     expect(prompt).toContain("「好調」");
     expect(prompt).toContain("「鍵となります」");
+    expect(prompt).toContain("試合データの kickoff_at_jst を必ず使うこと");
+    expect(prompt).toContain("kickoff_at は UTC");
   });
 
   it("selects the form core pattern when recent streak data exists", () => {
