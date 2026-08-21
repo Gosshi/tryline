@@ -58,6 +58,7 @@ const qaMock = vi.hoisted(() => ({
   ),
   DENSITY_PUBLISH_MIN: 4,
   evaluateNarrativeQuality: vi.fn(),
+  getDeterministicQaGuardIssues: vi.fn(() => []),
   isContentLengthIssue: vi.fn((result: { issues: string[] }) =>
     result.issues.includes("本文が目標字数の下限未満です"),
   ),
@@ -71,6 +72,12 @@ const qaMock = vi.hoisted(() => ({
 
 const verifyEntitiesMock = vi.hoisted(() => ({
   verifyNarrativeEntities: vi.fn(),
+}));
+
+const notifyMock = vi.hoisted(() => ({
+  notifyContentQualityRegression: vi.fn(),
+  notifyContentRejected: vi.fn(),
+  notifyCostAlert: vi.fn(),
 }));
 
 const dbMock = vi.hoisted(() => ({
@@ -92,10 +99,7 @@ vi.mock("@/lib/llm/stages/extract-facts", () => extractFactsMock);
 vi.mock("@/lib/llm/stages/generate-narrative", () => generateNarrativeMock);
 vi.mock("@/lib/llm/stages/qa", () => qaMock);
 vi.mock("@/lib/llm/stages/verify-entities", () => verifyEntitiesMock);
-vi.mock("@/lib/llm/notify", () => ({
-  notifyContentRejected: vi.fn(),
-  notifyCostAlert: vi.fn(),
-}));
+vi.mock("@/lib/llm/notify", () => notifyMock);
 vi.mock("@/lib/seo/indexnow", () => ({
   submitUrlsToIndexNow: vi.fn(),
 }));
@@ -256,6 +260,7 @@ describe("generateMatchContent length revision", () => {
       1,
     );
     expect(qaMock.evaluateNarrativeQuality).toHaveBeenCalledTimes(2);
+    expect(notifyMock.notifyContentQualityRegression).not.toHaveBeenCalled();
     expect(dbMock.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         content_md: expect.stringContaining("# revised"),
@@ -265,6 +270,61 @@ describe("generateMatchContent length revision", () => {
       expect.any(Object),
     );
     expect(verifyEntitiesMock.verifyNarrativeEntities).toHaveBeenCalledTimes(2);
+  });
+
+  it("notifies when a published regeneration lowers any QA score", async () => {
+    dbMock.maybeSingle.mockResolvedValue({
+      data: {
+        content_md: "あ".repeat(1944),
+        qa_scores: {
+          scores: {
+            factual_grounding: 4,
+            information_density: 5,
+            japanese_quality: 4,
+            tactical_depth: 3,
+          },
+        },
+        status: "published",
+      },
+      error: null,
+    });
+    generateNarrativeMock.generateNarrative.mockResolvedValue({
+      content: "あ".repeat(1844),
+      modelVersion: "gpt-4o",
+      promptVersion: "preview@3.6.0",
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    qaMock.evaluateNarrativeQuality.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: {
+        issues: [],
+        scores: {
+          factual_grounding: 3,
+          information_density: 4,
+          japanese_quality: 4,
+          tactical_depth: 4,
+        },
+        verdict: "publish",
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    await generateMatchContent("match-1", "preview", "ja");
+
+    expect(notifyMock.notifyContentQualityRegression).toHaveBeenCalledWith(
+      expect.objectContaining({
+        currentContentLength: 1844,
+        currentScores: expect.objectContaining({
+          factual_grounding: 3,
+          information_density: 4,
+        }),
+        previousContentLength: 1944,
+        previousScores: expect.objectContaining({
+          factual_grounding: 4,
+          information_density: 5,
+        }),
+      }),
+    );
   });
 
   it("passes the same assembled match metadata and form values to QA", async () => {
