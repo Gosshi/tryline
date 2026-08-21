@@ -14,8 +14,8 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.6.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.6.0");
+  it("uses qa prompt version 2.7.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.7.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -99,7 +99,7 @@ describe("buildQaContentPrompt", () => {
     expect(prompt).not.toContain("おおむね7割以上");
   });
 
-  it("limits sourced facts density scoring changes to Japanese recaps", () => {
+  it("rewards Japanese previews that adopt relevant sourced facts", () => {
     const previewPrompt = buildQaContentPrompt("preview", "本文", "ja", {
       ...matchContext,
       sourcedFacts: [
@@ -123,8 +123,23 @@ describe("buildQaContentPrompt", () => {
       ],
     });
 
-    expect(previewPrompt).not.toContain("recap sourced_facts 反映度チェック");
+    expect(previewPrompt).toContain("## preview sourced_facts 反映度チェック");
+    expect(previewPrompt).toContain("反映候補となる sourced_facts は 1 件");
+    expect(previewPrompt).toContain("おおむね7割以上");
+    expect(previewPrompt).toContain("sourced_facts の反映が一部にとどまる");
     expect(englishRecapPrompt).not.toContain("recap sourced_facts 反映度チェック");
+  });
+
+  it("does not penalize Japanese previews without sourced facts", () => {
+    const prompt = buildQaContentPrompt("preview", "本文", "ja", {
+      ...matchContext,
+      sourcedFacts: [],
+    });
+
+    expect(prompt).toContain("## preview sourced_facts 反映度チェック");
+    expect(prompt).toContain("sourced_facts は0件");
+    expect(prompt).toContain("反映度で下げず");
+    expect(prompt).not.toContain("おおむね7割以上");
   });
 
   it("adds winner consistency checks only for recaps", () => {

@@ -18,7 +18,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.11.0";
+export const PROMPT_VERSION = "preview@3.12.0";
 
 type CorePatternType = "context" | "form" | "numeric";
 
@@ -26,6 +26,17 @@ const NUMERIC_AXES = [
   "攻撃力（平均得点）と守備力（平均失点）の対比",
   "得失点差（avg_score_diff_last_5）の対比",
   "直近5試合の勝率（win_rate_last_5）の対比",
+] as const;
+
+const DATA_SPARSE_STRATEGIES = [
+  "- recent_form の直近5試合スコアから攻撃力・守備力・連勝/連敗ストリークを読み取り本文に反映すること",
+  "- competition_standings の現在順位・勝ち点差から、この試合の大会的意味を具体的に述べること",
+  "- h2h_last_5 の直近対戦傾向を引用し、今回の試合との比較・見どころを示すこと",
+  "- key_stats の直近平均得点・失点を使い、この試合の予想スコアレンジや拮抗度を推論すること",
+  "- key_stats.home/away の win_rate_last_5 を使い「好調（0.8〜）」「低調（0.2以下）」等の表現で状態を描写すること",
+  "- key_stats.home/away の avg_score_diff_last_5 が正なら攻撃優位、負なら守備に課題があると読み取ること",
+  "- key_stats.home/away の result_streak が winning/losing の場合は連勝・連敗ストリーク（何連勝/連敗かは recent_form から数える）を明示すること",
+  "- 「情報が少ない」「選手不明」等の逃げ表現は一切禁止。手元のデータで書き切ること",
 ] as const;
 
 function selectCorePattern(assembled: AssembledContentInput): CorePatternType {
@@ -105,9 +116,14 @@ export function buildGeneratePreviewPrompt(
   const hasSourcedFactLineup = hasConfirmedSourcedFactLineup(
     assembled.sourced_facts,
   );
+  const hasSourcedFacts = assembled.sourced_facts.length > 0;
   const hasPlayerReferenceData = hasLineups || hasSourcedFactLineup;
   const isDataSparse =
-    assembled.match_events.length === 0 && !hasPlayerReferenceData;
+    assembled.match_events.length === 0 &&
+    !hasPlayerReferenceData &&
+    !hasSourcedFacts;
+  const hasSourcedFactsWithoutPlayerReference =
+    hasSourcedFacts && !hasPlayerReferenceData;
   const structureInstruction = hasPlayerReferenceData
     ? [
         "構成: セクション0（この試合の核心）に続けて3セクション構成。",
@@ -143,7 +159,7 @@ export function buildGeneratePreviewPrompt(
           "数値を伴う統計が入力にない場合は、統計に触れずスコアの流れと戦術描写のみで構成すること。",
         ].join("\n")
       : [
-          "【出典付き補強事実 sourced_facts】以下はallowlist済みの信頼ソースから抽出した事実です。本文の根拠として使ってよい。",
+          "【出典付き補強事実 sourced_facts】以下はallowlist済みの信頼ソースから抽出した事実です。本文の趣旨に沿うものはできるだけ多く反映すること。ただし、個々の事実を無理にこじつけて記述してはならない。",
           "使う場合は必ず自分の日本語で言い換えること。原文の長い直接引用は禁止。同一ソースから複数引用しないこと。",
           "sourced_facts に含まれないWeb由来の負傷・欠場・統計・発言を推測して書いてはならない。",
           JSON.stringify(assembled.sourced_facts),
@@ -155,16 +171,14 @@ export function buildGeneratePreviewPrompt(
   const dataSparseBlock = isDataSparse
     ? [
         "【データスパースモード】ラインアップデータは存在しない。以下の代替戦略でプレビューを構成すること:",
-        "- recent_form の直近5試合スコアから攻撃力・守備力・連勝/連敗ストリークを読み取り本文に反映すること",
-        "- competition_standings の現在順位・勝ち点差から、この試合の大会的意味を具体的に述べること",
-        "- h2h_last_5 の直近対戦傾向を引用し、今回の試合との比較・見どころを示すこと",
-        "- key_stats の直近平均得点・失点を使い、この試合の予想スコアレンジや拮抗度を推論すること",
-        "- key_stats.home/away の win_rate_last_5 を使い「好調（0.8〜）」「低調（0.2以下）」等の表現で状態を描写すること",
-        "- key_stats.home/away の avg_score_diff_last_5 が正なら攻撃優位、負なら守備に課題があると読み取ること",
-        "- key_stats.home/away の result_streak が winning/losing の場合は連勝・連敗ストリーク（何連勝/連敗かは recent_form から数える）を明示すること",
-        "- 「情報が少ない」「選手不明」等の逃げ表現は一切禁止。手元のデータで書き切ること",
+        ...DATA_SPARSE_STRATEGIES,
       ].join("\n")
-    : "";
+    : hasSourcedFactsWithoutPlayerReference
+      ? [
+          "【補強事実を軸にしたプレビュー】ラインアップデータは存在しないが、sourced_facts に含まれる事実を本文の具体性の中心にすること。直近フォーム・順位・対戦傾向の数値も併用し、統計比較だけで本文を構成してはならない。",
+          ...DATA_SPARSE_STRATEGIES,
+        ].join("\n")
+      : "";
   const lineupUsageBlock = hasLineups
     ? [
         "【ラインアップ実名活用】projected_lineups に存在する選手名は積極的に本文へ登場させること。",
