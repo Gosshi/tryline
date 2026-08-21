@@ -9,7 +9,7 @@ import type {
   SourcedFactInput,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.8.0";
+export const PROMPT_VERSION = "qa@2.9.0";
 
 export type TeamFormStats = {
   avg_points_against_last_5?: number | null;
@@ -126,6 +126,7 @@ export function buildQaContentPrompt(
           `## ${contentType} sourced_facts 反映度チェック`,
           `この${contentType}で反映候補となる sourced_facts は ${sourcedFactsCount} 件です。`,
           "本文の趣旨に沿う事実が、自分の日本語として本文に反映されているかを照合して information_density を評価すること。単なる列挙や不自然なこじつけは反映として数えないこと。",
+          "背番号と実名を根拠なく並べただけのラインアップ羅列は、実在の選手名を含んでいても情報密度を上げる根拠にしてはならない。",
           "team_stats が入力されている場合は、本文の趣旨に沿う主要な数値の活用も情報密度の具体性として考慮すること。",
         ].join("\n");
   const informationDensityRubric = [

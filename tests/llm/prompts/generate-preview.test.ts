@@ -55,8 +55,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.13.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.13.0");
+  it("uses preview prompt version 3.14.0", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.14.0");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -294,7 +294,7 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).not.toContain("1)400-500字 2)600-700字 3)300-400字");
   });
 
-  it("requires real lineup names and matchups when lineup data is available", () => {
+  it("replaces the prior roster quota with evidence-based player mentions", () => {
     const prompt = buildGeneratePreviewPrompt(
       {
         ...assembled,
@@ -351,13 +351,22 @@ describe("buildGeneratePreviewPrompt", () => {
 
     expect(prompt).toContain("キープレイヤー/注目マッチアップ");
     expect(prompt).toContain("【ラインアップ実名活用】");
-    expect(prompt).toContain("projected_lineups.home から最低3名");
-    expect(prompt).toContain("projected_lineups.away から最低3名");
+    const promptBeforeRosterEnumerationFix = [
+      "- projected_lineups.home から最低3名、projected_lineups.away から最低3名の実名を本文に含めること。",
+    ].join("\n");
+
+    expect(promptBeforeRosterEnumerationFix).toContain("最低3名");
+    expect(prompt).not.toContain("最低3名");
+    expect(prompt).toContain("背番号と実名を連続して並べる羅列");
+    expect(prompt).toContain("その選手固有の根拠を必ず添えること");
     expect(prompt).toContain("実名マッチアップを最低1つ");
     expect(prompt).toContain("is_starter が false の選手");
     expect(prompt).toContain("先発扱いしないこと");
     expect(prompt).toContain(
       "projected_lineups・match_events に存在しない選手名",
+    );
+    expect(prompt).toContain(
+      "片側のチームだけに confirmed なラインアップがある場合",
     );
     expect(prompt).not.toContain("マーカス・スミス");
   });
@@ -402,7 +411,7 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("キープレイヤーセクションは省略すること");
     expect(prompt).toContain("【データスパースモード】");
     expect(prompt).not.toContain("【ラインアップ実名活用】");
-    expect(prompt).not.toContain("projected_lineups.home から最低3名");
+    expect(prompt).not.toContain("最低3名");
   });
 
   it("removes unconfirmed fallback lineup names from the raw match data dump", () => {

@@ -9,6 +9,8 @@ export const PLAYER_STAT_MISMATCH_ISSUE =
   "選手別得点統計がmatch_eventsと矛盾しています";
 export const CONTRADICTED_ZERO_STAT_CLAIM_ISSUE =
   "ゼロという断定が実際のteam_statsの数値と矛盾";
+export const ROSTER_ENUMERATION_ISSUE =
+  "ラインアップの羅列が本文の大半を占めています";
 
 type ZeroClaimStatField =
   | "errors"
@@ -35,6 +37,9 @@ const LINEUP_FACT_PATTERN =
   /先発|リザーブ|スタメン|出場メンバー|starting XV|replacements/i;
 const PERSON_LIKE_NAME_PATTERN =
   /[一-龥々ぁ-んァ-ヶー]{2,}|[A-Z][a-z]+(?:[ -][A-Z][a-z]+)+/;
+const NUMBERED_PLAYER_NAME_PATTERN =
+  /\d{1,2}番\s*[一-龥々ァ-ヶーA-Za-z][一-龥々ァ-ヶーA-Za-z・＝='’ -]{1,40}/g;
+const ROSTER_ENUMERATION_MIN_RATIO = 0.2;
 
 const ZERO_CLAIM_STAT_FIELDS: Record<string, ZeroClaimStatField> = {
   エラー: "errors",
@@ -168,6 +173,24 @@ export function hasConfirmedSourcedFactLineup(
       (hasNumberedPlayerList(fact) || hasCommaSeparatedPlayerList(fact))
     );
   });
+}
+
+export function containsRosterEnumeration(text: string): boolean {
+  const normalized = text.trim();
+
+  if (!normalized) {
+    return false;
+  }
+
+  const rosterEnumerationLength = normalized
+    .split("。")
+    .reduce((total, sentence) => {
+      const pairCount = sentence.match(NUMBERED_PLAYER_NAME_PATTERN)?.length ?? 0;
+
+      return pairCount >= 3 ? total + sentence.length + 1 : total;
+    }, 0);
+
+  return rosterEnumerationLength / normalized.length > ROSTER_ENUMERATION_MIN_RATIO;
 }
 
 export function containsUngroundedPlayerReference(

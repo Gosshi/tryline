@@ -4,6 +4,7 @@ import {
   CONTRADICTED_ZERO_STAT_CLAIM_ISSUE,
   containsUnsupportedStatistic,
   PLAYER_STAT_MISMATCH_ISSUE,
+  ROSTER_ENUMERATION_ISSUE,
   UNGROUNDED_ENTITY_ISSUE,
   WINNER_MISMATCH_ISSUE,
 } from "@/lib/content/fabrication-guard";
@@ -37,6 +38,11 @@ const passingScores = {
   tactical_depth: 4,
 };
 const recapWithTurningPoint = `# ターニングポイント\n${longJaRecap}`;
+const rosterEnumerationNarrative = [
+  "南アフリカは1番オックス・ンチェ、2番マルコム・マークス、3番ウィルコ・ラウを先発させ、4番エベン・エツベト、5番ルアン・ノーチェが続く。",
+  "後方には9番グラント・ウィリアムズ、10番サーシャ・ファインバーグ＝ムンゴメズル、12番ダミアン・デアレンデ、13番ジェシー・クリエル、14番チェスリン・コルビ、15番ダミアン・ヴィレムセが並ぶ。",
+  "ニュージーランドは1番イーサン・デ・グルート、2番コーディー・テイラー、3番タイレル・ローマックス、4番ジョシュ・ロード、5番ファビアン・ホランドを前列に置き、9番コルテス・ラティマ、10番ボーデン・バレット、12番ジョーディー・バレット、13番リーコ・イオアネを起用する。",
+].join("\n").padEnd(1_500, "分析");
 
 const matsunagaMatchEvents = [
   {
@@ -863,6 +869,70 @@ describe("evaluateNarrativeQuality", () => {
       }),
     );
   });
+
+  it("caps Japanese preview roster enumeration within the existing retry limit", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await evaluateNarrativeQuality({
+      contentType: "preview",
+      language: "ja",
+      matchContext,
+      narrative: rosterEnumerationNarrative,
+      retryCount: 2,
+    });
+
+    expect(result.result.issues).toContain(ROSTER_ENUMERATION_ISSUE);
+    expect(result.result.scores.information_density).toBe(2);
+    expect(result.result.verdict).toBe("reject");
+  });
+
+  it.each([
+    ["recap", "ja"],
+    ["preview", "en"],
+  ] as const)(
+    "leaves %s %s output unchanged",
+    async (contentType, language) => {
+      openAIMock.createTextResponse.mockResolvedValueOnce({
+        text: JSON.stringify({
+          scores: {
+            factual_grounding: 5,
+            information_density: 5,
+            japanese_quality: 5,
+            tactical_depth: 5,
+          },
+          issues: [],
+        }),
+        model: "gpt-4o-mini-2024-07-18",
+        usage: { inputTokens: 10, outputTokens: 10 },
+      });
+
+      const result = await evaluateNarrativeQuality({
+        contentType,
+        language,
+        matchContext,
+        narrative:
+          contentType === "recap"
+            ? `# ターニングポイント\n${rosterEnumerationNarrative}`
+            : `${rosterEnumerationNarrative}${" analysis".repeat(550)}`,
+        retryCount: 0,
+      });
+
+      expect(result.result.issues).not.toContain(ROSTER_ENUMERATION_ISSUE);
+      expect(result.result.verdict).toBe("publish");
+    },
+  );
 
   it("passes match context into the QA prompt", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({

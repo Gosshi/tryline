@@ -14,8 +14,8 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.7.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.8.0");
+  it("uses qa prompt version 2.9.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.9.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -127,6 +127,9 @@ describe("buildQaContentPrompt", () => {
     expect(previewPrompt).toContain("反映候補となる sourced_facts は 1 件");
     expect(previewPrompt).toContain("おおむね7割以上");
     expect(previewPrompt).toContain("sourced_facts の反映が一部にとどまる");
+    expect(previewPrompt).toContain(
+      "背番号と実名を根拠なく並べただけのラインアップ羅列",
+    );
     expect(englishRecapPrompt).not.toContain("recap sourced_facts 反映度チェック");
   });
 
