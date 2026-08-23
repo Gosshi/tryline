@@ -46,8 +46,8 @@ describe("backfill-player-name-ja", () => {
     expect(() => parseOptions(["--limit=0"])).toThrow("Usage:");
   });
 
-  it("asks MODELS.FAST-guided generation to use rugby language backgrounds", () => {
-    const prompt = buildPlayerNameJaPrompt([
+  it("keeps the foreign-player generation prompt unchanged", () => {
+    const players = [
       {
         country: "South Africa",
         id: "louw",
@@ -66,14 +66,20 @@ describe("backfill-player-name-ja", () => {
         name: "Ruan Nortjé",
         name_ja: null,
       },
-    ]);
+    ];
+    const prompt = buildPlayerNameJaPrompt(players);
 
     expect(MODELS.FAST).toBeTruthy();
-    expect(prompt).toContain("アフリカーンス語・マオリ語・パシフィカ系");
-    expect(prompt).toContain("Wilco Louw は「ラウ」");
-    expect(prompt).toContain("Paul de Villiers は「デ・ヴィリアーズ」");
-    expect(prompt).toContain("Ruan Nortjé は「ノルチェ」");
-    expect(prompt).toContain('"country":"South Africa"');
+    expect(prompt).toBe(
+      [
+        "あなたは日本語ラグビーメディアの編集者です。各選手の安定した日本語表記を決めてください。",
+        "英語読みだけで機械的にカタカナ化せず、所属チームの国からアフリカーンス語・マオリ語・パシフィカ系などの言語背景を考慮すること。",
+        "例: Wilco Louw は「ラウ」、Paul de Villiers は「デ・ヴィリアーズ」、Ruan Nortjé は「ノルチェ」。",
+        "既存の表記を変える処理ではない。渡された player_id ごとに1つだけ日本語表記を返すこと。",
+        `入力: ${JSON.stringify(players.map(({ country, id, name }) => ({ country, id, name })))} `,
+        'JSONのみで返答: {"names":[{"player_id":"...","name_ja":"..."}]}',
+      ].join("\n\n"),
+    );
   });
 
   it("keeps trial output deterministic for the selected candidates and does not write by default", async () => {
@@ -150,5 +156,124 @@ describe("backfill-player-name-ja", () => {
         candidates,
       ),
     ).toThrow("did not return every requested player");
+  });
+
+  it("excludes candidates whose existing name already contains Japanese characters", async () => {
+    const { db } = createDb([
+      { id: "roman", name: "Romain Taofifénua", name_ja: null },
+      { id: "katakana", name: "ハニテリ・ヴァイレア", name_ja: null },
+      { id: "kanji", name: "安江祥光", name_ja: null },
+    ]);
+    const generate = vi.fn().mockResolvedValue({
+      model: MODELS.FAST,
+      names: [{ name_ja: "ロマン・タオフィフェヌア", player_id: "roman" }],
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    const result = await runPlayerNameJaBackfill(
+      { apply: false, limit: 20 },
+      { db: db as never, generate },
+    );
+
+    expect(generate).toHaveBeenCalledWith([
+      expect.objectContaining({ id: "roman" }),
+    ]);
+    expect(result.skipped).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          player_id: "katakana",
+          reason: "name_contains_japanese",
+        }),
+        expect.objectContaining({
+          player_id: "kanji",
+          reason: "name_contains_japanese",
+        }),
+      ]),
+    );
+    expect(result.skipSummary).toEqual({
+      name_contains_japanese: 2,
+      non_katakana_output: 0,
+    });
+  });
+
+  it("skips Han and hiragana generated output but retains katakana with middle dots and long vowels", () => {
+    const candidates = [
+      { country: null, id: "yasue", name: "Yoshimitsu Yasue", name_ja: null },
+      { country: null, id: "valu", name: "AsaeliAi Valu", name_ja: null },
+      {
+        country: null,
+        id: "taofifenua",
+        name: "Romain Taofifénua",
+        name_ja: null,
+      },
+      {
+        country: null,
+        id: "atissogbe",
+        name: "Théo Attissogbé",
+        name_ja: null,
+      },
+    ];
+
+    const result = parseGeneratedPlayerNames(
+      JSON.stringify({
+        names: [
+          { player_id: "yasue", name_ja: "安江祥光" },
+          { player_id: "valu", name_ja: "アサエリ愛・ヴァル" },
+          { player_id: "taofifenua", name_ja: "ロマン・タオフィフェヌア" },
+          { player_id: "atissogbe", name_ja: "テオ・アティソグベ" },
+        ],
+      }),
+      candidates,
+    );
+
+    expect(result.names).toEqual([
+      { name_ja: "ロマン・タオフィフェヌア", player_id: "taofifenua" },
+      { name_ja: "テオ・アティソグベ", player_id: "atissogbe" },
+    ]);
+    expect(result.skipped).toEqual([
+      expect.objectContaining({
+        player_id: "yasue",
+        reason: "non_katakana_output",
+      }),
+      expect.objectContaining({
+        player_id: "valu",
+        reason: "non_katakana_output",
+      }),
+    ]);
+  });
+
+  it("does not update players whose generated names are skipped", async () => {
+    const { db, update } = createDb([
+      { id: "yasue", name: "Yoshimitsu Yasue", name_ja: null },
+      { id: "valu", name: "AsaeliAi Valu", name_ja: null },
+    ]);
+
+    const result = await runPlayerNameJaBackfill(
+      { apply: true, limit: 20 },
+      {
+        db: db as never,
+        generate: async () => ({
+          model: MODELS.FAST,
+          names: [],
+          skipped: [
+            {
+              name_ja: "安江祥光",
+              player_id: "yasue",
+              reason: "non_katakana_output",
+            },
+            {
+              name_ja: "アサエリ愛・ヴァル",
+              player_id: "valu",
+              reason: "non_katakana_output",
+            },
+          ],
+          usage: { inputTokens: 1, outputTokens: 1 },
+        }),
+      },
+    );
+
+    expect(result.generated).toEqual([]);
+    expect(result.skipSummary.non_katakana_output).toBe(2);
+    expect(update).not.toHaveBeenCalled();
   });
 });
