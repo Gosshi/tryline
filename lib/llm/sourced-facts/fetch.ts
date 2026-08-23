@@ -10,7 +10,7 @@ import {
 } from "@/lib/llm/sourced-facts/allowlist";
 import { fetchJrfuMatchLineup } from "@/lib/scrapers/jrfu-lineups";
 
-import type { Json } from "@/lib/db/types";
+import type { Database, Json } from "@/lib/db/types";
 import type {
   SourcedFact,
   SourcedFactRejection,
@@ -66,6 +66,54 @@ export type FetchSourcedFactsResult = {
   skippedReason: string | null;
 };
 
+type SourcedFactInsert =
+  Database["public"]["Tables"]["match_sourced_facts"]["Insert"];
+
+/**
+ * A search response is a complete latest snapshot for each source domain.
+ * Replacing only domains present in a non-empty response prevents differently
+ * worded retries from accumulating while preserving other sources and a
+ * previous snapshot when the search returns no facts.
+ */
+export async function replaceSourcedFactsForSourceDomains(
+  db: ReturnType<typeof getSupabaseServerClient>,
+  rows: SourcedFactInsert[],
+) {
+  if (rows.length === 0) {
+    return;
+  }
+
+  const matchId = rows[0]?.match_id;
+  const contentType = rows[0]?.content_type;
+  if (!matchId || !contentType) {
+    throw new Error(
+      "Sourced fact replacement rows require match and content type",
+    );
+  }
+
+  const sourceDomains = [...new Set(rows.map((row) => row.source_domain))];
+  for (const sourceDomain of sourceDomains) {
+    const { error: deleteError } = await db
+      .from("match_sourced_facts")
+      .delete()
+      .eq("match_id", matchId)
+      .eq("content_type", contentType)
+      .eq("source_domain", sourceDomain);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+  }
+
+  const { error: upsertError } = await db
+    .from("match_sourced_facts")
+    .upsert(rows, { onConflict: "match_id,content_type,fact" });
+
+  if (upsertError) {
+    throw upsertError;
+  }
+}
+
 function resolveDisplayName(
   team: { english_name: string | null; name: string } | null,
 ) {
@@ -107,9 +155,7 @@ function shouldUseCachedFacts(params: {
   return true;
 }
 
-function getCachedPromptVersion(
-  facts: StoredSourcedFact[],
-): string | null {
+function getCachedPromptVersion(facts: StoredSourcedFact[]): string | null {
   const version = facts
     .map((fact) => fact.metadata?.prompt_version)
     .find((value): value is string => typeof value === "string");
@@ -129,7 +175,9 @@ function formatJrfuPlayers(
     .join("、");
 }
 
-export function buildJrfuLineupSourcedFacts(lineup: Awaited<ReturnType<typeof fetchJrfuMatchLineup>>) {
+export function buildJrfuLineupSourcedFacts(
+  lineup: Awaited<ReturnType<typeof fetchJrfuMatchLineup>>,
+) {
   if (!lineup) {
     return [];
   }
@@ -410,13 +458,7 @@ export async function fetchSourcedFactsForMatch(options: {
   }));
 
   if (jrfuRows.length > 0) {
-    const { error: jrfuUpsertError } = await db
-      .from("match_sourced_facts")
-      .upsert(jrfuRows, { onConflict: "match_id,fact" });
-
-    if (jrfuUpsertError) {
-      throw jrfuUpsertError;
-    }
+    await replaceSourcedFactsForSourceDomains(db, jrfuRows);
   }
 
   const cachedSearchFacts = cachedFacts.filter(
@@ -523,13 +565,7 @@ export async function fetchSourcedFactsForMatch(options: {
   }));
 
   if (rows.length > 0) {
-    const { error: upsertError } = await db
-      .from("match_sourced_facts")
-      .upsert(rows, { onConflict: "match_id,fact" });
-
-    if (upsertError) {
-      throw upsertError;
-    }
+    await replaceSourcedFactsForSourceDomains(db, rows);
   }
 
   return {

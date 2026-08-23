@@ -16,12 +16,15 @@ import {
   isSourcedFactsEnabledForMatch,
   loadSourcedFactsForMatch,
   parseSourcedFactsResponse,
+  replaceSourcedFactsForSourceDomains,
 } from "@/lib/llm/sourced-facts/fetch";
 import { parseJrfuMatchLineupHtml } from "@/lib/scrapers/jrfu-lineups";
 
 import type { SourcedFactRejection } from "@/lib/llm/sourced-facts/types";
 
 const dbMock = vi.hoisted(() => ({
+  delete: vi.fn(),
+  deleteEq: vi.fn(),
   from: vi.fn(),
   matchSingle: vi.fn(),
   sourcedFactsThen: vi.fn(),
@@ -67,7 +70,16 @@ function createMatchBuilder() {
 }
 
 function createSourcedFactsBuilder(cachedRows: unknown[] = []) {
+  const deleteBuilder = {
+    eq: dbMock.deleteEq,
+    then: (resolve: (value: { error: null }) => unknown) =>
+      Promise.resolve(resolve({ error: null })),
+  };
+  dbMock.delete.mockReturnValue(deleteBuilder);
+  dbMock.deleteEq.mockReturnValue(deleteBuilder);
+
   return {
+    delete: dbMock.delete,
     eq: vi.fn().mockReturnThis(),
     in: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
@@ -679,6 +691,51 @@ describe("fetchSourcedFactsForMatch", () => {
     jrfuMock.fetchJrfuMatchLineup.mockResolvedValue(null);
   });
 
+  it("replaces only refreshed source domains, so revised wording converges without deleting other sources", async () => {
+    const builder = createSourcedFactsBuilder();
+    dbMock.from.mockReturnValue(builder);
+
+    await replaceSourcedFactsForSourceDomains(dbMock as never, [
+      {
+        confidence: "high",
+        content_type: "preview",
+        fact: "Siya Kolisi is unavailable and Pieter-Steph du Toit will captain.",
+        match_id: "match-1",
+        model_version: "test-model",
+        source_domain: "rugby.com.au",
+        source_url: "https://www.rugby.com.au/news/kolisi",
+      },
+    ]);
+
+    expect(dbMock.delete).toHaveBeenCalledOnce();
+    expect(dbMock.deleteEq.mock.calls).toEqual([
+      ["match_id", "match-1"],
+      ["content_type", "preview"],
+      ["source_domain", "rugby.com.au"],
+    ]);
+    expect(dbMock.upsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          fact: "Siya Kolisi is unavailable and Pieter-Steph du Toit will captain.",
+          source_domain: "rugby.com.au",
+        }),
+      ],
+      { onConflict: "match_id,content_type,fact" },
+    );
+    expect(dbMock.deleteEq).not.toHaveBeenCalledWith(
+      "source_domain",
+      "springboks.rugby",
+    );
+  });
+
+  it("does not delete cached facts when a refreshed search has no rows", async () => {
+    await replaceSourcedFactsForSourceDomains(dbMock as never, []);
+
+    expect(dbMock.from).not.toHaveBeenCalled();
+    expect(dbMock.delete).not.toHaveBeenCalled();
+    expect(dbMock.upsert).not.toHaveBeenCalled();
+  });
+
   it("uses cached facts without calling web search inside the freshness window", async () => {
     const cachedRows = [cachedFact()];
     dbMock.from.mockImplementation((table: string) => {
@@ -757,7 +814,7 @@ describe("fetchSourcedFactsForMatch", () => {
       expect.arrayContaining([
         expect.objectContaining({ model_version: "jrfu-lineups@1.0.0" }),
       ]),
-      { onConflict: "match_id,fact" },
+      { onConflict: "match_id,content_type,fact" },
     );
     expect(dbMock.from.mock.calls.map(([table]) => table)).toEqual(
       expect.not.arrayContaining(["players", "match_lineups"]),
@@ -798,17 +855,15 @@ describe("fetchSourcedFactsForMatch", () => {
     );
     expect(jrfuUpserts).toHaveLength(2);
     expect(
-      (jrfuUpserts[0]?.[0] as Array<{ fact: string }>).map(
-        ({ fact }) => fact,
-      ),
+      (jrfuUpserts[0]?.[0] as Array<{ fact: string }>).map(({ fact }) => fact),
     ).toEqual(
-      (jrfuUpserts[1]?.[0] as Array<{ fact: string }>).map(
-        ({ fact }) => fact,
+      (jrfuUpserts[1]?.[0] as Array<{ fact: string }>).map(({ fact }) => fact),
+    );
+    expect(
+      jrfuUpserts.every(
+        ([, options]) => options.onConflict === "match_id,content_type,fact",
       ),
-    );
-    expect(jrfuUpserts.every(([, options]) => options.onConflict === "match_id,fact")).toBe(
-      true,
-    );
+    ).toBe(true);
   });
 
   it("continues the existing web search when JRFU lineup parsing fails", async () => {
@@ -981,7 +1036,7 @@ describe("fetchSourcedFactsForMatch", () => {
           }),
         }),
       ],
-      { onConflict: "match_id,fact" },
+      { onConflict: "match_id,content_type,fact" },
     );
   });
 
@@ -1316,7 +1371,7 @@ describe("fetchSourcedFactsForMatch", () => {
           source_domain: "therugbypaper.co.uk",
         }),
       ],
-      { onConflict: "match_id,fact" },
+      { onConflict: "match_id,content_type,fact" },
     );
     expect(consoleInfo).toHaveBeenCalledWith(
       "Sourced facts rejected by disallowed domain",
@@ -1374,7 +1429,7 @@ describe("fetchSourcedFactsForMatch", () => {
           fact_ja: null,
         }),
       ]),
-      { onConflict: "match_id,fact" },
+      { onConflict: "match_id,content_type,fact" },
     );
   });
 
