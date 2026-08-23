@@ -9,7 +9,34 @@ import type {
   SourcedFactInput,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.9.0";
+export const PROMPT_VERSION = "qa@2.10.0";
+
+/**
+ * Fields which narrative generation uses as factual grounding and which the
+ * QA prompt must receive as well. The companion test scans the generation
+ * prompts, so a newly referenced assembled field must be listed here or in
+ * the explicit exclusions below.
+ */
+export const QA_GROUNDED_ASSEMBLED_FIELDS = [
+  "derived_stats",
+  "japanese_name_glossary",
+  "key_stats",
+  "match",
+  "match_events",
+  "projected_lineups",
+  "recent_form",
+  "sourced_facts",
+  "team_stats",
+] as const satisfies readonly (keyof AssembledContentInput)[];
+
+/** Generation-only fields deliberately outside this QA grounding scope. */
+export const QA_EXCLUDED_GENERATION_FIELDS = [
+  "competition_standings",
+  "h2h_last_5",
+  "injuries",
+  "match_phase",
+  "score_timeline",
+] as const satisfies readonly (keyof AssembledContentInput)[];
 
 export type TeamFormStats = {
   avg_points_against_last_5?: number | null;
@@ -29,6 +56,9 @@ export type QaMatchContext = {
   };
   homeScore: number | null;
   homeTeam: string;
+  japanese_name_glossary?: AssembledContentInput["japanese_name_glossary"];
+  match_events?: AssembledContentInput["match_events"];
+  projected_lineups?: AssembledContentInput["projected_lineups"];
   recent_form?: AssembledContentInput["recent_form"];
   sourcedFacts?: SourcedFactInput[];
   teamStats?: MatchTeamStats;
@@ -204,6 +234,38 @@ export function buildQaContentPrompt(
           "以下は直近5試合の個別結果です。本文がこれらの対戦相手・スコア・ホーム/アウェーに言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
           JSON.stringify(matchContext.recent_form),
         ].join("\n");
+  const projectedLineups = matchContext.projected_lineups;
+  const projectedLineupsBlock =
+    !projectedLineups ||
+    (projectedLineups.home.length === 0 && projectedLineups.away.length === 0)
+      ? ""
+      : [
+          "## projected_lineups grounding",
+          "以下は試合に紐づくラインアップです。本文がこれらの先発・リザーブ・背番号・ポジションに言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+          "選手名の日本語表記は japanese_name_glossary の source と japanese の対応を用いて照合すること。",
+          JSON.stringify(projectedLineups),
+          ...(matchContext.japanese_name_glossary?.length
+            ? [
+                "選手名の日本語表記:",
+                JSON.stringify(matchContext.japanese_name_glossary),
+              ]
+            : []),
+        ].join("\n");
+  const matchEventsBlock =
+    !matchContext.match_events || matchContext.match_events.length === 0
+      ? ""
+      : [
+          "## match_events grounding",
+          "以下は試合に紐づく得点イベントです。本文がこれらの分・種別・得点者・スコア推移に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+          "選手名の日本語表記は japanese_name_glossary の source と japanese の対応を用いて照合すること。",
+          JSON.stringify(matchContext.match_events),
+          ...(matchContext.japanese_name_glossary?.length
+            ? [
+                "選手名の日本語表記:",
+                JSON.stringify(matchContext.japanese_name_glossary),
+              ]
+            : []),
+        ].join("\n");
 
   return [
     `あなたは編集デスクです。以下の${languageLabel}コンテンツを品質評価してください。`,
@@ -243,6 +305,8 @@ export function buildQaContentPrompt(
     matchMetadataBlock,
     formStatsBlock,
     recentFormBlock,
+    projectedLineupsBlock,
+    matchEventsBlock,
     'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[],"statedWinner":"home"|"away"|"unclear","statedPlayerStats":[{"playerName":string,"tries"?:number,"conversions"?:number,"penaltyGoals"?:number,"totalPoints"?:number}]}',
     `本文: ${narrative}`,
   ].join("\n\n");

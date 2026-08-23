@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildQaContentPrompt,
   PROMPT_VERSION,
+  QA_EXCLUDED_GENERATION_FIELDS,
+  QA_GROUNDED_ASSEMBLED_FIELDS,
   type QaMatchContext,
 } from "@/lib/llm/prompts/qa-content";
 
@@ -14,8 +16,29 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.9.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.9.0");
+  it("uses qa prompt version 2.10.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.10.0");
+  });
+
+  it("keeps every generator grounding field in the QA context scope", () => {
+    expect(QA_GROUNDED_ASSEMBLED_FIELDS).toEqual([
+      "derived_stats",
+      "japanese_name_glossary",
+      "key_stats",
+      "match",
+      "match_events",
+      "projected_lineups",
+      "recent_form",
+      "sourced_facts",
+      "team_stats",
+    ]);
+    expect(QA_EXCLUDED_GENERATION_FIELDS).toEqual([
+      "competition_standings",
+      "h2h_last_5",
+      "injuries",
+      "match_phase",
+      "score_timeline",
+    ]);
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -130,7 +153,9 @@ describe("buildQaContentPrompt", () => {
     expect(previewPrompt).toContain(
       "背番号と実名を根拠なく並べただけのラインアップ羅列",
     );
-    expect(englishRecapPrompt).not.toContain("recap sourced_facts 反映度チェック");
+    expect(englishRecapPrompt).not.toContain(
+      "recap sourced_facts 反映度チェック",
+    );
   });
 
   it("does not penalize Japanese previews without sourced facts", () => {
@@ -328,7 +353,9 @@ describe("buildQaContentPrompt", () => {
 
     expect(prompt).toContain("## match_metadata grounding");
     expect(prompt).toContain("入力データに基づく正当な記述");
-    expect(prompt).toContain('"competition_name":"グレイテスト・ライバルリー2026"');
+    expect(prompt).toContain(
+      '"competition_name":"グレイテスト・ライバルリー2026"',
+    );
     expect(prompt).toContain('"venue":"ケープタウン・スタジアム"');
   });
 
@@ -522,6 +549,94 @@ describe("buildQaContentPrompt", () => {
 
     expect(prompt).not.toContain("## recent_form grounding");
     expect(prompt).not.toContain('"home_score":43');
+  });
+
+  it("does not include lineups or events in the legacy context fixture", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", matchContext);
+
+    expect(prompt).not.toContain("## projected_lineups grounding");
+    expect(prompt).not.toContain("## match_events grounding");
+  });
+
+  it("grounds Japanese lineup names, starters, reserves, and jersey numbers", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      japanese_name_glossary: [
+        {
+          japanese: "ファビアン・ホランド",
+          kind: "player",
+          source: "Fabian Holland",
+        },
+      ],
+      projected_lineups: {
+        away: [
+          {
+            is_starter: false,
+            jersey_number: 23,
+            name: "Reserve Player",
+            position: "RE",
+          },
+        ],
+        confirmed: { away: true, home: true },
+        home: [
+          {
+            is_starter: true,
+            jersey_number: 5,
+            name: "Fabian Holland",
+            position: "RL",
+          },
+        ],
+      },
+    });
+
+    expect(prompt).toContain("## projected_lineups grounding");
+    expect(prompt).toContain("先発・リザーブ・背番号・ポジション");
+    expect(prompt).toContain('"jersey_number":5');
+    expect(prompt).toContain('"is_starter":false');
+    expect(prompt).toContain("ファビアン・ホランド");
+  });
+
+  it("grounds match-event minutes, types, scorers, and score progression", () => {
+    const prompt = buildQaContentPrompt(
+      "recap",
+      "47分にホランドがトライ",
+      "ja",
+      {
+        ...matchContext,
+        japanese_name_glossary: [
+          {
+            japanese: "ファビアン・ホランド",
+            kind: "player",
+            source: "Fabian Holland",
+          },
+        ],
+        match_events: [
+          {
+            minute: 47,
+            player_name: "Fabian Holland",
+            team_name: "New Zealand",
+            type: "try",
+          },
+        ],
+      },
+    );
+
+    expect(prompt).toContain("## match_events grounding");
+    expect(prompt).toContain("分・種別・得点者・スコア推移");
+    expect(prompt).toContain('"minute":47');
+    expect(prompt).toContain('"type":"try"');
+    expect(prompt).toContain("ファビアン・ホランド");
+  });
+
+  it("omits lineup and event grounding blocks when both inputs are empty", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      match_events: [],
+      projected_lineups: { away: [], home: [] },
+    });
+
+    expect(prompt).not.toContain("## projected_lineups grounding");
+    expect(prompt).not.toContain("## match_events grounding");
   });
 
   it("omits turning point section checks when events are absent", () => {

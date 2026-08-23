@@ -446,6 +446,9 @@ describe("generateMatchContent length revision", () => {
               win_rate_last_5: 0.4,
             },
           },
+          japanese_name_glossary: assembledWithForm.japanese_name_glossary,
+          match_events: assembledWithForm.match_events,
+          projected_lineups: assembledWithForm.projected_lineups,
           recent_form: assembledWithForm.recent_form,
           venue: assembledWithForm.match.venue,
         }),
@@ -455,6 +458,14 @@ describe("generateMatchContent length revision", () => {
       qaMock.evaluateNarrativeQuality.mock.calls[0]?.[0].matchContext
         .recent_form,
     ).toBe(assembledWithForm.recent_form);
+    expect(
+      qaMock.evaluateNarrativeQuality.mock.calls[0]?.[0].matchContext
+        .projected_lineups,
+    ).toBe(assembledWithForm.projected_lineups);
+    expect(
+      qaMock.evaluateNarrativeQuality.mock.calls[0]?.[0].matchContext
+        .match_events,
+    ).toBe(assembledWithForm.match_events);
   });
 
   it("blocks publishing when entity verification finds ungrounded names", async () => {
