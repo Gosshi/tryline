@@ -36,9 +36,25 @@ export type GeneratedPlayerNameJa = {
   player_id: string;
 };
 
+export type SkippedPlayerNameJa = {
+  name_ja?: string;
+  player_id: string;
+  reason: "name_contains_japanese" | "non_katakana_output";
+};
+
+export type ParsedGeneratedPlayerNames = {
+  names: GeneratedPlayerNameJa[];
+  skipped: SkippedPlayerNameJa[];
+};
+
+type SkipReason = SkippedPlayerNameJa["reason"];
+
+export type PlayerNameJaSkipSummary = Record<SkipReason, number>;
+
 type NameGeneratorResponse = {
   model: string;
   names: GeneratedPlayerNameJa[];
+  skipped?: SkippedPlayerNameJa[];
   usage: { inputTokens: number; outputTokens: number };
 };
 
@@ -81,7 +97,7 @@ export function buildPlayerNameJaPrompt(
 export function parseGeneratedPlayerNames(
   text: string,
   candidates: PlayerNameJaCandidate[],
-): GeneratedPlayerNameJa[] {
+): ParsedGeneratedPlayerNames {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
@@ -100,41 +116,83 @@ export function parseGeneratedPlayerNames(
   }
 
   const candidateIds = new Set(candidates.map((candidate) => candidate.id));
-  const generated = names.flatMap((item) => {
+  const returned = new Map<string, string>();
+  for (const item of names) {
     if (!item || typeof item !== "object") {
-      return [];
+      continue;
     }
     const playerId = (item as { player_id?: unknown }).player_id;
     const nameJa = (item as { name_ja?: unknown }).name_ja;
     if (
       typeof playerId !== "string" ||
-      typeof nameJa !== "string" ||
       !candidateIds.has(playerId) ||
+      typeof nameJa !== "string" ||
       nameJa.trim().length === 0
     ) {
-      return [];
+      continue;
     }
-    return [{ name_ja: nameJa.trim(), player_id: playerId }];
-  });
+    if (returned.has(playerId)) {
+      throw new Error("Player name generator returned duplicate player IDs");
+    }
+    returned.set(playerId, nameJa.trim());
+  }
 
-  if (generated.length !== candidates.length) {
+  if (returned.size !== candidates.length) {
     throw new Error(
       "Player name generator did not return every requested player",
     );
   }
-  if (
-    new Set(generated.map((item) => item.player_id)).size !== generated.length
-  ) {
-    throw new Error("Player name generator returned duplicate player IDs");
+  const namesToApply: GeneratedPlayerNameJa[] = [];
+  const skipped: SkippedPlayerNameJa[] = [];
+  for (const candidate of candidates) {
+    const nameJa = returned.get(candidate.id);
+    if (!nameJa) {
+      throw new Error(
+        "Player name generator did not return every requested player",
+      );
+    }
+    if (!isKatakanaOnly(nameJa)) {
+      skipped.push({
+        name_ja: nameJa,
+        player_id: candidate.id,
+        reason: "non_katakana_output",
+      });
+      continue;
+    }
+    namesToApply.push({ name_ja: nameJa, player_id: candidate.id });
   }
 
-  return generated;
+  return { names: namesToApply, skipped };
+}
+
+function containsJapaneseCharacters(value: string) {
+  return /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(value);
+}
+
+function isKatakanaOnly(value: string) {
+  return /^[\p{Script=Katakana}ー・\s]+$/u.test(value);
+}
+
+function summarizeSkipped(
+  skipped: SkippedPlayerNameJa[],
+): PlayerNameJaSkipSummary {
+  return {
+    name_contains_japanese: skipped.filter(
+      (item) => item.reason === "name_contains_japanese",
+    ).length,
+    non_katakana_output: skipped.filter(
+      (item) => item.reason === "non_katakana_output",
+    ).length,
+  };
 }
 
 async function loadCandidates(
   db: SupabaseClient<Database>,
   limit: number,
-): Promise<PlayerNameJaCandidate[]> {
+): Promise<{
+  candidates: PlayerNameJaCandidate[];
+  skipped: SkippedPlayerNameJa[];
+}> {
   const { data, error } = await db
     .from("players")
     .select("id, name, name_ja, team:teams!players_team_id_fkey(country)")
@@ -146,12 +204,23 @@ async function loadCandidates(
     throw error;
   }
 
-  return (data ?? []).map((player) => ({
+  const players = (data ?? []).map((player) => ({
     country: player.team?.country ?? null,
     id: player.id,
     name: player.name,
     name_ja: player.name_ja,
   }));
+
+  return {
+    candidates: players.filter(
+      (player) => !containsJapaneseCharacters(player.name),
+    ),
+    skipped: players.flatMap((player) =>
+      containsJapaneseCharacters(player.name)
+        ? [{ player_id: player.id, reason: "name_contains_japanese" as const }]
+        : [],
+    ),
+  };
 }
 
 async function applyNames(
@@ -197,12 +266,14 @@ export async function runPlayerNameJaBackfill(
       });
       return {
         model: response.model,
-        names: parseGeneratedPlayerNames(response.text, players),
+        ...parseGeneratedPlayerNames(response.text, players),
         usage: response.usage,
       };
     });
-  const candidates = await loadCandidates(db, options.limit);
+  const loaded = await loadCandidates(db, options.limit);
+  const candidates = loaded.candidates;
   const generated = [] as GeneratedPlayerNameJa[];
+  const skipped = [...loaded.skipped] as SkippedPlayerNameJa[];
   let inputTokens = 0;
   let outputTokens = 0;
   let model: string | null = null;
@@ -210,6 +281,7 @@ export async function runPlayerNameJaBackfill(
   for (const batch of chunk(candidates, BATCH_SIZE)) {
     const response = await generate(batch);
     generated.push(...response.names);
+    skipped.push(...(response.skipped ?? []));
     inputTokens += response.usage.inputTokens;
     outputTokens += response.usage.outputTokens;
     model = response.model;
@@ -224,6 +296,8 @@ export async function runPlayerNameJaBackfill(
     candidates,
     generated,
     model,
+    skipped,
+    skipSummary: summarizeSkipped(skipped),
     usage: { inputTokens, outputTokens },
   };
 }
