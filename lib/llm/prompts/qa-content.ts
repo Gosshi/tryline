@@ -9,7 +9,7 @@ import type {
   SourcedFactInput,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.9.0";
+export const PROMPT_VERSION = "qa@2.10.0";
 
 export type TeamFormStats = {
   avg_points_against_last_5?: number | null;
@@ -29,11 +29,157 @@ export type QaMatchContext = {
   };
   homeScore: number | null;
   homeTeam: string;
+  japanese_name_glossary?: AssembledContentInput["japanese_name_glossary"];
+  match_events?: AssembledContentInput["match_events"];
+  projected_lineups?: AssembledContentInput["projected_lineups"];
   recent_form?: AssembledContentInput["recent_form"];
+  score_timeline?: AssembledContentInput["score_timeline"];
   sourcedFacts?: SourcedFactInput[];
   teamStats?: MatchTeamStats;
   venue?: string | null;
 };
+
+const QA_GENERATION_FIELD_DISPOSITIONS = {
+  competition_standings: "out_of_scope",
+  derived_stats: "grounded",
+  h2h_last_5: "out_of_scope",
+  injuries: "not_used_for_factual_grounding",
+  japanese_name_glossary: "grounded",
+  key_stats: "grounded",
+  match: "grounded",
+  match_events: "grounded",
+  match_phase: "not_used_for_factual_grounding",
+  projected_lineups: "grounded",
+  recent_form: "grounded",
+  score_timeline: "grounded",
+  sourced_facts: "grounded",
+  team_stats: "grounded",
+} as const satisfies Record<
+  keyof AssembledContentInput,
+  "grounded" | "not_used_for_factual_grounding" | "out_of_scope"
+>;
+
+type QaGroundedAssembledField = NonNullable<
+  {
+    [Field in keyof AssembledContentInput]: (typeof QA_GENERATION_FIELD_DISPOSITIONS)[Field] extends "grounded"
+      ? Field
+      : never;
+  }[keyof AssembledContentInput]
+>;
+
+export const QA_GROUNDING_CONTEXT_FIELDS = {
+  derived_stats: ["derivedStats"],
+  japanese_name_glossary: ["japanese_name_glossary"],
+  key_stats: ["formStats"],
+  match: [
+    "awayScore",
+    "awayTeam",
+    "competitionName",
+    "homeScore",
+    "homeTeam",
+    "venue",
+  ],
+  match_events: ["match_events"],
+  projected_lineups: ["projected_lineups"],
+  recent_form: ["recent_form"],
+  score_timeline: ["score_timeline"],
+  sourced_facts: ["sourcedFacts"],
+  team_stats: ["teamStats"],
+} as const satisfies Record<
+  QaGroundedAssembledField,
+  readonly (keyof QaMatchContext)[]
+>;
+
+export function getQaGroundingCoverageGaps() {
+  return (Object.entries(QA_GENERATION_FIELD_DISPOSITIONS) as Array<
+    [keyof AssembledContentInput, (typeof QA_GENERATION_FIELD_DISPOSITIONS)[keyof AssembledContentInput]]
+  >)
+    .filter(([, disposition]) => disposition === "grounded")
+    .map(([field]) => field)
+    .filter(
+      (field): field is QaGroundedAssembledField =>
+        !(field in QA_GROUNDING_CONTEXT_FIELDS),
+    );
+}
+
+function resolvePlayerNameForQa(
+  name: string,
+  language: ContentLanguage,
+  glossary: QaMatchContext["japanese_name_glossary"],
+) {
+  if (language !== "ja") {
+    return name;
+  }
+
+  return (
+    glossary?.find(
+      (entry) => entry.kind === "player" && entry.source === name,
+    )?.japanese ?? name
+  );
+}
+
+function localizeLineupsForQa(
+  lineups: QaMatchContext["projected_lineups"],
+  language: ContentLanguage,
+  glossary: QaMatchContext["japanese_name_glossary"],
+) {
+  if (!lineups) {
+    return null;
+  }
+
+  return {
+    ...lineups,
+    away: lineups.away.map((entry) => ({
+      ...entry,
+      name: resolvePlayerNameForQa(entry.name, language, glossary),
+    })),
+    home: lineups.home.map((entry) => ({
+      ...entry,
+      name: resolvePlayerNameForQa(entry.name, language, glossary),
+    })),
+  };
+}
+
+function localizeEventsForQa(
+  events: QaMatchContext["match_events"],
+  language: ContentLanguage,
+  glossary: QaMatchContext["japanese_name_glossary"],
+) {
+  return events?.map((event) => ({
+    ...event,
+    player_name: resolvePlayerNameForQa(event.player_name, language, glossary),
+  }));
+}
+
+function localizeScoreTimelineForQa(
+  scoreTimeline: QaMatchContext["score_timeline"],
+  language: ContentLanguage,
+  glossary: QaMatchContext["japanese_name_glossary"],
+) {
+  if (!scoreTimeline) {
+    return null;
+  }
+
+  return {
+    ...scoreTimeline,
+    score_progression: scoreTimeline.score_progression.map((entry) => ({
+      ...entry,
+      player: entry.player
+        ? resolvePlayerNameForQa(entry.player, language, glossary)
+        : null,
+    })),
+    winning_score: scoreTimeline.winning_score
+      ? {
+          ...scoreTimeline.winning_score,
+          player: resolvePlayerNameForQa(
+            scoreTimeline.winning_score.player,
+            language,
+            glossary,
+          ),
+        }
+      : null,
+  };
+}
 
 export function buildQaContentPrompt(
   contentType: ContentType,
@@ -204,6 +350,41 @@ export function buildQaContentPrompt(
           "以下は直近5試合の個別結果です。本文がこれらの対戦相手・スコア・ホーム/アウェーに言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
           JSON.stringify(matchContext.recent_form),
         ].join("\n");
+  const localizedLineups = localizeLineupsForQa(
+    matchContext.projected_lineups,
+    language,
+    matchContext.japanese_name_glossary,
+  );
+  const lineupsBlock =
+    !localizedLineups ||
+    (localizedLineups.home.length === 0 && localizedLineups.away.length === 0)
+      ? ""
+      : [
+          "## projected_lineups grounding",
+          "以下は試合に登録された先発・リザーブの実データです。本文がこれらの選手名・背番号・先発/リザーブ区分に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+          JSON.stringify(localizedLineups),
+        ].join("\n");
+  const localizedEvents = localizeEventsForQa(
+    matchContext.match_events,
+    language,
+    matchContext.japanese_name_glossary,
+  );
+  const localizedScoreTimeline = localizeScoreTimelineForQa(
+    matchContext.score_timeline,
+    language,
+    matchContext.japanese_name_glossary,
+  );
+  const eventsBlock =
+    !localizedEvents || localizedEvents.length === 0
+      ? ""
+      : [
+          "## match_events grounding",
+          "以下は得点イベントの実データです。本文がこれらの分・種別・得点者・チーム、またはスコア推移に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+          JSON.stringify({
+            events: localizedEvents,
+            score_timeline: localizedScoreTimeline,
+          }),
+        ].join("\n");
 
   return [
     `あなたは編集デスクです。以下の${languageLabel}コンテンツを品質評価してください。`,
@@ -243,6 +424,8 @@ export function buildQaContentPrompt(
     matchMetadataBlock,
     formStatsBlock,
     recentFormBlock,
+    lineupsBlock,
+    eventsBlock,
     'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[],"statedWinner":"home"|"away"|"unclear","statedPlayerStats":[{"playerName":string,"tries"?:number,"conversions"?:number,"penaltyGoals"?:number,"totalPoints"?:number}]}',
     `本文: ${narrative}`,
   ].join("\n\n");

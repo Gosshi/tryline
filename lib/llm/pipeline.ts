@@ -16,7 +16,10 @@ import {
   getContentLengthRequirement,
   measureContentLength,
 } from "@/lib/llm/content-length";
-import { hasConfirmedProjectedLineups } from "@/lib/llm/lineups";
+import {
+  hasConfirmedProjectedLineups,
+  sanitizeUnconfirmedProjectedLineups,
+} from "@/lib/llm/lineups";
 import {
   notifyContentQualityRegression,
   notifyContentRejected,
@@ -244,6 +247,7 @@ export async function generateMatchContent(
   const hasSourcedFactLineup = hasConfirmedSourcedFactLineup(
     assembled.sourced_facts,
   );
+  const qaAssembled = sanitizeUnconfirmedProjectedLineups(assembled);
   const allowedEntities = buildAllowedPersonEntities(assembled);
   const knownNonPersonNames = buildKnownNonPersonNames(assembled);
   let totalCostUsd = 0;
@@ -335,7 +339,11 @@ export async function generateMatchContent(
           },
           homeScore: assembled.match.home_score,
           homeTeam: assembled.match.home_team?.name ?? "Home",
+          japanese_name_glossary: qaAssembled.japanese_name_glossary,
+          match_events: qaAssembled.match_events,
+          projected_lineups: qaAssembled.projected_lineups,
           recent_form: assembled.recent_form,
+          score_timeline: qaAssembled.score_timeline,
           sourcedFacts: assembled.sourced_facts,
           teamStats: assembled.team_stats,
           venue: assembled.match.venue,

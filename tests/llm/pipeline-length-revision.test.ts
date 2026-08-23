@@ -373,6 +373,33 @@ describe("generateMatchContent length revision", () => {
         },
         venue: "ケープタウン・スタジアム",
       },
+      japanese_name_glossary: [
+        {
+          japanese: "ファビアン・ホランド",
+          kind: "player",
+          source: "Fabian Holland",
+        },
+      ],
+      match_events: [
+        {
+          minute: 47,
+          player_name: "Fabian Holland",
+          team_name: "New Zealand",
+          type: "try",
+        },
+      ],
+      projected_lineups: {
+        away: [],
+        confirmed: { away: true, home: true },
+        home: [
+          {
+            is_starter: true,
+            jersey_number: 5,
+            name: "Fabian Holland",
+            position: "RL",
+          },
+        ],
+      },
       recent_form: {
         away: [
           {
@@ -415,6 +442,24 @@ describe("generateMatchContent length revision", () => {
           },
         ],
       },
+      score_timeline: {
+        final_away: 33,
+        final_home: 16,
+        ht_away: 12,
+        ht_home: 10,
+        lead_changes: [],
+        score_progression: [
+          {
+            away: 15,
+            home: 16,
+            minute: 47,
+            player: "Fabian Holland",
+            team: "away",
+            type: "try",
+          },
+        ],
+        winning_score: null,
+      },
     };
     assembleMock.assembleMatchContentInput.mockResolvedValue(assembledWithForm);
     qaMock.evaluateNarrativeQuality.mockResolvedValueOnce({
@@ -446,7 +491,11 @@ describe("generateMatchContent length revision", () => {
               win_rate_last_5: 0.4,
             },
           },
+          japanese_name_glossary: assembledWithForm.japanese_name_glossary,
+          match_events: assembledWithForm.match_events,
+          projected_lineups: assembledWithForm.projected_lineups,
           recent_form: assembledWithForm.recent_form,
+          score_timeline: assembledWithForm.score_timeline,
           venue: assembledWithForm.match.venue,
         }),
       }),
@@ -455,6 +504,18 @@ describe("generateMatchContent length revision", () => {
       qaMock.evaluateNarrativeQuality.mock.calls[0]?.[0].matchContext
         .recent_form,
     ).toBe(assembledWithForm.recent_form);
+    expect(
+      qaMock.evaluateNarrativeQuality.mock.calls[0]?.[0].matchContext
+        .projected_lineups?.home,
+    ).toBe(assembledWithForm.projected_lineups.home);
+    expect(
+      qaMock.evaluateNarrativeQuality.mock.calls[0]?.[0].matchContext
+        .match_events,
+    ).toBe(assembledWithForm.match_events);
+    expect(
+      qaMock.evaluateNarrativeQuality.mock.calls[0]?.[0].matchContext
+        .score_timeline,
+    ).toBe(assembledWithForm.score_timeline);
   });
 
   it("blocks publishing when entity verification finds ungrounded names", async () => {
