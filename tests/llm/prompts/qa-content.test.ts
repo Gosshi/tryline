@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildQaContentPrompt,
+  getQaGroundingCoverageGaps,
   PROMPT_VERSION,
   type QaMatchContext,
 } from "@/lib/llm/prompts/qa-content";
@@ -14,8 +15,8 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.9.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.9.0");
+  it("uses qa prompt version 2.10.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.10.0");
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -522,6 +523,117 @@ describe("buildQaContentPrompt", () => {
 
     expect(prompt).not.toContain("## recent_form grounding");
     expect(prompt).not.toContain('"home_score":43');
+  });
+
+  it("keeps legacy contexts without lineup or event grounding blocks", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", matchContext);
+
+    expect(prompt).not.toContain("## projected_lineups grounding");
+    expect(prompt).not.toContain("## match_events grounding");
+  });
+
+  it("adds Japanese lineups and scoring events as grounding", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      japanese_name_glossary: [
+        {
+          japanese: "ファビアン・ホランド",
+          kind: "player",
+          source: "Fabian Holland",
+        },
+        {
+          japanese: "ルーベン・ラブ",
+          kind: "player",
+          source: "Ruben Love",
+        },
+      ],
+      match_events: [
+        {
+          minute: 47,
+          player_name: "Fabian Holland",
+          team_name: "ニュージーランド",
+          type: "try",
+        },
+      ],
+      projected_lineups: {
+        away: [
+          {
+            is_starter: true,
+            jersey_number: 10,
+            name: "Ruben Love",
+            position: "FH",
+          },
+        ],
+        home: [
+          {
+            is_starter: true,
+            jersey_number: 5,
+            name: "Fabian Holland",
+            position: "RL",
+          },
+          {
+            is_starter: false,
+            jersey_number: 23,
+            name: "Reserve Player",
+            position: "Utility",
+          },
+        ],
+      },
+      score_timeline: {
+        final_away: 33,
+        final_home: 16,
+        ht_away: 12,
+        ht_home: 10,
+        lead_changes: [
+          { away: 17, home: 16, minute: 58, new_leader: "away" },
+        ],
+        score_progression: [
+          {
+            away: 15,
+            home: 16,
+            minute: 47,
+            player: "Fabian Holland",
+            team: "away",
+            type: "try",
+          },
+        ],
+        winning_score: {
+          minute: 58,
+          player: "Ruben Love",
+          team: "away",
+          type: "try",
+        },
+      },
+    });
+
+    expect(prompt).toContain("## projected_lineups grounding");
+    expect(prompt).toContain("先発・リザーブの実データ");
+    expect(prompt).toContain('"name":"ファビアン・ホランド"');
+    expect(prompt).toContain('"jersey_number":5');
+    expect(prompt).toContain('"is_starter":false');
+    expect(prompt).toContain("## match_events grounding");
+    expect(prompt).toContain("分・種別・得点者・チーム、またはスコア推移");
+    expect(prompt).toContain('"minute":47');
+    expect(prompt).toContain('"type":"try"');
+    expect(prompt).toContain('"player_name":"ファビアン・ホランド"');
+    expect(prompt).toContain('"score_timeline"');
+    expect(prompt).toContain('"winning_score"');
+  });
+
+  it("omits lineup and event grounding when their values are empty", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      match_events: [],
+      projected_lineups: { away: [], home: [] },
+      score_timeline: null,
+    });
+
+    expect(prompt).not.toContain("## projected_lineups grounding");
+    expect(prompt).not.toContain("## match_events grounding");
+  });
+
+  it("has no ungrounded generation fields in the QA context coverage", () => {
+    expect(getQaGroundingCoverageGaps()).toEqual([]);
   });
 
   it("omits turning point section checks when events are absent", () => {
