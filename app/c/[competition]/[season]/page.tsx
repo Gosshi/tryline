@@ -35,6 +35,7 @@ import {
   formatCompetitionTitle,
   formatFamilyName,
   getCompetitionFamilyColor,
+  formatPoolName,
 } from "@/lib/format/competition";
 import {
   formatKickoffJstDate,
@@ -459,6 +460,7 @@ export default async function SeasonPage({ params }: Props) {
   const dateRange = formatDateRange(comp.startDate, comp.endDate);
   const family = comp.family;
   const accentColor = getCompetitionFamilyColor(family);
+  const heroScrimColor = `color-mix(in srgb, ${accentColor} 42%, #06090f)`;
   const pageUrl = `${SITE_URL}/c/${competition}/${season}`;
   const competitionCalendarFeedUrl = `${SITE_URL}/api/calendar/${comp.slug}.ics`;
   const competitionTitle = formatCompetitionTitle(comp, comp.season);
@@ -500,7 +502,7 @@ export default async function SeasonPage({ params }: Props) {
       ? poolStandings
           .map((pool) =>
             pool.standings[0]
-              ? `${pool.poolName}: ${pool.standings[0].teamName}`
+              ? `${formatPoolName(pool.poolName)}: ${pool.standings[0].teamName}`
               : null,
           )
           .filter((label): label is string => label !== null)
@@ -643,7 +645,7 @@ export default async function SeasonPage({ params }: Props) {
               aria-hidden
               className="absolute inset-0"
               style={{
-                background: `linear-gradient(100deg, ${accentColor}eb 0%, ${accentColor}c7 42%, ${accentColor}6b 100%)`,
+                background: `linear-gradient(100deg, color-mix(in srgb, ${heroScrimColor} 92%, transparent) 0%, color-mix(in srgb, ${heroScrimColor} 74%, transparent) 45%, color-mix(in srgb, ${heroScrimColor} 30%, transparent) 100%)`,
               }}
             />
             <div className="relative z-10 flex min-h-64 flex-col justify-end px-5 py-6 sm:min-h-72 sm:px-8 sm:py-8">
@@ -847,7 +849,10 @@ export default async function SeasonPage({ params }: Props) {
             {poolStandings.length > 0
               ? poolStandings.map((pool) => (
                   <div key={pool.poolName}>
-                    {renderStandingsBlock(pool.standings, pool.poolName)}
+                    {renderStandingsBlock(
+                      pool.standings,
+                      formatPoolName(pool.poolName),
+                    )}
                   </div>
                 ))
               : renderStandingsBlock(standings)}

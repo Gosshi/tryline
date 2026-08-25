@@ -86,6 +86,23 @@ export function formatFamilyName(family: string): string {
   );
 }
 
+const POOL_DISPLAY_NAMES: Record<string, string> = {
+  "Northern Hemisphere": "北半球",
+  "Southern Hemisphere": "南半球",
+};
+
+export function formatPoolName(poolName: string): string {
+  const displayName = POOL_DISPLAY_NAMES[poolName];
+
+  if (displayName) {
+    return displayName;
+  }
+
+  const poolMatch = /^Pool ([A-Z])$/.exec(poolName);
+
+  return poolMatch ? `プール${poolMatch[1]}` : poolName;
+}
+
 export function getCompetitionFamilyColor(family: string): string {
   return COMPETITION_FAMILY_COLORS[family] ?? "#1e293b";
 }
