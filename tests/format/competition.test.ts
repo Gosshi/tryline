@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatCompetitionTitle,
   formatFamilyName,
+  formatPoolName,
   getCompetitionDisplayName,
   getCompetitionFamilyColor,
 } from "@/lib/format/competition";
@@ -31,6 +32,14 @@ describe("formatFamilyName", () => {
     expect(formatFamilyName("lipovitan-challenge-cup")).toBe(
       "リポビタンDチャレンジカップ",
     );
+  });
+
+  it("formats known pool names and preserves unknown names", () => {
+    expect(formatPoolName("Northern Hemisphere")).toBe("北半球");
+    expect(formatPoolName("Southern Hemisphere")).toBe("南半球");
+    expect(formatPoolName("Pool A")).toBe("プールA");
+    expect(formatPoolName("Pool G")).toBe("プールG");
+    expect(formatPoolName("Conference X")).toBe("Conference X");
   });
 
   it("formats League One competition titles in Japanese without changing slugs", () => {

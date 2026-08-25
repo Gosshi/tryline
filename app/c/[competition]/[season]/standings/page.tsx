@@ -14,6 +14,7 @@ import {
   formatCompetitionTitle,
   formatFamilyName,
   getCompetitionFamilyColor,
+  formatPoolName,
 } from "@/lib/format/competition";
 import { SITE_URL } from "@/lib/site";
 
@@ -185,7 +186,7 @@ export default async function CompetitionStandingsPage({ params }: Props) {
                 accentColor={accentColor}
                 key={pool.poolName}
                 standings={pool.standings}
-                title={`${pool.poolName} 順位表`}
+                title={`${formatPoolName(pool.poolName)} 順位表`}
               />
             ))
           ) : (

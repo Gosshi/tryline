@@ -111,6 +111,18 @@ describe("competition standings page", () => {
     ).toHaveAttribute("href", "/calendar");
   });
 
+  it("formats pool names in standings table bands", async () => {
+    standingsMocks.getPoolStandingsForCompetition.mockResolvedValue([
+      { poolName: "Northern Hemisphere", standings: [standing] },
+    ]);
+
+    render(await CompetitionStandingsPage({ params }));
+
+    expect(
+      screen.getByRole("heading", { name: "北半球 順位表" }),
+    ).toBeInTheDocument();
+  });
+
   it("returns 404 instead of rendering a thin page without standings", async () => {
     standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
 

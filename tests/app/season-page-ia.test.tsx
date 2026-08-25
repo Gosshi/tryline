@@ -280,7 +280,7 @@ describe("season page information architecture", () => {
   });
 
   it("uses the family visual and derives the hero progress without another query", async () => {
-    render(
+    const { container } = render(
       await SeasonPage({
         params: Promise.resolve({
           competition: "premiership",
@@ -295,6 +295,15 @@ describe("season page information architecture", () => {
     );
     expect(screen.getByText("進行")).toBeInTheDocument();
     expect(screen.getByText("0節 / 全1節")).toBeInTheDocument();
+    const scrimStyle = container
+      .querySelector("header > div > .absolute.inset-0")
+      ?.getAttribute("style");
+
+    expect(scrimStyle).toContain("color-mix(in srgb");
+    expect(scrimStyle).toContain("42%");
+    expect(scrimStyle).toContain("92%");
+    expect(scrimStyle).toContain("74%");
+    expect(scrimStyle).toContain("30%");
     expect(matchesMocks.listMatchesForCompetition).toHaveBeenCalledTimes(1);
   });
 
@@ -439,12 +448,11 @@ describe("season page information architecture", () => {
       }),
     );
 
+    expect(screen.getByRole("heading", { name: "北半球" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "南半球" })).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Northern Hemisphere" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Southern Hemisphere" }),
-    ).toBeInTheDocument();
+      screen.getAllByText("北半球: Bath / 南半球: New Zealand"),
+    ).toHaveLength(2);
   });
 
   it("renders the four Lipovitan Challenge Cup fixtures without standings", async () => {
