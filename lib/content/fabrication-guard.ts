@@ -11,6 +11,8 @@ export const CONTRADICTED_ZERO_STAT_CLAIM_ISSUE =
   "ゼロという断定が実際のteam_statsの数値と矛盾";
 export const ROSTER_ENUMERATION_ISSUE =
   "ラインアップの羅列が本文の大半を占めています";
+export const INVALID_MATCH_DURATION_ISSUE =
+  "ラグビーユニオンの試合時間を90分と記述しています";
 
 type ZeroClaimStatField =
   | "errors"
@@ -40,6 +42,7 @@ const PERSON_LIKE_NAME_PATTERN =
 const NUMBERED_PLAYER_NAME_PATTERN =
   /\d{1,2}番\s*[一-龥々ァ-ヶーA-Za-z][一-龥々ァ-ヶーA-Za-z・＝='’ -]{1,40}/g;
 const ROSTER_ENUMERATION_MIN_RATIO = 0.2;
+const INVALID_MATCH_DURATION_PATTERN = /90分(?:間)?/;
 
 const ZERO_CLAIM_STAT_FIELDS: Record<string, ZeroClaimStatField> = {
   エラー: "errors",
@@ -123,6 +126,10 @@ export function containsUnsupportedStatistic(
     (signal) =>
       !supportedFacts.some((fact) => factSupportsSignal(fact, signal)),
   );
+}
+
+export function containsInvalidMatchDuration(text: string): boolean {
+  return INVALID_MATCH_DURATION_PATTERN.test(text);
 }
 
 export function containsContradictedZeroStatClaim(

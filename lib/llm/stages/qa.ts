@@ -1,9 +1,11 @@
 import {
+  containsInvalidMatchDuration,
   containsRosterEnumeration,
   containsContradictedZeroStatClaim,
   containsUngroundedPlayerReference,
   containsUnsupportedStatistic,
   CONTRADICTED_ZERO_STAT_CLAIM_ISSUE,
+  INVALID_MATCH_DURATION_ISSUE,
   UNGROUNDED_ENTITY_ISSUE,
   UNGROUNDED_PLAYER_REFERENCE_ISSUE,
   UNSUPPORTED_STATISTIC_ISSUE,
@@ -71,6 +73,7 @@ type StatedPlayerStatClaim = {
 const DETERMINISTIC_QA_GUARD_ISSUES = new Set([
   CONTENT_LENGTH_ISSUE,
   CONTRADICTED_ZERO_STAT_CLAIM_ISSUE,
+  INVALID_MATCH_DURATION_ISSUE,
   PLAYER_STAT_MISMATCH_ISSUE,
   ROSTER_ENUMERATION_ISSUE,
   UNGROUNDED_ENTITY_ISSUE,
@@ -115,6 +118,7 @@ export function isFactualGroundingHardBlock(result: QaResult): boolean {
     result.scores.factual_grounding <= 2 ||
     result.issues.includes(UNGROUNDED_ENTITY_ISSUE) ||
     result.issues.includes(UNGROUNDED_PLAYER_REFERENCE_ISSUE) ||
+    result.issues.includes(INVALID_MATCH_DURATION_ISSUE) ||
     result.issues.includes(UNSUPPORTED_STATISTIC_ISSUE) ||
     result.issues.includes(CONTRADICTED_ZERO_STAT_CLAIM_ISSUE) ||
     result.issues.includes(PLAYER_STAT_MISMATCH_ISSUE) ||
@@ -456,6 +460,17 @@ function applyDeterministicQaGuards(
     guarded = {
       ...guarded,
       issues: appendIssue(guarded.issues, UNGROUNDED_ENTITY_ISSUE),
+      scores: {
+        ...guarded.scores,
+        factual_grounding: 1,
+      },
+    };
+  }
+
+  if (containsInvalidMatchDuration(options.narrative)) {
+    guarded = {
+      ...guarded,
+      issues: appendIssue(guarded.issues, INVALID_MATCH_DURATION_ISSUE),
       scores: {
         ...guarded.scores,
         factual_grounding: 1,

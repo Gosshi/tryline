@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  containsInvalidMatchDuration,
   containsRosterEnumeration,
   containsContradictedZeroStatClaim,
   containsUngroundedPlayerReference,
@@ -229,6 +230,31 @@ describe("containsUnsupportedStatistic", () => {
     expect(
       containsUnsupportedStatistic("アイルランドはペナルティゴールを決めた"),
     ).toBe(false);
+  });
+});
+
+describe("containsInvalidMatchDuration", () => {
+  it("detects the published-style 90-minute preview sentence", () => {
+    expect(
+      containsInvalidMatchDuration(
+        "互いの先発構成にどこまで圧力をかけられるかを測る90分となる",
+      ),
+    ).toBe(true);
+  });
+
+  it("detects the published 90分間 variant", () => {
+    expect(containsInvalidMatchDuration("判断力が光った90分間だった。")).toBe(
+      true,
+    );
+  });
+
+  it("does not detect correct or duration-free copy", () => {
+    expect(
+      containsInvalidMatchDuration("ラグビーユニオンの試合は80分で行われる。"),
+    ).toBe(false);
+    expect(containsInvalidMatchDuration("終盤の接点で主導権を奪った。")).toBe(
+      false,
+    );
   });
 });
 

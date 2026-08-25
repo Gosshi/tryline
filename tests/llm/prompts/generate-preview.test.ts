@@ -4,6 +4,7 @@ import {
   buildGeneratePreviewPrompt,
   PROMPT_VERSION,
 } from "@/lib/llm/prompts/generate-preview";
+import { MATCH_DURATION_INSTRUCTION } from "@/lib/llm/prompts/shared-prompt-blocks";
 
 import type { AssembledContentInput } from "@/lib/llm/types";
 
@@ -78,6 +79,7 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(prompt).toContain("「鍵となります」");
     expect(prompt).toContain("試合データの kickoff_at_jst を必ず使うこと");
     expect(prompt).toContain("kickoff_at は UTC");
+    expect(prompt).toContain(MATCH_DURATION_INSTRUCTION);
   });
 
   it("selects the form core pattern when recent streak data exists", () => {
@@ -139,7 +141,9 @@ describe("buildGeneratePreviewPrompt", () => {
     );
     const coreQuestionBlock = prompt.split("\n\n【絶対禁止表現")[0] ?? "";
     expect(coreQuestionBlock).not.toContain("主将シヤ・コリシが負傷欠場");
-    expect(coreQuestionBlock).not.toContain('"source_domain":"springboks.rugby"');
+    expect(coreQuestionBlock).not.toContain(
+      '"source_domain":"springboks.rugby"',
+    );
     expect(prompt).not.toContain("【フォーム型で書くこと】");
     expect(prompt).not.toContain("5連勝中のBullsに");
   });
@@ -222,7 +226,9 @@ describe("buildGeneratePreviewPrompt", () => {
       [],
     );
 
-    expect(prompt).toContain("本文の趣旨に沿うものはできるだけ多く反映すること");
+    expect(prompt).toContain(
+      "本文の趣旨に沿うものはできるだけ多く反映すること",
+    );
     expect(prompt).toContain("【補強事実を軸にしたプレビュー】");
     expect(prompt).toContain("統計比較だけで本文を構成してはならない");
     expect(prompt).toContain("recent_form の直近5試合スコア");
