@@ -39,6 +39,11 @@ export const KICKOFF_TIMEZONE_INSTRUCTION = [
   "- kickoff_at は UTC であり、これを日本時間として本文に書いてはならない。",
 ].join("\n");
 
+export const MATCH_DURATION_INSTRUCTION = [
+  "【試合時間】ラグビーユニオンの試合は80分（40分ハーフ）である。",
+  "- 90分または90分間として記述してはならない。",
+].join("\n");
+
 export const NON_LEAGUE_ONE_PLAYER_NAME_STYLE_INSTRUCTION = [
   "選手名は、日本語表記グロッサリにある場合は、入力データと表記が異なる場合も指定の漢字表記を必ず使うこと。",
   "グロッサリにない選手でも、入力データ（projected_lineups・match_events・sourced_facts）に日本語表記がある場合はその表記をそのまま使い、漢字をカタカナに変換しないこと。",

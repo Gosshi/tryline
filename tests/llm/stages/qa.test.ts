@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   CONTRADICTED_ZERO_STAT_CLAIM_ISSUE,
+  INVALID_MATCH_DURATION_ISSUE,
   containsUnsupportedStatistic,
   PLAYER_STAT_MISMATCH_ISSUE,
   ROSTER_ENUMERATION_ISSUE,
@@ -909,6 +910,47 @@ describe("evaluateNarrativeQuality", () => {
     expect(result.result.issues).toContain(ROSTER_ENUMERATION_ISSUE);
     expect(result.result.scores.information_density).toBe(2);
     expect(result.result.verdict).toBe("reject");
+  });
+
+  it("retries then rejects an invalid match duration at the existing retry limit", async () => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 5,
+          information_density: 5,
+          japanese_quality: 5,
+          tactical_depth: 5,
+        },
+        issues: [],
+      }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const narrative =
+      "互いの先発構成にどこまで圧力をかけられるかを測る90分となる。".padEnd(
+        1_500,
+        "分析",
+      );
+    const retry = await evaluateNarrativeQuality({
+      contentType: "preview",
+      language: "ja",
+      matchContext,
+      narrative,
+      retryCount: 0,
+    });
+    const reject = await evaluateNarrativeQuality({
+      contentType: "preview",
+      language: "ja",
+      matchContext,
+      narrative,
+      retryCount: 2,
+    });
+
+    expect(retry.result.issues).toContain(INVALID_MATCH_DURATION_ISSUE);
+    expect(retry.result.scores.factual_grounding).toBe(1);
+    expect(retry.result.verdict).toBe("retry");
+    expect(reject.result.verdict).toBe("reject");
   });
 
   it.each([

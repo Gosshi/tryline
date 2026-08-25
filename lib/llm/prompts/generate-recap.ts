@@ -9,6 +9,7 @@ import {
   buildSignalsBlock,
   buildStandingsBlock,
   KICKOFF_TIMEZONE_INSTRUCTION,
+  MATCH_DURATION_INSTRUCTION,
   NON_LEAGUE_ONE_PLAYER_NAME_STYLE_INSTRUCTION,
   PROHIBITIONS_BLOCK,
 } from "./shared-prompt-blocks";
@@ -328,6 +329,7 @@ export function buildGenerateRecapPrompt(
     persona,
     prohibitionsBlock,
     KICKOFF_TIMEZONE_INSTRUCTION,
+    MATCH_DURATION_INSTRUCTION,
     MISSING_DATA_DISCLOSURE_BLOCK,
     structureInstruction,
     matchPhaseBlock,

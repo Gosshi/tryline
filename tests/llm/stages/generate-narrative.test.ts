@@ -250,6 +250,11 @@ describe("generateNarrative", () => {
         input: expect.stringContaining("Target: 1,000+ words total."),
       }),
     );
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.not.stringContaining("ラグビーユニオンの試合は80分"),
+      }),
+    );
   });
 
   it("uses the strengthened English recap prompt and version", async () => {

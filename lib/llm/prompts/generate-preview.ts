@@ -9,6 +9,7 @@ import {
   buildSignalsBlock,
   buildStandingsBlock,
   KICKOFF_TIMEZONE_INSTRUCTION,
+  MATCH_DURATION_INSTRUCTION,
   NON_LEAGUE_ONE_PLAYER_NAME_STYLE_INSTRUCTION,
   PROHIBITIONS_BLOCK,
 } from "./shared-prompt-blocks";
@@ -251,6 +252,7 @@ export function buildGeneratePreviewPrompt(
     coreQuestionBlock,
     prohibitionsBlock,
     KICKOFF_TIMEZONE_INSTRUCTION,
+    MATCH_DURATION_INSTRUCTION,
     structureInstruction,
     matchPhaseBlock,
     "各セクションが指定範囲の下限を下回った場合は、入力データにある recent_form・h2h_last_5・competition_standings・key_stats・projected_lineups・match_events・sourced_facts から具体的な根拠を追加して書き足すこと。",

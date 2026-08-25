@@ -4,6 +4,7 @@ import {
   buildGenerateRecapPrompt,
   PROMPT_VERSION,
 } from "@/lib/llm/prompts/generate-recap";
+import { MATCH_DURATION_INSTRUCTION } from "@/lib/llm/prompts/shared-prompt-blocks";
 
 import type { AssembledContentInput } from "@/lib/llm/types";
 
@@ -101,6 +102,7 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("反則を犯さない");
     expect(prompt).toContain("クリーンなプレー");
     expect(prompt).toContain("規律あるプレー");
+    expect(prompt).toContain(MATCH_DURATION_INSTRUCTION);
   });
 
   it("constrains the recap opening structure in all recap modes", () => {
