@@ -1,176 +1,140 @@
 ---
 version: "alpha"
-name: "Tryline Apple-Inspired"
-description: "Apple-inspired design system for a Japanese rugby analysis product."
+name: "Tryline Soft Modern"
+description: "The current soft-modern design system for a Japanese rugby analysis product."
 colors:
-  paper: "oklch(98.5% 0.005 95)"
-  ink: "oklch(18% 0.02 260)"
-  ink-muted: "oklch(45% 0.02 260)"
-  rule: "oklch(90% 0.01 260)"
-  accent: "oklch(58% 0.18 145)"
-  surface: "#ffffff"
-  surface-raised: "#f8fafc"
+  page-background: "#f1efe9"
+  paper: "#f5f6f8"
+  ink: "#1f2530"
+  ink-muted: "#767d8b"
+  rule: "#eceef2"
+  accent: "#c93a40"
+  accent-dim: "color-mix(in srgb, var(--color-accent) 15%, transparent)"
+  accent-subtle: "color-mix(in srgb, var(--color-accent) 10%, transparent)"
+  team-home: "#667085"
+  team-away: "#475467"
+  shadcn:
+    background: "220 13% 97%"
+    foreground: "219 22% 15%"
+    card: "0 0% 100%"
+    card-foreground: "219 22% 15%"
+    primary: "357 57% 51%"
+    primary-foreground: "0 0% 100%"
+    muted: "220 14% 95%"
+    muted-foreground: "220 7% 50%"
+    border: "220 16% 94%"
+    input: "220 16% 94%"
+    ring: "357 57% 51%"
 typography:
+  family:
+    body: "Zen Maru Gothic via --font-zen-maru"
+    heading: "Zen Maru Gothic via --font-zen-maru"
+    serif-jp: "Zen Maru Gothic via --font-zen-maru"
+    number: "Outfit via --font-number"
+  weights:
+    Zen Maru Gothic: [500, 700, 900]
+    Outfit: [500, 700]
   body:
-    fontFamily: "Hiragino Sans, Noto Sans JP, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
-    fontSize: "1rem"
-    fontWeight: 400
-    lineHeight: "1.9"
+    fontWeight: 500
   heading:
-    fontFamily: "Noto Serif JP, Fraunces, Hiragino Mincho ProN, Georgia, serif"
-    fontWeight: 700
-    lineHeight: "1.2"
-  display:
-    fontFamily: "Fraunces, Georgia, serif"
     fontWeight: 900
+  numeric:
     fontFeature: "tabular-nums"
-    lineHeight: "1"
-  caption:
-    fontSize: "0.75rem"
-    fontWeight: 600
-    letterSpacing: "0.18em"
-    textTransform: "uppercase"
-spacing:
-  xs: "4px"
-  sm: "8px"
-  md: "12px"
-  base: "16px"
-  lg: "24px"
-  xl: "32px"
-  "2xl": "40px"
-  "3xl": "48px"
-  "4xl": "64px"
-rounded:
-  sm: "0.5rem"
-  md: "0.75rem"
-  lg: "1rem"
-  full: "9999px"
+  scale:
+    xs: "0.75rem"
+    sm: "0.875rem"
+    base: "1rem"
+    lg: "1.125rem"
+    xl: "1.25rem"
+    "2xl": "1.5rem"
+    "3xl": "2rem"
+    "4xl": "2.5rem"
 radius:
-  sm: "0.5rem"
-  md: "0.75rem"
-  lg: "1rem"
-  full: "9999px"
+  base: "1rem"
+  sm: "1rem"
+  md: "1.375rem"
+  lg: "1.875rem"
 shadows:
-  none: "none"
-  card: "0 1px 2px rgb(15 23 42 / 0.06)"
-  card-hover: "0 10px 18px rgb(15 23 42 / 0.10)"
-components:
-  card:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    borderColor: "{colors.rule}"
-    padding: "{spacing.lg}"
-    shadow: "{shadows.card}"
-  card-hover:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    borderColor: "{colors.rule}"
-    shadow: "{shadows.card-hover}"
-    transform: "translateY(-2px)"
-  badge:
-    backgroundColor: "{colors.surface-raised}"
-    textColor: "{colors.ink-muted}"
-    rounded: "{rounded.full}"
-    padding: "2px 8px"
-  section-label:
-    textColor: "{colors.ink-muted}"
-    typography: "{typography.caption}"
+  default: "0 20px 44px -24px rgb(28 38 64 / 40%)"
+  soft: "0 12px 28px -20px rgb(28 38 64 / 45%)"
 ---
 
 # Tryline Design System
 
 ## Overview
 
-Tryline is a Japanese rugby analysis product for fans who already watch overseas rugby through DAZN, J SPORTS, WOWOW, or similar services. The interface should feel like a premium match companion: fast to scan before kickoff, calm enough to read after full time, and opinionated enough to distinguish itself from a generic sports database.
+Tryline is a Japanese rugby analysis product for fans who already watch overseas rugby through DAZN, J SPORTS, WOWOW, or similar services. The interface is a soft-modern, friendly and app-like match companion: fast to scan before kickoff and calm enough to read after full time.
 
-The design position is "sports media energy plus intelligent long-form reading." Match cards, scores, flags, and team color stripes provide the energy. Generous spacing, controlled color, and strong typography provide the reading quality.
+This direction was selected on 2026-06-23. The reference mock is [soft-v3](docs/design/mock-1-soft-v3.html). Match cards, scores, flags, and team color stripes provide the sports energy; rounded surfaces, soft depth, and rounded Japanese typography keep the reading experience approachable.
 
 ## Colors
 
-The palette is intentionally restrained and Apple-inspired. Use warm paper, deep ink, muted ink, soft rules, and a single green accent. Team colors may add context, but they should remain a supporting layer.
+The page background is not a single flat token. `body` uses `#f1efe9` as its background color, overlaid with a red 5% radial gradient (`rgb(201 58 58 / 5%)`), a blue 5% radial gradient (`rgb(26 58 92 / 5%)`), a `#f8f7f4` → `#f1efe9` → `#eceae3` linear gradient, and a low-opacity SVG noise texture. `.bg-paper` applies the same layers.
 
-- **Paper** (`oklch(98.5% 0.005 95)`): app background and reading foundation.
-- **Ink** (`oklch(18% 0.02 260)`): primary text, score emphasis, and important labels.
-- **Ink muted** (`oklch(45% 0.02 260)`): metadata, secondary text, and quiet labels.
-- **Rule** (`oklch(90% 0.01 260)`): separators and low-contrast borders.
-- **Accent** (`oklch(58% 0.18 145)`): CTA, focus, section accents, and availability badges.
-- **Surface** (`#ffffff`): cards, match panels, and raised content blocks.
-- **Surface raised** (`#f8fafc`): subtle interior panels, TOC blocks, and quiet badges.
+`--color-paper` is `#f5f6f8`; it is an internal-panel token, not the page background. It is used for interior panels on the match page, match events section, and score graph. `--color-ink` is `#1f2530`, `--color-ink-muted` is `#767d8b`, `--color-rule` is `#eceef2`, and the brand accent is red: `--color-accent: #c93a40`. `--color-accent-dim` and `--color-accent-subtle` mix that accent with transparency at 15% and 10% respectively. `--team-home` is `#667085` and `--team-away` is `#475467`.
+
+The shadcn-compatible tokens use HSL values: `--background: 220 13% 97%`, `--foreground: 219 22% 15%`, `--card: 0 0% 100%`, `--card-foreground: 219 22% 15%`, `--primary: 357 57% 51%`, `--primary-foreground: 0 0% 100%`, `--muted: 220 14% 95%`, `--muted-foreground: 220 7% 50%`, `--border: 220 16% 94%`, `--input: 220 16% 94%`, and `--ring: 357 57% 51%`. These provide the compatibility layer for controls and surfaces alongside the named Tryline tokens.
 
 ## Typography
 
-Typography carries the premium feel. Japanese body text uses a readable sans stack with generous line height. Headings use a serif stack for editorial weight. Scores use the display family with tabular numbers so score changes and score comparisons stay visually stable.
+Zen Maru Gothic is the single Japanese interface family. `--font-body`, `--font-heading`, and `--font-serif-jp` all alias `--font-zen-maru`; they are roles, not three different typefaces. The loaded Zen Maru Gothic weights are 500, 700, and 900. Body text is rendered at weight 500, and `h1`, `h2`, and `h3` at weight 900.
 
-- Body copy: `Hiragino Sans`, `Noto Sans JP`, `-apple-system`, 1rem or larger, line-height 1.9 for Japanese long-form reading.
-- Headings: `Noto Serif JP`, `Fraunces`, `Georgia`, weight 700.
-- Display and scores: `Fraunces`, weight 900, tabular numbers, 4xl or larger on match detail scorelines.
-- Captions and section labels: 0.75rem, weight 600, uppercase, letter-spacing 0.18em.
+Outfit is loaded separately through `--font-number` at weights 500 and 700. It is reserved for `.tabular-nums`, which also applies `font-variant-numeric: tabular-nums`, so score and statistic columns retain stable figure widths.
+
+The type scale has eight tokens: `--text-xs: 0.75rem`, `--text-sm: 0.875rem`, `--text-base: 1rem`, `--text-lg: 1.125rem`, `--text-xl: 1.25rem`, `--text-2xl: 1.5rem`, `--text-3xl: 2rem`, and `--text-4xl: 2.5rem`. Use scale and weight to establish hierarchy without making dense match data harder to scan on small screens.
 
 ## Layout
 
-Use an 8px spacing grid. Prefer clear vertical rhythm over dense dashboards. Mobile pages should keep primary match information visible without horizontal overflow. Desktop layouts can widen into two-column match grids, but the core card proportions should remain compact and scannable.
-
-Apple-inspired spacing means important content gets breathing room. Match detail headers, hero areas, and long-form content sections should use larger vertical padding than utility tables or metadata rows. Do not compress long Japanese text below 1rem.
+Keep primary match information visible without horizontal overflow on mobile. Desktop layouts can widen into two-column match grids, while the core card proportions remain compact and scannable. Use rounded, softly separated sections to group information; do not trade readable Japanese text for denser utility-table layouts.
 
 ## Elevation & Depth
 
-Surfaces should be quiet. The default card uses a 1px rule border, white background, and a light shadow. Hover can increase depth with a small upward translation and stronger shadow. Avoid heavy shadows, glossy panels, glassmorphism, and decorative gradients that compete with match data.
+Surfaces combine white cards, gentle borders, and the defined soft shadows: `--shadow` is `0 20px 44px -24px rgb(28 38 64 / 40%)`, and `--shadow-soft` is `0 12px 28px -20px rgb(28 38 64 / 45%)`. Layered page gradients, low-opacity card treatments, and `backdrop-blur` are intentional parts of the current interface when they preserve match-data legibility.
 
 Team identity is expressed through stripes and low-opacity card gradients, not through primary text color. Keep text neutral for readability and let the two-team structure carry the sports context.
 
 ## Shapes
 
-Use small, consistent radius values.
-
-- `sm` (`0.5rem`): badges, tags, and compact controls.
-- `md` (`0.75rem`): cards and standard panels. This matches the current `--radius`.
-- `lg` (`1rem`): larger sections and hero-adjacent panels.
-- `full` (`9999px`): pills and compact status controls.
-
-Avoid overly rounded cards unless the component is explicitly a pill or badge. Cards should feel crisp and premium, not playful.
+The soft-modern system uses rounded surfaces deliberately. `--radius`, the base radius, is `1rem`; `--radius-sm` is also `1rem`, `--radius-md` is `1.375rem`, and `--radius-lg` is `1.875rem`. Use these sizes to make cards, panels, and compact controls approachable while preserving clear group boundaries in data-dense views.
 
 ## Components
 
-Cards use a white surface, 1px rule border, `0.75rem` radius, and light shadow. On hover, use `-translate-y-0.5`, a slightly stronger shadow, and a subtle border change.
+Cards and panels use the white shadcn card surface (`--card: 0 0% 100%`) or the appropriate quiet interior surface, neutral text, rounded tokens, and the existing border/shadow treatments. Glass-like and gradient treatments are appropriate for overlays and match emphasis when their contrast remains adequate; they are not a substitute for hierarchy.
 
-Section labels are uppercase, wide-tracked, muted, and small. They label groups such as "最新シーズン", "今後の試合", "最近のレビュー", and "大会アーカイブ" without competing with match names.
-
-Accent lines use a 2px green border on the left side of important editorial headings. This is the preferred way to add brand emphasis inside long-form content.
-
-The homepage hero uses a deep ink background, white text, and a quiet grid pattern. It should signal product identity in the first viewport without becoming a marketing splash screen detached from the match experience.
+Section labels should support, rather than compete with, match names and scores. Accent is for actions, selected state, and editorial emphasis. Existing focus-visible controls commonly use `ring-2` with `ring-[var(--color-accent)]`; the shared ring token is `--ring: 357 57% 51%`.
 
 ## Do's and Don'ts
 
-Do use generous spacing, strong score typography, neutral text colors, and team colors as structural accents. Do keep Japanese long-form content comfortable with line-height 1.9 or higher. Do use focus rings with `ring-2` and the accent color.
+Do use rounded surfaces, soft shadows, restrained low-opacity gradients, and blur where they make grouping or match context clearer. Do use neutral text colors and team color as a structural accent. Do keep score and statistics columns stable with tabular figures, and stack content on mobile rather than reducing important text to microtype.
 
-Do not use team colors as body text colors. Do not add decorative color blobs, heavy gradients, or noisy sports textures. Do not reduce mobile text to fit more data into a row. Stack content instead.
+Do not use team colors for body text. Do not add decorative effects that obscure scores, labels, controls, or reading flow. Do not introduce contrast-dependent state without a visible text or shape cue, and do not use motion as the only way to communicate state.
 
 ## Brand Position
 
-Tryline serves Japanese rugby fans who want a better post-match and pre-match reading experience than raw English feeds or score-only apps. The product should feel premium, editorial, and useful during a rugby weekend.
+Tryline serves Japanese rugby fans who want a better post-match and pre-match reading experience than raw English feeds or score-only apps. The product is friendly, soft-modern, editorial, and useful during a rugby weekend—not a return to the rejected sparse-serif "margin premium" direction.
 
-The user expectation is not a social feed. It is a composed match companion: next matches, finished match results, official-looking match context, and Japanese AI analysis that is easy to read.
+The user expectation is a composed match companion: next matches, finished match results, official-looking match context, and Japanese AI analysis that is easy to read.
 
 ## Visual Principles
 
-1. Use breathing room. Important match and reading surfaces need generous padding.
-2. Let typography lead. Hierarchy should come from scale, weight, and family contrast.
-3. Keep color functional. Use accent for actions, state, and data labels.
-4. Keep surfaces quiet. White and slate surfaces should dominate; team color adds identity.
-5. Make interactions subtle. Hover is a small translation plus shadow, not a dramatic animation.
+1. Make match state scannable. Scores, teams, kickoff context, and availability should read quickly.
+2. Let rounded Japanese typography and soft surfaces create an approachable application feel.
+3. Keep color functional. Use the red accent for actions and emphasis, and team colors for identity rather than body text.
+4. Use depth purposefully. Existing gradients, texture, blur, borders, and shadows should clarify layers instead of competing with data.
+5. Keep mobile reading comfortable. Preserve useful text size and regroup content before compressing it.
 
 ## Sports Adaptation
 
-Scores use display typography, tabular numbers, and at least 4xl sizing in detail headers. Team abbreviations and flags should remain visually close to the score so the match state can be understood at a glance.
+Scores use Outfit with tabular figures where `.tabular-nums` is applied. Team abbreviations and flags should remain visually close to the score so the match state can be understood at a glance.
 
 Team colors are limited to stripes, top bars, and low-opacity gradients. This protects contrast and prevents a one-note team-color page from overpowering the reading experience.
 
-Japanese long-form analysis needs space. Use 1rem or larger body text, line-height 1.9 or higher, and avoid dense paragraphs that feel like raw data export.
+Japanese long-form analysis needs room to breathe. Keep narrative content visibly distinct from score and schedule data, and avoid layouts that make either feel like a raw data export.
 
 ## Accessibility
 
-Ink on paper should maintain contrast at 15:1 or better. Ink muted on surface must meet WCAG AA at 4.5:1 or better. Interactive elements use visible focus rings, preferably `ring-2 ring-[var(--color-accent)]`.
+Contrast was calculated with the WCAG relative-luminance formula (linearized sRGB channels, then `(L1 + 0.05) / (L2 + 0.05)`) using the solid `body` base color `#f1efe9` and the white card surface. `--color-ink` (`#1f2530`) against the `body` base is 13.37:1. `--color-ink-muted` (`#767d8b`) against the `body` base is 3.60:1, which is a known WCAG AA 4.5:1 failure for normal text. `--color-ink-muted` against a white card is 4.14:1, also a known WCAG AA 4.5:1 failure for normal text. The gradient and texture layers mean the painted page background varies slightly; these figures document the implemented solid base comparison.
 
-Motion should respect `prefers-reduced-motion`. Keep default transitions short and nonessential. Avoid interactions where motion is required to understand state.
+Interactive elements use visible focus treatment. The shared `--ring` token is `357 57% 51%`, and existing controls commonly use `focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]`.
+
+`prefers-reduced-motion` remains the intended accessibility requirement, but it is currently implemented in 0 locations. This is a known unmet requirement, not a claim of existing support. Keep transitions nonessential and do not make motion required to understand state.
