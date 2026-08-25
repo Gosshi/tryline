@@ -11,7 +11,7 @@
     --primary: 357 57% 51%;
     --primary-foreground: 0 0% 100%;
     --muted: 220 14% 95%;
-    --muted-foreground: 220 7% 50%;
+    --muted-foreground: 220 7% 42%;
     --border: 220 16% 94%;
     --input: 220 16% 94%;
     --ring: 357 57% 51%;
@@ -20,7 +20,7 @@
     /* Tryline design tokens */
     --color-paper: #f5f6f8;
     --color-ink: #1f2530;
-    --color-ink-muted: #767d8b;
+    --color-ink-muted: #646a76;
     --color-rule: #eceef2;
     --color-accent: #c93a40;
     --color-accent-dim: color-mix(
@@ -87,6 +87,17 @@
   .tabular-nums {
     font-family: var(--font-number), sans-serif;
     font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
