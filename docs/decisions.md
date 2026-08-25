@@ -387,3 +387,44 @@ GA4 実測（2026-07-19〜08-14 の 28 日）では **note.com referral が 0 �
 - `docs/note-owned-media-playbook.md` — B型の記述の扱いを要確認
 
 **教訓**: **単一チャネルのセッション数だけを見て「唯一機能している referral」と評価していた**（2026-07 時点の診断）。実際には 28 セッションが 1 ユーザーで、外部読者はゼロだった。**referral を評価するときはセッション数ではなくユーザー数を見る。** セッション数はひとりの回遊で容易に膨らむ。
+
+## D018 — `design.md` を実装に合わせて書き直す（実装を文書に寄せない）（2026-08-25、Owner 承認済み）
+
+**背景**: デザイン監査（PR #722、`docs/design/audit-2026-08-24.md` 所見 A-1）で、`design.md` と現行実装が別のデザインシステムになっていることが検出された。
+
+時系列を確認したところ、原因は文書の陳腐化だった。
+
+| 日付 | 出来事 |
+|---|---|
+| 2026-05-06 | `design.md` 作成（commit `91ea49f`「Apple-inspired design system」） |
+| **2026-06-23** | 試合ページ刷新のモック3案から Owner が **案1「やわらかモダン」を選定**。案3「余白プレミアム」（細身セリフ＋余白）は「上品だが訴求が弱く不採用」 |
+| 2026-07-07 | bento カード刷新（PR #489/#490/#491/#492） |
+| — | `design.md` はこの間**一度も更新されていない** |
+
+**`design.md` の内容は、実質的に却下された案3である。**
+
+| 項目 | design.md | 実装 |
+|---|---|---|
+| accent | 緑 `oklch(58% 0.18 145)` | `#c93a40`（赤） |
+| 見出し | `Noto Serif JP`（セリフ） | `Zen_Maru_Gothic`（丸ゴシック） |
+| display | `Fraunces` | 数値のみ `Outfit` |
+| カード radius | `md = 0.75rem` | `--radius-md: 1.375rem` |
+| 性格 | "crisp and premium, **not playful**" | 親しみやすくアプリらしい |
+
+**決定**:
+
+1. **`design.md` を現行実装に合わせて書き直す。** 実装側は変更しない。実装を design.md に寄せることは、Owner が明示的に却下した案3への回帰を意味するため
+2. **全面書き換えではない。** Elevation & Depth 節のチームカラーの扱い等、実装と既に一致している記述は残す（`docs/codex-prompts/feat-upcoming-fixture-visual-redesign.md:11` が既に実装根拠として参照している）
+3. **Do's and Don'ts 節は空にしない。** 現行の禁止事項（decorative gradients / glassmorphism / heavy shadows）はいずれも意図的な実装と衝突するが、削除して「何でもOK」にはせず、現行ブランドで実際に避けるべきことに置き換える
+4. **未達は未達と書く。** コントラスト比と `prefers-reduced-motion` は現状 WCAG AA を満たしていない。design.md は「目標」ではなく「現状 ＋ 既知の未達」として記述する
+5. **a11y の実バグ修正は本決定に含めない。** design.md の記述とは独立した別 spec とする
+
+**この決定が意味しないこと**: 現行ブランドを恒久的に固定するものではない。方向性を変える判断は将来あってよいが、そのときは「文書が古いから実装を直す」ではなく、方向性の変更として明示的に決める。
+
+**影響**:
+- `specs/fix-design-md-brand-realignment.md` / `docs/codex-prompts/fix-design-md-brand-realignment.md`（作成済み）
+- `docs/codex-prompts/pr7-create-design-md.md`・`pr8-ui-design-md-polish.md` は却下された方向の指示書。**今後参照しない**
+- 未 spec の実バグ2件が別途残る: ink-muted のコントラスト（実 body 背景上 3.60:1 / 白カード上 4.14:1、要求 4.5:1）、`prefers-reduced-motion` 対応 0 箇所（transition/animation は 125 箇所）
+- トークンの命名・値の不整合2件も別 spec 候補: `--color-paper`（#f5f6f8）が body の実背景（#f1efe9）と別値、`--font-serif-jp` が丸ゴシックを指しており名前と実体が乖離
+
+**教訓**: **デザイン文書を「権威ある基準」として扱う前に、作成日と、その後の方向性決定との前後関係を確認する。** 今回、Claude Code は監査プロンプトで design.md を無条件に適合基準と指定したが、これは誤りだった（Codex 側が所見 A-1 で「基準が未確定」と留保したため実害は出なかった）。同様に、監査レポートの数値を検算する際は**トークン名ではなく実際に描画される値**を使う。`--color-paper` を body 背景と取り違えてコントラスト比を再計算し、正しかった Codex の値を誤りと判定しかけた。
