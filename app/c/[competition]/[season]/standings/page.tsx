@@ -154,20 +154,22 @@ export default async function CompetitionStandingsPage({ params }: Props) {
         </nav>
 
         <header
-          className="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-slate-200"
-          style={{ borderLeft: `4px solid ${accentColor}` }}
+          className="flex flex-col gap-2 border-b-2 pb-4 sm:flex-row sm:items-end sm:justify-between"
+          style={{ borderColor: accentColor }}
         >
-          <p
-            className="text-xs font-semibold uppercase tracking-[0.18em]"
-            style={{ color: accentColor }}
-          >
-            {formatFamilyName(comp.family)}
-          </p>
-          <h1 className="mt-1 font-heading text-4xl font-bold tracking-tight text-[var(--color-ink)] sm:text-5xl">
-            {competitionTitle} 順位表
-          </h1>
+          <div>
+            <p
+              className="text-xs font-semibold uppercase tracking-[0.18em]"
+              style={{ color: accentColor }}
+            >
+              {formatFamilyName(comp.family)}
+            </p>
+            <h1 className="mt-1 font-heading text-xl font-bold tracking-tight text-[var(--color-ink)] sm:text-2xl">
+              {competitionTitle} 順位表
+            </h1>
+          </div>
           {updatedAt && (
-            <p className="mt-3 text-sm text-[var(--color-ink-muted)]">
+            <p className="text-xs text-[var(--color-ink-muted)] sm:text-right">
               最終更新: {formatUpdatedAt(updatedAt)}
             </p>
           )}
@@ -180,13 +182,14 @@ export default async function CompetitionStandingsPage({ params }: Props) {
           {poolStandings.length > 0 ? (
             poolStandings.map((pool) => (
               <StandingsTable
+                accentColor={accentColor}
                 key={pool.poolName}
                 standings={pool.standings}
                 title={`${pool.poolName} 順位表`}
               />
             ))
           ) : (
-            <StandingsTable standings={standings} />
+            <StandingsTable accentColor={accentColor} standings={standings} />
           )}
         </section>
 

@@ -1,6 +1,9 @@
 const COMPETITION_HERO_IMAGES: Record<string, string> = {
   "autumn-nations": "/visuals/autumn-nations.jpg",
+  "greatest-rivalry": "/visuals/greatest-rivalry.jpg",
   "league-one": "/visuals/league-one.jpg",
+  "lipovitan-challenge-cup": "/visuals/lipovitan-challenge-cup.jpg",
+  "nations-championship": "/visuals/nations-championship.jpg",
   pnc: "/visuals/pnc.jpg",
   premiership: "/visuals/premiership.jpg",
   "rugby-championship": "/visuals/rugby-championship.jpg",

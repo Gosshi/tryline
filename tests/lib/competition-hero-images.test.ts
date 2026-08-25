@@ -12,8 +12,20 @@ describe("competition hero images", () => {
     );
   });
 
-  it("falls back to the default local visual for an unmapped family", () => {
+  it("returns the new local visuals for each mapped competition family", () => {
     expect(getCompetitionHeroImage("nations-championship")).toBe(
+      "/visuals/nations-championship.jpg",
+    );
+    expect(getCompetitionHeroImage("greatest-rivalry")).toBe(
+      "/visuals/greatest-rivalry.jpg",
+    );
+    expect(getCompetitionHeroImage("lipovitan-challenge-cup")).toBe(
+      "/visuals/lipovitan-challenge-cup.jpg",
+    );
+  });
+
+  it("falls back to the default local visual for an unmapped family", () => {
+    expect(getCompetitionHeroImage("unmapped-competition")).toBe(
       DEFAULT_COMPETITION_HERO,
     );
   });

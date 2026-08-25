@@ -21,10 +21,10 @@ describe("FeaturedCompetitionCard", () => {
   it("renders supplied competition copy and falls back to the default visual", () => {
     render(
       <FeaturedCompetitionCard
-        description="次戦はJapan 対 Australia（2026-08-08）。"
-        family="lipovitan-challenge-cup"
-        headline="リポビタンDチャレンジカップ 2026を追う"
-        season="2026"
+        description="次戦はJapan 対 Australia（2027-10-01）。"
+        family="rwc"
+        headline="ラグビーワールドカップ 2027を追う"
+        season="2027"
         stats={{
           nextMatchLabel: "2026-07-11 (土) 19:30 JST",
           nextMatchSubLabel: "Japan 対 Ireland",
@@ -35,7 +35,7 @@ describe("FeaturedCompetitionCard", () => {
     );
 
     const headline = screen.getByRole("heading", {
-      name: "リポビタンDチャレンジカップ 2026を追う",
+      name: "ラグビーワールドカップ 2027を追う",
     });
     expect(headline).toBeInTheDocument();
     expect(headline).toHaveClass("text-balance");
@@ -45,6 +45,6 @@ describe("FeaturedCompetitionCard", () => {
     );
     expect(
       screen.getByRole("link", { name: "大会ページを見る →" }),
-    ).toHaveAttribute("href", "/c/lipovitan-challenge-cup/2026");
+    ).toHaveAttribute("href", "/c/rwc/2027");
   });
 });

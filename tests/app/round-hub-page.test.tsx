@@ -70,7 +70,9 @@ describe("round hub page", () => {
       name: "Six Nations",
       season: "2025",
     });
-    competitionsMock.listSeasonsByFamily.mockResolvedValue([{ season: "2025" }]);
+    competitionsMock.listSeasonsByFamily.mockResolvedValue([
+      { season: "2025" },
+    ]);
     matchesMock.getRoundMatches.mockResolvedValue([match]);
     matchesMock.listRoundsForCompetition.mockResolvedValue([1, 2, 3, 4, 5]);
     contentStatusMock.getContentStatusForMatches.mockResolvedValue({
@@ -88,13 +90,21 @@ describe("round hub page", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "シックスネイションズ 2025 第3節 の結果・日程",
+        name: "第3節",
       }),
     ).toBeInTheDocument();
     expect(container.querySelector('a[href="/matches/match-1"]')).toBeTruthy();
-    expect(
-      container.textContent?.includes('"@type":"BreadcrumbList"'),
-    ).toBe(true);
+    expect(screen.getByText("シックスネイションズ 2025")).toBeInTheDocument();
+    expect(screen.getByText("23:15 JST")).toBeInTheDocument();
+    expect(screen.getByText("Ireland")).toBeInTheDocument();
+    expect(screen.getByText("France")).toBeInTheDocument();
+    expect(screen.getByText("24–21")).toBeInTheDocument();
+    expect(screen.getByText("プレビューあり")).toBeInTheDocument();
+    expect(screen.getByText("レビューあり")).toBeInTheDocument();
+    expect(screen.getByText("解説1本")).toBeInTheDocument();
+    expect(container.textContent?.includes('"@type":"BreadcrumbList"')).toBe(
+      true,
+    );
   });
 
   it("returns canonical metadata for the path URL", async () => {
@@ -115,8 +125,7 @@ describe("round hub page", () => {
       }),
     ).resolves.toMatchObject({
       alternates: {
-        canonical:
-          "https://www.trylinerugby.com/c/six-nations/2025/round/3",
+        canonical: "https://www.trylinerugby.com/c/six-nations/2025/round/3",
       },
       openGraph: {
         locale: "ja_JP",
@@ -144,7 +153,9 @@ describe("round hub page", () => {
     });
     matchesMock.getRoundMatches.mockResolvedValue([]);
     matchesMock.listRoundsForCompetition.mockResolvedValue([1, 2, 3]);
-    competitionsMock.listSeasonsByFamily.mockResolvedValue([{ season: "2025" }]);
+    competitionsMock.listSeasonsByFamily.mockResolvedValue([
+      { season: "2025" },
+    ]);
 
     await expect(
       RoundHubPage({

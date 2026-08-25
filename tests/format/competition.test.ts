@@ -64,6 +64,9 @@ describe("formatFamilyName", () => {
     expect(getCompetitionFamilyColor("rugby-championship")).toBe("#C8102E");
     expect(getCompetitionFamilyColor("nations-championship")).toBe("#1A3A5C");
     expect(getCompetitionFamilyColor("greatest-rivalry")).toBe("#007A4D");
+    expect(getCompetitionFamilyColor("lipovitan-challenge-cup")).toBe(
+      "#E60012",
+    );
     expect(getCompetitionFamilyColor("unknown-family")).toBe("#1e293b");
   });
 });
