@@ -1,0 +1,77 @@
+== Regular season ==
+
+=== Round 1 ===
+{{rugbybox collapsible2
+|id = Benetton v Glasgow Warriors
+|date = 25 September
+|time = 19:35
+|team1 = [[Benetton Rugby|Benetton]] {{flagicon|ITA}}
+|score =
+|team2 = [[Glasgow Warriors]] {{flagicon|SCO}}
+|stadium = [[Stadio Comunale di Monigo|Stadio Monigo]], Treviso
+}}
+{{rugbybox collapsible2
+|id = Bulls v Cardiff
+|date = 26 September
+|time = 18:00
+|team1 = [[Bulls (rugby union)|Bulls]] {{flagicon|RSA}}
+|score =
+|team2 = [[Cardiff Rugby|Cardiff]] {{flagicon|WAL}}
+|stadium = [[Loftus Versfeld Stadium]], Pretoria
+}}
+{{rugbybox collapsible2
+|id = Connacht v Dragons
+|date = 27 September
+|time = 15:00
+|team1 = [[Connacht Rugby|Connacht]] {{flagicon|IRL}}
+|score =
+|team2 = [[Dragons RFC|Dragons]] {{flagicon|WAL}}
+|stadium = [[Dexcom Stadium]], Galway
+}}
+{{rugbybox collapsible2
+|id = Edinburgh v Leinster
+|date = 28 September
+|time = 17:30
+|team1 = [[Edinburgh Rugby|Edinburgh]] {{flagicon|SCO}}
+|score =
+|team2 = [[Leinster Rugby|Leinster]] {{flagicon|IRL}}
+|stadium = [[Edinburgh Rugby Stadium]], Edinburgh
+}}
+
+=== Round 10 ===
+{{rugbybox collapsible2
+|id = Lions v Munster
+|date = 22/23/24 January
+|time = 16:00
+|team1 = [[Lions (United Rugby Championship)|Lions]] {{flagicon|RSA}}
+|score =
+|team2 = [[Munster Rugby|Munster]] {{flagicon|IRL}}
+|stadium = [[Ellis Park Stadium]], Johannesburg
+}}
+{{rugbybox collapsible2
+|id = Ospreys v Scarlets
+|date = 23 January
+|time = 19:45
+|team1 = [[Ospreys (rugby union)|Ospreys]] {{flagicon|WAL}}
+|score =
+|team2 = [[Scarlets]] {{flagicon|WAL}}
+|stadium = [[Swansea.com Stadium]], Swansea
+}}
+{{rugbybox collapsible2
+|id = Sharks v Stormers
+|date = 24 January
+|time = 15:00
+|team1 = [[Sharks (rugby union)|Sharks]] {{flagicon|RSA}}
+|score =
+|team2 = [[Stormers]] {{flagicon|RSA}}
+|stadium = [[Kings Park Stadium]], Durban
+}}
+{{rugbybox collapsible2
+|id = Ulster v Zebre Parma
+|date = 25 January
+|time = 17:30
+|team1 = [[Ulster Rugby|Ulster]] {{flagicon|IRL}}
+|score =
+|team2 = [[Zebre Parma|Zebre]] {{flagicon|ITA}}
+|stadium = [[Kingspan Stadium]], Belfast
+}}

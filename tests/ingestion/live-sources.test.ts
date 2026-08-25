@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const fetcherMock = vi.hoisted(() => ({
@@ -42,6 +44,7 @@ import {
 import {
   fetchUrc,
   parseUrcLiveHtml,
+  parseUrcLiveWikitext,
 } from "@/lib/ingestion/sources/wikipedia-urc";
 import { parseWorldRugbyNationsChampionshipSchedulePayload } from "@/lib/ingestion/sources/world-rugby-nations-championship-times";
 import { FetchError } from "@/lib/scrapers/errors";
@@ -528,6 +531,22 @@ const URC_FUTURE_ZERO_HTML = `
 </tbody></table>
 `;
 
+const URC_2026_27_WIKITEXT = readFileSync(
+  path.join(process.cwd(), "tests/fixtures/wikipedia-urc-2026-27.wikitext"),
+  "utf8",
+);
+
+const URC_FUTURE_ZERO_WIKITEXT = `=== Round 1 ===
+{{rugbybox collapsible2
+|id = Leinster v Munster
+|date = 1 January
+|time = 15:00
+|team1 = [[Leinster Rugby|Leinster]] {{flagicon|IRL}}
+|score = 0–0
+|team2 = [[Munster Rugby|Munster]] {{flagicon|IRL}}
+|stadium = [[Aviva Stadium]]
+}}`;
+
 const TOP_14_FUTURE_ZERO_HTML = `
 <div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
 <div class="vevent summary" id="Toulouse_v_Bayonne">
@@ -652,11 +671,9 @@ describe("live competition source adapters", () => {
     );
     expect(
       LIVE_COMPETITION_SOURCES.some((source) =>
-        [
-          "premiership-2025-26",
-          "top-14-2025-26",
-          "urc-2025-26",
-        ].includes(source.competitionSlug),
+        ["premiership-2025-26", "top-14-2025-26", "urc-2025-26"].includes(
+          source.competitionSlug,
+        ),
       ),
     ).toBe(false);
   });
@@ -665,6 +682,7 @@ describe("live competition source adapters", () => {
     fetcherMock.fetchWithPolicy
       .mockResolvedValueOnce(new Response(PREMIERSHIP_FUTURE_ZERO_WIKITEXT))
       .mockResolvedValueOnce(new Response(PREMIERSHIP_FUTURE_ZERO_HTML))
+      .mockResolvedValueOnce(new Response(URC_FUTURE_ZERO_WIKITEXT))
       .mockResolvedValueOnce(new Response(URC_FUTURE_ZERO_HTML))
       .mockResolvedValueOnce(new Response(TOP_14_FUTURE_ZERO_HTML));
 
@@ -700,10 +718,14 @@ describe("live competition source adapters", () => {
     );
     expect(fetcherMock.fetchWithPolicy).toHaveBeenNthCalledWith(
       3,
-      "https://en.wikipedia.org/wiki/2026–27_United_Rugby_Championship",
+      "https://en.wikipedia.org/wiki/2026%E2%80%9327_United_Rugby_Championship?action=raw",
     );
     expect(fetcherMock.fetchWithPolicy).toHaveBeenNthCalledWith(
       4,
+      "https://en.wikipedia.org/wiki/2026–27_United_Rugby_Championship",
+    );
+    expect(fetcherMock.fetchWithPolicy).toHaveBeenNthCalledWith(
+      5,
       "https://en.wikipedia.org/wiki/2026–27_Top_14_season",
     );
   });
@@ -845,7 +867,10 @@ describe("live competition source adapters", () => {
     ).toEqual([]);
     expect(
       parseUrcLiveHtml(
-        URC_HTML.replace("<a href=\"/wiki/Leinster_Rugby\">Leinster</a>", "<a>Unknown URC</a>"),
+        URC_HTML.replace(
+          '<a href="/wiki/Leinster_Rugby">Leinster</a>',
+          "<a>Unknown URC</a>",
+        ),
       ),
     ).toEqual([]);
 
@@ -1324,6 +1349,95 @@ describe("live competition source adapters", () => {
       status: "scheduled",
       wikipediaUrl,
     });
+  });
+
+  it("parses URC wikitext fixtures with season-derived years and flagicon-free team names", () => {
+    const wikipediaUrl =
+      "https://en.wikipedia.org/wiki/2026–27_United_Rugby_Championship";
+    const matches = parseUrcLiveWikitext(
+      URC_2026_27_WIKITEXT,
+      "2026-27",
+      wikipediaUrl,
+    );
+
+    expect(matches).toHaveLength(8);
+    expect(matches.map((match) => match.homeTeamName)).toEqual([
+      "Benetton",
+      "Bulls",
+      "Connacht",
+      "Edinburgh",
+      "Lions",
+      "Ospreys",
+      "Sharks",
+      "Ulster",
+    ]);
+    expect(matches.map((match) => match.awayTeamName)).toEqual([
+      "Glasgow Warriors",
+      "Cardiff",
+      "Dragons",
+      "Leinster",
+      "Munster",
+      "Scarlets",
+      "Stormers",
+      "Zebre",
+    ]);
+    expect(
+      matches.every((match) => match.homeTeamSlug && match.awayTeamSlug),
+    ).toBe(true);
+    expect(
+      matches
+        .slice(0, 4)
+        .every((match) => match.kickoffAt.startsWith("2026-09")),
+    ).toBe(true);
+    expect(
+      matches.slice(4).every((match) => match.kickoffAt.startsWith("2027-01")),
+    ).toBe(true);
+    expect(matches[4]).toMatchObject({
+      homeTeamName: "Lions",
+      kickoffAt: "2027-01-22T16:00:00.000Z",
+      round: 10,
+      status: "scheduled",
+      wikipediaUrl,
+    });
+  });
+
+  it("throws for URC wikitext without rugbybox templates", () => {
+    expect(() => parseUrcLiveWikitext("=== Round 1 ===", "2026-27")).toThrow(
+      "No rugbybox templates found in URC wikitext.",
+    );
+  });
+
+  it("warns and skips URC wikitext fixtures with unparseable years", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(parseUrcLiveWikitext(URC_2026_27_WIKITEXT, "2026")).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(8);
+
+    warn.mockRestore();
+  });
+
+  it("preserves explicit years in older URC wikitext fixtures", () => {
+    const matches = parseUrcLiveWikitext(
+      URC_2026_27_WIKITEXT.replace("25 September", "25 September 2025"),
+      "2025-26",
+    );
+
+    expect(matches[0]?.kickoffAt).toBe("2025-09-25T19:35:00.000Z");
+  });
+
+  it("returns URC wikitext fixtures when event HTML cannot be fetched", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    fetcherMock.fetchWithPolicy
+      .mockResolvedValueOnce(new Response(URC_2026_27_WIKITEXT))
+      .mockRejectedValueOnce(new Error("event HTML unavailable"));
+
+    await expect(fetchUrc("2026-27")).resolves.toHaveLength(8);
+    expect(warn).toHaveBeenCalledWith(
+      "Unable to fetch event HTML for URC 2026-27; continuing without event HTML.",
+      expect.any(Error),
+    );
+
+    warn.mockRestore();
   });
 
   it("keeps Top 14 regular season scheduled vevents", () => {
