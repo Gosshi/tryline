@@ -1,6 +1,32 @@
-import { cn } from "@/lib/utils";
-
 import type { StandingRow } from "@/lib/db/queries/standings";
+
+function withOpacity(color: string, opacity: number): string {
+  const hex = color.replace("#", "");
+
+  if (!/^[0-9a-f]{6}$/i.test(hex)) {
+    return `rgb(15 23 42 / ${opacity})`;
+  }
+
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+
+  return `rgb(${red} ${green} ${blue} / ${opacity})`;
+}
+
+function darken(color: string): string {
+  const hex = color.replace("#", "");
+
+  if (!/^[0-9a-f]{6}$/i.test(hex)) {
+    return "#0f172a";
+  }
+
+  const channels = [0, 2, 4].map((offset) =>
+    Math.round(Number.parseInt(hex.slice(offset, offset + 2), 16) * 0.55),
+  );
+
+  return `rgb(${channels.join(" ")})`;
+}
 
 type StandingTableEntry =
   | { row: StandingRow; type: "row" }
@@ -32,11 +58,13 @@ function buildTableEntries(
 }
 
 export function StandingsTable({
+  accentColor = "#1e293b",
   highlightedTeams = [],
   excerptThreshold = 10,
   standings,
   title = "順位表",
 }: {
+  accentColor?: string;
   excerptThreshold?: number;
   highlightedTeams?: string[];
   standings: StandingRow[];
@@ -62,7 +90,7 @@ export function StandingsTable({
 
     return (
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[34rem] text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-xs font-semibold text-slate-400">
               <th className="pb-2 text-left">#</th>
@@ -96,20 +124,30 @@ export function StandingsTable({
               const isHighlighted =
                 highlighted.has(row.teamName.toLowerCase()) ||
                 highlighted.has(row.teamShortCode.toLowerCase());
+              const positionTint =
+                row.position <= 2
+                  ? 0.16
+                  : row.position === 3
+                    ? 0.09
+                    : row.position === 4
+                      ? 0.045
+                      : 0;
 
               return (
                 <tr
-                  className={cn(
-                    "border-b border-slate-50 last:border-0",
+                  className={`border-b border-slate-50 last:border-0 ${
                     isHighlighted
                       ? "bg-[var(--color-accent-subtle)] font-bold [&>td:first-child]:text-[var(--color-accent)] [&>td:last-child]:text-[var(--color-accent)]"
-                      : row.position === 1
-                        ? "bg-emerald-50/60"
-                        : row.position <= 3
-                          ? "bg-slate-50/60"
-                          : "",
-                  )}
+                      : ""
+                  }`}
                   key={row.position}
+                  style={{
+                    backgroundColor: isHighlighted
+                      ? "var(--color-accent-subtle)"
+                      : positionTint > 0
+                        ? withOpacity(accentColor, positionTint)
+                        : undefined,
+                  }}
                 >
                   <td className="py-2 pr-3 tabular-nums text-slate-400">
                     {row.position}
@@ -151,31 +189,30 @@ export function StandingsTable({
   }
 
   return (
-    <section className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
-      <div className="mb-4 border-b border-slate-100 pb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Standings
-        </p>
-        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
-          {title}
-        </h2>
+    <section className="overflow-hidden rounded-[var(--radius-md)] bg-white shadow-[var(--shadow-soft)]">
+      <div
+        className="flex items-center px-5 py-3 text-white sm:px-6"
+        style={{ backgroundColor: darken(accentColor) }}
+      >
+        <h2 className="text-sm font-bold tracking-wide text-white">{title}</h2>
       </div>
-
-      {shouldUseExcerpt ? (
-        <div className="space-y-4">
-          {renderTable(excerptRows, true)}
-          <details>
-            <summary className="cursor-pointer rounded-full border border-slate-200 px-4 py-2 text-center text-xs font-bold text-[var(--color-accent)] transition-colors hover:border-slate-300 hover:bg-slate-50">
-              全順位表を見る
-            </summary>
-            <div className="mt-4 border-t border-slate-100 pt-4">
-              {renderTable(standings)}
-            </div>
-          </details>
-        </div>
-      ) : (
-        renderTable(standings)
-      )}
+      <div className="p-5 sm:p-6">
+        {shouldUseExcerpt ? (
+          <div className="space-y-4">
+            {renderTable(excerptRows, true)}
+            <details>
+              <summary className="cursor-pointer rounded-full border border-slate-200 px-4 py-2 text-center text-xs font-bold text-[var(--color-accent)] transition-colors hover:border-slate-300 hover:bg-slate-50">
+                全順位表を見る
+              </summary>
+              <div className="mt-4 border-t border-slate-100 pt-4">
+                {renderTable(standings)}
+              </div>
+            </details>
+          </div>
+        ) : (
+          renderTable(standings)
+        )}
+      </div>
     </section>
   );
 }

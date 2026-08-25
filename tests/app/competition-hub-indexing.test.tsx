@@ -153,7 +153,7 @@ describe("competition hub indexing", () => {
     );
   });
 
-  it("falls back to the default key visual when no image is available", async () => {
+  it("uses the Nations Championship key visual when it is available", async () => {
     competitionMocks.listSeasonsByFamily.mockResolvedValue([
       {
         champion: null,
@@ -178,7 +178,7 @@ describe("competition hub indexing", () => {
 
     expect(
       screen.getByRole("img", { name: "Nations Championship" }),
-    ).toHaveAttribute("data-src", "/visuals/default.jpg");
+    ).toHaveAttribute("data-src", "/visuals/nations-championship.jpg");
   });
 
   it("uses Japanese RWC 2027 metadata for schedule and viewing queries", () => {

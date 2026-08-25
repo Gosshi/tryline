@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -10,6 +11,7 @@ import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
 import { StandingsTable } from "@/components/standings-table";
 import { TrackedLink } from "@/components/tracked-link";
+import { getCompetitionHeroImage } from "@/lib/competition-hero-images";
 import {
   getCompetitionBySlug,
   getCompetitionGuide,
@@ -117,6 +119,52 @@ function findNextScheduledMatch(
       )
       .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt))[0] ?? null
   );
+}
+
+type SeasonProgress = {
+  completedRounds: number;
+  nextMatch: MatchListItem | null;
+  nextRound: number;
+  totalRounds: number;
+};
+
+function getSeasonProgress(matches: MatchListItem[]): SeasonProgress | null {
+  const matchesByRound = new Map<number, MatchListItem[]>();
+
+  for (const match of matches) {
+    if (match.round === null) {
+      continue;
+    }
+
+    const roundMatches = matchesByRound.get(match.round) ?? [];
+    roundMatches.push(match);
+    matchesByRound.set(match.round, roundMatches);
+  }
+
+  if (matchesByRound.size === 0) {
+    return null;
+  }
+
+  const rounds = [...matchesByRound.entries()].sort(
+    ([left], [right]) => left - right,
+  );
+  const completedRounds = rounds.filter(([, roundMatches]) =>
+    roundMatches.every((match) => match.status === "finished"),
+  ).length;
+  const nextRound = rounds.find(([, roundMatches]) =>
+    roundMatches.some((match) => match.status !== "finished"),
+  );
+
+  return {
+    completedRounds,
+    nextMatch: nextRound
+      ? ([...nextRound[1]].sort((left, right) =>
+          left.kickoffAt.localeCompare(right.kickoffAt),
+        )[0] ?? null)
+      : null,
+    nextRound: nextRound?.[0] ?? rounds.at(-1)?.[0] ?? 0,
+    totalRounds: rounds.length,
+  };
 }
 
 function isJapanMatch(match: MatchListItem): boolean {
@@ -459,6 +507,7 @@ export default async function SeasonPage({ params }: Props) {
           .slice(0, 2)
           .join(" / ") || null
       : (standings[0]?.teamName ?? null);
+  const seasonProgress = getSeasonProgress(matches);
   const nextMatchJst = nextMatch
     ? formatMatchKickoffJst(nextMatch.kickoffAt)
     : null;
@@ -533,18 +582,32 @@ export default async function SeasonPage({ params }: Props) {
     const shouldCollapse = excerpt.length > 0 && excerpt.length < rows.length;
 
     if (!shouldCollapse) {
-      return <StandingsTable standings={rows} title={title} />;
+      return (
+        <StandingsTable
+          accentColor={accentColor}
+          standings={rows}
+          title={title}
+        />
+      );
     }
 
     return (
       <div className="space-y-3">
-        <StandingsTable standings={excerpt} title={title ?? "順位表"} />
+        <StandingsTable
+          accentColor={accentColor}
+          standings={excerpt}
+          title={title ?? "順位表"}
+        />
         <details className="rounded-[var(--radius-md)] bg-white p-4 shadow-[var(--shadow-soft)]">
           <summary className="cursor-pointer rounded-full border border-slate-200 px-4 py-2 text-center text-xs font-bold text-[var(--color-accent)] transition-colors hover:border-slate-300 hover:bg-slate-50">
             全順位表を見る
           </summary>
           <div className="mt-4 border-t border-slate-100 pt-4">
-            <StandingsTable standings={rows} title={title} />
+            <StandingsTable
+              accentColor={accentColor}
+              standings={rows}
+              title={title}
+            />
           </div>
         </details>
       </div>
@@ -566,52 +629,113 @@ export default async function SeasonPage({ params }: Props) {
         type="application/ld+json"
       />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <header
-          className="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-slate-200"
-          style={{ borderLeft: `4px solid ${accentColor}` }}
-        >
-          <p
-            className="text-xs font-semibold uppercase tracking-[0.18em]"
-            style={{ color: accentColor }}
-          >
-            {formatFamilyName(family)}
-          </p>
-          <h1 className="mt-1 font-heading text-4xl font-bold tracking-tight text-[var(--color-ink)] sm:text-5xl">
-            {formatCompetitionTitle(comp, comp.season)}
-          </h1>
-          {dateRange && (
-            <p className="mt-3 text-sm text-[var(--color-ink-muted)]">
-              {dateRange}
-            </p>
-          )}
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Link
-              className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
-              href={getWebcalUrl(competitionCalendarFeedUrl)}
-            >
-              この大会を購読
-            </Link>
-            <Link
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-              href={competitionCalendarFeedUrl}
-            >
-              大会iCal URL
-            </Link>
-            <TrackedLink
-              analytics={{
-                cta_id: "hub_hero_calendar",
-                cta_location: "hub_hero",
-                destination: "calendar",
-                label: "今週の全試合を見る",
+        <header className="overflow-hidden rounded-2xl bg-[var(--color-ink)] shadow-[var(--shadow-soft)]">
+          <div className="relative min-h-64 overflow-hidden sm:min-h-72">
+            <Image
+              alt={formatFamilyName(family)}
+              className="object-cover object-center"
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 1152px"
+              src={getCompetitionHeroImage(family)}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(100deg, ${accentColor}eb 0%, ${accentColor}c7 42%, ${accentColor}6b 100%)`,
               }}
-              className="inline-flex items-center px-1 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-              href="/calendar"
-            >
-              今週の全試合を見る →
-            </TrackedLink>
+            />
+            <div className="relative z-10 flex min-h-64 flex-col justify-end px-5 py-6 sm:min-h-72 sm:px-8 sm:py-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/75">
+                {formatFamilyName(family)}
+              </p>
+              <h1 className="mt-2 max-w-3xl font-heading text-3xl font-bold tracking-tight text-white sm:text-5xl">
+                {formatCompetitionTitle(comp, comp.season)}
+              </h1>
+              {dateRange && (
+                <p className="mt-3 text-sm font-medium text-white/80">
+                  {dateRange}
+                </p>
+              )}
+            </div>
           </div>
-          <div className="mt-5">
-            <NewsletterSignup source="competition" />
+          {(leaderLabel || seasonProgress?.nextMatch || seasonProgress) && (
+            <div className="grid divide-y divide-white/15 bg-black/55 text-white sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              {leaderLabel && (
+                <div className="px-5 py-4 sm:px-6">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
+                    首位
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-white">
+                    {leaderLabel}
+                  </p>
+                </div>
+              )}
+              {seasonProgress && (
+                <div className="px-5 py-4 sm:px-6">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
+                    進行
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-white">
+                    {seasonProgress.completedRounds}節 / 全
+                    {seasonProgress.totalRounds}節
+                  </p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/20">
+                    <div
+                      className="h-full rounded-full bg-white"
+                      style={{
+                        width: `${(seasonProgress.completedRounds / seasonProgress.totalRounds) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+              {seasonProgress?.nextMatch && (
+                <Link
+                  className="px-5 py-4 transition-colors hover:bg-white/10 sm:px-6"
+                  href={`/matches/${seasonProgress.nextMatch.id}`}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
+                    次節 第{seasonProgress.nextRound}節
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-white">
+                    {formatMatchKickoffJst(seasonProgress.nextMatch.kickoffAt)}
+                  </p>
+                </Link>
+              )}
+            </div>
+          )}
+          <div className="bg-white px-5 py-5 sm:px-8">
+            <div className="flex flex-wrap gap-2">
+              <Link
+                className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
+                href={getWebcalUrl(competitionCalendarFeedUrl)}
+              >
+                この大会を購読
+              </Link>
+              <Link
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                href={competitionCalendarFeedUrl}
+              >
+                大会iCal URL
+              </Link>
+              <TrackedLink
+                analytics={{
+                  cta_id: "hub_hero_calendar",
+                  cta_location: "hub_hero",
+                  destination: "calendar",
+                  label: "今週の全試合を見る",
+                }}
+                className="inline-flex items-center px-1 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                href="/calendar"
+              >
+                今週の全試合を見る →
+              </TrackedLink>
+            </div>
+            <div className="mt-5">
+              <NewsletterSignup source="competition" />
+            </div>
           </div>
         </header>
 

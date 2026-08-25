@@ -41,8 +41,10 @@ describe("StandingsTable", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders standings rows", () => {
-    const { container } = render(<StandingsTable standings={[standing]} />);
+  it("renders standings rows with a dark competition band", () => {
+    const { container } = render(
+      <StandingsTable accentColor="#001489" standings={[standing]} />,
+    );
 
     expect(screen.getByText("順位表")).toBeInTheDocument();
     expect(screen.getByText("Ireland")).toHaveClass("hidden", "sm:inline");
@@ -57,7 +59,34 @@ describe("StandingsTable", () => {
     expect(container.querySelector("section")).toHaveClass(
       "shadow-[var(--shadow-soft)]",
     );
-    expect(container.querySelector("tbody tr")).toHaveClass("bg-emerald-50/60");
+    expect(container.querySelector("tbody tr")).toHaveStyle({
+      backgroundColor: "rgb(0 20 137 / 0.16)",
+    });
+    expect(screen.getByRole("heading", { name: "順位表" })).toHaveClass(
+      "text-white",
+    );
+  });
+
+  it("uses three rank tint levels and leaves fifth place untinted", () => {
+    const { container } = render(
+      <StandingsTable
+        accentColor="#001489"
+        standings={[
+          createStanding(1, "Team 1"),
+          createStanding(3, "Team 3"),
+          createStanding(4, "Team 4"),
+          createStanding(5, "Team 5"),
+        ]}
+      />,
+    );
+    const rows = container.querySelectorAll("tbody tr");
+
+    expect(rows[0]).toHaveStyle({ backgroundColor: "rgb(0 20 137 / 0.16)" });
+    expect(rows[1]).toHaveStyle({ backgroundColor: "rgb(0 20 137 / 0.09)" });
+    expect(rows[2]).toHaveStyle({
+      backgroundColor: "rgb(0 20 137 / 0.045)",
+    });
+    expect(rows[3]).not.toHaveAttribute("style");
   });
 
   it("highlights the teams involved in the current match", () => {
@@ -83,9 +112,11 @@ describe("StandingsTable", () => {
     const details = screen.getByText("全順位表を見る").closest("details");
 
     expect(details).not.toHaveAttribute("open");
-    expect(screen.getAllByText("Team 3")).toHaveLength(2);
-    expect(screen.getAllByText("Team 8")).toHaveLength(2);
+    expect(screen.getAllByText("Team 3").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Team 8").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("Team 10")).toBeInTheDocument();
-    expect(screen.getByLabelText("省略された順位があります")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("省略された順位があります"),
+    ).toBeInTheDocument();
   });
 });

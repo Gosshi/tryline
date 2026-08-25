@@ -45,6 +45,12 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/image", () => ({
+  default: ({ alt, src }: { alt: string; src: string }) => (
+    <div aria-label={alt} data-src={src} role="img" />
+  ),
+}));
+
 vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("notFound");
@@ -271,6 +277,42 @@ describe("season page information architecture", () => {
     expect(follows(schedule!, standings!)).toBe(true);
     expect(follows(matchGroups, standings!)).toBe(true);
     expect(follows(standings!, guideFrame!)).toBe(true);
+  });
+
+  it("uses the family visual and derives the hero progress without another query", async () => {
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    );
+
+    expect(screen.getByRole("img", { name: "Premiership" })).toHaveAttribute(
+      "data-src",
+      "/visuals/premiership.jpg",
+    );
+    expect(screen.getByText("進行")).toBeInTheDocument();
+    expect(screen.getByText("0節 / 全1節")).toBeInTheDocument();
+    expect(matchesMocks.listMatchesForCompetition).toHaveBeenCalledTimes(1);
+  });
+
+  it("omits progress when every match has a null round", async () => {
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      { ...match, round: null },
+    ]);
+
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    );
+
+    expect(screen.queryByText("進行")).not.toBeInTheDocument();
   });
 
   it("links to the competition-specific iCal subscription", async () => {
