@@ -453,6 +453,50 @@ export type Database = {
           },
         ];
       };
+      news_links: {
+        Row: {
+          created_at: string;
+          id: string;
+          matched_match_id: string | null;
+          notified_at: string | null;
+          published_at: string | null;
+          source_domain: string;
+          source_url: string;
+          title: string;
+          title_ja: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          matched_match_id?: string | null;
+          notified_at?: string | null;
+          published_at?: string | null;
+          source_domain: string;
+          source_url: string;
+          title: string;
+          title_ja?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          matched_match_id?: string | null;
+          notified_at?: string | null;
+          published_at?: string | null;
+          source_domain?: string;
+          source_url?: string;
+          title?: string;
+          title_ja?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "news_links_matched_match_id_fkey";
+            columns: ["matched_match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       match_content: {
         Row: {
           content_md: string;
