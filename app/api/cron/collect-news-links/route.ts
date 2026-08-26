@@ -11,7 +11,8 @@ import {
 } from "@/lib/news-links";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
+const NEWS_LINK_NOTIFICATION_LIMIT = 20;
 
 export async function POST(request: Request) {
   try {
@@ -47,7 +48,12 @@ export async function POST(request: Request) {
     const links = await fetchNewsLinks();
     let matched = 0;
     let notified = 0;
+    let truncated = false;
     for (const link of links) {
+      if (notified >= NEWS_LINK_NOTIFICATION_LIMIT) {
+        truncated = true;
+        break;
+      }
       const match = matchNewsLink(link.title, candidates);
       const { data: saved, error: saveError } = await db
         .from("news_links")
@@ -103,6 +109,7 @@ export async function POST(request: Request) {
       matched,
       notified,
       status: "ok",
+      truncated,
     });
   } catch (error) {
     return NextResponse.json(
