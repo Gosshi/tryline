@@ -81,28 +81,26 @@ describe("/api/cron/collect-news-links", () => {
       Array.from({ length: 21 }, (_, index) => link(index)),
     );
     newsLinksMock.matchNewsLink.mockReturnValue(matchedFixture);
-    const { NEWS_LINK_NOTIFICATION_LIMIT, POST } = await import(
-      "@/app/api/cron/collect-news-links/route"
-    );
+    const { POST } = await import("@/app/api/cron/collect-news-links/route");
 
     const response = await POST(new Request("http://localhost"));
 
     expect(await response.json()).toEqual({
       fetched: 21,
-      matched: NEWS_LINK_NOTIFICATION_LIMIT,
-      notified: NEWS_LINK_NOTIFICATION_LIMIT,
+      matched: 20,
+      notified: 20,
       status: "ok",
       truncated: true,
     });
-    expect(upsert).toHaveBeenCalledTimes(NEWS_LINK_NOTIFICATION_LIMIT);
+    expect(upsert).toHaveBeenCalledTimes(20);
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({ source_url: "https://example.test/0" }),
       { ignoreDuplicates: true, onConflict: "source_url" },
     );
     expect(newsLinksMock.translateNewsTitle).toHaveBeenCalledTimes(
-      NEWS_LINK_NOTIFICATION_LIMIT,
+      20,
     );
-    expect(fetch).toHaveBeenCalledTimes(NEWS_LINK_NOTIFICATION_LIMIT);
+    expect(fetch).toHaveBeenCalledTimes(20);
   });
 
   it("does not consume the notification limit for unmatched links", async () => {
@@ -115,20 +113,18 @@ describe("/api/cron/collect-news-links", () => {
     newsLinksMock.matchNewsLink.mockImplementation((title: string) =>
       title === "unmatched" ? null : matchedFixture,
     );
-    const { NEWS_LINK_NOTIFICATION_LIMIT, POST } = await import(
-      "@/app/api/cron/collect-news-links/route"
-    );
+    const { POST } = await import("@/app/api/cron/collect-news-links/route");
 
     const response = await POST(new Request("http://localhost"));
 
     expect(await response.json()).toEqual({
       fetched: 22,
-      matched: NEWS_LINK_NOTIFICATION_LIMIT,
-      notified: NEWS_LINK_NOTIFICATION_LIMIT,
+      matched: 20,
+      notified: 20,
       status: "ok",
       truncated: true,
     });
-    expect(upsert).toHaveBeenCalledTimes(NEWS_LINK_NOTIFICATION_LIMIT + 1);
+    expect(upsert).toHaveBeenCalledTimes(21);
   });
 
   it("reports an untruncated response when fewer notifications are sent", async () => {

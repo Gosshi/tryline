@@ -12,7 +12,7 @@ import {
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
-export const NEWS_LINK_NOTIFICATION_LIMIT = 20;
+const NEWS_LINK_NOTIFICATION_LIMIT = 20;
 
 export async function POST(request: Request) {
   try {
