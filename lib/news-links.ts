@@ -6,7 +6,7 @@ export const NEWS_FEEDS = [
   { domain: "rnz.co.nz", url: "https://www.rnz.co.nz/rss/sport.xml" },
   {
     domain: "nzherald.co.nz",
-    url: "https://www.nzherald.co.nz/arc/outboundfeeds/rss/topic/rugby/?outputType=xml&_website=nzh",
+    url: "https://www.nzherald.co.nz/arc/outboundfeeds/rss/section/sport/?outputType=xml&_website=nzh",
   },
   {
     domain: "stuff.co.nz",
@@ -45,28 +45,64 @@ function tag(item: string, name: string) {
   );
 }
 
-export function parseRss(xml: string, sourceDomain: string): NewsLink[] {
-  return [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)].flatMap(
-    (match) => {
-      const item = match[1] ?? "";
-      const title = tag(item, "title");
-      const sourceUrl = tag(item, "link") ?? tag(item, "guid");
-      if (!title || !sourceUrl) return [];
-      const published = tag(item, "pubDate") ?? tag(item, "published");
-      const publishedAt =
-        published && !Number.isNaN(Date.parse(decode(published)))
-          ? new Date(decode(published)).toISOString()
-          : null;
-      return [
-        {
-          publishedAt,
-          sourceDomain,
-          sourceUrl: decode(sourceUrl),
-          title: decode(title),
-        },
-      ];
-    },
+function attribute(item: string, name: string, attributeName: string) {
+  return (
+    item.match(
+      new RegExp(
+        `<${name}\\b[^>]*\\b${attributeName}=["']([^"']+)["'][^>]*\\/?\\s*>`,
+        "i",
+      ),
+    )?.[1] ?? null
   );
+}
+
+export function parseRss(xml: string, sourceDomain: string): NewsLink[] {
+  return [
+    ...xml.matchAll(/<(?:item|entry)\b[^>]*>([\s\S]*?)<\/(?:item|entry)>/gi),
+  ].flatMap((match) => {
+    const item = match[1] ?? "";
+    const title = tag(item, "title");
+    const sourceUrl =
+      attribute(item, "link", "href") ?? tag(item, "link") ?? tag(item, "guid");
+    if (!title || !sourceUrl) return [];
+    const published =
+      tag(item, "pubDate") ?? tag(item, "published") ?? tag(item, "updated");
+    const publishedAt =
+      published && !Number.isNaN(Date.parse(decode(published)))
+        ? new Date(decode(published)).toISOString()
+        : null;
+    return [
+      {
+        publishedAt,
+        sourceDomain,
+        sourceUrl: decode(sourceUrl),
+        title: decode(title),
+      },
+    ];
+  });
+}
+
+const TEAM_ALIASES: Record<string, string[]> = {
+  Argentina: ["Pumas", "Los Pumas"],
+  Australia: ["Wallabies", "Wallaby"],
+  Fiji: ["Flying Fijians"],
+  France: ["Les Bleus"],
+  Italy: ["Azzurri"],
+  Japan: ["Brave Blossoms", "ブレイブブロッサムズ"],
+  "New Zealand": ["All Blacks", "All Black"],
+  "South Africa": ["Springboks", "Springbok", "Boks"],
+};
+
+function includesTeamReference(title: string, teamName: string | null) {
+  if (!teamName) return false;
+  const references = [teamName, ...(TEAM_ALIASES[teamName] ?? [])];
+  return references.some((reference) => {
+    const escaped = reference.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(
+      /^[\x00-\x7F]+$/.test(reference) ? `\\b${escaped}\\b` : escaped,
+      "i",
+    ).test(title);
+  });
 }
 
 export async function fetchNewsLinks(): Promise<NewsLink[]> {
@@ -81,15 +117,22 @@ export async function fetchNewsLinks(): Promise<NewsLink[]> {
 }
 
 export function matchNewsLink(title: string, matches: NewsMatch[]) {
-  const lowerTitle = title.toLocaleLowerCase();
+  const candidates = matches.filter((match) =>
+    [match.homeTeamName, match.awayTeamName].some((name) =>
+      includesTeamReference(title, name),
+    ),
+  );
+  const now = Date.now();
+  const upcoming = candidates.filter(
+    (match) => Date.parse(match.kickoffAt) >= now,
+  );
+  const target = upcoming.length > 0 ? upcoming : candidates;
   return (
-    matches
-      .filter((match) =>
-        [match.homeTeamName, match.awayTeamName].some(
-          (name) => name && lowerTitle.includes(name.toLocaleLowerCase()),
-        ),
-      )
-      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt))[0] ?? null
+    target.sort((a, b) =>
+      upcoming.length > 0
+        ? a.kickoffAt.localeCompare(b.kickoffAt)
+        : b.kickoffAt.localeCompare(a.kickoffAt),
+    )[0] ?? null
   );
 }
 
