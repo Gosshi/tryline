@@ -93,6 +93,30 @@ describe("news links", () => {
     vi.useRealTimers();
   });
 
+  it("matches aliases while keeping short aliases word-boundary-safe", () => {
+    const matches = [
+      {
+        id: "australia",
+        kickoffAt: "2026-08-30T00:00:00Z",
+        homeTeamName: "Australia",
+        awayTeamName: "Japan",
+      },
+      {
+        id: "south-africa",
+        kickoffAt: "2026-08-30T00:00:00Z",
+        homeTeamName: "South Africa",
+        awayTeamName: "Fiji",
+      },
+    ];
+
+    expect(matchNewsLink("Wallabies squad", matches)?.id).toBe("australia");
+    expect(matchNewsLink("ブレイブブロッサムズ squad", matches)?.id).toBe(
+      "australia",
+    );
+    expect(matchNewsLink("Boks squad", matches)?.id).toBe("south-africa");
+    expect(matchNewsLink("notboks squad", matches)).toBeNull();
+  });
+
   it("includes a machine-readable match id in notifications", () => {
     expect(
       formatNewsLinkNotification({

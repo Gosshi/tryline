@@ -96,12 +96,13 @@ const TEAM_ALIASES: Record<string, string[]> = {
 function includesTeamReference(title: string, teamName: string | null) {
   if (!teamName) return false;
   const references = [teamName, ...(TEAM_ALIASES[teamName] ?? [])];
-  return references.some((reference) =>
-    new RegExp(
-      `\\b${reference.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+  return references.some((reference) => {
+    const escaped = reference.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(
+      /^[\x00-\x7F]+$/.test(reference) ? `\\b${escaped}\\b` : escaped,
       "i",
-    ).test(title),
-  );
+    ).test(title);
+  });
 }
 
 export async function fetchNewsLinks(): Promise<NewsLink[]> {
