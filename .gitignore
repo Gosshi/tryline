@@ -30,6 +30,7 @@ pnpm-debug.log*
 # ローカル環境変数
 .env
 .env.local
+.env.bing.local
 .env.gsc.local
 .env.development.local
 .env.test.local
