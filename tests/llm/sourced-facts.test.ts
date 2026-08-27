@@ -13,6 +13,7 @@ import {
   SEARCH_PROMPT_VERSION,
   buildSearchPrompt,
   fetchSourcedFactsForMatch,
+  isManualSourcedFact,
   isSourcedFactsEnabledForMatch,
   loadSourcedFactsForMatch,
   parseSourcedFactsResponse,
@@ -25,6 +26,7 @@ import type { SourcedFactRejection } from "@/lib/llm/sourced-facts/types";
 const dbMock = vi.hoisted(() => ({
   delete: vi.fn(),
   deleteEq: vi.fn(),
+  deleteOr: vi.fn(),
   from: vi.fn(),
   matchSingle: vi.fn(),
   sourcedFactsThen: vi.fn(),
@@ -72,11 +74,13 @@ function createMatchBuilder() {
 function createSourcedFactsBuilder(cachedRows: unknown[] = []) {
   const deleteBuilder = {
     eq: dbMock.deleteEq,
+    or: dbMock.deleteOr,
     then: (resolve: (value: { error: null }) => unknown) =>
       Promise.resolve(resolve({ error: null })),
   };
   dbMock.delete.mockReturnValue(deleteBuilder);
   dbMock.deleteEq.mockReturnValue(deleteBuilder);
+  dbMock.deleteOr.mockReturnValue(deleteBuilder);
 
   return {
     delete: dbMock.delete,
@@ -726,6 +730,63 @@ describe("fetchSourcedFactsForMatch", () => {
       "source_domain",
       "springboks.rugby",
     );
+    expect(dbMock.deleteOr).toHaveBeenCalledWith(
+      "metadata->>entry_method.is.null,metadata->>entry_method.neq.manual",
+    );
+  });
+
+  it("does not persist a non-allowlisted fact from the automatic search path", async () => {
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({
+        facts: [
+          {
+            confidence: "high",
+            fact: "A non-allowlisted source claims a lineup change.",
+            source_url: "https://allblacks.com/news/lineup",
+          },
+        ],
+      }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(result.facts).toEqual([]);
+    expect(dbMock.upsert).not.toHaveBeenCalled();
+  });
+
+  it("preserves a manual fact from an allowlisted domain during automatic replacement", async () => {
+    const builder = createSourcedFactsBuilder();
+    dbMock.from.mockReturnValue(builder);
+
+    await replaceSourcedFactsForSourceDomains(dbMock as never, [
+      {
+        confidence: "high",
+        content_type: "preview",
+        fact: "An automatic fact from Springboks Rugby.",
+        match_id: "match-1",
+        model_version: "test-model",
+        source_domain: "springboks.rugby",
+        source_url: "https://springboks.rugby/news/test",
+      },
+    ]);
+
+    expect(dbMock.deleteOr).toHaveBeenCalledWith(
+      "metadata->>entry_method.is.null,metadata->>entry_method.neq.manual",
+    );
   });
 
   it("does not delete cached facts when a refreshed search has no rows", async () => {
@@ -954,6 +1015,21 @@ describe("fetchSourcedFactsForMatch", () => {
     );
 
     warn.mockRestore();
+  });
+
+  it("returns a manually entered fact from a non-allowlisted domain", async () => {
+    const manualFact = cachedFact({
+      metadata: { entry_method: "manual" },
+      model_version: "manual",
+      source_domain: "rnz.co.nz",
+      source_url: "https://www.rnz.co.nz/news/sport/1",
+    });
+    dbMock.from.mockReturnValue(createSourcedFactsBuilder([manualFact]));
+
+    await expect(
+      loadSourcedFactsForMatch("match-1", "preview"),
+    ).resolves.toEqual([manualFact]);
+    expect(isManualSourcedFact(manualFact)).toBe(true);
   });
 
   it("returns no cached facts when every source is excluded", async () => {
