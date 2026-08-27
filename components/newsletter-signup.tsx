@@ -1,19 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import {
+  trackNewsletterResult,
+  trackNewsletterSubmit,
+  trackNewsletterView,
+  type NewsletterSource,
+} from "@/lib/analytics";
 
 type NewsletterSignupProps = {
-  source: "calendar" | "competition" | "home";
+  source: NewsletterSource;
 };
 
 export function NewsletterSignup({ source }: NewsletterSignupProps) {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const hasTrackedView = useRef(false);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (
+          !entry?.isIntersecting ||
+          entry.intersectionRatio < 0.5 ||
+          hasTrackedView.current
+        ) {
+          return;
+        }
+
+        hasTrackedView.current = true;
+        trackNewsletterView({ source });
+        observer.disconnect();
+      },
+      { threshold: 0.5 },
+    );
+    observer.observe(section);
+
+    return () => observer.disconnect();
+  }, [source]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
+    trackNewsletterSubmit({ source });
     setMessage("");
 
     try {
@@ -25,23 +63,30 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
 
       if (response.status === 429) {
         setMessage("しばらくしてから、もう一度お試しください。");
+        trackNewsletterResult({ source, status: "rate_limited" });
       } else if (!response.ok) {
         setMessage("登録を受け付けられませんでした。入力内容を確認してください。");
+        trackNewsletterResult({ source, status: "error" });
       } else {
         setEmail("");
         setMessage(
           "必要な手続きをメールでお知らせします。受信箱をご確認ください。",
         );
+        trackNewsletterResult({ source, status: "ok" });
       }
     } catch {
       setMessage("通信に失敗しました。しばらくしてから、もう一度お試しください。");
+      trackNewsletterResult({ source, status: "network_error" });
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <section className="border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4">
+    <section
+      className="border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4"
+      ref={sectionRef}
+    >
       <p className="text-sm font-bold text-[var(--color-ink)]">
         週次ニュースレター
       </p>
