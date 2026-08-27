@@ -176,23 +176,31 @@ describe("POST /api/discord/interactions", () => {
     expect(payload.data.components).toHaveLength(2);
     expect(payload.data.components[0]).toMatchObject({
       label: "事実",
-      required: true,
       type: 18,
     });
+    expect(payload.data.components[0]).not.toHaveProperty("required");
     expect(payload.data.components[0].component).toMatchObject({
       custom_id: "fact",
+      required: true,
       style: 2,
       type: 4,
     });
     expect(payload.data.components[1]).toMatchObject({
       label: "確度",
-      required: false,
       type: 18,
     });
+    expect(payload.data.components[1]).not.toHaveProperty("required");
     expect(payload.data.components[1].component).toMatchObject({
       custom_id: "confidence",
+      required: false,
       type: 3,
     });
+    expect(payload.data.components[1].component).not.toHaveProperty(
+      "min_values",
+    );
+    expect(payload.data.components[1].component).not.toHaveProperty(
+      "max_values",
+    );
   });
 
   it("rejects a notification that is not backed by its news link record", async () => {

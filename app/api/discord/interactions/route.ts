@@ -132,29 +132,27 @@ function buildFactEntryModal(matchId: string, newsLinkId: string) {
         {
           component: {
             custom_id: "fact",
+            required: true,
             style: 2,
             type: 4,
           },
           label: "事実",
-          required: true,
           type: 18,
         },
         {
           component: {
             custom_id: "confidence",
-            max_values: 1,
-            min_values: 0,
             options: [
               { label: "high", value: "high" },
               { default: true, label: "medium", value: "medium" },
               { label: "low", value: "low" },
             ],
-            placeholder: "確度（既定: medium）",
+            placeholder: "確度を選択",
+            required: false,
             type: 3,
           },
-          description: "既定: medium",
+          description: "未選択なら medium",
           label: "確度",
-          required: false,
           type: 18,
         },
       ],
