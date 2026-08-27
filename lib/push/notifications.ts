@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type PushNotificationKind = "prematch" | "preview" | "recap";
 
 type PushTokenRow = {
+  team_slugs: string[] | null;
   token: string;
 };
 
@@ -144,15 +145,24 @@ async function getTokensForMatch(
 ) {
   const { data, error } = await client
     .from("expo_push_tokens")
-    .select("token")
-    .eq(column, true)
-    .overlaps("team_slugs", teamsForMatch(match));
+    .select("token, team_slugs")
+    .eq(column, true);
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []) as PushTokenRow[];
+  const matchTeams = teamsForMatch(match);
+
+  return ((data ?? []) as PushTokenRow[]).filter((row) => {
+    const teamSlugs = row.team_slugs ?? [];
+
+    if (teamSlugs.length === 0) {
+      return column === "notify_content";
+    }
+
+    return matchTeams.some((slug) => teamSlugs.includes(slug));
+  });
 }
 
 async function deleteInvalidTokens(

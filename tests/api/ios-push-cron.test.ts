@@ -40,7 +40,12 @@ type FakeClientState = {
   contentRows?: unknown[];
   insertedLogs?: unknown[];
   loggedRows?: Array<{ kind: string; match_id: string }>;
-  tokenRows?: Array<{ token: string }>;
+  tokenRows?: Array<{
+    notify_content?: boolean;
+    notify_prematch?: boolean;
+    team_slugs?: string[] | null;
+    token: string;
+  }>;
 };
 
 function createMatch(overrides: Partial<FakeMatch> = {}): FakeMatch {
@@ -106,16 +111,31 @@ function createFakeClient(state: FakeClientState = {}) {
       });
     }),
   };
+  let notificationColumn: "notify_content" | "notify_prematch" | null = null;
   const tokenQuery = {
-    eq: vi.fn(() => tokenQuery),
-    overlaps: vi.fn().mockImplementation((column: string, value: string[]) => {
-      tokenQueries.push({ column, value });
-
-      return Promise.resolve({
-        data: state.tokenRows ?? [],
-        error: null,
-      });
-    }),
+    eq: vi.fn(
+      (column: "notify_content" | "notify_prematch", value: boolean) => {
+        notificationColumn = column;
+        tokenQueries.push({ column, value });
+        return tokenQuery;
+      },
+    ),
+    then(
+      resolve: (value: {
+        data: FakeClientState["tokenRows"];
+        error: null;
+      }) => void,
+    ) {
+      return Promise.resolve(
+        resolve({
+          data: (state.tokenRows ?? []).filter(
+            (row) =>
+              notificationColumn === null || row[notificationColumn] !== false,
+          ),
+          error: null,
+        }),
+      );
+    },
   };
   const deleteQuery = {
     in: vi.fn().mockImplementation((column: string, value: string[]) => {
@@ -185,7 +205,9 @@ describe("sendPrematchPushNotifications", () => {
   it("sends matching tokens, logs once, and skips an already logged rerun", async () => {
     const match = createMatch();
     const firstState: FakeClientState = {
-      tokenRows: [{ token: "ExponentPushToken[token-1]" }],
+      tokenRows: [
+        { team_slugs: ["japan"], token: "ExponentPushToken[token-1]" },
+      ],
     };
     const firstClient = createFakeClient(firstState);
     const { sendPrematchPushNotifications } =
@@ -210,7 +232,7 @@ describe("sendPrematchPushNotifications", () => {
       }),
     ]);
     expect(firstClient.tokenQueries).toEqual([
-      { column: "team_slugs", value: ["japan", "france"] },
+      { column: "notify_prematch", value: true },
     ]);
     expect(firstClient.insertedLogs).toEqual([
       { kind: "prematch", match_id: "match-1", sent_count: 1 },
@@ -219,7 +241,9 @@ describe("sendPrematchPushNotifications", () => {
     expoMock.sendExpoPushNotifications.mockClear();
     const rerunClient = createFakeClient({
       loggedRows: [{ match_id: "match-1", kind: "prematch" }],
-      tokenRows: [{ token: "ExponentPushToken[token-1]" }],
+      tokenRows: [
+        { team_slugs: ["japan"], token: "ExponentPushToken[token-1]" },
+      ],
     });
     const rerun = await sendPrematchPushNotifications(
       [match as never],
@@ -246,6 +270,27 @@ describe("sendPrematchPushNotifications", () => {
     expect(expoMock.sendExpoPushNotifications).toHaveBeenCalledWith([]);
     expect(client.insertedLogs).toEqual([
       { kind: "prematch", match_id: "match-1", sent_count: 0 },
+    ]);
+  });
+
+  it("excludes empty team slug tokens from prematch notifications", async () => {
+    const client = createFakeClient({
+      tokenRows: [
+        { team_slugs: [], token: "ExponentPushToken[empty]" },
+        { team_slugs: ["japan"], token: "ExponentPushToken[japan]" },
+      ],
+    });
+    const { sendPrematchPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    const summary = await sendPrematchPushNotifications(
+      [createMatch() as never],
+      client.client as never,
+    );
+
+    expect(summary.sentNotifications).toBe(1);
+    expect(expoMock.sendExpoPushNotifications).toHaveBeenCalledWith([
+      expect.objectContaining({ to: "ExponentPushToken[japan]" }),
     ]);
   });
 });
@@ -298,6 +343,44 @@ describe("sendContentPushNotifications", () => {
     for (const message of sentMessages) {
       expect(message.body).not.toMatch(/\d+\s*[-–]\s*\d+/);
     }
+  });
+
+  it("sends content notifications to empty and null team slug tokens", async () => {
+    const client = createFakeClient({
+      contentRows: [
+        {
+          match_id: "match-1",
+          content_type: "preview",
+          generated_at: "2026-07-18T00:00:00.000Z",
+          match: contentMatchRow(),
+        },
+      ],
+      tokenRows: [
+        { team_slugs: [], token: "ExponentPushToken[empty]" },
+        { team_slugs: null, token: "ExponentPushToken[null]" },
+        { team_slugs: ["japan"], token: "ExponentPushToken[japan]" },
+        { team_slugs: ["ireland"], token: "ExponentPushToken[ireland]" },
+        {
+          notify_content: false,
+          team_slugs: [],
+          token: "ExponentPushToken[disabled]",
+        },
+      ],
+    });
+    const { sendContentPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    const summary = await sendContentPushNotifications(
+      new Date("2026-07-18T01:00:00.000Z"),
+      client.client as never,
+    );
+
+    expect(summary.sentNotifications).toBe(3);
+    expect(expoMock.sendExpoPushNotifications).toHaveBeenCalledWith([
+      expect.objectContaining({ to: "ExponentPushToken[empty]" }),
+      expect.objectContaining({ to: "ExponentPushToken[null]" }),
+      expect.objectContaining({ to: "ExponentPushToken[japan]" }),
+    ]);
   });
 
   it("deletes DeviceNotRegistered tokens returned by Expo", async () => {

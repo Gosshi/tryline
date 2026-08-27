@@ -49,9 +49,7 @@ vi.mock("@/lib/db/server", () => ({
         select() {
           return this;
         },
-        then(
-          resolve: (value: { data: MatchFixture[]; error: null }) => void,
-        ) {
+        then(resolve: (value: { data: MatchFixture[]; error: null }) => void) {
           return Promise.resolve(resolve({ data: dbMock.rows, error: null }));
         },
       };
@@ -91,10 +89,10 @@ function setBaseEnv() {
     "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
 }
 
-function buildRequest(headers: HeadersInit = {}) {
+function buildRequest(headers: HeadersInit = {}, method = "POST") {
   return new Request("http://localhost/api/cron/weekly-digest", {
     headers,
-    method: "POST",
+    method,
   });
 }
 
@@ -145,8 +143,18 @@ describe("/api/cron/weekly-digest", () => {
     expect(openAiMock.create).not.toHaveBeenCalled();
   });
 
-  it("skips when the weekly digest webhook is not configured", async () => {
+  it("returns 401 for GET without cron authorization", async () => {
+    const { GET } = await import("@/app/api/cron/weekly-digest/route");
+    const response = await GET(buildRequest({}, "GET"));
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "unauthorized" });
+    expect(openAiMock.create).not.toHaveBeenCalled();
+  });
+
+  it("sends email and skips Discord when the weekly digest webhook is not configured", async () => {
     delete process.env.DISCORD_WEBHOOK_WEEKLY_DIGEST;
+    dbMock.rows = [buildMatch()];
 
     const { POST } = await import("@/app/api/cron/weekly-digest/route");
     const response = await POST(
@@ -155,9 +163,16 @@ describe("/api/cron/weekly-digest", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({ reason: "no_webhook", skipped: true });
-    expect(openAiMock.create).not.toHaveBeenCalled();
+    expect(body).toEqual({
+      chunks: 1,
+      discord: "skipped",
+      matches: 1,
+      newsletter: { failed: 0, sent: 0, skipped: false },
+      status: "ok",
+    });
+    expect(openAiMock.create).toHaveBeenCalledTimes(1);
     expect(fetch).not.toHaveBeenCalled();
+    expect(newsletterMock.sendWeeklyDigestEmails).toHaveBeenCalledTimes(1);
   });
 
   it("skips without sending when no overseas finished matches are found", async () => {
@@ -231,14 +246,12 @@ describe("/api/cron/weekly-digest", () => {
     expect(openAiMock.create.mock.calls[0]?.[0].messages[1].content).toContain(
       "Ireland 24–17 France",
     );
-    expect(openAiMock.create.mock.calls[0]?.[0].messages[1].content).not.toContain(
-      "league-one-match",
-    );
+    expect(
+      openAiMock.create.mock.calls[0]?.[0].messages[1].content,
+    ).not.toContain("league-one-match");
     expect(fetch).toHaveBeenCalledTimes(2);
     const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
-    const firstPayload = JSON.parse(
-      String(fetchMock.mock.calls[0]?.[1]?.body),
-    );
+    const firstPayload = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
     expect(firstPayload).toMatchObject({
       content: expect.stringContaining("📋 note 原稿（コピペ用）"),
     });
@@ -250,5 +263,19 @@ describe("/api/cron/weekly-digest", () => {
       sent: 0,
       skipped: false,
     });
+  });
+
+  it("returns the same response for authorized GET and POST requests", async () => {
+    dbMock.rows = [buildMatch()];
+    const { GET, POST } = await import("@/app/api/cron/weekly-digest/route");
+    const headers = { Authorization: "Bearer test-cron-secret" };
+
+    const getResponse = await GET(buildRequest(headers, "GET"));
+    const postResponse = await POST(buildRequest(headers));
+
+    expect(getResponse.status).toBe(200);
+    expect(await getResponse.json()).toEqual(await postResponse.json());
+    expect(openAiMock.create).toHaveBeenCalledTimes(2);
+    expect(newsletterMock.sendWeeklyDigestEmails).toHaveBeenCalledTimes(2);
   });
 });
