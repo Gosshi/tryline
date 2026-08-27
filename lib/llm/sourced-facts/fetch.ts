@@ -69,6 +69,12 @@ export type FetchSourcedFactsResult = {
 type SourcedFactInsert =
   Database["public"]["Tables"]["match_sourced_facts"]["Insert"];
 
+export function isManualSourcedFact(
+  row: Pick<StoredSourcedFact, "metadata">,
+) {
+  return row.metadata?.entry_method === "manual";
+}
+
 /**
  * A search response is a complete latest snapshot for each source domain.
  * Replacing only domains present in a non-empty response prevents differently
@@ -98,7 +104,9 @@ export async function replaceSourcedFactsForSourceDomains(
       .delete()
       .eq("match_id", matchId)
       .eq("content_type", contentType)
-      .eq("source_domain", sourceDomain);
+      .eq("source_domain", sourceDomain)
+      // Preserve manual facts even when their source domain is refreshed.
+      .or("metadata->>entry_method.is.null,metadata->>entry_method.neq.manual");
 
     if (deleteError) {
       throw deleteError;
@@ -387,8 +395,9 @@ export async function loadSourcedFactsForMatch(
   }
 
   const rows = (data ?? []) as unknown as StoredSourcedFact[];
-  const allowedRows = rows.filter((row) =>
-    isAllowedSourcedFactDomain(row.source_domain),
+  const allowedRows = rows.filter(
+    (row) =>
+      isAllowedSourcedFactDomain(row.source_domain) || isManualSourcedFact(row),
   );
   const excludedCount = rows.length - allowedRows.length;
 
