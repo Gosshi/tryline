@@ -44,7 +44,7 @@ describe("success trackers", () => {
     render(<CheckoutSuccessTracker />);
 
     await waitFor(() => {
-      expect(gtag).toHaveBeenCalledWith("event", "trial_start");
+      expect(gtag).toHaveBeenCalledWith("event", "trial_start", {});
     });
     expect(
       gtag.mock.calls.some(
@@ -61,7 +61,7 @@ describe("success trackers", () => {
     render(<SignupSuccessTracker />);
 
     await waitFor(() => {
-      expect(gtag).toHaveBeenCalledWith("event", "sign_up");
+      expect(gtag).toHaveBeenCalledWith("event", "sign_up", {});
     });
   });
 });

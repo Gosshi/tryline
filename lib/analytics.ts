@@ -16,15 +16,79 @@ export type CtaClickParams = {
 
 export type NewsletterSource = "calendar" | "competition" | "home";
 
-export function trackEvent(
-  eventName: string,
-  params: AnalyticsEventParams = {},
-) {
+const GTAG_POLL_INTERVAL_MS = 250;
+const GTAG_MAX_WAIT_MS = 10_000;
+const MAX_QUEUED_EVENTS = 50;
+
+type QueuedEvent = {
+  eventName: string;
+  params: AnalyticsEventParams;
+};
+
+let queue: QueuedEvent[] = [];
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+let waitedMs = 0;
+
+function stopPolling() {
+  if (pollTimer !== null) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+
+  waitedMs = 0;
+}
+
+function flushQueue() {
   if (typeof window === "undefined" || typeof window.gtag !== "function") {
     return;
   }
 
-  window.gtag("event", eventName, params);
+  for (const { eventName, params } of queue) {
+    window.gtag("event", eventName, params);
+  }
+
+  queue = [];
+  stopPolling();
+}
+
+function startPolling() {
+  if (pollTimer !== null) {
+    return;
+  }
+
+  pollTimer = setInterval(() => {
+    if (typeof window.gtag === "function") {
+      flushQueue();
+      return;
+    }
+
+    waitedMs += GTAG_POLL_INTERVAL_MS;
+    if (waitedMs >= GTAG_MAX_WAIT_MS) {
+      queue = [];
+      stopPolling();
+    }
+  }, GTAG_POLL_INTERVAL_MS);
+}
+
+export function trackEvent(
+  eventName: string,
+  params: AnalyticsEventParams = {},
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (typeof window.gtag === "function") {
+    flushQueue();
+    window.gtag("event", eventName, params);
+    return;
+  }
+
+  if (queue.length < MAX_QUEUED_EVENTS) {
+    queue.push({ eventName, params });
+  }
+
+  startPolling();
 }
 
 export function trackCtaClick(params: CtaClickParams) {
@@ -44,6 +108,21 @@ export function trackPushPermissionGranted() {
 
 export function trackReturnVisit(params: { days_since_last_visit: number }) {
   trackEvent("return_visit", params);
+}
+
+export function trackTrialStart() {
+  trackEvent("trial_start");
+}
+
+export function trackSignUp() {
+  trackEvent("sign_up");
+}
+
+export function trackPaywallView(params: {
+  content_type: string;
+  match_id?: string;
+}) {
+  trackEvent("paywall_view", params);
 }
 
 export function trackNewsletterView(params: { source: NewsletterSource }) {

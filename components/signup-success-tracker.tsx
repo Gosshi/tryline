@@ -3,6 +3,8 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
+import { trackSignUp } from "@/lib/analytics";
+
 export function SignupSuccessTracker() {
   const searchParams = useSearchParams();
 
@@ -11,9 +13,7 @@ export function SignupSuccessTracker() {
       return;
     }
 
-    if (typeof window.gtag === "function") {
-      window.gtag("event", "sign_up");
-    }
+    trackSignUp();
   }, [searchParams]);
 
   return null;

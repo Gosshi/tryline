@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { trackPaywallView } from "@/lib/analytics";
+
 type PaywallViewTrackerProps = {
   contentType: string;
   matchId?: string;
@@ -12,11 +14,7 @@ export function PaywallViewTracker({
   matchId,
 }: PaywallViewTrackerProps) {
   useEffect(() => {
-    if (typeof window.gtag !== "function") {
-      return;
-    }
-
-    window.gtag("event", "paywall_view", {
+    trackPaywallView({
       content_type: contentType,
       match_id: matchId,
     });
