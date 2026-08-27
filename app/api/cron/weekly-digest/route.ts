@@ -145,7 +145,10 @@ function splitIntoChunks(text: string, maxLen = 1900): string[] {
   return chunks;
 }
 
-async function postToDiscord(webhookUrl: string, content: string): Promise<void> {
+async function postToDiscord(
+  webhookUrl: string,
+  content: string,
+): Promise<void> {
   const response = await fetch(webhookUrl, {
     body: JSON.stringify({ content }),
     headers: { "Content-Type": "application/json" },
@@ -161,14 +164,11 @@ async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function POST(request: Request) {
+async function runWeeklyDigest(request: Request) {
   try {
     assertCronAuthorized(request);
 
     const { DISCORD_WEBHOOK_WEEKLY_DIGEST } = getServerEnv();
-    if (!DISCORD_WEBHOOK_WEEKLY_DIGEST) {
-      return NextResponse.json({ reason: "no_webhook", skipped: true });
-    }
 
     const db = getSupabaseServerClient();
     const { lastSatStart, lastSunEnd } = getLastWeekendRange();
@@ -221,14 +221,16 @@ export async function POST(request: Request) {
 
     const chunks = splitIntoChunks(digest);
 
-    for (let index = 0; index < chunks.length; index += 1) {
-      const chunk = chunks[index]!;
-      const content =
-        index === 0 ? `📋 note 原稿（コピペ用）\n\n${chunk}` : chunk;
-      await postToDiscord(DISCORD_WEBHOOK_WEEKLY_DIGEST, content);
+    if (DISCORD_WEBHOOK_WEEKLY_DIGEST) {
+      for (let index = 0; index < chunks.length; index += 1) {
+        const chunk = chunks[index]!;
+        const content =
+          index === 0 ? `📋 note 原稿（コピペ用）\n\n${chunk}` : chunk;
+        await postToDiscord(DISCORD_WEBHOOK_WEEKLY_DIGEST, content);
 
-      if (index < chunks.length - 1) {
-        await sleep(100);
+        if (index < chunks.length - 1) {
+          await sleep(100);
+        }
       }
     }
 
@@ -237,6 +239,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       chunks: chunks.length,
+      ...(DISCORD_WEBHOOK_WEEKLY_DIGEST ? {} : { discord: "skipped" }),
       matches: matches.length,
       newsletter,
       status: "ok",
@@ -256,4 +259,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
+}
+
+export async function GET(request: Request) {
+  return runWeeklyDigest(request);
+}
+
+export async function POST(request: Request) {
+  return runWeeklyDigest(request);
 }
