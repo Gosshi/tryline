@@ -183,7 +183,9 @@ export function trackPaywallView(params: {
 11. 上記8〜10が、**`window.gtag` が未定義の状態でマウントされても**、gtag 定義後に送信される。
 12. 上記1〜11をテストで検証する。タイマーは `vi.useFakeTimers()` で制御し、実時間待ちをしない。
 13. `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` がすべて通る。
-14. 既存のテストが通る。
+14. 既存のテストが**1行も変更されずに**通る。特に `tests/components/newsletter-funnel-instrumentation.test.tsx` の期待値を書き換えて通すことは認めない。
+15. **テスト間でキューが漏れない。** `queue` はモジュールスコープのため、同一ファイル内の前のテストで積まれたイベントが次のテストで flush されてはならない。vitest の `setupFiles` を追加し、全テストの `beforeEach` でキューを初期化すること。`lib/analytics.ts` はそのためのリセット関数を export してよい（テスト専用と分かる名前にする）。
+16. テストの**実行順に依存せず**通る。
 
 ## やってはいけないこと
 
@@ -192,6 +194,9 @@ export function trackPaywallView(params: {
 - イベント名を変えないこと。`trial_start` / `sign_up` / `paywall_view` は GA4 側で既に見ている可能性がある。
 - キューを `localStorage` / `sessionStorage` に永続化しないこと。ページを離れたら破棄でよい。
 - ポーリング間隔を 250ms より短くしないこと。
+- **`trackEvent` の同期パスから `flushQueue()` の呼び出しを消さないこと。** これが無いと、先に積まれたイベントを後発のイベントが追い越し、受け入れ条件2の FIFO 保証が壊れる。
+- テストのキュー汚染を、各テストファイルへ手書きのドレイン処理を足して回る形で解決しないこと。書き忘れたファイルが将来同じ落ち方をする。
+- `vi.resetModules()` を使わないこと。import 済みモジュールとの同一性がずれる。
 - `MAX_QUEUED_EVENTS` を超えたときに**古いイベントを捨てない**こと。順序の意味が壊れる。
 - `components/return-visit-tracker.tsx` のロジック（localStorage の判定・7日窓・6時間閾値）に手を入れないこと。`trackEvent` の修正だけで直る。
 - 発火条件（`checkout=success` / `signup=success`）を変えないこと。

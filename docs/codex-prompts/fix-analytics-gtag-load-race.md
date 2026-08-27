@@ -76,3 +76,82 @@
 ## PR に書いてほしいこと
 
 **gtag 未定義の状態でマウントしたときに `trial_start` と `sign_up` が失われない**ことを、どのテストが保証しているかケース名で示してください。この2つが今回の修正の主目的です。
+
+---
+
+# 修正依頼（2026-08-27・PR #736 レビュー）
+
+**キュー実装と単体テストは spec どおりで問題ありません。** `tests/lib/analytics-gtag-queue.test.ts` は受け入れ条件1〜7を正しく網羅していますし、3コンポーネントの移行も発火条件・イベント名・パラメータが維持されています。
+
+直してほしいのは **CI で落ちている1件だけ**です。
+
+```
+FAIL tests/components/newsletter-funnel-instrumentation.test.tsx
+  > tracks newsletter confirmation without changing the confirmation page
+AssertionError: expected "spy" to be called 1 times, but got 3 times
+```
+
+## 原因（特定済み・推測ではありません）
+
+`lib/analytics.ts` の `queue` は**モジュールスコープ**なので、同一テストファイル内の**テストをまたいで残ります**。
+
+`tests/components/newsletter-funnel-instrumentation.test.tsx` の流れ:
+
+1. `keeps submission working without gtag or IntersectionObserver` が `window.gtag = undefined` にしてフォームを submit
+   → `newsletter_submit` と `newsletter_result` が**キューに積まれたまま残る**
+2. 同ファイルの `afterEach` は `cleanup()` と `vi.unstubAllGlobals()` だけで、**キューを空にしない**
+3. 次の `tracks newsletter confirmation...` が `stubGtag()` で gtag を定義し、確認ページを render
+4. `trackEvent("newsletter_confirmed")` は gtag があるので**先に `flushQueue()` を呼ぶ**
+   → 残っていた2件 + 新しい1件 = **3回**
+
+**`trackEvent` が同期パスで `flushQueue()` を呼ぶ設計自体は正しいです。** これが無いと「先に積まれたイベントが後発のイベントに追い越される」ので、FIFO の保証（受け入れ条件2）が壊れます。**この呼び出しを消して直さないでください。**
+
+## 直し方
+
+`tests/components/newsletter-funnel-instrumentation.test.tsx` の `afterEach` に、`tests/lib/analytics-gtag-queue.test.ts` と同じドレイン処理を足すだけでも CI は通ります。**ただしそれは採用しないでください。**
+
+理由は、**gtag に触るテストファイルが既に8つある**ためです。
+
+```
+tests/components/success-trackers.test.tsx
+tests/components/paywall.test.tsx
+tests/components/notification-settings.test.tsx
+tests/components/tracked-link.test.tsx
+tests/components/newsletter-funnel-instrumentation.test.tsx
+tests/components/sample-recap-cta.test.tsx
+tests/components/favorite-team-follow-button.test.tsx
+tests/components/return-visit-tracker.test.tsx
+```
+
+各ファイルに手作業でドレインを書く運用にすると、**書き忘れたファイルが将来また同じ落ち方をします**。しかも症状は「無関係なテストが謎の回数で失敗する」なので、原因にたどり着くまでが遠い。今回まさにそれが起きました。
+
+**次の2つをやってください。**
+
+**1. `lib/analytics.ts` にキューを初期化する関数を export する**
+
+```ts
+export function resetAnalyticsQueue() {
+  queue = [];
+  stopPolling();
+}
+```
+
+命名は `resetAnalyticsQueue` でなくても構いませんが、**テスト専用であることが名前から分かるようにしてください**（例: `resetAnalyticsQueueForTests`）。本番コードからは呼びません。
+
+**2. vitest の `setupFiles` を追加し、全テストの `beforeEach` で自動的に初期化する**
+
+`vitest.config.*` には現在 `setupFiles` がありません。新規に設定ファイルを作り、`beforeEach` で `resetAnalyticsQueue()` を呼んでください。
+
+これで8ファイルすべてと将来追加されるファイルが自動的に保護されます。**`vi.resetModules()` は使わないでください** — 既に import 済みのモジュールとの同一性がずれ、別の壊れ方をします。
+
+`tests/lib/analytics-gtag-queue.test.ts` の既存 `afterEach` のドレイン処理は、setupFiles を入れたら**冗長なので削ってよい**です（残しても害はありません。判断は任せます）。
+
+## 完了の定義（追加分）
+
+- `pnpm test` が**全件パス**する
+- `tests/components/newsletter-funnel-instrumentation.test.tsx` を**1行も変更せずに**通ること。テストの期待値を3回に書き換えて通すのは**不可**
+- テストの実行順に依存せず通ること
+
+## PR に追記してほしいこと
+
+setupFiles を入れたことで、**どのテストファイルがキュー汚染から保護されるようになったか**を書いてください。

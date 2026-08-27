@@ -27,9 +27,6 @@ describe("analytics gtag queue", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
-    setGtag(vi.fn());
-    vi.advanceTimersByTime(250);
-    vi.clearAllTimers();
     vi.useRealTimers();
   });
 

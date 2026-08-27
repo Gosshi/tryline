@@ -70,6 +70,11 @@ function startPolling() {
   }, GTAG_POLL_INTERVAL_MS);
 }
 
+export function resetAnalyticsQueueForTests() {
+  queue = [];
+  stopPolling();
+}
+
 export function trackEvent(
   eventName: string,
   params: AnalyticsEventParams = {},
