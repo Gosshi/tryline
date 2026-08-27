@@ -174,16 +174,38 @@ describe("POST /api/discord/interactions", () => {
       type: 9,
     });
     expect(payload.data.components).toHaveLength(2);
-    expect(payload.data.components[0].components[0]).toMatchObject({
-      custom_id: "fact",
+    expect(payload.data.components[0]).toMatchObject({
+      label: "事実",
       required: true,
+      type: 18,
+    });
+    expect(payload.data.components[0].component).toMatchObject({
+      custom_id: "fact",
       style: 2,
       type: 4,
     });
-    expect(payload.data.components[1].components[0]).toMatchObject({
-      custom_id: "confidence",
+    expect(payload.data.components[1]).toMatchObject({
+      label: "確度",
       required: false,
+      type: 18,
+    });
+    expect(payload.data.components[1].component).toMatchObject({
+      custom_id: "confidence",
       type: 3,
+    });
+  });
+
+  it("rejects a notification that is not backed by its news link record", async () => {
+    supabaseMocks.newsLinkMaybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    const response = await POST(createRequest(notificationCommand()));
+
+    await expect(response.json()).resolves.toEqual({
+      data: { content: "この形式のメッセージではありません。", flags: 64 },
+      type: 4,
     });
   });
 
@@ -192,8 +214,8 @@ describe("POST /api/discord/interactions", () => {
       createRequest({
         data: {
           components: [
-            { components: [{ custom_id: "fact", value: "先発に変更があった。" }] },
-            { components: [{ custom_id: "confidence", values: ["high"] }] },
+            { component: { custom_id: "fact", value: "先発に変更があった。" } },
+            { component: { custom_id: "confidence", values: ["high"] } },
           ],
           custom_id: `fact-entry:${matchId}:${newsLinkId}`,
         },

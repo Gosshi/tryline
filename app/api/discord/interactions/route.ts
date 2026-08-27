@@ -130,34 +130,32 @@ function buildFactEntryModal(matchId: string, newsLinkId: string) {
     data: {
       components: [
         {
-          components: [
-            {
-              custom_id: "fact",
-              label: "事実",
-              required: true,
-              style: 2,
-              type: 4,
-            },
-          ],
-          type: 1,
+          component: {
+            custom_id: "fact",
+            style: 2,
+            type: 4,
+          },
+          label: "事実",
+          required: true,
+          type: 18,
         },
         {
-          components: [
-            {
-              custom_id: "confidence",
-              max_values: 1,
-              min_values: 0,
-              options: [
-                { label: "high", value: "high" },
-                { default: true, label: "medium", value: "medium" },
-                { label: "low", value: "low" },
-              ],
-              placeholder: "確度（既定: medium）",
-              required: false,
-              type: 3,
-            },
-          ],
-          type: 1,
+          component: {
+            custom_id: "confidence",
+            max_values: 1,
+            min_values: 0,
+            options: [
+              { label: "high", value: "high" },
+              { default: true, label: "medium", value: "medium" },
+              { label: "low", value: "low" },
+            ],
+            placeholder: "確度（既定: medium）",
+            type: 3,
+          },
+          description: "既定: medium",
+          label: "確度",
+          required: false,
+          type: 18,
         },
       ],
       custom_id: `${FACT_ENTRY_MODAL_PREFIX}:${matchId}:${newsLinkId}`,
@@ -171,11 +169,9 @@ function findComponentValue(
   components: unknown,
   customId: string,
 ): string | null {
-  if (!Array.isArray(components)) {
-    return null;
-  }
+  const items = Array.isArray(components) ? components : [components];
 
-  for (const component of components) {
+  for (const component of items) {
     if (!component || typeof component !== "object") {
       continue;
     }
@@ -192,6 +188,10 @@ function findComponentValue(
     const nested = findComponentValue(record.components, customId);
     if (nested !== null) {
       return nested;
+    }
+    const nestedComponent = findComponentValue(record.component, customId);
+    if (nestedComponent !== null) {
+      return nestedComponent;
     }
   }
 

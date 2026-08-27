@@ -118,6 +118,8 @@ Discord は3秒で切る。処理が長ければ**先に defer（`type: 5`）を
 
 **いずれかが取れない場合はエラーを返す。** 推測で埋めない。Owner が通知以外のメッセージに対してコマンドを実行した場合、静かに失敗せず「この形式のメッセージではない」と返すこと。
 
+抽出後、`news_links` を `matched_match_id` と `source_url` の組み合わせで照合し、一致する行が無ければ拒否する。これは、任意のメッセージに `match_id` と URL を書くだけで allowlist 外ドメインの手動入力を登録できる抜け道を防ぐためである。副作用として、Discord 通知に載っていない記事は追加できず、通知内の URL が編集・短縮されると照合に失敗する。
+
 ### content_type の決め方
 
 **キックオフ時刻で機械的に決める。**
@@ -228,6 +230,7 @@ DELETE 条件から手動入力行を除外すること（`metadata->>'entry_met
 15. `lib/llm/sourced-facts/allowlist.ts` と `lib/news-links.ts` に差分が無い
 16. 必要な環境変数名が spec と PR 本文に明記されている
 17. `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build` がすべて clean
+18. 抽出した `match_id` と `source_url` が `news_links.matched_match_id` と `news_links.source_url` に一致しない場合は保存しない
 
 ## 未解決の質問
 
