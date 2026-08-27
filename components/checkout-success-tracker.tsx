@@ -3,6 +3,8 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
+import { trackTrialStart } from "@/lib/analytics";
+
 export function CheckoutSuccessTracker() {
   const searchParams = useSearchParams();
 
@@ -11,9 +13,7 @@ export function CheckoutSuccessTracker() {
       return;
     }
 
-    if (typeof window.gtag === "function") {
-      window.gtag("event", "trial_start");
-    }
+    trackTrialStart();
   }, [searchParams]);
 
   return null;
