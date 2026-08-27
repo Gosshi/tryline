@@ -1,9 +1,12 @@
 import Link from "next/link";
 
+import { NewsletterConfirmedTracker } from "@/components/newsletter-confirmed-tracker";
+
 export default function NewsletterConfirmedPage() {
   return (
     <main className="bg-paper flex min-h-screen items-center justify-center px-4">
       <section className="w-full max-w-lg rounded-xl border-l-4 border-[var(--color-accent)] bg-white p-6 shadow-sm">
+        <NewsletterConfirmedTracker />
         <p className="text-sm font-bold text-[var(--color-ink)]">
           ニュースレターの登録が完了しました
         </p>

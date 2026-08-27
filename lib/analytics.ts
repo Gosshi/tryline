@@ -14,6 +14,8 @@ export type CtaClickParams = {
   match_id?: string;
 };
 
+export type NewsletterSource = "calendar" | "competition" | "home";
+
 export function trackEvent(
   eventName: string,
   params: AnalyticsEventParams = {},
@@ -40,8 +42,25 @@ export function trackPushPermissionGranted() {
   trackEvent("push_permission_granted");
 }
 
-export function trackReturnVisit(params: {
-  days_since_last_visit: number;
-}) {
+export function trackReturnVisit(params: { days_since_last_visit: number }) {
   trackEvent("return_visit", params);
+}
+
+export function trackNewsletterView(params: { source: NewsletterSource }) {
+  trackEvent("newsletter_view", params);
+}
+
+export function trackNewsletterSubmit(params: { source: NewsletterSource }) {
+  trackEvent("newsletter_submit", params);
+}
+
+export function trackNewsletterResult(params: {
+  source: NewsletterSource;
+  status: "error" | "network_error" | "ok" | "rate_limited";
+}) {
+  trackEvent("newsletter_result", params);
+}
+
+export function trackNewsletterConfirmed() {
+  trackEvent("newsletter_confirmed");
 }
