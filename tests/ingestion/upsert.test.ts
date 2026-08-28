@@ -204,6 +204,44 @@ describe("upsertMatches", () => {
     ).toEqual(expect.arrayContaining(eventIds));
   });
 
+  it("uses a Top 14 LNR ID as the stable upsert key", async () => {
+    const [baseCandidate] = await resolveMatches(
+      parseWikipediaSixNations2027Html(
+        readFileSync(
+          path.join(
+            process.cwd(),
+            "tests/fixtures/wikipedia-six-nations-2027.html",
+          ),
+          "utf8",
+        ),
+      ),
+    );
+    const service = getSupabaseServerClient();
+    const candidate = {
+      ...baseCandidate!,
+      externalIds: { top14_lnr_id: "top14-lnr-upsert-test" },
+      kickoffAt: "2031-09-05T17:05:00.000Z",
+      status: "scheduled" as const,
+    };
+
+    const firstRun = await upsertMatches([candidate]);
+    const secondRun = await upsertMatches([
+      { ...candidate, venue: "Updated LNR venue" },
+    ]);
+
+    expect(firstRun).toMatchObject({ matchesInserted: 1, matchesUpdated: 0 });
+    expect(secondRun).toMatchObject({ matchesInserted: 0, matchesUpdated: 1 });
+
+    const { data, error } = await service
+      .from("matches")
+      .select("external_ids, venue")
+      .contains("external_ids", { top14_lnr_id: "top14-lnr-upsert-test" })
+      .single();
+
+    expect(error).toBeNull();
+    expect(data).toMatchObject({ venue: "Updated LNR venue" });
+  });
+
   it("preserves finished scores when a later source has no score", async () => {
     const [baseCandidate] = await resolveMatches(
       parseWikipediaSixNations2027Html(

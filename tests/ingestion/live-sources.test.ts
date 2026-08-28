@@ -10,6 +10,7 @@ vi.mock("@/lib/scrapers/fetcher", () => fetcherMock);
 
 import { LIVE_COMPETITION_SOURCES } from "@/lib/ingestion/live-competitions";
 import { parseLeagueOneLiveHtml } from "@/lib/ingestion/sources/league-one-live";
+import { fetchTop14LnrLiveMatches } from "@/lib/ingestion/sources/top14-lnr-live";
 import { parseAutumnNationsLiveHtml } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
 import {
   fetchGreatestRivalry2026,
@@ -685,8 +686,9 @@ describe("live competition source adapters", () => {
           competitionName: "Top 14 2026-27",
           competitionSlug: "top-14-2026-27",
           family: "top-14",
+          fetch: fetchTop14LnrLiveMatches,
           season: "2026-27",
-          sourceLabel: "wikipedia",
+          sourceLabel: "lnr.fr",
         }),
       ]),
     );

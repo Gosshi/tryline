@@ -113,6 +113,7 @@ describe("Six Nations 2027 live ingestion", () => {
   });
 
   it("resolves teams by name and extracts events for a newly finished match", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const rawHtml = `
       <div class="vevent summary" id="Ireland_v_England">
         <table>
@@ -138,24 +139,27 @@ describe("Six Nations 2027 live ingestion", () => {
         "グレイテスト・ライバルリー・ツアー オールブラックス 南アフリカ遠征",
       competitionSlug: "six-nations-2027",
       family: "six-nations",
-      fetch: vi.fn().mockResolvedValue([
-        {
-          awayScore: 5,
-          awayTeamName: "England",
-          eventId: "Ireland_v_England",
-          homeScore: 5,
-          homeTeamName: "Ireland",
-          kickoffAt: "2027-02-05T20:10:00.000Z",
-          lineupTableHtml: null,
-          rawHtml,
-          round: 1,
-          roundName: null,
-          status: "finished",
-          venue: "Aviva Stadium",
-          wikipediaUrl:
-            "https://en.wikipedia.org/wiki/2027_Six_Nations_Championship",
-        },
-      ]),
+      fetch: vi.fn().mockResolvedValue({
+        matches: [
+          {
+            awayScore: 5,
+            awayTeamName: "England",
+            eventId: "Ireland_v_England",
+            homeScore: 5,
+            homeTeamName: "Ireland",
+            kickoffAt: "2027-02-05T20:10:00.000Z",
+            lineupTableHtml: null,
+            rawHtml,
+            round: 1,
+            roundName: null,
+            status: "finished",
+            venue: "Aviva Stadium",
+            wikipediaUrl:
+              "https://en.wikipedia.org/wiki/2027_Six_Nations_Championship",
+          },
+        ],
+        unknownTeamNames: ["Promoted Club"],
+      }),
       season: "2027",
       sourceLabel: "wikipedia",
     });
@@ -208,8 +212,15 @@ describe("Six Nations 2027 live ingestion", () => {
         events_inserted: 1,
         matches_inserted: 0,
         matches_updated: 1,
+        unknown_teams: 1,
       },
+      unknownTeamNames: ["Promoted Club"],
     });
+    expect(warn).toHaveBeenCalledWith(
+      "[six-nations-2027] skipped unknown teams",
+      { count: 1, names: ["Promoted Club"] },
+    );
+    warn.mockRestore();
   });
 
   it("retries event parsing for a finished record when an event source is available", async () => {

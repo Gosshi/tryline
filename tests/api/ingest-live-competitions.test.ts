@@ -26,7 +26,12 @@ describe("/api/cron/ingest-live-competitions", () => {
     liveCompetitionsMock.ingestAllLiveCompetitions.mockResolvedValue([
       {
         competition: "super-rugby-pacific-2026",
-        counts: { matches_inserted: 1, matches_updated: 0 },
+        counts: {
+          matches_inserted: 1,
+          matches_updated: 0,
+          unknown_teams: 1,
+        },
+        unknownTeamNames: ["Promoted Club"],
       },
     ]);
   });
@@ -62,7 +67,12 @@ describe("/api/cron/ingest-live-competitions", () => {
       results: [
         {
           competition: "super-rugby-pacific-2026",
-          counts: { matches_inserted: 1, matches_updated: 0 },
+          counts: {
+            matches_inserted: 1,
+            matches_updated: 0,
+            unknown_teams: 1,
+          },
+          unknownTeamNames: ["Promoted Club"],
         },
       ],
       status: "ok",

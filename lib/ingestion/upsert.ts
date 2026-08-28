@@ -82,26 +82,31 @@ function buildMatchUpdate(
 
 async function findExistingMatch(candidate: ResolvedMatchCandidate) {
   const client = getSupabaseServerClient();
-  const wikipediaEventId = candidate.externalIds.wikipedia_event_id;
+  const stableExternalId = ["wikipedia_event_id", "top14_lnr_id"]
+    .map((key) => ({ key, value: candidate.externalIds[key] }))
+    .find(
+      (entry): entry is { key: string; value: string } =>
+        typeof entry.value === "string" && entry.value.length > 0,
+    );
 
-  if (typeof wikipediaEventId === "string" && wikipediaEventId.length > 0) {
-    const matchByWikipediaEventId = await client
+  if (stableExternalId) {
+    const matchByStableExternalId = await client
       .from("matches")
       .select(
         "id, competition_id, home_team_id, away_team_id, kickoff_at, status, venue, home_score, away_score, external_ids",
       )
       .eq("competition_id", candidate.competitionId)
       .contains("external_ids", {
-        wikipedia_event_id: wikipediaEventId,
+        [stableExternalId.key]: stableExternalId.value,
       })
       .maybeSingle();
 
-    if (matchByWikipediaEventId.error) {
-      throw matchByWikipediaEventId.error;
+    if (matchByStableExternalId.error) {
+      throw matchByStableExternalId.error;
     }
 
-    if (matchByWikipediaEventId.data) {
-      return matchByWikipediaEventId.data;
+    if (matchByStableExternalId.data) {
+      return matchByStableExternalId.data;
     }
   }
 
@@ -124,10 +129,10 @@ async function findExistingMatch(candidate: ResolvedMatchCandidate) {
     return exactMatch.data;
   }
 
-  // Wikipedia's event ID identifies repeated fixtures with the same teams.
-  // Do not collapse a new event onto another scheduled match just because the
-  // teams are identical.
-  if (typeof wikipediaEventId === "string" && wikipediaEventId.length > 0) {
+  // Stable source IDs identify repeated fixtures with the same teams. Do not
+  // collapse a new event onto another scheduled match just because the teams
+  // are identical.
+  if (stableExternalId) {
     return null;
   }
 

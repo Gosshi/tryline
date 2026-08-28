@@ -18,10 +18,15 @@ export type LiveCompetitionSource = {
   competitionNameJa?: string;
   competitionSlug: string;
   family: string;
-  fetch: () => Promise<ParsedLiveMatch[]>;
+  fetch: () => Promise<LiveSourceFetchResult | ParsedLiveMatch[]>;
   fetchEventMatches?: () => Promise<ParsedLiveMatch[]>;
   season: string;
   sourceLabel: string;
+};
+
+export type LiveSourceFetchResult = {
+  matches: ParsedLiveMatch[];
+  unknownTeamNames?: string[];
 };
 
 export type LiveIngestResult = {
@@ -30,7 +35,9 @@ export type LiveIngestResult = {
     events_inserted: number;
     matches_inserted: number;
     matches_updated: number;
+    unknown_teams: number;
   };
+  unknownTeamNames: string[];
 };
 
 type TeamLookup = {
@@ -134,6 +141,7 @@ function toExternalIds(
   match: ParsedLiveMatch,
 ): Record<string, Json> {
   const externalIds: Record<string, Json> = {
+    ...match.externalIds,
     source: source.sourceLabel,
   };
 
@@ -256,8 +264,19 @@ export async function ingestLiveCompetition(
   source: LiveCompetitionSource,
 ): Promise<LiveIngestResult> {
   const client = getSupabaseServerClient();
-  const parsedMatches = await source.fetch();
+  const fetched = await source.fetch();
+  const parsedMatches = Array.isArray(fetched) ? fetched : fetched.matches;
+  const unknownTeamNames = Array.isArray(fetched)
+    ? []
+    : [...new Set(fetched.unknownTeamNames ?? [])].sort();
   const eventMatchByKey = new Map<string, ParsedLiveMatch>();
+
+  if (unknownTeamNames.length > 0) {
+    console.warn(`[${source.competitionSlug}] skipped unknown teams`, {
+      count: unknownTeamNames.length,
+      names: unknownTeamNames,
+    });
+  }
 
   if (source.fetchEventMatches) {
     const eventMatches = await source.fetchEventMatches();
@@ -285,7 +304,13 @@ export async function ingestLiveCompetition(
 
     return {
       competition: source.competitionSlug,
-      counts: { events_inserted: 0, matches_inserted: 0, matches_updated: 0 },
+      counts: {
+        events_inserted: 0,
+        matches_inserted: 0,
+        matches_updated: 0,
+        unknown_teams: unknownTeamNames.length,
+      },
+      unknownTeamNames,
     };
   }
 
@@ -429,7 +454,7 @@ export async function ingestLiveCompetition(
   }
 
   console.info(
-    `[${source.competitionSlug}] inserted=${result.matchesInserted} updated=${result.matchesUpdated} events_inserted=${eventsInserted}`,
+    `[${source.competitionSlug}] inserted=${result.matchesInserted} updated=${result.matchesUpdated} events_inserted=${eventsInserted} unknown_teams=${unknownTeamNames.length}`,
   );
 
   return {
@@ -438,6 +463,8 @@ export async function ingestLiveCompetition(
       events_inserted: eventsInserted,
       matches_inserted: result.matchesInserted,
       matches_updated: result.matchesUpdated,
+      unknown_teams: unknownTeamNames.length,
     },
+    unknownTeamNames,
   };
 }

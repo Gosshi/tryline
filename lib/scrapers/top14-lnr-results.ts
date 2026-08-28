@@ -18,6 +18,11 @@ export type Top14LnrMatchResult = {
   venue: string | null;
 };
 
+export type Top14LnrCalendarParseResult = {
+  matches: Top14LnrMatchResult[];
+  unknownTeamNames: string[];
+};
+
 const TOP14_ORIGIN = "https://top14.lnr.fr";
 const FRENCH_MONTHS: Record<string, number> = {
   aout: 7,
@@ -33,50 +38,33 @@ const FRENCH_MONTHS: Record<string, number> = {
   octobre: 9,
   septembre: 8,
 };
-const LNR_TEAM_TO_TRYLINE_SLUG: Record<string, string> = {
-  "asm-clermont-auvergne": "clermont",
-  "aviron-bayonnais": "bayonne",
-  bayonne: "bayonne",
-  "bordeaux-begles": "bordeaux-begles",
-  castres: "castres",
-  "castres-olympique": "castres",
-  clermont: "clermont",
-  "la-rochelle": "la-rochelle",
-  "lyon-ou": "lyon",
-  lyon: "lyon",
-  montpellier: "montpellier",
-  "montpellier-herault-rugby": "montpellier",
-  montauban: "us-montauban",
-  paris: "stade-francais",
-  pau: "pau",
-  perpignan: "perpignan",
-  racing: "racing-92",
-  "racing-92": "racing-92",
-  "rc-toulon": "toulon",
-  "rc-vannes": "vannes",
-  "section-paloise": "pau",
-  "stade-francais": "stade-francais",
-  "stade-francais-paris": "stade-francais",
-  "stade-rochelais": "la-rochelle",
-  "stade-toulousain": "toulouse",
-  toulon: "toulon",
-  toulouse: "toulouse",
-  "union-bordeaux-begles": "bordeaux-begles",
-  "usa-perpignan": "perpignan",
-  vannes: "vannes",
+
+export const TOP14_TEAM_SLUG_BY_LNR_NAME: Record<string, string> = {
+  "ASM Clermont": "clermont",
+  "Aviron Bayonnais": "bayonne",
+  "Castres Olympique": "castres",
+  "LOU Rugby": "lyon",
+  "Montpellier Hérault Rugby": "montpellier",
+  "RC Toulon": "toulon",
+  "RC Vannes": "vannes",
+  "Racing 92": "racing-92",
+  "Section Paloise": "pau",
+  "Stade Français Paris": "stade-francais",
+  "Stade Rochelais": "la-rochelle",
+  "Stade Toulousain": "toulouse",
+  "USA Perpignan": "perpignan",
+  "Union Bordeaux-Bègles": "bordeaux-begles",
 };
 
 function normalizeText(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function normalizeSlug(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+function normalizeFrenchText(value: string) {
+  return normalizeText(value)
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 export function toLnrSeason(season: string) {
@@ -109,9 +97,9 @@ function parseRoundFromSlug(roundSlug: string) {
   return Number(matched[1]);
 }
 
-function parsePath(pathname: string) {
+function parseMatchPath(pathname: string) {
   const match = pathname.match(
-    /^\/feuille-de-match\/([^/]+)\/(j\d{1,2})\/(\d+)-(.+)$/,
+    /^\/feuille-de-match\/([^/]+)\/(j\d{1,2})\/(\d+)(?:-.+)?$/,
   );
 
   if (!match) {
@@ -122,337 +110,221 @@ function parsePath(pathname: string) {
     id: match[3]!,
     roundSlug: match[2]!,
     season: match[1]!,
-    slugPart: match[4]!,
   };
 }
 
-function resolveTrylineTeamSlug(lnrSlug: string) {
-  return LNR_TEAM_TO_TRYLINE_SLUG[normalizeSlug(lnrSlug)] ?? null;
-}
-
-export function resolveTop14TeamsFromLnrSlug(slugPart: string) {
-  const normalized = normalizeSlug(slugPart);
-  const lnrSlugs = Object.keys(LNR_TEAM_TO_TRYLINE_SLUG).sort(
-    (left, right) => right.length - left.length,
+function getParisDateParts(date: Date) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    month: "2-digit",
+    timeZone: "Europe/Paris",
+    year: "numeric",
+  });
+  const parts = Object.fromEntries(
+    formatter
+      .formatToParts(date)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
   );
 
-  for (const homeLnrSlug of lnrSlugs) {
-    const prefix = `${homeLnrSlug}-`;
-
-    if (!normalized.startsWith(prefix)) {
-      continue;
-    }
-
-    const awayLnrSlug = normalized.slice(prefix.length);
-    const homeSlug = resolveTrylineTeamSlug(homeLnrSlug);
-    const awaySlug = resolveTrylineTeamSlug(awayLnrSlug);
-
-    if (homeSlug && awaySlug) {
-      return { awaySlug, homeSlug };
-    }
-  }
-
-  throw new Error(`Unknown Top 14 LNR team slug pair: ${slugPart}`);
+  return {
+    day: Number(parts.day),
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    month: Number(parts.month),
+    year: Number(parts.year),
+  };
 }
 
-function tryResolveTop14TeamsFromLnrSlug(slugPart: string) {
-  try {
-    return resolveTop14TeamsFromLnrSlug(slugPart);
-  } catch {
-    return null;
-  }
-}
-
-function lastSundayOfMonthUtc(year: number, monthIndex: number) {
-  const date = new Date(Date.UTC(year, monthIndex + 1, 0));
-  date.setUTCDate(date.getUTCDate() - date.getUTCDay());
-
-  return date;
-}
-
-function isCentralEuropeanSummerTime(date: Date) {
-  const year = date.getUTCFullYear();
-  const startsAt = lastSundayOfMonthUtc(year, 2);
-  startsAt.setUTCHours(1, 0, 0, 0);
-
-  const endsAt = lastSundayOfMonthUtc(year, 9);
-  endsAt.setUTCHours(1, 0, 0, 0);
-
-  return date >= startsAt && date < endsAt;
-}
-
-function buildKickoffIso(params: {
+function toEuropeParisUtcIso(params: {
   day: number;
-  hours: number;
-  minutes: number;
+  hour: number;
+  minute: number;
   monthIndex: number;
   year: number;
 }) {
-  const localDateAsUtc = new Date(
-    Date.UTC(
-      params.year,
-      params.monthIndex,
-      params.day,
-      params.hours,
-      params.minutes,
-    ),
+  const targetAsUtc = Date.UTC(
+    params.year,
+    params.monthIndex,
+    params.day,
+    params.hour,
+    params.minute,
   );
-  const offset = isCentralEuropeanSummerTime(localDateAsUtc) ? 2 : 1;
+  let instant = targetAsUtc;
 
-  return new Date(
-    Date.UTC(
-      params.year,
-      params.monthIndex,
-      params.day,
-      params.hours - offset,
-      params.minutes,
-    ),
-  ).toISOString();
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const paris = getParisDateParts(new Date(instant));
+    const parisAsUtc = Date.UTC(
+      paris.year,
+      paris.month - 1,
+      paris.day,
+      paris.hour,
+      paris.minute,
+    );
+    instant += targetAsUtc - parisAsUtc;
+  }
+
+  return new Date(instant).toISOString();
 }
 
-function parseDatetimeAttribute(value: string) {
-  const parsed = new Date(value);
-
-  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
-}
-
-function parseYearFromSeason(monthIndex: number, lnrSeason: string) {
+function parseDateParts(dateText: string, lnrSeason: string) {
+  const normalized = normalizeFrenchText(dateText);
+  const french = normalized.match(
+    /(\d{1,2})\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)/,
+  );
+  const numeric = normalized.match(/(\d{1,2})[./-](\d{1,2})/);
   const [startYearText, endYearText] = lnrSeason.split("-");
 
-  return monthIndex >= 7 ? Number(startYearText) : Number(endYearText);
-}
-
-function parseFrenchDateTime(text: string, lnrSeason: string) {
-  const normalized = normalizeText(text)
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-  const dateMatch = normalized.match(
-    /(\d{1,2})\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)(?:\s+(\d{4}))?/,
-  );
-  const timeMatch = normalized.match(/(\d{1,2})[:h](\d{2})/);
-
-  if (!dateMatch) {
+  if (!startYearText || !endYearText) {
     return null;
   }
 
-  const monthIndex = FRENCH_MONTHS[dateMatch[2]!];
+  const day = Number(french?.[1] ?? numeric?.[1]);
+  const monthIndex = french
+    ? FRENCH_MONTHS[french[2]!]
+    : Number(numeric?.[2]) - 1;
 
-  if (monthIndex === undefined) {
+  if (!Number.isInteger(day) || monthIndex === undefined || monthIndex < 0) {
     return null;
-  }
-
-  const year = dateMatch[3]
-    ? Number(dateMatch[3])
-    : parseYearFromSeason(monthIndex, lnrSeason);
-
-  if (!timeMatch) {
-    return new Date(
-      Date.UTC(year, monthIndex, Number(dateMatch[1]), 0, 0),
-    ).toISOString();
-  }
-
-  return buildKickoffIso({
-    day: Number(dateMatch[1]),
-    hours: Number(timeMatch[1]),
-    minutes: Number(timeMatch[2]),
-    monthIndex,
-    year,
-  });
-}
-
-function parseNumericDateTime(text: string, lnrSeason: string) {
-  const normalized = normalizeText(text);
-  const dateMatch = normalized.match(
-    /(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?/,
-  );
-  const timeMatch = normalized.match(/(\d{1,2})[:h](\d{2})/);
-
-  if (!dateMatch || !timeMatch) {
-    return null;
-  }
-
-  const month = Number(dateMatch[2]);
-  const explicitYear = dateMatch[3];
-  const [startYearText, endYearText] = lnrSeason.split("-");
-  const year = explicitYear
-    ? Number(explicitYear.length === 2 ? `20${explicitYear}` : explicitYear)
-    : month >= 7
-      ? Number(startYearText)
-      : Number(endYearText);
-
-  return buildKickoffIso({
-    day: Number(dateMatch[1]),
-    hours: Number(timeMatch[1]),
-    minutes: Number(timeMatch[2]),
-    monthIndex: month - 1,
-    year,
-  });
-}
-
-function parseKickoffAt(
-  node: ReturnType<ReturnType<typeof load>>,
-  lnrSeason: string,
-  dateContext: string | null,
-) {
-  const datetime =
-    node.find("[datetime]").first().attr("datetime") ??
-    node.attr("data-kickoff") ??
-    node.attr("data-date") ??
-    null;
-
-  if (datetime) {
-    const parsed = parseDatetimeAttribute(datetime);
-
-    if (parsed) {
-      return parsed;
-    }
-  }
-
-  const text = normalizeText(
-    [dateContext, node.text()].filter(Boolean).join(" "),
-  );
-
-  return (
-    parseFrenchDateTime(text, lnrSeason) ??
-    parseNumericDateTime(text, lnrSeason)
-  );
-}
-
-function parseScore(node: ReturnType<ReturnType<typeof load>>): {
-  awayScore: number | null;
-  homeScore: number | null;
-  status: "finished" | "scheduled";
-} {
-  const homeScore = node.attr("data-home-score");
-  const awayScore = node.attr("data-away-score");
-
-  if (
-    homeScore &&
-    awayScore &&
-    /^\d+$/.test(homeScore) &&
-    /^\d+$/.test(awayScore)
-  ) {
-    return {
-      awayScore: Number(awayScore),
-      homeScore: Number(homeScore),
-      status: "finished",
-    };
-  }
-
-  const scoreText =
-    node.find(".score, .scoreboard, [data-score]").first().text() ||
-    node.attr("data-score") ||
-    node.text();
-  const matched = normalizeText(scoreText).match(/(\d+)\s*[–-]\s*(\d+)/);
-
-  if (!matched) {
-    return { awayScore: null, homeScore: null, status: "scheduled" };
   }
 
   return {
-    awayScore: Number(matched[2]),
-    homeScore: Number(matched[1]),
-    status: "finished",
+    day,
+    monthIndex,
+    year: monthIndex >= 7 ? Number(startYearText) : Number(endYearText),
   };
 }
 
-function parseVenue(node: ReturnType<ReturnType<typeof load>>) {
-  return (
-    normalizeText(
-      node.attr("data-venue") ??
-        node
-          .find(".venue, .stadium, .stade, .lieu, [data-venue]")
-          .first()
-          .text(),
-    ) || null
+export function parseTop14LnrKickoffAt(params: {
+  dateText: string;
+  lnrSeason: string;
+  timeText: string;
+}) {
+  const date = parseDateParts(params.dateText, params.lnrSeason);
+  const time = normalizeFrenchText(params.timeText).match(/^(\d{1,2})h(\d{2})$/);
+
+  if (!date || !time) {
+    return null;
+  }
+
+  return toEuropeParisUtcIso({
+    ...date,
+    hour: Number(time[1]),
+    minute: Number(time[2]),
+  });
+}
+
+function parseScore(node: ReturnType<ReturnType<typeof load>>) {
+  const scoreText = normalizeText(
+    node
+      .find(".match-line__score, .score, .scoreboard, [data-score]")
+      .first()
+      .text(),
   );
+  const match = scoreText.match(/(\d+)\s*[–-]\s*(\d+)/);
+
+  if (!match) {
+    return { awayScore: null, homeScore: null, status: "scheduled" as const };
+  }
+
+  return {
+    awayScore: Number(match[2]),
+    homeScore: Number(match[1]),
+    status: "finished" as const,
+  };
 }
 
 function findFixtureDateContext(
   $: ReturnType<typeof load>,
   element: Parameters<ReturnType<typeof load>>[0],
 ) {
-  const line = $(element).closest(".calendar-results__line");
-  const text = normalizeText(
-    line.prevAll(".calendar-results__fixture-date").first().text(),
-  );
-
-  return text || null;
-}
-
-function findMatchContainer(
-  $: ReturnType<typeof load>,
-  element: Parameters<ReturnType<typeof load>>[0],
-) {
-  const link = $(element);
-  const candidates = [
-    link,
-    ...link
-      .parents()
-      .toArray()
-      .map((node) => $(node)),
-  ];
-
   return (
-    candidates.find((candidate) => {
-      const text = normalizeText(candidate.text());
-      return (
-        candidate.attr("data-kickoff") ||
-        candidate.find("[datetime]").length > 0 ||
-        /(\d{1,2})[:h](\d{2})/.test(text)
-      );
-    }) ?? link.parent()
+    normalizeText(
+      $(element)
+        .closest(".calendar-results__line")
+        .prevAll(".calendar-results__fixture-date")
+        .first()
+        .text(),
+    ) || null
   );
 }
 
-export function parseTop14LnrCalendarHtml(params: {
+export function parseTop14LnrCalendarHtmlWithDiagnostics(params: {
   html: string;
   roundSlug: string;
   season: string;
   sourceUrl: string;
-}): Top14LnrMatchResult[] {
+}): Top14LnrCalendarParseResult {
   const $ = load(params.html);
-  const results = new Map<string, Top14LnrMatchResult>();
-  const unknownSlugParts = new Set<string>();
+  const matches = new Map<string, Top14LnrMatchResult>();
+  const unknownTeamNames = new Set<string>();
   const expectedLnrSeason = toLnrSeason(params.season);
 
-  $("a[href*='/feuille-de-match/']").each((_, element) => {
-    const href = $(element).attr("href");
+  $(".match-calendar-line").each((_, element) => {
+    const line = $(element);
+    const matchLink = line
+      .find("a[href*='/feuille-de-match/']")
+      .first()
+      .attr("href");
 
-    if (!href) {
+    if (!matchLink) {
       return;
     }
 
-    const url = new URL(href, TOP14_ORIGIN);
-    const parsedPath = parsePath(url.pathname);
+    const url = new URL(matchLink, TOP14_ORIGIN);
+    const parsedPath = parseMatchPath(url.pathname);
 
-    if (!parsedPath || parsedPath.roundSlug !== params.roundSlug) {
+    if (
+      !parsedPath ||
+      parsedPath.roundSlug !== params.roundSlug ||
+      parsedPath.season !== expectedLnrSeason
+    ) {
       return;
     }
 
-    const teams = tryResolveTop14TeamsFromLnrSlug(parsedPath.slugPart);
+    const teamNames = line
+      .find(".club-line__name")
+      .toArray()
+      .map((team) => normalizeText($(team).text()))
+      .filter(Boolean);
 
-    if (!teams) {
-      unknownSlugParts.add(parsedPath.slugPart);
+    if (teamNames.length !== 2) {
       return;
     }
 
-    const container = findMatchContainer($, element);
-    const dateContext = findFixtureDateContext($, element);
-    const kickoffAt = parseKickoffAt(container, parsedPath.season, dateContext);
+    const [homeTeamName, awayTeamName] = teamNames;
+    const homeTeamSlug = TOP14_TEAM_SLUG_BY_LNR_NAME[homeTeamName!];
+    const awayTeamSlug = TOP14_TEAM_SLUG_BY_LNR_NAME[awayTeamName!];
+
+    if (!homeTeamSlug || !awayTeamSlug) {
+      if (!homeTeamSlug) unknownTeamNames.add(homeTeamName!);
+      if (!awayTeamSlug) unknownTeamNames.add(awayTeamName!);
+      return;
+    }
+
+    const dateText = findFixtureDateContext($, element);
+    const kickoffAt = dateText
+      ? parseTop14LnrKickoffAt({
+          dateText,
+          lnrSeason: expectedLnrSeason,
+          timeText: line.find(".match-line__time").first().text(),
+        })
+      : null;
 
     if (!kickoffAt) {
-      throw new Error(`Unable to parse Top 14 LNR kickoff for ${url.pathname}`);
+      return;
     }
 
-    const score = parseScore(container);
+    const score = parseScore(line);
 
-    results.set(parsedPath.id, {
+    matches.set(parsedPath.id, {
       away_score: score.awayScore,
-      away_team_slug: teams.awaySlug,
+      away_team_slug: awayTeamSlug,
       home_score: score.homeScore,
-      home_team_slug: teams.homeSlug,
+      home_team_slug: homeTeamSlug,
       kickoff_at: kickoffAt,
       lnr_id: parsedPath.id,
       lnr_match_path: url.pathname,
@@ -461,34 +333,48 @@ export function parseTop14LnrCalendarHtml(params: {
       season: params.season,
       source_url: params.sourceUrl,
       status: score.status,
-      venue: parseVenue(container),
+      venue: null,
     });
   });
 
-  if (unknownSlugParts.size > 0) {
-    throw new Error(
-      `Unknown Top 14 LNR team slug pair(s): ${[...unknownSlugParts].join(", ")}`,
-    );
-  }
+  return {
+    matches: [...matches.values()].sort((left, right) =>
+      left.kickoff_at.localeCompare(right.kickoff_at),
+    ),
+    unknownTeamNames: [...unknownTeamNames].sort(),
+  };
+}
 
-  return [...results.values()].filter(
-    (match) => toLnrSeason(match.season) === expectedLnrSeason,
-  );
+export function parseTop14LnrCalendarHtml(params: {
+  html: string;
+  roundSlug: string;
+  season: string;
+  sourceUrl: string;
+}): Top14LnrMatchResult[] {
+  return parseTop14LnrCalendarHtmlWithDiagnostics(params).matches;
+}
+
+export async function fetchTop14LnrRoundResultsWithDiagnostics(
+  season: string,
+  roundSlug: string,
+): Promise<Top14LnrCalendarParseResult> {
+  const sourceUrl = buildTop14LnrCalendarUrl(season, roundSlug);
+  const response = await fetchWithPolicy(sourceUrl);
+
+  return parseTop14LnrCalendarHtmlWithDiagnostics({
+    html: await response.text(),
+    roundSlug,
+    season,
+    sourceUrl,
+  });
 }
 
 export async function fetchTop14LnrRoundResults(
   season: string,
   roundSlug: string,
 ): Promise<Top14LnrMatchResult[]> {
-  const sourceUrl = buildTop14LnrCalendarUrl(season, roundSlug);
-  const response = await fetchWithPolicy(sourceUrl);
-
-  return parseTop14LnrCalendarHtml({
-    html: await response.text(),
-    roundSlug,
-    season,
-    sourceUrl,
-  });
+  return (await fetchTop14LnrRoundResultsWithDiagnostics(season, roundSlug))
+    .matches;
 }
 
 export async function fetchTop14LnrRegularSeasonResults(season: string) {
