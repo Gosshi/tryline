@@ -2,10 +2,12 @@ import { parse } from "date-fns";
 
 import { FetchError } from "@/lib/scrapers/errors";
 
+import type { Json } from "@/lib/db/types";
 import type { ParsedWikipediaMatch } from "@/lib/ingestion/sources/wikipedia-six-nations";
 
 export type ParsedLiveMatch = ParsedWikipediaMatch & {
   awayTeamSlug?: string;
+  externalIds?: Record<string, Json>;
   homeTeamSlug?: string;
 };
 

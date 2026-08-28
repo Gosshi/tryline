@@ -4,6 +4,7 @@ import {
   type LiveIngestResult,
 } from "@/lib/ingestion/live-ingest";
 import { fetchLeagueOne202526 } from "@/lib/ingestion/sources/league-one-live";
+import { fetchTop14LnrLiveMatches } from "@/lib/ingestion/sources/top14-lnr-live";
 import { fetchAutumnNations2026 } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
 import { fetchGreatestRivalry2026 } from "@/lib/ingestion/sources/wikipedia-greatest-rivalry";
 import { fetchLipovitanChallengeCup2026 } from "@/lib/ingestion/sources/wikipedia-lipovitan-challenge-cup";
@@ -16,7 +17,6 @@ import { fetchPumaTrophy2026 } from "@/lib/ingestion/sources/wikipedia-puma-trop
 import { fetchRugbyChampionship2026 } from "@/lib/ingestion/sources/wikipedia-rugby-championship";
 import { fetchSixNations2027 } from "@/lib/ingestion/sources/wikipedia-six-nations-2027-live";
 import { fetchSuperRugbyPacific2026 } from "@/lib/ingestion/sources/wikipedia-super-rugby-pacific";
-import { fetchTop14 } from "@/lib/ingestion/sources/wikipedia-top-14";
 import { fetchUrc } from "@/lib/ingestion/sources/wikipedia-urc";
 
 export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
@@ -118,9 +118,9 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
     competitionName: "Top 14 2026-27",
     competitionSlug: "top-14-2026-27",
     family: "top-14",
-    fetch: () => fetchTop14("2026-27"),
+    fetch: fetchTop14LnrLiveMatches,
     season: "2026-27",
-    sourceLabel: "wikipedia",
+    sourceLabel: "lnr.fr",
   },
   {
     competitionName: "League One 2025-26",
