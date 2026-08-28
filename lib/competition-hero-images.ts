@@ -5,6 +5,7 @@ const COMPETITION_HERO_IMAGES: Record<string, string> = {
   "lipovitan-challenge-cup": "/visuals/lipovitan-challenge-cup.jpg",
   "nations-championship": "/visuals/nations-championship.jpg",
   pnc: "/visuals/pnc.jpg",
+  "puma-trophy": "/visuals/rugby-championship.jpg",
   premiership: "/visuals/premiership.jpg",
   "rugby-championship": "/visuals/rugby-championship.jpg",
   "six-nations": "/visuals/six-nations.jpg",
