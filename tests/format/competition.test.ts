@@ -34,6 +34,10 @@ describe("formatFamilyName", () => {
     );
   });
 
+  it("formats the Puma Trophy family name in Japanese", () => {
+    expect(formatFamilyName("puma-trophy")).toBe("プーマ・トロフィー");
+  });
+
   it("formats known pool names and preserves unknown names", () => {
     expect(formatPoolName("Northern Hemisphere")).toBe("北半球");
     expect(formatPoolName("Southern Hemisphere")).toBe("南半球");
@@ -76,6 +80,7 @@ describe("formatFamilyName", () => {
     expect(getCompetitionFamilyColor("lipovitan-challenge-cup")).toBe(
       "#E60012",
     );
+    expect(getCompetitionFamilyColor("puma-trophy")).toBe("#75AADB");
     expect(getCompetitionFamilyColor("unknown-family")).toBe("#1e293b");
   });
 });

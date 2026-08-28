@@ -31,6 +31,7 @@ import {
   fetchPremiership,
   parsePremiershipLiveHtml,
 } from "@/lib/ingestion/sources/wikipedia-premiership";
+import { fetchPumaTrophy2026 } from "@/lib/ingestion/sources/wikipedia-puma-trophy";
 import { parseRugbyChampionshipLiveHtml } from "@/lib/ingestion/sources/wikipedia-rugby-championship";
 import {
   fetchSixNations2027,
@@ -623,6 +624,26 @@ describe("live competition source adapters", () => {
         "グレイテスト・ライバルリー・ツアー オールブラックス 南アフリカ遠征",
       family: "greatest-rivalry",
       fetch: fetchGreatestRivalry2026,
+      season: "2026",
+      sourceLabel: "wikipedia",
+    });
+  });
+
+  it("registers Puma Trophy 2026 after Greatest Rivalry", () => {
+    const greatestRivalryIndex = LIVE_COMPETITION_SOURCES.findIndex(
+      (source) => source.competitionSlug === "greatest-rivalry-2026",
+    );
+    const pumaTrophyIndex = LIVE_COMPETITION_SOURCES.findIndex(
+      (source) => source.competitionSlug === "puma-trophy-2026",
+    );
+
+    expect(pumaTrophyIndex).toBe(greatestRivalryIndex + 1);
+    expect(LIVE_COMPETITION_SOURCES[pumaTrophyIndex]).toMatchObject({
+      competitionName: "Puma Trophy 2026",
+      competitionNameJa:
+        "プーマ・トロフィー オーストラリア代表 アルゼンチン遠征",
+      family: "puma-trophy",
+      fetch: fetchPumaTrophy2026,
       season: "2026",
       sourceLabel: "wikipedia",
     });
@@ -1568,6 +1589,17 @@ describe("live competition source adapters", () => {
     );
 
     await expect(fetchGreatestRivalry2026()).resolves.toEqual([]);
+    expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledWith(sourceUrl);
+  });
+
+  it("returns an empty array when the Puma Trophy page is missing", async () => {
+    const sourceUrl =
+      "https://en.wikipedia.org/wiki/2026_Australia_rugby_union_tour_of_Argentina";
+    fetcherMock.fetchWithPolicy.mockRejectedValueOnce(
+      new FetchError({ attempt: 1, status: 404, url: sourceUrl }),
+    );
+
+    await expect(fetchPumaTrophy2026()).resolves.toEqual([]);
     expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledWith(sourceUrl);
   });
 });

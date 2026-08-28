@@ -12,6 +12,7 @@ import { fetchNationsChampionship2026 } from "@/lib/ingestion/sources/wikipedia-
 import { fetchNationsChampionship2026EventMatches } from "@/lib/ingestion/sources/wikipedia-nations-championship-events";
 import { fetchPnc2026 } from "@/lib/ingestion/sources/wikipedia-pnc";
 import { fetchPremiership } from "@/lib/ingestion/sources/wikipedia-premiership";
+import { fetchPumaTrophy2026 } from "@/lib/ingestion/sources/wikipedia-puma-trophy";
 import { fetchRugbyChampionship2026 } from "@/lib/ingestion/sources/wikipedia-rugby-championship";
 import { fetchSixNations2027 } from "@/lib/ingestion/sources/wikipedia-six-nations-2027-live";
 import { fetchSuperRugbyPacific2026 } from "@/lib/ingestion/sources/wikipedia-super-rugby-pacific";
@@ -67,6 +68,16 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
     competitionSlug: "greatest-rivalry-2026",
     family: "greatest-rivalry",
     fetch: fetchGreatestRivalry2026,
+    season: "2026",
+    sourceLabel: "wikipedia",
+  },
+  {
+    competitionName: "Puma Trophy 2026",
+    competitionNameJa:
+      "プーマ・トロフィー オーストラリア代表 アルゼンチン遠征",
+    competitionSlug: "puma-trophy-2026",
+    family: "puma-trophy",
+    fetch: fetchPumaTrophy2026,
     season: "2026",
     sourceLabel: "wikipedia",
   },
