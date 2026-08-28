@@ -85,6 +85,10 @@ export function buildTop14LnrCalendarUrl(season: string, roundSlug: string) {
   return `${TOP14_ORIGIN}/calendrier-et-resultats/${toLnrSeason(season)}/${roundSlug}`;
 }
 
+export function buildTop14LnrCurrentCalendarUrl(season: string) {
+  return `${TOP14_ORIGIN}/calendrier-et-resultats/${toLnrSeason(season)}`;
+}
+
 function parseRoundFromSlug(roundSlug: string) {
   const matched = roundSlug.match(/^j(\d{1,2})$/i);
 
@@ -111,6 +115,35 @@ function parseMatchPath(pathname: string) {
     roundSlug: match[2]!,
     season: match[1]!,
   };
+}
+
+export function parseTop14LnrCurrentRoundSlug(params: {
+  html: string;
+  season: string;
+}) {
+  const $ = load(params.html);
+  const lnrSeason = toLnrSeason(params.season);
+
+  for (const href of $("a[href*='/feuille-de-match/']")
+    .toArray()
+    .map((link) => $(link).attr("href"))) {
+    if (!href) {
+      continue;
+    }
+
+    const pathname = new URL(href, TOP14_ORIGIN).pathname;
+    const match = pathname.match(
+      new RegExp(`^/feuille-de-match/${lnrSeason}/([^/]+)/`),
+    );
+
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+
+  throw new Error(
+    `Unable to determine the current Top 14 round for ${params.season}.`,
+  );
 }
 
 function getParisDateParts(date: Date) {
@@ -366,6 +399,15 @@ export async function fetchTop14LnrRoundResultsWithDiagnostics(
     roundSlug,
     season,
     sourceUrl,
+  });
+}
+
+export async function fetchTop14LnrCurrentRoundSlug(season: string) {
+  const response = await fetchWithPolicy(buildTop14LnrCurrentCalendarUrl(season));
+
+  return parseTop14LnrCurrentRoundSlug({
+    html: await response.text(),
+    season,
   });
 }
 

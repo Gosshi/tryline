@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const top14LnrResultsMock = vi.hoisted(() => ({
+  fetchTop14LnrCurrentRoundSlug: vi.fn(),
   fetchTop14LnrRoundResultsWithDiagnostics: vi.fn(),
 }));
 
@@ -9,6 +10,7 @@ vi.mock("@/lib/scrapers/top14-lnr-results", () => top14LnrResultsMock);
 import {
   fetchTop14LnrLiveMatches,
   getDefaultTop14LnrRoundSlugs,
+  getTop14LnrAdjacentRoundSlugs,
   MAX_TOP14_LNR_ROUNDS_PER_INGEST,
   TOP14_LNR_ROUND_DELAY_MS,
   toParsedTop14LnrLiveMatches,
@@ -33,11 +35,42 @@ const RESULT: Top14LnrMatchResult = {
 };
 
 describe("Top 14 LNR live source", () => {
-  it("defaults to the opening round and its next round before the season", () => {
-    expect(getDefaultTop14LnrRoundSlugs(new Date("2026-08-29T00:00:00Z"))).toEqual([
-      "j1",
-      "j2",
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("uses the LNR current-round response and clamps adjacent regular-season rounds", async () => {
+    top14LnrResultsMock.fetchTop14LnrCurrentRoundSlug.mockResolvedValue("j5");
+    await expect(getDefaultTop14LnrRoundSlugs()).resolves.toEqual([
+      "j4",
+      "j5",
+      "j6",
     ]);
+
+    top14LnrResultsMock.fetchTop14LnrCurrentRoundSlug.mockResolvedValue("j1");
+    await expect(getDefaultTop14LnrRoundSlugs()).resolves.toEqual(["j1", "j2"]);
+
+    top14LnrResultsMock.fetchTop14LnrCurrentRoundSlug.mockResolvedValue("j26");
+    await expect(getDefaultTop14LnrRoundSlugs()).resolves.toEqual([
+      "j25",
+      "j26",
+    ]);
+  });
+
+  it("does not ingest LNR final-round slugs or fall back to every round", async () => {
+    top14LnrResultsMock.fetchTop14LnrCurrentRoundSlug.mockResolvedValue(
+      "finale",
+    );
+    await expect(getDefaultTop14LnrRoundSlugs()).resolves.toEqual([]);
+
+    top14LnrResultsMock.fetchTop14LnrCurrentRoundSlug.mockRejectedValue(
+      new Error("LNR current round unavailable"),
+    );
+    await expect(getDefaultTop14LnrRoundSlugs()).rejects.toThrow(
+      "LNR current round unavailable",
+    );
+
+    expect(getTop14LnrAdjacentRoundSlugs("demi-finales")).toEqual([]);
   });
 
   it("maps LNR IDs into source external_ids without Wikipedia identifiers", () => {
@@ -92,5 +125,24 @@ describe("Top 14 LNR live source", () => {
         ),
       }),
     ).rejects.toThrow("at most");
+  });
+
+  it("waits after resolving the current round before requesting its fixtures", async () => {
+    const waitBetweenRounds = vi.fn().mockResolvedValue(undefined);
+    top14LnrResultsMock.fetchTop14LnrCurrentRoundSlug.mockResolvedValue("j1");
+    top14LnrResultsMock.fetchTop14LnrRoundResultsWithDiagnostics
+      .mockResolvedValueOnce({ matches: [], unknownTeamNames: [] })
+      .mockResolvedValueOnce({ matches: [], unknownTeamNames: [] });
+
+    await fetchTop14LnrLiveMatches({ waitBetweenRounds });
+
+    expect(waitBetweenRounds).toHaveBeenCalledTimes(2);
+    expect(waitBetweenRounds).toHaveBeenNthCalledWith(
+      1,
+      TOP14_LNR_ROUND_DELAY_MS,
+    );
+    expect(
+      top14LnrResultsMock.fetchTop14LnrRoundResultsWithDiagnostics,
+    ).toHaveBeenNthCalledWith(1, "2026-27", "j1");
   });
 });

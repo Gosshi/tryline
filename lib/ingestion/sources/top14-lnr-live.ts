@@ -1,4 +1,5 @@
 import {
+  fetchTop14LnrCurrentRoundSlug,
   fetchTop14LnrRoundResultsWithDiagnostics,
 } from "@/lib/scrapers/top14-lnr-results";
 
@@ -7,8 +8,6 @@ import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils"
 import type { Top14LnrMatchResult } from "@/lib/scrapers/top14-lnr-results";
 
 const TOP14_LNR_SEASON = "2026-27";
-const TOP14_REGULAR_SEASON_STARTS_AT = new Date("2026-09-05T00:00:00.000Z");
-const TOP14_REGULAR_SEASON_ENDS_AT = new Date("2027-06-13T00:00:00.000Z");
 
 export const MAX_TOP14_LNR_ROUNDS_PER_INGEST = 3;
 export const TOP14_LNR_ROUND_DELAY_MS = 3_000;
@@ -23,24 +22,23 @@ function toRoundSlug(round: number) {
   return `j${round}`;
 }
 
-export function getDefaultTop14LnrRoundSlugs(now = new Date()) {
-  if (now < TOP14_REGULAR_SEASON_STARTS_AT) {
-    return ["j1", "j2"];
-  }
+export function getTop14LnrAdjacentRoundSlugs(currentRoundSlug: string) {
+  const matched = currentRoundSlug.match(/^j([1-9]|1\d|2[0-6])$/);
 
-  if (now > TOP14_REGULAR_SEASON_ENDS_AT) {
+  if (!matched) {
     return [];
   }
 
-  const elapsedWeeks = Math.floor(
-    (now.getTime() - TOP14_REGULAR_SEASON_STARTS_AT.getTime()) /
-      (7 * 24 * 60 * 60 * 1_000),
-  );
-  const currentRound = Math.min(26, Math.max(1, elapsedWeeks + 1));
-
+  const currentRound = Number(matched[1]);
   return [currentRound - 1, currentRound, currentRound + 1]
     .filter((round) => round >= 1 && round <= 26)
     .map(toRoundSlug);
+}
+
+export async function getDefaultTop14LnrRoundSlugs() {
+  return getTop14LnrAdjacentRoundSlugs(
+    await fetchTop14LnrCurrentRoundSlug(TOP14_LNR_SEASON),
+  );
 }
 
 function validateRoundSlugs(roundSlugs: string[]) {
@@ -89,13 +87,18 @@ export async function fetchTop14LnrLiveMatches(options: {
   roundSlugs?: string[];
   waitBetweenRounds?: (ms: number) => Promise<void>;
 } = {}): Promise<LiveSourceFetchResult> {
-  const roundSlugs = options.roundSlugs ?? getDefaultTop14LnrRoundSlugs();
   const waitBetweenRounds = options.waitBetweenRounds ?? wait;
+  const usesCurrentRound = options.roundSlugs === undefined;
+  const roundSlugs = options.roundSlugs ?? (await getDefaultTop14LnrRoundSlugs());
 
   validateRoundSlugs(roundSlugs);
 
   const results: Top14LnrMatchResult[] = [];
   const unknownTeamNames = new Set<string>();
+
+  if (usesCurrentRound && roundSlugs.length > 0) {
+    await waitBetweenRounds(TOP14_LNR_ROUND_DELAY_MS);
+  }
 
   for (const [index, roundSlug] of roundSlugs.entries()) {
     const parsed = await fetchTop14LnrRoundResultsWithDiagnostics(

@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildTop14LnrCalendarUrl,
+  buildTop14LnrCurrentCalendarUrl,
   parseTop14LnrCalendarHtmlWithDiagnostics,
+  parseTop14LnrCurrentRoundSlug,
   parseTop14LnrKickoffAt,
   TOP14_TEAM_SLUG_BY_LNR_NAME,
   toLnrSeason,
@@ -31,6 +33,23 @@ describe("top14-lnr-results", () => {
   it("builds the LNR path URL without a query string", () => {
     expect(toLnrSeason(SEASON)).toBe("2026-2027");
     expect(buildTop14LnrCalendarUrl(SEASON, "j1")).toBe(SOURCE_URL);
+    expect(buildTop14LnrCurrentCalendarUrl(SEASON)).toBe(
+      "https://top14.lnr.fr/calendrier-et-resultats/2026-2027",
+    );
+  });
+
+  it("finds the current round from an official match link", () => {
+    const html = readFileSync(FIXTURE_PATH, "utf8");
+
+    expect(
+      parseTop14LnrCurrentRoundSlug({ html, season: SEASON }),
+    ).toBe("j1");
+    expect(
+      parseTop14LnrCurrentRoundSlug({
+        html: html.replaceAll("/j1/", "/finale/"),
+        season: SEASON,
+      }),
+    ).toBe("finale");
   });
 
   it("parses all seven J1 fixtures from the captured LNR page", () => {
