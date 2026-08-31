@@ -198,18 +198,6 @@ export async function POST(request: Request) {
 
     const homeLineupIsComplete = hasCompleteStarterLineup(lineup.home_players);
     const awayLineupIsComplete = hasCompleteStarterLineup(lineup.away_players);
-    const skippedTeams = [
-      ...(homeLineupIsComplete ? [] : ["home"]),
-      ...(awayLineupIsComplete ? [] : ["away"]),
-    ];
-
-    if (skippedTeams.length > 0) {
-      console.info("[ingest-lineups] skipped incomplete team lineup", {
-        matchId,
-        skippedTeams,
-      });
-    }
-
     const homeNames = homeLineupIsComplete
       ? lineup.home_players.map((player) => player.name)
       : [];
@@ -265,7 +253,26 @@ export async function POST(request: Request) {
       },
     );
 
-    const rows = [...homeRows, ...awayRows];
+    const homeLineupCanReplace =
+      homeLineupIsComplete && homeRows.length === lineup.home_players.length;
+    const awayLineupCanReplace =
+      awayLineupIsComplete && awayRows.length === lineup.away_players.length;
+    const skippedTeams = [
+      ...(homeLineupCanReplace ? [] : ["home"]),
+      ...(awayLineupCanReplace ? [] : ["away"]),
+    ];
+
+    if (skippedTeams.length > 0) {
+      console.info("[ingest-lineups] skipped incomplete team lineup", {
+        matchId,
+        skippedTeams,
+      });
+    }
+
+    const rows = [
+      ...(homeLineupCanReplace ? homeRows : []),
+      ...(awayLineupCanReplace ? awayRows : []),
+    ];
     if (rows.length > 0) {
       const { error: upsertError } = await db
         .from("match_lineups")
@@ -278,10 +285,10 @@ export async function POST(request: Request) {
       }
 
       for (const { teamId, teamRows } of [
-        ...(homeLineupIsComplete
+        ...(homeLineupCanReplace && homeRows.length > 0
           ? [{ teamId: match.home_team_id, teamRows: homeRows }]
           : []),
-        ...(awayLineupIsComplete
+        ...(awayLineupCanReplace && awayRows.length > 0
           ? [{ teamId: match.away_team_id, teamRows: awayRows }]
           : []),
       ]) {
@@ -303,8 +310,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       announced: true,
-      home_count: homeRows.length,
-      away_count: awayRows.length,
+      home_count: homeLineupCanReplace ? homeRows.length : 0,
+      away_count: awayLineupCanReplace ? awayRows.length : 0,
       skipped_teams: skippedTeams,
     });
   } catch (error) {
