@@ -57,8 +57,16 @@ describe("competition guide metadata", () => {
     expect(JSON.stringify(metadata.openGraph?.images)).toContain(
       "/api/og?type=competition",
     );
-    expect(JSON.stringify(metadata.openGraph?.images)).toContain(
-      "family_name=URC",
+    const ogImage = Array.isArray(metadata.openGraph?.images)
+      ? metadata.openGraph.images[0]
+      : metadata.openGraph?.images;
+    const ogImageUrl =
+      typeof ogImage === "string" || ogImage instanceof URL
+        ? ogImage
+        : ogImage?.url;
+    const url = new URL(ogImageUrl?.toString() ?? "", "https://example.com");
+    expect(url.searchParams.get("family_name")).toBe(
+      "ユナイテッド・ラグビー・チャンピオンシップ",
     );
   });
 

@@ -118,7 +118,7 @@ describe("competition hub indexing", () => {
       }),
     );
 
-    expect(screen.getByRole("img", { name: "Premiership" })).toHaveAttribute(
+    expect(screen.getByRole("img", { name: "プレミアシップ" })).toHaveAttribute(
       "data-src",
       "/visuals/premiership.jpg",
     );
@@ -147,10 +147,11 @@ describe("competition hub indexing", () => {
       }),
     );
 
-    expect(screen.getByRole("img", { name: "URC" })).toHaveAttribute(
-      "data-src",
-      "/visuals/urc.jpg",
-    );
+    expect(
+      screen.getByRole("img", {
+        name: "ユナイテッド・ラグビー・チャンピオンシップ",
+      }),
+    ).toHaveAttribute("data-src", "/visuals/urc.jpg");
   });
 
   it("uses the Nations Championship key visual when it is available", async () => {
@@ -177,7 +178,7 @@ describe("competition hub indexing", () => {
     );
 
     expect(
-      screen.getByRole("img", { name: "Nations Championship" }),
+      screen.getByRole("img", { name: "ネーションズチャンピオンシップ" }),
     ).toHaveAttribute("data-src", "/visuals/nations-championship.jpg");
   });
 

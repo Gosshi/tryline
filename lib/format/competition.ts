@@ -83,6 +83,7 @@ const FAMILY_DISPLAY_NAMES: Record<string, string> = {
 
 export function formatFamilyName(family: string): string {
   return (
+    JAPANESE_COMPETITION_NAMES_BY_FAMILY[family] ??
     FAMILY_DISPLAY_NAMES[family] ??
     family.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
   );
