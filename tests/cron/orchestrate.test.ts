@@ -216,7 +216,14 @@ describe("runOrchestrate", () => {
     expect(ingestLineups).toHaveBeenCalledWith("scheduled-1", null);
     expect(generateContent).toHaveBeenCalledWith("scheduled-1", "preview");
     expect(result.previews).toEqual({ triggered: 1, skipped: 0 });
-    expect(result.lineups).toEqual({ triggered: 1, no_url: 0 });
+    expect(result.lineups).toEqual({
+      triggered: 1,
+      no_url: 0,
+      preview_triggered: 1,
+      preview_no_url: 0,
+      recap_triggered: 0,
+      recap_no_url: 0,
+    });
   });
 
   it("fetches sourced facts before preview generation when provided", async () => {
@@ -339,7 +346,7 @@ describe("runOrchestrate", () => {
     );
   });
 
-  it("calls recap generation for finished matches without recap content", async () => {
+  it("refreshes lineups before generating recaps for finished matches", async () => {
     const db = createMockDb({
       scheduledIds: [],
       finishedIds: ["finished-1"],
@@ -354,8 +361,70 @@ describe("runOrchestrate", () => {
       now,
     });
 
+    expect(ingestLineups).toHaveBeenCalledWith("finished-1", null);
     expect(generateContent).toHaveBeenCalledWith("finished-1", "recap");
     expect(result.recaps).toEqual({ triggered: 1, skipped: 0 });
+    expect(result.lineups).toMatchObject({
+      triggered: 1,
+      recap_triggered: 1,
+      recap_no_url: 0,
+    });
+  });
+
+  it("continues recap generation when lineup ingestion fails", async () => {
+    const db = createMockDb({
+      scheduledIds: [],
+      finishedIds: ["finished-1"],
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockRejectedValue(new Error("lineup fail"));
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    const result = await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now,
+    });
+
+    expect(generateContent).toHaveBeenCalledWith("finished-1", "recap");
+    expect(result.recaps).toEqual({ triggered: 1, skipped: 0 });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "[orchestrate] lineup ingestion failed",
+      expect.objectContaining({ matchId: "finished-1" }),
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("refreshes lineups before fetching facts and generating a recap", async () => {
+    const db = createMockDb({
+      scheduledIds: [],
+      finishedIds: ["finished-1"],
+    });
+    const calls: string[] = [];
+    const ingestLineups = vi.fn().mockImplementation(async () => {
+      calls.push("lineups");
+      return "triggered";
+    });
+    const fetchSourcedFacts = vi.fn().mockImplementation(async () => {
+      calls.push("facts");
+    });
+    const generateContent = vi.fn().mockImplementation(async () => {
+      calls.push("generate");
+    });
+
+    await runOrchestrate({
+      db,
+      fetchSourcedFacts,
+      generateContent,
+      ingestLineups,
+      now,
+    });
+
+    expect(calls).toEqual(["lineups", "facts", "generate"]);
   });
 
   it("generates English recap after Japanese recap for League One finished matches", async () => {

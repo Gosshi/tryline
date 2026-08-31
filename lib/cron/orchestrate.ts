@@ -24,6 +24,10 @@ export type OrchestrateResult = {
   lineups: {
     triggered: number;
     no_url: number;
+    preview_triggered: number;
+    preview_no_url: number;
+    recap_triggered: number;
+    recap_no_url: number;
   };
   recaps: {
     triggered: number;
@@ -236,6 +240,10 @@ export async function runOrchestrate(
     lineups: {
       triggered: 0,
       no_url: 0,
+      preview_triggered: 0,
+      preview_no_url: 0,
+      recap_triggered: 0,
+      recap_no_url: 0,
     },
     recaps: {
       triggered: 0,
@@ -255,8 +263,10 @@ export async function runOrchestrate(
         );
         if (lineupOutcome === "no_url") {
           result.lineups.no_url += 1;
+          result.lineups.preview_no_url += 1;
         } else {
           result.lineups.triggered += 1;
+          result.lineups.preview_triggered += 1;
         }
       } catch (error) {
         console.error("[orchestrate] lineup ingestion failed", {
@@ -284,6 +294,26 @@ export async function runOrchestrate(
     RECAP_BATCH_SIZE,
   )) {
     const matchId = match.id;
+    const competitionFamily = firstRelation(match.competition)?.family ?? null;
+    try {
+      const lineupOutcome = await deps.ingestLineups(
+        matchId,
+        competitionFamily,
+      );
+      if (lineupOutcome === "no_url") {
+        result.lineups.no_url += 1;
+        result.lineups.recap_no_url += 1;
+      } else {
+        result.lineups.triggered += 1;
+        result.lineups.recap_triggered += 1;
+      }
+    } catch (error) {
+      console.error("[orchestrate] lineup ingestion failed", {
+        matchId,
+        error,
+      });
+    }
+
     try {
       await deps.fetchSourcedFacts?.(matchId, "recap");
       const generated = await deps.generateContent(matchId, "recap");
