@@ -10,6 +10,8 @@ import type { Json } from "@/lib/db/types";
 
 type JsonObject = Record<string, Json>;
 
+const REQUIRED_STARTER_COUNT = 15;
+
 function asJsonObject(value: Json): JsonObject {
   if (!value || Array.isArray(value) || typeof value !== "object") {
     return {};
@@ -21,6 +23,24 @@ function asJsonObject(value: Json): JsonObject {
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value,
+  );
+}
+
+function hasCompleteStarterLineup(
+  players: Array<{ jersey_number: number }>,
+): boolean {
+  const jerseyNumbers = new Set(
+    players
+      .map((player) => player.jersey_number)
+      .filter((jerseyNumber) => jerseyNumber <= REQUIRED_STARTER_COUNT),
+  );
+
+  return (
+    jerseyNumbers.size === REQUIRED_STARTER_COUNT &&
+    [...jerseyNumbers].every(
+      (jerseyNumber) =>
+        jerseyNumber >= 1 && jerseyNumber <= REQUIRED_STARTER_COUNT,
+    )
   );
 }
 
@@ -176,63 +196,123 @@ export async function POST(request: Request) {
       return existingByName;
     }
 
-    const homeNames = lineup.home_players.map((player) => player.name);
-    const awayNames = lineup.away_players.map((player) => player.name);
-    const homePlayerIds = await ensurePlayerIds(match.home_team_id, homeNames);
-    const awayPlayerIds = await ensurePlayerIds(match.away_team_id, awayNames);
+    const homeLineupIsComplete = hasCompleteStarterLineup(lineup.home_players);
+    const awayLineupIsComplete = hasCompleteStarterLineup(lineup.away_players);
+    const homeNames = homeLineupIsComplete
+      ? lineup.home_players.map((player) => player.name)
+      : [];
+    const awayNames = awayLineupIsComplete
+      ? lineup.away_players.map((player) => player.name)
+      : [];
+    const homePlayerIds = homeLineupIsComplete
+      ? await ensurePlayerIds(match.home_team_id, homeNames)
+      : new Map<string, string>();
+    const awayPlayerIds = awayLineupIsComplete
+      ? await ensurePlayerIds(match.away_team_id, awayNames)
+      : new Map<string, string>();
 
-    const homeRows = lineup.home_players.flatMap((player) => {
-      const playerId = homePlayerIds.get(player.name);
+    const homeRows = (homeLineupIsComplete ? lineup.home_players : []).flatMap(
+      (player) => {
+        const playerId = homePlayerIds.get(player.name);
 
-      if (!playerId) {
-        return [];
-      }
+        if (!playerId) {
+          return [];
+        }
 
-      return [
-        {
-          match_id: match.id,
-          team_id: match.home_team_id,
-          player_id: playerId,
-          jersey_number: player.jersey_number,
-          announced_at: lineup.announced_at,
-          source_url: lineup.source_url,
-        },
-      ];
-    });
+        return [
+          {
+            match_id: match.id,
+            team_id: match.home_team_id,
+            player_id: playerId,
+            jersey_number: player.jersey_number,
+            announced_at: lineup.announced_at,
+            source_url: lineup.source_url,
+          },
+        ];
+      },
+    );
 
-    const awayRows = lineup.away_players.flatMap((player) => {
-      const playerId = awayPlayerIds.get(player.name);
+    const awayRows = (awayLineupIsComplete ? lineup.away_players : []).flatMap(
+      (player) => {
+        const playerId = awayPlayerIds.get(player.name);
 
-      if (!playerId) {
-        return [];
-      }
+        if (!playerId) {
+          return [];
+        }
 
-      return [
-        {
-          match_id: match.id,
-          team_id: match.away_team_id,
-          player_id: playerId,
-          jersey_number: player.jersey_number,
-          announced_at: lineup.announced_at,
-          source_url: lineup.source_url,
-        },
-      ];
-    });
+        return [
+          {
+            match_id: match.id,
+            team_id: match.away_team_id,
+            player_id: playerId,
+            jersey_number: player.jersey_number,
+            announced_at: lineup.announced_at,
+            source_url: lineup.source_url,
+          },
+        ];
+      },
+    );
 
-    const { error: upsertError } = await db
-      .from("match_lineups")
-      .upsert([...homeRows, ...awayRows], {
-        onConflict: "match_id,team_id,jersey_number",
+    const homeLineupCanReplace =
+      homeLineupIsComplete && homeRows.length === lineup.home_players.length;
+    const awayLineupCanReplace =
+      awayLineupIsComplete && awayRows.length === lineup.away_players.length;
+    const skippedTeams = [
+      ...(homeLineupCanReplace ? [] : ["home"]),
+      ...(awayLineupCanReplace ? [] : ["away"]),
+    ];
+
+    if (skippedTeams.length > 0) {
+      console.info("[ingest-lineups] skipped incomplete team lineup", {
+        matchId,
+        skippedTeams,
       });
+    }
 
-    if (upsertError) {
-      throw upsertError;
+    const rows = [
+      ...(homeLineupCanReplace ? homeRows : []),
+      ...(awayLineupCanReplace ? awayRows : []),
+    ];
+    if (rows.length > 0) {
+      const { error: upsertError } = await db
+        .from("match_lineups")
+        .upsert(rows, {
+          onConflict: "match_id,team_id,jersey_number",
+        });
+
+      if (upsertError) {
+        throw upsertError;
+      }
+
+      for (const { teamId, teamRows } of [
+        ...(homeLineupCanReplace && homeRows.length > 0
+          ? [{ teamId: match.home_team_id, teamRows: homeRows }]
+          : []),
+        ...(awayLineupCanReplace && awayRows.length > 0
+          ? [{ teamId: match.away_team_id, teamRows: awayRows }]
+          : []),
+      ]) {
+        const jerseyNumbers = teamRows
+          .map((row) => row.jersey_number)
+          .join(",");
+        const { error: deleteError } = await db
+          .from("match_lineups")
+          .delete()
+          .eq("match_id", match.id)
+          .eq("team_id", teamId)
+          .not("jersey_number", "in", `(${jerseyNumbers})`);
+
+        if (deleteError) {
+          throw deleteError;
+        }
+      }
     }
 
     return NextResponse.json({
       announced: true,
-      home_count: homeRows.length,
-      away_count: awayRows.length,
+      home_count: homeLineupCanReplace ? homeRows.length : 0,
+      away_count: awayLineupCanReplace ? awayRows.length : 0,
+      skipped_teams: skippedTeams,
     });
   } catch (error) {
     if (error instanceof CronUnauthorizedError) {

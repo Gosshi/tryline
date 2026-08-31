@@ -11,6 +11,22 @@ const fetcherMock = vi.hoisted(() => ({
 
 vi.mock("@/lib/scrapers/fetcher", () => fetcherMock);
 
+function lineupRows(team: string, count: number) {
+  return Array.from(
+    { length: count },
+    (_, index) =>
+      `<tr><td>${index + 1}</td><td>${team} Player ${index + 1}</td></tr>`,
+  ).join("\n");
+}
+
+function directLineupsHtml(params: { awayCount: number; homeCount: number }) {
+  return `
+    <h2><span id="Line-ups">Line-ups</span></h2>
+    <table class="wikitable">${lineupRows("Home", params.homeCount)}</table>
+    <table class="wikitable">${lineupRows("Away", params.awayCount)}</table>
+  `;
+}
+
 describe("/api/cron/ingest-lineups", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -71,7 +87,7 @@ describe("/api/cron/ingest-lineups", () => {
     expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledTimes(1);
   });
 
-  it("inserts missing players and upserts match_lineups", async () => {
+  it("inserts missing players and replaces complete match_lineups", async () => {
     const { matchId, homeTeamId, awayTeamId, service } =
       await insertMatchFixture();
     await service
@@ -82,16 +98,7 @@ describe("/api/cron/ingest-lineups", () => {
       .eq("id", matchId);
 
     fetcherMock.fetchWithPolicy.mockResolvedValue(
-      new Response(`
-        <h2><span id="Line-ups">Line-ups</span></h2>
-        <table class="wikitable">
-          <tr><td>1</td><td>Home New Player</td></tr>
-          <tr><td>16</td><td>Home Bench Player</td></tr>
-        </table>
-        <table class="wikitable">
-          <tr><td>1</td><td>Away New Player</td></tr>
-        </table>
-      `),
+      new Response(directLineupsHtml({ awayCount: 15, homeCount: 15 })),
     );
 
     const { POST } = await import("@/app/api/cron/ingest-lineups/route");
@@ -109,27 +116,28 @@ describe("/api/cron/ingest-lineups", () => {
     expect(response.status).toBe(200);
     expect(body).toMatchObject({
       announced: true,
-      home_count: 2,
-      away_count: 1,
+      home_count: 15,
+      away_count: 15,
+      skipped_teams: [],
     });
     expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledTimes(1);
 
     const players = await service
       .from("players")
       .select("team_id, name, slug")
-      .in("name", ["Home New Player", "Away New Player"]);
+      .in("name", ["Home Player 1", "Away Player 1"]);
     expect(players.error).toBeNull();
     expect(players.data).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           team_id: homeTeamId,
-          name: "Home New Player",
-          slug: "home-new-player",
+          name: "Home Player 1",
+          slug: "home-player-1",
         }),
         expect.objectContaining({
           team_id: awayTeamId,
-          name: "Away New Player",
-          slug: "away-new-player",
+          name: "Away Player 1",
+          slug: "away-player-1",
         }),
       ]),
     );
@@ -141,10 +149,10 @@ describe("/api/cron/ingest-lineups", () => {
       .order("team_id", { ascending: true });
 
     expect(lineups.error).toBeNull();
-    expect(lineups.data?.length).toBe(3);
+    expect(lineups.data?.length).toBe(30);
   });
 
-  it("falls back to season-page vevent adjacent lineup tables with a single fetch", async () => {
+  it("reports incomplete season-page lineups without writing them", async () => {
     const { matchId, service } = await insertMatchFixture();
     await service
       .from("matches")
@@ -199,8 +207,9 @@ describe("/api/cron/ingest-lineups", () => {
     expect(response.status).toBe(200);
     expect(body).toMatchObject({
       announced: true,
-      home_count: 2,
-      away_count: 1,
+      home_count: 0,
+      away_count: 0,
+      skipped_teams: ["home", "away"],
     });
     expect(fetcherMock.fetchWithPolicy).toHaveBeenCalledTimes(1);
 
@@ -214,12 +223,170 @@ describe("/api/cron/ingest-lineups", () => {
       ]);
 
     expect(players.error).toBeNull();
-    expect(players.data).toEqual(
+    expect(players.data).toEqual([]);
+  });
+
+  it("keeps existing lineups when both parsed teams are incomplete", async () => {
+    const { matchId, homeTeamId, awayTeamId, service } =
+      await insertMatchFixture();
+    await service
+      .from("matches")
+      .update({
+        external_ids: { wikipedia_url: "https://en.wikipedia.org/wiki/match" },
+      })
+      .eq("id", matchId);
+    const { data: stalePlayers, error: stalePlayersError } = await service
+      .from("players")
+      .insert([
+        {
+          name: "Home Stale Player",
+          slug: "home-stale-player",
+          team_id: homeTeamId,
+        },
+        {
+          name: "Away Stale Player",
+          slug: "away-stale-player",
+          team_id: awayTeamId,
+        },
+      ])
+      .select("id, team_id");
+
+    expect(stalePlayersError).toBeNull();
+    await service.from("match_lineups").insert(
+      stalePlayers!.map((player) => ({
+        jersey_number: 23,
+        match_id: matchId,
+        player_id: player.id,
+        source_url: "https://en.wikipedia.org/wiki/previous-lineup",
+        team_id: player.team_id,
+      })),
+    );
+    fetcherMock.fetchWithPolicy.mockResolvedValue(
+      new Response(directLineupsHtml({ awayCount: 1, homeCount: 1 })),
+    );
+
+    const { POST } = await import("@/app/api/cron/ingest-lineups/route");
+    const response = await POST(
+      new Request(
+        `http://localhost/api/cron/ingest-lineups?match_id=${matchId}`,
+        {
+          method: "POST",
+          headers: { Authorization: "Bearer test-cron-secret" },
+        },
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      announced: true,
+      home_count: 0,
+      away_count: 0,
+      skipped_teams: ["home", "away"],
+    });
+    const { data: lineups } = await service
+      .from("match_lineups")
+      .select("team_id, jersey_number")
+      .eq("match_id", matchId)
+      .order("team_id", { ascending: true });
+    expect(lineups).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ name: "Home Season Fullback" }),
-        expect.objectContaining({ name: "Home Season Hooker" }),
-        expect.objectContaining({ name: "Away Season Fullback" }),
+        { team_id: homeTeamId, jersey_number: 23 },
+        { team_id: awayTeamId, jersey_number: 23 },
       ]),
     );
+
+    const { data: partialHomePlayers } = await service
+      .from("players")
+      .select("name")
+      .eq("name", "Home Player 1")
+      .eq("team_id", homeTeamId);
+    const { data: partialAwayPlayers } = await service
+      .from("players")
+      .select("name")
+      .eq("name", "Away Player 1")
+      .eq("team_id", awayTeamId);
+    expect(partialHomePlayers).toEqual([]);
+    expect(partialAwayPlayers).toEqual([]);
+  });
+
+  it("replaces only complete teams and removes their stale jersey numbers", async () => {
+    const { matchId, homeTeamId, awayTeamId, service } =
+      await insertMatchFixture();
+    await service
+      .from("matches")
+      .update({
+        external_ids: { wikipedia_url: "https://en.wikipedia.org/wiki/match" },
+      })
+      .eq("id", matchId);
+    const { data: stalePlayers, error: stalePlayersError } = await service
+      .from("players")
+      .insert([
+        {
+          name: "Home Stale Reserve",
+          slug: "home-stale-reserve",
+          team_id: homeTeamId,
+        },
+        {
+          name: "Away Stale Reserve",
+          slug: "away-stale-reserve",
+          team_id: awayTeamId,
+        },
+      ])
+      .select("id, team_id");
+
+    expect(stalePlayersError).toBeNull();
+    await service.from("match_lineups").insert(
+      stalePlayers!.map((player) => ({
+        jersey_number: 23,
+        match_id: matchId,
+        player_id: player.id,
+        source_url: "https://en.wikipedia.org/wiki/previous-lineup",
+        team_id: player.team_id,
+      })),
+    );
+    fetcherMock.fetchWithPolicy.mockResolvedValue(
+      new Response(directLineupsHtml({ awayCount: 1, homeCount: 15 })),
+    );
+
+    const { POST } = await import("@/app/api/cron/ingest-lineups/route");
+    const response = await POST(
+      new Request(
+        `http://localhost/api/cron/ingest-lineups?match_id=${matchId}`,
+        {
+          method: "POST",
+          headers: { Authorization: "Bearer test-cron-secret" },
+        },
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      announced: true,
+      home_count: 15,
+      away_count: 0,
+      skipped_teams: ["away"],
+    });
+    const { data: lineups } = await service
+      .from("match_lineups")
+      .select("team_id, jersey_number")
+      .eq("match_id", matchId);
+    expect(lineups).toHaveLength(16);
+    expect(lineups).toEqual(
+      expect.arrayContaining([
+        { team_id: awayTeamId, jersey_number: 23 },
+        { team_id: homeTeamId, jersey_number: 1 },
+        { team_id: homeTeamId, jersey_number: 15 },
+      ]),
+    );
+    expect(lineups).not.toEqual(
+      expect.arrayContaining([{ team_id: homeTeamId, jersey_number: 23 }]),
+    );
+
+    const { data: partialAwayPlayers } = await service
+      .from("players")
+      .select("name")
+      .eq("name", "Away Player 1")
+      .eq("team_id", awayTeamId);
+    expect(partialAwayPlayers).toEqual([]);
   });
 });

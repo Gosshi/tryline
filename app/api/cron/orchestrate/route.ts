@@ -94,7 +94,14 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         previews: { triggered: 0, skipped: 0 },
-        lineups: { triggered: 0, no_url: 0 },
+        lineups: {
+          triggered: 0,
+          no_url: 0,
+          preview_triggered: 0,
+          preview_no_url: 0,
+          recap_triggered: 0,
+          recap_no_url: 0,
+        },
         recaps: { triggered: 0, skipped: 0 },
       },
       { status: 200 },
