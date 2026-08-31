@@ -9,19 +9,29 @@ import {
 } from "@/lib/format/competition";
 
 describe("formatFamilyName", () => {
-  it("formats PNC family aliases as Pacific Nations Cup", () => {
-    expect(formatFamilyName("pnc")).toBe("Pacific Nations Cup");
-    expect(formatFamilyName("pacific-nations-cup")).toBe("Pacific Nations Cup");
+  it("formats PNC family aliases in Japanese", () => {
+    expect(formatFamilyName("pnc")).toBe("パシフィック・ネーションズカップ");
+    expect(formatFamilyName("pacific-nations-cup")).toBe(
+      "パシフィック・ネーションズカップ",
+    );
   });
 
-  it("formats formal competition family names", () => {
+  it("formats formal competition family names in Japanese", () => {
     expect(formatFamilyName("nations-championship")).toBe(
-      "Nations Championship",
+      "ネーションズチャンピオンシップ",
     );
     expect(formatFamilyName("rugby-championship")).toBe(
-      "The Rugby Championship",
+      "ザ・ラグビーチャンピオンシップ",
     );
-    expect(formatFamilyName("rwc")).toBe("Rugby World Cup");
+    expect(formatFamilyName("rwc")).toBe("ラグビーワールドカップ");
+  });
+
+  it("formats other Japanese competition family names", () => {
+    expect(formatFamilyName("premiership")).toBe("プレミアシップ");
+    expect(formatFamilyName("top-14")).toBe("トップ14");
+    expect(formatFamilyName("urc")).toBe(
+      "ユナイテッド・ラグビー・チャンピオンシップ",
+    );
   });
 
   it("formats League One family name in Japanese", () => {
@@ -36,6 +46,10 @@ describe("formatFamilyName", () => {
 
   it("formats the Puma Trophy family name in Japanese", () => {
     expect(formatFamilyName("puma-trophy")).toBe("プーマ・トロフィー");
+  });
+
+  it("falls back to title case for unknown family names", () => {
+    expect(formatFamilyName("unknown-cup")).toBe("Unknown Cup");
   });
 
   it("formats known pool names and preserves unknown names", () => {
