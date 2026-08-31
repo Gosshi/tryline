@@ -801,7 +801,7 @@ export default async function HomePage() {
 
                   return (
                     <li
-                      className={isFeatured ? "w-44 shrink-0" : "w-32 shrink-0"}
+                      className={isFeatured ? "w-52 shrink-0" : "w-40 shrink-0"}
                       key={`${competition.family}-${competition.season}`}
                     >
                       <Link

@@ -868,6 +868,12 @@ describe("HomePage", () => {
       }),
     ).toHaveAttribute("href", "/c/rwc/2023");
     expect(
+      document.querySelector('a[href="/c/rwc/2023"]')?.closest("li"),
+    ).toHaveClass("w-52", "shrink-0");
+    expect(
+      document.querySelector('a[href="/c/six-nations/2026"]')?.closest("li"),
+    ).toHaveClass("w-40", "shrink-0");
+    expect(
       screen.getByRole("link", {
         name: "2027年大会（オーストラリア開催）の日程はこちら →",
       }),
