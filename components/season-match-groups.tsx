@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { MatchCard } from "@/components/match-card";
 import { RoundHeading } from "@/components/round-heading";
+import { formatPoolName } from "@/lib/format/competition";
 
 import type { MatchContentStatus } from "@/lib/db/queries/match-content";
 import type { MatchListItem } from "@/lib/db/queries/matches";
@@ -18,16 +19,10 @@ type SeasonMatchGroupsProps = {
   roundHubBasePath?: string;
 };
 
-const ROUND_FILTERS = [
-  { label: "全試合", value: "all" },
-  { label: "Pool A", value: "pool-a" },
-  { label: "Pool B", value: "pool-b" },
-  { label: "Pool C", value: "pool-c" },
-  { label: "Pool D", value: "pool-d" },
-  { label: "ノックアウト", value: "knockout" },
-] as const;
-
-type RoundFilterValue = (typeof ROUND_FILTERS)[number]["value"];
+type RoundFilter = {
+  label: string;
+  value: string;
+};
 
 type MatchClassification = "test" | "tour";
 
@@ -118,14 +113,16 @@ export function SeasonMatchGroups({
   const router = useRouter();
   const searchParams = useSearchParams();
   const roundParam = searchParams.get("round");
-  const selectedRound = isRoundFilterValue(roundParam) ? roundParam : "all";
-  const totalMatches = groupedMatches.reduce(
-    (sum, [, matches]) => sum + matches.length,
-    0,
+  const roundFilters = useMemo(
+    () => getRoundFilters(groupedMatches),
+    [groupedMatches],
   );
-  const showRoundFilter = totalMatches >= 20;
+  const selectedRound = isRoundFilterValue(roundParam, roundFilters)
+    ? roundParam
+    : "all";
+  const showRoundFilter = roundFilters.length > 0;
   const visibleGroups = showRoundFilter
-    ? filterGroupsByRound(groupedMatches, selectedRound)
+    ? filterGroupsByRound(groupedMatches, selectedRound, roundFilters)
     : groupedMatches;
   const collapsible = shouldCollapseRoundGroups(groupedMatches);
   const defaultOpenIndexes = useMemo(
@@ -173,7 +170,7 @@ export function SeasonMatchGroups({
           className="flex gap-2 overflow-x-auto pb-1"
           role="tablist"
         >
-          {ROUND_FILTERS.map((filter) => {
+          {roundFilters.map((filter) => {
             const selected = selectedRound === filter.value;
 
             return (
@@ -209,87 +206,102 @@ export function SeasonMatchGroups({
         </div>
       )}
 
-      {visibleGroups.map(([groupKey, roundMatches], index) => {
-        const key =
-          groupKey.type === "round"
-            ? (groupKey.round ?? groupKey.roundName ?? "unassigned")
-            : `week-${groupKey.weekIndex}`;
-        const isOpen = openIndexes.has(index);
-        const roundHubHref = getRoundHubHref(groupKey, roundHubBasePath);
-        const roundHubRound = groupKey.type === "round" ? groupKey.round : null;
+      {visibleGroups.length === 0 ? (
+        <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
+          <p className="text-sm font-medium text-[var(--color-ink)]">
+            この絞り込みに該当する試合はありません。
+          </p>
+          <Link
+            className="mt-4 inline-flex text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+            href={pathname}
+          >
+            全試合に戻る
+          </Link>
+        </div>
+      ) : (
+        visibleGroups.map(([groupKey, roundMatches], index) => {
+          const key =
+            groupKey.type === "round"
+              ? (groupKey.round ?? groupKey.roundName ?? "unassigned")
+              : `week-${groupKey.weekIndex}`;
+          const isOpen = openIndexes.has(index);
+          const roundHubHref = getRoundHubHref(groupKey, roundHubBasePath);
+          const roundHubRound =
+            groupKey.type === "round" ? groupKey.round : null;
 
-        return (
-          <section className="space-y-4" key={key}>
-            {collapsible ? (
-              <>
-                <button
-                  aria-expanded={isOpen}
-                  className="flex w-full items-center justify-between gap-4 py-1 text-left"
-                  data-round-index={index}
-                  onClick={() =>
-                    setOpenIndexes((current) => {
-                      const next = new Set(current);
+          return (
+            <section className="space-y-4" key={key}>
+              {collapsible ? (
+                <>
+                  <button
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center justify-between gap-4 py-1 text-left"
+                    data-round-index={index}
+                    onClick={() =>
+                      setOpenIndexes((current) => {
+                        const next = new Set(current);
 
-                      if (next.has(index)) {
-                        next.delete(index);
-                      } else {
-                        next.add(index);
-                      }
+                        if (next.has(index)) {
+                          next.delete(index);
+                        } else {
+                          next.add(index);
+                        }
 
-                      return next;
-                    })
-                  }
-                  type="button"
-                >
-                  <div className="min-w-0 flex-1">
-                    <RoundHeading family={family} groupKey={groupKey} />
-                  </div>
-                  <ChevronIcon open={isOpen} />
-                </button>
-                {roundHubHref && (
-                  <RoundHubLink href={roundHubHref} round={roundHubRound} />
-                )}
-                <div
-                  className={isOpen ? "grid gap-4 md:grid-cols-2" : "hidden"}
-                >
-                  {roundMatches.map((match) => (
-                    <ClassifiedMatchCard
-                      contentStatus={contentStatusMap[match.id]}
-                      family={family}
-                      key={match.id}
-                      match={match}
-                    />
-                  ))}
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <RoundHeading family={family} groupKey={groupKey} />
-                  {roundHubHref && (
-                    <div className="text-center">
-                      <RoundHubLink
-                        href={roundHubHref}
-                        round={roundHubRound}
-                      />
+                        return next;
+                      })
+                    }
+                    type="button"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <RoundHeading family={family} groupKey={groupKey} />
                     </div>
+                    <ChevronIcon open={isOpen} />
+                  </button>
+                  {roundHubHref && (
+                    <RoundHubLink href={roundHubHref} round={roundHubRound} />
                   )}
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {roundMatches.map((match) => (
-                    <ClassifiedMatchCard
-                      contentStatus={contentStatusMap[match.id]}
-                      family={family}
-                      key={match.id}
-                      match={match}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </section>
-        );
-      })}
+                  <div
+                    className={isOpen ? "grid gap-4 md:grid-cols-2" : "hidden"}
+                  >
+                    {roundMatches.map((match) => (
+                      <ClassifiedMatchCard
+                        contentStatus={contentStatusMap[match.id]}
+                        family={family}
+                        key={match.id}
+                        match={match}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <RoundHeading family={family} groupKey={groupKey} />
+                    {roundHubHref && (
+                      <div className="text-center">
+                        <RoundHubLink
+                          href={roundHubHref}
+                          round={roundHubRound}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {roundMatches.map((match) => (
+                      <ClassifiedMatchCard
+                        contentStatus={contentStatusMap[match.id]}
+                        family={family}
+                        key={match.id}
+                        match={match}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+          );
+        })
+      )}
     </>
   );
 }
@@ -390,33 +402,130 @@ function RoundHubLink({ href, round }: { href: string; round: number | null }) {
   );
 }
 
-function isRoundFilterValue(value: string | null): value is RoundFilterValue {
-  return ROUND_FILTERS.some((filter) => filter.value === value);
+function isRoundFilterValue(
+  value: string | null,
+  roundFilters: RoundFilter[],
+): value is string {
+  return roundFilters.some((filter) => filter.value === value);
 }
 
 function normalizeRoundLabel(value: string | null): string {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
 }
 
-function filterGroupsByRound(
+function isKnockoutLabel(value: string): boolean {
+  return /(?:knockout|quarter|semi|final|playoff|third-place|bronze)/.test(
+    normalizeRoundLabel(value),
+  );
+}
+
+function isRegularRoundLabel(value: string): boolean {
+  return (
+    /^(?:round|week)-\d+$/.test(normalizeRoundLabel(value)) ||
+    /^第\d+節$/.test(value)
+  );
+}
+
+function getGroupLabels(
+  groupKey: GroupKey,
+  matches: MatchListItem[],
+): string[] {
+  return [
+    groupKey.type === "round" ? groupKey.roundName : null,
+    ...matches.flatMap((match) => [match.poolName, match.roundName]),
+  ].filter((label): label is string => Boolean(label));
+}
+
+function getPoolLabel(
+  labels: string[],
+  poolValues: Set<string>,
+): string | null {
+  return (
+    labels.map(normalizeRoundLabel).find((label) => poolValues.has(label)) ??
+    null
+  );
+}
+
+export function getRoundFilters(
   groupedMatches: Array<[GroupKey, MatchListItem[]]>,
-  filter: RoundFilterValue,
+): RoundFilter[] {
+  const pools = new Map<string, string>();
+
+  for (const [groupKey, matches] of groupedMatches) {
+    for (const label of getGroupLabels(groupKey, matches)) {
+      const value = normalizeRoundLabel(label);
+
+      if (
+        value &&
+        !isKnockoutLabel(label) &&
+        !isRegularRoundLabel(label) &&
+        !pools.has(value)
+      ) {
+        pools.set(value, label);
+      }
+    }
+  }
+
+  if (pools.size < 2) {
+    return [];
+  }
+
+  const poolValues = new Set(pools.keys());
+  const hasKnockoutMatches = groupedMatches.some(([groupKey, matches]) =>
+    matches.some(
+      (match) =>
+        getPoolLabel(
+          [
+            match.poolName,
+            match.roundName,
+            groupKey.type === "round" ? groupKey.roundName : null,
+          ].filter((label): label is string => Boolean(label)),
+          poolValues,
+        ) === null,
+    ),
+  );
+
+  return [
+    { label: "全試合", value: "all" },
+    ...[...pools].map(([value, label]) => ({
+      label: formatPoolName(label),
+      value,
+    })),
+    ...(hasKnockoutMatches
+      ? [{ label: "ノックアウト", value: "knockout" }]
+      : []),
+  ];
+}
+
+export function filterGroupsByRound(
+  groupedMatches: Array<[GroupKey, MatchListItem[]]>,
+  filter: string,
+  roundFilters: RoundFilter[],
 ): Array<[GroupKey, MatchListItem[]]> {
   if (filter === "all") {
     return groupedMatches;
   }
 
-  return groupedMatches.filter(([groupKey, matches]) => {
-    const labels = [
-      groupKey.type === "round" ? groupKey.roundName : null,
-      ...matches.map((match) => match.roundName),
-    ].map(normalizeRoundLabel);
-    const isPool = labels.some((label) => label.startsWith("pool-"));
+  const poolValues = new Set(
+    roundFilters
+      .map((roundFilter) => roundFilter.value)
+      .filter((value) => value !== "all" && value !== "knockout"),
+  );
 
-    if (filter === "knockout") {
-      return !isPool;
-    }
+  return groupedMatches.flatMap(([groupKey, matches]) => {
+    const filteredMatches = matches.filter((match) => {
+      const poolLabel = getPoolLabel(
+        [
+          match.poolName,
+          match.roundName,
+          groupKey.type === "round" ? groupKey.roundName : null,
+        ].filter((label): label is string => Boolean(label)),
+        poolValues,
+      );
 
-    return labels.some((label) => label === filter || label.startsWith(filter));
+      return filter === "knockout" ? poolLabel === null : poolLabel === filter;
+    });
+
+    return filteredMatches.length > 0 ? [[groupKey, filteredMatches]] : [];
   });
 }

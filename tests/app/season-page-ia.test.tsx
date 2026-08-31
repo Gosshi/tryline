@@ -5,12 +5,12 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import SeasonPage, {
-  generateMetadata,
-} from "@/app/c/[competition]/[season]/page";
+import SeasonPage, { generateMetadata } from "@/app/c/[competition]/[season]/page";
+import { isSeasonNotStarted } from "@/lib/season-standings";
 
 import type { MatchContentStatus } from "@/lib/db/queries/match-content";
 import type { MatchListItem } from "@/lib/db/queries/matches";
+import type { PoolStanding, StandingRow } from "@/lib/db/queries/standings";
 import type { ReactNode } from "react";
 
 const competitionMocks = vi.hoisted(() => ({
@@ -193,6 +193,124 @@ function getFaqJsonLd(container: HTMLElement) {
 }
 
 describe("season page information architecture", () => {
+  it.each([
+    {
+      expected: true,
+      label: "all matches are scheduled",
+      matches: [{ ...match, status: "scheduled" }],
+      poolStandings: [],
+      standings: [{ ...standing, played: 0 }],
+    },
+    {
+      expected: false,
+      label: "a finished match has a played standing",
+      matches: [{ ...match, status: "finished" }],
+      poolStandings: [],
+      standings: [standing],
+    },
+    {
+      expected: true,
+      label: "finished matches arrive before standings update",
+      matches: [{ ...match, status: "finished" }],
+      poolStandings: [],
+      standings: [{ ...standing, played: 0 }],
+    },
+    {
+      expected: true,
+      label: "there are no standings rows",
+      matches: [{ ...match, status: "finished" }],
+      poolStandings: [],
+      standings: [],
+    },
+    {
+      expected: true,
+      label: "every pool standing is unplayed",
+      matches: [{ ...match, status: "scheduled" }],
+      poolStandings: [
+        {
+          poolName: "Pool A",
+          standings: [{ ...standing, played: 0 }],
+        },
+      ],
+      standings: [],
+    },
+  ] as Array<{
+    expected: boolean;
+    label: string;
+    matches: MatchListItem[];
+    poolStandings: PoolStanding[];
+    standings: StandingRow[];
+  }>)(
+    "recognizes a preseason when $label",
+    ({ expected, matches, poolStandings, standings }) => {
+      expect(isSeasonNotStarted(matches, standings, poolStandings)).toBe(
+        expected,
+      );
+    },
+  );
+
+  it("uses a participant list instead of a zero-value standings table before the season", async () => {
+    const preseasonCompetition = {
+      ...competition,
+      family: "urc",
+      name: "United Rugby Championship",
+      season: "2026-27",
+      slug: "urc-2026-27",
+    };
+    const preseasonStandings = Array.from({ length: 16 }, (_, index) => ({
+      ...standing,
+      played: 0,
+      position: index + 1,
+      teamName: `Team ${index + 1}`,
+      teamShortCode: `T${index + 1}`,
+    }));
+
+    competitionMocks.getCompetitionBySlug.mockResolvedValue(
+      preseasonCompetition,
+    );
+    competitionMocks.listSeasonsByFamily.mockResolvedValue([
+      preseasonCompetition,
+    ]);
+    matchesMocks.listMatchesForCompetition.mockResolvedValue(
+      Array.from({ length: 18 }, (_, index) => ({
+        ...match,
+        id: `scheduled-${index + 1}`,
+        kickoffAt: `2026-09-${String((index % 20) + 1).padStart(2, "0")}T12:00:00.000Z`,
+      })),
+    );
+    standingsMocks.getStandingsForCompetition.mockResolvedValue(
+      preseasonStandings,
+    );
+
+    const { container } = render(
+      await SeasonPage({
+        params: Promise.resolve({ competition: "urc", season: "2026-27" }),
+      }),
+    );
+    const standingsSection = container.querySelector("#standings");
+    const faq = getFaqJsonLd(container);
+
+    expect(screen.queryByText("首位")).not.toBeInTheDocument();
+    expect(standingsSection).toHaveTextContent("参加チーム");
+    expect(standingsSection).not.toHaveTextContent("順位表");
+    expect(standingsSection).not.toHaveTextContent("勝点");
+    expect(screen.getByRole("link", { name: "参加チーム" })).toHaveAttribute(
+      "href",
+      "#standings",
+    );
+    expect(
+      screen.queryByRole("link", { name: "順位表をすべて見る →" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("参加チーム")).toHaveTextContent("Team 16");
+    expect(faq?.mainEntity).toContainEqual(
+      expect.objectContaining({
+        acceptedAnswer: expect.objectContaining({
+          text: "このシーズンの順位表はまだ確定していません。",
+        }),
+      }),
+    );
+  });
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-02-01T00:00:00.000Z"));
@@ -226,6 +344,11 @@ describe("season page information architecture", () => {
   });
 
   it("places the summary and schedule before standings while keeping the guide expanded", async () => {
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      { ...match, id: "finished-match", status: "finished" },
+      match,
+    ]);
+
     const { container } = render(
       await SeasonPage({
         params: Promise.resolve({
@@ -421,6 +544,10 @@ describe("season page information architecture", () => {
   });
 
   it("renders pool standings when the season has pool assignments", async () => {
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      { ...match, id: "finished-match", status: "finished" },
+      match,
+    ]);
     standingsMocks.getPoolStandingsForCompetition.mockResolvedValue([
       {
         poolName: "Northern Hemisphere",
@@ -500,6 +627,11 @@ describe("season page information architecture", () => {
   });
 
   it("shows a standings excerpt while keeping the full table in collapsed markup", async () => {
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      { ...match, id: "finished-match", status: "finished" },
+      match,
+      japanMatch,
+    ]);
     standingsMocks.getStandingsForCompetition.mockResolvedValue([
       { ...standing, position: 1, teamName: "Bath", teamShortCode: "BAT" },
       {
@@ -517,11 +649,6 @@ describe("season page information architecture", () => {
       { ...standing, position: 4, teamName: "Exeter", teamShortCode: "EXE" },
       { ...standing, position: 5, teamName: "Japan", teamShortCode: "JPN" },
     ]);
-    matchesMocks.listMatchesForCompetition.mockResolvedValue([
-      match,
-      japanMatch,
-    ]);
-
     render(
       await SeasonPage({
         params: Promise.resolve({

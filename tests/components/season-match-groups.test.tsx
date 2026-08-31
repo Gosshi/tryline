@@ -7,6 +7,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   SeasonMatchGroups,
+  filterGroupsByRound,
+  getRoundFilters,
   getMatchClassification,
   getDefaultOpenGroupIndex,
   getDefaultOpenGroupIndexes,
@@ -83,7 +85,87 @@ function buildGroup(
   ];
 }
 
+function buildPoolGroup(
+  poolName: string,
+  round: number,
+): [GroupKey, MatchListItem[]] {
+  const match = buildMatch(poolName, "2026-01-01T00:00:00.000Z", round);
+
+  return [
+    { round, roundName: poolName, type: "round" },
+    [{ ...match, poolName, roundName: poolName }],
+  ];
+}
+
 describe("season match groups", () => {
+  it("does not create filters for competitions without pools", () => {
+    const groupedMatches = Array.from({ length: 20 }, (_, index) =>
+      buildGroup(index + 1, "2026-01-01T00:00:00.000Z"),
+    );
+
+    expect(getRoundFilters(groupedMatches)).toEqual([]);
+
+    render(
+      <SeasonMatchGroups
+        contentStatusMap={{}}
+        groupedMatches={groupedMatches}
+      />,
+    );
+
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+  });
+
+  it("derives every actual pool filter and excludes nonmatching matches", () => {
+    const groupedMatches = [
+      ...["Pool A", "Pool B", "Pool C", "Pool D", "Pool E", "Pool F"].map(
+        (poolName, index) => buildPoolGroup(poolName, index + 1),
+      ),
+      [
+        { round: null, roundName: "Knockout", type: "round" } as GroupKey,
+        [
+          {
+            ...buildMatch("knockout", "2026-02-01T00:00:00.000Z", 7),
+            roundName: "Knockout",
+          },
+        ],
+      ] as [GroupKey, MatchListItem[]],
+    ];
+    const filters = getRoundFilters(groupedMatches);
+
+    expect(filters).toEqual([
+      { label: "全試合", value: "all" },
+      { label: "プールA", value: "pool-a" },
+      { label: "プールB", value: "pool-b" },
+      { label: "プールC", value: "pool-c" },
+      { label: "プールD", value: "pool-d" },
+      { label: "プールE", value: "pool-e" },
+      { label: "プールF", value: "pool-f" },
+      { label: "ノックアウト", value: "knockout" },
+    ]);
+    expect(filterGroupsByRound(groupedMatches, "pool-a", filters)).toHaveLength(
+      1,
+    );
+    expect(
+      filterGroupsByRound(groupedMatches, "pool-a", filters)[0]?.[1],
+    ).toHaveLength(1);
+    expect(
+      filterGroupsByRound(groupedMatches, "knockout", filters)[0]?.[1][0]?.id,
+    ).toBe("knockout");
+  });
+
+  it("uses the tournament's own hemisphere labels for pool filters", () => {
+    const groupedMatches = [
+      buildPoolGroup("Northern Hemisphere", 1),
+      buildPoolGroup("Southern Hemisphere", 2),
+    ];
+
+    expect(getRoundFilters(groupedMatches)).toEqual([
+      { label: "全試合", value: "all" },
+      { label: "北半球", value: "northern-hemisphere" },
+      { label: "南半球", value: "southern-hemisphere" },
+    ]);
+  });
+
   it("collapses only round-based competitions with at least ten groups", () => {
     expect(
       shouldCollapseRoundGroups(
@@ -246,25 +328,24 @@ describe("season match groups", () => {
   });
 
   it("distinguishes greatest-rivalry test matches from tour matches", () => {
-    const testMatch = buildMatch(
-      "test",
-      "2026-08-23T15:00:00.000Z",
-      1,
-      { away: "national", home: "national" },
-    );
-    const tourMatch = buildMatch(
-      "tour",
-      "2026-08-07T15:00:00.000Z",
-      1,
-      { away: "national", home: "club" },
-    );
+    const testMatch = buildMatch("test", "2026-08-23T15:00:00.000Z", 1, {
+      away: "national",
+      home: "national",
+    });
+    const tourMatch = buildMatch("tour", "2026-08-07T15:00:00.000Z", 1, {
+      away: "national",
+      home: "club",
+    });
 
     const { container } = render(
       <SeasonMatchGroups
         contentStatusMap={{}}
         family="greatest-rivalry"
         groupedMatches={[
-          [{ round: 1, roundName: null, type: "round" }, [testMatch, tourMatch]],
+          [
+            { round: 1, roundName: null, type: "round" },
+            [testMatch, tourMatch],
+          ],
         ]}
       />,
     );
