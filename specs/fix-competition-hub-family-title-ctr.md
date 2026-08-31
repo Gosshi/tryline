@@ -6,11 +6,11 @@
 
 ### 実測（GSC、2026-07-28〜08-24 の28日、`--dims page`）
 
-| URL | 表示回数 | クリック | CTR | 平均順位 |
-|---|---:|---:|---:|---:|
-| `/c/pnc/2026`（シーズン） | 79 | 6 | **7.6%** | 9.5 |
-| `/c/pnc`（ファミリー） | 88 | 1 | **1.1%** | 10.4 |
-| `/c/premiership`（ファミリー） | 107 | 2 | **1.9%** | 9.7 |
+| URL                            | 表示回数 | クリック |      CTR | 平均順位 |
+| ------------------------------ | -------: | -------: | -------: | -------: |
+| `/c/pnc/2026`（シーズン）      |       79 |        6 | **7.6%** |      9.5 |
+| `/c/pnc`（ファミリー）         |       88 |        1 | **1.1%** |     10.4 |
+| `/c/premiership`（ファミリー） |      107 |        2 | **1.9%** |      9.7 |
 
 **同一サイト・同一大会（pnc）・ほぼ同じ順位帯で、CTR が 7.6% と 1.1%。約7倍の差がある。** 順位が同じである以上、差はスニペット（タイトル・説明文）にしかない。
 
@@ -32,10 +32,10 @@
 
 Bing Webmaster Tools（2026-08-25〜08-28 の4日）の実測でも、**掲載順位は1〜7位と高いのにクリックが付かないクエリ**がある。
 
-| クエリ | 表示 | クリック | 平均掲載順位 |
-|---|---:|---:|---:|
-| `リポビタンdチャレンジカップ2026` | **12** | **0** | 6 |
-| `リポビタンdチャレンジカップ2026結果` | 2 | 1 | 5 |
+| クエリ                                |   表示 | クリック | 平均掲載順位 |
+| ------------------------------------- | -----: | -------: | -----------: |
+| `リポビタンdチャレンジカップ2026`     | **12** |    **0** |            6 |
+| `リポビタンdチャレンジカップ2026結果` |      2 |        1 |            5 |
 
 Bing 全体は 16クリック / 247表示（CTR 6.48%）で、Google（31クリック / 1401表示、CTR 2.21%）より**クリック数で約3.6倍**。**Bing の方が流入が大きいため、CTR 改善の効き幅も大きい。**
 
@@ -92,20 +92,22 @@ export const JAPANESE_COMPETITION_NAMES_BY_FAMILY: Record<string, string> = {
 
 **2つのマップは収録キーが一致していない。**
 
-| family | 英語マップ | 日本語マップ |
-|---|---|---|
-| `lipovitan-challenge-cup` | リポビタンDチャレンジカップ | **無し** |
-| `puma-trophy` | プーマ・トロフィー | **無し** |
+| family                    | 英語マップ                  | 日本語マップ |
+| ------------------------- | --------------------------- | ------------ |
+| `lipovitan-challenge-cup` | リポビタンDチャレンジカップ | **無し**     |
+| `puma-trophy`             | プーマ・トロフィー          | **無し**     |
 
 **単純に日本語マップへ差し替えると、この2つが失われて slug のタイトルケース（`Lipovitan Challenge Cup` / `Puma Trophy`）に落ちる。** 現在は英語マップ側に日本語で入っているため正しく表示されている。この退行を起こしてはならない。
 
 ## スコープ
 
 対象:
+
 - `lib/format/competition.ts` の `formatFamilyName` の解決順序
 - `tests/format/competition.test.ts` の更新
 
 対象外:
+
 - **`app/` 配下のページの変更**。`formatFamilyName` の戻り値を変えるだけで、呼び出し側は一切触らない
 - `getCompetitionDisplayName` / `formatCompetitionTitle` / `JAPANESE_COMPETITION_NAMES_BY_FAMILY` の変更
 - シーズンページのタイトル・説明文
@@ -144,13 +146,13 @@ export function formatFamilyName(family: string): string {
 
 `formatFamilyName` は以下から呼ばれており、**すべて日本語表示が望ましい面**である（英語を必要とする呼び出し元は無い）。
 
-| 呼び出し元 | 用途 |
-|---|---|
-| `app/c/[competition]/page.tsx:53,67,101,112` | ファミリーページの title / OG / alt / 見出し |
-| `app/c/[competition]/[season]/page.tsx:415,467,637,653` | シーズンページの OG / 見出し / alt |
-| `app/c/[competition]/[season]/standings/page.tsx:108,144,166` | 順位表ページの構造化データ名 / 見出し |
-| `app/c/[competition]/[season]/round/[round]/page.tsx:297,333,352` | ラウンドページの構造化データ名 / 見出し |
-| `app/page.tsx:419,462,465,772,808,827` | トップページの大会名表示 |
+| 呼び出し元                                                        | 用途                                         |
+| ----------------------------------------------------------------- | -------------------------------------------- |
+| `app/c/[competition]/page.tsx:53,67,101,112`                      | ファミリーページの title / OG / alt / 見出し |
+| `app/c/[competition]/[season]/page.tsx:415,467,637,653`           | シーズンページの OG / 見出し / alt           |
+| `app/c/[competition]/[season]/standings/page.tsx:108,144,166`     | 順位表ページの構造化データ名 / 見出し        |
+| `app/c/[competition]/[season]/round/[round]/page.tsx:297,333,352` | ラウンドページの構造化データ名 / 見出し      |
+| `app/page.tsx:419,462,465,772,808,827`                            | トップページの大会名表示                     |
 
 **シーズンページの見出し（`:467` の `familyTitle` 等）も日本語に変わる。** これは意図した改善であり、現在シーズンページの `<title>` が日本語なのに見出しが英語という不整合が解消される。
 
@@ -158,7 +160,11 @@ export function formatFamilyName(family: string): string {
 
 大会名の表示文字列が英語から日本語に変わる。**レイアウト・DOM 構造・クラスは変更しない。**
 
-日本語名は英語名より長いものがある（例: `URC` → `ユナイテッド・ラグビー・チャンピオンシップ`、23文字）。**トップページの大会カードや OG 画像で折り返し・はみ出しが起きないかを実機で確認すること。** 特に `app/page.tsx:419,462,465` のカード内表示と、`createCompetitionOgImage` の `familyName`。
+日本語名は英語名より長いものがある（例: `URC` → `ユナイテッド・ラグビー・チャンピオンシップ`、23文字）。
+
+**OG 画像は 2026-08-31 に実物で確認済み・対応不要。** 本番の `/api/og?type=competition&family_name=<最長の日本語名>&accent=%2300823E` は HTTP 200 / 1200x630 を返し、23文字が2行に折り返して中央に収まった。はみ出し・見切れなし。
+
+トップページの大会カード（`app/page.tsx:419,462,465`）はデプロイ後に実機確認する。
 
 ## LLM 連携
 
@@ -176,6 +182,13 @@ export function formatFamilyName(family: string): string {
 8. `formatFamilyName("league-one")` が `"ジャパンラグビー リーグワン"` を返す（両マップに存在、値は同一）。
 9. どちらのマップにも無いキー（例 `"unknown-cup"`）でタイトルケースのフォールバックが従来どおり動く。
 10. `tests/format/competition.test.ts` の既存の `formatFamilyName` テストを、上記の新しい期待値に更新する。**英語を期待している既存アサーション（`"Pacific Nations Cup"` / `"Rugby World Cup"` 等）は日本語に書き換える。**
+    10b. **`formatFamilyName` の戻り値を検証している他のテストも更新する。** 2026-08-31 の PR #744 で実際に7件落ちた。対象は次の4ファイル（モックの入力値として英語名を渡しているだけの箇所は変更不要。**出力を検証しているアサーションだけ**が対象）:
+
+- `tests/app/competition-guide-metadata.test.ts`（OG URL の `family_name`。**`URLSearchParams` でパーセントエンコードされるため、`new URL(...).searchParams.get("family_name")` でデコードして比較する**）
+- `tests/app/competition-hub-indexing.test.tsx`（画像 alt、3件）
+- `tests/app/home-page.test.tsx`（RWC アーカイブカード）
+- `tests/app/season-page-ia.test.tsx`（画像 alt、パンくず JSON-LD の `name`）
+
 11. `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` がすべて通る。
 12. `app/` 配下のファイルを変更していない。
 

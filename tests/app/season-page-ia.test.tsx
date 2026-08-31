@@ -289,7 +289,7 @@ describe("season page information architecture", () => {
       }),
     );
 
-    expect(screen.getByRole("img", { name: "Premiership" })).toHaveAttribute(
+    expect(screen.getByRole("img", { name: "プレミアシップ" })).toHaveAttribute(
       "data-src",
       "/visuals/premiership.jpg",
     );
@@ -557,7 +557,7 @@ describe("season page information architecture", () => {
     expect(breadcrumb.itemListElement).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: "Tryline", position: 1 }),
-        expect.objectContaining({ name: "Premiership", position: 2 }),
+        expect.objectContaining({ name: "プレミアシップ", position: 2 }),
         expect.objectContaining({
           name: "プレミアシップ 2025-26",
           position: 3,
@@ -572,7 +572,7 @@ describe("season page information architecture", () => {
           acceptedAnswer: expect.objectContaining({
             text: "次の試合は2026-03-01 (日) 21:00 JST（日本時間）です。",
           }),
-          name: "Premiershipの次の試合はいつですか（日本時間）？",
+          name: "プレミアシップの次の試合はいつですか（日本時間）？",
         }),
       ]),
     );

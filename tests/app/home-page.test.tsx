@@ -863,7 +863,9 @@ describe("HomePage", () => {
     render(await HomePage());
 
     expect(
-      screen.getByRole("link", { name: /Rugby World Cup 2023 最新シーズン/ }),
+      screen.getByRole("link", {
+        name: /ラグビーワールドカップ 2023 最新シーズン/,
+      }),
     ).toHaveAttribute("href", "/c/rwc/2023");
     expect(
       screen.getByRole("link", {
