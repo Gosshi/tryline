@@ -109,6 +109,7 @@ const competition = {
   season: "2025-26",
   slug: "premiership-2025-26",
   startDate: "2025-09-20",
+  totalRounds: null,
 };
 
 const standing = {
@@ -400,6 +401,63 @@ describe("season page information architecture", () => {
     expect(follows(schedule!, standings!)).toBe(true);
     expect(follows(matchGroups, standings!)).toBe(true);
     expect(follows(standings!, guideFrame!)).toBe(true);
+  });
+
+  it("uses configured total rounds for progress and reports an incomplete schedule", async () => {
+    const top14Competition = {
+      ...competition,
+      family: "top-14",
+      name: "Top 14",
+      season: "2026-27",
+      slug: "top-14-2026-27",
+      totalRounds: 26,
+    };
+    competitionMocks.getCompetitionBySlug.mockResolvedValue(top14Competition);
+    competitionMocks.listSeasonsByFamily.mockResolvedValue([top14Competition]);
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      { ...match, id: "round-1", round: 1 },
+      { ...match, id: "round-2", round: 2 },
+    ]);
+
+    render(
+      await SeasonPage({
+        params: Promise.resolve({ competition: "top-14", season: "2026-27" }),
+      }),
+    );
+
+    expect(screen.getByText("0節 / 全26節")).toBeInTheDocument();
+    expect(screen.getByLabelText("日程掲載状況")).toHaveTextContent(
+      "トップ14 2026-27",
+    );
+  });
+
+  it("does not report a schedule gap when all configured rounds are present", async () => {
+    const urcCompetition = {
+      ...competition,
+      family: "urc",
+      name: "URC",
+      season: "2026-27",
+      slug: "urc-2026-27",
+      totalRounds: 18,
+    };
+    competitionMocks.getCompetitionBySlug.mockResolvedValue(urcCompetition);
+    competitionMocks.listSeasonsByFamily.mockResolvedValue([urcCompetition]);
+    matchesMocks.listMatchesForCompetition.mockResolvedValue(
+      Array.from({ length: 18 }, (_, index) => ({
+        ...match,
+        id: `round-${index + 1}`,
+        round: index + 1,
+      })),
+    );
+
+    render(
+      await SeasonPage({
+        params: Promise.resolve({ competition: "urc", season: "2026-27" }),
+      }),
+    );
+
+    expect(screen.getByText("0節 / 全18節")).toBeInTheDocument();
+    expect(screen.queryByLabelText("日程掲載状況")).not.toBeInTheDocument();
   });
 
   it("uses the family visual and derives the hero progress without another query", async () => {

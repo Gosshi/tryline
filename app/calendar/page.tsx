@@ -3,8 +3,10 @@ import Link from "next/link";
 import { WeekSchedule } from "@/components/calendar/week-schedule";
 import { IosAppCta } from "@/components/ios-app-cta";
 import { NewsletterSignup } from "@/components/newsletter-signup";
+import { ScheduleCoverageNotice } from "@/components/schedule-coverage-notice";
 import { TrackedLink } from "@/components/tracked-link";
 import { getUser } from "@/lib/auth/server";
+import { listCompetitionScheduleCoverage } from "@/lib/db/queries/competitions";
 import { getMatchesInRange } from "@/lib/db/queries/matches";
 import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { getStandingPositionLookupForCompetitions } from "@/lib/db/queries/standings";
@@ -125,9 +127,11 @@ export default async function CalendarPage({
     ? getJstWeekRangeUtc(weekParam)
     : getCurrentJstWeekRangeUtc();
   const user = await getUser();
-  const [matches, spoilerGuardEnabled] = await Promise.all([
+  const [matches, spoilerGuardEnabled, incompleteCompetitions] =
+    await Promise.all([
     getMatchesInRange(range.startUtcIso, range.endUtcIso),
     getSpoilerGuardEnabledForUser(user?.id),
+    listCompetitionScheduleCoverage(),
   ]);
   const competitionIds = matches
     .map((match) => match.competition.id)
@@ -148,6 +152,13 @@ export default async function CalendarPage({
   const previousWeek = addJstDays(range.weekStartJst, -7);
   const nextWeek = addJstDays(range.weekStartJst, 7);
   const allCalendarFeedUrl = `${SITE_URL}/api/calendar/all.ics`;
+  const incompleteCompetitionsOutsideSelectedWeek =
+    incompleteCompetitions.filter(
+      (competition) =>
+        !matches.some(
+          (match) => match.competition.slug === competition.slug,
+        ),
+    );
 
   return (
     <main className="bg-paper min-h-screen">
@@ -220,6 +231,9 @@ export default async function CalendarPage({
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-8">
+        <ScheduleCoverageNotice
+          competitions={incompleteCompetitionsOutsideSelectedWeek}
+        />
         <WeekSchedule
           emptyMessage="この週に表示できる試合はありません。大会ページから過去シーズンの試合を確認できます。"
           highlightMatchId={focusMatchId}

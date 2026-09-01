@@ -7,6 +7,7 @@ import { IosAppCta } from "@/components/ios-app-cta";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { PoolTeamGrid } from "@/components/pool-team-grid";
 import { PremiumUpsellBanner } from "@/components/premium-upsell-banner";
+import { ScheduleCoverageNotice } from "@/components/schedule-coverage-notice";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
 import { StandingsTable } from "@/components/standings-table";
@@ -42,6 +43,7 @@ import {
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
 import { groupMatchesByRound } from "@/lib/format/match-groups";
+import { hasIncompleteSchedule } from "@/lib/format/schedule-coverage";
 import { isSeasonNotStarted } from "@/lib/season-standings";
 import { createCompetitionOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
@@ -130,7 +132,10 @@ type SeasonProgress = {
   totalRounds: number;
 };
 
-function getSeasonProgress(matches: MatchListItem[]): SeasonProgress | null {
+function getSeasonProgress(
+  matches: MatchListItem[],
+  totalRounds: number | null,
+): SeasonProgress | null {
   const matchesByRound = new Map<number, MatchListItem[]>();
 
   for (const match of matches) {
@@ -165,7 +170,7 @@ function getSeasonProgress(matches: MatchListItem[]): SeasonProgress | null {
         )[0] ?? null)
       : null,
     nextRound: nextRound?.[0] ?? rounds.at(-1)?.[0] ?? 0,
-    totalRounds: rounds.length,
+    totalRounds: totalRounds ?? rounds.length,
   };
 }
 
@@ -520,7 +525,15 @@ export default async function SeasonPage({ params }: Props) {
       : !seasonNotStarted
         ? (standings[0]?.teamName ?? null)
         : null;
-  const seasonProgress = getSeasonProgress(matches);
+  const seasonProgress = getSeasonProgress(matches, comp.totalRounds);
+  const hasIncompleteScheduleCoverage = hasIncompleteSchedule({
+    ingestedRoundCount: new Set(
+      matches
+        .map((match) => match.round)
+        .filter((round): round is number => round !== null),
+    ).size,
+    totalRounds: comp.totalRounds,
+  });
   const nextMatchJst = nextMatch
     ? formatMatchKickoffJst(nextMatch.kickoffAt)
     : null;
@@ -807,6 +820,9 @@ export default async function SeasonPage({ params }: Props) {
         )}
 
         <section className="scroll-mt-4 space-y-4" id="schedule">
+          {hasIncompleteScheduleCoverage && (
+            <ScheduleCoverageNotice competitions={[comp]} />
+          )}
           {matches.length === 0 ? (
             <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
               <p className="text-sm font-medium text-[var(--color-ink)]">

@@ -3,6 +3,10 @@ import { cache } from "react";
 
 import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
+import { getRoundFromExternalIds } from "@/lib/db/queries/matches";
+import { hasIncompleteSchedule } from "@/lib/format/schedule-coverage";
+
+import type { Json } from "@/lib/db/types";
 
 export type CompetitionRow = {
   champion: string | null;
@@ -16,6 +20,17 @@ export type CompetitionRow = {
   season: string;
   startDate: string | null;
   endDate: string | null;
+  totalRounds: number | null;
+};
+
+export type CompetitionScheduleCoverage = {
+  family: string;
+  ingestedRoundCount: number;
+  name: string;
+  nameJa: string | null;
+  season: string;
+  slug: string;
+  totalRounds: number | null;
 };
 
 export type HomepageCompetitionLink = {
@@ -48,6 +63,17 @@ type CompetitionDbRow = {
   season: string;
   start_date: string | null;
   end_date: string | null;
+  total_rounds: number | null;
+};
+
+type CompetitionScheduleCoverageDbRow = {
+  family: string;
+  matches: Array<{ external_ids: Json }> | null;
+  name: string;
+  name_ja: string | null;
+  season: string;
+  slug: string;
+  total_rounds: number | null;
 };
 
 type MatchContentCompetitionRow = {
@@ -101,7 +127,40 @@ function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
     season: row.season,
     slug: row.slug,
     startDate: row.start_date,
+    totalRounds: row.total_rounds ?? null,
   };
+}
+
+export async function listCompetitionScheduleCoverage(): Promise<
+  CompetitionScheduleCoverage[]
+> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("competitions")
+    .select(
+      "family, slug, name, name_ja, season, total_rounds, matches(external_ids)",
+    )
+    .not("total_rounds", "is", null);
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as CompetitionScheduleCoverageDbRow[])
+    .map((row) => ({
+      family: row.family,
+      ingestedRoundCount: new Set(
+        (row.matches ?? [])
+          .map((match) => getRoundFromExternalIds(match.external_ids))
+          .filter((round): round is number => round !== null),
+      ).size,
+      name: row.name,
+      nameJa: row.name_ja,
+      season: row.season,
+      slug: row.slug,
+      totalRounds: row.total_rounds,
+    }))
+    .filter(hasIncompleteSchedule);
 }
 
 export function selectLatestSeasonWithMatches(
