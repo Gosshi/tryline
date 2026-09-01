@@ -3,16 +3,13 @@ import Link from "next/link";
 import { WeekSchedule } from "@/components/calendar/week-schedule";
 import { IosAppCta } from "@/components/ios-app-cta";
 import { NewsletterSignup } from "@/components/newsletter-signup";
-import { ScheduleCoverageNotice } from "@/components/schedule-coverage-notice";
 import { TrackedLink } from "@/components/tracked-link";
 import { getUser } from "@/lib/auth/server";
-import { listCompetitionScheduleCoverage } from "@/lib/db/queries/competitions";
 import { getMatchesInRange } from "@/lib/db/queries/matches";
 import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { getStandingPositionLookupForCompetitions } from "@/lib/db/queries/standings";
 import { selectCalendarFocusMatchId } from "@/lib/format/calendar-focus";
 import { formatCompetitionTitle } from "@/lib/format/competition";
-import { findIncompleteCompetitionSchedulesForWeek } from "@/lib/format/schedule-coverage";
 import {
   addJstDays,
   formatJstWeekRangeLabel,
@@ -128,15 +125,10 @@ export default async function CalendarPage({
     ? getJstWeekRangeUtc(weekParam)
     : getCurrentJstWeekRangeUtc();
   const user = await getUser();
-  const [matches, spoilerGuardEnabled, scheduleCoverage] = await Promise.all([
+  const [matches, spoilerGuardEnabled] = await Promise.all([
     getMatchesInRange(range.startUtcIso, range.endUtcIso),
     getSpoilerGuardEnabledForUser(user?.id),
-    listCompetitionScheduleCoverage(),
   ]);
-  const incompleteSchedules = findIncompleteCompetitionSchedulesForWeek(
-    scheduleCoverage,
-    range.startUtcIso,
-  );
   const competitionIds = matches
     .map((match) => match.competition.id)
     .filter((id): id is string => Boolean(id));
@@ -228,15 +220,12 @@ export default async function CalendarPage({
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-8">
-        <div className="space-y-4">
-          <ScheduleCoverageNotice competitions={incompleteSchedules} />
-          <WeekSchedule
-            emptyMessage="この週に表示できる試合はありません。大会ページから過去シーズンの試合を確認できます。"
-            highlightMatchId={focusMatchId}
-            matches={matches}
-            spoilerGuardEnabled={spoilerGuardEnabled}
-          />
-        </div>
+        <WeekSchedule
+          emptyMessage="この週に表示できる試合はありません。大会ページから過去シーズンの試合を確認できます。"
+          highlightMatchId={focusMatchId}
+          matches={matches}
+          spoilerGuardEnabled={spoilerGuardEnabled}
+        />
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pb-10 sm:px-6 md:px-8">

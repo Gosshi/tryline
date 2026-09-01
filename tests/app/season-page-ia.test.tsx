@@ -430,55 +430,6 @@ describe("season page information architecture", () => {
     expect(matchesMocks.listMatchesForCompetition).toHaveBeenCalledTimes(1);
   });
 
-  it("shows the schedule coverage notice only for an incompletely ingested season", async () => {
-    const incompleteCompetition = {
-      ...competition,
-      endDate: "2027-06-26",
-      family: "top-14",
-      name: "Top 14",
-      season: "2026-27",
-      slug: "top-14-2026-27",
-    };
-    competitionMocks.getCompetitionBySlug.mockResolvedValue(
-      incompleteCompetition,
-    );
-    competitionMocks.listSeasonsByFamily.mockResolvedValue([
-      incompleteCompetition,
-    ]);
-    matchesMocks.listMatchesForCompetition.mockResolvedValue([
-      { ...match, kickoffAt: "2026-09-13T20:05:00.000Z" },
-    ]);
-
-    const { rerender } = render(
-      await SeasonPage({
-        params: Promise.resolve({ competition: "top-14", season: "2026-27" }),
-      }),
-    );
-
-    expect(screen.getByLabelText("日程掲載状況")).toHaveTextContent(
-      "トップ14 2026-27の日程は開催が近づいてから掲載されます。",
-    );
-
-    competitionMocks.getCompetitionBySlug.mockResolvedValue({
-      ...incompleteCompetition,
-      endDate: "2027-05-15",
-      family: "urc",
-      name: "United Rugby Championship",
-      slug: "urc-2026-27",
-    });
-    matchesMocks.listMatchesForCompetition.mockResolvedValue([
-      { ...match, kickoffAt: "2027-05-15T19:00:00.000Z" },
-    ]);
-
-    rerender(
-      await SeasonPage({
-        params: Promise.resolve({ competition: "urc", season: "2026-27" }),
-      }),
-    );
-
-    expect(screen.queryByLabelText("日程掲載状況")).not.toBeInTheDocument();
-  });
-
   it("omits progress when every match has a null round", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([
       { ...match, round: null },

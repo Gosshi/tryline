@@ -7,7 +7,6 @@ import { IosAppCta } from "@/components/ios-app-cta";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { PoolTeamGrid } from "@/components/pool-team-grid";
 import { PremiumUpsellBanner } from "@/components/premium-upsell-banner";
-import { ScheduleCoverageNotice } from "@/components/schedule-coverage-notice";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
 import { StandingsTable } from "@/components/standings-table";
@@ -43,7 +42,6 @@ import {
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
 import { groupMatchesByRound } from "@/lib/format/match-groups";
-import { hasIncompleteCompetitionSchedule } from "@/lib/format/schedule-coverage";
 import { isSeasonNotStarted } from "@/lib/season-standings";
 import { createCompetitionOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
@@ -460,11 +458,6 @@ export default async function SeasonPage({ params }: Props) {
     (status) => status.hasPreview || status.hasRecap,
   );
   const groupedMatches = groupMatchesByRound(matches);
-  const latestKickoffAt = matches.at(-1)?.kickoffAt ?? null;
-  const hasIncompleteSchedule = hasIncompleteCompetitionSchedule({
-    endDate: comp.endDate,
-    latestKickoffAt,
-  });
   const dateRange = formatDateRange(comp.startDate, comp.endDate);
   const family = comp.family;
   const accentColor = getCompetitionFamilyColor(family);
@@ -814,21 +807,6 @@ export default async function SeasonPage({ params }: Props) {
         )}
 
         <section className="scroll-mt-4 space-y-4" id="schedule">
-          {hasIncompleteSchedule && (
-            <ScheduleCoverageNotice
-              competitions={[
-                {
-                  endDate: comp.endDate,
-                  family: comp.family,
-                  latestKickoffAt,
-                  name: comp.name,
-                  nameJa: comp.nameJa,
-                  season: comp.season,
-                  slug: comp.slug,
-                },
-              ]}
-            />
-          )}
           {matches.length === 0 ? (
             <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
               <p className="text-sm font-medium text-[var(--color-ink)]">
