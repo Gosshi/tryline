@@ -220,6 +220,25 @@ describe("/calendar page", () => {
     ).toBeInTheDocument();
   });
 
+  it("places the calendar description and CTAs after the weekly schedule", async () => {
+    const { default: CalendarPage } = await import("@/app/calendar/page");
+
+    render(await CalendarPage({}));
+
+    const schedule = screen.getByText(/この週に表示できる試合はありません/);
+    const description = screen.getByText(/月曜 00:00 JST から翌月曜/);
+    const calendarSubscription = screen.getByText("カレンダー購読");
+
+    expect(
+      schedule.compareDocumentPosition(description) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
+    expect(
+      schedule.compareDocumentPosition(calendarSubscription) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
+  });
+
   it("uses a valid monday week query", async () => {
     const { default: CalendarPage } = await import("@/app/calendar/page");
 
