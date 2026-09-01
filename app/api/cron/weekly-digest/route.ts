@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { getServerEnv } from "@/lib/env";
 import { getOpenAIClient } from "@/lib/llm/client";
 import { MODELS } from "@/lib/llm/models";
 import { notifyNewsletterDelivery } from "@/lib/llm/notify";
@@ -14,6 +13,7 @@ type Relation<T> = T | T[] | null;
 
 type TeamRow = {
   name: string | null;
+  name_ja: string | null;
 };
 
 type CompetitionRow = {
@@ -31,20 +31,41 @@ type MatchRow = {
   kickoff_at: string;
 };
 
+type MatchEventRow = {
+  match_id: string;
+  metadata: Record<string, unknown> | null;
+  minute: number | null;
+  team: Relation<TeamRow>;
+  type: string;
+};
+
+type SourcedFactRow = {
+  fact: string;
+  fact_ja: string | null;
+  match_id: string;
+};
+
+type MatchWithDetails = MatchRow & {
+  events: MatchEventRow[];
+  sourcedFacts: SourcedFactRow[];
+};
+
 const SYSTEM_PROMPT = `あなたはラグビーメディア「Tryline」の日本語編集者です。
-提供された先週末の試合データをもとに、note.com への投稿原稿を生成してください。
+提供された先週末の試合データをもとに、購読者へ送るプレーンテキストの週次メール本文を生成してください。
 
 出力形式:
-- Markdown形式（# タイトル, ## 見出し, ### 小見出し, **太字**, [text](url) リンク）
-- 構成: タイトル → リード文（2〜3文） → 大会別セクション → フッター
-- 各試合に Tryline のレビューリンクを「→ [試合レビュー（日本語）](URL)」形式で付ける
-- タイトルに「【今週の海外ラグビーまとめ】」を必ず含める。末尾に「（YYYY.M.D–M.D）」の期間を付ける
+- 本文の1行目は「今週の海外ラグビーまとめ」を含むタイトルにする
+- 構成は、タイトル、リード文（2〜3文）、大会ごとの試合結果、締めの案内とする
+- 見出しは空行と自然な文言で区切る。見出し用のシャープ、横線、アスタリスクによる強調、角括弧と丸括弧を組み合わせたリンクは使わない
+- 各試合に Tryline のレビューURLを「→ https://www.trylinerugby.com/matches/...」のような裸のURLで付ける
 
 制約:
-- スコア・選手名・開催地は提供データのみ使う（推測・捏造厳禁）
-- ラグビー一般知識（チームの特徴、大会説明、ライバル関係）は活用してよい
+- スコア・選手名・開催地・得点経過・試合後の事実は、すべて提供データのみ使う（推測・捏造厳禁）
+- 提供データにない一般知識や背景を補わない
 - 語尾は「でした」「です」等の丁寧体で統一
-- 末尾に必ず「👉 [trylinerugby.com](https://www.trylinerugby.com)」を入れる`;
+- 数字を出したら、その数字が試合で何を意味したかを、提供された得点経過または試合後の事実に基づいて続ける。スコアの言い換えだけで終わらせない
+- 各試合で、得点経過または試合後の事実から少なくとも1つの具体を入れる
+- 末尾に「https://www.trylinerugby.com」を裸のURLで入れる`;
 
 function firstRelation<T>(relation: Relation<T>): T | null {
   if (Array.isArray(relation)) {
@@ -96,21 +117,47 @@ function formatPeriod(start: Date, end: Date): string {
   return `${startText}〜 ${endText}`;
 }
 
-function buildUserPrompt(matches: MatchRow[], start: Date, end: Date): string {
+function formatMatchEvent(event: MatchEventRow): string {
+  const team = firstRelation(event.team);
+  const teamName = team?.name_ja ?? team?.name ?? "チーム未設定";
+  const playerName = event.metadata?.player_name;
+  const player = typeof playerName === "string" ? ` ${playerName}` : "";
+  const minute = event.minute === null ? "時間不明" : `${event.minute}分`;
+
+  return `${minute}: ${teamName}${player} ${event.type}`;
+}
+
+function buildUserPrompt(
+  matches: MatchWithDetails[],
+  start: Date,
+  end: Date,
+): string {
   const period = formatPeriod(start, end);
   const matchLines = matches.map((match) => {
     const competition = firstRelation(match.competition);
     const homeTeam = firstRelation(match.home_team);
     const awayTeam = firstRelation(match.away_team);
     const competitionName = competition?.name_ja ?? "大会名未設定";
-    const homeName = homeTeam?.name ?? "ホーム";
-    const awayName = awayTeam?.name ?? "アウェイ";
+    const homeName = homeTeam?.name_ja ?? homeTeam?.name ?? "ホーム";
+    const awayName = awayTeam?.name_ja ?? awayTeam?.name ?? "アウェイ";
+    const eventLines = match.events.map(formatMatchEvent);
+    const sourcedFactLines = match.sourcedFacts.map(
+      (fact) => fact.fact_ja ?? fact.fact,
+    );
 
     return [
       `大会: ${competitionName}`,
       `${homeName} ${match.home_score}–${match.away_score} ${awayName}`,
       `日付: ${formatJstDateTime(match.kickoff_at)} JST`,
       `レビューURL: https://www.trylinerugby.com/matches/${match.id}`,
+      "得点・試合イベント:",
+      ...(eventLines.length > 0
+        ? eventLines.map((event) => `- ${event}`)
+        : ["- なし"]),
+      "試合後の事実:",
+      ...(sourcedFactLines.length > 0
+        ? sourcedFactLines.map((fact) => `- ${fact}`)
+        : ["- なし"]),
     ].join("\n");
   });
 
@@ -122,53 +169,26 @@ function buildUserPrompt(matches: MatchRow[], start: Date, end: Date): string {
 ${matchLines.join("\n\n")}`;
 }
 
-function splitIntoChunks(text: string, maxLen = 1900): string[] {
-  const lines = text.split("\n");
-  const chunks: string[] = [];
-  let current = "";
+function assertPlainTextDigest(digest: string): void {
+  const violations = [
+    ["heading", /(^|\n)\s*#/m],
+    ["link", /\[[^\]]+\]\([^\n)]+\)/],
+    ["divider", /(^|\n)\s*---+\s*(?=\n|$)/m],
+    ["bold", /\*\*[^*]+\*\*/],
+  ].flatMap(([name, pattern]) =>
+    (pattern as RegExp).test(digest) ? [name] : [],
+  );
 
-  for (const line of lines) {
-    const candidate = current ? `${current}\n${line}` : line;
-
-    if (candidate.length > maxLen && current) {
-      chunks.push(current.trim());
-      current = line;
-    } else {
-      current = candidate;
-    }
+  if (violations.length > 0) {
+    throw new Error(
+      `Weekly digest contains prohibited Markdown syntax: ${violations.join(", ")}.`,
+    );
   }
-
-  if (current.trim()) {
-    chunks.push(current.trim());
-  }
-
-  return chunks;
-}
-
-async function postToDiscord(
-  webhookUrl: string,
-  content: string,
-): Promise<void> {
-  const response = await fetch(webhookUrl, {
-    body: JSON.stringify({ content }),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Discord webhook failed: ${response.status}`);
-  }
-}
-
-async function sleep(ms: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function runWeeklyDigest(request: Request) {
   try {
     assertCronAuthorized(request);
-
-    const { DISCORD_WEBHOOK_WEEKLY_DIGEST } = getServerEnv();
 
     const db = getSupabaseServerClient();
     const { lastSatStart, lastSunEnd } = getLastWeekendRange();
@@ -180,8 +200,8 @@ async function runWeeklyDigest(request: Request) {
           home_score,
           away_score,
           kickoff_at,
-          home_team:teams!matches_home_team_id_fkey ( name ),
-          away_team:teams!matches_away_team_id_fkey ( name ),
+          home_team:teams!matches_home_team_id_fkey ( name, name_ja ),
+          away_team:teams!matches_away_team_id_fkey ( name, name_ja ),
           competition:competitions!matches_competition_id_fkey ( family, name_ja )
         `,
       )
@@ -203,11 +223,59 @@ async function runWeeklyDigest(request: Request) {
       return NextResponse.json({ matches: 0, skipped: true });
     }
 
+    const matchIds = matches.map((match) => match.id);
+    const [eventsResult, sourcedFactsResult] = await Promise.all([
+      db
+        .from("match_events")
+        .select(
+          "match_id, minute, type, metadata, team:teams!match_events_team_id_fkey(name, name_ja)",
+        )
+        .in("match_id", matchIds)
+        .order("minute", { ascending: true, nullsFirst: false }),
+      db
+        .from("match_sourced_facts")
+        .select("match_id, fact, fact_ja")
+        .in("match_id", matchIds)
+        .eq("content_type", "recap"),
+    ]);
+
+    if (eventsResult.error) {
+      throw eventsResult.error;
+    }
+
+    if (sourcedFactsResult.error) {
+      throw sourcedFactsResult.error;
+    }
+
+    const eventsByMatchId = new Map<string, MatchEventRow[]>();
+    for (const event of (eventsResult.data ?? []) as MatchEventRow[]) {
+      const events = eventsByMatchId.get(event.match_id) ?? [];
+      events.push(event);
+      eventsByMatchId.set(event.match_id, events);
+    }
+
+    const sourcedFactsByMatchId = new Map<string, SourcedFactRow[]>();
+    for (const fact of (sourcedFactsResult.data ?? []) as SourcedFactRow[]) {
+      const sourcedFacts = sourcedFactsByMatchId.get(fact.match_id) ?? [];
+      sourcedFacts.push(fact);
+      sourcedFactsByMatchId.set(fact.match_id, sourcedFacts);
+    }
+
+    const matchesWithDetails: MatchWithDetails[] = matches.map((match) => ({
+      ...match,
+      events: eventsByMatchId.get(match.id) ?? [],
+      sourcedFacts: sourcedFactsByMatchId.get(match.id) ?? [],
+    }));
+
     const response = await getOpenAIClient().chat.completions.create({
       messages: [
         { content: SYSTEM_PROMPT, role: "system" },
         {
-          content: buildUserPrompt(matches, lastSatStart, lastSunEnd),
+          content: buildUserPrompt(
+            matchesWithDetails,
+            lastSatStart,
+            lastSunEnd,
+          ),
           role: "user",
         },
       ],
@@ -219,27 +287,12 @@ async function runWeeklyDigest(request: Request) {
       throw new Error("Weekly digest generation returned empty content.");
     }
 
-    const chunks = splitIntoChunks(digest);
-
-    if (DISCORD_WEBHOOK_WEEKLY_DIGEST) {
-      for (let index = 0; index < chunks.length; index += 1) {
-        const chunk = chunks[index]!;
-        const content =
-          index === 0 ? `📋 note 原稿（コピペ用）\n\n${chunk}` : chunk;
-        await postToDiscord(DISCORD_WEBHOOK_WEEKLY_DIGEST, content);
-
-        if (index < chunks.length - 1) {
-          await sleep(100);
-        }
-      }
-    }
+    assertPlainTextDigest(digest);
 
     const newsletter = await sendWeeklyDigestEmails(digest);
     await notifyNewsletterDelivery(newsletter);
 
     return NextResponse.json({
-      chunks: chunks.length,
-      ...(DISCORD_WEBHOOK_WEEKLY_DIGEST ? {} : { discord: "skipped" }),
       matches: matches.length,
       newsletter,
       status: "ok",
