@@ -66,3 +66,6 @@ tsconfig.tsbuildinfo
 
 # Scratch output (GSC pulls, entity-grounding audits, video PoC artifacts, etc.)
 /tmp/
+
+# Codex の作業用ワークツリー（独立した git リポジトリ）
+.codex-work-*/
