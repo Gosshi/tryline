@@ -7,6 +7,7 @@
  */
 
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { TOP14_LNR_SEASON } from "@/lib/ingestion/sources/top14-lnr-live";
 import { upsertMatches } from "@/lib/ingestion/upsert";
 import {
   fetchTop14LnrRegularSeasonResults,
@@ -42,7 +43,8 @@ type BackfillResult = {
 };
 
 const FAMILY = "top-14";
-const SUPPORTED_SEASONS = new Set(["2024-25", "2025-26"]);
+const LEGACY_SUPPORTED_SEASONS = ["2024-25", "2025-26"];
+const SUPPORTED_SEASONS = [...LEGACY_SUPPORTED_SEASONS, TOP14_LNR_SEASON];
 const USAGE =
   "Usage: pnpm tsx scripts/backfill-top14-regular-season.ts --season=<YYYY-YY> [--dry-run] [--confirm-owner-approved]";
 
@@ -82,7 +84,7 @@ export function parseOptions(argv: string[]): CliOptions {
     throw new Error(USAGE);
   }
 
-  if (!SUPPORTED_SEASONS.has(season)) {
+  if (!SUPPORTED_SEASONS.includes(season)) {
     throw new Error(
       `Unsupported Top 14 regular-season --season=${season}. Supported seasons: ${[
         ...SUPPORTED_SEASONS,
