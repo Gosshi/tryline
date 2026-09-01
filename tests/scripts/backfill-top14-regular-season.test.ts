@@ -58,8 +58,21 @@ describe("backfill-top14-regular-season", () => {
       season: "2025-26",
     });
     expect(() => parseOptions(["--season=2025-26"])).toThrow("Writes require");
-    expect(() => parseOptions(["--season=2026-27", "--dry-run"])).toThrow(
-      "Unsupported Top 14 regular-season --season=2026-27",
+    expect(parseOptions(["--season=2026-27", "--dry-run"])).toEqual({
+      dryRun: true,
+      ownerApproved: false,
+      season: "2026-27",
+    });
+    expect(parseOptions(["--season=2024-25", "--dry-run"])).toEqual({
+      dryRun: true,
+      ownerApproved: false,
+      season: "2024-25",
+    });
+    expect(() => parseOptions(["--season=1999-00", "--dry-run"])).toThrow(
+      "Unsupported Top 14 regular-season --season=1999-00",
+    );
+    expect(() => parseOptions(["--season=abc", "--dry-run"])).toThrow(
+      "Usage:",
     );
   });
 

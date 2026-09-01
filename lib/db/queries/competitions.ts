@@ -4,6 +4,8 @@ import { cache } from "react";
 import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 
+import type { CompetitionScheduleCoverage } from "@/lib/format/schedule-coverage";
+
 export type CompetitionRow = {
   champion: string | null;
   id: string;
@@ -35,6 +37,16 @@ export type CompetitionGuide = {
 
 type CompetitionStartDateRow = {
   start_date: string | null;
+};
+
+type CompetitionScheduleCoverageRow = {
+  end_date: string | null;
+  family: string;
+  matches: Array<{ kickoff_at: string }> | null;
+  name: string;
+  name_ja: string | null;
+  season: string;
+  slug: string;
 };
 
 type CompetitionDbRow = {
@@ -190,6 +202,35 @@ export async function getCompetitionStartDateByFamilyAndSeason(
   }
 
   return ((data as CompetitionStartDateRow | null) ?? null)?.start_date ?? null;
+}
+
+export async function listCompetitionScheduleCoverage(): Promise<
+  CompetitionScheduleCoverage[]
+> {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("competitions")
+    .select(
+      "slug, family, name, name_ja, season, end_date, matches!inner(kickoff_at)",
+    )
+    .not("end_date", "is", null);
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as CompetitionScheduleCoverageRow[]).map((row) => ({
+    endDate: row.end_date,
+    family: row.family,
+    latestKickoffAt:
+      row.matches
+        ?.map((match) => match.kickoff_at)
+        .sort((left, right) => right.localeCompare(left))[0] ?? null,
+    name: row.name,
+    nameJa: row.name_ja,
+    season: row.season,
+    slug: row.slug,
+  }));
 }
 
 export async function listSeasonsByFamilies(

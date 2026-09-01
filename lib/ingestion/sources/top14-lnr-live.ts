@@ -7,7 +7,7 @@ import type { LiveSourceFetchResult } from "@/lib/ingestion/live-ingest";
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
 import type { Top14LnrMatchResult } from "@/lib/scrapers/top14-lnr-results";
 
-const TOP14_LNR_SEASON = "2026-27";
+export const TOP14_LNR_SEASON = "2026-27";
 
 export const MAX_TOP14_LNR_ROUNDS_PER_INGEST = 3;
 export const TOP14_LNR_ROUND_DELAY_MS = 3_000;
@@ -22,7 +22,7 @@ function toRoundSlug(round: number) {
   return `j${round}`;
 }
 
-export function getTop14LnrAdjacentRoundSlugs(currentRoundSlug: string) {
+export function getTop14LnrForwardRoundSlugs(currentRoundSlug: string) {
   const matched = currentRoundSlug.match(/^j([1-9]|1\d|2[0-6])$/);
 
   if (!matched) {
@@ -30,13 +30,13 @@ export function getTop14LnrAdjacentRoundSlugs(currentRoundSlug: string) {
   }
 
   const currentRound = Number(matched[1]);
-  return [currentRound - 1, currentRound, currentRound + 1]
+  return [currentRound, currentRound + 1, currentRound + 2]
     .filter((round) => round >= 1 && round <= 26)
     .map(toRoundSlug);
 }
 
 export async function getDefaultTop14LnrRoundSlugs() {
-  return getTop14LnrAdjacentRoundSlugs(
+  return getTop14LnrForwardRoundSlugs(
     await fetchTop14LnrCurrentRoundSlug(TOP14_LNR_SEASON),
   );
 }

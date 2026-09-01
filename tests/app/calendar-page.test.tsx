@@ -13,6 +13,9 @@ const matchQueryMock = vi.hoisted(() => ({
 const standingsQueryMock = vi.hoisted(() => ({
   getStandingPositionLookupForCompetitions: vi.fn(),
 }));
+const competitionQueryMock = vi.hoisted(() => ({
+  listCompetitionScheduleCoverage: vi.fn(),
+}));
 const authMock = vi.hoisted(() => ({
   getUser: vi.fn(),
 }));
@@ -21,6 +24,7 @@ const spoilerGuardMock = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/auth/server", () => authMock);
+vi.mock("@/lib/db/queries/competitions", () => competitionQueryMock);
 vi.mock("@/lib/db/queries/matches", () => matchQueryMock);
 vi.mock("@/lib/db/queries/spoiler-guard", () => spoilerGuardMock);
 vi.mock("@/lib/db/queries/standings", () => standingsQueryMock);
@@ -90,6 +94,7 @@ describe("/calendar page", () => {
     standingsQueryMock.getStandingPositionLookupForCompetitions.mockResolvedValue(
       new Map(),
     );
+    competitionQueryMock.listCompetitionScheduleCoverage.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -253,6 +258,43 @@ describe("/calendar page", () => {
       "2026-07-12T15:00:00.000Z",
       "2026-07-19T15:00:00.000Z",
     );
+  });
+
+  it("shows schedule coverage only after a competition's latest ingested fixture", async () => {
+    vi.setSystemTime(new Date("2026-09-01T03:00:00.000Z"));
+    competitionQueryMock.listCompetitionScheduleCoverage.mockResolvedValue([
+      {
+        endDate: "2027-06-26",
+        family: "top-14",
+        latestKickoffAt: "2026-09-13T20:05:00.000Z",
+        name: "Top 14",
+        nameJa: null,
+        season: "2026-27",
+        slug: "top-14-2026-27",
+      },
+    ]);
+    const { default: CalendarPage } = await import("@/app/calendar/page");
+
+    const { rerender } = render(
+      await CalendarPage({
+        searchParams: Promise.resolve({ week: "2026-09-07" }),
+      }),
+    );
+
+    expect(screen.queryByLabelText("日程掲載状況")).not.toBeInTheDocument();
+
+    rerender(
+      await CalendarPage({
+        searchParams: Promise.resolve({ week: "2026-10-26" }),
+      }),
+    );
+
+    expect(screen.getByLabelText("日程掲載状況")).toHaveTextContent(
+      "トップ14 2026-27の日程は開催が近づいてから掲載されます。",
+    );
+    expect(
+      competitionQueryMock.listCompetitionScheduleCoverage,
+    ).toHaveBeenCalledTimes(2);
   });
 
   it("lists only the competitions that have matches in the selected week", async () => {
