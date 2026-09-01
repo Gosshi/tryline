@@ -4,6 +4,7 @@ import { SpoilerScore } from "@/components/spoiler-score";
 import { TeamBadge } from "@/components/team-badge";
 import { TrackedLink } from "@/components/tracked-link";
 import {
+  formatFamilyName,
   formatCompetitionTitle,
   getCompetitionFamilyColor,
 } from "@/lib/format/competition";
@@ -41,6 +42,7 @@ const BOARD_COMPETITION_LABELS: Record<string, string> = {
   "nations-championship": "Nations",
   pnc: "PNC",
   premiership: "Premiership",
+  "puma-trophy": "Puma Trophy",
   "rugby-championship": "Rugby Championship",
   rwc: "RWC",
   "six-nations": "Six Nations",
@@ -453,7 +455,8 @@ function WeekBoard({
                 backgroundColor: getCompetitionFamilyColor(competition.family),
               }}
             />
-            {BOARD_COMPETITION_LABELS[competition.family] ?? competition.family}
+            {BOARD_COMPETITION_LABELS[competition.family] ??
+              formatFamilyName(competition.family)}
           </li>
         ))}
       </ul>

@@ -215,6 +215,34 @@ describe("WeekSchedule", () => {
     ).toHaveLength(5);
   });
 
+  it("never exposes a competition family slug in the board legend", () => {
+    const { container } = render(
+      <WeekSchedule
+        matches={[
+          {
+            ...baseMatch,
+            competition: {
+              ...baseMatch.competition,
+              family: "puma-trophy",
+              name: "Puma Trophy",
+              season: "2026",
+              slug: "puma-trophy-2026",
+            },
+          },
+        ]}
+      />,
+    );
+    const board = getDesktopBoard(container);
+    const labels = Array.from(
+      board.querySelectorAll('[aria-label="大会凡例"] li'),
+      (label) => label.textContent?.trim() ?? "",
+    );
+
+    expect(labels).toEqual(["Puma Trophy"]);
+    expect(labels).not.toContain("puma-trophy");
+    expect(labels.some((label) => /^[a-z0-9-]+$/.test(label))).toBe(false);
+  });
+
   it("renders an empty state", () => {
     render(<WeekSchedule emptyMessage="試合なし" matches={[]} />);
 
