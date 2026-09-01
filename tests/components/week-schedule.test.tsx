@@ -5,7 +5,11 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { WeekSchedule } from "@/components/calendar/week-schedule";
+import {
+  groupMatchesByJstDay,
+  groupMatchesByJstTime,
+  WeekSchedule,
+} from "@/components/calendar/week-schedule";
 
 import type { CalendarMatch } from "@/lib/db/queries/matches";
 
@@ -24,7 +28,7 @@ vi.mock("next/link", () => ({
 const baseMatch: CalendarMatch = {
   awayScore: null,
   awayTeam: {
-    name: "Kobe Steelers",
+    name: "コベルコ神戸スティーラーズ",
     shortCode: "KOB",
     slug: "kobe-steelers",
   },
@@ -39,7 +43,7 @@ const baseMatch: CalendarMatch = {
   hasRecap: false,
   homeScore: null,
   homeTeam: {
-    name: "Kubota Spears",
+    name: "クボタスピアーズ船橋・東京ベイ",
     shortCode: "KUB",
     slug: "kubota-spears",
   },
@@ -52,13 +56,68 @@ const baseMatch: CalendarMatch = {
   venue: "National Stadium",
 };
 
+function getDesktopBoard(container: HTMLElement) {
+  const board = container.querySelector('[data-testid="calendar-week-board"]');
+
+  if (!board) {
+    throw new Error("Calendar week board was not rendered.");
+  }
+
+  return board;
+}
+
+describe("WeekSchedule grouping", () => {
+  it("groups seven simultaneous matches into one kickoff-time group", () => {
+    const matches = Array.from({ length: 7 }, (_, index) => ({
+      ...baseMatch,
+      id: `match-${index}`,
+    }));
+
+    const groups = groupMatchesByJstTime(matches);
+    const [group] = groups;
+
+    expect(groups).toHaveLength(1);
+    expect(group).toBeDefined();
+    expect(group?.kickoffTime).toBe("00:30");
+    expect(group?.matches.map((match) => match.id)).toEqual([
+      "match-0",
+      "match-1",
+      "match-2",
+      "match-3",
+      "match-4",
+      "match-5",
+      "match-6",
+    ]);
+  });
+
+  it("does not create a day group without a match", () => {
+    const groups = groupMatchesByJstDay([baseMatch]);
+    const [group] = groups;
+
+    expect(groups).toHaveLength(1);
+    expect(group?.key).toBe("2026-06-08");
+  });
+
+  it("creates five day groups for matches on five JST dates", () => {
+    const groups = groupMatchesByJstDay(
+      Array.from({ length: 5 }, (_, index) => ({
+        ...baseMatch,
+        id: `match-${index}`,
+        kickoffAt: `2026-06-${String(7 + index).padStart(2, "0")}T15:30:00.000Z`,
+      })),
+    );
+
+    expect(groups).toHaveLength(5);
+  });
+});
+
 describe("WeekSchedule", () => {
   afterEach(() => {
     cleanup();
   });
 
-  it("groups matches by JST day and links every match page", () => {
-    render(
+  it("keeps the mobile day list while the desktop board links every match page", () => {
+    const { container } = render(
       <WeekSchedule
         highlightMatchId="match-1"
         matches={[
@@ -67,7 +126,6 @@ describe("WeekSchedule", () => {
             hasPreview: true,
             hasRecap: true,
             id: "match-1",
-            kickoffAt: "2026-06-07T15:30:00.000Z",
           },
           {
             ...baseMatch,
@@ -88,51 +146,101 @@ describe("WeekSchedule", () => {
       />,
     );
 
-    const june8Section = screen
-      .getByRole("heading", { name: "8" })
-      .closest("section");
-    expect(june8Section).toHaveTextContent("月");
-    expect(june8Section).toHaveTextContent("6月");
-    expect(june8Section).toHaveTextContent("1試合");
+    const board = getDesktopBoard(container);
+    const mobileSchedule = container.querySelector(".lg\\:hidden");
 
-    const june9Section = screen
-      .getByRole("heading", { name: "9" })
-      .closest("section");
-    expect(june9Section).toHaveTextContent("火");
-    expect(june9Section).toHaveTextContent("6月");
-    expect(june9Section).toHaveTextContent("2試合");
-    expect(screen.getByRole("link", { name: /00:30 JST/ })).toHaveAttribute(
-      "href",
-      "/matches/match-1",
+    expect(board).toHaveTextContent("時刻はすべて日本時間（JST）");
+    expect(board).toHaveTextContent("KUB–KOB");
+    expect(board).toHaveTextContent(
+      "クボタスピアーズ船橋・東京ベイ 対 コベルコ神戸スティーラーズ",
     );
-    expect(screen.getByText("注目")).toBeInTheDocument();
-    expect(screen.getByText("レビュー")).toBeInTheDocument();
-    expect(screen.getByText("プレビュー")).toBeInTheDocument();
-    expect(screen.getByText("24–19")).toBeInTheDocument();
-    expect(screen.getByText("ライブ")).toBeInTheDocument();
-    const competitionLink = screen
-      .getAllByRole("link")
-      .find(
-        (link) => link.getAttribute("href") === "/c/league-one/2025-26",
-      );
-    const matchLink = screen.getByRole("link", { name: /00:30 JST/ });
-
-    expect(competitionLink).toBeDefined();
-    expect(matchLink.querySelector("a")).toBeNull();
+    expect(board.querySelector(".full-name")).not.toHaveClass("truncate");
+    expect(board.querySelector(".full-name")).not.toHaveClass(
+      "whitespace-nowrap",
+    );
+    expect(board.querySelectorAll("svg")).toHaveLength(0);
+    expect(board.querySelectorAll('a[href="/matches/match-1"]')).toHaveLength(
+      1,
+    );
+    expect(board).toHaveTextContent("24–19");
+    expect(board).toHaveTextContent("試合中");
+    expect(board).toHaveTextContent("リーグワン");
+    expect(board.textContent?.match(/JST/g) ?? []).toHaveLength(1);
+    expect(mobileSchedule).toHaveTextContent("National Stadium");
+    expect(mobileSchedule).toHaveTextContent("1試合");
+    expect(mobileSchedule).toHaveTextContent("2試合");
+    expect(screen.getAllByText("レビュー")).toHaveLength(1);
+    expect(screen.getAllByText("プレビュー")).toHaveLength(1);
   });
 
-  it("keeps the competition hub link available in compact mode", () => {
-    render(<WeekSchedule compact matches={[baseMatch]} />);
+  it("renders a one-match day as a bounded board card instead of a full-width list", () => {
+    const { container } = render(<WeekSchedule matches={[baseMatch]} />);
+    const board = getDesktopBoard(container);
+    const day = board.querySelector('[data-testid="calendar-board-day"]');
 
+    expect(day).toHaveStyle({
+      maxWidth: "min(100%, calc(1 * 288px + 0 * 20px))",
+      width: "100%",
+    });
+    expect(day).not.toHaveStyle({ width: "fit-content" });
     expect(
-      screen
-        .getAllByRole("link")
-        .find(
-          (link) =>
-            link.getAttribute("href") ===
-            "/c/league-one/2025-26",
-        ),
-    ).toBeDefined();
+      board.querySelectorAll('[data-testid="calendar-board-match-grid"]'),
+    ).toHaveLength(1);
+  });
+
+  it("uses the multi-column match grid for a one-day, five-match week", () => {
+    const { container } = render(
+      <WeekSchedule
+        matches={Array.from({ length: 5 }, (_, index) => ({
+          ...baseMatch,
+          id: `match-${index}`,
+        }))}
+      />,
+    );
+    const board = getDesktopBoard(container);
+    const day = board.querySelector('[data-testid="calendar-board-day"]');
+    const matchGrid = board.querySelector(
+      '[data-testid="calendar-board-match-grid"]',
+    );
+
+    expect(day).toHaveStyle({
+      maxWidth: "min(100%, calc(5 * 288px + 4 * 20px))",
+    });
+    expect(matchGrid).toHaveClass(
+      "[grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]",
+    );
+    expect(matchGrid).toHaveClass("gap-x-5", "gap-y-0");
+    expect(
+      board.querySelectorAll('[data-testid="calendar-board-match"]'),
+    ).toHaveLength(5);
+  });
+
+  it("never exposes a competition family slug in the board legend", () => {
+    const { container } = render(
+      <WeekSchedule
+        matches={[
+          {
+            ...baseMatch,
+            competition: {
+              ...baseMatch.competition,
+              family: "puma-trophy",
+              name: "Puma Trophy",
+              season: "2026",
+              slug: "puma-trophy-2026",
+            },
+          },
+        ]}
+      />,
+    );
+    const board = getDesktopBoard(container);
+    const labels = Array.from(
+      board.querySelectorAll('[aria-label="大会凡例"] li'),
+      (label) => label.textContent?.trim() ?? "",
+    );
+
+    expect(labels).toEqual(["Puma Trophy"]);
+    expect(labels).not.toContain("puma-trophy");
+    expect(labels.some((label) => /^[a-z0-9-]+$/.test(label))).toBe(false);
   });
 
   it("renders an empty state", () => {
@@ -142,7 +250,7 @@ describe("WeekSchedule", () => {
   });
 
   it("renders broadcast links only for matches with structured broadcasts", () => {
-    render(
+    const { container } = render(
       <WeekSchedule
         matches={[
           {
@@ -160,21 +268,22 @@ describe("WeekSchedule", () => {
         ]}
       />,
     );
+    const board = getDesktopBoard(container);
+    const broadcastLink = board.querySelector(
+      'a[href="/matches/match-1#broadcasts"]',
+    );
 
-    const links = screen.getAllByRole("link", { name: "視聴" });
-
-    expect(links).toHaveLength(1);
-    expect(links[0]).toHaveAttribute("href", "/matches/match-1#broadcasts");
-    expect(links[0]).not.toHaveAttribute("rel");
-    expect(links[0]).not.toHaveAttribute("target");
+    expect(broadcastLink).toHaveTextContent("視聴");
+    expect(
+      board.querySelector('a[href="/matches/match-2#broadcasts"]'),
+    ).toBeNull();
     expect(
       screen.queryByRole("link", { name: "https://example.com/legacy-only" }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByText("視聴情報なし")).not.toBeInTheDocument();
   });
 
   it("hides finished scores behind spoiler guard until clicked", () => {
-    render(
+    const { container } = render(
       <WeekSchedule
         matches={[
           {
@@ -188,13 +297,12 @@ describe("WeekSchedule", () => {
         spoilerGuardEnabled
       />,
     );
+    const board = getDesktopBoard(container);
 
-    expect(screen.queryByText("24–19")).not.toBeInTheDocument();
+    expect(board).not.toHaveTextContent("24–19");
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "タップして結果を見る" }),
-    );
+    fireEvent.click(board.querySelector('[role="button"]') as HTMLElement);
 
-    expect(screen.getByText("24–19")).toBeInTheDocument();
+    expect(board).toHaveTextContent("24–19");
   });
 });
