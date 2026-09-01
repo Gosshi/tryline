@@ -153,6 +153,24 @@ describe("season match groups", () => {
     ).toBe("knockout");
   });
 
+  it("sorts pool filters by their label rather than kickoff insertion order", () => {
+    const groupedMatches = [
+      ...["Pool A", "Pool E", "Pool F", "Pool D", "Pool B", "Pool C"].map(
+        (poolName, index) => buildPoolGroup(poolName, index + 1),
+      ),
+    ];
+
+    expect(getRoundFilters(groupedMatches)).toEqual([
+      { label: "全試合", value: "all" },
+      { label: "プールA", value: "pool-a" },
+      { label: "プールB", value: "pool-b" },
+      { label: "プールC", value: "pool-c" },
+      { label: "プールD", value: "pool-d" },
+      { label: "プールE", value: "pool-e" },
+      { label: "プールF", value: "pool-f" },
+    ]);
+  });
+
   it("uses the tournament's own hemisphere labels for pool filters", () => {
     const groupedMatches = [
       buildPoolGroup("Northern Hemisphere", 1),

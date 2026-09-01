@@ -314,7 +314,10 @@ export function getMatchClassification(
     return null;
   }
 
-  if (match.homeTeam.kind === "national" && match.awayTeam.kind === "national") {
+  if (
+    match.homeTeam.kind === "national" &&
+    match.awayTeam.kind === "national"
+  ) {
     return "test";
   }
 
@@ -341,7 +344,12 @@ function ClassifiedMatchCard({
   };
 
   if (!classification) {
-    return <MatchCard contentStatus={contentStatus ?? defaultContentStatus} match={match} />;
+    return (
+      <MatchCard
+        contentStatus={contentStatus ?? defaultContentStatus}
+        match={match}
+      />
+    );
   }
 
   const isTestMatch = classification === "test";
@@ -371,7 +379,10 @@ function ClassifiedMatchCard({
           </span>
         )}
       </div>
-      <MatchCard contentStatus={contentStatus ?? defaultContentStatus} match={match} />
+      <MatchCard
+        contentStatus={contentStatus ?? defaultContentStatus}
+        match={match}
+      />
     </div>
   );
 }
@@ -487,10 +498,12 @@ export function getRoundFilters(
 
   return [
     { label: "全試合", value: "all" },
-    ...[...pools].map(([value, label]) => ({
-      label: formatPoolName(label),
-      value,
-    })),
+    ...[...pools]
+      .sort(([, left], [, right]) => left.localeCompare(right))
+      .map(([value, label]) => ({
+        label: formatPoolName(label),
+        value,
+      })),
     ...(hasKnockoutMatches
       ? [{ label: "ノックアウト", value: "knockout" }]
       : []),
