@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Suspense } from "react";
 
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
 import { IosAppCta } from "@/components/ios-app-cta";
@@ -837,14 +836,13 @@ export default async function SeasonPage({ params }: Props) {
           ) : (
             <>
               {hasAnyContent && <PremiumUpsellBanner />}
-              <Suspense>
-                <SeasonMatchGroups
-                  contentStatusMap={contentStatusMap}
-                  family={family}
-                  groupedMatches={groupedMatches}
-                  roundHubBasePath={`/c/${competition}/${season}`}
-                />
-              </Suspense>
+              <SeasonMatchGroups
+                contentStatusMap={contentStatusMap}
+                family={family}
+                groupedMatches={groupedMatches}
+                initialNow={new Date().toISOString()}
+                roundHubBasePath={`/c/${competition}/${season}`}
+              />
               <TrackedLink
                 analytics={{
                   cta_id: "hub_schedule_calendar",
