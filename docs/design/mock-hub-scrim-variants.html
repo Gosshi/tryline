@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>スクリム配合の比較 — 大会ハブのヒーロー帯</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --color-ink:#1f2530; --color-ink-muted:#646a76; --color-rule:#eceef2; --color-accent:#c93a40;
+  --radius-md:1.375rem;
+  --shadow-deep:0 24px 48px -28px rgb(18 41 63 / 55%);
+  --font-body:"Zen Maru Gothic",sans-serif; --font-num:"Outfit",sans-serif;
+  --neutral:8 12 20;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background-color:#f1efe9;
+  background-image:
+    radial-gradient(120% 60% at 20% 0%, rgb(201 58 58 / 5%), transparent 60%),
+    linear-gradient(180deg,#f8f7f4 0%,#f1efe9 45%,#eceae3 100%);
+  color:var(--color-ink); font-family:var(--font-body); font-weight:500;
+  -webkit-font-smoothing:antialiased; padding:clamp(1rem,.5rem + 2vw,2rem); line-height:1.7;
+}
+.wrap{max-width:66rem;margin:0 auto;display:flex;flex-direction:column;gap:3rem}
+.doc-head{border-bottom:2px solid var(--color-ink);padding-bottom:1rem}
+.doc-head h1{font-size:clamp(1.5rem,1.2rem + 1.5vw,2.25rem);font-weight:900;letter-spacing:-.02em}
+.doc-head p{color:var(--color-ink-muted);font-size:.9rem;margin-top:.5rem}
+.variant{display:flex;flex-direction:column;gap:.85rem}
+.vhead{display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap;border-bottom:1px solid var(--color-rule);padding-bottom:.5rem}
+.vhead h2{font-size:1.15rem;font-weight:900;letter-spacing:-.01em}
+.vhead .verdict{font-size:.72rem;font-weight:700;padding:.12rem .5rem;border-radius:999px}
+.ok{background:rgb(0 122 77/.12);color:#00603c}
+.ng{background:rgb(201 58 64/.12);color:var(--color-accent)}
+.hm{background:rgb(255 140 0/.16);color:#8a4b00}
+.vnote{font-size:.8rem;color:var(--color-ink-muted)}
+.code{font-family:var(--font-num);font-size:.72rem;background:#fff;border:1px solid var(--color-rule);
+      border-radius:.5rem;padding:.5rem .7rem;overflow-x:auto;white-space:nowrap;color:#3a4152}
+
+.c-six{--comp:#001489; --img:url("../../public/visuals/six-nations.jpg")}
+.c-nc{--comp:#1A3A5C;  --img:url("../../public/visuals/nations-championship.jpg")}
+.c-l1{--comp:#FF6B00;  --img:url("../../public/visuals/league-one.jpg")}
+
+.band{position:relative;isolation:isolate;border-radius:var(--radius-md);overflow:hidden;
+      box-shadow:var(--shadow-deep);color:#fff;min-height:11rem;display:flex;flex-direction:column;justify-content:flex-end}
+.band .bg{position:absolute;inset:0;background-image:var(--img);background-size:cover;background-position:center 42%;z-index:-2}
+.band .scrim{position:absolute;inset:0;z-index:-1}
+.band .tint{position:absolute;inset:0;z-index:-1}
+.band .bar{position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--comp);z-index:1}
+.binner{padding:1.3rem 1.4rem}
+.bkick{font-size:.66rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;opacity:.85}
+.btitle{font-size:1.5rem;font-weight:900;letter-spacing:-.03em;line-height:1.15;margin-top:.3rem}
+.bmeta{font-size:.78rem;opacity:.85;margin-top:.35rem}
+
+.now .scrim{background:linear-gradient(100deg,
+  color-mix(in srgb, var(--comp) 92%, transparent) 0%,
+  color-mix(in srgb, var(--comp) 78%, transparent) 42%,
+  color-mix(in srgb, var(--comp) 42%, transparent) 100%)}
+
+.va .scrim{background:linear-gradient(100deg,
+  rgb(var(--neutral)/.90) 0%, rgb(var(--neutral)/.70) 45%, rgb(var(--neutral)/.28) 100%)}
+
+.vb .scrim{background:linear-gradient(100deg,
+  color-mix(in srgb, color-mix(in srgb, var(--comp) 42%, #06090f) 92%, transparent) 0%,
+  color-mix(in srgb, color-mix(in srgb, var(--comp) 42%, #06090f) 74%, transparent) 45%,
+  color-mix(in srgb, color-mix(in srgb, var(--comp) 42%, #06090f) 30%, transparent) 100%)}
+
+.vc .scrim{background:linear-gradient(100deg,
+  rgb(var(--neutral)/.88) 0%, rgb(var(--neutral)/.66) 45%, rgb(var(--neutral)/.24) 100%)}
+.vc .tint{background:var(--comp);opacity:.16;mix-blend-mode:multiply}
+
+.grid{display:grid;gap:.7rem}
+@media (min-width:52rem){.grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc-head">
+    <h1>スクリム配合の比較</h1>
+    <p>本番で確認した問題 — <strong>大会カラーをそのまま重ねているため、濃色の大会では写真が同化し、明色の大会では写真が塗り潰される</strong>。構造は案B2 のまま、スクリムの配合だけを比較する。</p>
+    <p style="margin-top:.4rem">左＝シックスネイションズ <code>#001489</code>（現状うまくいっている） / 中＝ネーションズチャンピオンシップ <code>#1A3A5C</code>（濃すぎて平坦） / 右＝リーグワン <code>#FF6B00</code>（明るすぎて写真が消える）</p>
+  </header>
+
+  <section class="variant">
+    <div class="vhead">
+      <h2>現行（本番 2026-08-25）</h2>
+      <span class="verdict ng">3大会中2つで破綻</span>
+    </div>
+    <p class="code">linear-gradient(100deg, C 92%, C 78% 42%, C 42%) ／ C = 大会カラーそのまま</p>
+    <div class="grid">
+      <article class="band now c-six"><div class="bg"></div><div class="scrim"></div>
+        <div class="binner"><p class="bkick">Six Nations</p><h3 class="btitle">シックスネイションズ 2025</h3><p class="bmeta">2025年1月31日 〜 3月15日</p></div></article>
+      <article class="band now c-nc"><div class="bg"></div><div class="scrim"></div>
+        <div class="binner"><p class="bkick">Nations Championship</p><h3 class="btitle">ネーションズチャンピオンシップ 2026</h3><p class="bmeta">2026年7月4日 〜 11月21日</p></div></article>
+      <article class="band now c-l1"><div class="bg"></div><div class="scrim"></div>
+        <div class="binner"><p class="bkick">League One</p><h3 class="btitle">ジャパンラグビー リーグワン 2025-26</h3><p class="bmeta">2025年12月13日 〜 2026年6月7日</p></div></article>
+    </div>
+    <p class="vnote">左は成立。中は写真があるのに平坦な濃紺に見える。右は写真が完全に消えている。</p>
+  </section>
+
+  <section class="variant">
+    <div class="vhead">
+      <h2>案A　中性の暗色 ＋ 大会カラーの左バー</h2>
+      <span class="verdict ok">写真が最もよく残る</span>
+    </div>
+    <p class="code">linear-gradient(100deg, rgb(8 12 20 / .90), rgb(8 12 20 / .70) 45%, rgb(8 12 20 / .28)) ＋ 左端 6px の大会カラー</p>
+    <div class="grid">
+      <article class="band va c-six"><div class="bg"></div><div class="scrim"></div><span class="bar"></span>
+        <div class="binner"><p class="bkick">Six Nations</p><h3 class="btitle">シックスネイションズ 2025</h3><p class="bmeta">2025年1月31日 〜 3月15日</p></div></article>
+      <article class="band va c-nc"><div class="bg"></div><div class="scrim"></div><span class="bar"></span>
+        <div class="binner"><p class="bkick">Nations Championship</p><h3 class="btitle">ネーションズチャンピオンシップ 2026</h3><p class="bmeta">2026年7月4日 〜 11月21日</p></div></article>
+      <article class="band va c-l1"><div class="bg"></div><div class="scrim"></div><span class="bar"></span>
+        <div class="binner"><p class="bkick">League One</p><h3 class="btitle">ジャパンラグビー リーグワン 2025-26</h3><p class="bmeta">2025年12月13日 〜 2026年6月7日</p></div></article>
+    </div>
+    <p class="vnote">写真の再現性は最良で、3大会とも同じ品質になる。ただし<strong>大会の識別は左6pxのバーだけ</strong>なので、色による「どの大会か」の手がかりは弱くなる。</p>
+  </section>
+
+  <section class="variant">
+    <div class="vhead">
+      <h2>案B　大会カラーを黒と混ぜた暗色</h2>
+      <span class="verdict hm">識別と写真の折衷</span>
+    </div>
+    <p class="code">C2 = color-mix(in srgb, C 42%, #06090f) ／ linear-gradient(100deg, C2 92%, C2 74% 45%, C2 30%)</p>
+    <div class="grid">
+      <article class="band vb c-six"><div class="bg"></div><div class="scrim"></div>
+        <div class="binner"><p class="bkick">Six Nations</p><h3 class="btitle">シックスネイションズ 2025</h3><p class="bmeta">2025年1月31日 〜 3月15日</p></div></article>
+      <article class="band vb c-nc"><div class="bg"></div><div class="scrim"></div>
+        <div class="binner"><p class="bkick">Nations Championship</p><h3 class="btitle">ネーションズチャンピオンシップ 2026</h3><p class="bmeta">2026年7月4日 〜 11月21日</p></div></article>
+      <article class="band vb c-l1"><div class="bg"></div><div class="scrim"></div>
+        <div class="binner"><p class="bkick">League One</p><h3 class="btitle">ジャパンラグビー リーグワン 2025-26</h3><p class="bmeta">2025年12月13日 〜 2026年6月7日</p></div></article>
+    </div>
+    <p class="vnote">大会カラーを 42% だけ残して黒に寄せる。<strong>色の系統は残しつつ、明色の大会でも写真が生き残る</strong>。リーグワンが橙の暗色（焦茶）になるのをどう見るかが判断点。</p>
+  </section>
+
+  <section class="variant">
+    <div class="vhead">
+      <h2>案C　中性の暗色 ＋ 大会カラーの薄いティント全面</h2>
+      <span class="verdict ok">写真と識別を両立</span>
+    </div>
+    <p class="code">中性グラデーション（.88 / .66 / .24）＋ 全面に大会カラー opacity .16 の multiply</p>
+    <div class="grid">
+      <article class="band vc c-six"><div class="bg"></div><div class="scrim"></div><div class="tint"></div>
+        <div class="binner"><p class="bkick">Six Nations</p><h3 class="btitle">シックスネイションズ 2025</h3><p class="bmeta">2025年1月31日 〜 3月15日</p></div></article>
+      <article class="band vc c-nc"><div class="bg"></div><div class="scrim"></div><div class="tint"></div>
+        <div class="binner"><p class="bkick">Nations Championship</p><h3 class="btitle">ネーションズチャンピオンシップ 2026</h3><p class="bmeta">2026年7月4日 〜 11月21日</p></div></article>
+      <article class="band vc c-l1"><div class="bg"></div><div class="scrim"></div><div class="tint"></div>
+        <div class="binner"><p class="bkick">League One</p><h3 class="btitle">ジャパンラグビー リーグワン 2025-26</h3><p class="bmeta">2025年12月13日 〜 2026年6月7日</p></div></article>
+    </div>
+    <p class="vnote">写真は案A と同等に残しつつ、全面の薄いティントで大会の色が伝わる。<strong>ティントの濃さ（.16）は調整代がある</strong>。</p>
+  </section>
+
+  <section class="variant">
+    <div class="vhead"><h2>判断のポイント</h2></div>
+    <p class="vnote">
+      <strong>すべて「構造」ではなく「配合」の違い</strong>で、案B2 のレイアウトはそのまま。実装は <code>app/c/[competition]/[season]/page.tsx:646</code> の <code>background</code> 値の差し替え（案A / 案C は要素を1つ追加）だけ。<br><br>
+      判断は「<strong>写真をどれだけ見せたいか</strong>」対「<strong>色で大会をどれだけ識別させたいか</strong>」のトレードオフです。写真優先なら案A、識別優先なら案B、中間が案C。<br><br>
+      なお現行がシックスネイションズで成立して見えるのは、<strong>あの大会の色がたまたま明るい青で、写真にも青い照明が入っている</strong>ためです。他大会に一般化できません。
+    </p>
+  </section>
+
+</div>
+</body>
+</html>

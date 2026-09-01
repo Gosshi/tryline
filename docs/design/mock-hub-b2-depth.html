@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>案B2 濃色と奥行き — 大会ハブ3ページ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --color-ink:#1f2530; --color-ink-muted:#646a76;
+  --color-rule:#eceef2; --color-accent:#c93a40;
+  --comp:#1A3A5C; --comp-deep:#12293f; --comp-lift:#2f5a86;
+  --tint-1:rgb(26 58 92 / .045);
+  --tint-2:rgb(26 58 92 / .09);
+  --tint-3:rgb(26 58 92 / .16);
+  --radius-sm:1rem; --radius-md:1.375rem; --radius-lg:1.875rem;
+  --shadow-soft:0 12px 28px -20px rgb(28 38 64 / 45%);
+  --shadow-deep:0 24px 48px -28px rgb(18 41 63 / 55%);
+  --font-body:"Zen Maru Gothic",sans-serif; --font-num:"Outfit",sans-serif;
+  --space-page:clamp(1rem,.5rem + 2vw,2rem);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background-color:#f1efe9;
+  background-image:
+    radial-gradient(120% 60% at 20% 0%, rgb(201 58 58 / 5%), transparent 60%),
+    radial-gradient(120% 60% at 100% 40%, rgb(26 58 92 / 5%), transparent 55%),
+    linear-gradient(180deg,#f8f7f4 0%,#f1efe9 45%,#eceae3 100%);
+  color:var(--color-ink); font-family:var(--font-body); font-weight:500;
+  -webkit-font-smoothing:antialiased; padding:var(--space-page); line-height:1.7;
+}
+.wrap{max-width:64rem;margin:0 auto;display:flex;flex-direction:column;gap:3.5rem}
+.doc-head{border-bottom:2px solid var(--color-ink);padding-bottom:1rem}
+.doc-head h1{font-size:clamp(1.5rem,1.2rem + 1.5vw,2.25rem);font-weight:900;letter-spacing:-.02em}
+.doc-head p{color:var(--color-ink-muted);font-size:.9rem;margin-top:.5rem}
+.label{font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--color-ink-muted)}
+.panel{display:flex;flex-direction:column;gap:.75rem}
+.panel > .label span{color:var(--color-accent)}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;background:var(--color-ink);color:#fff;letter-spacing:.06em}
+.legend{font-size:.78rem;color:var(--color-ink-muted)}
+.note{font-size:.8rem;color:var(--color-ink-muted);background:#fff;border-left:3px solid var(--color-accent);
+      padding:.65rem .9rem;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+
+.depth{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.5rem}
+.sw{border-radius:var(--radius-sm);padding:.85rem .9rem;font-size:.72rem;font-weight:700;line-height:1.4;
+    outline:1px solid var(--color-rule)}
+.sw span{display:block;font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.7;margin-bottom:.2rem}
+.sw.l0{background:transparent} .sw.l1{background:var(--tint-1)} .sw.l2{background:var(--tint-2)}
+.sw.l3{background:var(--tint-3)} .sw.l4{background:var(--comp);color:#fff;outline:none}
+.sw.l5{background:var(--comp-deep);color:#fff;outline:none}
+
+.banner{border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-deep);color:#fff;position:relative;isolation:isolate}
+.banner.photo{background:#12293f}
+.banner.photo .bg{position:absolute;inset:0;background-image:url("../../public/visuals/nations-championship.jpg");
+  background-size:cover;background-position:center 42%;z-index:-2}
+.banner.photo.lipo .bg{background-image:url("../../public/visuals/lipovitan-challenge-cup.jpg")}
+.banner.photo.rivalry .bg{background-image:url("../../public/visuals/greatest-rivalry.jpg")}
+.banner.photo .scrim{position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(100deg,rgb(18 41 63/.92) 0%,rgb(18 41 63/.78) 42%,rgb(18 41 63/.42) 100%)}
+.banner.flat{background:linear-gradient(115deg,var(--comp-deep) 0%,var(--comp) 48%,var(--comp-lift) 100%)}
+.banner.flat::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:radial-gradient(70% 130% at 88% 8%,rgb(255 255 255/.16),transparent 58%)}
+.b-inner{padding:1.7rem 1.75rem;display:flex;flex-wrap:wrap;gap:1.5rem;align-items:flex-end;justify-content:space-between}
+.b-mark{display:flex;align-items:center;gap:.6rem;font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;opacity:.88}
+.b-mark img{width:22px;height:22px;filter:brightness(0) invert(1)}
+.b-title{font-size:clamp(1.6rem,1.1rem + 2.2vw,2.6rem);font-weight:900;letter-spacing:-.03em;line-height:1.15;margin-top:.4rem}
+.b-meta{font-size:.85rem;opacity:.85;margin-top:.5rem}
+.b-prog{display:flex;flex-direction:column;gap:.4rem;min-width:11rem}
+.b-prog .pk{font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.82}
+.b-bar{height:6px;border-radius:999px;background:rgb(255 255 255/.28);overflow:hidden}
+.b-bar i{display:block;height:100%;width:50%;background:#fff;border-radius:999px}
+.b-lead{display:flex;gap:1.4rem;flex-wrap:wrap;padding:.85rem 1.75rem;background:rgb(0 0 0/.32);
+        border-top:1px solid rgb(255 255 255/.12)}
+.b-lead div{display:flex;flex-direction:column}
+.b-lead .k{font-size:.63rem;letter-spacing:.14em;text-transform:uppercase;opacity:.78;font-weight:700}
+.b-lead .v{font-weight:700;font-size:.95rem}
+
+.t-head{display:flex;align-items:baseline;gap:.75rem;flex-wrap:wrap;padding:0 .25rem .6rem;border-bottom:2px solid var(--comp)}
+.t-head .crumb{font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--comp)}
+.t-head h2{font-size:1.35rem;font-weight:900;letter-spacing:-.02em}
+.t-head .upd{margin-left:auto;font-size:.75rem;color:var(--color-ink-muted)}
+.t-card{background:#fff;border-radius:var(--radius-md);box-shadow:var(--shadow-soft);
+        outline:1px solid var(--color-rule);overflow:hidden;margin-top:.75rem}
+.t-bar{background:var(--comp-deep);color:#fff;padding:.7rem 1.25rem;display:flex;align-items:center;gap:.6rem}
+.t-bar .pool{font-size:.72rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+.t-bar .qual{margin-left:auto;font-size:.66rem;font-weight:700;opacity:.75;letter-spacing:.1em}
+.t-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:34rem}
+th,td{padding:.6rem 1.25rem;text-align:right;font-size:.85rem;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;width:2.5rem}
+th:nth-child(2),td:nth-child(2){text-align:left}
+thead th{font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--color-ink-muted);
+         font-weight:700;background:var(--tint-1);border-bottom:1px solid var(--color-rule)}
+tbody tr{border-bottom:1px solid var(--color-rule)}
+tbody tr:last-child{border-bottom:0}
+tbody tr.q1{background:var(--tint-3)}
+tbody tr.q2{background:var(--tint-2)}
+tbody tr.q3{background:var(--tint-1)}
+td.pos{font-family:var(--font-num);font-weight:700;color:var(--comp);font-size:1rem}
+tr.q1 td.pos{color:var(--comp-deep)}
+td.team{font-weight:700}
+td.pts{font-family:var(--font-num);font-weight:900;font-size:1.05rem}
+td.n{font-family:var(--font-num);color:var(--color-ink-muted)}
+
+.r-strip{background:var(--comp-deep);color:#fff;border-radius:var(--radius-md) var(--radius-md) 0 0;
+         padding:.7rem 1.1rem;display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap}
+.r-strip .rd{font-size:1.15rem;font-weight:900;letter-spacing:-.01em}
+.r-strip .cnt{font-size:.74rem;opacity:.8}
+.r-strip .dt{margin-left:auto;font-size:.74rem;opacity:.85;font-family:var(--font-num)}
+.r-block{display:flex;gap:0;align-items:stretch;border-radius:0 0 var(--radius-md) var(--radius-md);
+         overflow:hidden;box-shadow:var(--shadow-soft);outline:1px solid var(--color-rule)}
+.r-date{flex:0 0 5rem;background:var(--comp);color:#fff;display:flex;flex-direction:column;
+        align-items:center;justify-content:center;padding:1rem .5rem;text-align:center}
+.r-date .dow{font-size:.68rem;font-weight:700;letter-spacing:.12em;opacity:.82}
+.r-date .d{font-family:var(--font-num);font-size:2.2rem;font-weight:900;line-height:1;margin:.1rem 0}
+.r-date .mo{font-size:.68rem;font-weight:700;opacity:.82}
+.r-rows{flex:1;min-width:0;background:#fff}
+.r-row{display:flex;align-items:center;gap:.75rem;padding:.62rem 1rem;border-bottom:1px solid var(--color-rule);
+       transition:background-color .15s}
+.r-row:nth-child(odd){background:var(--tint-1)}
+.r-row:last-child{border-bottom:0}
+.r-row:hover{background:var(--tint-2)}
+.r-time{font-family:var(--font-num);font-size:.76rem;color:var(--color-ink-muted);flex:0 0 3rem}
+.r-teams{flex:1;min-width:0;font-weight:700;font-size:.89rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-score{font-family:var(--font-num);font-weight:900;font-size:1rem;flex:0 0 auto}
+.r-score .w{color:var(--color-accent)}
+.r-badge{font-size:.66rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;
+         background:rgb(201 58 64/.12);color:var(--color-accent);flex:0 0 auto}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important}}
+@media (max-width:36rem){.r-block{flex-direction:column}.r-date{flex:none;flex-direction:row;gap:.5rem;justify-content:flex-start;padding:.45rem .9rem}.r-date .d{font-size:1.3rem;margin:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc-head">
+    <h1>案B2「濃色と奥行き」</h1>
+    <p>案Bの弱点＝<strong>濃い面がシーズンの帯にしか無く、通しで見ると白っぽい</strong>への対処。大会カラーを1色ではなく<strong>6段の深さ</strong>として使い、3ページすべてに濃い面を置く。</p>
+  </header>
+
+  <section class="panel">
+    <p class="label">深さの段階 — <span>大会カラー #1A3A5C の6段</span></p>
+    <div class="depth">
+      <div class="sw l0"><span>L0</span>紙（背景）</div>
+      <div class="sw l1"><span>L1</span>4.5% 行ティント</div>
+      <div class="sw l2"><span>L2</span>9% ホバー</div>
+      <div class="sw l3"><span>L3</span>16% 上位強調</div>
+      <div class="sw l4"><span>L4</span>ベタ 日付/帯</div>
+      <div class="sw l5"><span>L5</span>深色 見出し帯</div>
+    </div>
+    <p class="legend">白 or 大会カラーの2値ではなく段階にすることで、白カードを減らしつつ情報の重みを表現できる。大会が変われば6段まるごと色が変わる。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label"><span class="tag">B2</span> シーズン — <span>写真あり（画像がある9大会）</span></p>
+    <article class="banner photo">
+      <div class="bg"></div><div class="scrim"></div>
+      <div class="b-inner">
+        <div>
+          <p class="b-mark"><img src="../../public/logos/nations-championship.svg" alt=""> Nations Championship</p>
+          <h2 class="b-title">ネーションズチャンピオンシップ 2026</h2>
+          <p class="b-meta">2026年7月4日 〜 11月28日 ・ 全36試合 ・ 2プール12チーム</p>
+        </div>
+        <div class="b-prog">
+          <span class="pk">進行 <span class="num">3</span> / <span class="num">6</span> 節</span>
+          <span class="b-bar"><i></i></span>
+        </div>
+      </div>
+      <div class="b-lead">
+        <div><span class="k">首位 / 北</span><span class="v">フランス <span class="num">12</span>pt</span></div>
+        <div><span class="k">首位 / 南</span><span class="v">南アフリカ <span class="num">15</span>pt</span></div>
+        <div><span class="k">次節</span><span class="v">第4節 ・ <span class="num">9</span>月<span class="num">5</span>日</span></div>
+      </div>
+    </article>
+    <p class="legend">生成した <code>nations-championship.jpg</code>（2026-08-25 配置）を使用。スクリムを重ねているので、写真が変わっても文字は読める。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label">生成した3枚を同じ帯で検証 — <span>左側テキストの可読性</span></p>
+
+    <article class="banner photo rivalry" style="margin-bottom:.6rem">
+      <div class="bg"></div><div class="scrim"></div>
+      <div class="b-inner">
+        <div>
+          <p class="b-mark">Greatest Rivalry</p>
+          <h2 class="b-title">グレイテスト・ライバルリー・ツアー 2026</h2>
+          <p class="b-meta">2026年8月7日 〜 9月12日 ・ オールブラックス 南アフリカ遠征</p>
+        </div>
+        <div class="b-prog"><span class="pk">進行 <span class="num">3</span> / <span class="num">3</span> 戦</span><span class="b-bar"><i style="width:100%"></i></span></div>
+      </div>
+    </article>
+
+    <article class="banner photo lipo">
+      <div class="bg"></div><div class="scrim"></div>
+      <div class="b-inner">
+        <div>
+          <p class="b-mark">Lipovitan-D Challenge Cup</p>
+          <h2 class="b-title">リポビタンDチャレンジカップ 2026</h2>
+          <p class="b-meta">2026年8月8日 〜 10月24日 ・ 日本代表ホームテストマッチ</p>
+        </div>
+        <div class="b-prog"><span class="pk">進行 <span class="num">2</span> / <span class="num">4</span> 戦</span><span class="b-bar"><i></i></span></div>
+      </div>
+    </article>
+
+    <p class="legend"><strong>下の1枚が最も条件が厳しい</strong>（左側をフラッドライトの明るい帯が横切るため）。ここで文字が読めればスクリムの設計は全画像で成立する。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label"><span class="tag">B2</span> シーズン — <span>写真なし（NC など3大会）</span></p>
+    <article class="banner flat">
+      <div class="b-inner">
+        <div>
+          <p class="b-mark"><img src="../../public/logos/nations-championship.svg" alt=""> Nations Championship</p>
+          <h2 class="b-title">ネーションズチャンピオンシップ 2026</h2>
+          <p class="b-meta">2026年7月4日 〜 11月28日 ・ 全36試合 ・ 2プール12チーム</p>
+        </div>
+        <div class="b-prog">
+          <span class="pk">進行 <span class="num">3</span> / <span class="num">6</span> 節</span>
+          <span class="b-bar"><i></i></span>
+        </div>
+      </div>
+      <div class="b-lead">
+        <div><span class="k">首位 / 北</span><span class="v">フランス <span class="num">12</span>pt</span></div>
+        <div><span class="k">首位 / 南</span><span class="v">南アフリカ <span class="num">15</span>pt</span></div>
+        <div><span class="k">次節</span><span class="v">第4節 ・ <span class="num">9</span>月<span class="num">5</span>日</span></div>
+      </div>
+    </article>
+    <p class="legend"><strong>この2つを見比べてください。</strong> 写真なしでも濃さは足りているか、それとも NC の画像を生成する価値があるか。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label"><span class="tag">B2</span> 順位表 — <span>深色ヘッダ帯 ＋ 上位ティント</span></p>
+    <div class="t-head">
+      <span class="crumb">Nations Championship 2026</span>
+      <h2>順位表</h2>
+      <span class="upd">最終更新 2026年8月18日</span>
+    </div>
+    <div class="t-card">
+      <div class="t-bar"><span class="pool">サウス</span><span class="qual">上位2チームが決勝進出</span></div>
+      <div class="t-scroll">
+        <table>
+          <thead><tr><th>#</th><th>チーム</th><th>試</th><th>勝</th><th>敗</th><th>得</th><th>失</th><th>Pt</th></tr></thead>
+          <tbody>
+            <tr class="q1"><td class="pos">1</td><td class="team">南アフリカ</td><td class="n">3</td><td class="n">3</td><td class="n">0</td><td class="n">130</td><td class="n">49</td><td class="pts">15</td></tr>
+            <tr class="q1"><td class="pos">2</td><td class="team">ニュージーランド</td><td class="n">3</td><td class="n">3</td><td class="n">0</td><td class="n">121</td><td class="n">70</td><td class="pts">15</td></tr>
+            <tr class="q2"><td class="pos">3</td><td class="team">オーストラリア</td><td class="n">3</td><td class="n">1</td><td class="n">2</td><td class="n">114</td><td class="n">85</td><td class="pts">8</td></tr>
+            <tr class="q3"><td class="pos">4</td><td class="team">アルゼンチン</td><td class="n">3</td><td class="n">1</td><td class="n">2</td><td class="n">97</td><td class="n">99</td><td class="pts">7</td></tr>
+            <tr><td class="pos">5</td><td class="team">日本</td><td class="n">3</td><td class="n">1</td><td class="n">2</td><td class="n">62</td><td class="n">88</td><td class="pts">4</td></tr>
+            <tr><td class="pos">6</td><td class="team">フィジー</td><td class="n">3</td><td class="n">0</td><td class="n">3</td><td class="n">49</td><td class="n">145</td><td class="pts">0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="legend">ティントの濃さが順位の意味（決勝進出圏 → 圏外）を伝える。白い表に色を塗るのではなく、<strong>色の濃さ自体が情報になる</strong>。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label"><span class="tag">B2</span> ラウンド — <span>深色ストリップ ＋ 交互ティント</span></p>
+    <div class="r-strip">
+      <span class="rd">第1節</span>
+      <span class="cnt">ネーションズチャンピオンシップ 2026 ・ 6試合 ・ 解説6本</span>
+      <span class="dt">2026.07.04</span>
+    </div>
+    <div class="r-block">
+      <div class="r-date"><span class="dow">SAT</span><span class="d">4</span><span class="mo">7月</span></div>
+      <div class="r-rows">
+        <div class="r-row"><span class="r-time">16:10</span><span class="r-teams">ニュージーランド × フランス</span><span class="r-score"><span class="w">34</span>–32</span><span class="r-badge">解説</span></div>
+        <div class="r-row"><span class="r-time">17:40</span><span class="r-teams">日本 × イタリア</span><span class="r-score"><span class="w">27</span>–10</span><span class="r-badge">解説</span></div>
+        <div class="r-row"><span class="r-time">19:10</span><span class="r-teams">オーストラリア × アイルランド</span><span class="r-score">31–<span class="w">33</span></span><span class="r-badge">解説</span></div>
+        <div class="r-row"><span class="r-time">22:10</span><span class="r-teams">フィジー × ウェールズ</span><span class="r-score">24–<span class="w">39</span></span><span class="r-badge">解説</span></div>
+        <div class="r-row"><span class="r-time">00:40</span><span class="r-teams">南アフリカ × イングランド</span><span class="r-score"><span class="w">45</span>–21</span><span class="r-badge">解説</span></div>
+        <div class="r-row"><span class="r-time">04:10</span><span class="r-teams">アルゼンチン × スコットランド</span><span class="r-score">38–<span class="w">47</span></span><span class="r-badge">解説</span></div>
+      </div>
+    </div>
+    <p class="legend">案Bの日付スパインに深色ストリップを足し、行を交互にティント。白の面積が大きく減る。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label">B と B2 の違い</p>
+    <p class="note"><strong>変えたのは色の使い方だけ</strong>で、構造（帯 / 畳んだ見出し＋表 / 日付スパイン）は案Bのまま。<br>
+    ・濃い面が <strong>1箇所 → 3ページすべて</strong>に増えた<br>
+    ・大会カラーを1色ではなく<strong>6段</strong>で使い、ティントが情報（決勝進出圏・ホバー）を担うようにした<br>
+    ・白カードは残っているが、面積が減り「基準の色」ではなく「明るい面」として働く</p>
+  </section>
+
+</div>
+</body>
+</html>

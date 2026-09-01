@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tryline 密度方向 比較モック 2026-09-01</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 本番 app/globals.css と同一値 */
+  --color-paper:#f5f6f8; --color-ink:#1f2530; --color-ink-muted:#646a76;
+  --color-rule:#eceef2; --color-accent:#c93a40;
+  --radius-sm:1rem; --radius-md:1.375rem; --radius-lg:1.875rem;
+  --shadow:0 20px 44px -24px rgb(28 38 64/40%);
+  --shadow-soft:0 12px 28px -20px rgb(28 38 64/45%);
+  --font-body:"Zen Maru Gothic",sans-serif;
+  --font-number:"Outfit",sans-serif;
+  --c-urc:#00823E; --c-prem:#1C2C6B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background-color:#f1efe9;
+  background-image:
+    radial-gradient(120% 60% at 20% 0%,rgb(201 58 58/5%),transparent 60%),
+    radial-gradient(120% 60% at 100% 40%,rgb(26 58 92/5%),transparent 55%),
+    linear-gradient(180deg,#f8f7f4 0%,#f1efe9 45%,#eceae3 100%);
+  color:var(--color-ink); font-family:var(--font-body); font-weight:500;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1152px;margin:0 auto;padding:0 16px}
+code{font-family:var(--font-number);font-size:.9em;background:#efece5;padding:1px 5px;border-radius:4px}
+
+.doc-head{border-bottom:1px solid var(--color-rule);background:#fff;padding:40px 0 32px}
+.doc-head h1{font-size:2rem;font-weight:900;letter-spacing:-.01em}
+.eyebrow{font-size:.6875rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--color-accent)}
+.lede{margin-top:12px;max-width:80ch;font-size:.9375rem;line-height:1.85;color:var(--color-ink-muted)}
+.lede b{color:var(--color-ink)}
+.metrics{margin-top:26px;border-collapse:collapse;font-size:.8125rem;width:100%;max-width:760px}
+.metrics th,.metrics td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--color-rule)}
+.metrics th{font-weight:700;color:var(--color-ink-muted);font-size:.6875rem;letter-spacing:.08em;text-transform:uppercase}
+.metrics td:not(:first-child){font-family:var(--font-number);font-variant-numeric:tabular-nums;text-align:right}
+.metrics tr.now td:first-child::after{content:" ← 本番";color:var(--color-accent);font-size:.6875rem;font-family:var(--font-body)}
+
+section.case{padding:56px 0 8px}
+.case-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.case-head h2{font-size:1.5rem;font-weight:900}
+.case-tag{font-size:.6875rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:var(--color-ink);color:#fff}
+.case-note{font-size:.875rem;line-height:1.85;color:var(--color-ink-muted);max-width:82ch;margin-bottom:24px}
+.case-note b{color:var(--color-ink)}
+.viewport{border:1px dashed #cdc8bd;border-radius:8px;padding:20px 0;position:relative;background:rgba(255,255,255,.35)}
+.viewport::before{content:attr(data-label);position:absolute;top:-9px;left:16px;background:#f1efe9;padding:0 8px;font-size:.625rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9a9384}
+.fold{border-top:2px dashed var(--color-accent)}
+.fold::after{content:"ここから下は1画面目に入らない";position:absolute;right:12px;margin-top:-20px;font-size:.625rem;font-weight:700;color:var(--color-accent);background:#f1efe9;padding:0 6px}
+
+/* ---------- 現行 ---------- */
+.cur-day{display:flex;gap:16px;align-items:stretch;margin-bottom:24px}
+.cur-chip{flex:0 0 64px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-radius:1rem;background:var(--color-ink);color:#fff;padding:16px 8px}
+.cur-chip .wd{font-size:.625rem;font-weight:700;letter-spacing:.16em;color:rgb(255 255 255/.65)}
+.cur-chip .d{font-family:var(--font-number);font-weight:900;font-size:1.875rem;line-height:1;margin-top:4px}
+.cur-chip .m{font-size:.625rem;font-weight:700;color:rgb(255 255 255/.7);margin-top:4px}
+.cur-chip .n{margin-top:12px;background:rgb(255 255 255/.12);border-radius:999px;padding:2px 8px;font-size:.625rem;font-weight:700;color:rgb(255 255 255/.75)}
+.cur-list{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.cur-row{border:1px solid #e2e8f0;border-radius:.5rem;background:#fff;padding:12px 16px}
+.cur-comp{font-size:.75rem;color:var(--color-ink-muted);font-weight:500}
+.cur-main{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px}
+.cur-teams{font-size:.875rem;font-weight:600;display:flex;align-items:center;gap:8px;min-width:0}
+.cur-vs{font-size:.75rem;font-weight:400;color:#94a3b8}
+.cur-venue{font-size:.75rem;color:var(--color-ink-muted);margin-top:4px}
+.cur-time{font-family:var(--font-number);font-variant-numeric:tabular-nums;font-size:.875rem;font-weight:700;min-width:72px;text-align:right}
+.badge20{width:20px;height:20px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--font-number);font-size:.5rem;font-weight:700;color:#fff;flex:0 0 20px}
+
+/* ---------- 候補A ---------- */
+.a-day{margin-bottom:6px}
+.a-dayhead{display:flex;align-items:baseline;gap:12px;padding:16px 4px 8px;border-bottom:2px solid var(--color-ink)}
+.a-dayhead .dnum{font-family:var(--font-number);font-size:1.375rem;font-weight:700;line-height:1}
+.a-dayhead .dwd{font-size:.75rem;font-weight:700;color:var(--color-ink-muted)}
+.a-dayhead .dn{margin-left:auto;font-size:.6875rem;font-weight:700;color:var(--color-ink-muted);letter-spacing:.08em}
+.a-slot{display:grid;grid-template-columns:96px 1fr;border-bottom:1px solid var(--color-rule)}
+.a-slot:last-child{border-bottom:0}
+.a-time{padding:12px 12px 12px 4px;border-right:1px solid var(--color-rule)}
+.a-time .hh{font-family:var(--font-number);font-variant-numeric:tabular-nums;font-size:1.0625rem;font-weight:700;line-height:1.1;display:block}
+.a-time .zz{font-size:.625rem;font-weight:700;color:var(--color-ink-muted);letter-spacing:.06em}
+.a-cluster-note{font-size:.625rem;color:#a8a294;font-weight:700;letter-spacing:.04em;margin-top:6px}
+.a-rows{min-width:0}
+.a-row{display:grid;grid-template-columns:3px minmax(0,26rem) minmax(0,1fr) 116px;align-items:center;gap:16px;
+  height:46px;border-bottom:1px solid #f4f2ee;transition:background .12s}
+.a-row:last-child{border-bottom:0}
+.a-row:hover{background:#fbfaf7}
+.a-bar{width:3px;height:22px;border-radius:2px}
+.a-teams{display:flex;align-items:center;gap:8px;min-width:0;font-size:.875rem;font-weight:600}
+.a-teams .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.a-teams .v{color:#b3aca0;font-weight:500;font-size:.75rem;flex:0 0 auto}
+.a-venue{font-size:.75rem;color:var(--color-ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.a-act{display:flex;justify-content:flex-end;gap:6px;padding-right:4px}
+.pill{font-size:.625rem;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.pill-watch{color:var(--color-accent);border:1px solid rgb(201 58 64/.28);background:rgb(201 58 64/.08)}
+.pill-prev{color:#475569;background:#eef1f5}
+
+/* ---------- 候補B ---------- */
+.b-board{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start}
+.b-col{background:#fff;border-radius:var(--radius-md);box-shadow:var(--shadow-soft);overflow:hidden}
+.b-colhead{padding:14px 16px 12px;border-bottom:1px solid var(--color-rule);display:flex;align-items:baseline;gap:8px}
+.b-colhead .dnum{font-family:var(--font-number);font-size:1.5rem;font-weight:700;line-height:1}
+.b-colhead .dwd{font-size:.75rem;font-weight:700;color:var(--color-ink-muted)}
+.b-colhead .cnt{margin-left:auto;font-size:.625rem;font-weight:700;color:#fff;background:var(--color-ink);border-radius:999px;padding:2px 8px}
+.b-slot{padding:10px 12px 12px;border-bottom:1px solid #f6f4f0}
+.b-slot:last-child{border-bottom:0}
+.b-slottime{font-family:var(--font-number);font-variant-numeric:tabular-nums;font-size:.75rem;font-weight:700;color:var(--color-ink-muted);letter-spacing:.04em;margin-bottom:8px;display:block}
+.b-match{display:grid;grid-template-columns:3px 1fr;gap:8px;align-items:center;padding:6px 0;border-top:1px solid #faf9f6}
+.b-match:first-of-type{border-top:0}
+.b-match .bar{width:3px;height:26px;border-radius:2px}
+.b-names{min-width:0;font-size:.8125rem;font-weight:600;line-height:1.45}
+.b-names .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.b-names .n.away{color:#4b5361;font-weight:500}
+.b-mark{display:inline-block;width:6px;height:6px;border-radius:999px;background:var(--color-accent);margin-left:4px;vertical-align:middle}
+.b-legend{display:flex;gap:18px;font-size:.75rem;color:var(--color-ink-muted);margin-top:16px;flex-wrap:wrap}
+.b-legend span{display:inline-flex;align-items:center;gap:6px}
+.b-legend i{width:10px;height:3px;border-radius:2px;display:inline-block}
+
+/* ---------- 候補B2: 週ボード・文字を削った版 ---------- */
+.b2-note{font-size:.75rem;color:var(--color-ink-muted);margin-bottom:10px}
+.b2-board{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start}
+.b2-col{background:#fff;border-radius:var(--radius-md);box-shadow:var(--shadow-soft);overflow:hidden}
+.b2-colhead{padding:16px 18px 14px;display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--color-rule)}
+.b2-colhead .dnum{font-family:var(--font-number);font-size:1.75rem;font-weight:700;line-height:1}
+.b2-colhead .dwd{font-size:.8125rem;font-weight:700;color:var(--color-ink-muted)}
+.b2-slot{padding:12px 18px 14px}
+.b2-slot + .b2-slot{border-top:1px solid #f6f4f0}
+.b2-slottime{font-family:var(--font-number);font-variant-numeric:tabular-nums;font-size:.8125rem;font-weight:700;color:var(--color-ink);letter-spacing:.02em;display:block;margin-bottom:10px}
+.b2-match{display:grid;grid-template-columns:3px 1fr;gap:10px;align-items:center;padding:9px 0}
+.b2-match + .b2-match{border-top:1px solid #faf9f6}
+.b2-match .bar{width:3px;height:30px;border-radius:2px}
+.b2-names{min-width:0;line-height:1.5}
+.b2-names .h{display:block;font-size:.8125rem;font-weight:700;color:var(--color-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b2-names .a{display:block;font-size:.75rem;font-weight:500;color:#8b8578;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b2-mark{display:inline-block;width:5px;height:5px;border-radius:999px;background:var(--color-accent);margin-left:5px;vertical-align:middle}
+.b2-legend{display:flex;gap:16px;font-size:.75rem;color:var(--color-ink-muted);margin-top:14px;flex-wrap:wrap}
+.b2-legend span{display:inline-flex;align-items:center;gap:6px}
+.b2-legend i{width:10px;height:3px;border-radius:2px;display:inline-block}
+@media(max-width:900px){.b2-board{grid-template-columns:1fr}}
+/* ---------- 候補B3: 略称を主・正式名を従 ---------- */
+.b3-board,.b4-board{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start}
+.b3-col,.b4-col{background:#fff;border-radius:var(--radius-md);box-shadow:var(--shadow-soft);overflow:hidden}
+.b3-colhead,.b4-colhead{padding:16px 18px 14px;display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--color-rule)}
+.b3-colhead .dnum,.b4-colhead .dnum{font-family:var(--font-number);font-size:1.75rem;font-weight:700;line-height:1}
+.b3-colhead .dwd,.b4-colhead .dwd{font-size:.8125rem;font-weight:700;color:var(--color-ink-muted)}
+.b3-slot,.b4-slot{padding:12px 18px 14px}
+.b3-slot + .b3-slot,.b4-slot + .b4-slot{border-top:1px solid #f6f4f0}
+.b3-slottime,.b4-slottime{font-family:var(--font-number);font-variant-numeric:tabular-nums;font-size:.8125rem;font-weight:700;color:var(--color-ink);display:block;margin-bottom:10px}
+.b3-match{display:grid;grid-template-columns:3px 1fr;gap:10px;align-items:center;padding:9px 0}
+.b3-match + .b3-match{border-top:1px solid #faf9f6}
+.b3-match .bar{width:3px;height:100%;min-height:38px;border-radius:2px;align-self:stretch}
+.b3-codes{font-family:var(--font-number);font-variant-numeric:tabular-nums;font-size:.9375rem;font-weight:700;letter-spacing:.04em;color:var(--color-ink);display:block;line-height:1.3}
+.b3-codes .sep{color:#c4bdb0;font-weight:500;margin:0 4px}
+.b3-full{display:block;font-size:.6875rem;font-weight:500;color:#8b8578;line-height:1.45}
+.b3-full .vs{color:#c4bdb0;margin:0 .35em}
+.b3-dupe{outline:2px solid var(--color-accent);outline-offset:2px;border-radius:4px}
+
+/* ---------- 候補B4: バッジを固定アンカーに ---------- */
+.b4-match{display:grid;grid-template-columns:3px 1fr;gap:10px;align-items:center;padding:9px 0}
+.b4-match + .b4-match{border-top:1px solid #faf9f6}
+.b4-match .bar{width:3px;height:38px;border-radius:2px}
+.b4-side{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:center;min-width:0}
+.b4-side + .b4-side{margin-top:4px}
+.b4-badge{width:22px;height:22px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--font-number);font-size:.5rem;font-weight:700;color:#fff}
+.b4-nm{font-size:.8125rem;font-weight:700;color:var(--color-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b4-nm.away{font-weight:500;color:#6b6559}
+@media(max-width:900px){.b3-board,.b4-board{grid-template-columns:1fr}}
+/* ---------- 1日開催の週の扱い ---------- */
+.od-case{margin-bottom:28px}
+.od-lbl{font-size:.75rem;font-weight:700;color:var(--color-ink-muted);margin-bottom:8px;letter-spacing:.04em}
+.od-lbl b{color:var(--color-ink)}
+.od-t1{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;align-items:start}
+.od-t2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,288px));gap:16px;align-items:start;justify-content:start}
+.od-t3{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+.od-t4{display:flex;gap:16px;align-items:start}
+.od-t4 .b3-col{width:fit-content;max-width:100%}
+.od-t5 .od-inner{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0 20px}
+.od-t4 .od-inner{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,288px));gap:0 20px;justify-content:start}
+.od-t4 .b3-colhead,.od-t4 .b3-slot{min-width:288px}
+.od-t3 .b3-slot{padding-bottom:6px}
+.od-t3 .od-inner{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0 20px}
+.verdict{margin:56px 0 80px;background:#fff;border-left:4px solid var(--color-accent);border-radius:0 var(--radius-md) var(--radius-md) 0;padding:26px 30px;box-shadow:var(--shadow-soft)}
+.verdict h2{font-size:1.125rem;font-weight:900;margin-bottom:12px}
+.verdict p{font-size:.875rem;line-height:1.9;color:var(--color-ink-muted);max-width:72ch}
+.verdict p+p{margin-top:12px}
+.verdict b{color:var(--color-ink)}
+@media(max-width:900px){.b-board{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="doc-head"><div class="wrap">
+  <p class="eyebrow">Design direction · density</p>
+  <h1>同じ14試合を、6つの案で描く</h1>
+  <p class="lede">
+    データは <b>2026-10-26 週の実データ14試合</b>（新シーズンで最も試合が多い週）。本番 DB からそのまま取得しており、
+    件数も対戦カードも会場も加工していません。<b>10月31日の7試合はすべて 09:00 JST 開始</b>という実際の偏りも、そのまま出しています。<br>
+    幅は本番と同じ <code>max-width 1152px</code>、赤い破線が <b>1画面目の下端</b>（デスクトップ 759px から本番のヘッダ実測 380px を引いた残り）。
+    読者の <b>63% がデスクトップ</b>です。
+  </p>
+  <table class="metrics">
+    <tr><th>案</th><th>1行の高さ</th><th>行内の空白率（14行平均）</th><th>一覧全体の高さ</th><th>1画面目に入る試合</th></tr>
+    <tr class="now"><td>現行 やわらかモダン</td><td id="m0h">–</td><td id="m0e">–</td><td id="m0t">–</td><td id="m0f">–</td></tr>
+    <tr><td>候補A 密なプロダクト表</td><td id="mah">–</td><td id="mae">–</td><td id="mat">–</td><td id="maf">–</td></tr>
+    <tr><td>候補B 週ボード</td><td id="mbh">–</td><td id="mbe">–</td><td id="mbt">–</td><td id="mbf">–</td></tr>
+    <tr><td>候補B2 週ボード・文字削減</td><td id="m2h">–</td><td id="m2e">–</td><td id="m2t">–</td><td id="m2f">–</td></tr>
+    <tr><td>候補B3 略称を主・正式名を従</td><td id="m3h">–</td><td id="m3e">–</td><td id="m3t">–</td><td id="m3f">–</td></tr>
+    <tr><td>候補B4 バッジを固定アンカー</td><td id="m4h">–</td><td id="m4e">–</td><td id="m4t">–</td><td id="m4f">–</td></tr>
+  </table>
+  <table class="metrics" style="margin-top:18px">
+    <tr><th>文字数の内訳（14試合ぶん）</th><th>候補B</th><th>候補B2</th></tr>
+    <tr><td>チーム名（削れない中身）</td><td>186</td><td>186</td></tr>
+    <tr><td>列ヘッダ・時間帯ヘッダ（装飾）</td><td id="c-b-chrome">–</td><td id="c-b2-chrome">–</td></tr>
+    <tr><td>凡例</td><td id="c-b-leg">–</td><td id="c-b2-leg">–</td></tr>
+    <tr><td>会場（当初 spec で足す予定だった）</td><td>+258</td><td><b>出さない</b></td></tr>
+    <tr><td><b>合計</b></td><td id="c-b-tot">–</td><td id="c-b2-tot">–</td></tr>
+    <tr><td>候補B3（略称＋正式名）の合計</td><td colspan="2" id="c-b3-tot">–</td></tr>
+    <tr><td>候補B4（バッジ＋名前）の合計</td><td colspan="2" id="c-b4-tot">–</td></tr>
+  </table>
+  <p class="lede" style="margin-top:14px;font-size:.8125rem">
+    この表はページを開いたときに <b>実測して埋めています</b>。手で書いた見込み値ではありません。
+  </p>
+</div></div>
+
+<section class="case"><div class="wrap">
+  <div class="case-head"><h2>現行 — やわらかモダン</h2><span class="case-tag">本番と同じ</span></div>
+  <p class="case-note">
+    本番 <code>/calendar</code> の再現。日付は左の濃色チップ、試合は幅いっぱいの白カード。
+    <b>チーム名の終端から時刻までの空白が本番実測で 542〜696px</b>（カード幅1008pxの54〜69%）。デスクトップでは行の半分以上が空きます。
+    大会名が全行に出るため、同じ大会が7行続く日は同じ文字列が7回繰り返されます。
+  </p>
+  <div class="viewport" data-label="現行"><div style="padding:0 20px" id="cur"></div></div>
+</div></section>
+
+<section class="case"><div class="wrap">
+  <div class="case-head"><h2>候補A — 密なプロダクト表</h2><span class="case-tag">density: compact</span></div>
+  <p class="case-note">
+    <b>ブランドは変えません。</b>配色（<code>#c93a40</code>）も書体（Zen Maru Gothic + Outfit）も角丸トークンも現行のまま、
+    <b>密度と桁揃えだけ</b>を変えます。時刻を左の固定列に置いて<b>同時刻の試合をひとつの時間帯にまとめ</b>、
+    大会は色の細バーで示します。10月31日の「09:00 JST」の7回の繰り返しが1回になり、
+    大会名を毎行書かないぶんチーム名が行の主役になります。
+  </p>
+  <div class="viewport" data-label="候補A"><div style="padding:0 20px" id="dense"></div></div>
+</div></section>
+
+<section class="case"><div class="wrap">
+  <div class="case-head"><h2>候補B — 週ボード</h2><span class="case-tag">calendar as calendar</span></div>
+  <p class="case-note">
+    情報の並べ方そのものを変える案。<b>「今週の試合カレンダー」を実際にカレンダーとして</b>、開催日を横に並べます。
+    やわらかモダンの角丸・影・白カードはそのまま使うので、ブランドの見え方は現行に最も近いまま。
+    週全体が一望でき、<b>「今週末どれを見るか決める」</b>という実際の用途に直結します。
+    弱点も正直に出しています——<b>1日に7試合ある日は列が伸び、列の高さが揃いません。</b>
+  </p>
+  <div class="viewport" data-label="候補B"><div style="padding:0 20px" id="board"></div></div>
+  <div class="b-legend">
+    <span><i style="background:var(--c-urc)"></i>ユナイテッド・ラグビー・チャンピオンシップ</span>
+    <span><i style="background:var(--c-prem)"></i>プレミアシップ</span>
+    <span><i style="background:var(--color-accent);border-radius:999px;width:6px;height:6px"></i>視聴情報あり</span>
+  </div>
+</div></section>
+
+<section class="case"><div class="wrap">
+  <div class="case-head"><h2>候補B2 — 週ボード・文字を削った版</h2><span class="case-tag">B への修正</span></div>
+  <p class="case-note">
+    B に対する Owner の指摘「<b>文字が多くて見るのがしんどい</b>」（2026-09-01）への修正案。中身（チーム名186文字）は削れないので、
+    <b>それ以外を削りました</b>。<br>
+    ① <b>会場を出さない</b>（当初の spec は会場を足す予定で、それだけで文字量が +79% になるところでした）／
+    ② 「JST」を盤面ヘッダに1回だけ／③ 試合数バッジと「月」の繰り返しを削除／
+    ④ 「◯試合同時」の注記を削除／⑤ 凡例を短縮／
+    ⑥ <b>ホームを主・アウェイを従</b>にして、1試合を1かたまりとして読めるようにする／⑦ 余白を広げる
+  </p>
+  <p class="b2-note">時刻はすべて日本時間（JST）</p>
+  <div class="viewport" data-label="候補B2"><div style="padding:0 20px" id="board2"></div></div>
+  <div class="b2-legend">
+    <span><i style="background:var(--c-urc)"></i>URC</span>
+    <span><i style="background:var(--c-prem)"></i>プレミアシップ</span>
+    <span><i style="background:var(--color-accent);border-radius:999px;width:6px;height:6px"></i>視聴情報あり</span>
+  </div>
+</div></section>
+
+<section class="case"><div class="wrap">
+  <div class="case-head"><h2>候補B3 — 略称を主・正式名を従</h2><span class="case-tag">採用</span></div>
+  <p class="case-note">
+    「チーム名を JPN のようにして、正式名を下に小さく」という案。<b>Owner が採用（2026-09-01）。</b>
+    固定幅のラテン文字が左端に揃うので視線の足がかりができ、実測でも<b>一番短く、一番多く1画面に入ります</b>。<br>
+    当初この案には実データ由来の欠陥が2つありましたが、<b>両方とも下記のとおり潰した状態で描画しています</b>。
+  </p>
+  <p class="b2-note">時刻はすべて日本時間（JST）</p>
+  <div class="viewport" data-label="候補B3"><div style="padding:0 20px" id="board3"></div></div>
+  <p class="case-note" style="margin-top:16px">
+    <b>潰した欠陥①: 略称の重複。</b> 当初この週には <code>LEI</code> が2回出て、10/30 が<b>レンスター</b>、10/31 が<b>レスター・タイガース</b>を指していました。
+    本番 <code>teams</code> 91件のうち重複は <code>LEI</code>（レンスター／レスター・タイガース）と <code>CHI</code>（チリ／チーフス）の2組、略称なしが2件（ホンコンチャイナ・ジンバブエ）。
+    <b>マイグレーションで直す前提</b>で、ここではレスターを <code>TIG</code>（Tigers）として描いています。<br>
+    <b>潰した欠陥②: 正式名の切れ。</b> 当初はスラッシュ区切りの1行で、
+    「ブリストル・ベアーズ / レスター・タイガース」（23文字）と「サラセンズ / ニューカッスル・ファルコンズ」（22文字）の2件が省略記号になっていました。
+    <b>略称を知らない人ほど長い名前で困るのに、そこで保険が切れる</b>ため、正式名を2行に分けました。<br>
+    <b>正式名は「必要なときだけ折り返す」形にしています。</b>14件中12件は1行のまま、長い2件だけが2行になります。
+    2行固定にすると 648px・1画面目10/14 まで後退しますが、この形なら <b>575px・12/14</b> で収まります。<br>
+    <b>残る前提:</b> 代表（JPN・NZL）はともかく、<b>URC・プレミアシップのクラブ略称は読者の前提知識になります。</b>ここは実データでは検証できません。
+  </p>
+</div></section>
+
+<section class="case"><div class="wrap">
+  <div class="case-head"><h2>候補B4 — バッジを固定アンカーに</h2><span class="case-tag">対案</span></div>
+  <p class="case-note">
+    B3 の狙い（<b>左端に固定幅の足がかりを作る</b>）はそのままに、略称を<b>文字として増やさない</b>案。
+    略称は<b>既存の <code>TeamBadge</code>（大会カラーの丸に3文字）</b>の中に入れます。これは現行の試合カードで既に使われている部品です。<br>
+    ・左端が22pxで揃うので視線の足がかりができる ・略称が重複しても<b>色と名前で区別できる</b>
+    ・<b>文字数は B2 と同じ 186 のまま</b>（バッジ内の文字は読むものではなく形として効く）
+  </p>
+  <p class="b2-note">時刻はすべて日本時間（JST）</p>
+  <div class="viewport" data-label="候補B4"><div style="padding:0 20px" id="board4"></div></div>
+</div></section>
+
+<section class="case"><div class="wrap">
+  <div class="case-head"><h2>1日開催の週をどう出すか</h2><span class="case-tag">要判断</span></div>
+  <p class="case-note">
+    <b>86週のうち14週（16%）が1日開催</b>で、そのうち<b>6週は1試合・4週は2試合</b>。稀な例外ではありません。
+    週ボードは「開催日を横に並べる」設計なので、<b>日が1つだと並べるものがなく、幅1152pxに対して列が1本しか立ちません。</b><br>
+    実データ2週で3つの処理を比べます。データは加工していません。
+  </p>
+  <div class="viewport" data-label="1日開催"><div style="padding:0 20px" id="oneday"></div></div>
+</div></section>
+
+<div class="wrap"><div class="verdict">
+  <h2>この比較で決めたいこと</h2>
+  <p>
+    <b>これはブランド変更の比較ではありません。</b>3案とも同じ色・同じ書体・同じ角丸トークンを使っています。
+    違うのは <b>spacing と density と layout</b> ——
+    まさに現行の <code>design.md</code> が <b>1行も定義していない3つの軸</b>です。
+  </p>
+  <p>
+    どれを選んでも <code>design.md</code> には
+    <code>spacing.scale</code> / <code>spacing.density</code>（mobile と desktop で別値）/
+    <code>layout.breakpoints</code> / <code>layout.listRow</code> の節を新設する必要があります。
+    <b>refero から別スタイルを持ってきても、この空欄は埋まりません。</b>
+  </p>
+  <p>
+    「現行のまま」も正当な選択肢です。その場合に受け入れることになるのは、
+    <b>14試合週での長いスクロール</b>と、<b>1画面目に試合が1件も入らないデスクトップ表示</b>です。
+  </p>
+  <p>
+    <b>2026-09-01 の決定（最終）: 候補B3 を実装対象とする。</b>
+    B2 の文字削減を土台にしたうえで、チーム名を<b>略称（3文字）を主・正式名を小さく従</b>にする。
+    実測: 575px / 1画面目 12&nbsp;/&nbsp;14 / 正式名の切れ0件 / 略称の重複0件。
+    前提として <b>本番の <code>short_code</code> を2件直すマイグレーションが必要</b>（レスター・タイガース→<code>TIG</code>、チーフス→<code>CHF</code>、
+    未設定のホンコンチャイナ→<code>HKG</code>・ジンバブエ→<code>ZIM</code>）。
+  </p>
+  <p>
+    <s>2026-09-01 の中間案: 候補B2。</s> B の「文字が多くて見るのがしんどい」への対応として作成し、B3 の土台になった。会場は出さない。文字数は B の573文字（会場込み）から
+    <b>264文字へ54%削減</b>し、高さは 500px → 559px（余白を広げたぶん微増）。
+    チーム名の省略（ellipsis）は<b>0件</b>で、全91チーム最長15文字まで収まることを実測で確認済み。
+  </p>
+</div></div>
+
+<script id="data" type="application/json">[{"t":"2026-10-26T00:00:00.000Z","h":"ハーレクインズ","hc":"HAR","a":"サラセンズ","ac":"SAR","v":"Twickenham Stoop","c":"プレミアシップ 2026-27","f":"premiership","b":false,"p":false,"r":false},{"t":"2026-10-30T09:00:00.000Z","h":"グラスゴー・ウォリアーズ","hc":"GLA","a":"ライオンズ","ac":"LIO","v":"Scotstoun Stadium","c":"ユナイテッド・ラグビー・チャンピオンシップ 2026-27","f":"urc","b":false,"p":false,"r":false},{"t":"2026-10-30T09:00:00.000Z","h":"コノート","hc":"CON","a":"レンスター","ac":"LEI","v":"The Sportsground, Galway","c":"ユナイテッド・ラグビー・チャンピオンシップ 2026-27","f":"urc","b":false,"p":false,"r":false},{"t":"2026-10-31T04:45:00.000Z","h":"ブリストル・ベアーズ","hc":"BRI","a":"レスター・タイガース","ac":"LEI","v":"Ashton Gate","c":"プレミアシップ 2026-27","f":"premiership","b":false,"p":false,"r":false},{"t":"2026-10-31T09:00:00.000Z","h":"オスプレイズ","hc":"OSP","a":"カーディフ","ac":"CAR","v":"St Helen's, Swansea","c":"ユナイテッド・ラグビー・チャンピオンシップ 2026-27","f":"urc","b":false,"p":false,"r":false},{"t":"2026-10-31T09:00:00.000Z","h":"ストーマーズ","hc":"STO","a":"アルスター","ac":"ULS","v":"Cape Town Stadium","c":"ユナイテッド・ラグビー・チャンピオンシップ 2026-27","f":"urc","b":false,"p":false,"r":false},{"t":"2026-10-31T09:00:00.000Z","h":"ドラゴンズ","hc":"DRA","a":"ゼブレ・パルマ","ac":"ZEB","v":"Rodney Parade, Newport","c":"ユナイテッド・ラグビー・チャンピオンシップ 2026-27","f":"urc","b":false,"p":false,"r":false},{"t":"2026-10-31T09:00:00.000Z","h":"ブルズ","hc":"BUL","a":"スカーレッツ","ac":"SCA","v":"Loftus Versfeld, Pretoria","c":"ユナイテッド・ラグビー・チャンピオンシップ 2026-27","f":"urc","b":false,"p":false,"r":false},{"t":"2026-10-31T09:00:00.000Z","h":"ベネトン","hc":"BEN","a":"エディンバラ","ac":"EDI","v":"Stadio Monigo, Treviso","c":"ユナイテッド・ラグビー・チャンピオンシップ 2026-27","f":"urc","b":false,"p":false,"r":false},{"t":"2026-10-31T09:00:00.000Z","h":"マンスター","hc":"MUN","a":"シャークス","ac":"SHA","v":"Thomond Park, Limerick","c":"ユナイテッド・ラグビー・チャンピオンシップ 2026-27","f":"urc","b":false,"p":false,"r":false},{"t":"2026-11-01T00:00:00.000Z","h":"エクセター・チーフス","hc":"EXE","a":"ハーレクインズ","ac":"HAR","v":"Sandy Park","c":"プレミアシップ 2026-27","f":"premiership","b":false,"p":false,"r":false},{"t":"2026-11-01T00:00:00.000Z","h":"サラセンズ","hc":"SAR","a":"ニューカッスル・ファルコンズ","ac":"NEW","v":"StoneX Stadium","c":"プレミアシップ 2026-27","f":"premiership","b":false,"p":false,"r":false},{"t":"2026-11-01T00:05:00.000Z","h":"バース","hc":"BAT","a":"セール・シャークス","ac":"SAL","v":"The Recreation Ground","c":"プレミアシップ 2026-27","f":"premiership","b":false,"p":false,"r":false},{"t":"2026-11-01T02:30:00.000Z","h":"ノーザンプトン・セインツ","hc":"NOR","a":"グロスター","ac":"GLO","v":"Franklin's Gardens","c":"プレミアシップ 2026-27","f":"premiership","b":false,"p":false,"r":false}]</script>
+<script>
+const M = JSON.parse(document.getElementById('data').textContent);
+const COMP = {urc:'var(--c-urc)', premiership:'var(--c-prem)'};
+const WD = ['日','月','火','水','木','金','土'];
+/* データは JST の壁時計を UTC 表記で保存してあるので、getUTC* で読む */
+const dayKey = t => t.slice(0,10);
+const hhmm   = t => t.slice(11,16);
+const wdOf   = k => WD[new Date(k+'T00:00:00Z').getUTCDay()];
+const groupBy = (arr, fn) => arr.reduce((m,x)=>((m[fn(x)] = m[fn(x)]||[]).push(x), m), {});
+const esc = s => String(s==null?'':s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const days = groupBy(M, m => dayKey(m.t));
+const dayList = Object.keys(days).sort();
+
+/* ---- 現行 ---- */
+document.getElementById('cur').innerHTML = dayList.map(function(k){
+  const ms = days[k];
+  return '<div class="cur-day">'
+    + '<div class="cur-chip"><span class="wd">'+wdOf(k)+'</span><span class="d">'+(+k.slice(8,10))+'</span>'
+    + '<span class="m">'+(+k.slice(5,7))+'月</span><span class="n">'+ms.length+'試合</span></div>'
+    + '<div class="cur-list">' + ms.map(function(m){
+        return '<div class="cur-row">'
+          + '<div class="cur-comp">'+esc(m.c)+' →</div>'
+          + '<div class="cur-main"><div style="min-width:0;flex:1">'
+          + '<div class="cur-teams">'
+          +   '<span class="badge20" style="background:'+COMP[m.f]+'">'+esc(m.hc)+'</span><span>'+esc(m.h)+'</span>'
+          +   '<span class="cur-vs">対</span>'
+          +   '<span class="badge20" style="background:'+COMP[m.f]+'">'+esc(m.ac)+'</span><span>'+esc(m.a)+'</span>'
+          + '</div><div class="cur-venue">'+esc(m.v)+'</div></div>'
+          + '<div class="cur-time">'+hhmm(m.t)+' JST</div></div></div>';
+      }).join('')
+    + '</div></div>';
+}).join('');
+
+/* ---- 候補A ---- */
+document.getElementById('dense').innerHTML = dayList.map(function(k){
+  const slots = groupBy(days[k], function(m){ return hhmm(m.t); });
+  return '<div class="a-day">'
+    + '<div class="a-dayhead"><span class="dnum">'+(+k.slice(5,7))+'/'+(+k.slice(8,10))+'</span>'
+    + '<span class="dwd">'+wdOf(k)+'曜</span><span class="dn">'+days[k].length+'試合</span></div>'
+    + Object.keys(slots).sort().map(function(hm){
+        return '<div class="a-slot"><div class="a-time"><span class="hh">'+hm+'</span><span class="zz">JST</span>'
+          + (slots[hm].length>1 ? '<div class="a-cluster-note">'+slots[hm].length+'試合同時</div>' : '')
+          + '</div><div class="a-rows">'
+          + slots[hm].map(function(m){
+              return '<div class="a-row">'
+                + '<span class="a-bar" style="background:'+COMP[m.f]+'"></span>'
+                + '<span class="a-teams"><span class="nm">'+esc(m.h)+'</span><span class="v">対</span><span class="nm">'+esc(m.a)+'</span></span>'
+                + '<span class="a-venue">'+esc(m.v)+'</span>'
+                + '<span class="a-act">'+(m.b?'<span class="pill pill-watch">視聴</span>':'')+(m.p?'<span class="pill pill-prev">プレビュー</span>':'')+'</span>'
+                + '</div>';
+            }).join('')
+          + '</div></div>';
+      }).join('')
+    + '</div>';
+}).join('');
+
+/* ---- 候補B ---- */
+document.getElementById('board').innerHTML = '<div class="b-board">' + dayList.map(function(k){
+  const slots = groupBy(days[k], function(m){ return hhmm(m.t); });
+  return '<div class="b-col">'
+    + '<div class="b-colhead"><span class="dnum">'+(+k.slice(8,10))+'</span>'
+    + '<span class="dwd">'+(+k.slice(5,7))+'月 '+wdOf(k)+'</span><span class="cnt">'+days[k].length+'</span></div>'
+    + Object.keys(slots).sort().map(function(hm){
+        return '<div class="b-slot"><span class="b-slottime">'+hm+' JST'
+          + (slots[hm].length>1 ? ' · '+slots[hm].length+'試合' : '') + '</span>'
+          + slots[hm].map(function(m){
+              return '<div class="b-match"><span class="bar" style="background:'+COMP[m.f]+'"></span>'
+                + '<span class="b-names"><span class="n">'+esc(m.h)+(m.b?'<i class="b-mark"></i>':'')+'</span>'
+                + '<span class="n away">'+esc(m.a)+'</span></span></div>';
+            }).join('')
+          + '</div>';
+      }).join('')
+    + '</div>';
+}).join('') + '</div>';
+
+/* ---- 候補B2: 文字を削った版 ---- */
+document.getElementById('board2').innerHTML = '<div class="b2-board">' + dayList.map(function(k, di){
+  const slots = groupBy(days[k], function(m){ return hhmm(m.t); });
+  return '<div class="b2-col">'
+    + '<div class="b2-colhead"><span class="dnum">' + (+k.slice(8,10)) + '</span>'
+    + '<span class="dwd">' + (di === 0 ? (+k.slice(5,7)) + '月 ' : '') + wdOf(k) + '</span></div>'
+    + Object.keys(slots).sort().map(function(hm){
+        return '<div class="b2-slot"><span class="b2-slottime">' + hm + '</span>'
+          + slots[hm].map(function(m){
+              return '<div class="b2-match"><span class="bar" style="background:' + COMP[m.f] + '"></span>'
+                + '<span class="b2-names"><span class="h">' + esc(m.h) + (m.b ? '<i class="b2-mark"></i>' : '') + '</span>'
+                + '<span class="a">' + esc(m.a) + '</span></span></div>';
+            }).join('')
+          + '</div>';
+      }).join('')
+    + '</div>';
+}).join('') + '</div>';
+
+/* ---- 候補B3: 略称を主・正式名を従 ---- */
+/* 略称の重複解消（マイグレーションで本番データを直す前提） */
+var FIX = { LEI_LEICESTER: 'TIG' };
+(function(){ M.forEach(function(m){
+  if (m.a === 'レスター・タイガース') m.ac = 'TIG';
+  if (m.h === 'レスター・タイガース') m.hc = 'TIG';
+}); })();
+
+var dupCodes = (function(){
+  var m = {};
+  M.forEach(function(x){ (m[x.hc] = m[x.hc] || {})[x.h] = 1; (m[x.ac] = m[x.ac] || {})[x.a] = 1; });
+  return Object.keys(m).filter(function(c){ return Object.keys(m[c]).length > 1; });
+})();
+
+document.getElementById('board3').innerHTML = '<div class="b3-board">' + dayList.map(function(k, di){
+  const slots = groupBy(days[k], function(m){ return hhmm(m.t); });
+  return '<div class="b3-col">'
+    + '<div class="b3-colhead"><span class="dnum">' + (+k.slice(8,10)) + '</span>'
+    + '<span class="dwd">' + (di === 0 ? (+k.slice(5,7)) + '月 ' : '') + wdOf(k) + '</span></div>'
+    + Object.keys(slots).sort().map(function(hm){
+        return '<div class="b3-slot"><span class="b3-slottime">' + hm + '</span>'
+          + slots[hm].map(function(m){
+              var dupe = dupCodes.indexOf(m.hc) >= 0 || dupCodes.indexOf(m.ac) >= 0;
+              return '<div class="b3-match' + (dupe ? ' b3-dupe' : '') + '">'
+                + '<span class="bar" style="background:' + COMP[m.f] + '"></span>'
+                + '<span style="min-width:0">'
+                + '<span class="b3-codes">' + esc(FIX[m.hc]||m.hc) + '<span class="sep">–</span>' + esc(FIX[m.ac]||m.ac) + '</span>'
+                + '<span class="b3-full">' + esc(m.h) + '<span class="vs">\u5bfe</span>' + esc(m.a) + '</span>'
+                + '</span></div>';
+            }).join('')
+          + '</div>';
+      }).join('')
+    + '</div>';
+}).join('') + '</div>';
+
+/* ---- 候補B4: バッジを固定アンカーに ---- */
+document.getElementById('board4').innerHTML = '<div class="b4-board">' + dayList.map(function(k, di){
+  const slots = groupBy(days[k], function(m){ return hhmm(m.t); });
+  return '<div class="b4-col">'
+    + '<div class="b4-colhead"><span class="dnum">' + (+k.slice(8,10)) + '</span>'
+    + '<span class="dwd">' + (di === 0 ? (+k.slice(5,7)) + '月 ' : '') + wdOf(k) + '</span></div>'
+    + Object.keys(slots).sort().map(function(hm){
+        return '<div class="b4-slot"><span class="b4-slottime">' + hm + '</span>'
+          + slots[hm].map(function(m){
+              return '<div class="b4-match"><span class="bar" style="background:' + COMP[m.f] + '"></span>'
+                + '<span style="min-width:0">'
+                + '<span class="b4-side"><span class="b4-badge" style="background:' + COMP[m.f] + '">' + esc(m.hc) + '</span>'
+                +   '<span class="b4-nm">' + esc(m.h) + '</span></span>'
+                + '<span class="b4-side"><span class="b4-badge" style="background:' + COMP[m.f] + ';opacity:.55">' + esc(m.ac) + '</span>'
+                +   '<span class="b4-nm away">' + esc(m.a) + '</span></span>'
+                + '</span></div>';
+            }).join('')
+          + '</div>';
+      }).join('')
+    + '</div>';
+}).join('') + '</div>';
+
+/* ---- 1日開催の週: 3つの処理 ---- */
+var OD = {"2026-12-07":[{"t":"2026-12-07T00:00:00.000Z","h":"セール・シャークス","hc":"SAL","a":"エクセター・チーフス","ac":"EXE","f":"premiership","b":false,"p":false,"r":false}],"2027-05-24":[{"t":"2027-05-28T08:00:00.000Z","h":"ブリストル・ベアーズ","hc":"BRI","a":"バース","ac":"BAT","f":"premiership","b":false,"p":false,"r":false},{"t":"2027-05-28T08:00:00.000Z","h":"エクセター・チーフス","hc":"EXE","a":"レスター・タイガース","ac":"LEI","f":"premiership","b":false,"p":false,"r":false},{"t":"2027-05-28T08:00:00.000Z","h":"ハーレクインズ","hc":"HAR","a":"セール・シャークス","ac":"SAL","f":"premiership","b":false,"p":false,"r":false},{"t":"2027-05-28T08:00:00.000Z","h":"サラセンズ","hc":"SAR","a":"グロスター","ac":"GLO","f":"premiership","b":false,"p":false,"r":false},{"t":"2027-05-28T08:00:00.000Z","h":"ニューカッスル・ファルコンズ","hc":"NEW","a":"ノーザンプトン・セインツ","ac":"NOR","f":"premiership","b":false,"p":false,"r":false}]};
+function odCol(k, ms, inner){
+  var slots = groupBy(ms, function(m){ return hhmm(m.t); });
+  var cells = function(list){ return list.map(function(m){
+    return '<div class="b3-match"><span class="bar" style="background:' + (COMP[m.f] || '#7b8794') + '"></span>'
+      + '<span style="min-width:0">'
+      + '<span class="b3-codes">' + esc(m.hc) + '<span class="sep">–</span>' + esc(m.ac) + '</span>'
+      + '<span class="b3-full">' + esc(m.h) + '<span class="vs">\u5bfe</span>' + esc(m.a) + '</span>'
+      + '</span></div>';
+  }).join(''); };
+  return '<div class="b3-col">'
+    + '<div class="b3-colhead"><span class="dnum">' + (+k.slice(8,10)) + '</span>'
+    + '<span class="dwd">' + (+k.slice(5,7)) + '月 ' + wdOf(k) + '</span></div>'
+    + Object.keys(slots).sort().map(function(hm){
+        return '<div class="b3-slot"><span class="b3-slottime">' + hm + '</span>'
+          + (inner ? '<div class="od-inner">' + cells(slots[hm]) + '</div>' : cells(slots[hm]))
+          + '</div>';
+      }).join('')
+    + '</div>';
+}
+document.getElementById('oneday').innerHTML = Object.keys(OD).map(function(wk){
+  var ms = OD[wk];
+  var day = ms[0].t.slice(0,10);
+  var label = ms.length + '\u8a66\u5408\u30fb1\u65e5\u958b\u50ac\uff08' + day + '\uff09';
+  return '<div class="od-case"><p class="od-lbl">\u51e6\u7406A\uff1a\u5217\u3092\u5168\u5e45\u306b\u4f38\u3070\u3059 \u2014 <b>' + label + '</b></p>'
+    + '<div class="od-t1">' + odCol(day, ms, false) + '</div>'
+    + '<p class="od-lbl" style="margin-top:14px">\u51e6\u7406B\uff1a\u5217\u5e45\u3092\u7dad\u6301\u3057\u3066\u5de6\u5bc4\u305b</p>'
+    + '<div class="od-t2">' + odCol(day, ms, false) + '</div>'
+    + '<p class="od-lbl" style="margin-top:14px">\u51e6\u7406C\uff1a\u5168\u5e45\u306e\u65e5\u30ab\u30fc\u30c9\u306e\u4e2d\u3067\u8a66\u5408\u3092\u6a2a\u306b\u6d41\u3059</p>'
+    + '<div class="od-t3">' + odCol(day, ms, true) + '</div>'
+    + '<p class="od-lbl" style="margin-top:14px"><b>\u51e6\u7406D\uff1a\u4e2d\u8eab\u306e\u91cf\u3067\u5e45\u304c\u6c7a\u307e\u308b</b>\uff08\u4e0a\u9650288px\u306e\u5185\u5074\u30b0\u30ea\u30c3\u30c9\uff0bfit-content\uff09</p>'
+    + '<div class="od-t4">' + odCol(day, ms, true) + '</div>'
+    + '<p class="od-lbl" style="margin-top:14px"><b>\u51e6\u7406E\uff1a\u8a66\u5408\u6570\u304b\u3089\u5e45\u3092\u8a08\u7b97</b>\uff08max-width: min(100%, N\u00d7288px + (N-1)\u00d720px)\uff09</p>'
+    + '<div class="od-t5" style="max-width:min(100%, calc(' + ms.length + ' * 288px + ' + (ms.length - 1) + ' * 20px))">'
+    +   odCol(day, ms, true) + '</div></div>';
+}).join('');
+
+/* ---- 実測して metrics を埋める ---- */
+window.addEventListener('load', function(){
+  const FOLD = 759, HEADROOM = 380;      // 本番 /calendar は最初の試合行までに 724px 使う
+  const AVAIL = FOLD - HEADROOM;
+  const put = function(id,v){ document.getElementById(id).textContent = v; };
+  const H = function(el){ return Math.round(el.getBoundingClientRect().height); };
+
+  const curRows = [].slice.call(document.querySelectorAll('#cur .cur-row'));
+  const curGaps = curRows.map(function(row){
+    var teams = row.querySelector('.cur-teams'), time = row.querySelector('.cur-time');
+    var names = [].slice.call(teams.children).filter(function(s){ return !s.classList.contains('badge20'); });
+    var textRight = Math.max.apply(null, names.map(function(n){ return n.getBoundingClientRect().right; }));
+    return Math.max(0, time.getBoundingClientRect().left - textRight) / row.getBoundingClientRect().width;
+  });
+  var curAvg = curGaps.reduce(function(x,y){return x+y;},0)/curGaps.length;
+  put('m0h', H(curRows[1])+'px');
+  put('m0e', Math.round(curAvg*100)+'%');
+  put('m0t', H(document.getElementById('cur'))+'px');
+
+  const aRows = [].slice.call(document.querySelectorAll('#dense .a-row'));
+  const aGaps = aRows.map(function(row){
+    var nm = [].slice.call(row.querySelectorAll('.a-teams .nm, .a-teams .v'));
+    var ven = row.querySelector('.a-venue');
+    if(!nm.length || !ven) return 0;
+    var textRight = Math.max.apply(null, nm.map(function(n){ return n.getBoundingClientRect().right; }));
+    return Math.max(0, ven.getBoundingClientRect().left - textRight) / row.getBoundingClientRect().width;
+  });
+  var aAvg = aGaps.reduce(function(x,y){return x+y;},0)/aGaps.length;
+  put('mah', H(aRows[0])+'px');
+  put('mae', Math.round(aAvg*100)+'%');
+  put('mat', H(document.getElementById('dense'))+'px');
+
+  const bM = [].slice.call(document.querySelectorAll('#board .b-match'));
+  put('mbh', H(bM[0])+'px');
+  put('mbe', '0%（列組みのため行内空白なし）');
+  put('mbt', H(document.getElementById('board'))+'px');
+
+  const b2M = [].slice.call(document.querySelectorAll('#board2 .b2-match'));
+  put('m2h', H(b2M[0])+'px');
+  put('m2e', '0%（列組みのため行内空白なし）');
+  put('m2t', H(document.getElementById('board2'))+'px');
+
+  [['3','board3','.b3-match'],['4','board4','.b4-match']].forEach(function(p){
+    var el = [].slice.call(document.querySelectorAll('#'+p[1]+' '+p[2]));
+    put('m'+p[0]+'h', H(el[0])+'px');
+    put('m'+p[0]+'e', '0%（列組みのため行内空白なし）');
+    put('m'+p[0]+'t', H(document.getElementById(p[1]))+'px');
+  });
+
+  // 文字数を実測する（DOM から数える。手計算しない）
+  var textLen = function(sel){
+    return [].slice.call(document.querySelectorAll(sel))
+      .reduce(function(n, el){ return n + el.textContent.replace(/\s+/g,'').length; }, 0);
+  };
+  var bChrome  = textLen('#board .b-colhead') + textLen('#board .b-slottime');
+  var b2Chrome = textLen('#board2 .b2-colhead') + textLen('#board2 .b2-slottime');
+  var bLeg  = textLen('.b-legend');
+  var b2Leg = textLen('.b2-legend') + 'time はすべて日本時間'.length;
+  var bNames  = textLen('#board .b-names');
+  var b2Names = textLen('#board2 .b2-names');
+  put('c-b-chrome', bChrome); put('c-b2-chrome', b2Chrome);
+  put('c-b-leg', bLeg);       put('c-b2-leg', b2Leg);
+  put('c-b-tot', bNames + bChrome + bLeg + 258);
+  put('c-b2-tot', b2Names + b2Chrome + b2Leg);
+  var b3Names = textLen('#board3 .b3-codes') + textLen('#board3 .b3-full');
+  var b4Names = textLen('#board4 .b4-nm');   // バッジ内の3文字は「読む文字」に数えない
+  put('c-b3-tot', b3Names + textLen('#board3 .b3-colhead') + textLen('#board3 .b3-slottime') + b2Leg
+      + '  （B2比 +' + Math.round((b3Names - b2Names)/b2Names*100) + '%）');
+  put('c-b4-tot', b4Names + textLen('#board4 .b4-colhead') + textLen('#board4 .b4-slottime') + b2Leg
+      + '  （B2と同じ）');
+
+  const countFit = function(sel){
+    const els = [].slice.call(document.querySelectorAll(sel));
+    if(!els.length) return '0 / 14';
+    const top = els[0].getBoundingClientRect().top;
+    return els.filter(function(e){ return e.getBoundingClientRect().bottom - top <= AVAIL; }).length + ' / 14';
+  };
+  put('m0f', countFit('#cur .cur-row'));
+  put('maf', countFit('#dense .a-row'));
+  put('mbf', countFit('#board .b-match'));
+  put('m2f', countFit('#board2 .b2-match'));
+  put('m3f', countFit('#board3 .b3-match'));
+  put('m4f', countFit('#board4 .b4-match'));
+
+  [['cur'],['dense'],['board'],['board2'],['board3'],['board4']].forEach(function(p){
+    const host = document.getElementById(p[0]);
+    const first = host.querySelector('.cur-row, .a-row, .b-match, .b2-match, .b3-match, .b4-match');
+    if(!first) return;
+    const line = document.createElement('div');
+    line.className = 'fold';
+    line.style.cssText = 'position:absolute;left:0;right:0;top:' + (first.getBoundingClientRect().top - host.parentElement.getBoundingClientRect().top + AVAIL) + 'px';
+    host.parentElement.appendChild(line);
+  });
+});
+</script>
+</body>
+</html>

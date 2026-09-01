@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>案B 構造で分ける — 大会ハブ3ページ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --color-ink:#1f2530; --color-ink-muted:#646a76;
+  --color-rule:#eceef2; --color-accent:#c93a40; --comp:#1A3A5C;
+  --radius-sm:1rem; --radius-md:1.375rem; --radius-lg:1.875rem;
+  --shadow-soft:0 12px 28px -20px rgb(28 38 64 / 45%);
+  --font-body:"Zen Maru Gothic",sans-serif; --font-num:"Outfit",sans-serif;
+  --space-page:clamp(1rem,.5rem + 2vw,2rem);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background-color:#f1efe9;
+  background-image:
+    radial-gradient(120% 60% at 20% 0%, rgb(201 58 58 / 5%), transparent 60%),
+    radial-gradient(120% 60% at 100% 40%, rgb(26 58 92 / 5%), transparent 55%),
+    linear-gradient(180deg,#f8f7f4 0%,#f1efe9 45%,#eceae3 100%);
+  color:var(--color-ink); font-family:var(--font-body); font-weight:500;
+  -webkit-font-smoothing:antialiased; padding:var(--space-page); line-height:1.7;
+}
+.wrap{max-width:64rem;margin:0 auto;display:flex;flex-direction:column;gap:3.5rem}
+.doc-head{border-bottom:2px solid var(--color-ink);padding-bottom:1rem}
+.doc-head h1{font-size:clamp(1.5rem,1.2rem + 1.5vw,2.25rem);font-weight:900;letter-spacing:-.02em}
+.doc-head p{color:var(--color-ink-muted);font-size:.9rem;margin-top:.5rem}
+.label{font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--color-ink-muted)}
+.panel{display:flex;flex-direction:column;gap:.75rem}
+.panel > .label span{color:var(--color-accent)}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;background:var(--color-ink);color:#fff;letter-spacing:.06em}
+.legend{font-size:.78rem;color:var(--color-ink-muted)}
+.note{font-size:.8rem;color:var(--color-ink-muted);background:#fff;border-left:3px solid var(--color-accent);
+      padding:.65rem .9rem;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+
+.s-banner{border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-soft);
+  background:linear-gradient(115deg,var(--comp) 0%,#2d5680 55%,#3b6b9e 100%);color:#fff;position:relative}
+.s-banner::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(80% 120% at 90% 10%,rgb(255 255 255/.14),transparent 55%);pointer-events:none}
+.s-inner{padding:1.6rem 1.75rem;display:flex;flex-wrap:wrap;gap:1.5rem;align-items:flex-end;justify-content:space-between;position:relative;z-index:1}
+.s-mark{display:flex;align-items:center;gap:.6rem;font-size:.72rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;opacity:.85}
+.s-mark img{width:22px;height:22px;filter:brightness(0) invert(1);opacity:.95}
+.s-title{font-size:clamp(1.6rem,1.1rem + 2.2vw,2.6rem);font-weight:900;letter-spacing:-.03em;line-height:1.15;margin-top:.4rem}
+.s-meta{font-size:.85rem;opacity:.82;margin-top:.5rem}
+.s-progress{display:flex;flex-direction:column;gap:.4rem;min-width:12rem}
+.s-progress .pk{font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
+.s-bar{height:6px;border-radius:999px;background:rgb(255 255 255/.25);overflow:hidden}
+.s-bar i{display:block;height:100%;width:50%;background:#fff;border-radius:999px}
+.s-lead{display:flex;gap:1.25rem;flex-wrap:wrap;padding:.9rem 1.75rem;background:rgb(0 0 0/.18);position:relative;z-index:1}
+.s-lead div{display:flex;flex-direction:column}
+.s-lead .k{font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75;font-weight:700}
+.s-lead .v{font-weight:700;font-size:.95rem}
+
+.t-head{display:flex;align-items:baseline;gap:.75rem;flex-wrap:wrap;padding:0 .25rem .6rem;
+        border-bottom:2px solid var(--comp)}
+.t-head .crumb{font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--comp)}
+.t-head h2{font-size:1.35rem;font-weight:900;letter-spacing:-.02em}
+.t-head .upd{margin-left:auto;font-size:.75rem;color:var(--color-ink-muted)}
+.t-card{background:#fff;border-radius:var(--radius-md);box-shadow:var(--shadow-soft);
+        outline:1px solid var(--color-rule);overflow:hidden;margin-top:.75rem}
+.t-pool{font-size:.7rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--color-ink-muted);
+        padding:.75rem 1.25rem .4rem}
+.t-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:34rem}
+th,td{padding:.6rem 1.25rem;text-align:right;font-size:.85rem;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;width:2.5rem}
+th:nth-child(2),td:nth-child(2){text-align:left}
+thead th{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--color-ink-muted);
+         font-weight:700;border-bottom:1px solid var(--color-rule)}
+tbody tr{border-bottom:1px solid var(--color-rule)}
+tbody tr:last-child{border-bottom:0}
+tbody tr.top{background:linear-gradient(90deg,rgb(26 58 92/.07),transparent 60%)}
+td.pos{font-family:var(--font-num);font-weight:700;color:var(--comp);font-size:1rem}
+td.team{font-weight:700}
+td.pts{font-family:var(--font-num);font-weight:700;font-size:1rem}
+td.n{font-family:var(--font-num);color:var(--color-ink-muted)}
+
+.r-block{display:flex;gap:1rem;align-items:stretch}
+.r-date{flex:0 0 5.5rem;border-radius:var(--radius-sm);background:var(--comp);color:#fff;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.9rem .5rem;text-align:center}
+.r-date .dow{font-size:.7rem;font-weight:700;letter-spacing:.12em;opacity:.8}
+.r-date .d{font-family:var(--font-num);font-size:2.4rem;font-weight:700;line-height:1;margin:.15rem 0}
+.r-date .mo{font-size:.7rem;font-weight:700;opacity:.8}
+.r-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:.5rem}
+.r-title{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap}
+.r-title .rd{font-size:1.5rem;font-weight:900;letter-spacing:-.02em}
+.r-title .cnt{font-size:.78rem;color:var(--color-ink-muted)}
+.r-rows{background:#fff;border-radius:var(--radius-md);outline:1px solid var(--color-rule);
+        box-shadow:var(--shadow-soft);overflow:hidden}
+.r-row{display:flex;align-items:center;gap:.75rem;padding:.65rem 1rem;border-bottom:1px solid var(--color-rule);
+       transition:background-color .15s}
+.r-row:last-child{border-bottom:0}
+.r-row:hover{background:#fbfbfa}
+.r-time{font-family:var(--font-num);font-size:.78rem;color:var(--color-ink-muted);flex:0 0 3rem}
+.r-teams{flex:1;min-width:0;font-weight:700;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-score{font-family:var(--font-num);font-weight:700;font-size:1rem;flex:0 0 auto}
+.r-badge{font-size:.68rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;
+         background:rgb(201 58 64/.1);color:var(--color-accent);flex:0 0 auto}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important}}
+@media (max-width:36rem){.r-block{flex-direction:column}.r-date{flex:none;flex-direction:row;gap:.5rem;justify-content:flex-start;padding:.5rem .9rem}.r-date .d{font-size:1.4rem;margin:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc-head">
+    <h1>案B「構造で分ける」</h1>
+    <p>ページごとに<strong>ヒーローの形そのものを変える</strong>。シーズン＝帯、順位表＝畳んだ見出し＋表、ラウンド＝日付スパイン。カレンダーで既に使っている視覚言語を再利用する。</p>
+  </header>
+
+  <section class="panel">
+    <p class="label"><span class="tag">案B</span> シーズンページ <span>大会カラーの帯</span></p>
+    <article class="s-banner">
+      <div class="s-inner">
+        <div>
+          <p class="s-mark"><img src="../../public/logos/nations-championship.svg" alt=""> Nations Championship</p>
+          <h2 class="s-title">ネーションズチャンピオンシップ 2026</h2>
+          <p class="s-meta">2026年7月4日 〜 11月28日 ・ 全36試合 ・ 2プール12チーム</p>
+        </div>
+        <div class="s-progress">
+          <span class="pk">進行 <span class="num">3</span> / <span class="num">6</span> 節</span>
+          <span class="s-bar"><i></i></span>
+        </div>
+      </div>
+      <div class="s-lead">
+        <div><span class="k">首位 / 北</span><span class="v">フランス <span class="num">12</span>pt</span></div>
+        <div><span class="k">首位 / 南</span><span class="v">南アフリカ <span class="num">15</span>pt</span></div>
+        <div><span class="k">次節</span><span class="v">第4節 ・ <span class="num">9</span>月<span class="num">5</span>日</span></div>
+      </div>
+    </article>
+    <p class="legend">大会カラーが面で出るので、大会が変われば色も変わる。ページを開いた瞬間に「どの大会か」が分かる。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label"><span class="tag">案B</span> 順位表 <span>見出しを畳んで表を即開始</span></p>
+    <div class="t-head">
+      <span class="crumb">Nations Championship 2026</span>
+      <h2>順位表</h2>
+      <span class="upd">最終更新 2026年8月18日</span>
+    </div>
+    <div class="t-card">
+      <p class="t-pool">サウス</p>
+      <div class="t-scroll">
+        <table>
+          <thead><tr><th>#</th><th>チーム</th><th>試</th><th>勝</th><th>敗</th><th>得</th><th>失</th><th>Pt</th></tr></thead>
+          <tbody>
+            <tr class="top"><td class="pos">1</td><td class="team">南アフリカ</td><td class="n">3</td><td class="n">3</td><td class="n">0</td><td class="n">130</td><td class="n">49</td><td class="pts">15</td></tr>
+            <tr class="top"><td class="pos">2</td><td class="team">ニュージーランド</td><td class="n">3</td><td class="n">3</td><td class="n">0</td><td class="n">121</td><td class="n">70</td><td class="pts">15</td></tr>
+            <tr class="top"><td class="pos">3</td><td class="team">オーストラリア</td><td class="n">3</td><td class="n">1</td><td class="n">2</td><td class="n">114</td><td class="n">85</td><td class="pts">8</td></tr>
+            <tr><td class="pos">4</td><td class="team">アルゼンチン</td><td class="n">3</td><td class="n">1</td><td class="n">2</td><td class="n">97</td><td class="n">99</td><td class="pts">7</td></tr>
+            <tr><td class="pos">5</td><td class="team">日本</td><td class="n">3</td><td class="n">1</td><td class="n">2</td><td class="n">62</td><td class="n">88</td><td class="pts">4</td></tr>
+            <tr><td class="pos">6</td><td class="team">フィジー</td><td class="n">3</td><td class="n">0</td><td class="n">3</td><td class="n">49</td><td class="n">145</td><td class="pts">0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="legend">巨大な h1 をやめ、表が最初の主役になる。上位はチームカラー帯で強調。横スクロールは表の中に閉じ込める。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label"><span class="tag">案B</span> ラウンド <span>日付スパイン</span></p>
+    <div class="r-block">
+      <div class="r-date">
+        <span class="dow">SAT</span>
+        <span class="d">4</span>
+        <span class="mo">7月</span>
+      </div>
+      <div class="r-body">
+        <div class="r-title">
+          <span class="rd">第1節</span>
+          <span class="cnt">ネーションズチャンピオンシップ 2026 ・ 6試合</span>
+        </div>
+        <div class="r-rows">
+          <div class="r-row"><span class="r-time">16:10</span><span class="r-teams">ニュージーランド × フランス</span><span class="r-score">34–32</span><span class="r-badge">解説</span></div>
+          <div class="r-row"><span class="r-time">17:40</span><span class="r-teams">日本 × イタリア</span><span class="r-score">27–10</span><span class="r-badge">解説</span></div>
+          <div class="r-row"><span class="r-time">19:10</span><span class="r-teams">オーストラリア × アイルランド</span><span class="r-score">31–33</span><span class="r-badge">解説</span></div>
+          <div class="r-row"><span class="r-time">22:10</span><span class="r-teams">フィジー × ウェールズ</span><span class="r-score">24–39</span><span class="r-badge">解説</span></div>
+          <div class="r-row"><span class="r-time">00:40</span><span class="r-teams">南アフリカ × イングランド</span><span class="r-score">45–21</span><span class="r-badge">解説</span></div>
+          <div class="r-row"><span class="r-time">04:10</span><span class="r-teams">アルゼンチン × スコットランド</span><span class="r-score">38–47</span><span class="r-badge">解説</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="legend">カレンダーページの日付ブロックと同じ言語。2カラムのカードグリッドをやめ、6試合を一覧で追える密度にする。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label">案Bの評価</p>
+    <p class="note"><strong>利点</strong> — 3ページが形として明確に違う。日付スパインは <code>components/calendar/week-schedule.tsx</code> で実装済みの言語なので、<strong>ゼロから作らない</strong>。大会カラーが面で出るため大会間の差も付く。<br>
+    <strong>弱点</strong> — ラウンドページの <code>MatchCard</code> グリッドを行リストに変えるため、既存コンポーネントの置き換えが要る。実装は M〜L。</p>
+  </section>
+
+</div>
+</body>
+</html>

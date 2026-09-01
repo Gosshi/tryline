@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>案C エディトリアル — 大会ハブ3ページ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --color-ink:#1f2530; --color-ink-muted:#646a76;
+  --color-rule:#eceef2; --color-accent:#c93a40; --comp:#1A3A5C;
+  --radius-sm:1rem; --radius-md:1.375rem; --radius-lg:1.875rem;
+  --shadow-soft:0 12px 28px -20px rgb(28 38 64 / 45%);
+  --font-body:"Zen Maru Gothic",sans-serif; --font-num:"Outfit",sans-serif;
+  --space-page:clamp(1rem,.5rem + 2vw,2rem);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background-color:#f1efe9;
+  background-image:
+    radial-gradient(120% 60% at 20% 0%, rgb(201 58 58 / 5%), transparent 60%),
+    radial-gradient(120% 60% at 100% 40%, rgb(26 58 92 / 5%), transparent 55%),
+    linear-gradient(180deg,#f8f7f4 0%,#f1efe9 45%,#eceae3 100%);
+  color:var(--color-ink); font-family:var(--font-body); font-weight:500;
+  -webkit-font-smoothing:antialiased; padding:var(--space-page); line-height:1.7;
+}
+.wrap{max-width:64rem;margin:0 auto;display:flex;flex-direction:column;gap:3.5rem}
+.doc-head{border-bottom:2px solid var(--color-ink);padding-bottom:1rem}
+.doc-head h1{font-size:clamp(1.5rem,1.2rem + 1.5vw,2.25rem);font-weight:900;letter-spacing:-.02em}
+.doc-head p{color:var(--color-ink-muted);font-size:.9rem;margin-top:.5rem}
+.label{font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--color-ink-muted)}
+.panel{display:flex;flex-direction:column;gap:.75rem}
+.panel > .label span{color:var(--color-accent)}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;background:var(--color-ink);color:#fff;letter-spacing:.06em}
+.legend{font-size:.78rem;color:var(--color-ink-muted)}
+.note{font-size:.8rem;color:var(--color-ink-muted);background:#fff;border-left:3px solid var(--color-accent);
+      padding:.65rem .9rem;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+
+.e-season{background:#fff;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-soft);
+          outline:1px solid var(--color-rule)}
+.e-s-top{padding:2rem 1.75rem 1.5rem;position:relative;overflow:hidden}
+.e-s-top::before{content:"";position:absolute;right:-2rem;top:-3rem;width:16rem;height:16rem;border-radius:50%;
+  background:radial-gradient(circle,rgb(26 58 92/.09),transparent 68%);pointer-events:none}
+.e-s-mark{display:flex;align-items:center;gap:.55rem;font-size:.7rem;font-weight:700;letter-spacing:.2em;
+          text-transform:uppercase;color:var(--comp)}
+.e-s-mark img{width:20px;height:20px}
+.e-s-title{font-size:clamp(2rem,1.1rem + 4vw,3.75rem);font-weight:900;letter-spacing:-.045em;line-height:.98;
+           margin-top:.7rem;position:relative;z-index:1}
+.e-s-title em{display:block;font-style:normal;font-family:var(--font-num);font-weight:900;color:var(--comp);
+              font-variant-numeric:tabular-nums}
+.e-s-meta{margin-top:.9rem;font-size:.85rem;color:var(--color-ink-muted);position:relative;z-index:1}
+.e-s-split{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--color-rule)}
+.e-pool{padding:1.1rem 1.75rem;border-right:1px solid var(--color-rule)}
+.e-pool:last-child{border-right:0}
+.e-pool .pk{font-size:.65rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--color-ink-muted)}
+.e-pool .pt{display:flex;align-items:baseline;gap:.5rem;margin-top:.35rem}
+.e-pool .pn{font-family:var(--font-num);font-size:2rem;font-weight:900;color:var(--comp);line-height:1}
+.e-pool .pname{font-size:1.05rem;font-weight:700}
+.e-pool .ppt{font-size:.8rem;color:var(--color-ink-muted);margin-top:.2rem}
+
+.e-crumb{font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--comp);padding-left:.25rem}
+.e-lead-card{margin-top:.5rem;background:linear-gradient(120deg,var(--comp),#2f5a86);color:#fff;
+             border-radius:var(--radius-lg);padding:1.5rem 1.75rem;box-shadow:var(--shadow-soft);
+             display:flex;flex-wrap:wrap;align-items:center;gap:1.5rem;justify-content:space-between}
+.e-lead-l{display:flex;align-items:center;gap:1.1rem}
+.e-crown{font-family:var(--font-num);font-size:clamp(3rem,2rem + 4vw,4.5rem);font-weight:900;line-height:.85;opacity:.35}
+.e-lead-name{font-size:clamp(1.4rem,1rem + 1.8vw,2.1rem);font-weight:900;letter-spacing:-.03em;line-height:1.1}
+.e-lead-sub{font-size:.78rem;opacity:.82;margin-top:.3rem;letter-spacing:.04em}
+.e-lead-stats{display:flex;gap:1.5rem}
+.e-lead-stats div{display:flex;flex-direction:column;align-items:flex-end}
+.e-lead-stats .k{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75;font-weight:700}
+.e-lead-stats .v{font-family:var(--font-num);font-size:1.6rem;font-weight:900;line-height:1.1}
+.e-rest{margin-top:.6rem;background:#fff;border-radius:var(--radius-md);outline:1px solid var(--color-rule);overflow:hidden}
+.e-row{display:flex;align-items:center;gap:.9rem;padding:.6rem 1.25rem;border-bottom:1px solid var(--color-rule)}
+.e-row:last-child{border-bottom:0}
+.e-row .p{font-family:var(--font-num);font-weight:700;color:var(--color-ink-muted);width:1.5rem}
+.e-row .n{flex:1;font-weight:700;font-size:.9rem}
+.e-row .s{font-family:var(--font-num);font-weight:700}
+
+.e-round{display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap}
+.e-rnum{flex:0 0 auto;line-height:.8}
+.e-rnum .lbl{font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--color-ink-muted)}
+.e-rnum .big{font-family:var(--font-num);font-size:clamp(4rem,2rem + 8vw,7rem);font-weight:900;
+             color:var(--comp);letter-spacing:-.05em;display:block;margin-top:.2rem}
+.e-rnum .unit{font-size:.9rem;font-weight:700;color:var(--color-ink-muted)}
+.e-rside{flex:1;min-width:16rem}
+.e-rside h3{font-size:1.1rem;font-weight:900;letter-spacing:-.01em}
+.e-rside .d{font-size:.8rem;color:var(--color-ink-muted);margin-top:.2rem}
+.e-mrows{margin-top:.75rem;background:#fff;border-radius:var(--radius-md);outline:1px solid var(--color-rule);
+         box-shadow:var(--shadow-soft);overflow:hidden}
+.e-mrow{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;border-bottom:1px solid var(--color-rule)}
+.e-mrow:last-child{border-bottom:0}
+.e-mrow .t{flex:1;min-width:0;font-weight:700;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.e-mrow .sc{font-family:var(--font-num);font-weight:900;font-size:1.05rem}
+.e-mrow .w{color:var(--color-accent)}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important}}
+@media (max-width:40rem){.e-s-split{grid-template-columns:1fr}.e-pool{border-right:0;border-bottom:1px solid var(--color-rule)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc-head">
+    <h1>案C「エディトリアル」</h1>
+    <p>各ページに<strong>固有の視覚的アンカー</strong>を置く。シーズン＝巨大な大会名、順位表＝首位チームの抜き出し、ラウンド＝巨大な節番号。雑誌の扉ページの発想。</p>
+  </header>
+
+  <section class="panel">
+    <p class="label"><span class="tag">案C</span> シーズンページ <span>巨大タイポの扉</span></p>
+    <article class="e-season">
+      <div class="e-s-top">
+        <p class="e-s-mark"><img src="../../public/logos/nations-championship.svg" alt=""> Nations Championship</p>
+        <h2 class="e-s-title">ネーションズ<br>チャンピオンシップ<em>2026</em></h2>
+        <p class="e-s-meta">7月4日 〜 11月28日 ・ 全36試合 ・ 12チーム ・ 3節終了</p>
+      </div>
+      <div class="e-s-split">
+        <div class="e-pool">
+          <p class="pk">ノース 首位</p>
+          <p class="pt"><span class="pn">1</span><span class="pname">フランス</span></p>
+          <p class="ppt">3試合 2勝1敗 ・ <span class="num">12</span>pt</p>
+        </div>
+        <div class="e-pool">
+          <p class="pk">サウス 首位</p>
+          <p class="pt"><span class="pn">1</span><span class="pname">南アフリカ</span></p>
+          <p class="ppt">3試合 3勝0敗 ・ <span class="num">15</span>pt</p>
+        </div>
+      </div>
+    </article>
+    <p class="legend">大会名そのものがビジュアル。写真素材が無い大会でも成立する（NC にはキービジュアル画像が存在しない）。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label"><span class="tag">案C</span> 順位表 <span>首位を抜き出す</span></p>
+    <p class="e-crumb">Nations Championship 2026 ・ サウス</p>
+    <div class="e-lead-card">
+      <div class="e-lead-l">
+        <span class="e-crown">1</span>
+        <div>
+          <p class="e-lead-name">南アフリカ</p>
+          <p class="e-lead-sub">3勝0敗 ・ 得失点差 +81</p>
+        </div>
+      </div>
+      <div class="e-lead-stats">
+        <div><span class="k">Pt</span><span class="v">15</span></div>
+        <div><span class="k">得点</span><span class="v">130</span></div>
+        <div><span class="k">失点</span><span class="v">49</span></div>
+      </div>
+    </div>
+    <div class="e-rest">
+      <div class="e-row"><span class="p">2</span><span class="n">ニュージーランド</span><span class="s">15</span></div>
+      <div class="e-row"><span class="p">3</span><span class="n">オーストラリア</span><span class="s">8</span></div>
+      <div class="e-row"><span class="p">4</span><span class="n">アルゼンチン</span><span class="s">7</span></div>
+      <div class="e-row"><span class="p">5</span><span class="n">日本</span><span class="s">4</span></div>
+      <div class="e-row"><span class="p">6</span><span class="n">フィジー</span><span class="s">0</span></div>
+    </div>
+    <p class="legend">首位に物語を持たせる。ただし<strong>全チームの数字を比較したい読者には遠回り</strong>になる可能性がある。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label"><span class="tag">案C</span> ラウンド <span>巨大な節番号</span></p>
+    <div class="e-round">
+      <div class="e-rnum">
+        <span class="lbl">Round</span>
+        <span class="big">1</span>
+        <span class="unit">第1節</span>
+      </div>
+      <div class="e-rside">
+        <h3>ネーションズチャンピオンシップ 2026</h3>
+        <p class="d">2026年7月4日（土） ・ 6試合 ・ 解説6本公開済み</p>
+        <div class="e-mrows">
+          <div class="e-mrow"><span class="t">ニュージーランド × フランス</span><span class="sc"><span class="w">34</span>–32</span></div>
+          <div class="e-mrow"><span class="t">日本 × イタリア</span><span class="sc"><span class="w">27</span>–10</span></div>
+          <div class="e-mrow"><span class="t">オーストラリア × アイルランド</span><span class="sc">31–<span class="w">33</span></span></div>
+          <div class="e-mrow"><span class="t">フィジー × ウェールズ</span><span class="sc">24–<span class="w">39</span></span></div>
+          <div class="e-mrow"><span class="t">南アフリカ × イングランド</span><span class="sc"><span class="w">45</span>–21</span></div>
+          <div class="e-mrow"><span class="t">アルゼンチン × スコットランド</span><span class="sc">38–<span class="w">47</span></span></div>
+        </div>
+      </div>
+    </div>
+    <p class="legend">節番号が視覚的な目印になり、節を行き来したときに現在地が分かる。</p>
+  </section>
+
+  <section class="panel">
+    <p class="label">案Cの評価</p>
+    <p class="note"><strong>利点</strong> — 3ページの差が最も大きい。写真素材に依存しないので<strong>全大会に適用できる</strong>（キービジュアル画像は一部の大会にしか無い）。<br>
+    <strong>弱点</strong> — 巨大タイポは大会名が長いと破綻しやすい（「ユナイテッド・ラグビー・チャンピオンシップ」等）。順位表の首位抜き出しは、全体比較をしたい読者には一手増える。実装は L。</p>
+  </section>
+
+</div>
+</body>
+</html>
