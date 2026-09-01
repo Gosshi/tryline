@@ -184,6 +184,29 @@ describe("season match groups", () => {
     ]);
   });
 
+  it("filters the already rendered match groups when a pool tab is selected", () => {
+    const groupedMatches = [
+      buildPoolGroup("Pool A", 1),
+      buildPoolGroup("Pool B", 2),
+    ];
+
+    render(
+      <SeasonMatchGroups
+        contentStatusMap={{}}
+        groupedMatches={groupedMatches}
+        initialNow="2026-01-01T00:00:00.000Z"
+      />,
+    );
+
+    expect(screen.getByText("Home Pool A")).toBeInTheDocument();
+    expect(screen.getByText("Home Pool B")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "プールA" }));
+
+    expect(screen.getByText("Home Pool A")).toBeInTheDocument();
+    expect(screen.queryByText("Home Pool B")).not.toBeInTheDocument();
+  });
+
   it("collapses only round-based competitions with at least ten groups", () => {
     expect(
       shouldCollapseRoundGroups(

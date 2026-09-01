@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { MatchCard } from "@/components/match-card";
 import { RoundHeading } from "@/components/round-heading";
@@ -16,6 +16,7 @@ type SeasonMatchGroupsProps = {
   contentStatusMap: Record<string, MatchContentStatus>;
   family?: string;
   groupedMatches: Array<[GroupKey, MatchListItem[]]>;
+  initialNow?: string;
   roundHubBasePath?: string;
 };
 
@@ -107,27 +108,28 @@ export function SeasonMatchGroups({
   contentStatusMap,
   family,
   groupedMatches,
+  initialNow,
   roundHubBasePath,
 }: SeasonMatchGroupsProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const roundParam = searchParams.get("round");
   const roundFilters = useMemo(
     () => getRoundFilters(groupedMatches),
     [groupedMatches],
   );
-  const selectedRound = isRoundFilterValue(roundParam, roundFilters)
-    ? roundParam
-    : "all";
+  const [selectedRound, setSelectedRound] = useState("all");
   const showRoundFilter = roundFilters.length > 0;
-  const visibleGroups = showRoundFilter
-    ? filterGroupsByRound(groupedMatches, selectedRound, roundFilters)
-    : groupedMatches;
+  const visibleGroups = useMemo(
+    () =>
+      showRoundFilter
+        ? filterGroupsByRound(groupedMatches, selectedRound, roundFilters)
+        : groupedMatches,
+    [groupedMatches, roundFilters, selectedRound, showRoundFilter],
+  );
   const collapsible = shouldCollapseRoundGroups(groupedMatches);
+  const now = useMemo(() => new Date(initialNow ?? Date.now()), [initialNow]);
   const defaultOpenIndexes = useMemo(
-    () => getDefaultOpenGroupIndexes(visibleGroups),
-    [visibleGroups],
+    () => getDefaultOpenGroupIndexes(visibleGroups, now),
+    [now, visibleGroups],
   );
   const defaultScrollIndex = useMemo(() => {
     const indexes = [...defaultOpenIndexes].sort((left, right) => left - right);
@@ -165,45 +167,16 @@ export function SeasonMatchGroups({
   return (
     <>
       {showRoundFilter && (
-        <div
-          aria-label="ラウンドで絞り込み"
-          className="flex gap-2 overflow-x-auto pb-1"
-          role="tablist"
+        <Suspense
+          fallback={
+            <RoundFilterTabs roundFilters={roundFilters} selectedRound="all" />
+          }
         >
-          {roundFilters.map((filter) => {
-            const selected = selectedRound === filter.value;
-
-            return (
-              <button
-                aria-selected={selected}
-                className={
-                  selected
-                    ? "shrink-0 rounded-full bg-[var(--color-accent)] px-3 py-1.5 text-xs font-bold text-white"
-                    : "shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-slate-300 hover:text-[var(--color-ink)]"
-                }
-                key={filter.value}
-                onClick={() => {
-                  const params = new URLSearchParams(searchParams.toString());
-
-                  if (filter.value === "all") {
-                    params.delete("round");
-                  } else {
-                    params.set("round", filter.value);
-                  }
-
-                  const query = params.toString();
-                  router.push(query ? `${pathname}?${query}` : pathname, {
-                    scroll: false,
-                  });
-                }}
-                role="tab"
-                type="button"
-              >
-                {filter.label}
-              </button>
-            );
-          })}
-        </div>
+          <RoundFilterControls
+            onRoundChange={setSelectedRound}
+            roundFilters={roundFilters}
+          />
+        </Suspense>
       )}
 
       {visibleGroups.length === 0 ? (
@@ -303,6 +276,87 @@ export function SeasonMatchGroups({
         })
       )}
     </>
+  );
+}
+
+function RoundFilterControls({
+  onRoundChange,
+  roundFilters,
+}: {
+  onRoundChange: (round: string) => void;
+  roundFilters: RoundFilter[];
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const roundParam = searchParams.get("round");
+  const selectedRound = isRoundFilterValue(roundParam, roundFilters)
+    ? roundParam
+    : "all";
+
+  useEffect(() => {
+    onRoundChange(selectedRound);
+  }, [onRoundChange, selectedRound]);
+
+  return (
+    <RoundFilterTabs
+      onSelect={(filter) => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (filter.value === "all") {
+          params.delete("round");
+        } else {
+          params.set("round", filter.value);
+        }
+
+        onRoundChange(filter.value);
+        const query = params.toString();
+        router.push(query ? `${pathname}?${query}` : pathname, {
+          scroll: false,
+        });
+      }}
+      roundFilters={roundFilters}
+      selectedRound={selectedRound}
+    />
+  );
+}
+
+function RoundFilterTabs({
+  onSelect,
+  roundFilters,
+  selectedRound,
+}: {
+  onSelect?: (filter: RoundFilter) => void;
+  roundFilters: RoundFilter[];
+  selectedRound: string;
+}) {
+  return (
+    <div
+      aria-label="ラウンドで絞り込み"
+      className="flex gap-2 overflow-x-auto pb-1"
+      role="tablist"
+    >
+      {roundFilters.map((filter) => {
+        const selected = selectedRound === filter.value;
+
+        return (
+          <button
+            aria-selected={selected}
+            className={
+              selected
+                ? "shrink-0 rounded-full bg-[var(--color-accent)] px-3 py-1.5 text-xs font-bold text-white"
+                : "shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-slate-300 hover:text-[var(--color-ink)]"
+            }
+            key={filter.value}
+            onClick={onSelect ? () => onSelect(filter) : undefined}
+            role="tab"
+            type="button"
+          >
+            {filter.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
