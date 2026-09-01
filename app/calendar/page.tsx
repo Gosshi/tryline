@@ -216,33 +216,6 @@ export default async function CalendarPage({
               </div>
             </div>
           )}
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--color-ink-muted)]">
-            月曜 00:00 JST から翌月曜 00:00 JST
-            までの試合を、全大会横断で曜日ごとにまとめています。レビュー・プレビューが公開済みの試合にはバッジが付きます。
-          </p>
-          <div className="mt-6 grid gap-4 lg:grid-cols-3">
-            <div className="border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4">
-              <p className="text-sm font-bold text-[var(--color-ink)]">
-                カレンダー購読
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Link
-                  className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
-                  href={getWebcalUrl(allCalendarFeedUrl)}
-                >
-                  全大会を購読
-                </Link>
-                <Link
-                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-                  href={allCalendarFeedUrl}
-                >
-                  iCal URL
-                </Link>
-              </div>
-            </div>
-            <NewsletterSignup source="calendar" />
-            <IosAppCta surface="calendar" />
-          </div>
         </div>
       </section>
 
@@ -253,6 +226,36 @@ export default async function CalendarPage({
           matches={matches}
           spoilerGuardEnabled={spoilerGuardEnabled}
         />
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-10 sm:px-6 md:px-8">
+        <p className="max-w-2xl text-sm leading-6 text-[var(--color-ink-muted)]">
+          月曜 00:00 JST から翌月曜 00:00 JST
+          までの試合を、全大会横断で曜日ごとにまとめています。レビュー・プレビューが公開済みの試合にはバッジが付きます。
+        </p>
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          <div className="border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4">
+            <p className="text-sm font-bold text-[var(--color-ink)]">
+              カレンダー購読
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link
+                className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
+                href={getWebcalUrl(allCalendarFeedUrl)}
+              >
+                全大会を購読
+              </Link>
+              <Link
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                href={allCalendarFeedUrl}
+              >
+                iCal URL
+              </Link>
+            </div>
+          </div>
+          <NewsletterSignup source="calendar" />
+          <IosAppCta surface="calendar" />
+        </div>
       </section>
     </main>
   );
