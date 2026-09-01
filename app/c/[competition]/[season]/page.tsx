@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
 import { IosAppCta } from "@/components/ios-app-cta";
 import { NewsletterSignup } from "@/components/newsletter-signup";
+import { PoolTeamGrid } from "@/components/pool-team-grid";
 import { PremiumUpsellBanner } from "@/components/premium-upsell-banner";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
@@ -42,6 +43,7 @@ import {
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
 import { groupMatchesByRound } from "@/lib/format/match-groups";
+import { isSeasonNotStarted } from "@/lib/season-standings";
 import { createCompetitionOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
@@ -480,6 +482,14 @@ export default async function SeasonPage({ params }: Props) {
         nextJapanMatchInSeason.kickoffAt)
       ? nextJapanMatchAcrossCompetitions
       : nextJapanMatchInSeason;
+  const hasStandings =
+    standings.length > 0 ||
+    poolStandings.some((pool) => pool.standings.length > 0);
+  const seasonNotStarted = isSeasonNotStarted(
+    matches,
+    standings,
+    poolStandings,
+  );
   const latestReviewMatch =
     matches
       .filter(
@@ -498,7 +508,7 @@ export default async function SeasonPage({ params }: Props) {
         )
       : null;
   const leaderLabel =
-    poolStandings.length > 0
+    !seasonNotStarted && poolStandings.length > 0
       ? poolStandings
           .map((pool) =>
             pool.standings[0]
@@ -508,7 +518,9 @@ export default async function SeasonPage({ params }: Props) {
           .filter((label): label is string => label !== null)
           .slice(0, 2)
           .join(" / ") || null
-      : (standings[0]?.teamName ?? null);
+      : !seasonNotStarted
+        ? (standings[0]?.teamName ?? null)
+        : null;
   const seasonProgress = getSeasonProgress(matches);
   const nextMatchJst = nextMatch
     ? formatMatchKickoffJst(nextMatch.kickoffAt)
@@ -554,7 +566,7 @@ export default async function SeasonPage({ params }: Props) {
     },
     {
       answer:
-        standings.length > 0
+        !seasonNotStarted && hasStandings
           ? "このページ上部の順位表で最新順位を確認できます。"
           : "このシーズンの順位表はまだ確定していません。",
       question: `${familyTitle}の順位表はどこで見られますか？`,
@@ -572,9 +584,12 @@ export default async function SeasonPage({ params }: Props) {
       name: faq.question,
     })),
   };
-  const hasStandings =
-    standings.length > 0 ||
-    poolStandings.some((pool) => pool.standings.length > 0);
+  const teamPools =
+    poolStandings.length > 0
+      ? poolStandings
+      : standings.length > 0
+        ? [{ poolName: "", standings }]
+        : [];
   function renderStandingsBlock(rows: StandingRow[], title?: string) {
     if (rows.length === 0) {
       return null;
@@ -663,7 +678,9 @@ export default async function SeasonPage({ params }: Props) {
             </div>
           </div>
           {(leaderLabel || seasonProgress?.nextMatch || seasonProgress) && (
-            <div className="grid divide-y divide-white/15 bg-black/55 text-white sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <div
+              className={`grid divide-y divide-white/15 bg-black/55 text-white sm:divide-x sm:divide-y-0 ${leaderLabel ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+            >
               {leaderLabel && (
                 <div className="px-5 py-4 sm:px-6">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
@@ -772,7 +789,7 @@ export default async function SeasonPage({ params }: Props) {
               className="shrink-0 rounded-full px-4 py-2 text-[var(--color-ink-muted)] transition-colors hover:bg-slate-50 hover:text-[var(--color-ink)]"
               href="#standings"
             >
-              順位
+              {seasonNotStarted ? "参加チーム" : "順位"}
             </a>
           )}
           <a
@@ -846,22 +863,36 @@ export default async function SeasonPage({ params }: Props) {
 
         {hasStandings && (
           <section className="scroll-mt-4 space-y-4" id="standings">
-            {poolStandings.length > 0
-              ? poolStandings.map((pool) => (
-                  <div key={pool.poolName}>
-                    {renderStandingsBlock(
-                      pool.standings,
-                      formatPoolName(pool.poolName),
-                    )}
-                  </div>
-                ))
-              : renderStandingsBlock(standings)}
-            <Link
-              className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:border-[var(--color-accent)] hover:bg-slate-50"
-              href={`/c/${competition}/${season}/standings`}
-            >
-              順位表をすべて見る →
-            </Link>
+            {seasonNotStarted ? (
+              <>
+                <h2 className="font-heading text-2xl font-bold text-[var(--color-ink)]">
+                  参加チーム
+                </h2>
+                <PoolTeamGrid
+                  ariaLabel="参加チーム"
+                  poolStandings={teamPools}
+                />
+              </>
+            ) : poolStandings.length > 0 ? (
+              poolStandings.map((pool) => (
+                <div key={pool.poolName}>
+                  {renderStandingsBlock(
+                    pool.standings,
+                    formatPoolName(pool.poolName),
+                  )}
+                </div>
+              ))
+            ) : (
+              renderStandingsBlock(standings)
+            )}
+            {!seasonNotStarted && (
+              <Link
+                className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:border-[var(--color-accent)] hover:bg-slate-50"
+                href={`/c/${competition}/${season}/standings`}
+              >
+                順位表をすべて見る →
+              </Link>
+            )}
           </section>
         )}
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
+import { PoolTeamGrid } from "@/components/pool-team-grid";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { StandingsTable } from "@/components/standings-table";
 import {
@@ -13,10 +14,7 @@ import {
   listMatchesForCompetition,
   type MatchListItem,
 } from "@/lib/db/queries/matches";
-import {
-  getPoolStandingsForCompetition,
-  type PoolStanding,
-} from "@/lib/db/queries/standings";
+import { getPoolStandingsForCompetition } from "@/lib/db/queries/standings";
 import {
   formatKickoffJstDate,
   formatKickoffJstTime,
@@ -87,48 +85,6 @@ function PreTournamentBanner({ matchCount }: { matchCount: number }) {
       2027年10〜11月、オーストラリア開催。全{matchCount}
       試合のスケジュールが確定しています。開幕後、試合結果・日本語レビューを順次公開します。
     </div>
-  );
-}
-
-function PoolTeamGrid({
-  poolStandings,
-}: {
-  poolStandings: PoolStanding[];
-}) {
-  if (poolStandings.length === 0) {
-    return null;
-  }
-
-  return (
-    <section
-      aria-label="RWC 2027 プール分け"
-      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-    >
-      {poolStandings.map((pool) => (
-        <div
-          className="rounded-[var(--radius-md)] bg-white p-4 shadow-[var(--shadow-soft)]"
-          key={pool.poolName}
-        >
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-            {pool.poolName}
-          </p>
-          <ul className="mt-2 space-y-1">
-            {pool.standings.map((row) => (
-              <li
-                className="text-sm font-medium text-[var(--color-ink)]"
-                key={row.position}
-              >
-                {row.teamName === "-" ? (
-                  <span className="text-slate-400">未確定</span>
-                ) : (
-                  row.teamName
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </section>
   );
 }
 
@@ -288,7 +244,10 @@ export default async function RWC2027Page() {
         </Suspense>
 
         {!tournamentStarted && (
-          <PoolTeamGrid poolStandings={poolStandings} />
+          <PoolTeamGrid
+            ariaLabel="RWC 2027 プール分け"
+            poolStandings={poolStandings}
+          />
         )}
 
         <div className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
