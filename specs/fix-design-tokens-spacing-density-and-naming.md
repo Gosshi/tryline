@@ -116,7 +116,7 @@ spacing:
     mobile: "comfortable"
     desktop: "compact"
 layout:
-  container: "1152px"          # max-w-6xl。実装で最頻（14箇所）
+  container: "1152px"          # max-w-6xl。実装で最頻（15箇所、2026-09-02 実測）
   breakpoints:
     sm: "640px"
     md: "768px"
@@ -140,7 +140,7 @@ layout:
 front-matter に対応する散文を、既存の Colors / Typography 節と同じ書き方で追加する。最低限:
 
 - **Spacing**: base unit 4px。スケールの用途（`gap-2` は密な要素間、`gap-4` は要素群、`px-4` は既定の水平パディング等、**実装の使われ方を記述する**）
-- **Layout**: コンテナ幅1152px。ブレークポイント4段。**「`sm:` で分岐して終わりにせず、`lg:` 以上で情報の並べ方を変える」ことを明示的に要求する**（実測 `sm:` 221 vs `lg:` 24 の偏りが問題の原因であるため）
+- **Layout**: コンテナ幅1152px。ブレークポイント4段。**「`sm:` で分岐して終わりにせず、`lg:` 以上で情報の並べ方を変える」ことを明示的に要求する**（実測 `sm:` 223 vs `lg:` 26 の偏りが問題の原因であるため）
 - **Density**: モバイルは comfortable（縦積み・読みやすさ優先）、デスクトップは compact（列組み・走査性優先）。**同じ縦積みを横に引き伸ばさない**。既存の Colors 節が `docs/design/mock-1-soft-v3.html` を参照実装として名指ししているのと同じ形で、**`components/calendar/week-schedule.tsx` の `WeekBoard`（PR #748）を `density.desktop: compact` の参照実装として名指しする**。これは仮説ではなく既に本番で動いている実装であり、`hidden lg:block` で 1024px 以上のときだけ列組みに切り替える形が、Layout 節が要求する「`lg:` 以上で並べ方を変える」の実例そのものである
 
 ### `app/globals.css` の変更
