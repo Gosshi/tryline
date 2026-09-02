@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { listSeasonsByFamilies } from "@/lib/db/queries/competitions";
+import {
+  listCompetitionScheduleCoverage,
+  listSeasonsByFamilies,
+} from "@/lib/db/queries/competitions";
 
 const dbMocks = vi.hoisted(() => ({
   from: vi.fn(),
@@ -93,5 +96,54 @@ describe("listSeasonsByFamilies", () => {
     ).toHaveLength(1);
     expect(result.get("six-nations")?.[0]?.publishedContentCount).toBe(2);
     expect(result.get("urc")?.[0]?.publishedContentCount).toBe(1);
+  });
+});
+
+describe("listCompetitionScheduleCoverage", () => {
+  it("counts distinct normalized rounds instead of the maximum round number", async () => {
+    const coverageQuery = {
+      not: vi.fn(),
+      select: vi.fn(),
+    };
+    coverageQuery.select.mockReturnValue(coverageQuery);
+    coverageQuery.not.mockResolvedValue({
+      data: [
+        {
+          family: "premiership",
+          matches: [
+            { external_ids: { round: 1 } },
+            { external_ids: { round: 2 } },
+            { external_ids: { wikipedia_round: 18 } },
+          ],
+          name: "Premiership Rugby",
+          name_ja: null,
+          season: "2026-27",
+          slug: "premiership-2026-27",
+          total_rounds: 18,
+        },
+      ],
+      error: null,
+    });
+    dbMocks.from.mockReturnValue(coverageQuery);
+    dbMocks.getSupabasePublicServerClient.mockReturnValue({
+      from: dbMocks.from,
+    });
+
+    await expect(listCompetitionScheduleCoverage()).resolves.toEqual([
+      {
+        family: "premiership",
+        ingestedRoundCount: 3,
+        name: "Premiership Rugby",
+        nameJa: null,
+        season: "2026-27",
+        slug: "premiership-2026-27",
+        totalRounds: 18,
+      },
+    ]);
+    expect(coverageQuery.not).toHaveBeenCalledWith(
+      "total_rounds",
+      "is",
+      null,
+    );
   });
 });

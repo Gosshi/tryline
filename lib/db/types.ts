@@ -335,6 +335,7 @@ export type Database = {
           season: string;
           slug: string;
           start_date: string | null;
+          total_rounds: number | null;
           updated_at: string;
         };
         Insert: {
@@ -349,6 +350,7 @@ export type Database = {
           season: string;
           slug: string;
           start_date?: string | null;
+          total_rounds?: number | null;
           updated_at?: string;
         };
         Update: {
@@ -363,6 +365,7 @@ export type Database = {
           season?: string;
           slug?: string;
           start_date?: string | null;
+          total_rounds?: number | null;
           updated_at?: string;
         };
         Relationships: [];

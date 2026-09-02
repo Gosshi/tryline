@@ -13,6 +13,9 @@ const matchQueryMock = vi.hoisted(() => ({
 const standingsQueryMock = vi.hoisted(() => ({
   getStandingPositionLookupForCompetitions: vi.fn(),
 }));
+const competitionQueryMock = vi.hoisted(() => ({
+  listCompetitionScheduleCoverage: vi.fn(),
+}));
 const authMock = vi.hoisted(() => ({
   getUser: vi.fn(),
 }));
@@ -21,6 +24,7 @@ const spoilerGuardMock = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/auth/server", () => authMock);
+vi.mock("@/lib/db/queries/competitions", () => competitionQueryMock);
 vi.mock("@/lib/db/queries/matches", () => matchQueryMock);
 vi.mock("@/lib/db/queries/spoiler-guard", () => spoilerGuardMock);
 vi.mock("@/lib/db/queries/standings", () => standingsQueryMock);
@@ -90,6 +94,7 @@ describe("/calendar page", () => {
     standingsQueryMock.getStandingPositionLookupForCompetitions.mockResolvedValue(
       new Map(),
     );
+    competitionQueryMock.listCompetitionScheduleCoverage.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -288,6 +293,58 @@ describe("/calendar page", () => {
         name: "シックスネイションズ 2027",
       }),
     ).toHaveAttribute("href", "/c/six-nations/2027");
+  });
+
+  it("shows an incomplete competition only when it has no fixture in the selected week", async () => {
+    competitionQueryMock.listCompetitionScheduleCoverage.mockResolvedValue([
+      {
+        family: "top-14",
+        ingestedRoundCount: 2,
+        name: "Top 14",
+        nameJa: null,
+        season: "2026-27",
+        slug: "top-14-2026-27",
+        totalRounds: 26,
+      },
+    ]);
+    const { default: CalendarPage } = await import("@/app/calendar/page");
+
+    render(await CalendarPage({}));
+
+    expect(screen.getByLabelText("日程掲載状況")).toHaveTextContent(
+      "トップ14 2026-27",
+    );
+  });
+
+  it("does not show an incomplete competition when it has a fixture in the selected week", async () => {
+    matchQueryMock.getMatchesInRange.mockResolvedValue([
+      createCalendarMatch({
+        competition: {
+          family: "top-14",
+          id: "top-14-id",
+          name: "Top 14",
+          nameJa: null,
+          season: "2026-27",
+          slug: "top-14-2026-27",
+        },
+      }),
+    ]);
+    competitionQueryMock.listCompetitionScheduleCoverage.mockResolvedValue([
+      {
+        family: "top-14",
+        ingestedRoundCount: 2,
+        name: "Top 14",
+        nameJa: null,
+        season: "2026-27",
+        slug: "top-14-2026-27",
+        totalRounds: 26,
+      },
+    ]);
+    const { default: CalendarPage } = await import("@/app/calendar/page");
+
+    render(await CalendarPage({}));
+
+    expect(screen.queryByLabelText("日程掲載状況")).not.toBeInTheDocument();
   });
 
   it("falls back to current week for invalid week queries", async () => {
