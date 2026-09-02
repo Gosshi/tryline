@@ -7,7 +7,11 @@
 
 ## 位置づけ
 
-`specs/feat-calendar-week-board.md` の**前提**です。あちらが本作業で定義するトークンと `layout.listRow` の規定を使います。**先にこちらを終わらせてください。**
+**依存もブロッカーもありません。単独で着手できます。**
+
+`specs/feat-calendar-week-board.md`（週ボード）は当初この作業の後続として書きましたが、**PR #748 で 2026-09-02 に先にマージされました。** そのため本作業は「これから作るものの前提」ではなく、**既に本番で動いている実装を文書側に追いつかせる**作業です。
+
+`components/calendar/week-schedule.tsx` の `WeekBoard` を **`density.desktop: compact` の参照実装として design.md 本文で名指ししてください。** ただし**そのコードは一切変更しないでください。**
 
 ## 一文で言うと
 
@@ -19,7 +23,7 @@
 
 本作業はトークンの定義と文書の追記だけです。`--space-*` を既存コンポーネントに**適用しないでください**。適用は後続 spec の仕事です。
 
-`git diff` に `space-` を使う JSX や CSS の変更が含まれていたらスコープ違反です。
+判定は上の検証コマンドで行います。**文字列 `space-` で検索しないでください。** 改名対象の `app/matches/[id]/page.tsx:548` は同じ行に Tailwind の `space-y-4` を含むため、**正しく改名すると必ず引っかかります。** 見るのは `var(--space-` の追加だけです。
 
 ## やること（4つ）
 
@@ -32,7 +36,7 @@
 
 ## 値は発明しないでください
 
-spacing のスケールは**実装から書き起こします**。走査済みの実測値（2026-08-31）:
+spacing のスケールは**実装から書き起こします**。走査済みの実測値（gap / px / py は 2026-08-31、コンテナとブレークポイントは **2026-09-02 再実測**）:
 
 ```
 gap-2  (8px)  64回    px-4 (16px) 117回    py-2  (8px) 76回
@@ -42,7 +46,7 @@ gap-1.5 (6px) 17回    px-5 (20px)  37回    py-1.5 (6px)27回
 gap-6 (24px)  10回    px-2  (8px)  32回    py-0.5 (2px)27回
 gap-8 (32px)   6回    px-8 (32px)  30回    py-1  (4px) 25回
 gap-5 (20px)   6回
-コンテナ: max-w-6xl (1152px) が14箇所で最頻
+コンテナ: max-w-6xl (1152px) が15箇所で最頻
 ```
 
 → base unit **4px**、スケール **2 / 4 / 6 / 8 / 12 / 16 / 20 / 24 / 32 / 40px**。
@@ -56,11 +60,13 @@ gap-5 (20px)   6回
 実測でこうなっています:
 
 ```
-sm:  221回     ← 640px で分岐
-md:   49回
-lg:   24回     ← 1024px 以上に効く指定は実質30箇所
+sm:  223回     ← 640px で分岐
+md:   50回
+lg:   26回     ← 1024px 以上に効く指定は実質32箇所
 xl:    6回
 ```
+
+（2026-09-02 実測。週ボードが `lg:` を2つ足したが偏りの構造は変わっていない。）
 
 **読者の63%はデスクトップです。** 「`sm:` で分岐して終わりにせず、`lg:` 以上で情報の並べ方を変える」という要求を本文に明示的に書いてください。これが「引き伸ばされたモバイル」の構造的な原因です。
 
@@ -93,14 +99,14 @@ grep -rn -- '--font-serif-jp' app components lib tailwind.config.ts    # 期待:
 grep -rn -- 'var(--color-paper)' app components lib                    # 期待: 0件
 grep -rn -- 'var(--color-panel)' app components lib                    # 期待: 3件
 grep -rl 'bg-paper' app components | wc -l                             # 変更前後で同じ（21）
-git diff --stat                                                        # space- を使う JSX 変更が無いこと
+git diff -U0 -- app components lib ':!app/globals.css' | grep '^+' | grep -c 'var(--space-'   # 期待: 0
 ```
 
 さらに、**front-matter と globals.css の突き合わせ**を実行し、色・書体・角丸・影の20項目が全件一致することを PR 本文に貼ってください。2026-08-31 に一致を確認済みです（`ink-muted: #646a76` / `muted-foreground: 220 7% 42%` を含む）。**回帰させないでください。**
 
 ## 「完了」の定義
 
-1. spec の受け入れ条件 19 項目を1件ずつ照合し、PR 本文にチェックリストで貼る
+1. spec の受け入れ条件 **20項目**（1〜16 / 見た目の非回帰 17〜18 / デザイン品質 19〜20）を1件ずつ照合し、PR 本文にチェックリストで貼る
 2. 上の検証コマンドの実行結果を PR 本文に貼る
 3. front-matter × globals.css の20項目一致を PR 本文に貼る
 4. `pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build` がすべて clean

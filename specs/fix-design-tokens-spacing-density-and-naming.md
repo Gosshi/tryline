@@ -18,15 +18,17 @@
 
 ### 2. レイアウトは 640px で分岐して、そこから上は何も変わっていない
 
-`app/` と `components/` のソース走査（2026-08-31）:
+`app/` と `components/` のソース走査（**2026-09-02 再実測**。週ボード #748 を含む現在の main）:
 
 | ブレークポイント接頭辞 | 出現回数 |
 |---|---|
-| `sm:`（640px） | **221** |
-| `md:`（768px） | 49 |
-| `lg:`（1024px） | **24** |
+| `sm:`（640px） | **223** |
+| `md:`（768px） | 50 |
+| `lg:`（1024px） | **26** |
 | `xl:`（1280px） | **6** |
 | `2xl:`（1536px） | 1 |
+
+（初版は 2026-08-31 に `sm:` 221 / `lg:` 24 を測った。週ボードが `lg:` を2つ足したが、**偏りの構造は変わっていない**。）
 
 **読者の63%がデスクトップ**（GA4、2026-07-31〜08-27）である一方、1024px を超えた領域に効く指定は実質30箇所しかない。デスクトップ表示が「引き伸ばされたモバイル」になっている構造的な理由がこれである。
 
@@ -47,7 +49,7 @@
 | `gap-*` | `gap-2` 64 / `gap-3` 52 / `gap-4` 36 / `gap-1.5` 17 / `gap-6` 10 / `gap-8` 6 / `gap-5` 6 |
 | `px-*` | `px-4` 117 / `px-3` 72 / `px-6` 43 / `px-5` 37 / `px-2` 32 / `px-8` 30 |
 | `py-*` | `py-2` 76 / `py-3` 41 / `py-4` 29 / `py-1.5` 27 / `py-0.5` 27 / `py-1` 25 |
-| コンテナ | `max-w-6xl` **14**（最頻・1152px） / `max-w-2xl` 12 / `max-w-3xl` 8 / `max-w-5xl` 7 |
+| コンテナ | `max-w-6xl` **15**（最頻・1152px） / `max-w-2xl` 12 / `max-w-3xl` 8 / `max-w-5xl` 7 |
 
 **base unit は 4px で、実質的なスケールは 2 / 4 / 6 / 8 / 12 / 16 / 20 / 24 / 32 / 40px。** これを書き起こすのが本 spec の主作業であり、値の発明ではない。
 
@@ -74,7 +76,7 @@
 
 対象外:
 - **既存画面の見た目の変更。** 本 spec は**トークンと文書だけ**を触る。**レンダリング結果に差分を出してはいけない**
-- `/calendar` の週ボード化（`specs/feat-calendar-week-board.md`。本 spec のトークンを使う側）
+- `/calendar` の週ボード（`specs/feat-calendar-week-board.md`。**PR #748 で 2026-09-02 にマージ済み**。本 spec が書き起こす `density.desktop: compact` の参照実装であり、**触らない**）
 - `.bg-paper` ユーティリティの改名（21ファイルに波及する。**本 spec では触らない**）
 - Tailwind の `font-serif` ユーティリティ（意図的な用法。触らない）
 - 色・書体・角丸・影の値（D018 と D020 で確定済み）
@@ -139,7 +141,7 @@ front-matter に対応する散文を、既存の Colors / Typography 節と同�
 
 - **Spacing**: base unit 4px。スケールの用途（`gap-2` は密な要素間、`gap-4` は要素群、`px-4` は既定の水平パディング等、**実装の使われ方を記述する**）
 - **Layout**: コンテナ幅1152px。ブレークポイント4段。**「`sm:` で分岐して終わりにせず、`lg:` 以上で情報の並べ方を変える」ことを明示的に要求する**（実測 `sm:` 221 vs `lg:` 24 の偏りが問題の原因であるため）
-- **Density**: モバイルは comfortable（縦積み・読みやすさ優先）、デスクトップは compact（列組み・走査性優先）。**同じ縦積みを横に引き伸ばさない**
+- **Density**: モバイルは comfortable（縦積み・読みやすさ優先）、デスクトップは compact（列組み・走査性優先）。**同じ縦積みを横に引き伸ばさない**。既存の Colors 節が `docs/design/mock-1-soft-v3.html` を参照実装として名指ししているのと同じ形で、**`components/calendar/week-schedule.tsx` の `WeekBoard`（PR #748）を `density.desktop: compact` の参照実装として名指しする**。これは仮説ではなく既に本番で動いている実装であり、`hidden lg:block` で 1024px 以上のときだけ列組みに切り替える形が、Layout 節が要求する「`lg:` 以上で並べ方を変える」の実例そのものである
 
 ### `app/globals.css` の変更
 
@@ -159,7 +161,7 @@ front-matter に対応する散文を、既存の Colors / Typography 節と同�
 1. `design.md` の front-matter に `spacing.base` / `spacing.scale` / `spacing.density.mobile` / `spacing.density.desktop` / `layout.container` / `layout.breakpoints` / `layout.listRow` が存在する
 2. `layout.listRow.appliesTo` が `"new-and-redesigned-surfaces"` であり、本文にも**既存画面へ遡及適用しない**旨が書かれている
 3. `spacing.scale` の各値が、実装で実際に使われている Tailwind の間隔（2/4/6/8/12/16/20/24/32/40px）と対応している
-4. `layout.container` が `1152px`（`max-w-6xl`）である
+4. `layout.container` が `1152px`（`max-w-6xl`。2026-09-02 実測で15箇所と最頻）である
 5. `design.md` 本文に Spacing / Layout / Density に相当する節が追加され、front-matter の各キーが散文でも説明されている
 6. 本文の Layout 節に「`lg:` 以上で情報の並べ方を変える」旨の要求が明記されている
 7. `app/globals.css` に `--space-*` トークンが定義されている
@@ -177,7 +179,15 @@ front-matter に対応する散文を、既存の Colors / Typography 節と同�
 
 17. 次の5ページについて、デスクトップ幅 **1440** と モバイル幅 **390** のスクリーンショットを変更前後で撮り、**差分がゼロ**であることを示す:
     `/` / `/calendar` / `/c/urc/2026-27` / `/matches/<任意の公開済み試合>` / `/c/nations-championship/2026`
-18. `--space-*` を**既存コンポーネントに適用していない**（定義の追加のみ。`git diff` に `space-` を使う JSX/CSS の変更が含まれない）
+18. `--space-*` を**既存コンポーネントに適用していない**。判定は次のコマンドで行う:
+
+    ```
+    git diff -U0 -- app components lib ':!app/globals.css' | grep '^+' | grep -c 'var(--space-'
+    ```
+
+    **期待値は0。** 実装コード（`app` / `components` / `lib`）の差分の追加行に `var(--space-` が1件も現れないことを意味する。`app/globals.css` は定義そのものなので除外する。**文書（`specs/` / `docs/` / `design.md`）を対象に含めると、この条件文自体が引っかかって0にならない。**
+
+    **文字列 `space-` で検索してはいけない。** 改名対象の `app/matches/[id]/page.tsx:548` は `<div className="space-y-4 ... bg-[var(--color-paper)] ...">` であり、**Tailwind の `space-y-4` を同じ行に含む。** 受け入れ条件11が要求する改名を行えば、この行は必ず差分に現れる。`space-` で数えると、正しい実装が違反として検出される
 
 ### デザイン品質
 
@@ -193,7 +203,7 @@ front-matter に対応する散文を、既存の Colors / Typography 節と同�
 | 確認 | 方法 | 期待 |
 |---|---|---|
 | 文書と実装の一致 | 受け入れ条件14の突き合わせ | 色・書体・角丸・影 20項目 + spacing の全件一致 |
-| 後続 spec が参照できるか | `specs/feat-calendar-week-board.md` が `design.md` の `layout.listRow` を根拠に受け入れ条件を書けること | 書ける |
+| 参照実装と矛盾しないか | 追加する `density.desktop: compact` / `layout.listRow` の記述が、**既にマージ済みの週ボード**（`components/calendar/week-schedule.tsx`、PR #748）と矛盾しないこと | 矛盾しない |
 | 再発防止 | 次回のデザイン監査で「spacing の規定が無い」が所見に上がらないこと | 上がらない |
 
 ## 未解決の質問
