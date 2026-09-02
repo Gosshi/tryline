@@ -4,7 +4,7 @@ name: "Tryline Soft Modern"
 description: "The current soft-modern design system for a Japanese rugby analysis product."
 colors:
   page-background: "#f1efe9"
-  paper: "#f5f6f8"
+  panel: "#f5f6f8"
   ink: "#1f2530"
   ink-muted: "#646a76"
   rule: "#eceef2"
@@ -29,7 +29,6 @@ typography:
   family:
     body: "Zen Maru Gothic via --font-zen-maru"
     heading: "Zen Maru Gothic via --font-zen-maru"
-    serif-jp: "Zen Maru Gothic via --font-zen-maru"
     number: "Outfit via --font-number"
   weights:
     Zen Maru Gothic: [500, 700, 900]
@@ -57,6 +56,36 @@ radius:
 shadows:
   default: "0 20px 44px -24px rgb(28 38 64 / 40%)"
   soft: "0 12px 28px -20px rgb(28 38 64 / 45%)"
+spacing:
+  base: "4px"
+  scale:
+    "0.5": "2px"
+    "1": "4px"
+    "1.5": "6px"
+    "2": "8px"
+    "3": "12px"
+    "4": "16px"
+    "5": "20px"
+    "6": "24px"
+    "8": "32px"
+    "10": "40px"
+  density:
+    mobile: "comfortable"
+    desktop: "compact"
+layout:
+  container: "1152px"
+  breakpoints:
+    sm: "640px"
+    md: "768px"
+    lg: "1024px"
+    xl: "1280px"
+  listRow:
+    appliesTo: "new-and-redesigned-surfaces"
+    mobile:
+      orientation: "stacked"
+    desktop:
+      orientation: "columnar"
+      maxEmptyRatio: 0.25
 ---
 
 # Tryline Design System
@@ -71,21 +100,37 @@ This direction was selected on 2026-06-23. The reference mock is [soft-v3](docs/
 
 The page background is not a single flat token. `body` uses `#f1efe9` as its background color, overlaid with a red 5% radial gradient (`rgb(201 58 58 / 5%)`), a blue 5% radial gradient (`rgb(26 58 92 / 5%)`), a `#f8f7f4` → `#f1efe9` → `#eceae3` linear gradient, and a low-opacity SVG noise texture. `.bg-paper` applies the same layers.
 
-`--color-paper` is `#f5f6f8`; it is an internal-panel token, not the page background. It is used for interior panels on the match page, match events section, and score graph. `--color-ink` is `#1f2530`, `--color-ink-muted` is `#767d8b`, `--color-rule` is `#eceef2`, and the brand accent is red: `--color-accent: #c93a40`. `--color-accent-dim` and `--color-accent-subtle` mix that accent with transparency at 15% and 10% respectively. `--team-home` is `#667085` and `--team-away` is `#475467`.
+`--color-panel` is `#f5f6f8`; it is an internal-panel token, not the page background. It is used for interior panels on the match page, match events section, and score graph. `--color-ink` is `#1f2530`, `--color-ink-muted` is `#767d8b`, `--color-rule` is `#eceef2`, and the brand accent is red: `--color-accent: #c93a40`. `--color-accent-dim` and `--color-accent-subtle` mix that accent with transparency at 15% and 10% respectively. `--team-home` is `#667085` and `--team-away` is `#475467`.
 
 The shadcn-compatible tokens use HSL values: `--background: 220 13% 97%`, `--foreground: 219 22% 15%`, `--card: 0 0% 100%`, `--card-foreground: 219 22% 15%`, `--primary: 357 57% 51%`, `--primary-foreground: 0 0% 100%`, `--muted: 220 14% 95%`, `--muted-foreground: 220 7% 50%`, `--border: 220 16% 94%`, `--input: 220 16% 94%`, and `--ring: 357 57% 51%`. These provide the compatibility layer for controls and surfaces alongside the named Tryline tokens.
 
 ## Typography
 
-Zen Maru Gothic is the single Japanese interface family. `--font-body`, `--font-heading`, and `--font-serif-jp` all alias `--font-zen-maru`; they are roles, not three different typefaces. The loaded Zen Maru Gothic weights are 500, 700, and 900. Body text is rendered at weight 500, and `h1`, `h2`, and `h3` at weight 900.
+Zen Maru Gothic is the single Japanese interface family. `--font-body` and `--font-heading` both alias `--font-zen-maru`; they are roles, not different typefaces. The loaded Zen Maru Gothic weights are 500, 700, and 900. Body text is rendered at weight 500, and `h1`, `h2`, and `h3` at weight 900.
 
 Outfit is loaded separately through `--font-number` at weights 500 and 700. It is reserved for `.tabular-nums`, which also applies `font-variant-numeric: tabular-nums`, so score and statistic columns retain stable figure widths.
 
 The type scale has eight tokens: `--text-xs: 0.75rem`, `--text-sm: 0.875rem`, `--text-base: 1rem`, `--text-lg: 1.125rem`, `--text-xl: 1.25rem`, `--text-2xl: 1.5rem`, `--text-3xl: 2rem`, and `--text-4xl: 2.5rem`. Use scale and weight to establish hierarchy without making dense match data harder to scan on small screens.
 
+## Spacing
+
+Spacing uses a 4px base unit and the implemented scale of 2, 4, 6, 8, 12, 16, 20, 24, 32, and 40px. The matching `--space-*` custom properties are the documented source of truth, while Tailwind spacing utilities remain the implementation mechanism. In current surfaces, `gap-2` is the common separation for tightly related elements, `gap-4` separates element groups, and `px-4` is the default horizontal padding for many cards and containers.
+
+Use the smaller 2–8px steps inside compact controls and tightly coupled match data, the 12–20px steps between related groups, and the 24–40px steps for larger section rhythm. These tokens document the existing spacing language; they are not a requirement to replace established Tailwind utilities across existing components.
+
 ## Layout
 
-Keep primary match information visible without horizontal overflow on mobile. Desktop layouts can widen into two-column match grids, while the core card proportions remain compact and scannable. Use rounded, softly separated sections to group information; do not trade readable Japanese text for denser utility-table layouts.
+The primary container is 1152px (`max-w-6xl`), the most frequently used container width in the implementation. The responsive breakpoints are `sm` at 640px, `md` at 768px, `lg` at 1024px, and `xl` at 1280px.
+
+Responsive work must not branch at `sm:` and stop there. The current implementation has 223 `sm:` uses but only 26 `lg:` uses, even though 63% of readers are on desktop; new and redesigned surfaces must change how information is arranged at `lg:` and above instead of stretching the mobile stack across a wider canvas.
+
+List rows stack on mobile and become columnar on desktop. On new and redesigned surfaces, the empty span between the end of primary text and the start of the next column must not exceed 25% of the row width (`maxEmptyRatio: 0.25`). This constraint does not apply retroactively to unchanged existing surfaces.
+
+## Density
+
+Mobile density is comfortable: favor vertical stacking, readable text, and touchable separation. Desktop density is compact: use columns and deliberate alignment to improve scanning, while retaining the same soft-modern surfaces and legible Japanese typography. Do not carry the same vertical stack to desktop and merely stretch it horizontally.
+
+`WeekBoard` in `components/calendar/week-schedule.tsx` is the reference implementation for `density.desktop: compact`. Its desktop board is activated with `hidden lg:block`, changing to a columnar weekly arrangement at 1024px while the mobile presentation remains comfortable and stacked.
 
 ## Elevation & Depth
 

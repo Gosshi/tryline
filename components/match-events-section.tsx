@@ -193,7 +193,7 @@ export function MatchEventsSection({
         </div>
       )}
 
-      <details className="mt-4 rounded-[var(--radius-sm)] bg-[var(--color-paper)] px-4 py-3">
+      <details className="mt-4 rounded-[var(--radius-sm)] bg-[var(--color-panel)] px-4 py-3">
         <summary className="cursor-pointer text-sm font-bold text-[var(--color-ink)]">
           すべての得点・カード
         </summary>

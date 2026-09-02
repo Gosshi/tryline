@@ -545,7 +545,7 @@ export default async function MatchDetailPage({
                     +
                   </span>
                 </summary>
-                <div className="space-y-4 border-t border-[var(--color-rule)] bg-[var(--color-paper)] p-3 sm:p-4">
+                <div className="space-y-4 border-t border-[var(--color-rule)] bg-[var(--color-panel)] p-3 sm:p-4">
                   <MatchContentSection
                     afterBody={
                       <MatchContentTrustStrip
