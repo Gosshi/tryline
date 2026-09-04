@@ -57,6 +57,7 @@ export async function validateSourceUrl(
         redirect: "follow",
         signal: controller.signal,
       });
+      await response.body?.cancel();
     }
 
     if (response.status !== 200) {

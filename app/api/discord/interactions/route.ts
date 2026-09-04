@@ -354,10 +354,12 @@ function parseResearchFactLines(value: string) {
   const facts: Array<{ fact: string; lineNumber: number }> = [];
 
   for (const [index, rawLine] of value.split(/\r?\n/u).entries()) {
-    const fact = rawLine
-      .trim()
-      .replace(/^[-*・]\s*/u, "")
-      .trim();
+    const trimmedLine = rawLine.trim();
+    if (trimmedLine.startsWith("#")) {
+      continue;
+    }
+
+    const fact = trimmedLine.replace(/^[-*・]\s*/u, "").trim();
     if (fact) {
       facts.push({ fact, lineNumber: index + 1 });
     }

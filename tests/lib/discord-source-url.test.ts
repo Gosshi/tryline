@@ -51,10 +51,14 @@ describe("validateSourceUrl", () => {
   });
 
   it("falls back to GET when HEAD is not allowed", async () => {
+    const cancel = vi.fn(async () => undefined);
     const fetchImplementation = vi
       .fn()
       .mockResolvedValueOnce(new Response(null, { status: 405 }))
-      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+      .mockResolvedValueOnce({
+        body: { cancel },
+        status: 200,
+      } as unknown as Response);
 
     await expect(
       validateSourceUrl("https://example.com/story", {
@@ -71,6 +75,7 @@ describe("validateSourceUrl", () => {
       new URL("https://example.com/story"),
       expect.objectContaining({ method: "GET", redirect: "follow" }),
     );
+    expect(cancel).toHaveBeenCalledOnce();
   });
 
   it("rejects non-http schemes without making a request", async () => {

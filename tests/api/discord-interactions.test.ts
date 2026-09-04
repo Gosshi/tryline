@@ -489,7 +489,8 @@ describe("POST /api/discord/interactions", () => {
       createRequest(
         researchSubmission({
           confidence: "high",
-          facts: "  - 事実A  \n\n* 事実B\n ・ 事実C ",
+          facts:
+            "## 日本 × New Zealand\n  - 事実A  \n\n### 出典: https://example.com\n* 事実B\n ・ 事実C ",
         }),
       ),
     );
@@ -673,6 +674,30 @@ describe("POST /api/discord/interactions", () => {
     const fetchMock = stubFetchWithSourceStatus();
 
     await POST(createRequest(researchSubmission({ facts: " \n - \n ・ " })));
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    expect(
+      fetchMock.mock.calls.filter(([, init]) => init?.method !== "PATCH"),
+    ).toHaveLength(0);
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "有効な事実が1件もありません",
+    );
+  });
+
+  it("rejects a research submission containing only headings", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+
+    await POST(
+      createRequest(
+        researchSubmission({
+          facts: "## 日本 × New Zealand\n### 出典: https://example.com",
+        }),
+      ),
+    );
     await runAfterCallbacks();
 
     expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
