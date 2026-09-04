@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
 import { IosAppCta } from "@/components/ios-app-cta";
@@ -58,8 +60,44 @@ type Props = {
 
 export const revalidate = 3600;
 
+function listDedicatedSeasonRouteKeys(): Set<string> {
+  const competitionRoutesDirectory = join(process.cwd(), "app", "c");
+  const routeKeys = new Set<string>();
+
+  for (const competitionEntry of readdirSync(competitionRoutesDirectory, {
+    withFileTypes: true,
+  })) {
+    if (
+      !competitionEntry.isDirectory() ||
+      competitionEntry.name.startsWith("[")
+    ) {
+      continue;
+    }
+
+    const competitionDirectory = join(
+      competitionRoutesDirectory,
+      competitionEntry.name,
+    );
+
+    for (const seasonEntry of readdirSync(competitionDirectory, {
+      withFileTypes: true,
+    })) {
+      if (
+        seasonEntry.isDirectory() &&
+        !seasonEntry.name.startsWith("[") &&
+        existsSync(join(competitionDirectory, seasonEntry.name, "page.tsx"))
+      ) {
+        routeKeys.add(`${competitionEntry.name}/${seasonEntry.name}`);
+      }
+    }
+  }
+
+  return routeKeys;
+}
+
 export async function generateStaticParams() {
   const families = await listFamilies();
+  const dedicatedSeasonRouteKeys = listDedicatedSeasonRouteKeys();
   const params = (
     await Promise.all(
       families.map(async (competition) => {
@@ -73,7 +111,10 @@ export async function generateStaticParams() {
     )
   ).flat();
 
-  return params;
+  return params.filter(
+    ({ competition, season }) =>
+      !dedicatedSeasonRouteKeys.has(`${competition}/${season}`),
+  );
 }
 
 function formatDateJa(dateStr: string): string {
