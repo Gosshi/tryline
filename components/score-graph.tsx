@@ -54,7 +54,7 @@ export function ScoreGraph({
     .join(" ");
 
   return (
-    <div className="relative w-full overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-paper)] px-2 pt-2">
+    <div className="relative w-full overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-panel)] px-2 pt-2">
       <svg
         aria-label="スコア推移グラフ"
         className="w-full"
