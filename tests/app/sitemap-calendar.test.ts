@@ -43,6 +43,9 @@ describe("sitemap static routes", () => {
           priority: 0.75,
           url: "https://www.trylinerugby.com/c/six-nations/2026/standings",
         }),
+        expect.objectContaining({
+          url: "https://www.trylinerugby.com/c/rwc/2027/bracket",
+        }),
       ]),
     );
     expect(entries).not.toEqual(
@@ -50,5 +53,11 @@ describe("sitemap static routes", () => {
         expect.objectContaining({ url: "https://www.trylinerugby.com/news" }),
       ]),
     );
+    expect(
+      entries.filter(
+        ({ url }) =>
+          url === "https://www.trylinerugby.com/c/rwc/2027/bracket",
+      ),
+    ).toHaveLength(1);
   });
 });

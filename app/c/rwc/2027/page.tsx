@@ -23,6 +23,8 @@ import { groupMatchesByRound } from "@/lib/format/match-groups";
 
 import type { Metadata } from "next";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "ラグビーワールドカップ2027 日程・出場国・日本語ガイド",
   description:

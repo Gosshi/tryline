@@ -3,9 +3,14 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup, render, screen } from "@testing-library/react";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import SeasonPage, { generateMetadata } from "@/app/c/[competition]/[season]/page";
+import SeasonPage, {
+  generateMetadata,
+  generateStaticParams,
+} from "@/app/c/[competition]/[season]/page";
 import { isSeasonNotStarted } from "@/lib/season-standings";
 
 import type { MatchContentStatus } from "@/lib/db/queries/match-content";
@@ -193,7 +198,53 @@ function getFaqJsonLd(container: HTMLElement) {
     | undefined;
 }
 
+function listStaticCompetitionPageRoutes(
+  directory = join(process.cwd(), "app", "c"),
+  segments: string[] = [],
+): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.isFile() && entry.name === "page.tsx") {
+      return [`/c/${segments.join("/")}`];
+    }
+
+    if (!entry.isDirectory() || entry.name.startsWith("[")) {
+      return [];
+    }
+
+    return listStaticCompetitionPageRoutes(join(directory, entry.name), [
+      ...segments,
+      entry.name,
+    ]);
+  });
+}
+
 describe("season page information architecture", () => {
+  it("does not generate params owned by static competition routes", async () => {
+    competitionMocks.listFamilies.mockResolvedValue(["rwc", "urc"]);
+    competitionMocks.listSeasonsByFamily.mockImplementation(
+      async (family: string) =>
+        family === "rwc"
+          ? [{ season: "2027" }, { season: "2023" }]
+          : [{ season: "2026-27" }],
+    );
+
+    const generatedParams = await generateStaticParams();
+    const generatedRoutes = new Set(
+      generatedParams.map(
+        ({ competition, season }) => `/c/${competition}/${season}`,
+      ),
+    );
+    const conflictingRoutes = listStaticCompetitionPageRoutes().filter(
+      (route) => generatedRoutes.has(route),
+    );
+
+    expect(conflictingRoutes).toEqual([]);
+    expect(generatedParams).toEqual([
+      { competition: "rwc", season: "2023" },
+      { competition: "urc", season: "2026-27" },
+    ]);
+  });
+
   it.each([
     {
       expected: true,

@@ -104,6 +104,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily" as const,
       lastModified: new Date(),
       priority: 0.8,
+      url: `${base}/c/rwc/2027/bracket`,
+    },
+    {
+      changeFrequency: "daily" as const,
+      lastModified: new Date(),
+      priority: 0.8,
       url: `${base}/calendar`,
     },
     {
