@@ -85,21 +85,18 @@ jobs:
               exit 1
             fi
 
-            node <<'NODE'
-            const fs = require("node:fs");
+            ids=$(jq -r '.match_ids | join(" ")' /tmp/recent-manual-facts.json)
+            count=$(jq -r '.count' /tmp/recent-manual-facts.json)
+            truncated=$(jq -r '.truncated' /tmp/recent-manual-facts.json)
 
-            const payload = JSON.parse(fs.readFileSync("/tmp/recent-manual-facts.json", "utf8"));
-            const ids = Array.isArray(payload?.match_ids) ? payload.match_ids : [];
+            echo "match_ids=$ids" >> "$GITHUB_OUTPUT"
+            echo "count=$count" >> "$GITHUB_OUTPUT"
 
-            fs.appendFileSync(process.env.GITHUB_OUTPUT, `match_ids=${ids.join(" ")}\n`);
-            fs.appendFileSync(process.env.GITHUB_OUTPUT, `count=${ids.length}\n`);
-
-            console.log(`Recent manual recap match count: ${ids.length}`);
-            console.log(`Recent manual recap matches truncated: ${payload?.truncated === true}`);
-            if (ids.length > 0) {
-              console.log(`Target match IDs: ${ids.join(", ")}`);
-            }
-            NODE
+            echo "Recent manual recap match count: $count"
+            echo "Recent manual recap matches truncated: $truncated"
+            if [ "$count" -gt 0 ]; then
+              echo "Target match IDs: $ids"
+            fi
           else
             echo "Fetching calendar: $FROM to $TO"
             code=$(curl -s -o /tmp/calendar.json -w "%{http_code}" "$BASE/api/v1/calendar?from=$FROM&to=$TO")
