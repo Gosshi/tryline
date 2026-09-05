@@ -9,10 +9,17 @@ GitHub Actions の cron は実測で1〜10時間遅れますが、**遅れを当
 ---
 
 ```
-次の2ページを読んで、掲載されている試合の事実を収集してください。
+まず日付を計算してください。**このタスクは金曜に実行されます。**
 
-https://www.trylinerugby.com/calendar?week=<今週の月曜>
-https://www.trylinerugby.com/calendar?week=<翌週の月曜>
+- 今週の月曜 = 今日の4日前
+- 翌週の月曜 = 今日の3日後
+
+それぞれ `YYYY-MM-DD` 形式にして、次の2つの URL の `week=` に入れ、両方のページを読んでください。
+
+https://www.trylinerugby.com/calendar?week=（今週の月曜）
+https://www.trylinerugby.com/calendar?week=（翌週の月曜）
+
+**最初に、計算した2つの日付を明記してください。**
 
 **日本時間の日曜・月曜未明にキックオフする試合**を主な対象にしてください。
 
