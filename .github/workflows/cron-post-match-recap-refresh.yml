@@ -4,6 +4,8 @@ on:
   schedule:
     # Mon 09:05 JST: refresh recaps after weekend post-match news settles.
     - cron: "5 0 * * 1"
+    # Tue 09:05 JST: refresh recaps for matches with recently added manual facts.
+    - cron: "5 0 * * 2"
   workflow_dispatch:
     inputs:
       from:
@@ -23,6 +25,7 @@ jobs:
       BASE: ${{ secrets.PRODUCTION_URL }}
       AUTH: "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
       EVENT_NAME: ${{ github.event_name }}
+      EVENT_SCHEDULE: ${{ github.event.schedule }}
       INPUT_FROM: ${{ inputs.from }}
       INPUT_TO: ${{ inputs.to }}
 
@@ -41,11 +44,18 @@ jobs:
             trigger="manual"
             from="$INPUT_FROM"
             to="$INPUT_TO"
-          else
+          elif [ "$EVENT_SCHEDULE" = "5 0 * * 1" ]; then
             trigger="weekly-monday"
             base_date=$(TZ=Asia/Tokyo date +%F)
             from=$(TZ=Asia/Tokyo date -d "$base_date -4 days" +%F)
             to="$base_date"
+          elif [ "$EVENT_SCHEDULE" = "5 0 * * 2" ]; then
+            trigger="tuesday-recent-manual-facts"
+            from="not-applicable"
+            to="not-applicable"
+          else
+            echo "Unsupported trigger schedule: $EVENT_SCHEDULE" >&2
+            exit 1
           fi
 
           echo "trigger=$trigger" >> "$GITHUB_OUTPUT"
@@ -63,18 +73,46 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "Fetching calendar: $FROM to $TO"
-          code=$(curl -s -o /tmp/calendar.json -w "%{http_code}" "$BASE/api/v1/calendar?from=$FROM&to=$TO")
-          echo "Calendar HTTP status: $code"
-          cat /tmp/calendar.json
-          echo
+          if [ "$EVENT_SCHEDULE" = "5 0 * * 2" ]; then
+            echo "Fetching matches with recent manual recap facts"
+            code=$(curl -s -o /tmp/recent-manual-facts.json -w "%{http_code}" -H "$AUTH" "$BASE/api/cron/matches-with-recent-manual-facts?content_type=recap&hours=24")
+            echo "Recent manual facts HTTP status: $code"
+            cat /tmp/recent-manual-facts.json
+            echo
 
-          if [ "$code" != "200" ]; then
-            echo "ERROR: calendar API returned non-200 status: $code" >&2
-            exit 1
-          fi
+            if [ "$code" != "200" ]; then
+              echo "ERROR: recent manual facts API returned non-200 status: $code" >&2
+              exit 1
+            fi
 
-          node <<'NODE'
+            node <<'NODE'
+            const fs = require("node:fs");
+
+            const payload = JSON.parse(fs.readFileSync("/tmp/recent-manual-facts.json", "utf8"));
+            const ids = Array.isArray(payload?.match_ids) ? payload.match_ids : [];
+
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `match_ids=${ids.join(" ")}\n`);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `count=${ids.length}\n`);
+
+            console.log(`Recent manual recap match count: ${ids.length}`);
+            console.log(`Recent manual recap matches truncated: ${payload?.truncated === true}`);
+            if (ids.length > 0) {
+              console.log(`Target match IDs: ${ids.join(", ")}`);
+            }
+            NODE
+          else
+            echo "Fetching calendar: $FROM to $TO"
+            code=$(curl -s -o /tmp/calendar.json -w "%{http_code}" "$BASE/api/v1/calendar?from=$FROM&to=$TO")
+            echo "Calendar HTTP status: $code"
+            cat /tmp/calendar.json
+            echo
+
+            if [ "$code" != "200" ]; then
+              echo "ERROR: calendar API returned non-200 status: $code" >&2
+              exit 1
+            fi
+
+            node <<'NODE'
           const fs = require("node:fs");
 
           const payload = JSON.parse(fs.readFileSync("/tmp/calendar.json", "utf8"));
@@ -117,6 +155,7 @@ jobs:
             console.log(`Target match IDs: ${ids.join(", ")}`);
           }
           NODE
+          fi
 
       - name: Refresh recap facts and content
         id: refresh
