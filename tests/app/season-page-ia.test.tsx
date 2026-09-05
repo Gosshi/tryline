@@ -31,6 +31,7 @@ const contentMocks = vi.hoisted(() => ({
 
 const broadcastMocks = vi.hoisted(() => ({
   getMatchBroadcastPresenceForMatches: vi.fn(),
+  getMatchBroadcastsForMatches: vi.fn(),
   getMatchBroadcastServicesForMatches: vi.fn(),
 }));
 
@@ -380,6 +381,7 @@ describe("season page information architecture", () => {
       new Set(),
     );
     broadcastMocks.getMatchBroadcastServicesForMatches.mockResolvedValue([]);
+    broadcastMocks.getMatchBroadcastsForMatches.mockResolvedValue(new Map());
     standingsMocks.getPoolStandingsForCompetition.mockResolvedValue([]);
     standingsMocks.getStandingsForCompetition.mockResolvedValue([standing]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({
@@ -584,7 +586,7 @@ describe("season page information architecture", () => {
     ).toHaveAttribute("href", "/calendar");
   });
 
-  it("passes aggregated broadcast services to the competition guide", async () => {
+  it("uses verified broadcast data for the visible guide and FAQ", async () => {
     const greatestRivalryCompetition = {
       ...competition,
       family: "greatest-rivalry",
@@ -600,16 +602,25 @@ describe("season page information architecture", () => {
     competitionMocks.listSeasonsByFamily.mockResolvedValue([
       greatestRivalryCompetition,
     ]);
-    broadcastMocks.getMatchBroadcastServicesForMatches.mockResolvedValue([
-      {
-        displayOrder: 0,
-        kind: "tv",
-        serviceName: "J SPORTS 3",
-        url: "https://example.com/j-sports-3",
-      },
-    ]);
+    broadcastMocks.getMatchBroadcastsForMatches.mockResolvedValue(
+      new Map([
+        [
+          "match-1",
+          [
+            {
+              displayOrder: 0,
+              kind: "tv",
+              serviceName: "J SPORTS 3",
+              sourceUrl: "https://example.com/source",
+              url: "https://example.com/j-sports-3",
+              verifiedAt: "2026-09-05T00:00:00.000Z",
+            },
+          ],
+        ],
+      ]),
+    );
 
-    render(
+    const { container } = render(
       await SeasonPage({
         params: Promise.resolve({
           competition: "greatest-rivalry",
@@ -622,8 +633,17 @@ describe("season page information architecture", () => {
       "href",
       "https://example.com/j-sports-3",
     );
+    expect(screen.getByText(/確認済みのサービス: J SPORTS 3（2026-09-05確認）。/)).toBeInTheDocument();
+    expect(getFaqJsonLd(container)?.mainEntity).toContainEqual(
+      expect.objectContaining({
+        acceptedAnswer: expect.objectContaining({
+          text: "掲載中の一部試合に視聴情報があります。対象試合の案内をご確認ください。確認済みのサービス: J SPORTS 3（2026-09-05確認）。",
+        }),
+        name: "Greatest Rivalryはどこで見られますか？",
+      }),
+    );
     expect(
-      broadcastMocks.getMatchBroadcastServicesForMatches,
+      broadcastMocks.getMatchBroadcastsForMatches,
     ).toHaveBeenCalledWith(["match-1"]);
   });
 
@@ -802,6 +822,15 @@ describe("season page information architecture", () => {
     );
     expect(faq).toBeDefined();
     expect(faq?.mainEntity).toHaveLength(4);
+    const broadcastFaq = faq?.mainEntity.find((entry) =>
+      entry.name.endsWith("はどこで見られますか？"),
+    );
+    expect(broadcastFaq?.acceptedAnswer.text).not.toMatch(
+      /DAZN|J SPORTS|WOWOW|NHK/,
+    );
+    expect(broadcastFaq?.acceptedAnswer.text).toBe(
+      "このシーズンの放送・配信情報は確認中です。最新情報は大会公式サイトをご確認ください。",
+    );
     expect(faq?.mainEntity).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
