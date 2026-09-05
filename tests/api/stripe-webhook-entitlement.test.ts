@@ -11,6 +11,10 @@ const stripeMocks = vi.hoisted(() => ({
   constructEvent: vi.fn(),
 }));
 
+const notificationMocks = vi.hoisted(() => ({
+  notifyStripeWebhookIssue: vi.fn(),
+}));
+
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(() => ({ from: dbMocks.from })),
 }));
@@ -20,6 +24,8 @@ vi.mock("stripe", () => ({
     webhooks: { constructEvent: stripeMocks.constructEvent },
   })),
 }));
+
+vi.mock("@/lib/llm/notify", () => notificationMocks);
 
 import { POST } from "@/app/api/stripe/webhook/route";
 
@@ -52,6 +58,7 @@ function createSubscription(
 function setEvent(type: string, subscription: Record<string, unknown>) {
   stripeMocks.constructEvent.mockReturnValue({
     data: { object: subscription },
+    id: "evt_test",
     type,
   });
 }
@@ -66,6 +73,7 @@ describe("Stripe premium entitlement webhook", () => {
     dbMocks.eq.mockResolvedValue({ error: null });
     dbMocks.update.mockReturnValue({ eq: dbMocks.eq });
     dbMocks.upsert.mockResolvedValue({ error: null });
+    notificationMocks.notifyStripeWebhookIssue.mockResolvedValue(undefined);
     dbMocks.from.mockReturnValue({
       update: dbMocks.update,
       upsert: dbMocks.upsert,
@@ -85,6 +93,7 @@ describe("Stripe premium entitlement webhook", () => {
     const response = await POST(createRequest());
 
     expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe("ok");
     expect(dbMocks.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         current_period_end: periodEndIso,
@@ -172,5 +181,70 @@ describe("Stripe premium entitlement webhook", () => {
       }),
     );
     expect(dbMocks.eq).toHaveBeenCalledWith("id", "user-1");
+  });
+
+  it("returns 500 and reports identifiers only when an entitlement upsert fails", async () => {
+    dbMocks.upsert.mockResolvedValue({
+      error: { details: "customer email@example.com", message: "write failed" },
+    });
+    setEvent("customer.subscription.updated", createSubscription());
+
+    const response = await POST(createRequest());
+
+    expect(response.status).toBe(500);
+    expect(notificationMocks.notifyStripeWebhookIssue).toHaveBeenCalledWith({
+      eventId: "evt_test",
+      eventType: "customer.subscription.updated",
+      issueCode: "subscription_upsert_failed",
+      userId: "user-1",
+    });
+  });
+
+  it("returns 500 when a deletion update fails", async () => {
+    dbMocks.eq.mockResolvedValue({ error: { message: "write failed" } });
+    setEvent("customer.subscription.deleted", createSubscription());
+
+    const response = await POST(createRequest());
+
+    expect(response.status).toBe(500);
+    expect(notificationMocks.notifyStripeWebhookIssue).toHaveBeenCalledWith({
+      eventId: "evt_test",
+      eventType: "customer.subscription.deleted",
+      issueCode: "subscription_delete_failed",
+      userId: "user-1",
+    });
+  });
+
+  it("acknowledges a handled event without userId after notifying ops", async () => {
+    setEvent(
+      "customer.subscription.created",
+      createSubscription({ metadata: {} }),
+    );
+
+    const response = await POST(createRequest());
+
+    expect(response.status).toBe(200);
+    expect(notificationMocks.notifyStripeWebhookIssue).toHaveBeenCalledWith({
+      eventId: "evt_test",
+      eventType: "customer.subscription.created",
+      issueCode: "missing_user_id",
+    });
+    expect(dbMocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it("keeps invalid signatures and unsupported event types acknowledged as before", async () => {
+    stripeMocks.constructEvent.mockImplementationOnce(() => {
+      throw new Error("invalid signature");
+    });
+
+    const invalidSignatureResponse = await POST(createRequest());
+
+    expect(invalidSignatureResponse.status).toBe(400);
+
+    setEvent("invoice.created", createSubscription({ metadata: {} }));
+    const unsupportedEventResponse = await POST(createRequest());
+
+    expect(unsupportedEventResponse.status).toBe(200);
+    expect(notificationMocks.notifyStripeWebhookIssue).not.toHaveBeenCalled();
   });
 });

@@ -267,3 +267,24 @@ export async function notifyNewsletterDelivery(
 
   await postOpsAlert(message);
 }
+
+export async function notifyStripeWebhookIssue(options: {
+  eventId: string;
+  eventType: string;
+  issueCode:
+    | "missing_user_id"
+    | "subscription_delete_failed"
+    | "subscription_upsert_failed";
+  userId?: string;
+}): Promise<void> {
+  const message = [
+    "🚨 Stripe webhook requires attention",
+    `Event ID: ${options.eventId}`,
+    `Event type: ${options.eventType}`,
+    `User ID: ${options.userId ?? "missing"}`,
+    `Issue: ${options.issueCode}`,
+    "対応: Stripe Dashboard のイベントIDを確認し、user_profiles の権限を調査してください",
+  ].join("\n");
+
+  await postOpsAlert(message);
+}

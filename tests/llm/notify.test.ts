@@ -19,6 +19,7 @@ import {
   notifyDataIntegrityReport,
   notifyNewsletterDelivery,
   notifyPrekickoffReadinessAudit,
+  notifyStripeWebhookIssue,
 } from "@/lib/llm/notify";
 
 import type { QaResult } from "@/lib/llm/types";
@@ -81,6 +82,27 @@ describe("llm notify", () => {
       "問題点: tone_mismatch / insufficient_evidence",
     );
     expect(payload.content).toContain("戦術的深さ(tactical_depth) 2/5");
+  });
+
+  it("posts Stripe webhook identifiers without payment or customer details", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyStripeWebhookIssue({
+      eventId: "evt_test",
+      eventType: "customer.subscription.updated",
+      issueCode: "subscription_upsert_failed",
+      userId: "user-1",
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const content = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(content).toContain("Event ID: evt_test");
+    expect(content).toContain("User ID: user-1");
+    expect(content).not.toMatch(/cus_|card|email/i);
   });
 
   it("posts deterministic diagnostics before issues for rejected content", async () => {
