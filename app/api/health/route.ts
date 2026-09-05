@@ -62,17 +62,23 @@ export async function GET() {
     checkOpenAI(),
   ]);
 
-  return NextResponse.json({
-    status: "ok",
-    checks: {
-      supabase,
-      openai,
+  const status =
+    supabase === "error" ? "error" : openai === "error" ? "degraded" : "ok";
+
+  return NextResponse.json(
+    {
+      status,
+      checks: {
+        supabase,
+        openai,
+      },
+      version:
+        process.env.VERCEL_GIT_COMMIT_SHA ??
+        process.env.GIT_COMMIT_SHA ??
+        process.env.npm_package_version ??
+        "dev",
+      timestamp: new Date().toISOString(),
     },
-    version:
-      process.env.VERCEL_GIT_COMMIT_SHA ??
-      process.env.GIT_COMMIT_SHA ??
-      process.env.npm_package_version ??
-      "dev",
-    timestamp: new Date().toISOString(),
-  });
+    { status: status === "error" ? 503 : 200 },
+  );
 }
