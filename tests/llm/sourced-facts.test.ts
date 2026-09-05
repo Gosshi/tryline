@@ -1019,7 +1019,10 @@ describe("fetchSourcedFactsForMatch", () => {
 
   it("returns a manually entered fact from a non-allowlisted domain", async () => {
     const manualFact = cachedFact({
-      metadata: { entry_method: "manual" },
+      metadata: {
+        entry_method: "manual",
+        entry_path: "discord_research_command",
+      },
       model_version: "manual",
       source_domain: "rnz.co.nz",
       source_url: "https://www.rnz.co.nz/news/sport/1",

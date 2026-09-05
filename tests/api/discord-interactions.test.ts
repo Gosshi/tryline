@@ -5,7 +5,19 @@ const envMocks = vi.hoisted(() => ({
   getServerEnv: vi.fn(),
 }));
 
+const afterMocks = vi.hoisted(() => {
+  const callbacks: Array<() => Promise<unknown> | unknown> = [];
+  return {
+    after: vi.fn((callback: () => Promise<unknown> | unknown) => {
+      callbacks.push(callback);
+    }),
+    callbacks,
+  };
+});
+
 const supabaseMocks = vi.hoisted(() => ({
+  candidateGte: vi.fn(),
+  candidateLte: vi.fn(),
   from: vi.fn(),
   matchEq: vi.fn(),
   matchMaybeSingle: vi.fn(),
@@ -13,6 +25,7 @@ const supabaseMocks = vi.hoisted(() => ({
   newsLinkEq: vi.fn(),
   newsLinkMaybeSingle: vi.fn(),
   newsLinkSelect: vi.fn(),
+  sourcedFactsSelect: vi.fn(),
   sourcedFactsUpsert: vi.fn(),
 }));
 
@@ -20,6 +33,7 @@ vi.mock("@/lib/env", () => envMocks);
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: vi.fn(() => ({ from: supabaseMocks.from })),
 }));
+vi.mock("next/server", () => ({ after: afterMocks.after }));
 
 import { POST } from "@/app/api/discord/interactions/route";
 
@@ -27,6 +41,8 @@ const ownerUserId = "123456789012345678";
 const matchId = "0fd7d8e6-37f9-4b58-82dd-9c2d5592fd64";
 const newsLinkId = "1fd7d8e6-37f9-4b58-82dd-9c2d5592fd64";
 const sourceUrl = "https://www.rnz.co.nz/news/sport/572252/test-selection";
+const discordApplicationId = "999999999999999999";
+const discordInteractionToken = "interaction-token";
 const timestamp = "1720000000";
 const { privateKey, publicKey } = generateKeyPairSync("ed25519");
 const publicKeyHex = publicKey
@@ -34,11 +50,16 @@ const publicKeyHex = publicKey
   .subarray(-32)
   .toString("hex");
 
-function createRequest(payload: Record<string, unknown>, validSignature = true) {
+function createRequest(
+  payload: Record<string, unknown>,
+  validSignature = true,
+) {
   const body = JSON.stringify(payload);
-  const signature = sign(null, Buffer.from(`${timestamp}${body}`), privateKey).toString(
-    "hex",
-  );
+  const signature = sign(
+    null,
+    Buffer.from(`${timestamp}${body}`),
+    privateKey,
+  ).toString("hex");
 
   return new Request("http://localhost/api/discord/interactions", {
     body,
@@ -70,6 +91,69 @@ function notificationCommand() {
   });
 }
 
+function researchCommand() {
+  return ownerInteraction({
+    name: "調査事実を追加",
+    type: 1,
+  });
+}
+
+function researchSubmission(params: {
+  confidence?: string;
+  facts: string;
+  matchId?: string;
+  sourceUrl?: string;
+}) {
+  return {
+    application_id: discordApplicationId,
+    data: {
+      components: [
+        {
+          component: {
+            custom_id: "match_id",
+            values: [params.matchId ?? matchId],
+          },
+        },
+        { component: { custom_id: "facts", value: params.facts } },
+        {
+          component: {
+            custom_id: "source_url",
+            value: params.sourceUrl ?? sourceUrl,
+          },
+        },
+        {
+          component: {
+            custom_id: "confidence",
+            values: params.confidence ? [params.confidence] : [],
+          },
+        },
+      ],
+      custom_id: "research-fact-entry",
+    },
+    token: discordInteractionToken,
+    type: 5,
+    user: { id: ownerUserId },
+  };
+}
+
+async function runAfterCallbacks() {
+  const callbacks = afterMocks.callbacks.splice(0);
+  await Promise.all(callbacks.map((callback) => callback()));
+}
+
+function stubFetchWithSourceStatus(status = 200) {
+  const fetchMock = vi.fn(
+    async (_input: string | URL | Request, init?: RequestInit) => {
+      if (init?.method === "PATCH") {
+        return new Response(null, { status: 204 });
+      }
+      return new Response(null, { status });
+    },
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
 const newsLinkBuilder = {
   eq: supabaseMocks.newsLinkEq,
   maybeSingle: supabaseMocks.newsLinkMaybeSingle,
@@ -80,20 +164,32 @@ const matchBuilder = {
   maybeSingle: supabaseMocks.matchMaybeSingle,
   select: supabaseMocks.matchSelect,
 };
+const candidateMatchBuilder = {
+  gte: supabaseMocks.candidateGte,
+  lte: supabaseMocks.candidateLte,
+};
+const sourcedFactsBuilder = {
+  select: supabaseMocks.sourcedFactsSelect,
+};
 
 describe("POST /api/discord/interactions", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-27T00:00:00.000Z"));
     vi.clearAllMocks();
+    afterMocks.callbacks.length = 0;
     envMocks.getServerEnv.mockReturnValue({
       DISCORD_OWNER_USER_ID: ownerUserId,
       DISCORD_PUBLIC_KEY: publicKeyHex,
     });
     supabaseMocks.newsLinkSelect.mockReturnValue(newsLinkBuilder);
     supabaseMocks.newsLinkEq.mockReturnValue(newsLinkBuilder);
-    supabaseMocks.matchSelect.mockReturnValue(matchBuilder);
+    supabaseMocks.matchSelect.mockImplementation((columns: string) =>
+      columns.includes("home_team") ? candidateMatchBuilder : matchBuilder,
+    );
     supabaseMocks.matchEq.mockReturnValue(matchBuilder);
+    supabaseMocks.candidateGte.mockReturnValue(candidateMatchBuilder);
+    supabaseMocks.candidateLte.mockResolvedValue({ data: [], error: null });
     supabaseMocks.newsLinkMaybeSingle.mockResolvedValue({
       data: { id: newsLinkId, source_url: sourceUrl },
       error: null,
@@ -102,7 +198,11 @@ describe("POST /api/discord/interactions", () => {
       data: { kickoff_at: "2026-08-29T09:00:00.000Z" },
       error: null,
     });
-    supabaseMocks.sourcedFactsUpsert.mockResolvedValue({ error: null });
+    supabaseMocks.sourcedFactsUpsert.mockReturnValue(sourcedFactsBuilder);
+    supabaseMocks.sourcedFactsSelect.mockResolvedValue({
+      data: [{ fact: "saved" }],
+      error: null,
+    });
     supabaseMocks.from.mockImplementation((table: string) => {
       if (table === "news_links") return newsLinkBuilder;
       if (table === "matches") return matchBuilder;
@@ -115,6 +215,7 @@ describe("POST /api/discord/interactions", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it("rejects an invalid Ed25519 signature before accessing the database", async () => {
@@ -203,6 +304,105 @@ describe("POST /api/discord/interactions", () => {
     );
   });
 
+  it("opens a four-field research modal with the nearest 25 matches", async () => {
+    const matches = Array.from({ length: 26 }, (_, index) => ({
+      away_team: {
+        name: index === 0 ? "New Zealand" : `Away ${index}`,
+        name_ja: index === 0 ? null : `アウェイ${index}`,
+      },
+      home_team: {
+        name: index === 0 ? "Japan" : `Home ${index}`,
+        name_ja: index === 0 ? "日本" : `ホーム${index}`,
+      },
+      id:
+        index === 0
+          ? matchId
+          : `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+      kickoff_at: new Date(
+        Date.parse("2026-08-27T00:00:00.000Z") + index * 60 * 60 * 1_000,
+      ).toISOString(),
+    })).reverse();
+    supabaseMocks.candidateLte.mockResolvedValue({
+      data: matches,
+      error: null,
+    });
+
+    const response = await POST(createRequest(researchCommand()));
+    const payload = await response.json();
+
+    expect(payload).toMatchObject({
+      data: {
+        custom_id: "research-fact-entry",
+        title: "調査事実を追加",
+      },
+      type: 9,
+    });
+    expect(supabaseMocks.candidateGte).toHaveBeenCalledWith(
+      "kickoff_at",
+      "2026-08-13T00:00:00.000Z",
+    );
+    expect(supabaseMocks.candidateLte).toHaveBeenCalledWith(
+      "kickoff_at",
+      "2026-09-10T00:00:00.000Z",
+    );
+    expect(payload.data.components).toHaveLength(4);
+    expect(
+      payload.data.components.every(
+        (component: Record<string, unknown>) =>
+          component.type === 18 && !("required" in component),
+      ),
+    ).toBe(true);
+
+    const [matchField, factsField, sourceUrlField, confidenceField] =
+      payload.data.components;
+    expect(matchField).toMatchObject({
+      component: {
+        custom_id: "match_id",
+        required: true,
+        type: 3,
+      },
+      label: "試合",
+    });
+    expect(matchField.component.options).toHaveLength(25);
+    expect(matchField.component.options[0]).toEqual({
+      label: "08/27 日本 × New Zealand",
+      value: matchId,
+    });
+    expect(matchField.component).not.toHaveProperty("min_values");
+    expect(matchField.component).not.toHaveProperty("max_values");
+    expect(factsField).toMatchObject({
+      component: {
+        custom_id: "facts",
+        required: true,
+        style: 2,
+        type: 4,
+      },
+      description:
+        "1行に1件・300字以内。主語と数字を明示し、意見や推測は書かない。",
+      label: "事実",
+    });
+    expect(sourceUrlField).toMatchObject({
+      component: {
+        custom_id: "source_url",
+        required: true,
+        style: 1,
+        type: 4,
+      },
+      label: "出典 URL",
+    });
+    expect(confidenceField).toMatchObject({
+      component: {
+        custom_id: "confidence",
+        required: false,
+        type: 3,
+      },
+      label: "確度",
+    });
+    expect(confidenceField.component).not.toHaveProperty("min_values");
+    expect(confidenceField.component).not.toHaveProperty("max_values");
+    expect(supabaseMocks.from).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects a notification that is not backed by its news link record", async () => {
     supabaseMocks.newsLinkMaybeSingle.mockResolvedValue({
       data: null,
@@ -275,6 +475,262 @@ describe("POST /api/discord/interactions", () => {
     expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledWith(
       expect.objectContaining({ confidence: "medium", content_type: "recap" }),
       { onConflict: "match_id,content_type,fact" },
+    );
+  });
+
+  it("defers and stores normalized research facts with one source check", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+    supabaseMocks.sourcedFactsSelect.mockResolvedValue({
+      data: [{ fact: "事実A" }, { fact: "事実C" }],
+      error: null,
+    });
+
+    const response = await POST(
+      createRequest(
+        researchSubmission({
+          confidence: "high",
+          facts:
+            "## 日本 × New Zealand\n  - 事実A  \n\n### 出典: https://example.com\n* 事実B\n ・ 事実C ",
+        }),
+      ),
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      data: { flags: 64 },
+      type: 5,
+    });
+    expect(afterMocks.after).toHaveBeenCalledOnce();
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({ fact: "事実A", fact_ja: "事実A" }),
+        expect.objectContaining({ fact: "事実B", fact_ja: "事実B" }),
+        expect.objectContaining({ fact: "事実C", fact_ja: "事実C" }),
+      ],
+      {
+        ignoreDuplicates: true,
+        onConflict: "match_id,content_type,fact",
+      },
+    );
+    const insertedRows = supabaseMocks.sourcedFactsUpsert.mock.calls[0]?.[0];
+    expect(insertedRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          confidence: "high",
+          content_type: "preview",
+          match_id: matchId,
+          metadata: {
+            entry_method: "manual",
+            entry_path: "discord_research_command",
+          },
+          model_version: "manual",
+          source_domain: "www.rnz.co.nz",
+          source_url: sourceUrl,
+        }),
+      ]),
+    );
+    expect(supabaseMocks.sourcedFactsSelect).toHaveBeenCalledWith("fact");
+
+    const sourceRequests = fetchMock.mock.calls.filter(
+      ([, init]) => init?.method !== "PATCH",
+    );
+    expect(sourceRequests).toHaveLength(1);
+    expect(sourceRequests[0]?.[1]).toMatchObject({
+      method: "HEAD",
+      redirect: "follow",
+    });
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(patchCall?.[0]).toBe(
+      `https://discord.com/api/v10/webhooks/${discordApplicationId}/${discordInteractionToken}/messages/@original`,
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body))).toEqual({
+      allowed_mentions: { parse: [] },
+      content: "保存: 2件、重複スキップ: 1件。",
+    });
+  });
+
+  it("uses recap and medium defaults for research facts after kickoff", async () => {
+    stubFetchWithSourceStatus();
+    supabaseMocks.matchMaybeSingle.mockResolvedValue({
+      data: { kickoff_at: "2026-08-26T09:00:00.000Z" },
+      error: null,
+    });
+
+    await POST(createRequest(researchSubmission({ facts: "試合後の事実。" })));
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          confidence: "medium",
+          content_type: "recap",
+        }),
+      ],
+      expect.any(Object),
+    );
+  });
+
+  it("rejects a research URL with an invalid scheme without saving", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+
+    const response = await POST(
+      createRequest(
+        researchSubmission({
+          facts: "事実。",
+          sourceUrl: "javascript:alert(1)",
+        }),
+      ),
+    );
+    await expect(response.json()).resolves.toEqual({
+      data: { flags: 64 },
+      type: 5,
+    });
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    expect(
+      fetchMock.mock.calls.filter(([, init]) => init?.method !== "PATCH"),
+    ).toHaveLength(0);
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "http または https",
+    );
+  });
+
+  it("does not save any research facts when the source returns 404", async () => {
+    const fetchMock = stubFetchWithSourceStatus(404);
+
+    await POST(createRequest(researchSubmission({ facts: "事実A\n事実B" })));
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "HTTP 404",
+    );
+  });
+
+  it("does not save any research facts when the source connection fails", async () => {
+    const fetchMock = vi.fn(
+      async (_input: string | URL | Request, init?: RequestInit) => {
+        if (init?.method === "PATCH") {
+          return new Response(null, { status: 204 });
+        }
+        throw new TypeError("fetch failed");
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(createRequest(researchSubmission({ facts: "事実A\n事実B" })));
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "接続できませんでした",
+    );
+  });
+
+  it("does not save any research facts when the source check times out", async () => {
+    const fetchMock = vi.fn(
+      async (_input: string | URL | Request, init?: RequestInit) => {
+        if (init?.method === "PATCH") {
+          return new Response(null, { status: 204 });
+        }
+
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("Aborted", "AbortError"));
+          });
+        });
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(createRequest(researchSubmission({ facts: "事実A\n事実B" })));
+    const afterPromise = runAfterCallbacks();
+    await vi.advanceTimersByTimeAsync(5_000);
+    await afterPromise;
+
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "5 秒でタイムアウト",
+    );
+  });
+
+  it("rejects research submissions with no facts after normalization", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+
+    await POST(createRequest(researchSubmission({ facts: " \n - \n ・ " })));
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    expect(
+      fetchMock.mock.calls.filter(([, init]) => init?.method !== "PATCH"),
+    ).toHaveLength(0);
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "有効な事実が1件もありません",
+    );
+  });
+
+  it("rejects a research submission containing only headings", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+
+    await POST(
+      createRequest(
+        researchSubmission({
+          facts: "## 日本 × New Zealand\n### 出典: https://example.com",
+        }),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    expect(
+      fetchMock.mock.calls.filter(([, init]) => init?.method !== "PATCH"),
+    ).toHaveLength(0);
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "有効な事実が1件もありません",
+    );
+  });
+
+  it("identifies the original line when a research fact exceeds 300 characters", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+
+    await POST(
+      createRequest(
+        researchSubmission({ facts: `短い事実。\n${"長".repeat(301)}` }),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    expect(
+      fetchMock.mock.calls.filter(([, init]) => init?.method !== "PATCH"),
+    ).toHaveLength(0);
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toBe(
+      "2行目が300文字を超えています。",
     );
   });
 });
