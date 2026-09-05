@@ -99,16 +99,9 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
   const contentStatusMap = await getContentStatusForMatches(
     data.matches.map((match) => match.id),
   );
-  const latestFinishedMatch = data.matches.find(
-    (match) => match.status === "finished",
-  );
-  const nextHeadToHeadMatch = data.matches
-    .filter(
-      (match) =>
-        match.status === "scheduled" &&
-        match.kickoffAt >= new Date().toISOString(),
-    )
-    .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt))[0];
+  const now = Date.now();
+  const latestFinishedMatch = selectLatestFinishedMatch(data.matches);
+  const nextHeadToHeadMatch = selectNextHeadToHeadMatch(data.matches, now);
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(data);
 
   return (
@@ -162,12 +155,8 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
               <TeamSummary align="left" team={data.teamB} />
             </div>
 
-            <div className="grid gap-3 bg-[#f8fafc]/70 px-5 py-4 sm:grid-cols-3 sm:px-6">
+            <div className="grid gap-3 bg-[#f8fafc]/70 px-5 py-4 sm:grid-cols-2 sm:px-6">
               <Metric label="収録対戦" value={`${data.matches.length}試合`} />
-              <Metric
-                label="直近の対戦"
-                value={formatKickoffJst(data.matches[0]?.kickoffAt ?? "")}
-              />
               <Metric label="表示範囲" value="Tryline 収録分" />
             </div>
           </section>
@@ -251,6 +240,46 @@ function buildBreadcrumbJsonLd(data: HeadToHeadPageData) {
   };
 }
 
+function selectLatestFinishedMatch(matches: HeadToHeadMatch[]) {
+  return matches.reduce<HeadToHeadMatch | undefined>((latest, match) => {
+    if (match.status !== "finished") {
+      return latest;
+    }
+
+    const matchKickoffAt = Date.parse(match.kickoffAt);
+
+    if (!Number.isFinite(matchKickoffAt)) {
+      return latest;
+    }
+
+    if (!latest || matchKickoffAt > Date.parse(latest.kickoffAt)) {
+      return match;
+    }
+
+    return latest;
+  }, undefined);
+}
+
+function selectNextHeadToHeadMatch(matches: HeadToHeadMatch[], now: number) {
+  return matches.reduce<HeadToHeadMatch | undefined>((next, match) => {
+    if (match.status !== "scheduled") {
+      return next;
+    }
+
+    const matchKickoffAt = Date.parse(match.kickoffAt);
+
+    if (!Number.isFinite(matchKickoffAt) || matchKickoffAt < now) {
+      return next;
+    }
+
+    if (!next || matchKickoffAt < Date.parse(next.kickoffAt)) {
+      return match;
+    }
+
+    return next;
+  }, undefined);
+}
+
 function LatestReviewCta({
   contentStatus,
   match,
@@ -270,10 +299,13 @@ function LatestReviewCta({
   return (
     <aside className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm shadow-slate-200/50">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-        最新の対戦
+        直近の対戦
       </p>
       <p className="mt-2 text-sm font-bold text-slate-950">
         {teamA.name} {teamAScore ?? 0} - {teamBScore ?? 0} {teamB.name}
+      </p>
+      <p className="mt-1 text-sm text-slate-600">
+        {formatKickoffJst(match.kickoffAt)}
       </p>
       {contentStatus?.hasRecap && (
         <TrackedLink
@@ -286,7 +318,7 @@ function LatestReviewCta({
           className="mt-3 inline-flex text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           href={`/matches/${match.id}`}
         >
-          最新の対戦のレビューを読む →
+          直近の対戦のレビューを読む →
         </TrackedLink>
       )}
     </aside>

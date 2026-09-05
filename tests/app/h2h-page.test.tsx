@@ -137,6 +137,8 @@ describe("H2H page", () => {
     expect(container.textContent).toContain("Leinster 対 Stade Toulousain");
     expect(container.textContent).not.toContain("Leinster vs Stade Toulousain");
     expect(screen.getAllByText(/Tryline 収録分/).length).toBeGreaterThan(0);
+    expect(screen.queryByText("最新の対戦")).not.toBeInTheDocument();
+    expect(screen.getByText("直近の対戦")).toBeInTheDocument();
     expect(container.querySelector('a[href="/matches/match-1"]')).toBeTruthy();
     expect(container.querySelector('a[href="/teams/leinster"]')).toBeTruthy();
     expect(container.querySelector('a[href="/teams/toulouse"]')).toBeTruthy();
@@ -145,7 +147,7 @@ describe("H2H page", () => {
     ).toBe(true);
     expect(container.textContent).not.toContain("勝");
     expect(
-      screen.getByRole("link", { name: "最新の対戦のレビューを読む →" }),
+      screen.getByRole("link", { name: "直近の対戦のレビューを読む →" }),
     ).toHaveAttribute("href", "/matches/match-1");
     expect(contentMocks.getContentStatusForMatches).toHaveBeenCalledWith([
       "match-1",
@@ -169,13 +171,13 @@ describe("H2H page", () => {
         {
           ...pageData.matches[0],
           id: "next-later-match",
-          kickoffAt: "2026-08-15T13:45:00.000Z",
+          kickoffAt: "2026-08-07T23:00:00.000Z",
           status: "scheduled",
         },
         {
           ...pageData.matches[0],
           id: "next-match",
-          kickoffAt: "2026-08-08T13:45:00.000Z",
+          kickoffAt: "2026-08-08T00:30:00.000+02:00",
           status: "scheduled",
         },
         pageData.matches[0],
@@ -195,7 +197,7 @@ describe("H2H page", () => {
       screen.getByRole("link", { name: "次回対戦の詳細を見る →" }),
     ).toHaveAttribute("href", "/matches/next-match");
     expect(
-      screen.queryByRole("link", { name: "最新の対戦のレビューを読む →" }),
+      screen.queryByRole("link", { name: "直近の対戦のレビューを読む →" }),
     ).not.toBeInTheDocument();
     expect(trackedLinkMocks.calls).toEqual(
       expect.arrayContaining([
@@ -207,6 +209,96 @@ describe("H2H page", () => {
         }),
       ]),
     );
+  });
+
+  it("does not render the most recent meeting when no finished match exists", async () => {
+    matchesMock.getHeadToHeadPageData.mockResolvedValue({
+      ...pageData,
+      matches: [
+        {
+          ...pageData.matches[0],
+          id: "scheduled-match",
+          kickoffAt: "2026-08-08T13:45:00.000Z",
+          status: "scheduled",
+        },
+      ],
+    });
+
+    const element = await HeadToHeadPage({
+      params: Promise.resolve({ pair: "leinster-vs-toulouse" }),
+    });
+    render(element);
+
+    expect(screen.queryByText("直近の対戦")).not.toBeInTheDocument();
+    expect(screen.getByText("次回対戦")).toBeInTheDocument();
+  });
+
+  it("does not render the next meeting when no future scheduled match exists", async () => {
+    matchesMock.getHeadToHeadPageData.mockResolvedValue({
+      ...pageData,
+      matches: [
+        pageData.matches[0],
+        {
+          ...pageData.matches[0],
+          id: "past-scheduled-match",
+          kickoffAt: "2026-07-20T13:45:00.000Z",
+          status: "scheduled",
+        },
+        {
+          ...pageData.matches[0],
+          id: "cancelled-future-match",
+          kickoffAt: "2026-08-08T13:45:00.000Z",
+          status: "cancelled",
+        },
+        {
+          ...pageData.matches[0],
+          id: "live-future-match",
+          kickoffAt: "2026-08-15T13:45:00.000Z",
+          status: "live",
+        },
+      ],
+    });
+    contentMocks.getContentStatusForMatches.mockResolvedValue({
+      "match-1": { hasPreview: false, hasRecap: true },
+    });
+
+    const element = await HeadToHeadPage({
+      params: Promise.resolve({ pair: "leinster-vs-toulouse" }),
+    });
+    render(element);
+
+    expect(screen.getByText("直近の対戦")).toBeInTheDocument();
+    expect(screen.queryByText("次回対戦")).not.toBeInTheDocument();
+  });
+
+  it("selects the latest finished match using its kickoff time", async () => {
+    matchesMock.getHeadToHeadPageData.mockResolvedValue({
+      ...pageData,
+      matches: [
+        {
+          ...pageData.matches[0],
+          id: "finished-earlier-match",
+          kickoffAt: "2026-07-21T00:00:00.000Z",
+        },
+        {
+          ...pageData.matches[0],
+          id: "finished-latest-match",
+          kickoffAt: "2026-07-20T23:30:00.000-03:00",
+        },
+      ],
+    });
+    contentMocks.getContentStatusForMatches.mockResolvedValue({
+      "finished-latest-match": { hasPreview: false, hasRecap: true },
+    });
+
+    const element = await HeadToHeadPage({
+      params: Promise.resolve({ pair: "leinster-vs-toulouse" }),
+    });
+    render(element);
+
+    expect(
+      screen.getByRole("link", { name: "直近の対戦のレビューを読む →" }),
+    ).toHaveAttribute("href", "/matches/finished-latest-match");
   });
 
   it("redirects reverse pair slugs to the canonical URL", async () => {
