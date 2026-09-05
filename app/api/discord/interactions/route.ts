@@ -15,20 +15,11 @@ const DISCORD_PUBLIC_KEY_PREFIX = Buffer.from(
   "hex",
 );
 const EPHEMERAL = 1 << 6;
-const FACT_ENTRY_COMMAND_NAME = "事実を追加";
-const FACT_ENTRY_MODAL_PREFIX = "fact-entry";
 const RESEARCH_FACT_ENTRY_COMMAND_NAME = "調査事実を追加";
 const RESEARCH_FACT_ENTRY_MODAL_PREFIX = "research-fact-entry";
 const RESEARCH_FACT_MAX_LENGTH = 300;
 const MATCH_CANDIDATE_WINDOW_MS = 14 * 24 * 60 * 60 * 1_000;
 const MAX_MATCH_OPTIONS = 25;
-const UUID_PATTERN =
-  "[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
-const MATCH_ID_PATTERN = new RegExp(`^match_id:\\s*(${UUID_PATTERN})\\s*$`, "im");
-const MODAL_ID_PATTERN = new RegExp(
-  `^${FACT_ENTRY_MODAL_PREFIX}:(${UUID_PATTERN}):(${UUID_PATTERN})$`,
-  "i",
-);
 const RESEARCH_MODAL_ID_PATTERN = new RegExp(
   `^${RESEARCH_FACT_ENTRY_MODAL_PREFIX}$`,
 );
@@ -40,21 +31,12 @@ type DiscordInteraction = {
     components?: unknown;
     custom_id?: unknown;
     name?: unknown;
-    resolved?: {
-      messages?: Record<string, { content?: unknown }>;
-    };
-    target_id?: unknown;
     type?: unknown;
   };
   member?: { user?: { id?: unknown } };
   token?: unknown;
   type?: unknown;
   user?: { id?: unknown };
-};
-
-type NotificationReference = {
-  matchId: string;
-  sourceUrl: string;
 };
 
 type TeamName = {
@@ -119,79 +101,6 @@ function verifyDiscordSignature(params: {
 function getInteractionUserId(interaction: DiscordInteraction) {
   const userId = interaction.member?.user?.id ?? interaction.user?.id;
   return typeof userId === "string" ? userId : null;
-}
-
-function parseNotificationReference(content: string): NotificationReference | null {
-  const matchId = content.match(MATCH_ID_PATTERN)?.[1];
-  const sourceUrl = content.match(/https?:\/\/[^\s<>]+/i)?.[0];
-  if (!matchId || !sourceUrl) {
-    return null;
-  }
-
-  try {
-    const url = new URL(sourceUrl);
-    if (url.protocol !== "https:" && url.protocol !== "http:") {
-      return null;
-    }
-  } catch {
-    return null;
-  }
-
-  return { matchId, sourceUrl };
-}
-
-function getMessageCommandReference(
-  interaction: DiscordInteraction,
-): NotificationReference | null {
-  if (
-    interaction.data?.name !== FACT_ENTRY_COMMAND_NAME ||
-    interaction.data.type !== 3 ||
-    typeof interaction.data.target_id !== "string"
-  ) {
-    return null;
-  }
-
-  const content = interaction.data.resolved?.messages?.[interaction.data.target_id]
-    ?.content;
-  return typeof content === "string" ? parseNotificationReference(content) : null;
-}
-
-function buildFactEntryModal(matchId: string, newsLinkId: string) {
-  return Response.json({
-    data: {
-      components: [
-        {
-          component: {
-            custom_id: "fact",
-            required: true,
-            style: 2,
-            type: 4,
-          },
-          label: "事実",
-          type: 18,
-        },
-        {
-          component: {
-            custom_id: "confidence",
-            options: [
-              { label: "high", value: "high" },
-              { default: true, label: "medium", value: "medium" },
-              { label: "low", value: "low" },
-            ],
-            placeholder: "確度を選択",
-            required: false,
-            type: 3,
-          },
-          description: "未選択なら medium",
-          label: "確度",
-          type: 18,
-        },
-      ],
-      custom_id: `${FACT_ENTRY_MODAL_PREFIX}:${matchId}:${newsLinkId}`,
-      title: "事実を追加",
-    },
-    type: 9,
-  });
 }
 
 function firstRelation<T>(relation: T | T[] | null): T | null {
@@ -325,31 +234,6 @@ function findComponentValue(
   return null;
 }
 
-function parseModalSubmission(interaction: DiscordInteraction) {
-  if (interaction.type !== 5 || typeof interaction.data?.custom_id !== "string") {
-    return null;
-  }
-
-  const modalId = interaction.data.custom_id.match(MODAL_ID_PATTERN);
-  const fact = findComponentValue(interaction.data.components, "fact")?.trim();
-  const confidenceValue = findComponentValue(
-    interaction.data.components,
-    "confidence",
-  );
-  const confidence = confidenceValue ?? "medium";
-
-  if (!modalId || !fact || !CONFIDENCES.has(confidence as SourcedFactConfidence)) {
-    return null;
-  }
-
-  return {
-    confidence: confidence as SourcedFactConfidence,
-    fact,
-    matchId: modalId[1]!,
-    newsLinkId: modalId[2]!,
-  };
-}
-
 function parseResearchFactLines(value: string) {
   const facts: Array<{ fact: string; lineNumber: number }> = [];
 
@@ -406,29 +290,6 @@ function parseResearchModalSubmission(interaction: DiscordInteraction) {
   };
 }
 
-async function openFactEntryModal(interaction: DiscordInteraction) {
-  const reference = getMessageCommandReference(interaction);
-  if (!reference) {
-    return interactionResponse("この形式のメッセージではありません。");
-  }
-
-  const db = getSupabaseServerClient();
-  const { data: newsLink, error } = await db
-    .from("news_links")
-    .select("id")
-    .eq("matched_match_id", reference.matchId)
-    .eq("source_url", reference.sourceUrl)
-    .maybeSingle();
-  if (error) {
-    throw error;
-  }
-  if (!newsLink) {
-    return interactionResponse("この形式のメッセージではありません。");
-  }
-
-  return buildFactEntryModal(reference.matchId, newsLink.id);
-}
-
 async function openResearchFactEntryModal(interaction: DiscordInteraction) {
   if (
     interaction.data?.name !== RESEARCH_FACT_ENTRY_COMMAND_NAME ||
@@ -472,61 +333,6 @@ async function openResearchFactEntryModal(interaction: DiscordInteraction) {
   }
 
   return buildResearchFactEntryModal(candidates);
-}
-
-async function saveFactEntry(interaction: DiscordInteraction) {
-  const submission = parseModalSubmission(interaction);
-  if (!submission) {
-    return interactionResponse("入力内容を確認してください。");
-  }
-
-  const db = getSupabaseServerClient();
-  const [{ data: newsLink, error: newsLinkError }, { data: match, error: matchError }] =
-    await Promise.all([
-      db
-        .from("news_links")
-        .select("source_url")
-        .eq("id", submission.newsLinkId)
-        .eq("matched_match_id", submission.matchId)
-        .maybeSingle(),
-      db
-        .from("matches")
-        .select("kickoff_at")
-        .eq("id", submission.matchId)
-        .maybeSingle(),
-    ]);
-  if (newsLinkError) {
-    throw newsLinkError;
-  }
-  if (matchError) {
-    throw matchError;
-  }
-  if (!newsLink || !match) {
-    return interactionResponse("対象の試合または通知が見つかりません。");
-  }
-
-  const sourceDomain = new URL(newsLink.source_url).hostname;
-  const contentType: ContentType =
-    new Date(match.kickoff_at).getTime() > Date.now() ? "preview" : "recap";
-  const { error: upsertError } = await db.from("match_sourced_facts").upsert(
-    {
-      confidence: submission.confidence,
-      content_type: contentType,
-      fact: submission.fact,
-      fact_ja: submission.fact,
-      match_id: submission.matchId,
-      metadata: { entry_method: "manual" },
-      model_version: "manual",
-      source_domain: sourceDomain,
-      source_url: newsLink.source_url,
-    },
-    { onConflict: "match_id,content_type,fact" },
-  );
-  if (upsertError) {
-    throw upsertError;
-  }
-
-  return interactionResponse("事実を追加しました。");
 }
 
 async function processResearchFactEntry(interaction: DiscordInteraction) {
@@ -692,7 +498,7 @@ export async function POST(request: Request) {
     ) {
       return openResearchFactEntryModal(interaction);
     }
-    return openFactEntryModal(interaction);
+    return interactionResponse("未対応のDiscord操作です。");
   }
   if (interaction.type === 5) {
     if (
@@ -701,7 +507,7 @@ export async function POST(request: Request) {
     ) {
       return deferResearchFactEntry(interaction);
     }
-    return saveFactEntry(interaction);
+    return interactionResponse("未対応のDiscord操作です。");
   }
 
   return interactionResponse("未対応のDiscord操作です。");
