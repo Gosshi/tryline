@@ -25,6 +25,11 @@ import type { Metadata } from "next";
 
 export const revalidate = 3600;
 
+const RWC2027_OFFICIAL_URL =
+  "https://www.rugbyworldcup.com/en/news/976797/about-mens-rugby-world-cup-2027";
+const RWC2027_TOURNAMENT_DATES = "2027年10月1日〜11月13日";
+const RWC2027_TOURNAMENT_MATCH_COUNT = 52;
+
 export const metadata: Metadata = {
   title: "ラグビーワールドカップ2027 日程・出場国・日本語ガイド",
   description:
@@ -55,7 +60,7 @@ function formatMatchKickoffJst(kickoffAt: string): string {
   return `${formatKickoffJstDate(kickoffAt)} ${formatKickoffJstTime(kickoffAt)}`;
 }
 
-function PendingState() {
+function PendingState({ matchCount }: { matchCount?: number }) {
   return (
     <div className="mx-auto max-w-2xl px-4 py-24 text-center">
       <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-accent)]">
@@ -69,6 +74,11 @@ function PendingState() {
         <br />
         プール振り分け・フィクスチャー確定後に順次公開予定です。
       </p>
+      {matchCount !== undefined && (
+        <div className="mt-6 text-left">
+          <PreTournamentBanner matchCount={matchCount} />
+        </div>
+      )}
       <div className="mt-8">
         <Link
           className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
@@ -84,8 +94,10 @@ function PendingState() {
 function PreTournamentBanner({ matchCount }: { matchCount: number }) {
   return (
     <div className="rounded-lg border border-[var(--color-rule)] bg-white px-6 py-4 text-sm text-[var(--color-ink-muted)]">
-      2027年10〜11月、オーストラリア開催。全{matchCount}
-      試合のスケジュールが確定しています。開幕後、試合結果・日本語レビューを順次公開します。
+      {RWC2027_TOURNAMENT_DATES}、オーストラリアで開催。24チーム・
+      {RWC2027_TOURNAMENT_MATCH_COUNT}
+      試合の大会です。Trylineでは現在{matchCount}
+      試合の日程を掲載しています。開幕後、試合結果・日本語レビューを順次公開します。
     </div>
   );
 }
@@ -110,7 +122,7 @@ export default async function RWC2027Page() {
   if (matches.length === 0) {
     return (
       <main className="min-h-screen bg-paper">
-        <PendingState />
+        <PendingState matchCount={0} />
       </main>
     );
   }
@@ -129,19 +141,10 @@ export default async function RWC2027Page() {
         .filter((venue): venue is string => Boolean(venue)),
     ),
   ];
-  const sortedMatches = [...matches].sort((left, right) =>
-    left.kickoffAt.localeCompare(right.kickoffAt),
-  );
-  const firstMatch = sortedMatches[0] ?? null;
-  const lastMatch = sortedMatches.at(-1) ?? null;
-  const tournamentDates =
-    firstMatch && lastMatch
-      ? `${formatKickoffJstDate(firstMatch.kickoffAt)}〜${formatKickoffJstDate(lastMatch.kickoffAt)}`
-      : "開催期間未定";
   const nextJapanMatch = findNextJapanMatch(matches);
   const rwcFaqs = [
     {
-      answer: `ラグビーワールドカップ2027は${tournamentDates}に開催されます。`,
+      answer: `ラグビーワールドカップ2027は${RWC2027_TOURNAMENT_DATES}に開催されます。`,
       question: "ラグビーワールドカップ2027はいつ開催されますか？",
     },
     {
@@ -150,7 +153,7 @@ export default async function RWC2027Page() {
     },
     {
       answer:
-        "日本での視聴方法は大会ガイドで最新情報を確認してください。",
+        "日本国内の放送予定は未発表です。発表後に大会公式サイトとこのページで最新情報を確認してください。",
       question: "ラグビーワールドカップ2027はどこで見られますか？",
     },
     {
@@ -252,11 +255,35 @@ export default async function RWC2027Page() {
           />
         )}
 
+        <section
+          aria-labelledby="broadcast-heading"
+          className="rounded-lg border border-[var(--color-rule)] bg-white px-6 py-4 text-sm text-[var(--color-ink-muted)]"
+        >
+          <h2
+            className="font-heading text-lg font-bold text-[var(--color-ink)]"
+            id="broadcast-heading"
+          >
+            日本での視聴方法
+          </h2>
+          <p className="mt-2">
+            日本国内の放送予定は未発表です。決定次第更新します。最新情報は
+            <a
+              className="text-[var(--color-accent)] underline underline-offset-4"
+              href={RWC2027_OFFICIAL_URL}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              大会公式サイト
+            </a>
+            をご確認ください。
+          </p>
+        </section>
+
         <div className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
           <CompetitionViewingGuide
             markdown={guide?.guideJa ?? null}
             sourceUrl={guide?.sourceUrl ?? null}
-            verifiedAt={guide?.verifiedAt ?? null}
+            verifiedAt={null}
           />
         </div>
       </div>
