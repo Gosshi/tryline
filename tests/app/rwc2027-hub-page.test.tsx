@@ -253,6 +253,7 @@ describe("RWC 2027 hub page", () => {
     expect(
       screen.getByRole("heading", { name: "大会ガイド" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("最終確認日: 2026-07-09")).toBeInTheDocument();
     expect(
       screen.getByText(/日本国内の放送予定は未発表です。決定次第更新します。/),
     ).toBeInTheDocument();

@@ -283,7 +283,7 @@ export default async function RWC2027Page() {
           <CompetitionViewingGuide
             markdown={guide?.guideJa ?? null}
             sourceUrl={guide?.sourceUrl ?? null}
-            verifiedAt={null}
+            verifiedAt={guide?.verifiedAt ?? null}
           />
         </div>
       </div>
