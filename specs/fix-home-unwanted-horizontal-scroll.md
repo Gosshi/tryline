@@ -1,5 +1,13 @@
 # ホームページの意図しない横スクロールを修正
 
+> **【2026-09-06 追記】本 spec は `specs/fix-home-sr-only-overflow-escape.md` に supersede された。実装しないこと。**
+>
+> 本 spec は PR #520（`2c3d08a`）で実装済みだが、**症状は解消していない**。2026-09-06 の本番実測で、`html` / `body` の `overflow-x: clip` が両方効いている状態でトップページが 862px 横スクロールすることを確認した（`scrollWidth 2332` / `clientWidth 1470` / `scrollTo(10000,0)` 後の `scrollX = 862`）。
+>
+> 下記の「`ul.overflow-x-auto` の存在自体が `documentElement.scrollWidth` を増やす」という診断は誤りである。実際の原因は `app/page.tsx:831` の `sr-only` span で、祖先に positioned 要素が無いため包含ブロックが初期包含ブロックになり、スクローラのクリップを逃れていた。二分探索が `ul` を示したのは、その span が `ul` の中にあったためである。
+>
+> `app/globals.css:74,87` に残る `overflow-x: clip` は本 spec の成果物だが、**現時点では削除も追加もしない**（後継 spec の対象外事項を参照）。
+
 ## 背景
 
 ホームページ（`/`）全体が、コンテンツ幅を超えて横スクロールできてしまう（Owner指摘）。Chrome DevToolsで直接検証したところ:
