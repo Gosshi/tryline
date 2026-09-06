@@ -276,6 +276,117 @@ export function computeScoreTimeline(
 
 export { eventTotalsMatchFinalScore } from "@/lib/ingestion/event-integrity";
 
+export type AssembledEventIntegrity =
+  | {
+      actual: { away: number; home: number };
+      delta: { away: number; home: number };
+      eventCount: number;
+      expected: { away: number; home: number };
+      reason: "score_mismatch" | "verified";
+      status: "mismatch" | "verified";
+    }
+  | {
+      actual: null;
+      delta: null;
+      eventCount: number;
+      expected: { away: number | null; home: number | null };
+      reason:
+        | "content_type_not_recap"
+        | "events_unavailable"
+        | "match_not_finished"
+        | "score_unavailable";
+      status: "unavailable";
+    };
+
+export type AssembledContentInputWithEventIntegrity = AssembledContentInput & {
+  eventIntegrity: AssembledEventIntegrity;
+};
+
+export function determineEventIntegrity(
+  contentType: ContentType,
+  match: Pick<
+    AssembledContentInput["match"],
+    "away_score" | "home_score" | "status"
+  >,
+  eventCount: number,
+  scoreTimeline: ScoreTimeline | null,
+): AssembledEventIntegrity {
+  const expected = {
+    away: match.away_score,
+    home: match.home_score,
+  };
+
+  if (contentType !== "recap") {
+    return {
+      actual: null,
+      delta: null,
+      eventCount,
+      expected,
+      reason: "content_type_not_recap",
+      status: "unavailable",
+    };
+  }
+
+  if (match.status !== "finished") {
+    return {
+      actual: null,
+      delta: null,
+      eventCount,
+      expected,
+      reason: "match_not_finished",
+      status: "unavailable",
+    };
+  }
+
+  if (match.home_score === null || match.away_score === null) {
+    return {
+      actual: null,
+      delta: null,
+      eventCount,
+      expected,
+      reason: "score_unavailable",
+      status: "unavailable",
+    };
+  }
+
+  if (eventCount === 0 || scoreTimeline === null) {
+    return {
+      actual: null,
+      delta: null,
+      eventCount,
+      expected,
+      reason: "events_unavailable",
+      status: "unavailable",
+    };
+  }
+
+  const actual = {
+    away: scoreTimeline.final_away,
+    home: scoreTimeline.final_home,
+  };
+  const delta = {
+    away: actual.away - match.away_score,
+    home: actual.home - match.home_score,
+  };
+  const matchesFinalScore = eventTotalsMatchFinalScore(
+    scoreTimeline,
+    match.home_score,
+    match.away_score,
+  );
+
+  return {
+    actual,
+    delta,
+    eventCount,
+    expected: {
+      away: match.away_score,
+      home: match.home_score,
+    },
+    reason: matchesFinalScore ? "verified" : "score_mismatch",
+    status: matchesFinalScore ? "verified" : "mismatch",
+  };
+}
+
 function asJsonObject(value: Json): Record<string, Json> {
   if (!value || Array.isArray(value) || typeof value !== "object") {
     return {};
@@ -627,7 +738,7 @@ export async function assembleMatchContentInput(
   matchId: string,
   language: ContentLanguage = "ja",
   contentType: ContentType = "preview",
-): Promise<AssembledContentInput> {
+): Promise<AssembledContentInputWithEventIntegrity> {
   const db = getSupabaseServerClient();
 
   const { data: match, error: matchError } = await db
@@ -900,6 +1011,13 @@ export async function assembleMatchContentInput(
     homeTeamName,
     awayTeamName,
   );
+  const eventIntegrity = determineEventIntegrity(
+    contentType,
+    match,
+    matchEvents.length,
+    scoreTimeline,
+  );
+  const hasScoreMismatch = eventIntegrity.status === "mismatch";
   const projectedLineups = {
     away: awayProjectedLineups.entries,
     confirmed: {
@@ -1020,7 +1138,8 @@ export async function assembleMatchContentInput(
       away: awayRecent,
     },
     h2h_last_5: h2hLast5,
-    match_events: matchEvents,
+    eventIntegrity,
+    match_events: hasScoreMismatch ? [] : matchEvents,
     competition_standings: competitionStandings,
     projected_lineups: projectedLineups,
     injuries: {
@@ -1040,8 +1159,8 @@ export async function assembleMatchContentInput(
       },
       match: matchStats,
     },
-    score_timeline: scoreTimeline,
-    derived_stats: derivedStats,
+    score_timeline: hasScoreMismatch ? null : scoreTimeline,
+    derived_stats: hasScoreMismatch ? null : derivedStats,
     team_stats: resolvedTeamStats,
     sourced_facts: remainingSourcedFacts,
     japanese_name_glossary: language === "ja" ? japaneseNameGlossary : [],

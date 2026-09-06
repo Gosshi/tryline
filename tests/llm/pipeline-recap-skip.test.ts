@@ -68,14 +68,15 @@ vi.mock("@/lib/llm/stages/verify-entities", () => verifyEntitiesMock);
 vi.mock("@/lib/llm/notify", () => ({
   notifyContentRejected: vi.fn(),
   notifyCostAlert: vi.fn(),
+  notifyEventIntegrityMismatch: vi.fn(),
 }));
 vi.mock("@/lib/seo/indexnow", () => indexNowMock);
 
 import { generateMatchContent } from "@/lib/llm/pipeline";
 
-import type { AssembledContentInput } from "@/lib/llm/types";
+import type { AssembledContentInputWithEventIntegrity } from "@/lib/llm/stages/assemble";
 
-const assembledWithoutEvents: AssembledContentInput = {
+const assembledWithoutEvents: AssembledContentInputWithEventIntegrity = {
   competition_standings: [],
   h2h_last_5: [],
   injuries: {
@@ -115,6 +116,14 @@ const assembledWithoutEvents: AssembledContentInput = {
     status: "finished",
     venue: null,
   },
+  eventIntegrity: {
+    actual: null,
+    delta: null,
+    eventCount: 0,
+    expected: { away: 17, home: 24 },
+    reason: "events_unavailable",
+    status: "unavailable",
+  },
   match_events: [],
   match_phase: null,
   projected_lineups: {
@@ -129,6 +138,15 @@ const assembledWithoutEvents: AssembledContentInput = {
   derived_stats: null,
   team_stats: null,
   sourced_facts: [],
+};
+
+const verifiedEventIntegrity = {
+  actual: { away: 17, home: 24 },
+  delta: { away: 0, home: 0 },
+  eventCount: 1,
+  expected: { away: 17, home: 24 },
+  reason: "verified" as const,
+  status: "verified" as const,
 };
 
 describe("generateMatchContent recap event guard", () => {
@@ -186,7 +204,7 @@ describe("generateMatchContent recap event guard", () => {
     expect(qaMock.evaluateNarrativeQuality).not.toHaveBeenCalled();
   });
 
-  it("logs a score integrity warning when event totals differ from the final score", async () => {
+  it("stops before every LLM stage and notifies when event totals differ", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     assembleMock.assembleMatchContentInput.mockResolvedValue({
       ...assembledWithoutEvents,
@@ -197,14 +215,15 @@ describe("generateMatchContent recap event guard", () => {
         away_team: { name: "Away" },
         home_team: { name: "Home" },
       },
-      match_events: [
-        {
-          minute: 12,
-          player_name: "Player One",
-          team_name: "Home",
-          type: "try",
-        },
-      ],
+      eventIntegrity: {
+        actual: { away: 0, home: 5 },
+        delta: { away: 0, home: -3 },
+        eventCount: 1,
+        expected: { away: 0, home: 8 },
+        reason: "score_mismatch",
+        status: "mismatch",
+      },
+      match_events: [],
     });
     assembleMock.computeScoreTimeline.mockReturnValue({
       final_away: 0,
@@ -241,7 +260,14 @@ describe("generateMatchContent recap event guard", () => {
       usage: { inputTokens: 1, outputTokens: 1 },
     });
 
-    await generateMatchContent("match-3", "recap");
+    const result = await generateMatchContent("match-3", "recap");
+
+    expect(result).toEqual({
+      contentType: "recap",
+      matchId: "match-3",
+      qa: null,
+      status: "skipped",
+    });
 
     expect(warnSpy).toHaveBeenCalledWith(
       "[score-integrity] event total mismatch",
@@ -264,6 +290,19 @@ describe("generateMatchContent recap event guard", () => {
         status: "failed",
       }),
     );
+    const notifyModule = await import("@/lib/llm/notify");
+    expect(notifyModule.notifyEventIntegrityMismatch).toHaveBeenCalledWith({
+      actualAway: 0,
+      actualHome: 5,
+      competitionLabel: undefined,
+      expectedAway: 0,
+      expectedHome: 8,
+      matchId: "match-3",
+      matchLabel: "Home 対 Away",
+    });
+    expect(extractFactsMock.extractTacticalPoints).not.toHaveBeenCalled();
+    expect(generateNarrativeMock.generateNarrative).not.toHaveBeenCalled();
+    expect(qaMock.evaluateNarrativeQuality).not.toHaveBeenCalled();
 
     warnSpy.mockRestore();
   });
@@ -279,6 +318,14 @@ describe("generateMatchContent recap event guard", () => {
         away_team: { name: "Away" },
         home_team: { name: "Home" },
       },
+      eventIntegrity: {
+        actual: { away: 0, home: 5 },
+        delta: { away: 0, home: 0 },
+        eventCount: 1,
+        expected: { away: 0, home: 5 },
+        reason: "verified",
+        status: "verified",
+      },
       match_events: [
         {
           minute: 12,
@@ -287,6 +334,15 @@ describe("generateMatchContent recap event guard", () => {
           type: "try",
         },
       ],
+      score_timeline: {
+        final_away: 0,
+        final_home: 5,
+        ht_away: 0,
+        ht_home: 5,
+        lead_changes: [],
+        score_progression: [],
+        winning_score: null,
+      },
     });
     assembleMock.computeScoreTimeline.mockReturnValue({
       final_away: 0,
@@ -329,6 +385,19 @@ describe("generateMatchContent recap event guard", () => {
       "[score-integrity] event total mismatch",
       expect.anything(),
     );
+    expect(generateNarrativeMock.generateNarrative).toHaveBeenCalledWith(
+      expect.objectContaining({
+        assembled: expect.objectContaining({
+          match_events: [
+            expect.objectContaining({ player_name: "Player One", type: "try" }),
+          ],
+          score_timeline: expect.objectContaining({
+            final_away: 0,
+            final_home: 5,
+          }),
+        }),
+      }),
+    );
 
     warnSpy.mockRestore();
   });
@@ -340,6 +409,7 @@ describe("generateMatchContent recap event guard", () => {
     });
     assembleMock.assembleMatchContentInput.mockResolvedValue({
       ...assembledWithoutEvents,
+      eventIntegrity: verifiedEventIntegrity,
       match: {
         ...assembledWithoutEvents.match,
         competition: {
@@ -400,6 +470,7 @@ describe("generateMatchContent recap event guard", () => {
   it("keeps low-density published recap QA as draft", async () => {
     assembleMock.assembleMatchContentInput.mockResolvedValue({
       ...assembledWithoutEvents,
+      eventIntegrity: verifiedEventIntegrity,
       match_events: [
         {
           minute: 12,
