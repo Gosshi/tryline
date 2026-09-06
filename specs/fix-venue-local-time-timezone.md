@@ -125,7 +125,7 @@ function getVenueTimezone(teamSlug: string) {
 
 ```
 normalizeVenue(venue: string): string
-  - Wikipedia 脚注 `[17]` `[9]` 等（/\[\d+\]/g）を除去
+  - Wikipedia 脚注を除去する。**`/\[[^\]]*\]/g` を使うこと。`/\[\d+\]/g` では不足する**（下記「脚注は数字だけではない」参照）
   - 前後の空白を trim、連続空白を 1 個に畳む
   - 大文字小文字を無視した比較ができる形にする
 
@@ -155,22 +155,71 @@ const VENUE_TIMEZONES: Record<string, string> = {
 
 日本国内会場の扱い: 辞書上 `Asia/Tokyo` に解決された場合も現地行を出さない。JST 行と同一内容になるためである。**この判定は「解決結果が `Asia/Tokyo` か」で行い、会場名の日本語判定や国推定で行わないこと。**
 
+### 2.5 脚注は数字だけではない（2026-09-06 追記）
+
+初版の本 spec は脚注を `/\[\d+\]/g` と書いた。**これは誤りだった。** PR #775 はその指示どおりに実装しており、実装側の欠陥ではない。
+
+本番には**英字脚注が 18 行 / 12 会場**存在する。二重脚注もある。
+
+```
+"Hnry Stadium, Wellington[42]"              ← 数字（現行実装で除去できる）
+"Eden Park, Auckland[a]"                     ← 英字（除去できない）
+"Navigation Homes Stadium, Pukekohe[e][f]"   ← 二重
+"Churchill Park, Lautoka[e]" / "Four R Stadium, Ba[f]" / "HFC Bank Stadium, Suva[g]"
+"McLean Park, Napier[c]" / "Rotorua International Stadium, Rotorua[d]"
+"Sky Stadium, Wellington[c]" / "Bay Oval, Mount Maunganui[g]"
+```
+
+実測（プレビュー、2026-09-06）:
+
+```
+"North Queensland Stadium, Townsville[17]" → "north queensland stadium, townsville"     → Australia/Brisbane
+"Eden Park, Auckland[a]"                   → "eden park, auckland[a]"                   → null   ← 引けない
+```
+
+誤った時刻は出ないので**安全側には倒れている**が、辞書に登録しても引けない会場が 12 ある。SRP の主要会場（Eden Park・Sky Stadium・McLean Park）が該当する。
+
+`/\[[^\]]*\]/g` に変更する。日本の会場は全角の `（）` と半角の `()` を使っており、角括弧は使っていないため巻き込まない。
+
 ### 3. カバレッジの取り扱い
 
-216 会場すべてを本 PR で埋めることは求めない。**未マッピングは安全側に倒れる**（現地行が出ない）ため、段階的に増やせる。
+216 会場すべてを本 spec で埋めることは求めない。**未マッピングは安全側に倒れる**（現地行が出ない）ため、段階的に増やせる。
 
-ただし PR 本文に次を記載すること。
+**2026-09-06 追記: 元データは `docs/venue-timezone-coverage-2026-09-06.md` にある。** 本番から生成した 146 会場 / 669 試合の一覧で、各行に試合数・大会・その会場をホームで使うチームが付く。「一覧が無いので集計できない」という状態は解消した。
 
-- 辞書に入れた会場数
-- 2026-01-01 以降の試合が使う 154 会場のうち、何件をカバーしたか
-- 意図的に入れなかった会場のうち代表的なものと、その理由（都市が特定できない等）
+初回実装（PR #775）の辞書は 7 文字列 / 6 物理会場で、**2026 年以降 669 試合中 32 試合（約 5%）にしか現地行が出ない**。以下を満たすまで拡張する。
+
+- **2026-01-01 以降の試合数が 5 以上の会場をすべて登録する**（一覧の上位。`Asia/Tokyo` に解決される会場も辞書には入れる。表示側で行を出さないのは別の判断である）
+- 一覧の「表記ゆれ」節に挙がった組は、**同一会場と判断できたものは両方の表記をキーとして登録する**
+
+PR 本文に次を記載すること。
+
+- 辞書に入れた会場数と、669 試合のうち現地行が出るようになった試合数
+- 意図的に入れなかった会場のうち代表的なものと、その理由
+
+**`home_teams` 列から国を推定してタイムゾーンを決めてはならない。** 一覧に付けたのは判断材料としてであって、中立会場では複数国が並ぶ。
+
+#### 同名スタジアムの罠
+
+一覧の生成で判明した。**`Allianz Stadium` が 3 都市に存在する。**
+
+| 文字列 | 大会 | home_teams |
+|---|---|---|
+| `Allianz Stadium, Sydney` | super-rugby-pacific-2026 | waratahs |
+| `Allianz Stadium, London, England` | nations-championship-2026 | england |
+| `Allianz Stadium, Turin, Italy` | nations-championship-2026 | italy |
+| `Allianz Stadium` | premiership-2025-26 | harlequins |
+
+**先頭語だけで正規化・照合してはならない。** キーは正規化後の文字列全体である。都市名を持たない `Allianz Stadium` のような表記は、文字列だけでは決まらないので**登録しない**（安全側に倒す）。
 
 ## 受け入れ条件
 
 **テスト実行の条件**: `tests/format/` は `vitest.config.ts:16` の `exclude` に該当しない（同ディレクトリの `tests/format/kickoff.test.ts` が既定の `pnpm test` で実行されていることを確認済み）。したがって本 spec のテストは `pnpm test` に含まれる。**実行結果を PR 本文に貼ること。**
 
 1. `resolveVenueTimezone("North Queensland Stadium, Townsville")` が `"Australia/Brisbane"` を返す
-2. `resolveVenueTimezone("North Queensland Stadium, Townsville[17]")` が **同じ値**を返す（脚注正規化。本番に 53 行存在する）
+2. `resolveVenueTimezone("North Queensland Stadium, Townsville[17]")` が **同じ値**を返す（数字脚注の正規化。本番に 53 行存在する）
+
+2b. **英字脚注と二重脚注も正規化される**（2026-09-06 追記）。`normalizeVenue("Eden Park, Auckland[a]")` が `"eden park, auckland"` を、`normalizeVenue("Navigation Homes Stadium, Pukekohe[e][f]")` が `"navigation homes stadium, pukekohe"` を返すことを検証するテストがある。本番に 18 行 / 12 会場存在する
 3. `resolveVenueTimezone(null)` と `resolveVenueTimezone("")` が `null` を返す
 4. 辞書に無い会場文字列（例: `"Nonexistent Stadium"`）で `null` を返す。**`"Europe/London"` を返さないこと**
 5. `components/match-header.tsx` に `TEAM_TIMEZONES` と `getVenueTimezone` が存在しない。`homeTeam.slug` からタイムゾーンを導く経路がコード上に残っていない
@@ -186,12 +235,19 @@ const VENUE_TIMEZONES: Record<string, string> = {
 15. **本番相当での実測**: プレビュー URL で `/matches/f01f68e2-bdd6-47c8-8910-0ea37a382b0a` を開き、現地時刻行が `現地 2026-08-15 (Sat) 15:00 AEST` 相当（BST ではない）になっていることをスクリーンショットまたは DOM テキストで示す
 16. **Owner の目視評価**: 現地行が消えた試合で、キックオフ情報が JST だけになっても不足に見えないこと。320 / 768 / 1440px で確認する
 
+17. **カバレッジ**（2026-09-06 追記）: `docs/venue-timezone-coverage-2026-09-06.md` で 2026-01-01 以降の試合数が **5 以上**の会場がすべて辞書にある。PR 本文に、辞書の件数と 669 試合のうち現地行が出る試合数を書く
+
+18. **同名スタジアムを取り違えていない**（2026-09-06 追記）: `Allianz Stadium, Sydney` を `Europe/London` に解決しないことを検証するテストがある。都市名を持たない `Allianz Stadium` は登録せず `null` を返す
+
 ## 未解決の質問
 
-**Owner が決めること。**
+1. ~~**辞書のカバレッジをどこまで本 PR に含めるか。**~~ **決着（2026-09-06）**: `docs/venue-timezone-coverage-2026-09-06.md` を生成し、Owner が「2026 年以降 5 試合以上の会場をすべて埋める」方針を採った。受け入れ条件 17 に反映済み
 
-1. **辞書のカバレッジをどこまで本 PR に含めるか。** 216 会場すべてか、2026 年以降の 154 会場か、主要大会分のみか。未マッピングは安全側（現地行なし）に倒れるため、少なく始めて増やすことができる。**推奨は「確信を持てる範囲だけを入れ、残りは後続 PR」** で、本 spec の受け入れ条件はその方針で書いてある
-2. **将来的に `venue_timezone` 列や会場マスタを持つか。** 216 件の辞書がコードに載ることの是非。本 spec では列を追加しないが、RWC 2027 に向けて会場情報（収容人数・都市・アクセス）を持つ判断をするなら、そのときに辞書を DB へ移すのが自然
+**残る Owner 判断:**
+
+2. **将来的に `venue_timezone` 列や会場マスタを持つか。** 146 件規模の辞書がコードに載ることの是非。本 spec では列を追加しないが、RWC 2027 に向けて会場情報（収容人数・都市・アクセス）を持つ判断をするなら、そのときに辞書を DB へ移すのが自然
+
+3. **現地時刻の略称表記**（2026-09-06 実測で判明）。プレビューで `現地 2026-08-15 (Sat) 15:00 GMT+10` と出る。時刻とオフセットは正しいが、読者には `AEST` の方が親切である。`Intl` の `timeZoneName: "short"` は `en-GB` ロケールでは豪州の略称を持たないため `GMT+10` になる。**本 spec では扱わない。** 直すなら会場ごとにロケールを切り替えるか略称の辞書を別に持つことになり、範囲が変わる
 
 **本 spec で解決しないと明示するもの**:
 
