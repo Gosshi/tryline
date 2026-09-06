@@ -203,7 +203,7 @@ describe("RWC 2027 hub page", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "2027年10〜11月、オーストラリア開催。全36試合のスケジュールが確定しています。開幕後、試合結果・日本語レビューを順次公開します。",
+        "2027年10月1日〜11月13日、オーストラリアで開催。24チーム・52試合の大会です。Trylineでは現在36試合の日程を掲載しています。開幕後、試合結果・日本語レビューを順次公開します。",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText("Pool A 順位表")).not.toBeInTheDocument();
@@ -254,9 +254,12 @@ describe("RWC 2027 hub page", () => {
       screen.getByRole("heading", { name: "大会ガイド" }),
     ).toBeInTheDocument();
     expect(screen.getByText("最終確認日: 2026-07-09")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "参照元" })).toHaveAttribute(
+    expect(
+      screen.getByText(/日本国内の放送予定は未発表です。決定次第更新します。/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "大会公式サイト" })).toHaveAttribute(
       "href",
-      "https://www.rugbyworldcup.com/2027/en",
+      "https://www.rugbyworldcup.com/en/news/976797/about-mens-rugby-world-cup-2027",
     );
 
     const jsonLd = container.querySelector('script[type="application/ld+json"]');
@@ -266,6 +269,9 @@ describe("RWC 2027 hub page", () => {
       "@type": "FAQPage",
       mainEntity: expect.arrayContaining([
         expect.objectContaining({
+          acceptedAnswer: expect.objectContaining({
+            text: "ラグビーワールドカップ2027は2027年10月1日〜11月13日に開催されます。",
+          }),
           name: "ラグビーワールドカップ2027はいつ開催されますか？",
         }),
         expect.objectContaining({
@@ -322,6 +328,11 @@ describe("RWC 2027 hub page", () => {
 
     expect(screen.getByText("Coming Soon")).toBeInTheDocument();
     expect(screen.getByText("Rugby World Cup 2027")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "2027年10月1日〜11月13日、オーストラリアで開催。24チーム・52試合の大会です。Trylineでは現在0試合の日程を掲載しています。開幕後、試合結果・日本語レビューを順次公開します。",
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText("RWC 2027 全日程")).not.toBeInTheDocument();
     expect(contentStatusMock.getContentStatusMap).not.toHaveBeenCalled();
   });
@@ -337,7 +348,7 @@ describe("RWC 2027 hub page", () => {
     render(await RWC2027Page());
 
     expect(
-      screen.queryByText(/全36試合のスケジュールが確定しています/),
+      screen.queryByText(/全52試合のスケジュールが確定しています/),
     ).not.toBeInTheDocument();
     expect(screen.queryByLabelText("RWC 2027 プール分け")).not.toBeInTheDocument();
     expect(screen.getByText("Pool A 順位表")).toBeInTheDocument();
@@ -351,6 +362,26 @@ describe("RWC 2027 hub page", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
+
+  it("keeps tournament size separate from the number of listed fixtures", async () => {
+    matchesMock.listMatchesForCompetition.mockResolvedValue(
+      Array.from({ length: 52 }, (_, index) =>
+        buildMatch(index + 1, "scheduled"),
+      ),
+    );
+
+    const { container } = render(await RWC2027Page());
+
+    expect(
+      screen.getByText(
+        "2027年10月1日〜11月13日、オーストラリアで開催。24チーム・52試合の大会です。Trylineでは現在52試合の日程を掲載しています。開幕後、試合結果・日本語レビューを順次公開します。",
+      ),
+    ).toBeInTheDocument();
+    expect(container).not.toHaveTextContent(
+      "全52試合のスケジュールが確定しています",
+    );
+  });
+
 
   it("keeps real standings above the schedule after a match has finished", async () => {
     matchesMock.listMatchesForCompetition.mockResolvedValue([
