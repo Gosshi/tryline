@@ -36,7 +36,27 @@ lib/llm/notify.ts
 - `lib/llm/content-length.ts`（字数要件には触れません）
 - `match_events` / `match_content`（DELETE / UPDATE を作らない）
 
-## 通知について
+## 通知は #769 で用意済みです（2026-09-06 追記）
+
+**新しい通知関数を書かないでください。** #769（`2f6e5c0`）が `lib/llm/notify.ts` に用意しています。
+
+```
+export async function notifyEventIntegrityMismatch(alert: EventIntegrityMismatchAlert): Promise<void>
+
+export type EventIntegrityMismatchAlert = {
+  actualAway: number;
+  actualHome: number;
+  competitionLabel?: string;
+  expectedAway: number;
+  expectedHome: number;
+  matchId: string;
+  matchLabel?: string;
+};
+```
+
+**match_id・URL・期待値・実測値の整形はこの関数が持っています。** `audit` や DB の型に依存しないので、**LLM 呼び出し前に呼べます。** そのまま使ってください。
+
+## 通知（元の指示）について
 
 止めたことを Discord に出すとき、**件数だけにしないでください。** match_id と `https://www.trylinerugby.com/matches/<id>` を含めてください。
 
