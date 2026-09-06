@@ -1,4 +1,5 @@
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
+import { formatCompetitionTitle } from "@/lib/format/competition";
 
 export type PublishedMatchContent = {
   contentType: "preview" | "recap";
@@ -46,7 +47,13 @@ type PublishedRecapFeedRow = {
   match_id: string;
   match: {
     away_team: { name: string; name_ja?: string | null } | null;
-    competition: { name: string; name_ja?: string | null; season: string } | null;
+    competition: {
+      family?: string | null;
+      name: string;
+      name_ja?: string | null;
+      season: string;
+      slug?: string | null;
+    } | null;
     home_team: { name: string; name_ja?: string | null } | null;
   } | null;
 };
@@ -167,9 +174,11 @@ export async function listPublishedRecapsForFeed(
             name_ja
           ),
           competition:competitions!matches_competition_id_fkey (
+            family,
             name,
             name_ja,
-            season
+            season,
+            slug
           )
         )
       `,
@@ -192,12 +201,17 @@ export async function listPublishedRecapsForFeed(
     .map((row) => ({
       awayTeamName:
         row.match?.away_team?.name_ja ?? row.match?.away_team?.name ?? "",
-      competitionName: [
-        row.match?.competition?.name_ja ?? row.match?.competition?.name ?? "",
-        row.match?.competition?.season,
-      ]
-        .filter(Boolean)
-        .join(" "),
+      competitionName: row.match?.competition
+        ? formatCompetitionTitle(
+            {
+              family: row.match.competition.family,
+              name: row.match.competition.name,
+              nameJa: row.match.competition.name_ja,
+              slug: row.match.competition.slug,
+            },
+            row.match.competition.season,
+          )
+        : "",
       contentMdJa: row.content_md,
       generatedAt: row.generated_at,
       homeTeamName:
