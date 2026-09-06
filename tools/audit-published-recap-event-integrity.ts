@@ -33,7 +33,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const DEFAULT_OUTPUT_DIR = "tmp/event-integrity-audit";
 const PAGE_SIZE = 500;
 const SITE_URL = "https://www.trylinerugby.com";
-const UNRELIABLE_KEY_COLLISION_LIMIT = 100;
+const UNRELIABLE_KEY_COLLISION_LIMIT = 25;
+const UNRELIABLE_KEY_COLLISION_SAMPLE_LIMIT = 3;
 
 type Logger = Pick<Console, "log">;
 
@@ -129,8 +130,9 @@ export type EventIntegrityAuditReport = {
     matchesWithoutFixtureIdentifier: number;
     unreliableKeyCollisions: Array<{
       key: string;
+      matchCount: number;
+      sampleMatchIds: string[];
       value: string;
-      matchIds: string[];
     }>;
     unreliableKeyCollisionLimit: number;
     unreliableKeyCollisionTotal: number;
@@ -360,8 +362,15 @@ function reportToSummaryJson(report: EventIntegrityAuditReport) {
         report.identifierQuality.matchesWithoutFixtureIdentifier,
       unreliable_key_collisions:
         report.identifierQuality.unreliableKeyCollisions.map(
-          ({ key, value, matchIds }) => ({ key, value, match_ids: matchIds }),
+          ({ key, matchCount, sampleMatchIds, value }) => ({
+            key,
+            match_count: matchCount,
+            sample_match_ids: sampleMatchIds,
+            value,
+          }),
         ),
+      unreliable_key_collision_query_note:
+        "全件を確認する場合: select id from matches where external_ids->>'<key>' = '<value>';",
       unreliable_key_collision_limit:
         report.identifierQuality.unreliableKeyCollisionLimit,
       unreliable_key_collision_total:
@@ -666,16 +675,22 @@ export async function auditPublishedRecapEventIntegrity(
     .filter(([, matchIds]) => matchIds.length > 1)
     .map(([identifier, matchIds]) => {
       const separator = identifier.indexOf("=");
+      const sortedMatchIds = [...matchIds].sort();
+
       return {
         key: identifier.slice(0, separator),
+        matchCount: sortedMatchIds.length,
+        sampleMatchIds: sortedMatchIds.slice(
+          0,
+          UNRELIABLE_KEY_COLLISION_SAMPLE_LIMIT,
+        ),
         value: identifier.slice(separator + 1),
-        matchIds: [...matchIds].sort(),
       };
     })
     // Show the largest collisions first, with stable ordering for equal counts.
     .sort(
       (left, right) =>
-        right.matchIds.length - left.matchIds.length ||
+        right.matchCount - left.matchCount ||
         left.key.localeCompare(right.key) ||
         left.value.localeCompare(right.value),
     );
