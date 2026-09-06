@@ -5,6 +5,7 @@ import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { getTeamColor } from "@/lib/format/team-identity";
+import { resolveVenueTimezone } from "@/lib/format/venue-timezone";
 import { cn } from "@/lib/utils";
 
 import { SpoilerScore } from "./spoiler-score";
@@ -22,19 +23,6 @@ type MatchHeaderProps = {
   match: MatchDetail;
   spoilerGuardEnabled?: boolean;
 };
-
-const TEAM_TIMEZONES: Record<string, string> = {
-  england: "Europe/London",
-  france: "Europe/Paris",
-  ireland: "Europe/Dublin",
-  italy: "Europe/Rome",
-  scotland: "Europe/London",
-  wales: "Europe/London",
-};
-
-function getVenueTimezone(teamSlug: string) {
-  return TEAM_TIMEZONES[teamSlug] ?? "Europe/London";
-}
 
 function buildYouTubeSearchUrl(
   homeTeamName: string,
@@ -76,7 +64,7 @@ export function MatchHeader({
   match,
   spoilerGuardEnabled = false,
 }: MatchHeaderProps) {
-  const localTimezone = getVenueTimezone(match.homeTeam.slug);
+  const localTimezone = resolveVenueTimezone(match.venue);
   const outcome = getMatchOutcome(match);
   const homeColor = getTeamColor(match.homeTeam.slug);
   const awayColor = getTeamColor(match.awayTeam.slug);
@@ -180,12 +168,14 @@ export function MatchHeader({
         >
           {formatKickoffJst(match.kickoffAt)}
         </time>
-        <time
-          className="rounded-full bg-white/15 px-3 py-1.5 backdrop-blur-sm"
-          dateTime={match.kickoffAt}
-        >
-          現地 {formatKickoffLocal(match.kickoffAt, localTimezone)}
-        </time>
+        {localTimezone !== null && localTimezone !== "Asia/Tokyo" && (
+          <time
+            className="rounded-full bg-white/15 px-3 py-1.5 backdrop-blur-sm"
+            dateTime={match.kickoffAt}
+          >
+            現地 {formatKickoffLocal(match.kickoffAt, localTimezone)}
+          </time>
+        )}
         {match.venue && (
           <span className="rounded-full bg-white/15 px-3 py-1.5 backdrop-blur-sm">
             {match.venue}

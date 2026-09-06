@@ -53,6 +53,66 @@ afterEach(() => {
 });
 
 describe("MatchHeader", () => {
+  it.each([
+    null,
+    "",
+    "Nonexistent Stadium",
+    "Prince Chichibu Memorial Rugby Ground (Tokyo)",
+  ])(
+    "omits local time for %s while preserving JST and the venue label",
+    (venue) => {
+      const { container } = render(<MatchHeader match={{ ...match, venue }} />);
+
+      expect(screen.queryByText(/^現地 /)).not.toBeInTheDocument();
+      expect(screen.getByText("2027-02-07 (日) 00:00 JST")).toBeInTheDocument();
+      expect(container.querySelectorAll("time")).toHaveLength(1);
+      if (venue) {
+        expect(screen.getByText(venue)).toBeInTheDocument();
+      }
+    },
+  );
+
+  it.each(["australia", "spain", "tonga", "chile", "georgia", "england"])(
+    "uses Townsville local time for home team %s at a neutral venue",
+    (slug) => {
+      render(
+        <MatchHeader
+          match={{
+            ...match,
+            homeTeam: { ...match.homeTeam, slug },
+            kickoffAt: "2026-08-15T05:00:00.000Z",
+            venue: "North Queensland Stadium, Townsville[17]",
+          }}
+        />,
+      );
+
+      expect(
+        screen.getByText(/^現地 2026-08-15 \(Sat\) 15:00 (AEST|GMT\+10)$/),
+      ).toBeInTheDocument();
+      expect(screen.getByText("2026-08-15 (土) 14:00 JST")).toBeInTheDocument();
+      expect(
+        screen.getByText("North Queensland Stadium, Townsville[17]"),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/BST/)).not.toBeInTheDocument();
+    },
+  );
+
+  it.each([
+    ["2026-01-15T05:00:00.000Z", /^現地 2026-01-15 \(Thu\) 05:00 GMT$/],
+    [
+      "2026-08-15T05:00:00.000Z",
+      /^現地 2026-08-15 \(Sat\) 06:00 (BST|GMT\+1)$/,
+    ],
+  ])("preserves London's seasonal offset at %s", (kickoffAt, localTime) => {
+    render(
+      <MatchHeader
+        match={{ ...match, kickoffAt, venue: "Twickenham Stadium, London" }}
+      />,
+    );
+
+    expect(screen.getByText(localTime)).toBeInTheDocument();
+  });
+
   it("renders one screen-reader-only h1 for the match name", () => {
     const { container } = render(<MatchHeader match={match} />);
 
