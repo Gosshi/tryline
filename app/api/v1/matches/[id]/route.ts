@@ -20,6 +20,10 @@ import {
 } from "@/lib/db/queries/matches";
 import { getStorySourcedFactsForMatches } from "@/lib/db/queries/sourced-facts";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
+import {
+  computeEventPointTotals,
+  eventTotalsMatchFinalScore,
+} from "@/lib/ingestion/event-integrity";
 
 import type { V1MatchDetailData, V1NextReadMatch } from "@/lib/api/v1/types";
 
@@ -122,6 +126,30 @@ export async function GET(
   const suppressMatchFlags =
     match.competition.id !== undefined &&
     singleNationCompetitionIds.has(match.competition.id);
+  const eventIntegrity =
+    match.status !== "finished" ||
+    match.homeScore === null ||
+    match.awayScore === null ||
+    events.length === 0
+      ? "unavailable"
+      : events.some(
+            (event) =>
+              event.teamId !== match.homeTeamId &&
+              event.teamId !== match.awayTeamId,
+          )
+        ? "mismatch"
+        : eventTotalsMatchFinalScore(
+              computeEventPointTotals(events, {
+                away: { id: match.awayTeamId, name: match.awayTeam.name },
+                home: { id: match.homeTeamId, name: match.homeTeam.name },
+              }),
+              {
+                away_score: match.awayScore,
+                home_score: match.homeScore,
+              },
+            )
+          ? "verified"
+          : "mismatch";
   const data: V1MatchDetailData = {
     match: {
       away_team: {
@@ -143,7 +171,8 @@ export async function GET(
         season: match.competition.season,
         slug: match.competition.slug,
       },
-      events: events.map((event) => ({
+      event_integrity: eventIntegrity,
+      events: (eventIntegrity === "mismatch" ? [] : events).map((event) => ({
         id: event.id,
         is_penalty_try: event.isPenaltyTry,
         minute: event.minute,

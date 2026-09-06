@@ -4,9 +4,14 @@ import { ScoreGraph } from "@/components/score-graph";
 import { deriveMatchEventHighlights } from "@/lib/format/match-key-moment";
 import { buildScoreTimeline } from "@/lib/format/match-timeline";
 import { getTeamColor } from "@/lib/format/team-identity";
+import {
+  computeEventPointTotals,
+  eventTotalsMatchFinalScore,
+} from "@/lib/ingestion/event-integrity";
 import { cn } from "@/lib/utils";
 
 import type { MatchEventRow } from "@/lib/db/queries/match-events";
+import type { MatchStatus } from "@/lib/format/status";
 
 const EVENT_TYPE_LABEL: Record<string, string> = {
   conversion: "コンバージョン",
@@ -18,15 +23,17 @@ const EVENT_TYPE_LABEL: Record<string, string> = {
 };
 
 type MatchEventsSectionProps = {
+  awayTeamId?: string;
   awayTeamName: string;
   awayTeamSlug: string;
   events: MatchEventRow[];
-  finalAwayScore: number;
-  finalHomeScore: number;
+  finalAwayScore: number | null;
+  finalHomeScore: number | null;
   homeTeamId: string;
   homeTeamName: string;
   homeTeamSlug: string;
   playerLinks?: Record<string, string>;
+  status?: MatchStatus;
   variant?: "highlights" | "timeline";
 };
 
@@ -48,7 +55,18 @@ function sortEvents(events: MatchEventRow[]): MatchEventRow[] {
   });
 }
 
+function hasOnlyMatchTeams(
+  events: MatchEventRow[],
+  homeTeamId: string,
+  awayTeamId: string,
+) {
+  return events.every(
+    (event) => event.teamId === homeTeamId || event.teamId === awayTeamId,
+  );
+}
+
 export function MatchEventsSection({
+  awayTeamId,
   awayTeamName,
   awayTeamSlug,
   events,
@@ -58,10 +76,48 @@ export function MatchEventsSection({
   homeTeamName,
   homeTeamSlug,
   playerLinks = {},
+  status,
   variant = "highlights",
 }: MatchEventsSectionProps) {
   if (events.length === 0) {
     return null;
+  }
+
+  const eventIntegrity =
+    status !== "finished" ||
+    finalHomeScore === null ||
+    finalAwayScore === null
+      ? "unavailable"
+      : !hasOnlyMatchTeams(events, homeTeamId, awayTeamId ?? "")
+        ? "mismatch"
+        : eventTotalsMatchFinalScore(
+              computeEventPointTotals(events, {
+                away: { id: awayTeamId ?? "", name: awayTeamName },
+                home: { id: homeTeamId, name: homeTeamName },
+              }),
+              {
+                away_score: finalAwayScore,
+                home_score: finalHomeScore,
+              },
+            )
+          ? "verified"
+          : "mismatch";
+
+  if (eventIntegrity === "mismatch") {
+    if (variant === "timeline") {
+      return null;
+    }
+
+    return (
+      <section
+        aria-label="得点記録"
+        className="rounded-[var(--radius-md)] bg-[var(--color-panel)] p-5 sm:p-6"
+      >
+        <p className="text-sm font-medium leading-6 text-[var(--color-ink)]">
+          試合結果のみ掲載。得点経過は確認中です
+        </p>
+      </section>
+    );
   }
 
   const homeColor = getTeamColor(homeTeamSlug);
@@ -70,8 +126,8 @@ export function MatchEventsSection({
   const timeline = buildScoreTimeline(sorted, homeTeamId);
   const highlights = deriveMatchEventHighlights({
     events: sorted,
-    finalAwayScore,
-    finalHomeScore,
+    finalAwayScore: finalAwayScore ?? 0,
+    finalHomeScore: finalHomeScore ?? 0,
     homeTeamId,
   });
   const homeEvents = sorted.filter((event) => event.teamId === homeTeamId);
@@ -185,8 +241,8 @@ export function MatchEventsSection({
         <div className="mb-4">
           <ScoreGraph
             awayTeamSlug={awayTeamSlug}
-            finalAwayScore={finalAwayScore}
-            finalHomeScore={finalHomeScore}
+            finalAwayScore={finalAwayScore ?? 0}
+            finalHomeScore={finalHomeScore ?? 0}
             homeTeamSlug={homeTeamSlug}
             timeline={timeline}
           />
