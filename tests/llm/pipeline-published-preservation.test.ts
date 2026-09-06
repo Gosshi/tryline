@@ -354,4 +354,25 @@ describe("generateMatchContent published preservation", () => {
       }),
     );
   });
+
+  it("keeps an existing draft as draft after a QA rejection", async () => {
+    dbMock.existingContent = {
+      content_md: "# existing draft",
+      generated_at: "2026-07-17T12:00:00.000Z",
+      qa_scores: { issues: ["existing"] },
+      status: "draft",
+    };
+    setAssembledContent("recap");
+    qaMock.evaluateNarrativeQuality.mockResolvedValue(qaResult("reject"));
+
+    const result = await generateMatchContent("match-1", "recap", "ja");
+
+    expect(result.status).toBe("draft");
+    expect(dbMock.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "draft",
+      }),
+      expect.any(Object),
+    );
+  });
 });

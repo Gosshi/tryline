@@ -264,6 +264,123 @@ describe("match sample recap page", () => {
     expect(previewDetails).toHaveTextContent("プレビュー本文");
   });
 
+  it("adds the disclosure to the recap trust strip but not the preview", async () => {
+    setCommonMocks({
+      match: {
+        awayScore: 17,
+        homeScore: 56,
+      },
+    });
+    matchEventMocks.getMatchEventsForMatch.mockResolvedValue([
+      {
+        id: "event-1",
+        isPenaltyTry: false,
+        minute: 12,
+        playerName: "Home Scorer",
+        points: null,
+        teamId: "home-team",
+        type: "try",
+      },
+    ]);
+
+    const element = await MatchDetailPage({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    render(element);
+
+    expect(
+      screen.getAllByText(
+        "この記事の得点経過は現在の記録と一致していません。確認のうえ更新します。",
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("does not disclose a recap when event totals match the final score", async () => {
+    setCommonMocks({
+      match: {
+        awayScore: 0,
+        homeScore: 5,
+      },
+    });
+    matchEventMocks.getMatchEventsForMatch.mockResolvedValue([
+      {
+        id: "event-1",
+        isPenaltyTry: false,
+        minute: 12,
+        playerName: "Home Scorer",
+        points: null,
+        teamId: "home-team",
+        type: "try",
+      },
+    ]);
+
+    const element = await MatchDetailPage({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    render(element);
+
+    expect(
+      screen.queryByText(
+        "この記事の得点経過は現在の記録と一致していません。確認のうえ更新します。",
+      ),
+    ).toBeNull();
+  });
+
+  it.each([
+    {
+      events: [
+        {
+          id: "event-1",
+          isPenaltyTry: false,
+          minute: 12,
+          playerName: "Home Scorer",
+          points: null,
+          teamId: "home-team",
+          type: "try",
+        },
+      ],
+      match: { awayScore: 17, homeScore: 56, status: "scheduled" as const },
+      name: "the match is not finished",
+    },
+    {
+      events: [
+        {
+          id: "event-1",
+          isPenaltyTry: false,
+          minute: 12,
+          playerName: "Home Scorer",
+          points: null,
+          teamId: "home-team",
+          type: "try",
+        },
+      ],
+      match: { awayScore: 17, homeScore: null },
+      name: "a final score is unavailable",
+    },
+    {
+      events: [],
+      match: { awayScore: 17, homeScore: 56 },
+      name: "there are no events",
+    },
+  ])("does not disclose a recap when $name", async ({ events, match }) => {
+    setCommonMocks({ match });
+    matchEventMocks.getMatchEventsForMatch.mockResolvedValue(events);
+
+    const element = await MatchDetailPage({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+
+    render(element);
+
+    expect(
+      screen.queryByText(
+        "この記事の得点経過は現在の記録と一致していません。確認のうえ更新します。",
+      ),
+    ).toBeNull();
+  });
+
   it("keeps non-sample recaps on the existing premium gate", async () => {
     setCommonMocks({ id: nonSampleMatchId });
 

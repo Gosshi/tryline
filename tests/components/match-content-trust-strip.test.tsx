@@ -62,6 +62,48 @@ describe("MatchContentTrustStrip", () => {
     );
   });
 
+  it("adds a neutral integrity disclosure without changing existing trust labels", () => {
+    render(
+      <MatchContentTrustStrip
+        eventIntegrity="mismatch"
+        hasConfirmedLineups
+        sourcedFactSources={[
+          {
+            domain: "rugby-japan.jp",
+            sourceUrl: "https://www.rugby-japan.jp/news/example",
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "この記事の得点経過は現在の記録と一致していません。確認のうえ更新します。",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("ラインアップ確認済み")).toBeInTheDocument();
+    expect(screen.getByText("出典: rugby-japan.jp")).toHaveAttribute(
+      "href",
+      "https://www.rugby-japan.jp/news/example",
+    );
+    expect(screen.queryByText(/この記事は誤っています|AI が生成/)).toBeNull();
+  });
+
+  it.each(["unavailable", "verified"] as const)(
+    "does not disclose event integrity when it is %s",
+    (eventIntegrity) => {
+      const { container } = render(
+        <MatchContentTrustStrip
+          eventIntegrity={eventIntegrity}
+          hasConfirmedLineups={false}
+          sourcedFactSources={[]}
+        />,
+      );
+
+      expect(container).toBeEmptyDOMElement();
+    },
+  );
+
   it("renders nothing without sources or trust labels", () => {
     const { container } = render(
       <MatchContentTrustStrip
