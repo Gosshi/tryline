@@ -21,7 +21,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.19.0";
+export const PROMPT_VERSION = "recap@4.20.0";
 
 const MISSING_DATA_DISCLOSURE_BLOCK = [
   "【本文でシステム内部のデータ不在を開示しない】読者に向けて「入力データ」「提供されたデータ」等のシステム内部を指す語を出してはならない。",
@@ -153,6 +153,9 @@ export function buildGenerateRecapPrompt(
       : [
           "【出典付き補強事実 sourced_facts】以下はallowlist済みの信頼ソースから抽出した事実です。本文の趣旨に沿うものはできるだけ多く反映すること。ただし、個々の事実を無理にこじつけて記述してはならない。",
           "使う場合は必ず自分の日本語で言い換えること。原文の長い直接引用は禁止。同一ソースから複数引用しないこと。",
+          "数値スタッツ（%・本数・回数）が含まれる場合は、試合の筋に沿うものを本文のいずれかのセクションで最低1つ使うこと。",
+          "イエローカード・レッドカードが含まれる場合は、該当する得点局面で、そのカードと前後のプレーの因果に触れること。",
+          "ただし試合の筋に沿わない事実は無理に使わないこと。供給された事実に無い数値を書いてはならない。",
           "sourced_facts に含まれないWeb由来の負傷・欠場・統計・発言を推測して書いてはならない。",
           JSON.stringify(assembled.sourced_facts),
         ].join("\n");

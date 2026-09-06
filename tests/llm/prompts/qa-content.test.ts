@@ -1,11 +1,30 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
   buildQaContentPrompt,
+  getRecapSourcedFactCoverage,
   getQaGroundingCoverageGaps,
   PROMPT_VERSION,
   type QaMatchContext,
 } from "@/lib/llm/prompts/qa-content";
+
+import type { SourcedFactInput } from "@/lib/llm/types";
+
+type RecapSourcedFactsFixture = {
+  facts: Array<SourcedFactInput & { entryMethod: string }>;
+};
+
+const recapSourcedFactsFixture = JSON.parse(
+  readFileSync(
+    resolve(process.cwd(), "tests/fixtures/recap-sourced-facts-dcd576dd.json"),
+    "utf8",
+  ),
+) as RecapSourcedFactsFixture;
+const recapSourcedFacts = recapSourcedFactsFixture.facts.map(
+  ({ entryMethod: _entryMethod, ...fact }) => fact,
+);
 
 const matchContext: QaMatchContext = {
   awayScore: 17,
@@ -15,8 +34,76 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
-  it("uses qa prompt version 2.10.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.10.0");
+  it("uses qa prompt version 2.11.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.11.0");
+  });
+
+  it("asks QA to lower information density when supplied statistics and cards are unused", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      sourcedFacts: recapSourcedFacts,
+    });
+    const coverage = getRecapSourcedFactCoverage(recapSourcedFacts);
+
+    expect(coverage.statisticalFacts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fact: expect.stringContaining("ポゼッション57%"),
+        }),
+        expect.objectContaining({
+          fact: expect.stringContaining("ラインアウトはSouth Africaが11/11"),
+        }),
+      ]),
+    );
+    expect(coverage.cardFacts).toHaveLength(2);
+    expect(prompt).toContain("## recap supplied statistics and cards coverage");
+    expect(prompt).toContain("information_density を下げること");
+    expect(prompt).toContain("カードと該当局面の因果");
+  });
+
+  it("does not lower information density solely because one supplied statistic is used", () => {
+    const prompt = buildQaContentPrompt(
+      "recap",
+      "New Zealandはポゼッション57%を記録した。",
+      "ja",
+      {
+        ...matchContext,
+        sourcedFacts: recapSourcedFacts,
+      },
+    );
+
+    expect(prompt).toContain(
+      "少なくとも1つを試合の筋に沿って反映していれば、この一覧だけを理由に下げないこと",
+    );
+  });
+
+  it("does not add the supplied-statistics gate when no statistics or cards are supplied", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      sourcedFacts: [
+        {
+          confidence: "high",
+          fact: "The coach praised the team after the match.",
+          source_domain: "example.com",
+          source_url: "https://example.com/recap",
+        },
+      ],
+    });
+
+    expect(prompt).not.toContain(
+      "## recap supplied statistics and cards coverage",
+    );
+  });
+
+  it("does not add the supplied-statistics gate when sourced facts are empty", () => {
+    const prompt = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      sourcedFacts: [],
+    });
+
+    expect(prompt).not.toContain(
+      "## recap supplied statistics and cards coverage",
+    );
   });
 
   it("uses preview length thresholds in the information density rubric", () => {
@@ -131,7 +218,9 @@ describe("buildQaContentPrompt", () => {
     expect(previewPrompt).toContain(
       "背番号と実名を根拠なく並べただけのラインアップ羅列",
     );
-    expect(englishRecapPrompt).not.toContain("recap sourced_facts 反映度チェック");
+    expect(englishRecapPrompt).not.toContain(
+      "recap sourced_facts 反映度チェック",
+    );
   });
 
   it("does not penalize Japanese previews without sourced facts", () => {
@@ -329,7 +418,9 @@ describe("buildQaContentPrompt", () => {
 
     expect(prompt).toContain("## match_metadata grounding");
     expect(prompt).toContain("入力データに基づく正当な記述");
-    expect(prompt).toContain('"competition_name":"グレイテスト・ライバルリー2026"');
+    expect(prompt).toContain(
+      '"competition_name":"グレイテスト・ライバルリー2026"',
+    );
     expect(prompt).toContain('"venue":"ケープタウン・スタジアム"');
   });
 
@@ -584,9 +675,7 @@ describe("buildQaContentPrompt", () => {
         final_home: 16,
         ht_away: 12,
         ht_home: 10,
-        lead_changes: [
-          { away: 17, home: 16, minute: 58, new_leader: "away" },
-        ],
+        lead_changes: [{ away: 17, home: 16, minute: 58, new_leader: "away" }],
         score_progression: [
           {
             away: 15,
