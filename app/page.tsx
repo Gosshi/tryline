@@ -828,7 +828,6 @@ export default async function HomePage() {
                           </span>
                           <span className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-white/75">
                             {competition.season}
-                            <span className="sr-only"> 最新シーズン</span>
                             {competition.family === "league-one" && (
                               <span className="bg-white/18 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/85">
                                 EN
