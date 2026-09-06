@@ -23,7 +23,7 @@ import {
 } from "@/lib/db/queries/competitions";
 import {
   getMatchBroadcastPresenceForMatches,
-  getMatchBroadcastServicesForMatches,
+  getMatchBroadcastsForMatches,
 } from "@/lib/db/queries/match-broadcasts";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import {
@@ -50,6 +50,10 @@ import { isSeasonNotStarted } from "@/lib/season-standings";
 import { createCompetitionOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
+import type {
+  MatchBroadcast,
+  MatchBroadcastService,
+} from "@/lib/db/queries/match-broadcasts";
 import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { StandingRow } from "@/lib/db/queries/standings";
 import type { Metadata } from "next";
@@ -164,6 +168,60 @@ function findNextScheduledMatch(
       )
       .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt))[0] ?? null
   );
+}
+
+type SeasonBroadcastGuide = {
+  answer: string;
+  services: MatchBroadcastService[];
+};
+
+function getSeasonBroadcastGuide(
+  broadcastsByMatch: Map<string, MatchBroadcast[]>,
+): SeasonBroadcastGuide {
+  const servicesByName = new Map<string, MatchBroadcast>();
+
+  for (const broadcasts of broadcastsByMatch.values()) {
+    for (const broadcast of broadcasts) {
+      const existing = servicesByName.get(broadcast.serviceName);
+
+      if (
+        !existing ||
+        new Date(broadcast.verifiedAt).getTime() >
+          new Date(existing.verifiedAt).getTime()
+      ) {
+        servicesByName.set(broadcast.serviceName, broadcast);
+      }
+    }
+  }
+
+  const broadcasts = [...servicesByName.values()].sort(
+    (left, right) =>
+      left.displayOrder - right.displayOrder ||
+      left.serviceName.localeCompare(right.serviceName, "ja"),
+  );
+
+  if (broadcasts.length === 0) {
+    return {
+      answer:
+        "このシーズンの放送・配信情報は確認中です。最新情報は大会公式サイトをご確認ください。",
+      services: [],
+    };
+  }
+
+  return {
+    answer: `掲載中の一部試合に視聴情報があります。対象試合の案内をご確認ください。確認済みのサービス: ${broadcasts
+      .map(
+        (broadcast) =>
+          `${broadcast.serviceName}（${broadcast.verifiedAt.slice(0, 10)}確認）`,
+      )
+      .join("、")}。`,
+    services: broadcasts.map(({ displayOrder, kind, serviceName, url }) => ({
+      displayOrder,
+      kind,
+      serviceName,
+      url,
+    })),
+  };
 }
 
 type SeasonProgress = {
@@ -496,10 +554,11 @@ export default async function SeasonPage({ params }: Props) {
     ],
   );
   const matchIds = matches.map((match) => match.id);
-  const [contentStatusMap, broadcastServices] = await Promise.all([
+  const [contentStatusMap, broadcastsByMatch] = await Promise.all([
     getContentStatusForMatches(matchIds),
-    getMatchBroadcastServicesForMatches(matchIds),
+    getMatchBroadcastsForMatches(matchIds),
   ]);
+  const seasonBroadcastGuide = getSeasonBroadcastGuide(broadcastsByMatch);
   const hasAnyContent = Object.values(contentStatusMap).some(
     (status) => status.hasPreview || status.hasRecap,
   );
@@ -608,7 +667,7 @@ export default async function SeasonPage({ params }: Props) {
       question: `${competitionTitle}はいつ開催されますか？`,
     },
     {
-      answer: "日本ではDAZN・J SPORTS 等の配信サービスで視聴できます。",
+      answer: seasonBroadcastGuide.answer,
       question: `${familyTitle}はどこで見られますか？`,
     },
     {
@@ -955,8 +1014,32 @@ export default async function SeasonPage({ params }: Props) {
           className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6"
           id="guide"
         >
+          <section aria-labelledby="season-broadcast-guide-heading">
+            <h2
+              className="font-heading text-2xl font-bold text-[var(--color-ink)]"
+              id="season-broadcast-guide-heading"
+            >
+              日本での視聴方法
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-[var(--color-ink-muted)]">
+              {seasonBroadcastGuide.answer}
+              {seasonBroadcastGuide.services.length === 0 && guide?.sourceUrl && (
+                <>
+                  {" "}
+                  <a
+                    className="text-[var(--color-accent)] underline underline-offset-4"
+                    href={guide.sourceUrl}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    大会公式サイト
+                  </a>
+                </>
+              )}
+            </p>
+          </section>
           <CompetitionViewingGuide
-            broadcastServices={broadcastServices}
+            broadcastServices={seasonBroadcastGuide.services}
             markdown={guide?.guideJa ?? null}
             sourceUrl={guide?.sourceUrl ?? null}
             verifiedAt={guide?.verifiedAt ?? null}
