@@ -144,7 +144,6 @@ V4 は既に別 match_id に登録された同一 source namespace・fixture ID 
 **実装前に Owner が決めること。決まるまで着手しない。**
 
 1. **V4 の fixture 識別子**: `external_ids` のどのキーを source fixture id とするか、namespace をどう区切るか、欠損時に拒否するか通すか、日付の粒度をどう扱うか。既存の `fix-live-ingest-event-key-collision.md` と `feat-nations-championship-event-source.md` のキー設計と衝突しない形を確定する
-   **2026-09-06 確定追記**: `specs/fix-external-identifier-key-policy.md` により、許可リストは `match_url` / `league_one_match_id` / `world_rugby_match_id` / `top14_lnr_id` / `top14_lnr_match_path` の 5 キーとする。`lib/ingestion/external-identifiers.ts` の `extractFixtureIdentifiers` を共有し、キーを namespace とした `${key}=${value}` 形式で扱う。`wikipedia_event_id` / `wikipedia_url` / `top14_lnr_url` は fixture 識別子としない。本番では 327 / 1,372 試合（24%）だけが許可キーを持ち、1,045 試合（76%）には使える識別子が無い。Wikipedia 系は V1〜V3 が主防御、V4 は補助であり、識別子欠損から fixture 重複とは判定しない。この追記は識別子の解釈の確定のみで、取り込み時ガードの実装は含まない。
 2. **V3 を自動拒否に使うか**: 4 件という閾値は候補抽出の暫定基準であり、汚染の確定ではない。正常な試合が誤って拒否される反例テストを見たうえで、自動拒否とするか警告に留めるかを決める
 3. **共通入口を通らない 2 実装の扱い**: `scripts/import-world-rugby-full.ts:505` と `scripts/import-league-one-full.ts:335` を本 spec で共通化するか、別 spec に回すか
 
