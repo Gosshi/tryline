@@ -24,12 +24,10 @@ import {
   notifyContentQualityRegression,
   notifyContentRejected,
   notifyCostAlert,
+  notifyEventIntegrityMismatch,
 } from "@/lib/llm/notify";
 import { calculateCostUsd } from "@/lib/llm/pricing";
-import {
-  assembleMatchContentInput,
-  computeScoreTimeline,
-} from "@/lib/llm/stages/assemble";
+import { assembleMatchContentInput } from "@/lib/llm/stages/assemble";
 import { extractTacticalPoints } from "@/lib/llm/stages/extract-facts";
 import {
   generateNarrative,
@@ -201,39 +199,56 @@ export async function generateMatchContent(
     status: "success",
   });
 
-  if (contentType === "recap" && assembled.match_events.length > 0) {
-    const timeline = computeScoreTimeline(
-      assembled.match_events,
-      assembled.match.home_team?.name ?? "Home",
-      assembled.match.away_team?.name ?? "Away",
-    );
+  if (
+    contentType === "recap" &&
+    assembled.eventIntegrity?.status === "mismatch"
+  ) {
+    const { actual, delta, expected } = assembled.eventIntegrity;
 
-    if (timeline) {
-      const homeDelta = timeline.final_home - (assembled.match.home_score ?? 0);
-      const awayDelta = timeline.final_away - (assembled.match.away_score ?? 0);
+    console.warn("[score-integrity] event total mismatch", {
+      awayDelta: delta.away,
+      homeDelta: delta.home,
+      matchId,
+    });
 
-      if (homeDelta !== 0 || awayDelta !== 0) {
-        console.warn("[score-integrity] event total mismatch", {
-          awayDelta,
-          homeDelta,
-          matchId,
-        });
+    await logPipelineRun({
+      matchId,
+      contentType,
+      stage: 0,
+      inputHash: "",
+      output: {
+        awayDelta: delta.away,
+        homeDelta: delta.home,
+        type: "score_event_mismatch",
+      },
+      costUsd: 0,
+      durationMs: 0,
+      status: "failed",
+    });
+    await notifyEventIntegrityMismatch({
+      actualAway: actual.away,
+      actualHome: actual.home,
+      competitionLabel: assembled.match.competition
+        ? `${assembled.match.competition.name} ${assembled.match.competition.season}`
+        : undefined,
+      expectedAway: expected.away,
+      expectedHome: expected.home,
+      matchId,
+      matchLabel: `${assembled.match.home_team?.name ?? "Home"} 対 ${assembled.match.away_team?.name ?? "Away"}`,
+    });
 
-        await logPipelineRun({
-          matchId,
-          contentType,
-          stage: 0,
-          inputHash: "",
-          output: { awayDelta, homeDelta, type: "score_event_mismatch" },
-          costUsd: 0,
-          durationMs: 0,
-          status: "failed",
-        });
-      }
-    }
+    return {
+      matchId,
+      contentType,
+      status: "skipped",
+      qa: null,
+    };
   }
 
-  if (contentType === "recap" && assembled.match_events.length === 0) {
+  if (
+    contentType === "recap" &&
+    assembled.eventIntegrity?.reason === "events_unavailable"
+  ) {
     return {
       matchId,
       contentType,
