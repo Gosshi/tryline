@@ -47,6 +47,24 @@ describe("recap event integrity gate", () => {
     });
   });
 
+  it("prioritizes an unavailable final score over missing events", () => {
+    expect(
+      determineEventIntegrity(
+        "recap",
+        { away_score: null, home_score: null, status: "finished" },
+        0,
+        null,
+      ),
+    ).toEqual({
+      actual: null,
+      delta: null,
+      eventCount: 0,
+      expected: { away: null, home: null },
+      reason: "score_unavailable",
+      status: "unavailable",
+    });
+  });
+
   it.each([
     ["preview", { away_score: 17, home_score: 56, status: "finished" }, 19, scoreTimeline, "content_type_not_recap"],
     ["recap", { away_score: 17, home_score: 56, status: "scheduled" }, 19, scoreTimeline, "match_not_finished"],
