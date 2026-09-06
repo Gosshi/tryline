@@ -38,6 +38,10 @@ import {
 import { buildMatchEventPlayerLinks } from "@/lib/format/match-event-player-links";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import {
+  computeEventPointTotals,
+  eventTotalsMatchFinalScore,
+} from "@/lib/ingestion/event-integrity";
+import {
   extractCoreSection,
   extractDescription,
 } from "@/lib/match-content/description";
@@ -233,6 +237,30 @@ export default async function MatchDetailPage({
           match.awayTeam.slug,
         )}`
       : null;
+  const recapEventIntegrity =
+    match.status !== "finished" ||
+    match.homeScore === null ||
+    match.awayScore === null ||
+    events.length === 0
+      ? "unavailable"
+      : events.some(
+            (event) =>
+              event.teamId !== match.homeTeamId &&
+              event.teamId !== match.awayTeamId,
+          )
+        ? "mismatch"
+        : eventTotalsMatchFinalScore(
+              computeEventPointTotals(events, {
+                away: { id: match.awayTeamId, name: match.awayTeam.name },
+                home: { id: match.homeTeamId, name: match.homeTeam.name },
+              }),
+              {
+                away_score: match.awayScore,
+                home_score: match.homeScore,
+              },
+            )
+          ? "verified"
+          : "mismatch";
   const hasEnglishContent =
     englishContent.preview !== null || englishContent.recap !== null;
   const hasConfirmedLineups = lineups.length > 0;
@@ -452,6 +480,7 @@ export default async function MatchDetailPage({
                   afterBody={
                     <>
                       <MatchContentTrustStrip
+                        eventIntegrity={recapEventIntegrity}
                         hasConfirmedLineups={hasConfirmedLineups}
                         sourcedFactSources={sourcedFactSummary.recapSources}
                       />
@@ -499,6 +528,7 @@ export default async function MatchDetailPage({
                   publishedContent.recap ? (
                     <>
                       <MatchContentTrustStrip
+                        eventIntegrity={recapEventIntegrity}
                         hasConfirmedLineups={hasConfirmedLineups}
                         sourcedFactSources={sourcedFactSummary.recapSources}
                       />

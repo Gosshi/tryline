@@ -1,4 +1,5 @@
 type MatchContentTrustStripProps = {
+  eventIntegrity?: "mismatch" | "unavailable" | "verified";
   hasConfirmedLineups: boolean;
   sourcedFactSources: Array<{
     domain: string;
@@ -7,6 +8,7 @@ type MatchContentTrustStripProps = {
 };
 
 export function MatchContentTrustStrip({
+  eventIntegrity,
   hasConfirmedLineups,
   sourcedFactSources,
 }: MatchContentTrustStripProps) {
@@ -25,7 +27,11 @@ export function MatchContentTrustStrip({
 
   const sources = [...sourcesByDomain.values()];
 
-  if (!hasConfirmedLineups && sources.length === 0) {
+  if (
+    eventIntegrity !== "mismatch" &&
+    !hasConfirmedLineups &&
+    sources.length === 0
+  ) {
     return null;
   }
 
@@ -33,6 +39,11 @@ export function MatchContentTrustStrip({
     <div className="mt-6 border-t border-[var(--color-rule)] pt-4">
       <dl className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs font-semibold leading-relaxed text-[var(--color-ink-muted)]">
         <dt className="sr-only">この記事の根拠</dt>
+        {eventIntegrity === "mismatch" && (
+          <dd className="basis-full">
+            この記事の得点経過は現在の記録と一致していません。確認のうえ更新します。
+          </dd>
+        )}
         {hasConfirmedLineups && (
           <dd className="rounded-full bg-[var(--color-accent-subtle)] px-3 py-1">
             ラインアップ確認済み
