@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   summarizeDraftBacklog,
+  summarizeActionableDataIntegrityMatches,
   summarizeDuplicateEvents,
   summarizeEmptyFinishedEvents,
   summarizeScoreMismatches,
@@ -39,6 +40,7 @@ function auditMatch(
     away_score: 7,
     away_team: { name: "Away" },
     away_team_id: "away-id",
+    competition: { name: "Rugby Championship", season: "2026" },
     home_score: 10,
     home_team: { name: "Home" },
     home_team_id: "home-id",
@@ -139,6 +141,49 @@ describe("data integrity audit summaries", () => {
       count: 0,
       matches: [],
     });
+  });
+
+  it("includes only published recaps in actionable score mismatch metadata", () => {
+    const matches = [
+      auditMatch({
+        away_score: 8,
+        id: "published-mismatch",
+        match_content: [{ content_type: "recap", status: "published" }],
+      }),
+      auditMatch({
+        away_score: 8,
+        id: "draft-mismatch",
+        match_content: [{ content_type: "recap", status: "draft" }],
+      }),
+    ];
+    const duplicateEvents = summarizeDuplicateEvents(matches);
+    const scoreMismatches = summarizeScoreMismatches(matches);
+
+    expect(
+      summarizeActionableDataIntegrityMatches(
+        matches,
+        duplicateEvents,
+        scoreMismatches,
+      ),
+    ).toEqual([
+      {
+        competitionLabel: "Rugby Championship 2026",
+        duplicateEvents: [
+          {
+            eventCount: 5,
+            matchingMatchCount: 2,
+          },
+        ],
+        matchId: "published-mismatch",
+        matchLabel: "Home 対 Away",
+        scoreMismatch: {
+          actualAway: 7,
+          actualHome: 10,
+          expectedAway: 8,
+          expectedHome: 10,
+        },
+      },
+    ]);
   });
 
   it("summarizes finished matches with zero events", () => {
