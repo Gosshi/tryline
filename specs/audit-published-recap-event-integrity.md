@@ -16,7 +16,10 @@
 
 対象:
 - `tools/audit-published-recap-event-integrity.ts`（新規）: **読み取り専用**。公開済み recap を持つ試合を対象に 5 種類の検査を行い、結果をファイルへ書き出す
+- `tests/tools/audit-published-recap-event-integrity.test.ts`（新規）: 合成 fixture とモックによる検証。**`tests/db/**` の除外に該当しない場所に置く**
 - 出力レポート: `tmp/event-integrity-audit/` に JSON と CSV
+
+**アプリコードには差分を作らない**（`app/` / `lib/` / `components/` / `scripts/`）。テストの追加は対象に含む。
 
 対象外:
 - **自動削除・自動修正・自動 unpublish**（1 行も書き込まない。結果を見て Owner が個別に判断する）
@@ -70,7 +73,7 @@ teams/competitionsを実際の外部キーでJOINし表示名とcompetition_slug
 
 | # | 検査 | 判定 |
 |---|---|---|
-| C1 | 得点不一致 | イベント合計が `home_score` / `away_score` と一致しない。判定には `lib/format/match-event-points.ts` の `pointsForMatchEvent` を使う（得点換算を書き起こさない。`penalty_try` 5 点誤りの再発源。`specs/fix-penalty-try-scoring.md` 参照）。**`toScoreEvent`（`audit.ts:117`）は export されていないため import できない** |
+| C1 | 得点不一致 | イベント合計が `home_score` / `away_score` と一致しない。判定には `lib/format/match-event-points.ts` の `pointsForMatchEvent` を使う（得点換算を書き起こさない。`penalty_try` 5 点誤りの再発源。`specs/fix-penalty-try-scoring.md` 参照）。**`toScoreEvent` は既に存在しない**（#765 が `lib/ingestion/event-integrity.ts` の `toScoreTimelineEvent` へ置き換え済み） |
 | C2 | 第三チーム | イベントの `team_id` に当該試合の `home_team_id` / `away_team_id` 以外が含まれる |
 | C3 | 署名一致 | `(minute, type, metadata.player_name)` の署名列が**別の match_id と完全一致**する。**署名が 4 件以上のときのみ判定**（3 件以下は偶然一致しうる） |
 | C4 | 帰属反転 | C3 に該当し、かつ両試合の対戦カードが同一（両チーム集合が一致）で、**`team_id` の対応が全件逆**である |
@@ -125,7 +128,7 @@ LLM実行承認フラグは不要だが、機密ファイルやgitignore対象�
 4. 第1戦 `2c276057-bb3a-4617-a5b1-b7742e65f034` は C1 に該当しない（合計 32–35 が最終スコアと一致するため）
 5. C3 の判定が署名 4 件以上のときのみ適用されることを検証するテストがある。3 件以下の署名が偶然一致しても検出しない
 6. C4 が「対戦カード一致 かつ 帰属全件反転」のときのみ立つことを検証するテストがある。**一部だけ反転している場合は C3 の `suspect` に留まる**
-7. C1 の判定に `pointsForMatchEvent` を使っており、得点換算が新規に書き起こされていない。**`toScoreEvent` を import していない**（export されていないため）
+7. C1 の判定に `pointsForMatchEvent` を使っており、得点換算が新規に書き起こされていない
 8. `summary.json` に、対象 distinct match 数と、別群（preview のみ / draft / コンテンツ無し）の件数が含まれる
 9. `summary.json` に「現在のデータでの監査であり、生成時点の再現ではない」旨の注記が含まれる
 10. 実行開始時に対象件数が標準出力に表示され、Owner が本番を向いていることを確認できる
@@ -133,6 +136,6 @@ LLM実行承認フラグは不要だが、機密ファイルやgitignore対象�
 12. **Owner が結果を見て判断できること**: `findings.csv` の `url` 列をブラウザで開くだけで、疑いのある試合を目視確認できる
 
 ## 監査の完全性と共通関数
-対象match_idは公開recapを持つ試合に限定し、署名/fixture重複の比較先はコンテンツの有無を問わないイベント保有試合に広げる。ページングを末尾まで実行し、途中失敗は非ゼロ終了・incomplete reportとする。toScoreEventはprivateなので直接importしない。先行PRで切り出した純関数とpointsForMatchEventを使う。CSVは複数相手IDと言語別記事情報を配列として保持し、CSV quotingを適用する。
+対象match_idは公開recapを持つ試合に限定し、署名/fixture重複の比較先はコンテンツの有無を問わないイベント保有試合に広げる。ページングを末尾まで実行し、途中失敗は非ゼロ終了・incomplete reportとする。`lib/ingestion/event-integrity.ts` の公開関数（`computeEventPointTotals` / `eventTotalsMatchFinalScore` / `toScoreTimelineEvent`）と `pointsForMatchEvent` を使う。CSVは複数相手IDと言語別記事情報を配列として保持し、CSV quotingを適用する。
 
 **本 spec は件数を出すところまでで終わる。** 見つかった汚染をどう処理するか（イベント削除・再取得・recap の draft 降格・再生成）は、**件数と類型が分かってから Owner が決める**。全件が `confirmed` なら方針が変わりうるため、先に処理方法を決め打ちしない。
