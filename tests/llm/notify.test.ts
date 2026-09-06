@@ -11,12 +11,14 @@ vi.mock("@/lib/env", async () => {
 });
 
 import {
+  DATA_INTEGRITY_ACTION_ITEM_LIMIT,
   getQaScoreRegressions,
   notifyContentQualityRegression,
   notifyContentRejected,
   notifyBroadcastIngestReport,
   notifyCostAlert,
   notifyDataIntegrityReport,
+  notifyEventIntegrityMismatch,
   notifyNewsletterDelivery,
   notifyPrekickoffReadinessAudit,
   notifyStripeWebhookIssue,
@@ -183,6 +185,20 @@ describe("llm notify", () => {
     vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
 
     await notifyDataIntegrityReport({
+      actionableMatches: [
+        {
+          competitionLabel: "The Rugby Championship 2026",
+          duplicateEvents: [],
+          matchId: "f01f68e2-bdd6-47c8-8910-0ea37a382b0a",
+          matchLabel: "オーストラリア 対 日本",
+          scoreMismatch: {
+            actualAway: 35,
+            actualHome: 32,
+            expectedAway: 17,
+            expectedHome: 56,
+          },
+        },
+      ],
       draftBacklog: { recent7Days: 2, total: 10 },
       duplicateEvents: { groupCount: 1, groups: [], matchCount: 2 },
       emptyFinishedEvents: { count: 3, matchIds: [] },
@@ -213,6 +229,101 @@ describe("llm notify", () => {
     expect(body).toContain("4. draft滞留");
     expect(body).toContain("5. 順位表 stale");
     expect(body).toContain("premiership-2025-26 (9日 stale)");
+    expect(body).toContain("要対応: 1件");
+    expect(body).toContain("f01f68e2-bdd6-47c8-8910-0ea37a382b0a");
+    expect(body).toContain(
+      "https://www.trylinerugby.com/matches/f01f68e2-bdd6-47c8-8910-0ea37a382b0a",
+    );
+    expect(body).toContain(
+      "オーストラリア 対 日本 — The Rugby Championship 2026",
+    );
+    expect(body).toContain("最終 56–17 / イベント 32–35");
+  });
+
+  it("sends a data integrity report when no published recap requires action", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyDataIntegrityReport({
+      actionableMatches: [],
+      draftBacklog: { recent7Days: 0, total: 0 },
+      duplicateEvents: { groupCount: 0, groups: [], matchCount: 0 },
+      emptyFinishedEvents: { count: 0, matchIds: [] },
+      generatedAt: "2026-07-08T00:00:00.000Z",
+      scoreMismatches: { count: 1, matches: [] },
+      staleStandings: { competitions: [], count: 0 },
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(body).toContain("要対応: 0件");
+    expect(body).toContain("要対応の試合はありません");
+  });
+
+  it("bounds actionable data integrity details before Discord truncation", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+    const actionableMatches = Array.from({ length: 50 }, (_, index) => ({
+      competitionLabel: "International Rugby Competition 2026",
+      duplicateEvents: [],
+      matchId: `match-${index + 1}`,
+      matchLabel: `ホームチーム ${index + 1} 対 アウェーチーム ${index + 1}`,
+      scoreMismatch: {
+        actualAway: 35,
+        actualHome: 32,
+        expectedAway: 17,
+        expectedHome: 56,
+      },
+    }));
+
+    await notifyDataIntegrityReport({
+      actionableMatches,
+      draftBacklog: { recent7Days: 2, total: 10 },
+      duplicateEvents: { groupCount: 0, groups: [], matchCount: 0 },
+      emptyFinishedEvents: { count: 0, matchIds: [] },
+      generatedAt: "2026-07-08T00:00:00.000Z",
+      scoreMismatches: { count: 50, matches: [] },
+      staleStandings: { competitions: [], count: 0 },
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(body.length).toBeLessThanOrEqual(2_000);
+    expect(body).toContain(`要対応の表示は先頭${DATA_INTEGRITY_ACTION_ITEM_LIMIT}件までです。残り${50 - DATA_INTEGRITY_ACTION_ITEM_LIMIT}件`);
+    expect(body).toContain("match-1");
+    expect(body).toContain(`match-${DATA_INTEGRITY_ACTION_ITEM_LIMIT}`);
+    expect(body).not.toContain(`match-${DATA_INTEGRITY_ACTION_ITEM_LIMIT + 1}`);
+    expect(body).not.toContain("…(切り詰め)");
+  });
+
+  it("posts an actionable match-level mismatch alert for generation gates", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyEventIntegrityMismatch({
+      actualAway: 35,
+      actualHome: 32,
+      expectedAway: 17,
+      expectedHome: 56,
+      matchId: "match-1",
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(body).toContain("試合ID: match-1");
+    expect(body).toContain("https://www.trylinerugby.com/matches/match-1");
+    expect(body).toContain("最終スコア: 56–17");
+    expect(body).toContain("イベント合計: 32–35");
   });
 
   it("posts weekly newsletter delivery counts to Discord ops", async () => {

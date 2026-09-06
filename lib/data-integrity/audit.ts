@@ -29,6 +29,7 @@ export type AuditMatchEventRow = {
 export type AuditFinishedMatchRow = CleanupMatchRow & {
   away_score: number | null;
   away_team_id: string;
+  competition: { name: string; season: string } | null;
   home_score: number | null;
   home_team_id: string;
   match_events: AuditMatchEventRow[];
@@ -96,7 +97,25 @@ export type StaleStandingsSummary = {
   count: number;
 };
 
+export type ActionableDataIntegrityMatch = {
+  competitionLabel: string;
+  duplicateEvents: Array<{
+    eventCount: number;
+    matchingMatchCount: number;
+  }>;
+  matchId: string;
+  matchLabel: string;
+  scoreMismatch: {
+    actualAway: number;
+    actualHome: number;
+    expectedAway: number | null;
+    expectedHome: number | null;
+  } | null;
+};
+
 export type DataIntegrityAuditReport = {
+  /** Published recaps affected by a score mismatch or duplicate event group. */
+  actionableMatches?: ActionableDataIntegrityMatch[];
   draftBacklog: DraftBacklogSummary;
   duplicateEvents: DuplicateEventsSummary;
   emptyFinishedEvents: EmptyFinishedEventsSummary;
@@ -216,6 +235,68 @@ export function summarizeScoreMismatches(
   };
 }
 
+/**
+ * Produces notification metadata from the existing audit results. This does not
+ * add a new integrity check: only published recaps already identified by the
+ * duplicate-event and score-mismatch checks are included.
+ */
+export function summarizeActionableDataIntegrityMatches(
+  matches: AuditFinishedMatchRow[],
+  duplicateEvents: DuplicateEventsSummary,
+  scoreMismatches: ScoreMismatchSummary,
+): ActionableDataIntegrityMatch[] {
+  const mismatchByMatchId = new Map(
+    scoreMismatches.matches.map((mismatch) => [mismatch.matchId, mismatch]),
+  );
+  const duplicateGroupsByMatchId = new Map<
+    string,
+    ActionableDataIntegrityMatch["duplicateEvents"]
+  >();
+
+  for (const group of duplicateEvents.groups) {
+    for (const matchId of group.matchIds) {
+      duplicateGroupsByMatchId.set(matchId, [
+        ...(duplicateGroupsByMatchId.get(matchId) ?? []),
+        {
+          eventCount: group.eventCount,
+          matchingMatchCount: group.matchCount,
+        },
+      ]);
+    }
+  }
+
+  return matches
+    .filter(
+      (match) =>
+        match.match_content.some(
+          (content) =>
+            content.content_type === "recap" && content.status === "published",
+        ) &&
+        (mismatchByMatchId.has(match.id) ||
+          duplicateGroupsByMatchId.has(match.id)),
+    )
+    .map((match) => {
+      const mismatch = mismatchByMatchId.get(match.id);
+
+      return {
+        competitionLabel: [match.competition?.name, match.competition?.season]
+          .filter(Boolean)
+          .join(" "),
+        duplicateEvents: duplicateGroupsByMatchId.get(match.id) ?? [],
+        matchId: match.id,
+        matchLabel: `${match.home_team?.name ?? "不明"} 対 ${match.away_team?.name ?? "不明"}`,
+        scoreMismatch: mismatch
+          ? {
+              actualAway: mismatch.actualAway,
+              actualHome: mismatch.actualHome,
+              expectedAway: mismatch.expectedAway,
+              expectedHome: mismatch.expectedHome,
+            }
+          : null,
+      };
+    });
+}
+
 export function summarizeEmptyFinishedEvents(
   matches: AuditFinishedMatchRow[],
 ): EmptyFinishedEventsSummary {
@@ -317,6 +398,7 @@ async function loadFinishedMatches(client: AuditClient) {
         away_team_id,
         home_team:teams!matches_home_team_id_fkey(name),
         away_team:teams!matches_away_team_id_fkey(name),
+        competition:competitions!matches_competition_id_fkey(name, season),
         match_events(id, type, minute, player_id, team_id, metadata),
         match_content(content_type, status)
       `,
@@ -375,12 +457,20 @@ export async function runDataIntegrityAudit(
     loadStandingFreshnessRows(client),
   ]);
 
+  const duplicateEvents = summarizeDuplicateEvents(finishedMatches);
+  const scoreMismatches = summarizeScoreMismatches(finishedMatches);
+
   return {
+    actionableMatches: summarizeActionableDataIntegrityMatches(
+      finishedMatches,
+      duplicateEvents,
+      scoreMismatches,
+    ),
     draftBacklog: summarizeDraftBacklog(draftRows, now),
-    duplicateEvents: summarizeDuplicateEvents(finishedMatches),
+    duplicateEvents,
     emptyFinishedEvents: summarizeEmptyFinishedEvents(finishedMatches),
     generatedAt: now.toISOString(),
-    scoreMismatches: summarizeScoreMismatches(finishedMatches),
+    scoreMismatches,
     staleStandings: summarizeStaleStandings(standingsRows, now),
   };
 }
