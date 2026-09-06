@@ -18,6 +18,10 @@ import {
   eventTotalsMatchFinalScore,
   toScoreTimelineEvent,
 } from "@/lib/ingestion/event-integrity";
+import {
+  extractFixtureIdentifiers,
+  extractUnreliableIdentifiers,
+} from "@/lib/ingestion/external-identifiers";
 
 import type { Database, Json } from "@/lib/db/types";
 import type {
@@ -29,6 +33,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const DEFAULT_OUTPUT_DIR = "tmp/event-integrity-audit";
 const PAGE_SIZE = 500;
 const SITE_URL = "https://www.trylinerugby.com";
+const UNRELIABLE_KEY_COLLISION_LIMIT = 100;
 
 type Logger = Pick<Console, "log">;
 
@@ -118,6 +123,18 @@ export type EventIntegrityAuditReport = {
     contentlessFinished: number;
     draftRecap: number;
     previewOnly: number;
+  };
+  identifierQuality: {
+    matchesWithFixtureIdentifier: number;
+    matchesWithoutFixtureIdentifier: number;
+    unreliableKeyCollisions: Array<{
+      key: string;
+      value: string;
+      matchIds: string[];
+    }>;
+    unreliableKeyCollisionLimit: number;
+    unreliableKeyCollisionTotal: number;
+    unreliableKeyCollisionRemaining: number;
   };
   retrievedAt: string;
   summary: {
@@ -273,37 +290,6 @@ function allTeamAssignmentsAreReversed(
   return [...rightCounts.values()].every((count) => count === 0);
 }
 
-function externalIdentifiers(value: Json, pathPrefix = ""): string[] {
-  if (Array.isArray(value)) {
-    return value.flatMap((entry, index) =>
-      externalIdentifiers(entry, `${pathPrefix}[${index}]`),
-    );
-  }
-
-  const record = getJsonRecord(value);
-
-  if (!record) {
-    return [];
-  }
-
-  return Object.entries(record).flatMap(([key, nestedValue]) => {
-    const fieldPath = pathPrefix ? `${pathPrefix}.${key}` : key;
-
-    if (typeof nestedValue === "object" && nestedValue !== null) {
-      return externalIdentifiers(nestedValue, fieldPath);
-    }
-
-    if (
-      (typeof nestedValue !== "string" && typeof nestedValue !== "number") ||
-      !/(?:id|url|fixture|event)/i.test(key)
-    ) {
-      return [];
-    }
-
-    return [`${fieldPath}=${nestedValue}`];
-  });
-}
-
 function csvEscape(value: string | number | null): string {
   const raw = value === null ? "" : String(value);
 
@@ -366,6 +352,22 @@ function reportToSummaryJson(report: EventIntegrityAuditReport) {
       contentless_finished: report.groups.contentlessFinished,
       draft_recap: report.groups.draftRecap,
       preview_only: report.groups.previewOnly,
+    },
+    identifier_quality: {
+      matches_with_fixture_identifier:
+        report.identifierQuality.matchesWithFixtureIdentifier,
+      matches_without_fixture_identifier:
+        report.identifierQuality.matchesWithoutFixtureIdentifier,
+      unreliable_key_collisions:
+        report.identifierQuality.unreliableKeyCollisions.map(
+          ({ key, value, matchIds }) => ({ key, value, match_ids: matchIds }),
+        ),
+      unreliable_key_collision_limit:
+        report.identifierQuality.unreliableKeyCollisionLimit,
+      unreliable_key_collision_total:
+        report.identifierQuality.unreliableKeyCollisionTotal,
+      unreliable_key_collision_remaining:
+        report.identifierQuality.unreliableKeyCollisionRemaining,
     },
     retrieved_at: report.retrievedAt,
   };
@@ -637,14 +639,46 @@ export async function auditPublishedRecapEventIntegrity(
   }
 
   const matchesByExternalIdentifier = new Map<string, string[]>();
+  const matchesByUnreliableIdentifier = new Map<string, string[]>();
+  let matchesWithFixtureIdentifier = 0;
 
+  // Quality coverage includes every match, regardless of recap or event presence.
   for (const match of matchRows) {
-    for (const identifier of externalIdentifiers(match.external_ids)) {
+    const identifiers = extractFixtureIdentifiers(match.external_ids);
+    if (identifiers.length > 0) {
+      matchesWithFixtureIdentifier += 1;
+    }
+
+    for (const identifier of identifiers) {
       const matchIds = matchesByExternalIdentifier.get(identifier) ?? [];
       matchIds.push(match.id);
       matchesByExternalIdentifier.set(identifier, matchIds);
     }
+
+    for (const identifier of extractUnreliableIdentifiers(match.external_ids)) {
+      const matchIds = matchesByUnreliableIdentifier.get(identifier) ?? [];
+      matchIds.push(match.id);
+      matchesByUnreliableIdentifier.set(identifier, matchIds);
+    }
   }
+
+  const unreliableKeyCollisions = [...matchesByUnreliableIdentifier]
+    .filter(([, matchIds]) => matchIds.length > 1)
+    .map(([identifier, matchIds]) => {
+      const separator = identifier.indexOf("=");
+      return {
+        key: identifier.slice(0, separator),
+        value: identifier.slice(separator + 1),
+        matchIds: [...matchIds].sort(),
+      };
+    })
+    // Show the largest collisions first, with stable ordering for equal counts.
+    .sort(
+      (left, right) =>
+        right.matchIds.length - left.matchIds.length ||
+        left.key.localeCompare(right.key) ||
+        left.value.localeCompare(right.value),
+    );
 
   for (const matchIds of matchesByExternalIdentifier.values()) {
     if (matchIds.length < 2) {
@@ -758,6 +792,21 @@ export async function auditPublishedRecapEventIntegrity(
     findings,
     generatedAt,
     groups: groupCounts(contentRows, matchRows),
+    identifierQuality: {
+      matchesWithFixtureIdentifier,
+      matchesWithoutFixtureIdentifier:
+        matchRows.length - matchesWithFixtureIdentifier,
+      unreliableKeyCollisions: unreliableKeyCollisions.slice(
+        0,
+        UNRELIABLE_KEY_COLLISION_LIMIT,
+      ),
+      unreliableKeyCollisionLimit: UNRELIABLE_KEY_COLLISION_LIMIT,
+      unreliableKeyCollisionTotal: unreliableKeyCollisions.length,
+      unreliableKeyCollisionRemaining: Math.max(
+        0,
+        unreliableKeyCollisions.length - UNRELIABLE_KEY_COLLISION_LIMIT,
+      ),
+    },
     retrievedAt: generatedAt,
     summary: {
       C1: count("C1"),

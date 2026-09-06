@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { mkdtemp } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
@@ -301,11 +302,144 @@ describe("audit-published-recap-event-integrity", () => {
       preview_only: 1,
     });
     expect(summary.current_data_note).toContain("生成時点のデータを再現");
+    expect(summary.identifier_quality).toEqual({
+      matches_with_fixture_identifier: 0,
+      matches_without_fixture_identifier: 5,
+      unreliable_key_collisions: [],
+      unreliable_key_collision_limit: 100,
+      unreliable_key_collision_total: 0,
+      unreliable_key_collision_remaining: 0,
+    });
     expect(csv).toContain("match_id,url,competition_slug");
     expect(csv).toContain(
       `https://www.trylinerugby.com/matches/${SECOND_MATCH_ID}`,
     );
     expect(csv).toContain(`[""${FIRST_MATCH_ID}""]`);
+  });
+
+  it.each(["wikipedia_url", "wikipedia_event_id", "top14_lnr_url"])(
+    "does not count shared %s as C5 or add findings",
+    async (key) => {
+      const report = await auditPublishedRecapEventIntegrity(
+        createMockDb({
+          events: [
+            event(FIRST_MATCH_ID, 1, "try", HOME_TEAM_ID, "One"),
+            event(SECOND_MATCH_ID, 2, "try", HOME_TEAM_ID, "Two"),
+          ],
+          matches: [
+            match(FIRST_MATCH_ID, 5, 0, { [key]: "shared=value" }),
+            {
+              ...match(SECOND_MATCH_ID, 5, 0, { [key]: "shared=value" }),
+              competition: { slug: "another-competition" },
+            },
+            match("without-content-or-events", null, null, {
+              match_url: "https://example.org/m/3",
+            }),
+          ],
+        }),
+      );
+
+      expect(report.summary.C5).toBe(0);
+      expect(report.findings).toEqual([]);
+      expect(report.identifierQuality).toEqual({
+        matchesWithFixtureIdentifier: 1,
+        matchesWithoutFixtureIdentifier: 2,
+        unreliableKeyCollisions: [
+          {
+            key,
+            value: "shared=value",
+            matchIds: [FIRST_MATCH_ID, SECOND_MATCH_ID],
+          },
+        ],
+        unreliableKeyCollisionLimit: 100,
+        unreliableKeyCollisionTotal: 1,
+        unreliableKeyCollisionRemaining: 0,
+      });
+    },
+  );
+
+  it("counts shared match_url as C5", async () => {
+    const report = await auditPublishedRecapEventIntegrity(
+      createMockDb({
+        events: [
+          event(FIRST_MATCH_ID, 1, "try", HOME_TEAM_ID, "One"),
+          event(SECOND_MATCH_ID, 2, "try", HOME_TEAM_ID, "Two"),
+        ],
+        matches: [
+          match(FIRST_MATCH_ID, 5, 0, { match_url: "https://example.org/m/1" }),
+          match(SECOND_MATCH_ID, 5, 0, {
+            match_url: "https://example.org/m/1",
+          }),
+        ],
+      }),
+    );
+
+    expect(report.summary.C5).toBe(2);
+    expect(report.findings).toEqual([
+      expect.objectContaining({
+        matchId: FIRST_MATCH_ID,
+        checksHit: ["C5"],
+        pairedMatchIds: [SECOND_MATCH_ID],
+        severity: "suspect",
+      }),
+      expect.objectContaining({
+        matchId: SECOND_MATCH_ID,
+        checksHit: ["C5"],
+        pairedMatchIds: [FIRST_MATCH_ID],
+        severity: "suspect",
+      }),
+    ]);
+  });
+
+  it("caps unreliable collisions and reports the remaining count across all matches", async () => {
+    const matches = Array.from({ length: 101 }, (_, index) =>
+      (index === 0 ? ["first", "second", "third"] : ["first", "second"]).map(
+        (side) =>
+          match(`${index}-${side}`, null, null, {
+            wikipedia_event_id:
+              index === 0 ? "mw-content-text" : `anchor-${index}`,
+          }),
+      ),
+    ).flat();
+    const report = await auditPublishedRecapEventIntegrity(
+      createMockDb({ events: [], matches }),
+    );
+
+    expect(report.summary.C5).toBe(0);
+    expect(report.identifierQuality).toEqual({
+      matchesWithFixtureIdentifier: 0,
+      matchesWithoutFixtureIdentifier: 203,
+      unreliableKeyCollisions: expect.any(Array),
+      unreliableKeyCollisionLimit: 100,
+      unreliableKeyCollisionTotal: 101,
+      unreliableKeyCollisionRemaining: 1,
+    });
+    expect(report.identifierQuality.unreliableKeyCollisions).toHaveLength(100);
+    expect(report.identifierQuality.unreliableKeyCollisions).toContainEqual({
+      key: "wikipedia_event_id",
+      value: "mw-content-text",
+      matchIds: ["0-first", "0-second", "0-third"],
+    });
+    const outputDir = await mkdtemp("/tmp/event-integrity-quality-");
+    const paths = await writeEventIntegrityAuditReport(report, outputDir);
+    const summary = JSON.parse(readFileSync(paths.summaryPath, "utf8"));
+
+    expect(summary.identifier_quality.unreliable_key_collision_limit).toBe(100);
+    expect(summary.identifier_quality.unreliable_key_collision_total).toBe(101);
+    expect(summary.identifier_quality.unreliable_key_collision_remaining).toBe(
+      1,
+    );
+    expect(summary.identifier_quality.unreliable_key_collisions).toHaveLength(
+      100,
+    );
+    expect(summary.identifier_quality.unreliable_key_collisions[0]).toEqual({
+      key: "wikipedia_event_id",
+      value: "mw-content-text",
+      match_ids: ["0-first", "0-second", "0-third"],
+    });
+    expect(readFileSync(paths.csvPath, "utf8")).not.toContain(
+      "mw-content-text",
+    );
   });
 
   it("contains no database writes or LLM imports", () => {
