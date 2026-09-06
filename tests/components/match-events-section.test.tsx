@@ -25,6 +25,34 @@ const event: MatchEventRow = {
   type: "try",
 };
 
+function eventsWithTotals32To35(): MatchEventRow[] {
+  return [
+    ...Array.from({ length: 6 }, (_, index) => ({
+      ...event,
+      id: `home-try-${index}`,
+      playerName: `Home Try ${index}`,
+    })),
+    {
+      ...event,
+      id: "home-conversion",
+      playerName: "Home Kicker",
+      type: "conversion",
+    },
+    ...Array.from({ length: 7 }, (_, index) => ({
+      ...event,
+      id: `away-try-${index}`,
+      playerName: `Away Try ${index}`,
+      teamId: "away-team",
+    })),
+    ...Array.from({ length: 5 }, (_, index) => ({
+      ...event,
+      id: `home-card-${index}`,
+      playerName: `Home Card ${index}`,
+      type: "yellow_card",
+    })),
+  ];
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -33,6 +61,7 @@ describe("MatchEventsSection", () => {
   it("renders nothing when no events are available", () => {
     const { container } = render(
       <MatchEventsSection
+        awayTeamId="away-team"
         awayTeamName="France"
         awayTeamSlug="france"
         events={[]}
@@ -41,6 +70,7 @@ describe("MatchEventsSection", () => {
         homeTeamId="home-team"
         homeTeamName="Ireland"
         homeTeamSlug="ireland"
+        status="finished"
       />,
     );
 
@@ -304,5 +334,132 @@ describe("MatchEventsSection", () => {
 
     expect(screen.queryByText("リードを奪った得点")).not.toBeInTheDocument();
     expect(screen.getByText("前半の最大リード")).toBeInTheDocument();
+  });
+
+  it("hides mismatched event highlights, graph and timeline once", () => {
+    const events = eventsWithTotals32To35();
+
+    render(
+      <>
+        <MatchEventsSection
+          awayTeamId="away-team"
+          awayTeamName="France"
+          awayTeamSlug="france"
+          events={events}
+          finalAwayScore={17}
+          finalHomeScore={56}
+          homeTeamId="home-team"
+          homeTeamName="Ireland"
+          homeTeamSlug="ireland"
+          status="finished"
+        />
+        <MatchEventsSection
+          awayTeamId="away-team"
+          awayTeamName="France"
+          awayTeamSlug="france"
+          events={events}
+          finalAwayScore={17}
+          finalHomeScore={56}
+          homeTeamId="home-team"
+          homeTeamName="Ireland"
+          homeTeamSlug="ireland"
+          status="finished"
+          variant="timeline"
+        />
+      </>,
+    );
+
+    expect(
+      screen.getAllByText("試合結果のみ掲載。得点経過は確認中です"),
+    ).toHaveLength(1);
+    expect(screen.queryByText("この試合の要点")).not.toBeInTheDocument();
+    expect(screen.queryByText("得点推移")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "スコア推移グラフ" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("すべての得点・カード")).not.toBeInTheDocument();
+  });
+
+  it("renders all 19 events when their 32–35 total matches the final score", () => {
+    const { container } = render(
+      <MatchEventsSection
+        awayTeamId="away-team"
+        awayTeamName="France"
+        awayTeamSlug="france"
+        events={eventsWithTotals32To35()}
+        finalAwayScore={35}
+        finalHomeScore={32}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        homeTeamSlug="ireland"
+        status="finished"
+        variant="timeline"
+      />,
+    );
+
+    expect(screen.getByText("得点推移")).toBeInTheDocument();
+    expect(screen.getByText("すべての得点・カード")).toBeInTheDocument();
+    expect(container.querySelectorAll(".space-y-0\\.5 > div")).toHaveLength(
+      19,
+    );
+  });
+
+  it("does not display events assigned to a third team", () => {
+    render(
+      <MatchEventsSection
+        awayTeamId="away-team"
+        awayTeamName="France"
+        awayTeamSlug="france"
+        events={[{ ...event, teamId: "other-team", type: "yellow_card" }]}
+        finalAwayScore={0}
+        finalHomeScore={0}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        homeTeamSlug="ireland"
+        status="finished"
+      />,
+    );
+
+    expect(
+      screen.getByText("試合結果のみ掲載。得点経過は確認中です"),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      finalAwayScore: 17,
+      finalHomeScore: 56,
+      name: "the match is not finished",
+      status: "scheduled" as const,
+    },
+    {
+      finalAwayScore: null,
+      finalHomeScore: 56,
+      name: "a final score is unavailable",
+      status: "finished" as const,
+    },
+  ])("does not show the notice when $name", ({
+    finalAwayScore,
+    finalHomeScore,
+    status,
+  }) => {
+    render(
+      <MatchEventsSection
+        awayTeamId="away-team"
+        awayTeamName="France"
+        awayTeamSlug="france"
+        events={eventsWithTotals32To35()}
+        finalAwayScore={finalAwayScore}
+        finalHomeScore={finalHomeScore}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        homeTeamSlug="ireland"
+        status={status}
+      />,
+    );
+
+    expect(
+      screen.queryByText("試合結果のみ掲載。得点経過は確認中です"),
+    ).not.toBeInTheDocument();
   });
 });

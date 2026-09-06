@@ -110,6 +110,7 @@ export type V1MatchDetail = {
   broadcast_jp_url: string | null;
   broadcasts: V1MatchBroadcast[];
   competition: V1CompetitionSummary & { family: string };
+  event_integrity: "mismatch" | "unavailable" | "verified";
   events: V1MatchEvent[];
   home_team: V1TeamSummary & { english_name: string | null };
   id: string;

@@ -456,30 +456,34 @@ export default async function MatchDetailPage({
                         sourcedFactSources={sourcedFactSummary.recapSources}
                       />
                       <MatchEventsSection
+                        awayTeamId={match.awayTeamId}
                         awayTeamName={match.awayTeam.name}
                         awayTeamSlug={match.awayTeam.slug}
                         events={events}
-                        finalAwayScore={match.awayScore ?? 0}
-                        finalHomeScore={match.homeScore ?? 0}
+                        finalAwayScore={match.awayScore}
+                        finalHomeScore={match.homeScore}
                         homeTeamId={match.homeTeamId}
                         homeTeamName={match.homeTeam.name}
                         homeTeamSlug={match.homeTeam.slug}
                         playerLinks={eventPlayerLinks}
+                        status={match.status}
                         variant="timeline"
                       />
                     </>
                   }
                   betweenLeadAndBody={
                     <MatchEventsSection
+                      awayTeamId={match.awayTeamId}
                       awayTeamName={match.awayTeam.name}
                       awayTeamSlug={match.awayTeam.slug}
                       events={events}
-                      finalAwayScore={match.awayScore ?? 0}
-                      finalHomeScore={match.homeScore ?? 0}
+                      finalAwayScore={match.awayScore}
+                      finalHomeScore={match.homeScore}
                       homeTeamId={match.homeTeamId}
                       homeTeamName={match.homeTeam.name}
                       homeTeamSlug={match.homeTeam.slug}
                       playerLinks={eventPlayerLinks}
+                      status={match.status}
                     />
                   }
                   content={publishedContent.recap}
@@ -499,15 +503,17 @@ export default async function MatchDetailPage({
                         sourcedFactSources={sourcedFactSummary.recapSources}
                       />
                       <MatchEventsSection
+                        awayTeamId={match.awayTeamId}
                         awayTeamName={match.awayTeam.name}
                         awayTeamSlug={match.awayTeam.slug}
                         events={events}
-                        finalAwayScore={match.awayScore ?? 0}
-                        finalHomeScore={match.homeScore ?? 0}
+                        finalAwayScore={match.awayScore}
+                        finalHomeScore={match.homeScore}
                         homeTeamId={match.homeTeamId}
                         homeTeamName={match.homeTeam.name}
                         homeTeamSlug={match.homeTeam.slug}
                         playerLinks={eventPlayerLinks}
+                        status={match.status}
                         variant="timeline"
                       />
                     </>
@@ -516,15 +522,17 @@ export default async function MatchDetailPage({
                 betweenLeadAndBody={
                   publishedContent.recap ? (
                     <MatchEventsSection
+                      awayTeamId={match.awayTeamId}
                       awayTeamName={match.awayTeam.name}
                       awayTeamSlug={match.awayTeam.slug}
                       events={events}
-                      finalAwayScore={match.awayScore ?? 0}
-                      finalHomeScore={match.homeScore ?? 0}
+                      finalAwayScore={match.awayScore}
+                      finalHomeScore={match.homeScore}
                       homeTeamId={match.homeTeamId}
                       homeTeamName={match.homeTeam.name}
                       homeTeamSlug={match.homeTeam.slug}
                       playerLinks={eventPlayerLinks}
+                      status={match.status}
                     />
                   ) : null
                 }

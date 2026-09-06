@@ -31,7 +31,7 @@ vi.mock("@/lib/api/v1/server", () => serverMock);
 vi.mock("@/lib/db/queries/sourced-facts", () => sourcedFactsMock);
 
 const match = {
-  awayScore: 17,
+  awayScore: 0,
   awayTeam: {
     englishName: "France",
     flagCode: "🇫🇷",
@@ -48,7 +48,7 @@ const match = {
     season: "2027",
     slug: "six-nations-2027",
   },
-  homeScore: 24,
+  homeScore: 5,
   homeTeam: {
     englishName: "Japan",
     flagCode: "🇯🇵",
@@ -65,6 +65,45 @@ const match = {
   status: "finished",
   venue: "国立競技場",
 };
+
+function eventsWithTotals32To35() {
+  const baseEvent = {
+    isPenaltyTry: false,
+    minute: 12,
+    points: null,
+  };
+
+  return [
+    ...Array.from({ length: 6 }, (_, index) => ({
+      ...baseEvent,
+      id: `home-try-${index}`,
+      playerName: `Home Try ${index}`,
+      teamId: "home-id",
+      type: "try",
+    })),
+    {
+      ...baseEvent,
+      id: "home-conversion",
+      playerName: "Home Kicker",
+      teamId: "home-id",
+      type: "conversion",
+    },
+    ...Array.from({ length: 7 }, (_, index) => ({
+      ...baseEvent,
+      id: `away-try-${index}`,
+      playerName: `Away Try ${index}`,
+      teamId: "away-id",
+      type: "try",
+    })),
+    ...Array.from({ length: 5 }, (_, index) => ({
+      ...baseEvent,
+      id: `home-card-${index}`,
+      playerName: `Home Card ${index}`,
+      teamId: "home-id",
+      type: "yellow_card",
+    })),
+  ];
+}
 
 describe("GET /api/v1/matches/[id]", () => {
   beforeEach(() => {
@@ -155,6 +194,7 @@ describe("GET /api/v1/matches/[id]", () => {
           competition: {
             name: "シックスネーションズ",
           },
+          event_integrity: "verified",
           events: [
             {
               id: "event-1",
@@ -187,6 +227,65 @@ describe("GET /api/v1/matches/[id]", () => {
     });
     expect(eventsMock.getMatchEventsForMatch).toHaveBeenCalledWith("match-1");
     expect(lineupsMock.getMatchLineupsForMatch).toHaveBeenCalledWith("match-1");
+  });
+
+  it("returns mismatch and no events for the contaminated 56–17 match", async () => {
+    const matchId = "f01f68e2-bdd6-47c8-8910-0ea37a382b0a";
+    matchesMock.getMatchById.mockResolvedValue({
+      ...match,
+      awayScore: 17,
+      homeScore: 56,
+      id: matchId,
+    });
+    eventsMock.getMatchEventsForMatch.mockResolvedValue(eventsWithTotals32To35());
+
+    const { GET } = await import("@/app/api/v1/matches/[id]/route");
+    const response = await GET(
+      new Request(`http://localhost/api/v1/matches/${matchId}`),
+      { params: Promise.resolve({ id: matchId }) },
+    );
+    const body = await response.json();
+
+    expect(body.data.match.event_integrity).toBe("mismatch");
+    expect(body.data.match.events).toEqual([]);
+  });
+
+  it("returns the 19 events when their 32–35 total matches the first match", async () => {
+    const matchId = "2c276057-bb3a-4617-a5b1-b7742e65f034";
+    matchesMock.getMatchById.mockResolvedValue({
+      ...match,
+      awayScore: 35,
+      homeScore: 32,
+      id: matchId,
+    });
+    eventsMock.getMatchEventsForMatch.mockResolvedValue(eventsWithTotals32To35());
+
+    const { GET } = await import("@/app/api/v1/matches/[id]/route");
+    const response = await GET(
+      new Request(`http://localhost/api/v1/matches/${matchId}`),
+      { params: Promise.resolve({ id: matchId }) },
+    );
+    const body = await response.json();
+
+    expect(body.data.match.event_integrity).toBe("verified");
+    expect(body.data.match.events).toHaveLength(19);
+  });
+
+  it("returns unavailable without hiding events before the match is finished", async () => {
+    matchesMock.getMatchById.mockResolvedValue({
+      ...match,
+      status: "scheduled",
+    });
+
+    const { GET } = await import("@/app/api/v1/matches/[id]/route");
+    const response = await GET(
+      new Request("http://localhost/api/v1/matches/match-1"),
+      { params: Promise.resolve({ id: "match-1" }) },
+    );
+    const body = await response.json();
+
+    expect(body.data.match.event_integrity).toBe("unavailable");
+    expect(body.data.match.events).toHaveLength(1);
   });
 
   it("returns an enveloped 404 when the match does not exist", async () => {
