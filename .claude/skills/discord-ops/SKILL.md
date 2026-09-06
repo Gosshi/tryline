@@ -1,32 +1,18 @@
 ---
 name: discord-ops
-description: Discord への配信・コミュニティ運用の下書きをするときに使う。「Discord に流す文面」「Discord の運用」「公式サーバーへの返信案」と言われたら起動。notify-discord パイプラインとの関係と文面ルール。
+description: Discord文面と事実入力運用。「Discordに流す文面」「事実入力を確認」「Discord運用」と言われたら起動。配信通知・運用アラート・手動事実入力を区別する。
 ---
 
-# Discord 運用（下書き支援）
+# discord-ops
 
-Discord まわりの文面作成・運用相談。**送信・投稿するのは Owner**。
+共通参照: [運用方針と測定基準](../today/references/operating-baseline.md)。
 
-## 既存の仕組み（前提）
+送信はOwner。自動化の変更は仕様書を通してCodexへ渡す。
+- D027/PR #757でニュースリンク収集・その通知・コンテキストメニュー入力は停止済み。既存のrecap公開通知とops障害通知、Ownerのスラッシュコマンド事実入力は別機能であり、まとめて停止扱いしない。
+- D026の例外は`app/api/discord/interactions/route.ts`のURL存在確認に限定する。HEAD/必要時GETで本文を読まず確認する既存仕様を参照し、汎用ニュース取得に流用しない。
+- Ownerの手動事実は自動取得allowlistとは別の判断経路。URLが200でもその事実が載っているとは保証されないため、Ownerの確認内容と出典を対応づける。
+- 事実入力の候補には対象match_id、pre/postの区別、短い事実、出典URL、確認時刻を揃える。推測でDBに追加しない。
+- ops通知は件数だけでなく重大度、match_id/公開URL、失敗段階、安全な理由、最初/最後の発生、次の行動を含める。APIキー、個人のメール、決済情報、生エラーは書かない。
+- 他サーバー向け文面はその場のルールを確認し、事実＋用途の説明＋必要なリンクにする。15語超・同一ソース複数回の引用を避ける。
 
-- **自動通知**: recap 公開時の通知は `app/api/cron/notify-discord` が担う（X 自動投稿を停止した際にこちらへ一本化。`specs/fix-disable-x-auto-post.md`）。この cron の挙動変更は spec 経由で Codex へ
-- **公式サーバーへの返信下書き**: `specs/fix-discord-official-reply-draft.md` の運用（大会公式・コミュニティサーバーでの返信）
-- **コミュニティ構想**: Tryline 自前の Discord（growth-playbook C3、「チャットの熱量が非会員に見えない」への対策）は未着手。着手判断は Owner
-
-## 文面ルール
-
-- X と同じ制約: 実データのみ（捏造統計禁止）・引用15語以内・実在ロゴ画像等は使わない
-- Discord はコミュニティの場。**宣伝臭を消す**: リンクを貼るなら「何がわかるか」を一言添える（`x-reply` スキルと同じ原則）
-- 他人のサーバーではそのサーバーのルール（自己宣伝チャンネルの有無等）を最初に確認してから文面を作る
-
-## 使いどころ
-
-| 依頼 | やること |
-|------|---------|
-| 試合スレッドへの参加文面 | 該当試合の実データ（得点経過・H2H）で価値ある一言＋必要ならリンク |
-| notify-discord の文面調整 | 現行テンプレを確認 → 変更は spec 化して Codex へ（直接編集しない） |
-| 自前サーバー開設の相談 | C3 の位置づけ（I=3, E=3）と運用コストを `biz-strategy` の枠で整理 |
-
-## 計測
-
-Discord 経由の流入は GA4 の referral / UTM（`specs/feat-utm-attribution.md` の `ShareSource: "discord"`）で確認。
+出力は用途別の完成文面、根拠、送信対象、未確認事項。D027の完了済み停止作業を再提案しない。通知が行動につながったかはincident-postmortemで追う。

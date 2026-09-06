@@ -1,50 +1,18 @@
 ---
 name: pr-merge
-description: Codex の PR を確認してマージし、後処理までやるときに使う。「問題なければマージして」「マージまでやって」と言われたら起動。CI 確認・マージ方式・ローカル整理・デプロイ確認の手順。
+description: 明示依頼されたPRのマージ。「問題なければマージして」「マージまで」と言われたら起動。対象headのレビューと必須チェックを確認してマージする。
 ---
 
-# PR マージ〜後処理
+# pr-merge
 
-`codex-review` スキル（spec 照合・Tryline 固有チェック）でレビューした後の、マージと後処理のワークフロー。**マージは Owner の明示的な許可があるときだけ**（「問題なければマージして」等）。
+共通参照: [運用方針と測定基準](../today/references/operating-baseline.md)。
 
-## 手順
+Ownerの明示的な対象PRへのマージ依頼が必要。既にある許可を再質問しない。通常の実装/PR作成依頼からマージを推測しない。
+1. codex-reviewの結果、base/head SHA、変更ファイル、依存PR、必須チェックの現在状態を確認する。headが変われば変更分を再確認する。
+2. 必須チェックが完了して合格するまでマージしない。状態取得不能/失敗なら理由を伝える。待機する場合も無言で長時間止まらない。
+3. リポジトリ標準のmerge commit方式を使い、ブランチ削除オプションを付けない。ブランチ削除はマージ許可とは別に明示許可が必要。
+4. MERGEDとmerge SHAを確認する。共有ワークツリーの未コミット/未追跡ファイルを、リモートと同一でも勝手に削除・checkoutで破棄しない。
+5. ローカル更新が既存差分で止まる場合は対象を一覧にして報告する。force/reset/ACL変更で迂回しない。
+6. デプロイ完了の監視はOwnerから依頼された場合だけ。通常のPR作成後にCI/Vercelの完了待ちを追加しない。確認依頼がある場合はCDNの古い応答とデプロイ失敗を区別し、site-auditで実画面を確認する。
 
-### 1. CI 確認
-
-```bash
-gh pr checks <番号>
-```
-
-全て pass になるまでマージしない。pending の場合は Monitor で terminal state を待つ（ポーリングループを直接 sleep で書かない）。
-
-### 2. マージ
-
-```bash
-gh pr merge <番号> --merge --delete-branch
-```
-
-このリポジトリの標準は **merge commit 方式**（squash ではない）。`gh pr view <番号> --json state,mergedAt` で MERGED を確認。
-
-### 3. ローカル整理（重要・事故ポイント）
-
-Codex がこの共有ワークツリーで作業するため、マージ済みの内容と同一のファイルが**未コミット変更・未追跡ファイルとしてローカルに残る**ことがある。`git pull` が abort したら:
-
-1. `git fetch origin main`（**必ず fetch してから比較**。古い ref と比較すると DIFFERS と誤判定する）
-2. 各ファイルを `cmp -s <file> <(git show origin/main:<file>)` でバイト比較
-3. **IDENTICAL を確認できたものだけ** `rm`（未追跡）/ `git checkout --`（変更）で破棄
-4. DIFFERS のファイルは**破棄しない**。内容を確認して Owner に報告
-5. `git pull` して `git log --oneline -3` でマージコミットを確認
-
-### 4. デプロイ確認
-
-```bash
-gh api repos/Gosshi/tryline/commits/<merge-sha>/status --jq '.state'
-```
-
-- `pending` → Monitor で success/failure を待つ（2〜8分かかる）
-- デプロイ success 直後は **CDN エッジキャッシュが古い内容を返すことがある**。静的アセット差し替えの場合は `curl -sI <URL> | grep -iE "content-length|x-vercel-cache"` で新ファイルのサイズになったか確認。数分の伝播遅延は正常
-- 本番で該当ページを Playwright で開き目視確認（`site-audit` スキルの誤検出注意も参照）
-
-## 直列依存の管理
-
-同じファイルを触る PR は並列マージしない。マージ順は spec 作成時に決めた依存関係（例: シーズンページ → RWC2027）に従う。
+出力は対象PR・merge SHA・確認した必須チェック・未実施の後処理。マージと本番DB適用/本番デプロイコマンドの許可を混同しない。

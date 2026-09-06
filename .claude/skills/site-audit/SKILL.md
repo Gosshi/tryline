@@ -1,45 +1,19 @@
 ---
 name: site-audit
-description: 本番サイトの実測監査（スクリーンショット・UI/UX・SEO 評価）をするときに使う。「サイトをレビューして」「本番を確認して」「スクショ撮って評価」と言われたら起動。撮影規約と誤検出への注意。
+description: Web表示の実測監査。「サイトをレビュー」「本番を確認」「スクショで評価」と言われたら起動。SSR、DOM、画面幅、操作状態を区別して証拠を残す。
 ---
 
-# 本番サイト監査
+# site-audit
 
-Playwright MCP で https://www.trylinerugby.com を実測し、デザイン・UI・SEO を評価する。読み取り専用（本番への書き込み・ログイン試行はしない）。
+共通参照: [運用方針と測定基準](../today/references/operating-baseline.md)。
 
-## 撮影規約
+本番の読み取り専用監査。ログイン試行・フォーム送信・購入を行わない。大会の事実検証はhub-audit、実ユーザー性能はperformance-rumへ。
+1. 対象URL、環境、取得日時、HEAD、ブラウザ、viewport、ログイン状態を記録する。D018/D020～D023と現行design.md/実CSSを照合し、古いブランドへ戻す提案をしない。
+2. 標準確認幅は320/375/768/1024/1280/1440px（今回改稿案の検査マトリクス。実測値ではない）。対象specが指定した条件を優先し、未検証の幅を明記する。
+3. lazy-load画像のnaturalWidth、hydration後DOM、アコーディオンの状態とソースを確認する。スクリーンショット1枚や固定秒数の待機だけで欠落と断定しない。
+4. ページ全体のscrollWidth/clientWidthと要素矩形を比較し、意図的な横スクロール領域とbodyのはみ出しを区別する。原因要素と再現条件を示す。
+5. SEOはサーバーHTML、canonical/noindex、実DOMのJSON-LDを別々に解析する。RSC埋め込み文字列をJSON-LDタグとして重複計上しない。sitemapの試合URL数を記事本数と呼ばない。
+6. 週ボードは略称＋正式名の折返し、1日開催週の幅、JST/現地日時の意味を確認する。D021の空白率基準を無関係な既存画面へ遡及適用しない。
+7. プレビューがSSOに拒否された場合は環境制約として記録する。本番の公開表示や認可済みの別ブラウザで独立検証し、アプリ不具合と混同しない。SSOを迂回しない。
 
-- viewport: desktop 1440x900 / mobile 375x812
-- `browser_take_screenshot` で fullPage、JPEG 品質90
-- 保存先: `docs/site-audit-screenshots/YYYY-MM/`（過去監査と同じ規約。リポジトリルートに置き去りにしない）
-- レポートは `docs/` に `<テーマ>-YYYY-MM-DD.md` で保存（例: `design-ui-growth-review-2026-07-03.md`）
-
-## 誤検出への注意（実際にやらかした3パターン）
-
-フルページスクリーンショットは**キャプチャ時点の初期描画**しか写さない。以下は「壊れている」と断定する前に必ずソース確認:
-
-1. **lazy-load 画像の空白**: below-fold の画像は未ロードで空白に写る。`browser_evaluate` で `naturalWidth`/HTTP ステータスを確認
-2. **ハイドレーション後にしか出ない UI**: ペイウォール CTA・チャット枠などクライアント描画の要素は初期 HTML に無い。`document.body.textContent` を遅延後に評価して確認
-3. **自動展開アコーディオン**: `useEffect` でデフォルト展開＋自動スクロールする実装は、スクショだと「全部閉じている」ように見える。該当コンポーネントのソース（useState 初期値・useEffect）を読む
-
-詳細はメモリ `feedback_screenshot_audit_caveat` 参照。
-
-## SEO 判定はサーバー HTML で
-
-a11y スナップショットやスクショで「リンクが無い」と判定しない。クローラが見るのはサーバー HTML:
-
-```js
-// browser_evaluate で
-const html = await (await fetch('/対象パス')).text();
-(html.match(/href="\/matches\//g) || []).length
-```
-
-## UI 変更を提案する前に
-
-「隠す・折りたたむ・簡略化する」系の提案は、**過去に採用→撤回された前例がないか** `git log --oneline -- <対象ファイル>` で確認する（メモリ `feedback_spec_history_check` 参照。docs/decisions.md に載っていない判断がコミット履歴だけに残っていることがある）。
-
-## 過去の監査レポート
-
-- `docs/design-ui-growth-review-2026-07-03.md`（デザイン・UI・集客横断）
-- `docs/site-audit-report-2026-05.md` / `-2026-05b.md`
-- 比較の基準として先に読み、重複調査を避ける
+スクリーンショットはdocs/site-audit-screenshots/の日付別、レポートはdocs/の監査文書へ。URL・幅・状態・期待/実際・確証度・証拠パスを揃える。既知の修正はHEAD/PRで照合して重複起票を避ける。

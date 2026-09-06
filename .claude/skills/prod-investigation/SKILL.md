@@ -1,33 +1,17 @@
 ---
 name: prod-investigation
-description: 本番 Supabase のデータ調査・デバッグをするときに使う。「本番のデータを見て」「DB を調べて」「なぜこの試合の recap がないか」等の調査で起動。読み取り専用の作法と主要テーブルの入口。
+description: 本番データの読み取り調査。「本番DBを調べる」「recapがない原因」「データの原因調査」と言われたら起動。再現可能なSELECTとコード経路から原因を切り分ける。
 ---
 
-# 本番データ調査（読み取り専用）
+# prod-investigation
 
-## 鉄則
+共通参照: [運用方針と測定基準](../today/references/operating-baseline.md)。
 
-- **基本は SELECT のみ**。`UPDATE` は、その都度 Owner の明示的承認を得た場合に限り Claude Code 自身が実行してよい（対象行・条件を先に提示し、実行後に影響件数を確認する）。`INSERT` / `DELETE` / DDL は承認があっても Claude Code 自身は実行しない。修正が必要な場合は Owner 自身が実行するか、Codex への実装依頼に回す
-- Supabase MCP の `execute_sql` を使う（ToolSearch で先にロード）。プロジェクトは `list_projects` で確認してから
-- 修正が必要と判明したら、直接直さず原因と方針を報告 → spec 化 → Codex 委譲の流れに乗せる
+定期検出はproduction-data-integrity、本スキルは個別の原因調査。機密env・ignoredファイル・他プロジェクトへアクセスしない。
+1. 対象match_id/期間/プロジェクトをセッション情報と認可済み読取接続で確認する。SQLはSELECTのみを基本に、secretを含まない最小列を取得する。
+2. lib/db/types.tsとmigrations、現在のqueriesを読んで列名・NULL・JSON格納を確定する。match_eventsの人名はmetadata.player_nameでありplayer_idだけを見ない。
+3. 件数・合計・第三チーム・署名・source fixture対応を検査し、入力→保存→集約→本文→公開API/画面のどこで食い違うか追う。現在値と生成時点の値を分ける。
+4. ログの検出日時と通知内容を確認し、「検出なし」と「検出済みだが行動につながらず」を区別する。完了済みPRはHEADで再確認する。
+5. ページングや取得失敗を隠さず、全件/サンプル/未取得の範囲を報告する。古いデータ欠落率を現在値として引用しない。
 
-## 既知ギャップを鵜呑みにしない
-
-このファイルに書かれた「既知の欠落」は起票時点の事実にすぎず、後続の実装で解消されていることが多い（2026-07-13 監査で URC/SRP 項目が実際に反証された）。調査前に、該当 spec が既にマージ済みでないか `git log --oneline -- specs/<name>.md` で確認し、書かれた既知ギャップを鵜呑みにしない。
-
-## スキーマの入口
-
-- 型定義: `lib/db/types.ts`（テーブル・カラムの正）
-- クエリパターン: `lib/db/queries/` 配下
-- マイグレーション履歴: `supabase/migrations/`
-
-## よくある調査パターン
-
-- **コンテンツ欠落**: match に対する preview/recap の有無と status（published / draft）を確認。draft 落ちは QA 不合格が典型
-- **イベント欠落・汚染**: match_events の件数と event 共有を確認（過去に 35 recap が別試合データを参照した汚染事故あり。spec: `specs/fix-contaminated-match-events.md`）
-- **URC / SRP**: 2026-06 時点では events が薄い既知ギャップがあったが、`specs/feat-urc-srp-match-events.md` 等のPRで解消済み（2026-07-13実測: URC 145/157件・SRP 160/166件の終了試合でevents保有、いずれも9割超）。現役の注意点はイベント汚染（`specs/fix-contaminated-match-events.md`）とURCノックアウトラウンドの取りこぼし
-- **MOM**: recap の MOM は LLM 推論であり公式と食い違うことがある
-
-## 調査結果の報告
-
-「事実（SQL と結果件数）→ 原因仮説 → 対処方針（spec 候補 or 手修正提案）」の順で報告し、対処の実行判断は Owner に委ねる。
+結果は事実（SQL/取得条件/件数/取得時刻）→仮説→検証→修正候補。監査中に修復を実行しない。Claude Codeによる本番UPDATEは、別途具体的な対象・条件のOwner承認がある場合だけCLAUDE.mdに従う。INSERT/DELETE/DDLは実行しない。Codexへの実装委譲は本番操作の許可を意味しない。

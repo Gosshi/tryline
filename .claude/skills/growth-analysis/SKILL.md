@@ -1,35 +1,26 @@
 ---
 name: growth-analysis
-description: SEO・集客・グロースの分析をするときに使う。「GSC を見て」「アクセス状況は」「SEO 分析して」「グロース監査」と言われたら起動。GSC/GA4 の取得手順と既知の診断コンテキスト。
+description: 流入・SEOの分析。「GSCを見て」「アクセス状況は」「SEO分析」「グロース監査」と言われたら起動。GA4とBWT/GSCの母数・期間を揃えて診断する。
 ---
 
-# グロース分析（GSC / GA4）
+# growth-analysis
 
-## データ取得
+共通参照: [運用方針と測定基準](../today/references/operating-baseline.md)。
 
-### GSC（Search Console）
+流入と検索需要を担当する。サイト内の段差はfunnel-audit、投資配分はbiz-strategy、週次整理はtodayへ渡す。
+`docs/decisions.md` D017/D019と共通operating-baselineを読む。
 
-```bash
-node --env-file=.env.production.local tools/run-ts.cjs tools/gsc-pull.ts
-```
+## 手順
+1. 期間・タイムゾーン・プロパティ・ディメンション・指標名・フィルタ・取得日を先に記録する。GA4は認可済みの読取専用コネクタ、BWT/GSCは同等の読取経路またはOwner提供のエクスポートを使う。機密envやignored出力へ勝手にアクセスしない。
+2. ユーザー数とセッション数を併記し、読者構成/referral評価はユーザー基準とする。異なる流入元やOSのユーザー行を単純合算して全体のユニーク人数とみなさない。
+3. Owner混入は除外設定・本人確認・debugデータなどの根拠を示す。セッション/ユーザー比だけで全員Ownerと断定しない。取得失敗・閾値処理・サンプリングも記録する。
+4. 最大流入元のBingをGSCで代用せず、bing-webmaster-analysisで実クエリを取る。順位・表示回数・クリックとGA4の着地後行動を期間/URLで対応させる。
+5. 過去レポートは日付付きの比較材料とする。技術衛生完了・配信が原因・唯一の成長領域といった結論を最新データなしに固定しない。
 
-- 出力は `tmp/gsc/` に落ちる → Read で読んで分析する
-- セットアップ手順は `docs/runbooks/gsc-analysis-setup.md`（URL-prefix プロパティ、SA は読み取り専用）
-- Search Analytics + URL Inspection が取れる
-
-### GA4
-
-- MCP ツール `mcp__analytics__run_report` を使う（ToolSearch で先にロード）
-- 期間比較は前週・前月同期間で行う
-
-## 分析時に前提とする既知の診断（2026-07 時点）
-
-- **実測はゼロ近傍**: GA4 で約 4.1 セッション/日。小さい変動を「成長」と誤読しない
-- **技術衛生はほぼ完了**: index bloat（選手ページ noindex 済み・GSC 在庫は自然消化を監視のみ）、カタカナ命名、title/meta、IndexNow はすべて対策済み。再提案しない
-- **チャネル戦略**: SEO（大会ハブ集中）+ X 運用（毎日10分 reply + データ画像）+ note（週次まとめ + 月1エバーグリーン。note 8 > X 3 セッション/28日で唯一機能している referral）。海外リーグの英語化はやらない
-- **GSC で需要実証済みの領域は大会ページのみ**: PNC 2026 順位10位・クリック発生、RWC 系クエリ29〜58位（→ `rwc2027` スキル）。選手ページ・英語名クエリは在庫消化中で追わない
-- 過去の監査レポート: `docs/marketing-strategy-2026-07-06.md`（**現行戦略。90日 KPI 表は §9**）、`docs/growth-audit-2026-07-01.md`、`docs/growth-playbook-2026-06.md`
+## 測定基準
+2026-09-05にOwnerから受領したGA4再集計（2026-08-08〜09-04、operatingSystem）ではWindowsはユーザー基準65% / セッション基準49%。出典: `docs/chatgpt-prompts/gpt6-spec-review-and-skill-update-2026-09-05.md` §1.2。現在値として再利用するときは取り直す。
+scrollは読了計測ではなく、newsletter_confirmedも同一コホートの購読完了率を直接表さない。詳細定義は計測コードと取得時点の公式仕様を照合する。
+D019のX判定はt.coユーザー数/28日。歴史的数値と継続判定基準、位置づけの再検討基準を混ぜない。
 
 ## 出力
-
-数値は必ず「実測値 + 期間」を明記。改善提案は spec 化候補として挙げ、Owner の判断に委ねる（勝手に spec を作らない）。
+観測表（値・期間・母数・出典・取得日）→検証可能な解釈→不足データ→施策候補。未承認の予算変更・本番設定変更・新機能実装は行わない。
