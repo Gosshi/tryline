@@ -306,9 +306,11 @@ describe("audit-published-recap-event-integrity", () => {
       matches_with_fixture_identifier: 0,
       matches_without_fixture_identifier: 5,
       unreliable_key_collisions: [],
-      unreliable_key_collision_limit: 100,
+      unreliable_key_collision_limit: 25,
       unreliable_key_collision_total: 0,
       unreliable_key_collision_remaining: 0,
+      unreliable_key_collision_query_note:
+        "全件を確認する場合: select id from matches where external_ids->>'<key>' = '<value>';",
     });
     expect(csv).toContain("match_id,url,competition_slug");
     expect(csv).toContain(
@@ -347,11 +349,12 @@ describe("audit-published-recap-event-integrity", () => {
         unreliableKeyCollisions: [
           {
             key,
+            matchCount: 2,
+            sampleMatchIds: [FIRST_MATCH_ID, SECOND_MATCH_ID],
             value: "shared=value",
-            matchIds: [FIRST_MATCH_ID, SECOND_MATCH_ID],
           },
         ],
-        unreliableKeyCollisionLimit: 100,
+        unreliableKeyCollisionLimit: 25,
         unreliableKeyCollisionTotal: 1,
         unreliableKeyCollisionRemaining: 0,
       });
@@ -393,7 +396,10 @@ describe("audit-published-recap-event-integrity", () => {
 
   it("caps unreliable collisions and reports the remaining count across all matches", async () => {
     const matches = Array.from({ length: 101 }, (_, index) =>
-      (index === 0 ? ["first", "second", "third"] : ["first", "second"]).map(
+      (index === 0
+        ? ["first", "second", "third", "fourth"]
+        : ["first", "second"]
+      ).map(
         (side) =>
           match(`${index}-${side}`, null, null, {
             wikipedia_event_id:
@@ -404,39 +410,50 @@ describe("audit-published-recap-event-integrity", () => {
     const report = await auditPublishedRecapEventIntegrity(
       createMockDb({ events: [], matches }),
     );
+    const repeatedReport = await auditPublishedRecapEventIntegrity(
+      createMockDb({ events: [], matches }),
+    );
 
     expect(report.summary.C5).toBe(0);
     expect(report.identifierQuality).toEqual({
       matchesWithFixtureIdentifier: 0,
-      matchesWithoutFixtureIdentifier: 203,
+      matchesWithoutFixtureIdentifier: 204,
       unreliableKeyCollisions: expect.any(Array),
-      unreliableKeyCollisionLimit: 100,
+      unreliableKeyCollisionLimit: 25,
       unreliableKeyCollisionTotal: 101,
-      unreliableKeyCollisionRemaining: 1,
+      unreliableKeyCollisionRemaining: 76,
     });
-    expect(report.identifierQuality.unreliableKeyCollisions).toHaveLength(100);
-    expect(report.identifierQuality.unreliableKeyCollisions).toContainEqual({
+    expect(report.identifierQuality.unreliableKeyCollisions).toHaveLength(25);
+    expect(report.identifierQuality.unreliableKeyCollisions[0]).toEqual({
       key: "wikipedia_event_id",
+      matchCount: 4,
+      sampleMatchIds: ["0-first", "0-fourth", "0-second"],
       value: "mw-content-text",
-      matchIds: ["0-first", "0-second", "0-third"],
     });
+    expect(report.identifierQuality.unreliableKeyCollisions).toEqual(
+      repeatedReport.identifierQuality.unreliableKeyCollisions,
+    );
     const outputDir = await mkdtemp("/tmp/event-integrity-quality-");
     const paths = await writeEventIntegrityAuditReport(report, outputDir);
     const summary = JSON.parse(readFileSync(paths.summaryPath, "utf8"));
 
-    expect(summary.identifier_quality.unreliable_key_collision_limit).toBe(100);
+    expect(summary.identifier_quality.unreliable_key_collision_limit).toBe(25);
     expect(summary.identifier_quality.unreliable_key_collision_total).toBe(101);
     expect(summary.identifier_quality.unreliable_key_collision_remaining).toBe(
-      1,
+      76,
     );
     expect(summary.identifier_quality.unreliable_key_collisions).toHaveLength(
-      100,
+      25,
     );
     expect(summary.identifier_quality.unreliable_key_collisions[0]).toEqual({
       key: "wikipedia_event_id",
+      match_count: 4,
+      sample_match_ids: ["0-first", "0-fourth", "0-second"],
       value: "mw-content-text",
-      match_ids: ["0-first", "0-second", "0-third"],
     });
+    expect(summary.identifier_quality.unreliable_key_collision_query_note).toContain(
+      "select id from matches where external_ids->>'<key>' = '<value>';",
+    );
     expect(readFileSync(paths.csvPath, "utf8")).not.toContain(
       "mw-content-text",
     );
