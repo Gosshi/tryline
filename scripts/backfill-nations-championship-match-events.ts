@@ -10,6 +10,7 @@
 
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { pointsForMatchEvent } from "@/lib/format/match-event-points";
+import { eventTotalsMatchFinalScore } from "@/lib/ingestion/event-integrity";
 import { upsertMatchEvents } from "@/lib/ingestion/events";
 import { fetchNationsChampionship2026EventMatches } from "@/lib/ingestion/sources/wikipedia-nations-championship-events";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
@@ -150,13 +151,6 @@ export function computeEventPointTotals(
     },
     { away: 0, home: 0 },
   );
-}
-
-export function eventTotalsMatchFinalScore(
-  totals: EventPointTotals,
-  match: Pick<MatchRow, "away_score" | "home_score">,
-) {
-  return totals.home === match.home_score && totals.away === match.away_score;
 }
 
 async function loadTargetMatches(

@@ -4,10 +4,13 @@ import {
   type ContaminatedEventGroup,
 } from "@/lib/data-integrity/contaminated-events";
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { computeScoreTimeline, eventTotalsMatchFinalScore } from "@/lib/llm/stages/assemble";
+import {
+  eventTotalsMatchFinalScore,
+  toScoreTimelineEvent,
+} from "@/lib/ingestion/event-integrity";
+import { computeScoreTimeline } from "@/lib/llm/stages/assemble";
 
 import type { Json } from "@/lib/db/types";
-import type { AssembledContentInput } from "@/lib/llm/types";
 
 const STALE_STANDINGS_THRESHOLD_DAYS = 7;
 const RECENT_DRAFT_WINDOW_DAYS = 7;
@@ -114,22 +117,14 @@ function getBooleanMetadataFlag(metadata: Json, key: string): boolean {
   return (metadata as Record<string, Json>)[key] === true;
 }
 
-function toScoreEvent(
-  match: AuditFinishedMatchRow,
-  event: AuditMatchEventRow,
-): AssembledContentInput["match_events"][number] {
-  return {
-    is_penalty_try: getBooleanMetadataFlag(event.metadata, "is_penalty_try"),
-    minute: event.minute,
-    player_name: "",
-    team_name:
-      event.team_id === match.home_team_id
-        ? (match.home_team?.name ?? "")
-        : event.team_id === match.away_team_id
-          ? (match.away_team?.name ?? "")
-          : "",
-    type: event.type,
-  };
+function getStringMetadataValue(metadata: Json, key: string): string {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return "";
+  }
+
+  const value = (metadata as Record<string, Json>)[key];
+
+  return typeof value === "string" ? value : "";
 }
 
 function summarizeContaminatedGroups(
@@ -172,7 +167,30 @@ export function summarizeScoreMismatches(
     const awayName = match.away_team?.name ?? "";
     const events = [...match.match_events]
       .sort((left, right) => (left.minute ?? 0) - (right.minute ?? 0))
-      .map((event) => toScoreEvent(match, event));
+      .map((event) =>
+        toScoreTimelineEvent(
+          {
+            isPenaltyTry: getBooleanMetadataFlag(
+              event.metadata,
+              "is_penalty_try",
+            ),
+            minute: event.minute,
+            playerName: getStringMetadataValue(event.metadata, "player_name"),
+            teamId: event.team_id,
+            type: event.type,
+          },
+          {
+            away: {
+              id: match.away_team_id,
+              name: match.away_team?.name ?? "",
+            },
+            home: {
+              id: match.home_team_id,
+              name: match.home_team?.name ?? "",
+            },
+          },
+        ),
+      );
     const timeline = computeScoreTimeline(events, homeName, awayName);
 
     if (

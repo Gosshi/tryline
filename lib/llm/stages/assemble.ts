@@ -7,6 +7,7 @@ import {
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import { pointsForMatchEvent } from "@/lib/format/match-event-points";
 import { getTeamDisplayName } from "@/lib/format/team";
+import { eventTotalsMatchFinalScore } from "@/lib/ingestion/event-integrity";
 import { deriveTeamStatsFromSourcedFacts } from "@/lib/llm/sourced-facts/derive-team-stats";
 import { loadSourcedFactsForMatch } from "@/lib/llm/sourced-facts/fetch";
 import { computeDerivedMatchStats } from "@/lib/llm/stages/derived-stats";
@@ -273,19 +274,7 @@ export function computeScoreTimeline(
   };
 }
 
-export function eventTotalsMatchFinalScore(
-  scoreTimeline: ScoreTimeline | null,
-  homeScore: number | null,
-  awayScore: number | null,
-): boolean {
-  return (
-    scoreTimeline !== null &&
-    homeScore !== null &&
-    awayScore !== null &&
-    scoreTimeline.final_home === homeScore &&
-    scoreTimeline.final_away === awayScore
-  );
-}
+export { eventTotalsMatchFinalScore } from "@/lib/ingestion/event-integrity";
 
 function asJsonObject(value: Json): Record<string, Json> {
   if (!value || Array.isArray(value) || typeof value !== "object") {

@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { eventTotalsMatchFinalScore } from "@/lib/ingestion/event-integrity";
 import { parseNationsChampionshipEventHtml } from "@/lib/ingestion/sources/wikipedia-nations-championship-events";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 import {
   buildEventMatchLookup,
   computeEventPointTotals,
-  eventTotalsMatchFinalScore,
   parseOptions,
   runBackfillNationsChampionshipMatchEvents,
   shouldBackfillNationsChampionshipMatch,
