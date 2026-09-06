@@ -5,6 +5,7 @@ import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 export type JrfuScheduleResult = {
   dateJrfu: string;
   japanScore: number | null;
+  matchUrl: string | null;
   opponentName: string;
   opponentScore: number | null;
 };
@@ -56,6 +57,7 @@ export function parseJrfuScheduleResultsHtml(
         .find(".scoreboard .score")
         .toArray()
         .map((score) => parseScore($(score).text()));
+      const matchHref = $(card).find("a[href*='/match/']").first().attr("href");
 
       if (!dateParts || !japan || !opponent || scores.length !== 2) {
         return [];
@@ -67,6 +69,9 @@ export function parseJrfuScheduleResultsHtml(
         {
           dateJrfu: `${year}-${dateParts[1]?.padStart(2, "0")}-${dateParts[2]?.padStart(2, "0")}`,
           japanScore: japan.side === "home" ? homeScore ?? null : awayScore ?? null,
+          matchUrl: matchHref
+            ? new URL(matchHref, JRFU_SCHEDULE_URL).toString()
+            : null,
           opponentName: opponent.name,
           opponentScore:
             opponent.side === "home" ? homeScore ?? null : awayScore ?? null,
