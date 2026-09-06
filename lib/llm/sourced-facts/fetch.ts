@@ -8,6 +8,7 @@ import {
   isAllowedSourcedFactDomain,
   SOURCED_FACT_ALLOWED_DOMAINS,
 } from "@/lib/llm/sourced-facts/allowlist";
+import { containsStatisticalFact } from "@/lib/llm/sourced-facts/statistical-fact";
 import { fetchJrfuMatchLineup } from "@/lib/scrapers/jrfu-lineups";
 
 import type { Database, Json } from "@/lib/db/types";
@@ -23,8 +24,6 @@ const PREVIEW_REFRESH_WINDOW_HOURS = 72;
 const PREVIEW_FRESHNESS_HOURS = 24;
 const MAX_STORED_FACTS = 8;
 const JRFU_LINEUP_MODEL_VERSION = "jrfu-lineups@1.0.0";
-const STATISTICAL_FACT_PATTERN =
-  /\d+(?:\.\d+)?\s*%|\b(?:penalt\w*|tackles?|possession|territory|turnovers?|lineouts?|scrums?|carries|metres?|meters?)\b/i;
 
 type MatchForSourcedFacts = {
   id: string;
@@ -69,9 +68,7 @@ export type FetchSourcedFactsResult = {
 type SourcedFactInsert =
   Database["public"]["Tables"]["match_sourced_facts"]["Insert"];
 
-export function isManualSourcedFact(
-  row: Pick<StoredSourcedFact, "metadata">,
-) {
+export function isManualSourcedFact(row: Pick<StoredSourcedFact, "metadata">) {
   return row.metadata?.entry_method === "manual";
 }
 
@@ -244,10 +241,6 @@ function metadataForJrfuLineupFact(): Json {
     deterministic: true,
     source: "jrfu_match_lineup",
   };
-}
-
-function containsStatisticalFact(fact: string): boolean {
-  return STATISTICAL_FACT_PATTERN.test(fact);
 }
 
 export function buildSearchPrompt(

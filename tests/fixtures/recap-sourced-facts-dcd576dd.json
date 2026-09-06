@@ -1,0 +1,149 @@
+{
+  "$note": "本番 DB から 2026-09-06 に取得した実データ。recap 生成（2026-09-06 03:08 UTC）の時点で存在した全 18 件。この入力から生成された本文は、数値スタッツ（ポゼッション/テリトリー/タックル/反則/ラインアウト/スクラム）とカード 2 件を 1 つも使わなかった。fact / source_url / source_domain / confidence が SourcedFactInput（lib/llm/types.ts:140）に対応する。entryMethod は由来の記録用で SourcedFactInput には含まれない。",
+  "matchId": "dcd576dd-f778-4690-b4e1-3d960bd664f1",
+  "contentType": "recap",
+  "capturedAt": "2026-09-06T03:08:00Z",
+  "matchLabel": "South Africa 29 - 24 New Zealand (2026-09-06 JST 00:10 kickoff)",
+  "expectedUnusedInNarrative": {
+    "statistics": [
+      "ポゼッション 57%",
+      "テリトリー 53%",
+      "タックル 150 対 106",
+      "反則 11 対 12",
+      "ラインアウト 11/11 対 11/12",
+      "スクラム投入 11 対 5"
+    ],
+    "cards": [
+      "10分 Sacha Feinberg-Mngomezulu イエロー",
+      "36分 Ruben Love イエロー"
+    ]
+  },
+  "facts": [
+    {
+      "fact": "10分、Sacha Feinberg-Mngomezuluがイエローカード。New Zealandの攻撃中、50/50のボールを故意にノックダウンしたとNika Amashukeli主審に判定された。",
+      "source_url": "https://www.dailymaverick.co.za/article/2026-09-05-boks-take-moral-victory-in-series-after-overpowering-all-blacks-in-soweto/?utm_source=chatgpt.com",
+      "source_domain": "www.dailymaverick.co.za",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "36分、Ruben Loveがイエローカード。South Africaがゴール前で連続攻撃した場面でシニカルな守備を取ったためで、その後Boksは5mスクラムを選び、押し込んでペナルティトライを得た。",
+      "source_url": "https://www.dailymaverick.co.za/article/2026-09-05-boks-take-moral-victory-in-series-after-overpowering-all-blacks-in-soweto/?utm_source=chatgpt.com",
+      "source_domain": "www.dailymaverick.co.za",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "Kolbeは同じ序盤の局面で頭部を負傷して退場し、その後顎の骨折が判明。Saveaも肩を痛めて前半途中に退き、第4戦には帯同しないとしている。",
+      "source_url": "https://www.dailymaverick.co.za/article/2026-09-05-boks-take-moral-victory-in-series-after-overpowering-all-blacks-in-soweto/?utm_source=chatgpt.com",
+      "source_domain": "www.dailymaverick.co.za",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "Siya Kolisiはこの勝利で、Springboks主将として55勝目を記録し、同国代表主将として最多勝記録を樹立した。",
+      "source_url": "https://www.dailymaverick.co.za/article/2026-09-05-boks-take-moral-victory-in-series-after-overpowering-all-blacks-in-soweto/?utm_source=chatgpt.com",
+      "source_domain": "www.dailymaverick.co.za",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "57分のKrielトライは、South Africaがリスタートを確保して左右に展開し、Feinberg-Mngomezulu→Manie Libbok→Jesse Krielと長いパスをつないだもの。Leroy Carterが前に飛び出してタックルを外し、Krielが約22mを走り切った。",
+      "source_url": "https://wetalkrugby.com/springboks-vs-all-blacks-3rd-test-match-report-fnb-stadium/?utm_source=chatgpt.com",
+      "source_domain": "wetalkrugby.com",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "New Zealandはポゼッション57%、South Africaはテリトリー53%。タックル数はSouth Africa 150、New Zealand 106、反則数はSouth Africa 11、New Zealand 12だった。",
+      "source_url": "https://wetalkrugby.com/springboks-vs-all-blacks-3rd-test-match-report-fnb-stadium/?utm_source=chatgpt.com",
+      "source_domain": "wetalkrugby.com",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "South AfricaのEthan HookerがPlayer of the Matchに選ばれた。Siya Kolisiは主将として55勝目、Tupou Vaa’iは50キャップ目だった",
+      "source_url": "https://wetalkrugby.com/springboks-vs-all-blacks-3rd-test-match-report-fnb-stadium/?utm_source=chatgpt.com",
+      "source_domain": "wetalkrugby.com",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "Will Jordanのキックがインゴールを越えたことでBoksボールのスクラムとなり、Fletcher Newellが反則。LibbokはPGではなくコーナーを選び、Du Toitがラインアウトを確保すると、Marxを最後尾に置いたモールが約20m前進して65～66分のトライにつながった。",
+      "source_url": "https://wetalkrugby.com/springboks-vs-all-blacks-3rd-test-match-report-fnb-stadium/?utm_source=chatgpt.com",
+      "source_domain": "wetalkrugby.com",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "さらにFabian Hollandがラックへ横から進入して反則。Feinberg-Mngomezuluが約70分にPGを決め、57分の12-17から29-17まで17連続得点となった。",
+      "source_url": "https://wetalkrugby.com/springboks-vs-all-blacks-3rd-test-match-report-fnb-stadium/?utm_source=chatgpt.com",
+      "source_domain": "wetalkrugby.com",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "その後Morné van den BergのタッチキックでNZを後退させ、Pieter-Steph du Toitが前進を止め、Malcolm Marxがブレイクダウンでペナルティを獲得。63分にはDeon Fourie、Gerhard Steenekamp、Lood de Jagerを投入してFWを刷新した。",
+      "source_url": "https://wetalkrugby.com/springboks-vs-all-blacks-3rd-test-match-report-fnb-stadium/?utm_source=chatgpt.com",
+      "source_domain": "wetalkrugby.com",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "ラインアウトはSouth Africaが11/11、New Zealandが11/12。スクラム投入数はNew Zealand 11回、South Africa 5回で、記事はSouth AfricaがNew Zealandボールのスクラムからペナルティトライを含む複数の反則を引き出したことを勝因として挙げている。",
+      "source_url": "https://wetalkrugby.com/springboks-vs-all-blacks-3rd-test-match-report-fnb-stadium/?utm_source=chatgpt.com",
+      "source_domain": "wetalkrugby.com",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "Erasmusは、勝因を単純なスクラム支配とはせず、モールの出来が非常に良かったと評価。New Zealandのボールを動かし続ける能力も高く評価し、世界1位・2位同士に大きな差はないという認識を示した。",
+      "source_url": "https://gulfnews.com/sport/rugby/kolbe-breaks-jaw-and-shoulder-injury-sidelines-savea-1.500664557?utm_source=chatgpt.com",
+      "source_domain": "gulfnews.com",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "POTM受賞後のHookerは、New Zealand個人への対応よりもSouth Africa自身の遂行に集中したという趣旨で振り返っている。",
+      "source_url": "https://gulfnews.com/sport/rugby/kolbe-breaks-jaw-and-shoulder-injury-sidelines-savea-1.500664557?utm_source=chatgpt.com",
+      "source_domain": "gulfnews.com",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "Rennieは、前半は高テンポでSouth Africaの大型FWを動かせたが、後半にミスが増えてスクラム→反則→陣地喪失という流れになり、17-12とした直後からセットピースで主導権を奪われたと説明した。",
+      "source_url": "https://gulfnews.com/sport/rugby/kolbe-breaks-jaw-and-shoulder-injury-sidelines-savea-1.500664557?utm_source=chatgpt.com",
+      "source_domain": "gulfnews.com",
+      "confidence": "high",
+      "entryMethod": "manual"
+    },
+    {
+      "fact": "New Zealand tries: Ardie Savea (11', 26'), Will Jordan (56'), Samisoni Taukei'aho (82').",
+      "source_url": "https://www.onrugby.it/2026/09/05/rugbys-greatest-rivalry-la-mischia-sudafricana-domina-e-gli-springboks-battono-gli-all-blacks/",
+      "source_domain": "onrugby.it",
+      "confidence": "medium",
+      "entryMethod": "automatic"
+    },
+    {
+      "fact": "South Africa tries: Kurt-Lee Arendse (21'), penalty try (36'), Jesse Kriel (58'), Malcolm Marx (66').",
+      "source_url": "https://www.onrugby.it/2026/09/05/rugbys-greatest-rivalry-la-mischia-sudafricana-domina-e-gli-springboks-battono-gli-all-blacks/",
+      "source_domain": "onrugby.it",
+      "confidence": "medium",
+      "entryMethod": "automatic"
+    },
+    {
+      "fact": "Attendance at FNB Stadium was 85,967.",
+      "source_url": "https://springboks.rugby/news-features/articles/2026/9/5/boks-take-series-lead-in-greatest-test",
+      "source_domain": "springboks.rugby",
+      "confidence": "high",
+      "entryMethod": "automatic"
+    },
+    {
+      "fact": "Rassie Erasmus said South Africa had not yet clinched the series and still had a series to win.",
+      "source_url": "https://springboks.rugby/news-features/articles/2026/9/5/erasmus-weve-still-got-a-series-to-win",
+      "source_domain": "springboks.rugby",
+      "confidence": "high",
+      "entryMethod": "automatic"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { getContentLengthRequirement } from "@/lib/llm/content-length";
+import { containsStatisticalFact } from "@/lib/llm/sourced-facts/statistical-fact";
 
 import type {
   AssembledContentInput,
@@ -9,7 +10,7 @@ import type {
   SourcedFactInput,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.10.0";
+export const PROMPT_VERSION = "qa@2.11.0";
 
 export type TeamFormStats = {
   avg_points_against_last_5?: number | null;
@@ -38,6 +39,22 @@ export type QaMatchContext = {
   teamStats?: MatchTeamStats;
   venue?: string | null;
 };
+
+const CARD_FACT_PATTERN =
+  /(?:イエローカード|レッドカード|\byellow cards?\b|\bred cards?\b|\bsin[- ]?bin(?:ned)?\b|\bsent[- ]off\b)/i;
+
+export function getRecapSourcedFactCoverage(
+  sourcedFacts: SourcedFactInput[] | undefined,
+) {
+  const facts = sourcedFacts ?? [];
+
+  return {
+    cardFacts: facts.filter((entry) => CARD_FACT_PATTERN.test(entry.fact)),
+    statisticalFacts: facts.filter((entry) =>
+      containsStatisticalFact(entry.fact),
+    ),
+  };
+}
 
 const QA_GENERATION_FIELD_DISPOSITIONS = {
   competition_standings: "out_of_scope",
@@ -91,9 +108,14 @@ export const QA_GROUNDING_CONTEXT_FIELDS = {
 >;
 
 export function getQaGroundingCoverageGaps() {
-  return (Object.entries(QA_GENERATION_FIELD_DISPOSITIONS) as Array<
-    [keyof AssembledContentInput, (typeof QA_GENERATION_FIELD_DISPOSITIONS)[keyof AssembledContentInput]]
-  >)
+  return (
+    Object.entries(QA_GENERATION_FIELD_DISPOSITIONS) as Array<
+      [
+        keyof AssembledContentInput,
+        (typeof QA_GENERATION_FIELD_DISPOSITIONS)[keyof AssembledContentInput],
+      ]
+    >
+  )
     .filter(([, disposition]) => disposition === "grounded")
     .map(([field]) => field)
     .filter(
@@ -112,9 +134,8 @@ function resolvePlayerNameForQa(
   }
 
   return (
-    glossary?.find(
-      (entry) => entry.kind === "player" && entry.source === name,
-    )?.japanese ?? name
+    glossary?.find((entry) => entry.kind === "player" && entry.source === name)
+      ?.japanese ?? name
   );
 }
 
@@ -275,6 +296,32 @@ export function buildQaContentPrompt(
           "背番号と実名を根拠なく並べただけのラインアップ羅列は、実在の選手名を含んでいても情報密度を上げる根拠にしてはならない。",
           "team_stats が入力されている場合は、本文の趣旨に沿う主要な数値の活用も情報密度の具体性として考慮すること。",
         ].join("\n");
+  const recapSourcedFactCoverage =
+    contentType === "recap"
+      ? getRecapSourcedFactCoverage(matchContext.sourcedFacts)
+      : { cardFacts: [], statisticalFacts: [] };
+  const recapSourcedFactsCoverageBlock =
+    contentType !== "recap" ||
+    (recapSourcedFactCoverage.statisticalFacts.length === 0 &&
+      recapSourcedFactCoverage.cardFacts.length === 0)
+      ? ""
+      : [
+          "## recap supplied statistics and cards coverage",
+          recapSourcedFactCoverage.statisticalFacts.length === 0
+            ? ""
+            : [
+                "以下は供給された数値スタッツです。本文がこの一覧のどれにも自分の日本語で触れていない場合は、information_density を下げること。少なくとも1つを試合の筋に沿って反映していれば、この一覧だけを理由に下げないこと。",
+                JSON.stringify(recapSourcedFactCoverage.statisticalFacts),
+              ].join("\n"),
+          recapSourcedFactCoverage.cardFacts.length === 0
+            ? ""
+            : [
+                "以下は供給されたカード情報です。本文がカードと該当局面の因果に触れていない場合は、information_density を下げること。",
+                JSON.stringify(recapSourcedFactCoverage.cardFacts),
+              ].join("\n"),
+        ]
+          .filter(Boolean)
+          .join("\n");
   const informationDensityRubric = [
     "### information_density (1-5)",
     isJapaneseSourcedFactsContent && sourcedFactsCount > 0
@@ -419,6 +466,7 @@ export function buildQaContentPrompt(
     playerStatCheckBlock,
     sourcedFactsBlock,
     sourcedFactsDensityBlock,
+    recapSourcedFactsCoverageBlock,
     derivedStatsBlock,
     teamStatsBlock,
     matchMetadataBlock,

@@ -56,8 +56,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.19.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.19.0");
+  it("uses recap prompt version 4.20.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.20.0");
   });
 
   it("does not disclose missing system data while allowing factual limits", () => {
@@ -193,6 +193,9 @@ describe("buildGenerateRecapPrompt", () => {
     );
     expect(prompt).toContain("無理にこじつけて記述してはならない");
     expect(prompt).toContain("自分の日本語で言い換えること");
+    expect(prompt).toContain("数値スタッツ（%・本数・回数）");
+    expect(prompt).toContain("イエローカード・レッドカード");
+    expect(prompt).toContain("供給された事実に無い数値を書いてはならない");
   });
 
   it("adds official team stats when available", () => {
