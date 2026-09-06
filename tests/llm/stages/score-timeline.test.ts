@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { eventTotalsMatchFinalScore } from "@/lib/ingestion/event-integrity";
 import {
   computeMatchStats,
   computeScoreTimeline,
-  eventTotalsMatchFinalScore,
 } from "@/lib/llm/stages/assemble";
 
 describe("computeScoreTimeline", () => {
