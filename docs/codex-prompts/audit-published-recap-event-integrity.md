@@ -9,11 +9,10 @@
 ## 触るファイル
 
 ```
-tools/audit-published-recap-event-integrity.ts        （新規）
-tests/tools/audit-published-recap-event-integrity.test.ts  （新規）
+tools/audit-published-recap-event-integrity.ts   （新規、これだけ）
 ```
 
-**`app/` `lib/` `components/` `scripts/` に差分を作らないでください。** テストの追加は対象です（初版の「これだけ」は書き方が誤りでした）。 `lib/data-integrity/audit.ts` と `lib/llm/notify.ts` にも触りません（週次通知の改善は別 spec です）。
+**`app/` `lib/` `components/` に差分を作らないでください。** `lib/data-integrity/audit.ts` と `lib/llm/notify.ts` にも触りません（週次通知の改善は別 spec です）。
 
 ## 絶対に守ること
 
@@ -39,15 +38,7 @@ node --env-file=.env.production.local tools/run-ts.cjs tools/audit-published-rec
 
 **得点換算を書き起こさないでください。** `lib/format/match-event-points.ts` の `pointsForMatchEvent` を使ってください。
 
-**`lib/ingestion/event-integrity.ts` の公開関数を使ってください**（2026-09-06 更新）。
-
-```
-computeEventPointTotals(events, teams) → EventPointTotals
-eventTotalsMatchFinalScore(totals, { home_score, away_score }) → boolean
-toScoreTimelineEvent(event, teams) → ScoreTimelineEvent
-```
-
-初版が触れていた `audit.ts` の `toScoreEvent` は**既に存在しません**。#765 が上記モジュールへ置き換えました。`lib/data-integrity/audit.ts:190` が実際の使用例です。
+**`toScoreEvent`（`audit.ts:117`）は export されていないので import できません。**
 
 **`match_events` に `player_name` 列はありません。** `metadata: Json` の中（`metadata.player_name`）で、`player_id` は別の nullable FK です。署名はこれを正規化して作ってください。
 
