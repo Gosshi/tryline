@@ -1,0 +1,585 @@
+{
+  "review_date": "2026-09-05",
+  "code_head": "c4f2535c9f89b26b016d7589b6e413a9a15e33f5",
+  "public_commit_verified": true,
+  "source_files_unchanged_from_read_snapshot": true,
+  "sources": [
+    {
+      "path": ".claude/agents/tryline-spec-checker.md",
+      "sha256": "1f8852a538fda739195a3680e640a611368ead488ca774cb0fa8867eacf4e717",
+      "lines": 40
+    },
+    {
+      "path": ".claude/agents/tryline-web-researcher.md",
+      "sha256": "9bce24c6ecbf28c3f0a81d2e134e281d03992aaf5ebb74e22c1ef946c51a3518",
+      "lines": 30
+    },
+    {
+      "path": ".claude/agents/tryline-site-auditor.md",
+      "sha256": "bc101d90a4a05d237de8874d3fbafbf2c27d2bb0a41fada433823111f1de9b3f",
+      "lines": 34
+    },
+    {
+      "path": ".claude/skills/note-weekly/SKILL.md",
+      "sha256": "0d29d54a73689cfc62bfdb005f730779427d15c8a63c0c9ab3285aab61e5084e",
+      "lines": 158
+    },
+    {
+      "path": ".claude/skills/codex-review/SKILL.md",
+      "sha256": "f6972ed9015b01f6e3853b489eaae7ffd44eeddc62b356359e0740428dbd0c18",
+      "lines": 31
+    },
+    {
+      "path": ".claude/skills/biz-strategy/SKILL.md",
+      "sha256": "53d42df77e045bde930195a42c43340a3bedea542c423117491b0f43fc129c1f",
+      "lines": 34
+    },
+    {
+      "path": ".claude/skills/growth-analysis/SKILL.md",
+      "sha256": "85b87e8ae9d12d84aaa5cce77d3b0833b0300457a37e5061ba2ae4e3f1cb197d",
+      "lines": 35
+    },
+    {
+      "path": ".claude/skills/content-plan/SKILL.md",
+      "sha256": "23ba81a87351d439953e022fb8ac915712eec9204045fd4071bc92283da0aca8",
+      "lines": 33
+    },
+    {
+      "path": ".claude/skills/competitor-watch/SKILL.md",
+      "sha256": "f83a57c82fdf087c3378d30e79ee7012acc4ecd5c0497b9a9043814b23055dc4",
+      "lines": 39
+    },
+    {
+      "path": ".claude/skills/x-post/SKILL.md",
+      "sha256": "e0b1a0e3c0f350a3d86ec6011d1abe21814bda55867e9bd6a3a92f1b6a6edf2c",
+      "lines": 165
+    },
+    {
+      "path": ".claude/skills/content-qa/SKILL.md",
+      "sha256": "29a32aa55f31704a7277249746d7969fcb86898867fcda96b8ede921057e0854",
+      "lines": 41
+    },
+    {
+      "path": ".claude/skills/funnel-audit/SKILL.md",
+      "sha256": "7e5bcdc0100668f2f708899b88d38b7d3a9dc6320a197a34e463d1cd9909304f",
+      "lines": 38
+    },
+    {
+      "path": ".claude/skills/codex-handoff/SKILL.md",
+      "sha256": "7b7cad059159e29b78c0326ac64d75264efcee9cc23ace542c5d032aa5d20037",
+      "lines": 31
+    },
+    {
+      "path": ".claude/skills/discord-ops/SKILL.md",
+      "sha256": "99b38adac5a7c6a28c1683f47f296be4af665790e9356ce59a8681c8ade39948",
+      "lines": 32
+    },
+    {
+      "path": ".claude/skills/backlink-outreach/SKILL.md",
+      "sha256": "0bfa01f95114a5045257f92b8bc725ee1389c236fd8fd87f208545f434b51c57",
+      "lines": 32
+    },
+    {
+      "path": ".claude/skills/rwc2027/SKILL.md",
+      "sha256": "32708be7601a9de6d0e9381ef92987a885f691b29676e2a3682243331cea8593",
+      "lines": 41
+    },
+    {
+      "path": ".claude/skills/site-audit/SKILL.md",
+      "sha256": "1073d70c6ca9299c63b1d86035727ba36196a498dba46d1c008565326fbac6b5",
+      "lines": 45
+    },
+    {
+      "path": ".claude/skills/hub-audit/SKILL.md",
+      "sha256": "f818fabff38b7e4cb6323785fb905db63f973c98f48cd705665ffbd7555970c4",
+      "lines": 42
+    },
+    {
+      "path": ".claude/skills/prod-investigation/SKILL.md",
+      "sha256": "358bc09afece8041f9655bf1c4a7238edcb40658c4a6aae9ab33b1467d049352",
+      "lines": 33
+    },
+    {
+      "path": ".claude/skills/pr-merge/SKILL.md",
+      "sha256": "e363131fef8bf57f7cb0cf212353dcdedc637cd88012abe9328fbed9062c71fd",
+      "lines": 50
+    },
+    {
+      "path": ".claude/skills/rugby-news/SKILL.md",
+      "sha256": "95a66260656b5775c16ded7dd85a21d9a40605d30a2681d49d675fce1bf8a599",
+      "lines": 36
+    },
+    {
+      "path": ".claude/skills/weekly-ops/SKILL.md",
+      "sha256": "34661b1859e0dcd8be61aab14aff41b5f72f6299a145781060359e7771d1db11",
+      "lines": 41
+    },
+    {
+      "path": ".claude/skills/today/SKILL.md",
+      "sha256": "cda08c14c9fbe55a7b64b307c374f172f54f93d67a845d6b6885ed912f7ac5f7",
+      "lines": 88
+    },
+    {
+      "path": ".claude/skills/decision-log/SKILL.md",
+      "sha256": "b2ab023af1224f259034c890abd8cad4ef8cb36ef6c5012cbebfdd3271729d1c",
+      "lines": 40
+    },
+    {
+      "path": ".claude/skills/spec-writing/SKILL.md",
+      "sha256": "4f47ae9a67b548db23a1d5c1aee9aa06b91dcbafbebbac5f2161a17a62f18b86",
+      "lines": 33
+    },
+    {
+      "path": ".claude/skills/image-gen/SKILL.md",
+      "sha256": "1013ab37024d541b71ce692a6a0de07e30a0919dc68070d7c5765c493d73aefa",
+      "lines": 54
+    },
+    {
+      "path": ".claude/skills/incident-postmortem/SKILL.md",
+      "sha256": "52afc56003c8cc451de845f06dcc0ac4d7269a877803f8ace5a79d78cad1f91f",
+      "lines": 37
+    },
+    {
+      "path": ".claude/skills/x-reply/SKILL.md",
+      "sha256": "de0f09e623ab705f5fa591725164da680b846fd7645f960968d7f1f2f6377eec",
+      "lines": 54
+    },
+    {
+      "path": ".claude/skills/content-regen/SKILL.md",
+      "sha256": "b888a3fa35db20e709a0ab63384483a846a5c003e8a7c65435998669b6cc2073",
+      "lines": 38
+    },
+    {
+      "path": "docs/codex-prompts/audit-published-recap-event-integrity.md",
+      "sha256": "1298c418adef0c6bd9a96940dbfcc5c45d1b6d78a5159420f687d94abaa28ea4",
+      "lines": 43
+    },
+    {
+      "path": "docs/codex-prompts/fix-billing-terms-consistency.md",
+      "sha256": "69e1b1a6019fac0f5c783be7868fceaaafac1f4f0a381b0f8bb5f2aff9c6ae9c",
+      "lines": 41
+    },
+    {
+      "path": "docs/codex-prompts/fix-contaminated-events-display-isolation.md",
+      "sha256": "4311acc6d46f56f4fce305d003bc4990d5ad521d673a7dca3bd6e229e70c8cce",
+      "lines": 36
+    },
+    {
+      "path": "docs/codex-prompts/fix-competition-guide-participant-verification.md",
+      "sha256": "e2821b28811fa98b711c3ecd5abda4e47aecc38ec20761f8a19c306ca477030d",
+      "lines": 31
+    },
+    {
+      "path": "docs/codex-prompts/fix-stripe-webhook-db-error-propagation.md",
+      "sha256": "3a4a193e634596d8f8e761f3d9e90186b624e548472fc8bc97f9d1f94b40ea5d",
+      "lines": 47
+    },
+    {
+      "path": "docs/codex-prompts/fix-generation-event-integrity-gate.md",
+      "sha256": "95ccf0bd9094bbfba370b21a4abb0da6ffe21bd85f9e1e03d94e13f652adf7b9",
+      "lines": 43
+    },
+    {
+      "path": "docs/codex-prompts/fix-h2h-latest-vs-next-match.md",
+      "sha256": "e9183b8ebe141dedd1010c48ea5eae648a6f91dce1340a2930a87337809cbff1",
+      "lines": 45
+    },
+    {
+      "path": "docs/codex-prompts/fix-season-faq-broadcast-hardcoding.md",
+      "sha256": "c756cdb0b772d0677cf75a1c6fb221f488e79c5533f2a1a8725dd1023e8c932b",
+      "lines": 39
+    },
+    {
+      "path": "specs/fix-billing-terms-consistency.md",
+      "sha256": "3348b717cd3dc6a96692256b5721ca3516b1284f56cff90ab9f6829bcb1d53ac",
+      "lines": 78
+    },
+    {
+      "path": "specs/audit-published-recap-event-integrity.md",
+      "sha256": "3dafeaea23738d278d4837353abe4632e92da65534f4c84b71e32f8e4fe8f7ed",
+      "lines": 129
+    },
+    {
+      "path": "specs/fix-contaminated-events-display-isolation.md",
+      "sha256": "63ea51209ed7a738dc5ae3ca951b934a93eb93f0e7afda8b1f89ed73785d30a2",
+      "lines": 108
+    },
+    {
+      "path": "specs/fix-competition-guide-participant-verification.md",
+      "sha256": "1bbade963f6aa74097e487f92a59082b2c13458347c72e8b89a39276fb247cfd",
+      "lines": 82
+    },
+    {
+      "path": "specs/fix-stripe-webhook-db-error-propagation.md",
+      "sha256": "892420e4f83f7878a826737d1392450a4bfce2c3fe53d74f97403b78f68774d5",
+      "lines": 95
+    },
+    {
+      "path": "specs/fix-season-faq-broadcast-hardcoding.md",
+      "sha256": "5deb53822ec70884f34a31db310c46e9b51ac825836edea5ea1761068f5b8a12",
+      "lines": 70
+    },
+    {
+      "path": "specs/fix-generation-event-integrity-gate.md",
+      "sha256": "742b577fed6bf58e8f9bab3d4a5019f2d6d9024ece830e3429020e0630213fd6",
+      "lines": 93
+    },
+    {
+      "path": "specs/fix-h2h-latest-vs-next-match.md",
+      "sha256": "0ebe07ab27c9f1b54c08ff51f9e756c6a5ff8c2aa4cf7704797dee89eee4c69c",
+      "lines": 77
+    },
+    {
+      "path": "specs/fix-rwc2027-match-count-and-broadcast-claims.md",
+      "sha256": "6ae6ac4ef7a889a3b02dfdce1c5e41d793b572eec93fd2e0ba7d5b19279fe7bc",
+      "lines": 77
+    },
+    {
+      "path": "specs/fix-health-endpoint-status-and-llm-monitoring.md",
+      "sha256": "55c6d00c32fe8561ff750ce41615121a3dbcf8aa405381ad220289ee1061b0a6",
+      "lines": 94
+    },
+    {
+      "path": "specs/fix-event-ingestion-identity-guard.md",
+      "sha256": "a52ddcb4012ae8faf3c043838168ecb8fcbb98479c5edf332ad6014ef32299fb",
+      "lines": 133
+    },
+    {
+      "path": "docs/codex-prompts/fix-rwc2027-match-count-and-broadcast-claims.md",
+      "sha256": "32e5ebbd13bff168586a3f7bfa94a6168e812b9c2b60e6fc602bd4c884a2563a",
+      "lines": 31
+    },
+    {
+      "path": "docs/codex-prompts/fix-health-endpoint-status-and-llm-monitoring.md",
+      "sha256": "ba9f09ebd6862307589de2b3c134159ba582e5978290b95745e2da6298d11f42",
+      "lines": 43
+    },
+    {
+      "path": "docs/codex-prompts/fix-event-ingestion-identity-guard.md",
+      "sha256": "bfaa25e9c13a81f42f4ea44c0ae44163ecc624b8c7a672dd5725e9522782e931",
+      "lines": 45
+    }
+  ],
+  "quotations": [
+    {
+      "path": "specs/fix-event-ingestion-identity-guard.md",
+      "line": 60,
+      "text": "match_events: match_id, team_id, minute, type, player_name"
+    },
+    {
+      "path": "specs/fix-event-ingestion-identity-guard.md",
+      "line": 105,
+      "text": "**対称スコア（例: 24–24）では反転を V1 で検出できない。** この限界を既知として受け入れ、V4 の fixture 同一性で補う。"
+    },
+    {
+      "path": "specs/fix-event-ingestion-identity-guard.md",
+      "line": 121,
+      "text": "7. **正常系が壊れていないこと**: イベント合計が最終スコアと一致する試合、および `status` が `finished` でない（スコア未確定の）試合では、従来どおり書き込みが成功することを検証するテストがある"
+    },
+    {
+      "path": "specs/fix-event-ingestion-identity-guard.md",
+      "line": 127,
+      "text": "13. **本 spec の実装で、既存の `match_events` 行が 1 行も削除・更新されない**こと（差分に DELETE / UPDATE が現れない）"
+    },
+    {
+      "path": "specs/fix-event-ingestion-identity-guard.md",
+      "line": 31,
+      "text": "**11 経路のうちガードがあるのは 2 経路だけで、しかも判定基準が違う。** 汚染はガードの無い経路から入った。"
+    },
+    {
+      "path": "specs/fix-event-ingestion-identity-guard.md",
+      "line": 99,
+      "text": "V3 は署名列が 3 件以下の試合では偶然一致しうるため、**4 件以上のときのみ適用**する。3 件以下は V1 / V2 / V4 に委ねる。"
+    },
+    {
+      "path": "specs/fix-generation-event-integrity-gate.md",
+      "line": 38,
+      "text": "なし。書き込みは既存の `pipeline_runs` ログのみ。"
+    },
+    {
+      "path": "specs/fix-generation-event-integrity-gate.md",
+      "line": 89,
+      "text": "## 未解決の質問"
+    },
+    {
+      "path": "specs/fix-contaminated-events-display-isolation.md",
+      "line": 51,
+      "text": "`components/match-events-section.tsx` の描画条件を次のように変える。props は現状のまま（`finalHomeScore` / `finalAwayScore` を既に受け取っているため、**呼び出し側 `app/matches/[id]/page.tsx:458, 473, 501, 518` の 4 箇所は変更不要**）。"
+    },
+    {
+      "path": "specs/fix-contaminated-events-display-isolation.md",
+      "line": 104,
+      "text": "## 未解決の質問"
+    },
+    {
+      "path": "specs/audit-published-recap-event-integrity.md",
+      "line": 38,
+      "text": "match_content: match_id, content_type, status, prompt_version, created_at, updated_at"
+    },
+    {
+      "path": "specs/audit-published-recap-event-integrity.md",
+      "line": 96,
+      "text": "| `confirmed` | C4 に該当（対戦カード一致・署名一致・帰属全件反転）。第2戦と同型 |"
+    },
+    {
+      "path": "specs/audit-published-recap-event-integrity.md",
+      "line": 108,
+      "text": "**読み取り専用なので `--confirm-owner-approved` は不要**（LLM コストが発生しないため。`audit-entity-grounding.ts` がフラグを要求するのは LLM 課金があるから）。実行開始時に対象件数を表示する。"
+    },
+    {
+      "path": "specs/audit-published-recap-event-integrity.md",
+      "line": 125,
+      "text": "## 未解決の質問"
+    },
+    {
+      "path": "specs/fix-rwc2027-match-count-and-broadcast-claims.md",
+      "line": 64,
+      "text": "2. 同ページに大会全体が 52 試合であることと、Tryline の収録件数が別々に表示され、**どちらも同じ数字として提示されていない**"
+    },
+    {
+      "path": "specs/fix-rwc2027-match-count-and-broadcast-claims.md",
+      "line": 73,
+      "text": "## 未解決の質問"
+    },
+    {
+      "path": "specs/fix-season-faq-broadcast-hardcoding.md",
+      "line": 66,
+      "text": "## 未解決の質問"
+    },
+    {
+      "path": "specs/fix-season-faq-broadcast-hardcoding.md",
+      "line": 11,
+      "text": "これは `seasonFaqs` に入り、**FAQPage の JSON-LD として全大会・全シーズンに出力される**。検索結果のリッチリザルトにも載りうる。"
+    },
+    {
+      "path": "specs/fix-competition-guide-participant-verification.md",
+      "line": 35,
+      "text": "competition_guides（または大会ガイドを保持する既存テーブル）: competition_id / family, body, status"
+    },
+    {
+      "path": "specs/fix-competition-guide-participant-verification.md",
+      "line": 78,
+      "text": "## 未解決の質問"
+    },
+    {
+      "path": "specs/fix-stripe-webhook-db-error-propagation.md",
+      "line": 37,
+      "text": "- 冪等性キーの新設・イベント重複排除の仕組み（**upsert は既に冪等**。再送で壊れない）"
+    },
+    {
+      "path": "specs/fix-stripe-webhook-db-error-propagation.md",
+      "line": 72,
+      "text": "1. `console.error` に `event.id` / `event.type` / `userId` / エラー内容を出す"
+    },
+    {
+      "path": "specs/fix-stripe-webhook-db-error-propagation.md",
+      "line": 58,
+      "text": "**`userId` 欠落で 5xx を返してはならない。** メタデータが無いイベントは何度再送されても成立せず、Stripe の再送上限まで無駄に叩き続けることになる。通知して 200 で受け切る。"
+    },
+    {
+      "path": "specs/fix-billing-terms-consistency.md",
+      "line": 13,
+      "text": "特商法表記は法定の開示であり、**販売ページと食い違っていること自体が問題**。どちらが実際の Stripe の設定と一致しているかは、コードからは判定できない。"
+    },
+    {
+      "path": "specs/fix-billing-terms-consistency.md",
+      "line": 73,
+      "text": "**Stripe の本番 Product / Price に無料トライアルが設定されているか。設定されている場合は日数。**"
+    },
+    {
+      "path": "specs/fix-billing-terms-consistency.md",
+      "line": 52,
+      "text": "**各ページで文言を直書きしないこと。** 現在の矛盾は直書きが 2 箇所にあることから生じている。"
+    },
+    {
+      "path": "specs/fix-health-endpoint-status-and-llm-monitoring.md",
+      "line": 39,
+      "text": "なし。最終生成成功時刻は既存の `pipeline_runs` から読む。"
+    },
+    {
+      "path": "specs/fix-health-endpoint-status-and-llm-monitoring.md",
+      "line": 94,
+      "text": "**`checks.generation` の閾値の初期値**は、既存 cron の実行間隔から導く。`cron-live-pipeline` は 1 日 4 回（`0 0,6,12,18 * * *`）なので、**48 時間**を初期値とする。閑散期（8月等）に誤検知しうるが、`fix-retire-news-link-pipeline` で通知の総量が下がっているため、誤検知 1 件は埋もれない。運用して調整する前提で定数にしておく。"
+    },
+    {
+      "path": "specs/fix-health-endpoint-status-and-llm-monitoring.md",
+      "line": 57,
+      "text": "HTTP ステータスコードは **`ok` / `degraded` で 200、`error` で 503** とする。"
+    },
+    {
+      "path": "specs/fix-h2h-latest-vs-next-match.md",
+      "line": 50,
+      "text": "| 次回対戦 | `status` が `finished` でない試合のうち、キックオフが最も近いもの |"
+    },
+    {
+      "path": "specs/fix-h2h-latest-vs-next-match.md",
+      "line": 52,
+      "text": "**「直近の対戦」と「最新の対戦」は同じものを指している。** 現状は前者が未来、後者が過去を指すため別物に見えているだけで、正しく直すと重複する。**片方に統合し、ラベルを 1 つにする。**"
+    },
+    {
+      "path": ".claude/skills/backlink-outreach/SKILL.md",
+      "line": 12,
+      "text": "1. **自前チャネルからのリンク**: note 記事→Tryline の内部リンク（既に機能中。`note-weekly` スキルの送客3点セット）、X bio・note プロフィールの URL 確認"
+    },
+    {
+      "path": ".claude/skills/biz-strategy/SKILL.md",
+      "line": 14,
+      "text": "- **現状**: 実ユーザーほぼゼロ（GA4 約4〜5セッション/日）。ボトルネックは製品ではなく**発見（distribution）**"
+    },
+    {
+      "path": ".claude/skills/codex-handoff/SKILL.md",
+      "line": 27,
+      "text": "- 受け入れ条件に対するテストを書く（`tests/` 配下の既存構成に倣う）"
+    },
+    {
+      "path": ".claude/skills/codex-review/SKILL.md",
+      "line": 15,
+      "text": "4. **テスト・品質確認**: 受け入れ条件に対するテストがあるか。`pnpm lint` / `pnpm tsc --noEmit` / `pnpm test` / `pnpm build` の結果（自分で実行するか、Owner/CI の出力）を確認。"
+    },
+    {
+      "path": ".claude/skills/competitor-watch/SKILL.md",
+      "line": 32,
+      "text": "- WebFetch で対象サイトの公開ページを見る（ログイン・課金が必要な領域は Owner に確認）"
+    },
+    {
+      "path": ".claude/skills/content-plan/SKILL.md",
+      "line": 19,
+      "text": "- 大会ガイド（`competitions` テーブルの guide、`feat-competition-guides.md`）— 全大会に概要・見どころ・視聴方法あり"
+    },
+    {
+      "path": ".claude/skills/content-qa/SKILL.md",
+      "line": 26,
+      "text": "   - 結果は `allowedEntityCount` で層別すること: **0件＝ほぼ確実に本物の捏造**（最優先で確認）。**1件以上＝実データはある状態での違反**で、チーム名・大会名の誤検出（照合精度の偽陽性）や、事件性の低い言及の可能性も高いため個別に本文を読んで判断する"
+    },
+    {
+      "path": ".claude/skills/content-regen/SKILL.md",
+      "line": 20,
+      "text": "3. **全件実行**: 検品 OK 後にのみ全件。実行後、published 件数が減っていないか SQL で確認する。"
+    },
+    {
+      "path": ".claude/skills/decision-log/SKILL.md",
+      "line": 40,
+      "text": "- メモリ（`~/.claude` 配下）は Claude 個人の作業記憶、decisions.md はプロジェクトの公式記録。**Owner・Codex も読む判断は必ず decisions.md 側に**"
+    },
+    {
+      "path": ".claude/skills/discord-ops/SKILL.md",
+      "line": 12,
+      "text": "- **自動通知**: recap 公開時の通知は `app/api/cron/notify-discord` が担う（X 自動投稿を停止した際にこちらへ一本化。`specs/fix-disable-x-auto-post.md`）。この cron の挙動変更は spec 経由で Codex へ"
+    },
+    {
+      "path": ".claude/skills/funnel-audit/SKILL.md",
+      "line": 17,
+      "text": "| 4 | pricing → トライアル開始 | Stripe Checkout 遷移、`checkout-success-tracker.tsx` が成功時イベント送信 |"
+    },
+    {
+      "path": ".claude/skills/growth-analysis/SKILL.md",
+      "line": 29,
+      "text": "- **チャネル戦略**: SEO（大会ハブ集中）+ X 運用（毎日10分 reply + データ画像）+ note（週次まとめ + 月1エバーグリーン。note 8 > X 3 セッション/28日で唯一機能している referral）。海外リーグの英語化はやらない"
+    },
+    {
+      "path": ".claude/skills/hub-audit/SKILL.md",
+      "line": 8,
+      "text": "検索の着地点・回遊の起点である大会ハブページを、**大会開幕の3〜4週間前**に監査する。根拠: GSC 実測で流入が発生しているのは大会ページのみ（平均順位10.4位・PNC 2026 でクリック発生。`docs/marketing-strategy-2026-07-06.md` §2・§4）。検索需要は「いま試合がある大会」に発生するため、開幕前の整備が最も費用対効果が高い。"
+    },
+    {
+      "path": ".claude/skills/incident-postmortem/SKILL.md",
+      "line": 22,
+      "text": "2. **タイムライン**: 混入 → 検知 → 復旧の各時点。検知が遅れた理由も"
+    },
+    {
+      "path": ".claude/skills/note-weekly/SKILL.md",
+      "line": 59,
+      "text": "### C. 月1エバーグリーン／独自データ企画（交互に実施）"
+    },
+    {
+      "path": ".claude/skills/pr-merge/SKILL.md",
+      "line": 23,
+      "text": "gh pr merge <番号> --merge --delete-branch"
+    },
+    {
+      "path": ".claude/skills/prod-investigation/SKILL.md",
+      "line": 28,
+      "text": "- **URC / SRP**: 2026-06 時点では events が薄い既知ギャップがあったが、`specs/feat-urc-srp-match-events.md` 等のPRで解消済み（2026-07-13実測: URC 145/157件・SRP 160/166件の終了試合でevents保有、いずれも9割超）。現役の注意点はイベント汚染（`specs/fix-contaminated-match-events.md`）とURCノックアウトラウンドの取りこぼし"
+    },
+    {
+      "path": ".claude/skills/rugby-news/SKILL.md",
+      "line": 12,
+      "text": "1. **一次情報を優先**: 大会公式（premiershiprugby.com、sixnationsrugby.com、super.rugby 等）、クラブ公式、World Rugby。二次（RugbyPass、BBC Sport 等）は補助"
+    },
+    {
+      "path": ".claude/skills/rwc2027/SKILL.md",
+      "line": 18,
+      "text": "2. **note 連載「RWC2027への道」**（月1本、執筆規約は `note-weekly` に従う）:"
+    },
+    {
+      "path": ".claude/skills/site-audit/SKILL.md",
+      "line": 12,
+      "text": "- viewport: desktop 1440x900 / mobile 375x812"
+    },
+    {
+      "path": ".claude/skills/spec-writing/SKILL.md",
+      "line": 27,
+      "text": "- [ ] specで参照するファイルパス・関数名・コマンドは、実際に存在するか `grep`/`ls` 等で確認してから書く（存在しない参照は Codex の実装を誤らせる）"
+    },
+    {
+      "path": ".claude/skills/today/SKILL.md",
+      "line": 28,
+      "text": "| 金 | routine「週末ニュースダイジェスト」（金曜 18:00 JST 発火）の `draft:` PR を検品（出典・確度ラベル必須） | ダイジェストをマージするか / reply ネタとして採用するか |"
+    },
+    {
+      "path": ".claude/skills/weekly-ops/SKILL.md",
+      "line": 13,
+      "text": "- [ ] 今週の note を判定する: **日本代表戦がある週 → A**（試合翌朝の深掘り。B は休止）/ **ない週 → B**（テーマ型、2〜3試合に絞る。テーマが立たない週は公開なしでよい）/ **月1回 → C**（エバーグリーン・独自企画、別枠最大3h。月初の /today が拾う）"
+    },
+    {
+      "path": ".claude/skills/x-post/SKILL.md",
+      "line": 71,
+      "text": "- **元が記事 URL だけなら本文完結**にし、URL は 1st reply に置く（本文にリンクを入れると露出が落ちる。@rugbykuronekoya が本文に URL を貼れるのはフォロワー15,930で露出が自力で足りるため。Tryline は露出がボトルネックなので同じ形は取れない）"
+    },
+    {
+      "path": ".claude/skills/x-reply/SKILL.md",
+      "line": 21,
+      "text": "   - 該当試合の得点経過（`match_events`）"
+    },
+    {
+      "path": ".claude/skills/today/SKILL.md",
+      "line": 32,
+      "text": "| 月初（当月最初の月曜） | `rwc2027` の月次チェック（RWC 系クエリ順位・note 連載進捗）＋ note エバーグリーン今月分のテーマ候補（`docs/marketing-strategy-2026-07-06.md` §7.2 のタイトル案から） | RWC 施策を進めるか / 今月のエバーグリーンを書くか |"
+    },
+    {
+      "path": ".claude/skills/note-weekly/SKILL.md",
+      "line": 32,
+      "text": "C（月1エバーグリーン）は時間的切迫が無いため、この即時ブリーフは必須としない（従来通りテーマ確認から始めてよい）。"
+    },
+    {
+      "path": ".claude/skills/note-weekly/SKILL.md",
+      "line": 123,
+      "text": "2. note 公開直後、親投稿への返信で「記事で新たに分かったこと＋URL」を投稿"
+    },
+    {
+      "path": ".claude/skills/note-weekly/SKILL.md",
+      "line": 156,
+      "text": "- C（月次）: 直近5本の C の **30日ビュー中央値の2倍**（C が5本未満の間は全記事の30日中央値で代用）、または UTM referral **3件以上**"
+    },
+    {
+      "path": ".claude/skills/x-post/SKILL.md",
+      "line": 92,
+      "text": "金曜プレビュー投稿（型2、H2H→キーマッチアップ→勝敗予想の3連ツリー）で立てた予想は、次の月曜まとめ投稿（型1 or 6）で必ず答え合わせをする。「金曜に予想した◯試合中◯試合的中」のように的中率を一言添える。的中率の積み上げが「続きものとして追う理由」を作り、フォローの動機になる。数字は実際の予想内容と結果から算出したものだけを使う（水増し・後付け解釈禁止）。"
+    },
+    {
+      "path": ".claude/skills/x-post/SKILL.md",
+      "line": 10,
+      "text": "## X の位置づけ（2026-08-28 実測で確定）"
+    },
+    {
+      "path": ".claude/skills/content-qa/SKILL.md",
+      "line": 25,
+      "text": "1. **人名捏造は全件機械監査が可能**（他の観点と違いサンプリング不要）: `node --env-file=.env.production.local tools/run-ts.cjs tools/audit-entity-grounding.ts --confirm-owner-approved`。公開済み全件を照合し `tmp/entity-audit/entity-grounding-audit-*.json` にレポート出力（件数・コスト見積もりは実行時にログ出力されるので、固定値を書き写さずそちらを見る。`tmp/` 配下は `.gitignore` 対象なので本番由来レポートが誤ってコミットされる心配はない）"
+    },
+    {
+      "path": ".claude/skills/hub-audit/SKILL.md",
+      "line": 21,
+      "text": "## 理想形チェックリスト（1ハブにつき）"
+    }
+  ]
+}

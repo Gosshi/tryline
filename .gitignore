@@ -69,3 +69,9 @@ tsconfig.tsbuildinfo
 
 # Codex の作業用ワークツリー（独立した git リポジトリ）
 .codex-work-*/
+
+# MCP のプロジェクト設定（端末ごとに異なるため共有しない）
+.mcp.json
+
+# 監査時のスクリーンショット（再取得可能・容量が大きい）
+docs/site-audit-screenshots/

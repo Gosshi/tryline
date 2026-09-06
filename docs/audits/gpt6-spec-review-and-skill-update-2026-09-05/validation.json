@@ -1,0 +1,358 @@
+{
+  "review_date": "2026-09-05",
+  "spec_reviews": 11,
+  "perspectives_per_spec": {
+    "1": 10,
+    "2": 10,
+    "3": 10,
+    "4": 10,
+    "5": 10,
+    "6": 10,
+    "7": 10,
+    "8": 10,
+    "9": 10,
+    "10": 10,
+    "11": 10
+  },
+  "existing_skill_rows": 26,
+  "proposed_skill_files": 30,
+  "new_skills": [
+    "billing-monitor",
+    "bing-webmaster-analysis",
+    "email-delivery-qa",
+    "performance-rum",
+    "production-data-integrity"
+  ],
+  "agent_files": 3,
+  "quick_validate": [
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/backlink-outreach/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/billing-monitor/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/bing-webmaster-analysis/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/biz-strategy/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/codex-handoff/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/codex-review/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/competitor-watch/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/content-plan/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/content-qa/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/content-regen/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/decision-log/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/discord-ops/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/email-delivery-qa/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/funnel-audit/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/growth-analysis/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/hub-audit/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/image-gen/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/incident-postmortem/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/note-weekly/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/performance-rum/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/pr-merge/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/prod-investigation/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/production-data-integrity/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/rugby-news/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/rwc2027/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/site-audit/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/spec-writing/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/today/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/x-post/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/x-reply/SKILL.md",
+      "ok": true,
+      "message": "Skill is valid!"
+    }
+  ],
+  "frontmatter": [
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/backlink-outreach/SKILL.md",
+      "name": "backlink-outreach",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/billing-monitor/SKILL.md",
+      "name": "billing-monitor",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/bing-webmaster-analysis/SKILL.md",
+      "name": "bing-webmaster-analysis",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/biz-strategy/SKILL.md",
+      "name": "biz-strategy",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/codex-handoff/SKILL.md",
+      "name": "codex-handoff",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/codex-review/SKILL.md",
+      "name": "codex-review",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/competitor-watch/SKILL.md",
+      "name": "competitor-watch",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/content-plan/SKILL.md",
+      "name": "content-plan",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/content-qa/SKILL.md",
+      "name": "content-qa",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/content-regen/SKILL.md",
+      "name": "content-regen",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/decision-log/SKILL.md",
+      "name": "decision-log",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/discord-ops/SKILL.md",
+      "name": "discord-ops",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/email-delivery-qa/SKILL.md",
+      "name": "email-delivery-qa",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/funnel-audit/SKILL.md",
+      "name": "funnel-audit",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/growth-analysis/SKILL.md",
+      "name": "growth-analysis",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/hub-audit/SKILL.md",
+      "name": "hub-audit",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/image-gen/SKILL.md",
+      "name": "image-gen",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/incident-postmortem/SKILL.md",
+      "name": "incident-postmortem",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/note-weekly/SKILL.md",
+      "name": "note-weekly",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/performance-rum/SKILL.md",
+      "name": "performance-rum",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/pr-merge/SKILL.md",
+      "name": "pr-merge",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/prod-investigation/SKILL.md",
+      "name": "prod-investigation",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/production-data-integrity/SKILL.md",
+      "name": "production-data-integrity",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/rugby-news/SKILL.md",
+      "name": "rugby-news",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/rwc2027/SKILL.md",
+      "name": "rwc2027",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/site-audit/SKILL.md",
+      "name": "site-audit",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/spec-writing/SKILL.md",
+      "name": "spec-writing",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/today/SKILL.md",
+      "name": "today",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/x-post/SKILL.md",
+      "name": "x-post",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/skills/x-reply/SKILL.md",
+      "name": "x-reply",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/agents/tryline-site-auditor.md",
+      "name": "tryline-site-auditor",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/agents/tryline-spec-checker.md",
+      "name": "tryline-spec-checker",
+      "ok": true
+    },
+    {
+      "path": "docs/audits/gpt6-spec-review-and-skill-update-2026-09-05/proposed/.claude/agents/tryline-web-researcher.md",
+      "name": "tryline-web-researcher",
+      "ok": true
+    }
+  ],
+  "quoted_lines_checked": 64,
+  "quotes_match_source": true,
+  "source_files_checked": 51,
+  "sources_unchanged": true,
+  "image_gen_byte_identical": true,
+  "broken_links": [],
+  "bundle_matches_individual_files": true,
+  "tracked_worktree_diff": [],
+  "application_tests_run": false,
+  "agent_behavior_tests_run": false,
+  "live_services_mutated": false,
+  "all_static_checks_passed": true
+}

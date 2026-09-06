@@ -1,0 +1,1485 @@
+{
+  "scanned_spec_files": 495,
+  "method": "literal target path/string search; candidates are not all substantive conflicts",
+  "matches": {
+    "lib/ingestion/events.ts": [
+      {
+        "path": "specs/feat-backfill-reparse-existing-urc-events.md",
+        "lines": [
+          24
+        ]
+      },
+      {
+        "path": "specs/feat-league-one-playoff-events.md",
+        "lines": [
+          116
+        ]
+      },
+      {
+        "path": "specs/feat-league-one-substitutions-cards.md",
+        "lines": [
+          24,
+          51
+        ]
+      },
+      {
+        "path": "specs/feat-nations-championship-event-source.md",
+        "lines": [
+          17
+        ]
+      },
+      {
+        "path": "specs/fix-contaminated-match-events.md",
+        "lines": [
+          19,
+          31,
+          122
+        ]
+      },
+      {
+        "path": "specs/fix-event-ingestion-identity-guard.md",
+        "lines": [
+          18,
+          20,
+          24,
+          42,
+          84
+        ]
+      },
+      {
+        "path": "specs/fix-live-ingest-event-key-collision.md",
+        "lines": [
+          72,
+          103
+        ]
+      },
+      {
+        "path": "specs/fix-nations-championship-event-contamination.md",
+        "lines": [
+          76
+        ]
+      },
+      {
+        "path": "specs/p1-match-events-ingestion.md",
+        "lines": [
+          11,
+          103
+        ]
+      }
+    ],
+    "lib/llm/stages/assemble.ts": [
+      {
+        "path": "specs/feat-calendar-week-board.md",
+        "lines": [
+          59
+        ]
+      },
+      {
+        "path": "specs/feat-data-integrity-weekly-audit.md",
+        "lines": [
+          19
+        ]
+      },
+      {
+        "path": "specs/feat-derive-team-stats-from-sourced-facts.md",
+        "lines": [
+          14,
+          33,
+          78
+        ]
+      },
+      {
+        "path": "specs/feat-derived-match-stats.md",
+        "lines": [
+          18,
+          138
+        ]
+      },
+      {
+        "path": "specs/feat-improve-recap-prompt.md",
+        "lines": [
+          18,
+          60,
+          331
+        ]
+      },
+      {
+        "path": "specs/feat-japanese-player-kanji-names.md",
+        "lines": [
+          10,
+          19
+        ]
+      },
+      {
+        "path": "specs/feat-preview-player-kanji-glossary.md",
+        "lines": [
+          11,
+          73
+        ]
+      },
+      {
+        "path": "specs/feat-top14-team-stats.md",
+        "lines": [
+          34,
+          100
+        ]
+      },
+      {
+        "path": "specs/feat-web-sourced-facts.md",
+        "lines": [
+          15
+        ]
+      },
+      {
+        "path": "specs/fix-contaminated-events-display-isolation.md",
+        "lines": [
+          77
+        ]
+      },
+      {
+        "path": "specs/fix-derived-stats-event-integrity-gate.md",
+        "lines": [
+          15,
+          24
+        ]
+      },
+      {
+        "path": "specs/fix-event-ingestion-identity-guard.md",
+        "lines": [
+          26,
+          80,
+          97
+        ]
+      },
+      {
+        "path": "specs/fix-generation-event-integrity-gate.md",
+        "lines": [
+          11,
+          23,
+          56
+        ]
+      },
+      {
+        "path": "specs/fix-league-one-playoff-stage-labeling.md",
+        "lines": [
+          11
+        ]
+      },
+      {
+        "path": "specs/fix-narrative-kickoff-date-utc-leak.md",
+        "lines": [
+          21,
+          87
+        ]
+      },
+      {
+        "path": "specs/fix-nations-championship-event-contamination.md",
+        "lines": [
+          72
+        ]
+      },
+      {
+        "path": "specs/fix-penalty-try-scoring.md",
+        "lines": [
+          5,
+          20
+        ]
+      },
+      {
+        "path": "specs/fix-player-name-ja-coverage.md",
+        "lines": [
+          38
+        ]
+      },
+      {
+        "path": "specs/fix-projected-lineup-fallback-fabrication.md",
+        "lines": [
+          7,
+          21
+        ]
+      },
+      {
+        "path": "specs/fix-qa-form-stats-individual-results.md",
+        "lines": [
+          103
+        ]
+      },
+      {
+        "path": "specs/fix-qa-win-rate-false-positive.md",
+        "lines": [
+          7
+        ]
+      },
+      {
+        "path": "specs/fix-recap-hardcoded-playoff-framing.md",
+        "lines": [
+          9
+        ]
+      },
+      {
+        "path": "specs/fix-recap-score-progression-snapshots.md",
+        "lines": [
+          55,
+          73
+        ]
+      },
+      {
+        "path": "specs/fix-score-event-integrity-check.md",
+        "lines": [
+          7,
+          12,
+          38
+        ]
+      },
+      {
+        "path": "specs/p1-competition-standings.md",
+        "lines": [
+          14,
+          146
+        ]
+      },
+      {
+        "path": "specs/p1-content-pipeline.md",
+        "lines": [
+          88
+        ]
+      },
+      {
+        "path": "specs/p1-historical-results-backfill-2020-2024.md",
+        "lines": [
+          15
+        ]
+      },
+      {
+        "path": "specs/p1-historical-results-backfill.md",
+        "lines": [
+          19
+        ]
+      },
+      {
+        "path": "specs/p1-match-events-ingestion.md",
+        "lines": [
+          13,
+          136
+        ]
+      },
+      {
+        "path": "specs/p1-squad-ingestion.md",
+        "lines": [
+          5,
+          23
+        ]
+      }
+    ],
+    "lib/llm/pipeline.ts": [
+      {
+        "path": "specs/feat-derived-match-stats.md",
+        "lines": [
+          21,
+          201
+        ]
+      },
+      {
+        "path": "specs/feat-entity-grounding-gate.md",
+        "lines": [
+          20
+        ]
+      },
+      {
+        "path": "specs/feat-improve-recap-prompt.md",
+        "lines": [
+          22,
+          302,
+          331
+        ]
+      },
+      {
+        "path": "specs/feat-indexnow-hub-expansion.md",
+        "lines": [
+          7,
+          51
+        ]
+      },
+      {
+        "path": "specs/feat-indexnow-recap.md",
+        "lines": [
+          19,
+          92
+        ]
+      },
+      {
+        "path": "specs/feat-league-one-playoff-events.md",
+        "lines": [
+          7,
+          138
+        ]
+      },
+      {
+        "path": "specs/feat-lipovitan-match-events-live.md",
+        "lines": [
+          7
+        ]
+      },
+      {
+        "path": "specs/feat-migrate-to-gpt-5-6.md",
+        "lines": [
+          30,
+          31
+        ]
+      },
+      {
+        "path": "specs/feat-news-digest-import-preview-regeneration.md",
+        "lines": [
+          20
+        ]
+      },
+      {
+        "path": "specs/feat-style-guard-shadow-mode.md",
+        "lines": [
+          7
+        ]
+      },
+      {
+        "path": "specs/feat-tuesday-recap-refresh.md",
+        "lines": [
+          30,
+          119,
+          129,
+          150
+        ]
+      },
+      {
+        "path": "specs/feat-urc-srp-match-events.md",
+        "lines": [
+          29
+        ]
+      },
+      {
+        "path": "specs/fix-content-pipeline-revalidate-outside-request.md",
+        "lines": [
+          11,
+          32
+        ]
+      },
+      {
+        "path": "specs/fix-factual-grounding-over-length.md",
+        "lines": [
+          30
+        ]
+      },
+      {
+        "path": "specs/fix-generation-event-integrity-gate.md",
+        "lines": [
+          9,
+          22,
+          64
+        ]
+      },
+      {
+        "path": "specs/fix-ja-content-length-enforcement.md",
+        "lines": [
+          29
+        ]
+      },
+      {
+        "path": "specs/fix-live-ingest-event-key-collision.md",
+        "lines": [
+          11,
+          104
+        ]
+      },
+      {
+        "path": "specs/fix-narrative-code-fence-stripping.md",
+        "lines": [
+          41
+        ]
+      },
+      {
+        "path": "specs/fix-nations-championship-event-contamination.md",
+        "lines": [
+          5,
+          27,
+          39,
+          72,
+          108
+        ]
+      },
+      {
+        "path": "specs/fix-pipeline-language-column.md",
+        "lines": [
+          5,
+          33,
+          80
+        ]
+      },
+      {
+        "path": "specs/fix-projected-lineup-fallback-fabrication.md",
+        "lines": [
+          22,
+          48
+        ]
+      },
+      {
+        "path": "specs/fix-prompt-additional-signals-comment.md",
+        "lines": [
+          5,
+          20,
+          40
+        ]
+      },
+      {
+        "path": "specs/fix-qa-factual-grounding.md",
+        "lines": [
+          61
+        ]
+      },
+      {
+        "path": "specs/fix-qa-form-stats-individual-results.md",
+        "lines": [
+          80,
+          120,
+          148
+        ]
+      },
+      {
+        "path": "specs/fix-qa-gate-density.md",
+        "lines": [
+          17,
+          68
+        ]
+      },
+      {
+        "path": "specs/fix-qa-guard-sourced-facts-lineup-mismatch.md",
+        "lines": [
+          29,
+          67,
+          135
+        ]
+      },
+      {
+        "path": "specs/fix-qa-lineups-and-events-grounding.md",
+        "lines": [
+          154
+        ]
+      },
+      {
+        "path": "specs/fix-qa-prompt-missing-form-and-match-metadata.md",
+        "lines": [
+          74,
+          120,
+          138
+        ]
+      },
+      {
+        "path": "specs/fix-qa-win-rate-false-positive.md",
+        "lines": [
+          16
+        ]
+      },
+      {
+        "path": "specs/fix-recap-winner-attribution-consistency.md",
+        "lines": [
+          28,
+          40
+        ]
+      },
+      {
+        "path": "specs/fix-regen-reject-preserves-published.md",
+        "lines": [
+          9,
+          16
+        ]
+      },
+      {
+        "path": "specs/fix-score-event-integrity-check.md",
+        "lines": [
+          13,
+          54
+        ]
+      },
+      {
+        "path": "specs/fix-verify-entities-team-name-false-positive.md",
+        "lines": [
+          19
+        ]
+      },
+      {
+        "path": "specs/p1-content-pipeline.md",
+        "lines": [
+          183
+        ]
+      },
+      {
+        "path": "specs/p1-observability.md",
+        "lines": [
+          13,
+          90
+        ]
+      },
+      {
+        "path": "specs/p3-recap-require-events.md",
+        "lines": [
+          14
+        ]
+      }
+    ],
+    "lib/data-integrity/audit.ts": [
+      {
+        "path": "specs/audit-published-recap-event-integrity.md",
+        "lines": [
+          11,
+          27,
+          73
+        ]
+      },
+      {
+        "path": "specs/fix-contaminated-events-display-isolation.md",
+        "lines": [
+          79
+        ]
+      },
+      {
+        "path": "specs/fix-event-ingestion-identity-guard.md",
+        "lines": [
+          35,
+          80
+        ]
+      },
+      {
+        "path": "specs/fix-health-endpoint-status-and-llm-monitoring.md",
+        "lines": [
+          33
+        ]
+      }
+    ],
+    "lib/llm/notify.ts": [
+      {
+        "path": "specs/audit-published-recap-event-integrity.md",
+        "lines": [
+          11,
+          27
+        ]
+      },
+      {
+        "path": "specs/feat-broadcast-auto-ingest.md",
+        "lines": [
+          153
+        ]
+      },
+      {
+        "path": "specs/feat-content-notification-diagnostics.md",
+        "lines": [
+          27,
+          82
+        ]
+      },
+      {
+        "path": "specs/feat-data-integrity-weekly-audit.md",
+        "lines": [
+          12,
+          53
+        ]
+      },
+      {
+        "path": "specs/feat-news-link-digest.md",
+        "lines": [
+          128
+        ]
+      },
+      {
+        "path": "specs/feat-prekickoff-readiness-audit.md",
+        "lines": [
+          62
+        ]
+      },
+      {
+        "path": "specs/fix-event-ingestion-identity-guard.md",
+        "lines": [
+          35,
+          111
+        ]
+      },
+      {
+        "path": "specs/fix-generation-event-integrity-gate.md",
+        "lines": [
+          72
+        ]
+      },
+      {
+        "path": "specs/fix-ops-notifications-discord.md",
+        "lines": [
+          5,
+          32,
+          40,
+          61,
+          80,
+          95
+        ]
+      },
+      {
+        "path": "specs/fix-retire-news-link-pipeline.md",
+        "lines": [
+          50,
+          77,
+          116
+        ]
+      },
+      {
+        "path": "specs/fix-stripe-webhook-db-error-propagation.md",
+        "lines": [
+          73
+        ]
+      },
+      {
+        "path": "specs/p1-observability.md",
+        "lines": [
+          7,
+          12,
+          40,
+          134
+        ]
+      }
+    ],
+    "components/match-events-section.tsx": [
+      {
+        "path": "specs/feat-match-page-redesign.md",
+        "lines": [
+          20
+        ]
+      },
+      {
+        "path": "specs/feat-match-scorer-player-links.md",
+        "lines": [
+          5,
+          15,
+          32
+        ]
+      },
+      {
+        "path": "specs/feat-mobile-score-progression-graph.md",
+        "lines": [
+          7
+        ]
+      },
+      {
+        "path": "specs/fix-contaminated-events-display-isolation.md",
+        "lines": [
+          7,
+          16,
+          51,
+          81
+        ]
+      },
+      {
+        "path": "specs/fix-design-md-brand-realignment.md",
+        "lines": [
+          49
+        ]
+      },
+      {
+        "path": "specs/fix-design-tokens-spacing-density-and-naming.md",
+        "lines": [
+          63,
+          74,
+          171
+        ]
+      },
+      {
+        "path": "specs/fix-nations-championship-event-contamination.md",
+        "lines": [
+          24
+        ]
+      },
+      {
+        "path": "specs/p7-english-sublabel-remove.md",
+        "lines": [
+          9,
+          16,
+          37
+        ]
+      }
+    ],
+    "app/api/v1/matches/[id]/route.ts": [
+      {
+        "path": "specs/feat-favorite-team-next-match-api.md",
+        "lines": [
+          7,
+          14,
+          34
+        ]
+      },
+      {
+        "path": "specs/feat-mobile-match-detail-related-news.md",
+        "lines": [
+          14,
+          30
+        ]
+      },
+      {
+        "path": "specs/feat-mobile-recap-next-read-links.md",
+        "lines": [
+          36
+        ]
+      },
+      {
+        "path": "specs/fix-contaminated-events-display-isolation.md",
+        "lines": [
+          17,
+          85
+        ]
+      }
+    ],
+    "app/c/rwc/2027/page.tsx": [
+      {
+        "path": "specs/feat-competition-hub-visual-differentiation.md",
+        "lines": [
+          43
+        ]
+      },
+      {
+        "path": "specs/feat-paper-texture-background.md",
+        "lines": [
+          28
+        ]
+      },
+      {
+        "path": "specs/feat-rwc2027-hub-seo-enhancement.md",
+        "lines": [
+          7,
+          18,
+          44
+        ]
+      },
+      {
+        "path": "specs/feat-seo-competition-indexing.md",
+        "lines": [
+          16,
+          23,
+          43,
+          54
+        ]
+      },
+      {
+        "path": "specs/fix-hub-preseason-standings-and-round-filter.md",
+        "lines": [
+          52,
+          110,
+          143,
+          159
+        ]
+      },
+      {
+        "path": "specs/fix-hub-schedule-server-rendering.md",
+        "lines": [
+          65,
+          169,
+          171
+        ]
+      },
+      {
+        "path": "specs/fix-mobile-rwc2027-banner-hub-url.md",
+        "lines": [
+          7
+        ]
+      },
+      {
+        "path": "specs/fix-rwc2027-hub-page-gate.md",
+        "lines": [
+          17,
+          38
+        ]
+      },
+      {
+        "path": "specs/fix-rwc2027-hub-route-shadowed.md",
+        "lines": [
+          5,
+          47,
+          91,
+          94,
+          120,
+          132,
+          180
+        ]
+      },
+      {
+        "path": "specs/fix-rwc2027-match-count-and-broadcast-claims.md",
+        "lines": [
+          9,
+          25
+        ]
+      },
+      {
+        "path": "specs/fix-rwc2027-pre-tournament-pools.md",
+        "lines": [
+          11,
+          31,
+          93
+        ]
+      },
+      {
+        "path": "specs/p3-rwc-2027-prep.md",
+        "lines": [
+          18,
+          95,
+          98
+        ]
+      }
+    ],
+    "app/c/[competition]/[season]/page.tsx": [
+      {
+        "path": "specs/feat-calendar-internal-linking.md",
+        "lines": [
+          18,
+          48,
+          58
+        ]
+      },
+      {
+        "path": "specs/feat-competition-hub-post-tournament-navigation.md",
+        "lines": [
+          7
+        ]
+      },
+      {
+        "path": "specs/feat-competition-hub-state-based-title.md",
+        "lines": [
+          7
+        ]
+      },
+      {
+        "path": "specs/feat-competition-hub-visual-differentiation.md",
+        "lines": [
+          13,
+          33,
+          74,
+          124
+        ]
+      },
+      {
+        "path": "specs/feat-competition-key-visuals.md",
+        "lines": [
+          20
+        ]
+      },
+      {
+        "path": "specs/feat-competition-og-images.md",
+        "lines": [
+          16,
+          128
+        ]
+      },
+      {
+        "path": "specs/feat-discovery-pages-round-h2h.md",
+        "lines": [
+          24
+        ]
+      },
+      {
+        "path": "specs/feat-email-capture-newsletter.md",
+        "lines": [
+          126
+        ]
+      },
+      {
+        "path": "specs/feat-evergreen-competition-guides.md",
+        "lines": [
+          11
+        ]
+      },
+      {
+        "path": "specs/feat-greatest-rivalry-tour-2026.md",
+        "lines": [
+          122
+        ]
+      },
+      {
+        "path": "specs/feat-ios-app-web-cta.md",
+        "lines": [
+          43
+        ]
+      },
+      {
+        "path": "specs/feat-nations-championship-2026-standings.md",
+        "lines": [
+          26
+        ]
+      },
+      {
+        "path": "specs/feat-paper-texture-background.md",
+        "lines": [
+          27
+        ]
+      },
+      {
+        "path": "specs/feat-rwc2027-hub-seo-enhancement.md",
+        "lines": [
+          7,
+          11,
+          20,
+          21,
+          31
+        ]
+      },
+      {
+        "path": "specs/feat-season-page-ia.md",
+        "lines": [
+          7,
+          16,
+          35
+        ]
+      },
+      {
+        "path": "specs/feat-season-page-search-answer-blocks.md",
+        "lines": [
+          15
+        ]
+      },
+      {
+        "path": "specs/feat-seo-competition-indexing.md",
+        "lines": [
+          7
+        ]
+      },
+      {
+        "path": "specs/feat-standings-standalone-pages.md",
+        "lines": [
+          19
+        ]
+      },
+      {
+        "path": "specs/fix-competition-hero-images.md",
+        "lines": [
+          37
+        ]
+      },
+      {
+        "path": "specs/fix-competition-hub-family-title-ctr.md",
+        "lines": [
+          152
+        ]
+      },
+      {
+        "path": "specs/fix-competition-hub-title-ctr.md",
+        "lines": [
+          18,
+          30,
+          33
+        ]
+      },
+      {
+        "path": "specs/fix-competition-japanese-name-and-broadcast-display.md",
+        "lines": [
+          74
+        ]
+      },
+      {
+        "path": "specs/fix-competition-season-page-flow.md",
+        "lines": [
+          7,
+          22
+        ]
+      },
+      {
+        "path": "specs/fix-home-archive-latest-season-priority.md",
+        "lines": [
+          22
+        ]
+      },
+      {
+        "path": "specs/fix-hub-hero-scrim-and-pool-labels.md",
+        "lines": [
+          9,
+          29,
+          34
+        ]
+      },
+      {
+        "path": "specs/fix-hub-preseason-standings-and-round-filter.md",
+        "lines": [
+          28,
+          44,
+          108,
+          194
+        ]
+      },
+      {
+        "path": "specs/fix-hub-schedule-server-rendering.md",
+        "lines": [
+          33,
+          60,
+          119
+        ]
+      },
+      {
+        "path": "specs/fix-match-card-content-badge.md",
+        "lines": [
+          16,
+          64
+        ]
+      },
+      {
+        "path": "specs/fix-og-image-weight.md",
+        "lines": [
+          51
+        ]
+      },
+      {
+        "path": "specs/fix-rwc-season-filter.md",
+        "lines": [
+          17
+        ]
+      },
+      {
+        "path": "specs/fix-rwc2027-hub-route-shadowed.md",
+        "lines": [
+          5,
+          54,
+          88,
+          95,
+          130,
+          150
+        ]
+      },
+      {
+        "path": "specs/fix-schedule-coverage-notice-by-rounds.md",
+        "lines": [
+          66,
+          81
+        ]
+      },
+      {
+        "path": "specs/fix-season-faq-broadcast-hardcoding.md",
+        "lines": [
+          5,
+          22,
+          58
+        ]
+      },
+      {
+        "path": "specs/fix-season-page-guide-collapse-regression.md",
+        "lines": [
+          15,
+          23
+        ]
+      },
+      {
+        "path": "specs/fix-seo-indexing.md",
+        "lines": [
+          20,
+          50,
+          152
+        ]
+      },
+      {
+        "path": "specs/p3-competition-color-accent.md",
+        "lines": [
+          12,
+          40,
+          66
+        ]
+      },
+      {
+        "path": "specs/p3-ogp-image.md",
+        "lines": [
+          14
+        ]
+      },
+      {
+        "path": "specs/p4-autumn-nations-grouping.md",
+        "lines": [
+          22,
+          42,
+          105,
+          173
+        ]
+      }
+    ],
+    "competition_guides": [
+      {
+        "path": "specs/feat-competition-guide-search-query-override.md",
+        "lines": [
+          147
+        ]
+      },
+      {
+        "path": "specs/feat-competition-guides.md",
+        "lines": [
+          12,
+          28,
+          31,
+          37,
+          39,
+          40,
+          111
+        ]
+      },
+      {
+        "path": "specs/feat-generate-competition-guide-per-family.md",
+        "lines": [
+          11,
+          38,
+          55,
+          65
+        ]
+      },
+      {
+        "path": "specs/feat-rwc2027-hub-seo-enhancement.md",
+        "lines": [
+          10,
+          29,
+          36,
+          57
+        ]
+      },
+      {
+        "path": "specs/feat-season-page-search-answer-blocks.md",
+        "lines": [
+          134
+        ]
+      },
+      {
+        "path": "specs/fix-competition-guide-factual-errors-and-broadcast-verification.md",
+        "lines": [
+          7,
+          16,
+          27,
+          48
+        ]
+      },
+      {
+        "path": "specs/fix-competition-guide-participant-verification.md",
+        "lines": [
+          35
+        ]
+      },
+      {
+        "path": "specs/fix-competition-japanese-name-and-broadcast-display.md",
+        "lines": [
+          90,
+          102,
+          216
+        ]
+      }
+    ],
+    "app/api/stripe/webhook/route.ts": [
+      {
+        "path": "specs/feat-discord-fact-entry.md",
+        "lines": [
+          76
+        ]
+      },
+      {
+        "path": "specs/feat-ios-in-app-purchase.md",
+        "lines": [
+          55
+        ]
+      },
+      {
+        "path": "specs/feat-premium-entitlement-refactor.md",
+        "lines": [
+          11,
+          86
+        ]
+      },
+      {
+        "path": "specs/fix-free-trial.md",
+        "lines": [
+          8
+        ]
+      },
+      {
+        "path": "specs/fix-ga4-purchase-event-fires-at-trial-start.md",
+        "lines": [
+          25,
+          37,
+          43
+        ]
+      },
+      {
+        "path": "specs/fix-stripe-webhook-db-error-propagation.md",
+        "lines": [
+          5,
+          31
+        ]
+      }
+    ],
+    "app/api/stripe/checkout/route.ts": [
+      {
+        "path": "specs/feat-signup-trial-events.md",
+        "lines": [
+          14
+        ]
+      },
+      {
+        "path": "specs/fix-free-trial.md",
+        "lines": [
+          13,
+          27
+        ]
+      }
+    ],
+    "app/api/revenuecat/webhook/route.ts": [
+      {
+        "path": "specs/feat-discord-fact-entry.md",
+        "lines": [
+          77
+        ]
+      },
+      {
+        "path": "specs/feat-ios-in-app-purchase.md",
+        "lines": [
+          53
+        ]
+      },
+      {
+        "path": "specs/fix-ios-purchase-without-registration.md",
+        "lines": [
+          77
+        ]
+      },
+      {
+        "path": "specs/fix-revenuecat-transfer-event.md",
+        "lines": [
+          5,
+          25,
+          40
+        ]
+      },
+      {
+        "path": "specs/fix-stripe-webhook-db-error-propagation.md",
+        "lines": [
+          26,
+          33,
+          87
+        ]
+      }
+    ],
+    "app/pricing/page.tsx": [
+      {
+        "path": "specs/feat-bento-card-redesign.md",
+        "lines": [
+          20,
+          26,
+          66,
+          72
+        ]
+      },
+      {
+        "path": "specs/feat-paper-texture-background.md",
+        "lines": [
+          30
+        ]
+      },
+      {
+        "path": "specs/feat-season-page-search-answer-blocks.md",
+        "lines": [
+          9,
+          35
+        ]
+      },
+      {
+        "path": "specs/fix-billing-terms-consistency.md",
+        "lines": [
+          10,
+          11,
+          22,
+          60,
+          65
+        ]
+      },
+      {
+        "path": "specs/fix-free-trial.md",
+        "lines": [
+          14,
+          47
+        ]
+      },
+      {
+        "path": "specs/fix-heading-manual-linebreak-orphan.md",
+        "lines": [
+          19
+        ]
+      },
+      {
+        "path": "specs/fix-home-width-expansion.md",
+        "lines": [
+          21
+        ]
+      },
+      {
+        "path": "specs/fix-og-image-weight.md",
+        "lines": [
+          51
+        ]
+      },
+      {
+        "path": "specs/fix-pricing-canonical-faq-schema.md",
+        "lines": [
+          5,
+          11,
+          17,
+          39,
+          74
+        ]
+      },
+      {
+        "path": "specs/fix-pricing-faq-competitions.md",
+        "lines": [
+          18,
+          36,
+          48
+        ]
+      },
+      {
+        "path": "specs/fix-pricing-faq-trial.md",
+        "lines": [
+          5,
+          14
+        ]
+      },
+      {
+        "path": "specs/fix-pricing-hero-copy.md",
+        "lines": [
+          5,
+          15
+        ]
+      },
+      {
+        "path": "specs/fix-pricing-sample-content.md",
+        "lines": [
+          5,
+          27,
+          57
+        ]
+      },
+      {
+        "path": "specs/fix-site-copy-audit.md",
+        "lines": [
+          11,
+          12,
+          42
+        ]
+      },
+      {
+        "path": "specs/p2-stripe-subscription.md",
+        "lines": [
+          61
+        ]
+      },
+      {
+        "path": "specs/p3-home-premium-pitch.md",
+        "lines": [
+          21
+        ]
+      },
+      {
+        "path": "specs/p3-ogp-image.md",
+        "lines": [
+          18
+        ]
+      },
+      {
+        "path": "specs/p3-pricing-page-redesign.md",
+        "lines": [
+          73
+        ]
+      },
+      {
+        "path": "specs/p6-free-trial-link.md",
+        "lines": [
+          45,
+          71
+        ]
+      },
+      {
+        "path": "specs/p6-login-modal-context.md",
+        "lines": [
+          17,
+          61
+        ]
+      },
+      {
+        "path": "specs/p6-pricing-cta-text.md",
+        "lines": [
+          52
+        ]
+      },
+      {
+        "path": "specs/p7-misc-fixes.md",
+        "lines": [
+          12
+        ]
+      }
+    ],
+    "app/legal/tokusho/page.tsx": [
+      {
+        "path": "specs/feat-support-page.md",
+        "lines": [
+          9,
+          22,
+          64
+        ]
+      },
+      {
+        "path": "specs/fix-billing-terms-consistency.md",
+        "lines": [
+          9,
+          22,
+          60
+        ]
+      }
+    ],
+    "app/api/health/route.ts": [
+      {
+        "path": "specs/fix-health-endpoint-status-and-llm-monitoring.md",
+        "lines": [
+          5,
+          26
+        ]
+      }
+    ],
+    "app/h2h/[pair]/page.tsx": [
+      {
+        "path": "specs/feat-h2h-latest-match-cta.md",
+        "lines": [
+          5,
+          14
+        ]
+      },
+      {
+        "path": "specs/feat-paper-texture-background.md",
+        "lines": [
+          19
+        ]
+      },
+      {
+        "path": "specs/fix-ai-copy-labels.md",
+        "lines": [
+          18,
+          64,
+          111
+        ]
+      },
+      {
+        "path": "specs/fix-h2h-latest-vs-next-match.md",
+        "lines": [
+          27
+        ]
+      },
+      {
+        "path": "specs/fix-matchup-title-ja-connector.md",
+        "lines": [
+          7,
+          13,
+          40
+        ]
+      },
+      {
+        "path": "specs/fix-site-copy-audit.md",
+        "lines": [
+          15
+        ]
+      }
+    ]
+  }
+}
