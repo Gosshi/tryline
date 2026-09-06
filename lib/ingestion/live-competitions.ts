@@ -1,4 +1,8 @@
 import {
+  applyJrfuResultFallback,
+  type JrfuResultFallbackResult,
+} from "@/lib/ingestion/jrfu-result-fallback";
+import {
   ingestLiveCompetition,
   type LiveCompetitionSource,
   type LiveIngestResult,
@@ -146,10 +150,20 @@ export async function ingestAllLiveCompetitions() {
     }
   }
 
-  return results
+  const ingested = results
     .filter(
       (result): result is PromiseFulfilledResult<LiveIngestResult> =>
         result.status === "fulfilled",
     )
     .map((result) => result.value);
+
+  try {
+    const fallback = await applyJrfuResultFallback();
+
+    return [...ingested, fallback];
+  } catch (error) {
+    console.error("Failed to apply JRFU result fallback:", error);
+
+    return ingested as Array<LiveIngestResult | JrfuResultFallbackResult>;
+  }
 }
