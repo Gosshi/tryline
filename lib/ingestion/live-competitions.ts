@@ -1,4 +1,8 @@
 import {
+  applyJrfuMatchEventFallback,
+  type JrfuMatchEventFallbackResult,
+} from "@/lib/ingestion/jrfu-match-event-fallback";
+import {
   applyJrfuResultFallback,
   type JrfuResultFallbackResult,
 } from "@/lib/ingestion/jrfu-result-fallback";
@@ -22,6 +26,7 @@ import { fetchRugbyChampionship2026 } from "@/lib/ingestion/sources/wikipedia-ru
 import { fetchSixNations2027 } from "@/lib/ingestion/sources/wikipedia-six-nations-2027-live";
 import { fetchSuperRugbyPacific2026 } from "@/lib/ingestion/sources/wikipedia-super-rugby-pacific";
 import { fetchUrc } from "@/lib/ingestion/sources/wikipedia-urc";
+import { fetchJrfuScheduleResults } from "@/lib/scrapers/jrfu-schedule-results";
 
 export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
   {
@@ -158,12 +163,16 @@ export async function ingestAllLiveCompetitions() {
     .map((result) => result.value);
 
   try {
-    const fallback = await applyJrfuResultFallback();
+    const jrfuResults = await fetchJrfuScheduleResults();
+    const resultFallback = await applyJrfuResultFallback(jrfuResults);
+    const eventFallback = await applyJrfuMatchEventFallback(jrfuResults);
 
-    return [...ingested, fallback];
+    return [...ingested, resultFallback, eventFallback];
   } catch (error) {
-    console.error("Failed to apply JRFU result fallback:", error);
+    console.error("Failed to apply JRFU fallback:", error);
 
-    return ingested as Array<LiveIngestResult | JrfuResultFallbackResult>;
+    return ingested as Array<
+      JrfuMatchEventFallbackResult | JrfuResultFallbackResult | LiveIngestResult
+    >;
   }
 }

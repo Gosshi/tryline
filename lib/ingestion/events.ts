@@ -62,6 +62,7 @@ export async function upsertMatchEvents(params: {
   homeTeamId: string;
   awayTeamId: string;
   events: ParsedMatchEvent[];
+  onUnresolvedPlayer?: (params: { playerName: string; teamId: string }) => void;
 }): Promise<{ inserted: number }> {
   const db = getSupabaseServerClient();
   const deleteResult = await db
@@ -85,6 +86,13 @@ export async function upsertMatchEvents(params: {
         playerName: getPlayerNameForResolution(event),
         teamId,
       });
+
+      if (playerId === null) {
+        params.onUnresolvedPlayer?.({
+          playerName: getPlayerNameForResolution(event),
+          teamId,
+        });
+      }
 
       return {
         match_id: params.matchId,

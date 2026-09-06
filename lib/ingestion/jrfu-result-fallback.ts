@@ -92,9 +92,11 @@ async function loadJapanMatches(): Promise<JapanMatchRow[]> {
   return (data ?? []) as JapanMatchRow[];
 }
 
-export async function applyJrfuResultFallback(): Promise<JrfuResultFallbackResult> {
+export async function applyJrfuResultFallback(
+  prefetchedJrfuResults?: JrfuScheduleResult[],
+): Promise<JrfuResultFallbackResult> {
   const [jrfuResults, japanMatches] = await Promise.all([
-    fetchJrfuScheduleResults(),
+    prefetchedJrfuResults ?? fetchJrfuScheduleResults(),
     loadJapanMatches(),
   ]);
   const client = getSupabaseServerClient();

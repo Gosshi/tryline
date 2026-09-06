@@ -30,6 +30,7 @@ describe("JRFU schedule result scraper", () => {
         expect.objectContaining({
           dateJrfu: "2026-07-04",
           japanScore: 27,
+          matchUrl: "https://www.rugby-japan.jp/match/29966",
           opponentName: "イタリア代表",
           opponentScore: 10,
         }),
