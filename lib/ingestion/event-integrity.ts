@@ -1,11 +1,11 @@
-import type { MatchEventRow } from "@/lib/db/queries/match-events";
+import { pointsForMatchEvent } from "@/lib/format/match-event-points";
 
 type FinalScoreTimeline = {
   final_away: number;
   final_home: number;
 };
 
-type EventPointTotals = {
+export type EventPointTotals = {
   away: number;
   home: number;
 };
@@ -21,6 +21,19 @@ export type ScoreTimelineEvent = {
   player_name: string;
   team_name: string;
   type: string;
+};
+
+export type EventIntegrityEvent = {
+  isPenaltyTry: boolean;
+  minute: number | null;
+  playerName: string;
+  teamId: string;
+  type: string;
+};
+
+export type EventIntegrityTeams = {
+  away: { id: string; name: string };
+  home: { id: string; name: string };
 };
 
 export function eventTotalsMatchFinalScore(
@@ -67,12 +80,33 @@ export function eventTotalsMatchFinalScore(
   );
 }
 
+export function computeEventPointTotals(
+  events: Array<
+    Pick<EventIntegrityEvent, "isPenaltyTry" | "teamId" | "type">
+  >,
+  teams: EventIntegrityTeams,
+): EventPointTotals {
+  return events.reduce<EventPointTotals>(
+    (totals, event) => {
+      const points = pointsForMatchEvent(event);
+
+      if (event.teamId === teams.home.id) {
+        return { ...totals, home: totals.home + points };
+      }
+
+      if (event.teamId === teams.away.id) {
+        return { ...totals, away: totals.away + points };
+      }
+
+      return totals;
+    },
+    { away: 0, home: 0 },
+  );
+}
+
 export function toScoreTimelineEvent(
-  event: MatchEventRow,
-  teams: {
-    away: { id: string; name: string };
-    home: { id: string; name: string };
-  },
+  event: EventIntegrityEvent,
+  teams: EventIntegrityTeams,
 ): ScoreTimelineEvent {
   return {
     is_penalty_try: event.isPenaltyTry,

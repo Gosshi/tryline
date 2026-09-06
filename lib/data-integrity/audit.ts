@@ -10,7 +10,6 @@ import {
 } from "@/lib/ingestion/event-integrity";
 import { computeScoreTimeline } from "@/lib/llm/stages/assemble";
 
-import type { MatchEventRow } from "@/lib/db/queries/match-events";
 import type { Json } from "@/lib/db/types";
 
 const STALE_STANDINGS_THRESHOLD_DAYS = 7;
@@ -171,17 +170,15 @@ export function summarizeScoreMismatches(
       .map((event) =>
         toScoreTimelineEvent(
           {
-            id: event.id,
             isPenaltyTry: getBooleanMetadataFlag(
               event.metadata,
               "is_penalty_try",
             ),
             minute: event.minute,
             playerName: getStringMetadataValue(event.metadata, "player_name"),
-            points: null,
             teamId: event.team_id,
             type: event.type,
-          } satisfies MatchEventRow,
+          },
           {
             away: {
               id: match.away_team_id,
