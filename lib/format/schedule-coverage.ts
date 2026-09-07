@@ -21,6 +21,7 @@ export function hasIncompleteSchedule({
 
   if (
     totalRounds === null ||
+    missingRounds > 0 ||
     standingTeamCount === 0 ||
     standingTeamCount % 2 !== 0
   ) {

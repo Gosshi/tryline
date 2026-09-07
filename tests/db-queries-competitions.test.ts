@@ -136,7 +136,7 @@ describe("listCompetitionScheduleCoverage", () => {
       {
         family: "premiership",
         ingestedRoundCount: 3,
-        missingFixtures: 87,
+        missingFixtures: null,
         missingRounds: 15,
         name: "Premiership Rugby",
         nameJa: null,

@@ -6,15 +6,15 @@ import {
 } from "@/lib/format/schedule-coverage";
 
 describe("hasIncompleteSchedule", () => {
-  it("counts only regular-season fixtures for a Premiership-style season", () => {
+  it("does not report fixture gaps while a Premiership-style round is missing", () => {
     expect(
       hasIncompleteSchedule({
         ingestedRegularSeasonFixtureCount: 85,
-        ingestedRoundCount: 18,
+        ingestedRoundCount: 17,
         standingTeamCount: 10,
         totalRounds: 18,
       }),
-    ).toEqual({ missingFixtures: 5, missingRounds: 0 });
+    ).toEqual({ missingFixtures: null, missingRounds: 1 });
   });
 
   it("returns zero missing fixtures for a complete URC-style season", () => {
@@ -61,6 +61,12 @@ describe("hasIncompleteSchedule", () => {
     {
       ingestedRegularSeasonFixtureCount: 91,
       ingestedRoundCount: 18,
+      standingTeamCount: 10,
+      totalRounds: 18,
+    },
+    {
+      ingestedRegularSeasonFixtureCount: 85,
+      ingestedRoundCount: 17,
       standingTeamCount: 10,
       totalRounds: 18,
     },
