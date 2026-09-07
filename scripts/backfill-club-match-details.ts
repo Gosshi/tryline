@@ -6,7 +6,7 @@
  */
 
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { upsertMatchEvents } from "@/lib/ingestion/events";
+import { assertEventInsertionAccepted, upsertMatchEvents } from "@/lib/ingestion/events";
 import {
   scrapeWikipediaClubMatchDetails,
   type WikipediaClubMatchDetails,
@@ -343,6 +343,7 @@ async function persistDetails(
       homeTeamId: match.home_team_id,
       matchId: match.id,
     });
+    assertEventInsertionAccepted(upserted);
     eventsInserted = upserted.inserted;
   }
 

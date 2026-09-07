@@ -14,7 +14,7 @@
 import { load } from "cheerio";
 
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { upsertMatchEvents } from "@/lib/ingestion/events";
+import { assertEventInsertionAccepted, upsertMatchEvents } from "@/lib/ingestion/events";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 import {
@@ -325,6 +325,7 @@ export async function main() {
           homeTeamId: match.home_team_id,
           matchId: match.id,
         });
+        assertEventInsertionAccepted(result);
 
         eventsInserted += result.inserted;
         console.log(

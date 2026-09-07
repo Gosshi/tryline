@@ -60,6 +60,23 @@ export type EventIntegrityMismatchAlert = {
   matchLabel?: string;
 };
 
+export async function notifyEventIngestionIdentityAlert(params: {
+  detail: string;
+  matchId: string;
+  reason:
+    | "duplicate_signature"
+    | "fixture_conflict"
+    | "score_mismatch"
+    | "third_team";
+}): Promise<void> {
+  await postOpsAlert([
+    `⚠️ イベント取り込み同一性 ${params.reason === "duplicate_signature" ? "警告" : "拒否"}`,
+    `試合ID: ${params.matchId}`,
+    matchPageUrl(params.matchId),
+    `詳細: ${params.detail}`,
+  ].join("\n"));
+}
+
 function truncateDiscordMessageContent(text: string): string {
   if (text.length <= DISCORD_MESSAGE_CONTENT_LIMIT) {
     return text;
