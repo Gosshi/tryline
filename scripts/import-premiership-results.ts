@@ -166,7 +166,18 @@ async function upsertCompetitionTeams(
 
 async function main() {
   const season = parseSeasonArg(process.argv[2]);
-  const results = await wikipediaPremiershipResultsScraper.fetchResults(season);
+  const {
+    results,
+    skippedMatchCount,
+    skippedMatches,
+    unknownTeamNames,
+  } = await wikipediaPremiershipResultsScraper.fetchResults(season);
+
+  if (skippedMatchCount > 0) {
+    console.log(
+      `Skipped ${skippedMatchCount} Premiership result(s) with unknown team name(s): ${unknownTeamNames.join(", ")}. Matches: ${skippedMatches.map((match) => `${match.homeTeamName} vs ${match.awayTeamName}`).join("; ")}`,
+    );
+  }
 
   if (results.length !== EXPECTED_MATCH_COUNT) {
     console.error(

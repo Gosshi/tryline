@@ -1,5 +1,6 @@
 import { load } from "cheerio";
 
+import { resolvePremiershipTeamSlug } from "@/lib/ingestion/sources/premiership-team-slugs";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 import { parsePremiershipKickoffAt } from "@/lib/scrapers/premiership-kickoff";
 
@@ -16,32 +17,27 @@ export type HistoricalMatchResult = {
   wikipedia_event_id: string | null;
 };
 
+export type SkippedPremiershipResult = {
+  awayTeamName: string;
+  homeTeamName: string;
+  round: number | null;
+  unknownTeamNames: string[];
+  wikipediaEventId: string | null;
+};
+
+export type PremiershipResultsParseResult = {
+  results: HistoricalMatchResult[];
+  skippedMatchCount: number;
+  skippedMatches: SkippedPremiershipResult[];
+  unknownTeamNames: string[];
+};
+
 export interface CompetitionResultScraper {
-  fetchResults(season: string): Promise<HistoricalMatchResult[]>;
+  fetchResults(season: string): Promise<PremiershipResultsParseResult>;
 }
 
 const ROUND_ID_PATTERN = /^Round_(\d+)$/;
 const SCORE_PATTERN = /(\d+)\s*[–-]\s*(\d+)/;
-const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
-  Bath: "bath",
-  "Bath Rugby": "bath",
-  Bristol: "bristol-bears",
-  "Bristol Bears": "bristol-bears",
-  Exeter: "exeter-chiefs",
-  "Exeter Chiefs": "exeter-chiefs",
-  Gloucester: "gloucester",
-  "Gloucester Rugby": "gloucester",
-  Harlequins: "harlequins",
-  Leicester: "leicester-tigers",
-  "Leicester Tigers": "leicester-tigers",
-  Newcastle: "newcastle-falcons",
-  "Newcastle Falcons": "newcastle-falcons",
-  Northampton: "northampton-saints",
-  "Northampton Saints": "northampton-saints",
-  Sale: "sale-sharks",
-  "Sale Sharks": "sale-sharks",
-  Saracens: "saracens",
-};
 
 function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim();
@@ -57,16 +53,6 @@ function parseSeason(season: string) {
 
 function buildWikipediaUrl(season: string) {
   return `https://en.wikipedia.org/wiki/${season.replace("-", "–")}_Premiership_Rugby`;
-}
-
-function resolveTeamSlug(teamName: string) {
-  const slug = TEAM_SLUG_BY_WIKIPEDIA_NAME[teamName];
-
-  if (!slug) {
-    throw new Error(`Unknown Premiership team name: ${teamName}`);
-  }
-
-  return slug;
 }
 
 function parseScore(scoreText: string) {
@@ -130,10 +116,11 @@ export function parsePremiershipResultsHtml(
   html: string,
   season: string,
   sourceUrl = buildWikipediaUrl(season),
-): HistoricalMatchResult[] {
+): PremiershipResultsParseResult {
   const parsedSeason = parseSeason(season);
   const $ = load(html);
   const results: HistoricalMatchResult[] = [];
+  const skippedMatches: SkippedPremiershipResult[] = [];
 
   for (const element of $("div.vevent.summary").toArray()) {
     const block = $(element);
@@ -160,12 +147,6 @@ export function parsePremiershipResultsHtml(
       firstRowCells.eq(2).find("a").last().text(),
     );
 
-    if (!homeTeamName || !awayTeamName) {
-      throw new Error(
-        "Unable to parse Premiership team names from a vevent block.",
-      );
-    }
-
     const kickoffAt = parsePremiershipKickoffAt(dateTable.text());
 
     if (!kickoffAt) {
@@ -175,11 +156,28 @@ export function parsePremiershipResultsHtml(
       continue;
     }
 
+    const homeTeamSlug = resolvePremiershipTeamSlug(homeTeamName);
+    const awayTeamSlug = resolvePremiershipTeamSlug(awayTeamName);
+
+    if (!homeTeamSlug || !awayTeamSlug) {
+      skippedMatches.push({
+        awayTeamName,
+        homeTeamName,
+        round: parseRoundFromHeading($, block),
+        unknownTeamNames: [
+          ...(!homeTeamSlug ? [homeTeamName] : []),
+          ...(!awayTeamSlug ? [awayTeamName] : []),
+        ],
+        wikipediaEventId: block.attr("id") ?? null,
+      });
+      continue;
+    }
+
     results.push({
       away_score: score.awayScore,
-      away_team_slug: resolveTeamSlug(awayTeamName),
+      away_team_slug: awayTeamSlug,
       home_score: score.homeScore,
-      home_team_slug: resolveTeamSlug(homeTeamName),
+      home_team_slug: homeTeamSlug,
       kickoff_at: kickoffAt,
       round: parseRoundFromHeading($, block),
       season: parsedSeason,
@@ -191,13 +189,20 @@ export function parsePremiershipResultsHtml(
     });
   }
 
-  if (results.length === 0) {
+  if (results.length === 0 && skippedMatches.length === 0) {
     throw new Error(
       "No finished Premiership regular season matches were found.",
     );
   }
 
-  return results;
+  return {
+    results,
+    skippedMatchCount: skippedMatches.length,
+    skippedMatches,
+    unknownTeamNames: [
+      ...new Set(skippedMatches.flatMap((match) => match.unknownTeamNames)),
+    ],
+  };
 }
 
 export const wikipediaPremiershipResultsScraper: CompetitionResultScraper = {
