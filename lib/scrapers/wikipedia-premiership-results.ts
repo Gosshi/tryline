@@ -99,6 +99,10 @@ function isWithinRegularSeason(
   $: ReturnType<typeof load>,
   block: ReturnType<ReturnType<typeof load>>,
 ) {
+  if (block.parents('section[aria-labelledby="Regular_season"]').length > 0) {
+    return true;
+  }
+
   let cursor = block.prev();
 
   while (cursor.length > 0) {

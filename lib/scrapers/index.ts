@@ -105,6 +105,8 @@ export {
 export type {
   CompetitionResultScraper as Top14ResultScraper,
   HistoricalMatchResult as Top14HistoricalMatchResult,
+  SkippedTop14Result,
+  Top14ResultsParseResult,
 } from "@/lib/scrapers/wikipedia-top-14-results";
 export {
   parsePremiershipResultsHtml,

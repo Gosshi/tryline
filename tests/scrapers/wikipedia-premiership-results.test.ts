@@ -91,8 +91,46 @@ const HTML = `
   </table>
 </div>
 `;
+const PARSOID_HTML = `
+<section aria-labelledby="Regular_season">
+  <div class="mw-heading mw-heading2"><h2 id="Regular_season">Regular season</h2></div>
+  <section aria-labelledby="Results">
+    <section aria-labelledby="Round_1">
+      <div class="mw-heading mw-heading3"><h3 id="Round_1">Round 1</h3></div>
+      <div class="vevent summary" id="Bath_v_Northampton_Saints">
+        <table><tbody><tr><td>20 September 2024<br />19:45</td></tr></tbody></table>
+        <table><tbody><tr><td><a>Bath</a></td><td>38–16</td><td><a>Northampton Saints</a></td></tr></tbody></table>
+        <table><tbody><tr><td><span class="location">The Recreation Ground</span></td></tr></tbody></table>
+      </div>
+    </section>
+  </section>
+</section>
+<section aria-labelledby="Play-offs">
+  <div class="mw-heading mw-heading2"><h2 id="Play-offs">Play-offs</h2></div>
+  <section aria-labelledby="Semi-finals">
+    <div class="mw-heading mw-heading3"><h3 id="Semi-finals">Semi-finals</h3></div>
+    <div class="vevent summary" id="Bath_v_Sale">
+      <table><tbody><tr><td>7 June 2025<br />15:30</td></tr></tbody></table>
+      <table><tbody><tr><td><a>Bath</a></td><td>34–20</td><td><a>Sale Sharks</a></td></tr></tbody></table>
+      <table><tbody><tr><td><span class="location">The Recreation Ground</span></td></tr></tbody></table>
+    </div>
+  </section>
+</section>
+`;
 
 describe("parsePremiershipResultsHtml", () => {
+  it("parses Parsoid nested regular-season sections and excludes play-offs", () => {
+    const { results } = parsePremiershipResultsHtml(PARSOID_HTML, "2024-25");
+
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      away_team_slug: "northampton-saints",
+      home_team_slug: "bath",
+      round: 1,
+      wikipedia_event_id: "Bath_v_Northampton_Saints",
+    });
+  });
+
   it("parses regular season Premiership vevent blocks and skips play-offs", () => {
     const { results, skippedMatchCount } = parsePremiershipResultsHtml(
       HTML,

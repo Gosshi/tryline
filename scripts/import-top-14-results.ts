@@ -162,7 +162,14 @@ async function upsertCompetitionTeams(
 
 async function main() {
   const season = parseSeasonArg(process.argv[2]);
-  const results = await wikipediaTop14ResultsScraper.fetchResults(season);
+  const { results, skippedMatchCount, skippedMatches, unknownTeamNames } =
+    await wikipediaTop14ResultsScraper.fetchResults(season);
+
+  if (skippedMatchCount > 0) {
+    console.log(
+      `Skipped ${skippedMatchCount} Top 14 result(s) with unknown team name(s): ${unknownTeamNames.join(", ")}. Matches: ${skippedMatches.map((match) => `${match.homeTeamName} vs ${match.awayTeamName}`).join("; ")}`,
+    );
+  }
 
   if (results.length < EXPECTED_MIN_MATCH_COUNT) {
     console.error(

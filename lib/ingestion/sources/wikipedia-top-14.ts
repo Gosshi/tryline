@@ -8,6 +8,7 @@ import {
   parseDmyDate,
   parseScoreText,
 } from "@/lib/ingestion/sources/live-source-utils";
+import { resolveTop14TeamSlug } from "@/lib/ingestion/sources/top-14-team-slugs";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
@@ -19,25 +20,6 @@ const PLAYOFF_ROUNDS: Record<string, number> = {
   "Semi-finals": 2,
   Final: 3,
 };
-const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
-  Bayonne: "bayonne",
-  "Bordeaux Bègles": "bordeaux-begles",
-  Castres: "castres",
-  Clermont: "clermont",
-  Grenoble: "grenoble",
-  "La Rochelle": "la-rochelle",
-  Lyon: "lyon",
-  Montpellier: "montpellier",
-  Pau: "pau",
-  Perpignan: "perpignan",
-  Racing: "racing-92",
-  "Racing 92": "racing-92",
-  "Stade Français": "stade-francais",
-  Toulon: "toulon",
-  Toulouse: "toulouse",
-  Vannes: "vannes",
-};
-
 function buildWikipediaUrl(season: string) {
   return `https://en.wikipedia.org/wiki/${season.replace("-", "–")}_Top_14_season`;
 }
@@ -152,8 +134,8 @@ export function parseTop14LiveHtml(
     const awayTeamName = normalizeWhitespace(
       firstRowCells.eq(2).find("a").last().text(),
     );
-    const homeTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[homeTeamName];
-    const awayTeamSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[awayTeamName];
+    const homeTeamSlug = resolveTop14TeamSlug(homeTeamName);
+    const awayTeamSlug = resolveTop14TeamSlug(awayTeamName);
 
     if (!homeTeamName || !awayTeamName || !homeTeamSlug || !awayTeamSlug) {
       console.warn(
