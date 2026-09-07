@@ -110,9 +110,12 @@ describe("listCompetitionScheduleCoverage", () => {
       data: [
         {
           family: "premiership",
+          competition_standings: Array.from({ length: 10 }, (_, index) => ({
+            team_id: `team-${index}`,
+          })),
           matches: [
-            { external_ids: { round: 1 } },
-            { external_ids: { round: 2 } },
+            { external_ids: { wikipedia_round: 1 } },
+            { external_ids: { wikipedia_round: 2 } },
             { external_ids: { wikipedia_round: 18 } },
           ],
           name: "Premiership Rugby",
@@ -133,6 +136,8 @@ describe("listCompetitionScheduleCoverage", () => {
       {
         family: "premiership",
         ingestedRoundCount: 3,
+        missingFixtures: null,
+        missingRounds: 15,
         name: "Premiership Rugby",
         nameJa: null,
         season: "2026-27",
@@ -140,10 +145,9 @@ describe("listCompetitionScheduleCoverage", () => {
         totalRounds: 18,
       },
     ]);
-    expect(coverageQuery.not).toHaveBeenCalledWith(
-      "total_rounds",
-      "is",
-      null,
+    expect(coverageQuery.select).toHaveBeenCalledWith(
+      "family, slug, name, name_ja, season, total_rounds, matches(external_ids), competition_standings(team_id)",
     );
+    expect(coverageQuery.not).toHaveBeenCalledWith("total_rounds", "is", null);
   });
 });

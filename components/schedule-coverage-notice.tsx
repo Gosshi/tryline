@@ -1,27 +1,53 @@
 import { formatCompetitionTitle } from "@/lib/format/competition";
 
-type ScheduleCoverageNoticeCompetition = {
+import type { IncompleteSchedule } from "@/lib/format/schedule-coverage";
+
+type ScheduleCoverageNoticeCompetition = IncompleteSchedule & {
   family: string;
+  ingestedRoundCount: number;
   name: string;
   nameJa?: string | null;
   season: string;
   slug: string;
+  totalRounds: number | null;
 };
 
 type ScheduleCoverageNoticeProps = {
   competitions: ScheduleCoverageNoticeCompetition[];
 };
 
-export function ScheduleCoverageNotice({
-  competitions,
-}: ScheduleCoverageNoticeProps) {
-  if (competitions.length === 0) {
+function getScheduleCoverageMessage(
+  competition: ScheduleCoverageNoticeCompetition,
+): string | null {
+  if (competition.totalRounds === null) {
     return null;
   }
 
-  const titles = competitions.map((competition) =>
-    formatCompetitionTitle(competition, competition.season),
-  );
+  const title = formatCompetitionTitle(competition, competition.season);
+  const hasMissingFixtures =
+    competition.missingFixtures !== null && competition.missingFixtures > 0;
+
+  if (competition.missingRounds > 0) {
+    return `${title}: 全${competition.totalRounds}節中${competition.ingestedRoundCount}節を掲載しています。${hasMissingFixtures ? " 一部の試合が未取得です。" : ""}`;
+  }
+
+  if (hasMissingFixtures) {
+    return `${title}: ${competition.totalRounds}節を掲載していますが、一部の試合が未取得です。`;
+  }
+
+  return null;
+}
+
+export function ScheduleCoverageNotice({
+  competitions,
+}: ScheduleCoverageNoticeProps) {
+  const messages = competitions
+    .map(getScheduleCoverageMessage)
+    .filter((message): message is string => message !== null);
+
+  if (messages.length === 0) {
+    return null;
+  }
 
   return (
     <aside
@@ -32,7 +58,7 @@ export function ScheduleCoverageNotice({
         日程掲載状況
       </p>
       <p className="mt-1 text-sm leading-6 text-[var(--color-ink-muted)]">
-        {titles.join("・")}の日程には、現在表示できない節があります。
+        {messages.join("・")}
       </p>
     </aside>
   );
