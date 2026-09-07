@@ -19,6 +19,7 @@ type JrfuEventType =
 
 export type JrfuMatchEventParseResult = {
   events: ParsedMatchEvent[];
+  firstHalfEventCount: number;
   hasHalfHeadings: boolean;
   hasUnsupportedScoringEvent: boolean;
 };
@@ -75,6 +76,7 @@ export function parseJrfuMatchEventsHtml(
 ): JrfuMatchEventParseResult {
   const $ = load(html);
   const events: ParsedMatchEvent[] = [];
+  let firstHalfEventCount = 0;
   let hasUnsupportedScoringEvent = false;
   let previousScore: [number, number] | null = null;
   const hasFirstHalfHeading = $("#timeline .half")
@@ -156,10 +158,15 @@ export function parseJrfuMatchEventsHtml(
       teamSide,
       type,
     });
+
+    if (!isSecondHalf) {
+      firstHalfEventCount += 1;
+    }
   });
 
   return {
     events,
+    firstHalfEventCount,
     hasHalfHeadings: hasFirstHalfHeading && hasSecondHalfHeading,
     hasUnsupportedScoringEvent,
   };
