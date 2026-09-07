@@ -94,7 +94,7 @@ const HTML = `
 
 describe("parsePremiershipResultsHtml", () => {
   it("parses regular season Premiership vevent blocks and skips play-offs", () => {
-    const results = parsePremiershipResultsHtml(
+    const { results, skippedMatchCount } = parsePremiershipResultsHtml(
       HTML,
       "2024-25",
       "https://example.test/2024-25_Premiership_Rugby",
@@ -118,11 +118,12 @@ describe("parsePremiershipResultsHtml", () => {
       round: 11,
     });
     expect(results[1]?.kickoff_at).toBe("2025-01-04T17:30:00.000Z");
+    expect(skippedMatchCount).toBe(0);
   });
 
   it("keeps parseable multiday results when another kickoff is TBC", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const results = parsePremiershipResultsHtml(
+    const { results } = parsePremiershipResultsHtml(
       `
         <div class="mw-heading"><h2 id="Regular_season">Regular season</h2></div>
         <div class="mw-heading"><h3 id="Round_10">Round 10</h3></div>
@@ -163,5 +164,43 @@ describe("parsePremiershipResultsHtml", () => {
     );
 
     warn.mockRestore();
+  });
+
+  it("resolves Newcastle Red Bulls and retains the prior Newcastle aliases", () => {
+    const { results } = parsePremiershipResultsHtml(
+      HTML.replace("<a>Bath</a>", "<a>Newcastle Red Bulls</a>")
+        .replace("<a>Saracens</a>", "<a>Newcastle Falcons</a>")
+        .replace("<a>Bristol Bears</a>", "<a>Newcastle</a>"),
+      "2024-25",
+    );
+
+    expect(results).toMatchObject([
+      { home_team_slug: "newcastle-falcons" },
+      {
+        away_team_slug: "newcastle-falcons",
+        home_team_slug: "newcastle-falcons",
+      },
+    ]);
+  });
+
+  it("skips only matches with unknown teams and returns their details", () => {
+    const { results, skippedMatchCount, skippedMatches, unknownTeamNames } =
+      parsePremiershipResultsHtml(
+        HTML.replace("<a>Bath</a>", "<a>Unknown RFC</a>"),
+        "2024-25",
+      );
+
+    expect(results).toHaveLength(1);
+    expect(skippedMatchCount).toBe(1);
+    expect(unknownTeamNames).toEqual(["Unknown RFC"]);
+    expect(skippedMatches).toEqual([
+      {
+        awayTeamName: "Northampton Saints",
+        homeTeamName: "Unknown RFC",
+        round: 1,
+        unknownTeamNames: ["Unknown RFC"],
+        wikipediaEventId: "Bath_v_Northampton_Saints",
+      },
+    ]);
   });
 });

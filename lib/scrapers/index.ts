@@ -113,6 +113,8 @@ export {
 export type {
   CompetitionResultScraper as PremiershipResultScraper,
   HistoricalMatchResult as PremiershipHistoricalMatchResult,
+  PremiershipResultsParseResult,
+  SkippedPremiershipResult,
 } from "@/lib/scrapers/wikipedia-premiership-results";
 export {
   parseRugbyChampionshipResultsHtml,
