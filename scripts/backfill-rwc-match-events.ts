@@ -1,5 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { assertEventInsertionAccepted, upsertMatchEvents } from "@/lib/ingestion/events";
+import { upsertMatchEvents } from "@/lib/ingestion/events";
 import { scrapeWikipediaRwcMatchEvents } from "@/lib/scrapers/wikipedia-rwc-match-events";
 
 import type { Json } from "@/lib/db/types";
@@ -234,7 +234,6 @@ export async function main() {
       homeTeamId: match.home_team_id,
       matchId: match.id,
     });
-    assertEventInsertionAccepted(result);
 
     if (details.events.length === 0) {
       skipped += 1;

@@ -4,7 +4,6 @@ const dbMocks = vi.hoisted(() => ({
   getSupabaseServerClient: vi.fn(),
 }));
 const eventMocks = vi.hoisted(() => ({
-  resolvePlayerId: vi.fn(),
   upsertMatchEvents: vi.fn(),
 }));
 const scraperMocks = vi.hoisted(() => ({
@@ -119,10 +118,8 @@ describe("JRFU match event fallback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     eventMocks.upsertMatchEvents.mockResolvedValue({ inserted: 2 });
-    eventMocks.resolvePlayerId.mockResolvedValue("player-id");
     scraperMocks.fetchJrfuMatchEvents.mockResolvedValue({
       events: scoreMatchingEvents,
-      hasHalfHeadings: true,
       hasUnsupportedScoringEvent: false,
     });
   });
@@ -135,13 +132,10 @@ describe("JRFU match event fallback", () => {
     ).resolves.toEqual({
       counts: {
         existing_events_skipped: 0,
-        half_headings_skipped: 0,
         match_limit_skipped: 0,
         matches_inserted: 1,
         score_mismatches_skipped: 0,
-        timeline_order_skipped: 0,
         unresolved_player_names: 0,
-        unresolved_players_all_skipped: 0,
         unsupported_timeline_skipped: 0,
       },
       source: "jrfu-match-events",

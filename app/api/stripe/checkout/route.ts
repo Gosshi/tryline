@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 import { requireUser } from "@/lib/auth/server";
-import { BILLING_TERMS } from "@/lib/billing/terms";
 import { SITE_URL } from "@/lib/site";
 
 function getStripe() {
@@ -27,7 +26,7 @@ export async function POST() {
     metadata: { userId: user.id },
     subscription_data: {
       metadata: { userId: user.id },
-      trial_period_days: BILLING_TERMS.trialDays,
+      trial_period_days: 7,
       trial_settings: {
         end_behavior: { missing_payment_method: "cancel" },
       },

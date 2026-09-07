@@ -9,14 +9,9 @@
  */
 
 import { getSupabaseServerClient } from "@/lib/db/server";
-import {
-  computeParsedMatchEventPointTotals,
-  eventTotalsMatchFinalScore,
-} from "@/lib/ingestion/event-integrity";
-import {
-  assertEventInsertionAccepted,
-  upsertMatchEvents,
-} from "@/lib/ingestion/events";
+import { pointsForMatchEvent } from "@/lib/format/match-event-points";
+import { eventTotalsMatchFinalScore } from "@/lib/ingestion/event-integrity";
+import { upsertMatchEvents } from "@/lib/ingestion/events";
 import { fetchNationsChampionship2026EventMatches } from "@/lib/ingestion/sources/wikipedia-nations-championship-events";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 
@@ -24,8 +19,6 @@ import type { Json } from "@/lib/db/types";
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
 import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-export { computeParsedMatchEventPointTotals as computeEventPointTotals } from "@/lib/ingestion/event-integrity";
 
 type CliOptions = {
   dryRun: boolean;
@@ -48,6 +41,11 @@ type MatchRow = {
 type EventMatchLookupEntry =
   | { match: ParsedLiveMatch; status: "unique" }
   | { matches: ParsedLiveMatch[]; status: "ambiguous" };
+
+type EventPointTotals = {
+  away: number;
+  home: number;
+};
 
 type BackfillDeps = {
   fetchEventMatches?: () => Promise<ParsedLiveMatch[]>;
@@ -136,6 +134,23 @@ export function buildEventMatchLookup(eventMatches: ParsedLiveMatch[]) {
   }
 
   return lookup;
+}
+
+export function computeEventPointTotals(
+  events: ParsedMatchEvent[],
+): EventPointTotals {
+  return events.reduce<EventPointTotals>(
+    (totals, event) => {
+      const points = pointsForMatchEvent(event);
+
+      if (event.teamSide === "home") {
+        return { ...totals, home: totals.home + points };
+      }
+
+      return { ...totals, away: totals.away + points };
+    },
+    { away: 0, home: 0 },
+  );
 }
 
 async function loadTargetMatches(
@@ -233,7 +248,7 @@ export async function runBackfillNationsChampionshipMatchEvents(
       continue;
     }
 
-    const totals = computeParsedMatchEventPointTotals(events);
+    const totals = computeEventPointTotals(events);
 
     if (!eventTotalsMatchFinalScore(totals, match)) {
       skipped += 1;
@@ -256,7 +271,6 @@ export async function runBackfillNationsChampionshipMatchEvents(
       homeTeamId: match.home_team_id,
       matchId: match.id,
     });
-    assertEventInsertionAccepted(result);
     eventsInserted += result.inserted;
     logger.log(`Inserted ${result.inserted} events for ${label}`);
   }

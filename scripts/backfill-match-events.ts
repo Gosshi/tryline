@@ -1,5 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { assertEventInsertionAccepted, upsertMatchEvents } from "@/lib/ingestion/events";
+import { upsertMatchEvents } from "@/lib/ingestion/events";
 import { parseWikipediaSixNationsHtml } from "@/lib/ingestion/sources/wikipedia-six-nations";
 import { fetchWithPolicy } from "@/lib/scrapers";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
@@ -203,7 +203,6 @@ async function main() {
           homeTeamId: match.home_team_id,
           matchId: match.id,
         });
-        assertEventInsertionAccepted(result);
 
         eventsInserted += result.inserted;
         console.log(

@@ -9,10 +9,7 @@ import { load } from "cheerio";
 import { pathToFileURL } from "node:url";
 
 import { getSupabaseServerClient } from "@/lib/db/server";
-import {
-  assertEventInsertionAccepted,
-  upsertMatchEvents,
-} from "@/lib/ingestion/events";
+import { upsertMatchEvents } from "@/lib/ingestion/events";
 import { fetchWithPolicy } from "@/lib/scrapers";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 
@@ -405,13 +402,20 @@ async function fillMatch(match: MatchGapRow): Promise<number> {
     return 0;
   }
 
+  const totals = eventTotalsExceedFinalScore(events, match);
+  if (totals.exceeds) {
+    console.warn(
+      `  -> event totals exceed final score (${totals.homeTotal}-${totals.awayTotal} vs ${match.home_score}-${match.away_score}), skipping`,
+    );
+    return 0;
+  }
+
   const result = await upsertMatchEvents({
     awayTeamId: match.away_team_id,
     events,
     homeTeamId: match.home_team_id,
     matchId: match.id,
   });
-  assertEventInsertionAccepted(result);
 
   return result.inserted;
 }

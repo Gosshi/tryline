@@ -1,9 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
 import {
-  assertEventInsertionAccepted,
-  upsertMatchEvents,
-} from "@/lib/ingestion/events";
-import {
   fetchLeagueOneMatchDetail,
   type LeagueOneEvent,
   type LeagueOnePlayer,
@@ -14,7 +10,6 @@ import {
 } from "@/lib/scrapers/league-one-schedule";
 
 import type { Json } from "@/lib/db/types";
-import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
 
 type TeamLookup = Record<string, string>;
 
@@ -337,30 +332,72 @@ async function upsertMatchLineups(params: {
   return rows.length;
 }
 
-function toParsedLeagueOneEvents(events: LeagueOneEvent[]): ParsedMatchEvent[] {
-  return events.map((event) => {
-    const type = EVENT_TYPE_TO_DB[event.event_type];
-    if (event.event_type === "substitution") {
-      return {
-        jerseyIn: event.jersey_in,
-        jerseyOut: event.jersey_out,
-        minute: event.minute,
-        playerInName: event.player_in_name,
-        playerOutName: event.player_out_name,
-        source: SOURCE,
-        teamSide: event.team_side,
-        type: "substitution" as const,
-      };
-    }
+async function upsertMatchEvents(params: {
+  awayPlayerIds: Map<string, string>;
+  awayTeamId: string;
+  events: LeagueOneEvent[];
+  homePlayerIds: Map<string, string>;
+  homeTeamId: string;
+  matchId: string;
+}) {
+  const client = getSupabaseServerClient();
+  const deleteResult = await client
+    .from("match_events")
+    .delete()
+    .eq("match_id", params.matchId);
+
+  if (deleteResult.error) {
+    throw deleteResult.error;
+  }
+
+  if (params.events.length === 0) {
+    return 0;
+  }
+
+  const rows = params.events.map((event) => {
+    const teamId =
+      event.team_side === "home" ? params.homeTeamId : params.awayTeamId;
+    const playerIds =
+      event.team_side === "home" ? params.homePlayerIds : params.awayPlayerIds;
+    const playerNameForResolution =
+      event.event_type === "substitution"
+        ? event.player_in_name
+        : event.player_name;
+    const metadata =
+      event.event_type === "substitution"
+        ? {
+            jersey_in: event.jersey_in,
+            jersey_out: event.jersey_out,
+            player_in_name: event.player_in_name,
+            player_out_name: event.player_out_name,
+            source: SOURCE,
+          }
+        : {
+            ...(event.event_type === "yellow_card" ||
+            event.event_type === "red_card"
+              ? { card: event.event_type }
+              : {}),
+            player_name: event.player_name,
+            source: SOURCE,
+          };
+
     return {
-      isPenaltyTry: false,
+      match_id: params.matchId,
+      metadata: metadata as Json,
       minute: event.minute,
-      playerName: event.player_name,
-      source: SOURCE,
-      teamSide: event.team_side,
-      type: type as Exclude<ParsedMatchEvent["type"], "substitution">,
-    } as ParsedMatchEvent;
+      player_id: playerIds.get(playerNameForResolution) ?? null,
+      team_id: teamId,
+      type: EVENT_TYPE_TO_DB[event.event_type],
+    };
   });
+
+  const { error } = await client.from("match_events").insert(rows);
+
+  if (error) {
+    throw error;
+  }
+
+  return rows.length;
 }
 
 async function importMatchDetail(
@@ -392,15 +429,16 @@ async function importMatchDetail(
     players: detail.players,
     printUrl,
   });
-  const eventResult = await upsertMatchEvents({
+  const eventsInserted = await upsertMatchEvents({
+    awayPlayerIds,
     awayTeamId: match.away_team_id,
-    events: toParsedLeagueOneEvents(detail.events),
+    events: detail.events,
+    homePlayerIds,
     homeTeamId: match.home_team_id,
     matchId: match.id,
   });
-  assertEventInsertionAccepted(eventResult);
 
-  return { eventsInserted: eventResult.inserted, lineupsInserted };
+  return { eventsInserted, lineupsInserted };
 }
 
 async function main() {

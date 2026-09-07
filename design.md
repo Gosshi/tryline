@@ -132,48 +132,6 @@ Mobile density is comfortable: favor vertical stacking, readable text, and touch
 
 `WeekBoard` in `components/calendar/week-schedule.tsx` is the reference implementation for `density.desktop: compact`. Its desktop board is activated with `hidden lg:block`, changing to a columnar weekly arrangement at 1024px while the mobile presentation remains comfortable and stacked.
 
-## Surface Intent: Brand vs Data
-
-> **Status: draft (2026-09-06). Pending external design review — the thresholds below are not settled.** Added in response to audit finding A-6 #1 (`docs/audits/gpt6-full-audit-2026-09-05.md`, P2): 「ブランドの面」と「比較する表」の余白規則を区別する.
-
-The Spacing, Layout, and Density rules above apply uniformly to every surface. That is the gap: they do not distinguish a surface whose job is to **establish the brand** from one whose job is to **let the reader compare rows**. The observed cost is that on hubs — where the reader arrives to check a schedule or a table — the combination of guide imagery, a tall header, and the newsletter block delays the first action.
-
-Every surface declares one of two intents. A surface may contain both kinds of blocks; the intent is decided by **what the reader came for**.
-
-| | Brand surface | Data surface |
-|---|---|---|
-| Reader's goal | understand what this is, decide to care | find a fixture, a score, a standing |
-| Examples | home hero, pricing, competition family guide, newsletter landing | calendar, competition season hub, standings, match detail records, H2H |
-| Vertical rhythm | the 24–40px steps are the default between blocks | the 12–20px steps are the default; 24–40px only between top-level sections |
-| Imagery | may occupy a full-width band | must not push the first data element past the budget below |
-| Newsletter / subscribe blocks | may appear above the fold | placed after the first complete data unit, never between the header and the data |
-
-### First data element
-
-On a **data surface**, the first row of real data must be reachable without the reader hunting for it.
-
-**The measurable budget is not yet fixed.** Measurements taken 2026-09-05 during the audit:
-
-- Calendar at 1440px: the first card sits about **591px** from the top of the page
-- Home at 375px: the hero alone consumes most of the first **900px**
-
-These are observations, not targets. **The threshold is an open question for the design review.**
-
-### What this section does not change
-
-- The 4px base unit and the 2–40px scale. Both surface intents draw from the same scale
-- `max-w-6xl` as the primary container, and the breakpoint set
-- `maxEmptyRatio: 0.25` for list rows
-- `WeekBoard` as the reference implementation for `density.desktop: compact`
-- The soft-modern direction, the paper/red palette, and the rounded Japanese type. The audit explicitly endorsed these（「8/25改稿後の方針を尊重する」）
-
-### Open questions for design review
-
-1. **What is the budget for "first data element"?** A fixed px value, a viewport-height fraction, or a rule expressed in blocks ("at most one brand block above the first data unit")? A px value is easy to check but brittle across breakpoints
-2. **Where does the competition family guide sit?** It reads as brand copy but lives on a hub that readers reach for data. Does `/c/<family>` become a brand surface and `/c/<family>/<season>` a data surface, or does one page carry both intents with an ordering rule?
-3. **Does the home page have a single intent?** It currently mixes a brand hero with the Matchday Board. If it is a data surface, the hero budget shrinks; if it is a brand surface, the board moves down
-4. **Should this be enforceable?** The `maxEmptyRatio: 0.25` precedent shows a measurable rule can live in `design.md` and be checked. Is the first-data-element budget worth the same treatment, or does it stay guidance?
-
 ## Elevation & Depth
 
 Surfaces combine white cards, gentle borders, and the defined soft shadows: `--shadow` is `0 20px 44px -24px rgb(28 38 64 / 40%)`, and `--shadow-soft` is `0 12px 28px -20px rgb(28 38 64 / 45%)`. Layered page gradients, low-opacity card treatments, and `backdrop-blur` are intentional parts of the current interface when they preserve match-data legibility.

@@ -145,17 +145,10 @@ V4 は既に別 match_id に登録された同一 source namespace・fixture ID 
 
 1. **V4 の fixture 識別子**: `external_ids` のどのキーを source fixture id とするか、namespace をどう区切るか、欠損時に拒否するか通すか、日付の粒度をどう扱うか。既存の `fix-live-ingest-event-key-collision.md` と `feat-nations-championship-event-source.md` のキー設計と衝突しない形を確定する
    **2026-09-06 確定追記**: `specs/fix-external-identifier-key-policy.md` により、許可リストは `match_url` / `league_one_match_id` / `world_rugby_match_id` / `top14_lnr_id` / `top14_lnr_match_path` の 5 キーとする。`lib/ingestion/external-identifiers.ts` の `extractFixtureIdentifiers` を共有し、キーを namespace とした `${key}=${value}` 形式で扱う。`wikipedia_event_id` / `wikipedia_url` / `top14_lnr_url` は fixture 識別子としない。本番では 327 / 1,372 試合（24%）だけが許可キーを持ち、1,045 試合（76%）には使える識別子が無い。Wikipedia 系は V1〜V3 が主防御、V4 は補助であり、識別子欠損から fixture 重複とは判定しない。この追記は識別子の解釈の確定のみで、取り込み時ガードの実装は含まない。
-2. ~~**V3 を自動拒否に使うか**~~
-   **2026-09-06 確定: 警告に留める。取り込みを拒否しない。** 同日の本番監査（848 試合）で C3 該当は 8 件しかなく、自動拒否の必要性は低い。一方で誤検知の代償は「正常な試合の取り込みが止まる」であり大きい。V3 は `lib/llm/notify.ts` 経由で match_id と `https://www.trylinerugby.com/matches/<id>` を含む通知を出し、**取り込み自体は続行する**。将来 V3 を拒否に昇格させるなら、正常な試合が誤って拒否される反例テストを先に用意すること。
-
-3. ~~**共通入口を通らない 2 実装の扱い**~~
-   **2026-09-06 確定: 本 spec で共通化する。** 両ファイルに独自の `upsertMatchEvents` が現存することを同日に確認済み（`scripts/import-league-one-full.ts:335,345,394` / `scripts/import-world-rugby-full.ts:505,515`）。これらは `lib/ingestion/events.ts` を通らないため、ガードを入れてもこの 2 経路は素通りする。**別 spec に回すと「ガードを入れた」と言いながら穴が残る。** 独自実装を削除し、共通の `upsertMatchEvents` を呼ぶ形に統一する。統一によって既存の取り込み結果が変わらないことを、テストで示すこと。
-
-**上記 3 件がすべて確定したため、本 spec は着手可能である。**「決まるまで着手しない」という冒頭の但し書きは解除された。
+2. **V3 を自動拒否に使うか**: 4 件という閾値は候補抽出の暫定基準であり、汚染の確定ではない。正常な試合が誤って拒否される反例テストを見たうえで、自動拒否とするか警告に留めるかを決める
+3. **共通入口を通らない 2 実装の扱い**: `scripts/import-world-rugby-full.ts:505` と `scripts/import-league-one-full.ts:335` を本 spec で共通化するか、別 spec に回すか
 
 **本 spec で解決しないと明示するもの**:
 
 - **対称スコア（例: 24–24）でのチーム帰属反転は V1 でも V4 でも検出できない。** 完全に防ぐには出典側のチーム識別子と試合日を入力契約に加えて照合する必要があり、パーサ改修を含む別 spec で定める。**「同一性を保証した」と完了報告しないこと**
 - **正常時の `delete` → `insert`（`events.ts:69`/`:102`）は原子的でない。** ガード通過後に insert が失敗すると既存イベントが失われる。本 spec のガードはこれを解決しない
-- **V3 は同一ラン内で新たに作られた重複を検出できない。** `getEventInsertionValidationSnapshot()` は他試合の署名を 1 回だけ読み、insert 後に更新しない。2026-07-06 の NC 第1節（6 試合が 1 回の取り込みで同じ 18 イベントを共有）のような形では、2 件目以降のコピーがスナップショットの何とも一致せず警告が出ない。**ただし拒否側の V1 / V2 / V4 は毎回 canonical な試合データを引くため影響を受けない。** 同事故を検算すると、6 試合中 5 試合はイベント合計 34–32 が実スコア（38–47 / 31–33 / 24–39 / 45–21 / 27–10）と食い違うため **V1 で拒否される**。警告が出ないだけで汚染は入らない
-- **サーバレスの warm インスタンスではスナップショットがプロセス寿命の間残る。** `app/api/cron/*` は温まったまま再利用されるため、V3 と V4 の精度が時間とともに静かに劣化する。**「ガードがあるのに同種の汚染が入った」と判断する前に、まずスナップショットの鮮度を疑うこと**

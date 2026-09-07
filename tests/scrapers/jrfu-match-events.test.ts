@@ -31,7 +31,6 @@ describe("JRFU match event scraper", () => {
     const result = parseJrfuMatchEventsHtml(await readFixture());
 
     expect(result.hasUnsupportedScoringEvent).toBe(false);
-    expect(result.hasHalfHeadings).toBe(true);
     expect(result.events).toHaveLength(18);
     expect(result.events).toEqual(
       expect.arrayContaining([
@@ -52,35 +51,6 @@ describe("JRFU match event scraper", () => {
           playerName: "タコダ・マクマリン",
           teamSide: "away",
           type: "try",
-        }),
-      ]),
-    );
-    expect(result.events.find((event) => event.minute === 60)).toMatchObject({
-      playerName: "ベン・ルサージュ",
-      teamSide: "away",
-      type: "try",
-    });
-    expect(result.events.find((event) => event.minute === 42)).toMatchObject({
-      playerName: "下川甲嗣",
-      teamSide: "home",
-      type: "try",
-    });
-    expect(result.events.find((event) => event.minute === 43)).toMatchObject({
-      playerName: "松永拓朗",
-      teamSide: "home",
-      type: "conversion",
-    });
-    expect(result.events.filter((event) => event.minute === 19)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          playerName: "タコダ・マクマリン",
-          teamSide: "away",
-          type: "try",
-        }),
-        expect.objectContaining({
-          playerName: "タコダ・マクマリン",
-          teamSide: "away",
-          type: "conversion",
         }),
       ]),
     );

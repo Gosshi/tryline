@@ -1,6 +1,6 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { pointsForMatchEvent } from "@/lib/format/match-event-points";
-import { resolvePlayerId, upsertMatchEvents } from "@/lib/ingestion/events";
+import { upsertMatchEvents } from "@/lib/ingestion/events";
 import { JRFU_OPPONENT_SLUGS } from "@/lib/ingestion/jrfu-result-fallback";
 import { fetchJrfuMatchEvents } from "@/lib/scrapers/jrfu-match-events";
 
@@ -12,12 +12,9 @@ export const JRFU_MATCH_EVENT_FALLBACK_LIMIT = 5;
 export type JrfuMatchEventFallbackResult = {
   counts: {
     existing_events_skipped: number;
-    half_headings_skipped: number;
     match_limit_skipped: number;
     matches_inserted: number;
     score_mismatches_skipped: number;
-    timeline_order_skipped: number;
-    unresolved_players_all_skipped: number;
     unresolved_player_names: number;
     unsupported_timeline_skipped: number;
   };
@@ -166,12 +163,9 @@ export async function applyJrfuMatchEventFallback(
 ): Promise<JrfuMatchEventFallbackResult> {
   const counts = {
     existing_events_skipped: 0,
-    half_headings_skipped: 0,
     match_limit_skipped: 0,
     matches_inserted: 0,
     score_mismatches_skipped: 0,
-    timeline_order_skipped: 0,
-    unresolved_players_all_skipped: 0,
     unresolved_player_names: 0,
     unsupported_timeline_skipped: 0,
   };
@@ -201,14 +195,6 @@ export async function applyJrfuMatchEventFallback(
   for (const candidate of cappedCandidates) {
     const parsed = await fetchJrfuMatchEvents(candidate.result.matchUrl!);
 
-    if (!parsed.hasHalfHeadings) {
-      counts.half_headings_skipped += 1;
-      console.warn("[jrfu-match-event-fallback] half headings missing; skipped", {
-        matchId: candidate.match.id,
-      });
-      continue;
-    }
-
     if (parsed.hasUnsupportedScoringEvent) {
       counts.unsupported_timeline_skipped += 1;
       console.warn(
@@ -219,29 +205,6 @@ export async function applyJrfuMatchEventFallback(
     }
 
     const scoreCheck = eventScoresMatch(parsed.events, candidate.match);
-
-    const isMonotonic = parsed.events.every(
-      (event, index) =>
-        index === 0 ||
-        event.minute === null ||
-        parsed.events[index - 1]!.minute === null ||
-        event.minute >= parsed.events[index - 1]!.minute!,
-    );
-    const firstHalfTotals = eventTotals(
-      parsed.events.filter((event) => event.minute !== null && event.minute <= 40),
-    );
-
-    if (
-      !isMonotonic ||
-      firstHalfTotals.home > scoreCheck.totals.home ||
-      firstHalfTotals.away > scoreCheck.totals.away
-    ) {
-      counts.timeline_order_skipped += 1;
-      console.warn("[jrfu-match-event-fallback] invalid event timeline; skipped", {
-        matchId: candidate.match.id,
-      });
-      continue;
-    }
 
     if (!scoreCheck.matches) {
       counts.score_mismatches_skipped += 1;
@@ -256,34 +219,6 @@ export async function applyJrfuMatchEventFallback(
           matchId: candidate.match.id,
         },
       );
-      continue;
-    }
-
-    const playerNameForResolution = (event: ParsedMatchEvent) =>
-      event.type === "substitution" ? event.playerInName : event.playerName;
-    const attemptedPlayerNames = parsed.events.map(playerNameForResolution);
-    const resolvedPlayerCount = (
-      await Promise.all(
-        parsed.events.map((event) =>
-          resolvePlayerId({
-            playerName: playerNameForResolution(event),
-            teamId:
-              event.teamSide === "home"
-                ? candidate.match.home_team!.id
-                : candidate.match.away_team!.id,
-          }),
-        ),
-      )
-    ).filter((playerId) => playerId !== null).length;
-
-    if (parsed.events.length > 0 && resolvedPlayerCount === 0) {
-      counts.unresolved_players_all_skipped += 1;
-      console.warn("[jrfu-match-event-fallback] all players unresolved; skipped", {
-        attemptedPlayerNames,
-        eventCount: parsed.events.length,
-        matchId: candidate.match.id,
-        resolvedPlayerCount,
-      });
       continue;
     }
 

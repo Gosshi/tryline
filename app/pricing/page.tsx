@@ -2,13 +2,8 @@ import Image from "next/image";
 
 import { PricingForm } from "@/app/pricing/pricing-form";
 import { HeroTexture } from "@/components/hero-texture";
-import {
-  PricingBillingSummary,
-  PricingTrialBadge,
-} from "@/components/pricing-billing-copy";
 import { PricingFaq } from "@/components/pricing-faq";
 import { TrackedLink } from "@/components/tracked-link";
-import { BILLING_TERMS, type BillingTerms } from "@/lib/billing/terms";
 import { getRecentlyReviewedMatchById } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { getPrimarySampleMatchId } from "@/lib/sample-matches";
@@ -18,9 +13,11 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/pricing` },
-  description: BILLING_TERMS.pricingDescription,
+  description:
+    "見逃した海外ラグビーの試合を日本語レビューと AI チャットで深く追える Tryline Premium。7日間無料、その後 ¥980/月。",
   openGraph: {
-    description: BILLING_TERMS.pricingDescription,
+    description:
+      "見逃した海外ラグビーの試合を日本語レビューと AI チャットで深く追える Tryline Premium。7日間無料、その後 ¥980/月。",
     images: [{ height: 630, url: `${SITE_URL}/og-image.png`, width: 1200 }],
     locale: "ja_JP",
     title: "プランを選ぶ | Tryline",
@@ -39,39 +36,37 @@ const features = [
   { free: true, name: "試合更新・公開通知", premium: true },
 ];
 
-function createFaqs(billingTerms: BillingTerms) {
-  return [
-    {
-      answer: billingTerms.trialFaqAnswer,
-      question: "無料トライアルはありますか？",
-    },
-    {
-      answer:
-        "試合スコア・順位表・ラインナップ・日本語プレビュー全文・試合更新通知は無料でご利用いただけます。日本語レビュー全文・試合 AI チャットは Premium 限定です。",
-      question: "無料でどこまで利用できますか？",
-    },
-    {
-      answer:
-        "デジタルコンテンツの性質上、原則として返金は承っておりません。ご不明な点は support@trylinerugby.com までお問い合わせください。",
-      question: "返金ポリシーを教えてください。",
-    },
-    {
-      answer:
-        "はい。Stripe カスタマーポータルからいつでも解約できます。次回更新日まで引き続きご利用いただけます。",
-      question: "いつでもキャンセルできますか？",
-    },
-    {
-      answer:
-        "Six Nations、Premiership、URC、Top 14、Super Rugby Pacific、Rugby Championship、Autumn Nations Series、リーグワン、Pacific Nations Cup、RWC 2027 に対応しています。",
-      question: "どの大会のコンテンツが読めますか？",
-    },
-    {
-      answer:
-        "クレジットカード・デビットカードに対応しています（Stripe 決済）。",
-      question: "支払い方法は？",
-    },
-  ];
-}
+const faqs = [
+  {
+    answer:
+      "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・試合 AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
+    question: "無料トライアルはありますか？",
+  },
+  {
+    answer:
+      "試合スコア・順位表・ラインナップ・日本語プレビュー全文・試合更新通知は無料でご利用いただけます。日本語レビュー全文・試合 AI チャットは Premium 限定です。",
+    question: "無料でどこまで利用できますか？",
+  },
+  {
+    answer:
+      "デジタルコンテンツの性質上、原則として返金は承っておりません。ご不明な点は support@trylinerugby.com までお問い合わせください。",
+    question: "返金ポリシーを教えてください。",
+  },
+  {
+    answer:
+      "はい。Stripe カスタマーポータルからいつでも解約できます。次回更新日まで引き続きご利用いただけます。",
+    question: "いつでもキャンセルできますか？",
+  },
+  {
+    answer:
+      "Six Nations、Premiership、URC、Top 14、Super Rugby Pacific、Rugby Championship、Autumn Nations Series、リーグワン、Pacific Nations Cup、RWC 2027 に対応しています。",
+    question: "どの大会のコンテンツが読めますか？",
+  },
+  {
+    answer: "クレジットカード・デビットカードに対応しています（Stripe 決済）。",
+    question: "支払い方法は？",
+  },
+];
 
 const pricingVideoJsonLd = {
   "@context": "https://schema.org",
@@ -84,22 +79,18 @@ const pricingVideoJsonLd = {
   uploadDate: "2025-01-01",
 };
 
-function createPricingFaqJsonLd(billingTerms: BillingTerms) {
-  const faqs = createFaqs(billingTerms);
-
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((faq) => ({
-      "@type": "Question",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: faq.answer,
-      },
-      name: faq.question,
-    })),
-  };
-}
+const pricingFaqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+    name: faq.question,
+  })),
+};
 
 function FeatureMark({ enabled }: { enabled: boolean }) {
   return (
@@ -113,8 +104,6 @@ function FeatureMark({ enabled }: { enabled: boolean }) {
 }
 
 export default async function PricingPage() {
-  const faqs = createFaqs(BILLING_TERMS);
-  const pricingFaqJsonLd = createPricingFaqJsonLd(BILLING_TERMS);
   const sampleMatchId = await getPrimarySampleMatchId();
   const sample = await getRecentlyReviewedMatchById(sampleMatchId, "ja");
   const trialUrl = sample ? `/matches/${sampleMatchId}` : "/";
@@ -145,7 +134,7 @@ export default async function PricingPage() {
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/60">
             <span>10大会対応</span>
             <span>500試合以上</span>
-            <PricingTrialBadge billingTerms={BILLING_TERMS} />
+            <span>7日間無料</span>
           </div>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65">
             DAZN、J SPORTS、WOWOW
@@ -158,9 +147,9 @@ export default async function PricingPage() {
                 cta_id: "pricing_hero_checkout",
                 cta_location: "pricing_hero",
                 destination: "checkout",
-                label: BILLING_TERMS.trialRecapCtaLabel,
+                label: "7日間無料でレビュー全文を読む",
               }}
-              buttonLabel={BILLING_TERMS.trialRecapCtaLabel}
+              buttonLabel="7日間無料でレビュー全文を読む"
             />
             <TrackedLink
               analytics={{
@@ -179,7 +168,7 @@ export default async function PricingPage() {
             </TrackedLink>
           </div>
           <p className="mt-3 text-xs text-white/45">
-            <PricingBillingSummary billingTerms={BILLING_TERMS} />
+            7日間無料 · その後 ¥980/月 · いつでもキャンセル可能 · Stripe 決済
           </p>
         </div>
       </section>
@@ -277,9 +266,9 @@ export default async function PricingPage() {
                   cta_id: "pricing_sample_section_checkout",
                   cta_location: "pricing_sample_section",
                   destination: "checkout",
-                  label: BILLING_TERMS.trialFullContentCtaLabel,
+                  label: "7日間無料で全文を読む",
                 }}
-                buttonLabel={BILLING_TERMS.trialFullContentCtaLabel}
+                buttonLabel="7日間無料で全文を読む"
                 variant="inline"
               />
             </div>

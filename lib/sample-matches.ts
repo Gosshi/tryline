@@ -1,6 +1,6 @@
 import { listCachedSampleMatchIds } from "@/lib/db/queries/sample-matches";
 
-export const PRIMARY_SAMPLE_MATCH_ID = "dcd576dd-f778-4690-b4e1-3d960bd664f1";
+export const PRIMARY_SAMPLE_MATCH_ID = "d31077ee-92c6-480e-bbef-87f955e6bc1d";
 
 export const FALLBACK_SAMPLE_MATCH_IDS = [
   PRIMARY_SAMPLE_MATCH_ID,
