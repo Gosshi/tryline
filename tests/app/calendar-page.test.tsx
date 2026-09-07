@@ -300,6 +300,8 @@ describe("/calendar page", () => {
       {
         family: "top-14",
         ingestedRoundCount: 2,
+        missingFixtures: null,
+        missingRounds: 24,
         name: "Top 14",
         nameJa: null,
         season: "2026-27",
@@ -333,6 +335,8 @@ describe("/calendar page", () => {
       {
         family: "top-14",
         ingestedRoundCount: 2,
+        missingFixtures: null,
+        missingRounds: 24,
         name: "Top 14",
         nameJa: null,
         season: "2026-27",

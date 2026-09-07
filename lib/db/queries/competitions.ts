@@ -4,7 +4,10 @@ import { cache } from "react";
 import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { getRoundFromExternalIds } from "@/lib/db/queries/matches";
-import { hasIncompleteSchedule } from "@/lib/format/schedule-coverage";
+import {
+  hasIncompleteSchedule,
+  hasMissingScheduleData,
+} from "@/lib/format/schedule-coverage";
 
 import type { Json } from "@/lib/db/types";
 
@@ -26,6 +29,8 @@ export type CompetitionRow = {
 export type CompetitionScheduleCoverage = {
   family: string;
   ingestedRoundCount: number;
+  missingFixtures: number | null;
+  missingRounds: number;
   name: string;
   nameJa: string | null;
   season: string;
@@ -67,6 +72,7 @@ type CompetitionDbRow = {
 };
 
 type CompetitionScheduleCoverageDbRow = {
+  competition_standings: Array<{ team_id: string | null }> | null;
   family: string;
   matches: Array<{ external_ids: Json }> | null;
   name: string;
@@ -77,7 +83,10 @@ type CompetitionScheduleCoverageDbRow = {
 };
 
 type MatchContentCompetitionRow = {
-  matches: { competition_id: string } | Array<{ competition_id: string }> | null;
+  matches:
+    | { competition_id: string }
+    | Array<{ competition_id: string }>
+    | null;
 };
 
 function countPublishedContentByCompetition(
@@ -131,6 +140,19 @@ function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
   };
 }
 
+function hasNumericWikipediaRound(externalIds: Json): boolean {
+  if (
+    !externalIds ||
+    typeof externalIds !== "object" ||
+    Array.isArray(externalIds)
+  ) {
+    return false;
+  }
+
+  const wikipediaRound = externalIds.wikipedia_round;
+  return typeof wikipediaRound === "number" && Number.isFinite(wikipediaRound);
+}
+
 export async function listCompetitionScheduleCoverage(): Promise<
   CompetitionScheduleCoverage[]
 > {
@@ -138,7 +160,7 @@ export async function listCompetitionScheduleCoverage(): Promise<
   const { data, error } = await client
     .from("competitions")
     .select(
-      "family, slug, name, name_ja, season, total_rounds, matches(external_ids)",
+      "family, slug, name, name_ja, season, total_rounds, matches(external_ids), competition_standings(team_id)",
     )
     .not("total_rounds", "is", null);
 
@@ -147,20 +169,38 @@ export async function listCompetitionScheduleCoverage(): Promise<
   }
 
   return ((data ?? []) as CompetitionScheduleCoverageDbRow[])
-    .map((row) => ({
-      family: row.family,
-      ingestedRoundCount: new Set(
-        (row.matches ?? [])
+    .map((row) => {
+      const matches = row.matches ?? [];
+      const ingestedRoundCount = new Set(
+        matches
           .map((match) => getRoundFromExternalIds(match.external_ids))
           .filter((round): round is number => round !== null),
-      ).size,
-      name: row.name,
-      nameJa: row.name_ja,
-      season: row.season,
-      slug: row.slug,
-      totalRounds: row.total_rounds,
-    }))
-    .filter(hasIncompleteSchedule);
+      ).size;
+      const coverage = hasIncompleteSchedule({
+        ingestedRegularSeasonFixtureCount: matches.filter((match) =>
+          hasNumericWikipediaRound(match.external_ids),
+        ).length,
+        ingestedRoundCount,
+        standingTeamCount: new Set(
+          (row.competition_standings ?? [])
+            .map((standing) => standing.team_id)
+            .filter((teamId): teamId is string => teamId !== null),
+        ).size,
+        totalRounds: row.total_rounds,
+      });
+
+      return {
+        family: row.family,
+        ingestedRoundCount,
+        ...coverage,
+        name: row.name,
+        nameJa: row.name_ja,
+        season: row.season,
+        slug: row.slug,
+        totalRounds: row.total_rounds,
+      };
+    })
+    .filter(hasMissingScheduleData);
 }
 
 export function selectLatestSeasonWithMatches(
@@ -176,8 +216,7 @@ function isRecentlyActive(endDate: string | null, now = new Date()): boolean {
     return false;
   }
 
-  const diffMs =
-    now.getTime() - new Date(`${endDate}T23:59:59.999Z`).getTime();
+  const diffMs = now.getTime() - new Date(`${endDate}T23:59:59.999Z`).getTime();
 
   return diffMs <= 14 * 24 * 60 * 60 * 1000;
 }

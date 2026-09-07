@@ -45,7 +45,10 @@ import {
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
 import { groupMatchesByRound } from "@/lib/format/match-groups";
-import { hasIncompleteSchedule } from "@/lib/format/schedule-coverage";
+import {
+  hasIncompleteSchedule,
+  hasMissingScheduleData,
+} from "@/lib/format/schedule-coverage";
 import { isSeasonNotStarted } from "@/lib/season-standings";
 import { createCompetitionOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
@@ -626,14 +629,22 @@ export default async function SeasonPage({ params }: Props) {
         ? (standings[0]?.teamName ?? null)
         : null;
   const seasonProgress = getSeasonProgress(matches, comp.totalRounds);
-  const hasIncompleteScheduleCoverage = hasIncompleteSchedule({
-    ingestedRoundCount: new Set(
-      matches
-        .map((match) => match.round)
-        .filter((round): round is number => round !== null),
-    ).size,
+  const ingestedRoundCount = new Set(
+    matches
+      .map((match) => match.round)
+      .filter((round): round is number => round !== null),
+  ).size;
+  const incompleteScheduleCoverage = hasIncompleteSchedule({
+    ingestedRegularSeasonFixtureCount: matches.filter(
+      (match) => match.round !== null,
+    ).length,
+    ingestedRoundCount,
+    standingTeamCount: standings.length,
     totalRounds: comp.totalRounds,
   });
+  const hasIncompleteScheduleCoverage = hasMissingScheduleData(
+    incompleteScheduleCoverage,
+  );
   const nextMatchJst = nextMatch
     ? formatMatchKickoffJst(nextMatch.kickoffAt)
     : null;
@@ -921,7 +932,11 @@ export default async function SeasonPage({ params }: Props) {
 
         <section className="scroll-mt-4 space-y-4" id="schedule">
           {hasIncompleteScheduleCoverage && (
-            <ScheduleCoverageNotice competitions={[comp]} />
+            <ScheduleCoverageNotice
+              competitions={[
+                { ...comp, ...incompleteScheduleCoverage, ingestedRoundCount },
+              ]}
+            />
           )}
           {matches.length === 0 ? (
             <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
@@ -1023,19 +1038,20 @@ export default async function SeasonPage({ params }: Props) {
             </h2>
             <p className="mt-2 text-sm leading-7 text-[var(--color-ink-muted)]">
               {seasonBroadcastGuide.answer}
-              {seasonBroadcastGuide.services.length === 0 && guide?.sourceUrl && (
-                <>
-                  {" "}
-                  <a
-                    className="text-[var(--color-accent)] underline underline-offset-4"
-                    href={guide.sourceUrl}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    大会公式サイト
-                  </a>
-                </>
-              )}
+              {seasonBroadcastGuide.services.length === 0 &&
+                guide?.sourceUrl && (
+                  <>
+                    {" "}
+                    <a
+                      className="text-[var(--color-accent)] underline underline-offset-4"
+                      href={guide.sourceUrl}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      大会公式サイト
+                    </a>
+                  </>
+                )}
             </p>
           </section>
           <CompetitionViewingGuide
