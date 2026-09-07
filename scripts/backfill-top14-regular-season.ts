@@ -101,7 +101,9 @@ export function parseOptions(argv: string[]): CliOptions {
 
 function getCompetitionDates(results: Top14LnrMatchResult[]) {
   const dates = results
-    .map((result) => result.kickoff_at.slice(0, 10))
+    .flatMap((result) =>
+      result.kickoff_at ? [result.kickoff_at.slice(0, 10)] : [],
+    )
     .sort((a, b) => a.localeCompare(b));
   const startDate = dates[0];
   const endDate = dates.at(-1);

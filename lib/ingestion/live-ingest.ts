@@ -51,13 +51,20 @@ async function upsertCompetition(
 ): Promise<string> {
   const client = getSupabaseServerClient();
   const dates = matches
-    .map((match) => match.kickoffAt.slice(0, 10))
+    .flatMap((match) =>
+      match.preserveExistingKickoffAt ? [] : [match.kickoffAt.slice(0, 10)],
+    )
     .sort((left, right) => left.localeCompare(right));
   const { data, error } = await client
     .from("competitions")
     .upsert(
       {
-        end_date: dates.at(-1) ?? null,
+        ...(dates.length > 0
+          ? {
+              end_date: dates.at(-1),
+              start_date: dates[0],
+            }
+          : {}),
         family: source.family,
         name: source.competitionName,
         ...(source.competitionNameJa
@@ -65,7 +72,6 @@ async function upsertCompetition(
           : {}),
         season: source.season,
         slug: source.competitionSlug,
-        start_date: dates[0] ?? null,
       },
       { onConflict: "slug" },
     )
@@ -230,6 +236,10 @@ function buildParsedMatchKey(match: ParsedLiveMatch | undefined) {
 
   const homeKey = match.homeTeamSlug ?? match.homeTeamName;
   const awayKey = match.awayTeamSlug ?? match.awayTeamName;
+  if (match.preserveExistingKickoffAt) {
+    return null;
+  }
+
   const kickoffDate = match.kickoffAt.slice(0, 10);
 
   return `${kickoffDate}:${homeKey}:${awayKey}`;
@@ -338,7 +348,7 @@ export async function ingestLiveCompetition(
         externalIds: toExternalIds(source, match),
         homeScore: match.homeScore,
         homeTeamId,
-        kickoffAt: match.kickoffAt,
+        kickoffAt: match.preserveExistingKickoffAt ? null : match.kickoffAt,
         rawHtml: match.rawHtml,
         status: match.status,
         venue: match.venue,

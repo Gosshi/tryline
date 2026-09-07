@@ -72,8 +72,10 @@ export function toParsedTop14LnrLiveMatches(
     homeScore: result.home_score,
     homeTeamName: result.home_team_slug,
     homeTeamSlug: result.home_team_slug,
-    kickoffAt: result.kickoff_at,
+    // `live-ingest` turns this into a null upsert candidate when the flag is set.
+    kickoffAt: result.kickoff_at ?? "",
     lineupTableHtml: null,
+    preserveExistingKickoffAt: result.kickoff_at === null,
     rawHtml: "",
     round: result.round,
     roundName: null,
