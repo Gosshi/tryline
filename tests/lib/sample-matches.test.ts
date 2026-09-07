@@ -28,7 +28,7 @@ describe("sample matches", () => {
 
   it("keeps the fallback sample list available", () => {
     expect(PRIMARY_SAMPLE_MATCH_ID).toBe(
-      "d31077ee-92c6-480e-bbef-87f955e6bc1d",
+      "dcd576dd-f778-4690-b4e1-3d960bd664f1",
     );
     expect(SAMPLE_MATCH_IDS).toHaveLength(9);
     expect(SAMPLE_MATCH_IDS[0]).toBe(PRIMARY_SAMPLE_MATCH_ID);
