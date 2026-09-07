@@ -5,6 +5,7 @@ import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
 
 const JRFU_BASE_URL = "https://www.rugby-japan.jp/";
+export const JRFU_SECOND_HALF_MINUTE_OFFSET = 40;
 
 const EVENT_TYPE_BY_ICON = {
   "icon-conversion": "conversion",
@@ -18,6 +19,7 @@ type JrfuEventType =
 
 export type JrfuMatchEventParseResult = {
   events: ParsedMatchEvent[];
+  hasHalfHeadings: boolean;
   hasUnsupportedScoringEvent: boolean;
 };
 
@@ -75,8 +77,19 @@ export function parseJrfuMatchEventsHtml(
   const events: ParsedMatchEvent[] = [];
   let hasUnsupportedScoringEvent = false;
   let previousScore: [number, number] | null = null;
+  const hasFirstHalfHeading = $("#timeline .half")
+    .text()
+    .includes("前半");
+  const hasSecondHalfHeading = $("th").toArray().some((heading) =>
+    normalizeText($(heading).text()).includes("後半"),
+  );
+  let isSecondHalf = false;
 
   $("#timeline .timeline tbody tr").each((_, row) => {
+    if ($(row).find(".half").text().includes("前半")) {
+      isSecondHalf = true;
+      return;
+    }
     const score = parseTimelineScore($(row).find(".score").first().text());
     const scoreChanged =
       score !== null &&
@@ -130,7 +143,14 @@ export function parseJrfuMatchEventsHtml(
 
     events.push({
       isPenaltyTry: false,
-      minute: parseMinute(entry.closest("tr").find(".time").first().text()),
+      minute: (() => {
+        const minute = parseMinute(
+          entry.closest("tr").find(".time").first().text(),
+        );
+        return minute === null || !isSecondHalf
+          ? minute
+          : minute + JRFU_SECOND_HALF_MINUTE_OFFSET;
+      })(),
       playerName,
       source: "jrfu",
       teamSide,
@@ -138,7 +158,11 @@ export function parseJrfuMatchEventsHtml(
     });
   });
 
-  return { events, hasUnsupportedScoringEvent };
+  return {
+    events,
+    hasHalfHeadings: hasFirstHalfHeading && hasSecondHalfHeading,
+    hasUnsupportedScoringEvent,
+  };
 }
 
 export function normalizeJrfuMatchUrl(url: string): string {
