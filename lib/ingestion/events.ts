@@ -106,7 +106,27 @@ export async function resolvePlayerId(params: {
     throw error;
   }
 
-  return data.length === 1 ? data[0]!.id : null;
+  if (data.length === 1) {
+    return data[0]!.id;
+  }
+
+  const { data: japaneseNameCandidates, error: japaneseNameError } = await db
+    .from("players")
+    .select("id, name_ja")
+    .eq("team_id", params.teamId);
+
+  if (japaneseNameError) {
+    throw japaneseNameError;
+  }
+
+  const normalizedPlayerName = params.playerName.replace(/[ \u3000]/g, "");
+  const japaneseNameMatches = japaneseNameCandidates.filter(
+    (player) =>
+      player.name_ja !== null &&
+      player.name_ja.replace(/[ \u3000]/g, "") === normalizedPlayerName,
+  );
+
+  return japaneseNameMatches.length === 1 ? japaneseNameMatches[0]!.id : null;
 }
 
 function buildMetadata(event: ParsedMatchEvent): MatchEventMetadata {
