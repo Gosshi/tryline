@@ -66,7 +66,7 @@ const HTML = `
 
 describe("parseTop14ResultsHtml", () => {
   it("parses Top 14 relegation and playoff sections", () => {
-    const results = parseTop14ResultsHtml(
+    const { results } = parseTop14ResultsHtml(
       HTML,
       "2024-25",
       "https://example.test/2024-25_Top_14_season",
@@ -95,5 +95,26 @@ describe("parseTop14ResultsHtml", () => {
       round: 3,
     });
     expect(results[5]?.kickoff_at).toBe("2025-06-28T19:05:00.000Z");
+  });
+
+  it("skips unknown Top 14 teams and returns their match details", () => {
+    const { results, skippedMatchCount, skippedMatches, unknownTeamNames } =
+      parseTop14ResultsHtml(
+        HTML.replace("<a>Grenoble</a>", "<a>Provence</a>"),
+        "2024-25",
+      );
+
+    expect(results).toHaveLength(5);
+    expect(skippedMatchCount).toBe(1);
+    expect(unknownTeamNames).toEqual(["Provence"]);
+    expect(skippedMatches).toEqual([
+      {
+        awayTeamName: "Perpignan",
+        homeTeamName: "Provence",
+        round: 0,
+        unknownTeamNames: ["Provence"],
+        wikipediaEventId: "Grenoble_v_Perpignan",
+      },
+    ]);
   });
 });

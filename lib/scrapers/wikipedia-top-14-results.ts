@@ -1,6 +1,7 @@
 import { load } from "cheerio";
 import { parse } from "date-fns";
 
+import { resolveTop14TeamSlug } from "@/lib/ingestion/sources/top-14-team-slugs";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 
 export type HistoricalMatchResult = {
@@ -16,8 +17,23 @@ export type HistoricalMatchResult = {
   wikipedia_event_id: string | null;
 };
 
+export type SkippedTop14Result = {
+  awayTeamName: string;
+  homeTeamName: string;
+  round: number;
+  unknownTeamNames: string[];
+  wikipediaEventId: string | null;
+};
+
+export type Top14ResultsParseResult = {
+  results: HistoricalMatchResult[];
+  skippedMatchCount: number;
+  skippedMatches: SkippedTop14Result[];
+  unknownTeamNames: string[];
+};
+
 export interface CompetitionResultScraper {
-  fetchResults(season: string): Promise<HistoricalMatchResult[]>;
+  fetchResults(season: string): Promise<Top14ResultsParseResult>;
 }
 
 const SCORE_PATTERN = /(\d+)\s*[–-]\s*(\d+)/;
@@ -26,25 +42,6 @@ const SECTION_ROUNDS: Record<string, number> = {
   "Semi-final_Qualifiers": 1,
   "Semi-finals": 2,
   Final: 3,
-};
-
-const TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
-  Bayonne: "bayonne",
-  "Bordeaux Bègles": "bordeaux-begles",
-  Castres: "castres",
-  Clermont: "clermont",
-  Grenoble: "grenoble",
-  "La Rochelle": "la-rochelle",
-  Lyon: "lyon",
-  Montpellier: "montpellier",
-  Pau: "pau",
-  Perpignan: "perpignan",
-  Racing: "racing-92",
-  "Racing 92": "racing-92",
-  "Stade Français": "stade-francais",
-  Toulon: "toulon",
-  Toulouse: "toulouse",
-  Vannes: "vannes",
 };
 
 function normalizeWhitespace(value: string) {
@@ -61,16 +58,6 @@ function parseSeason(season: string) {
 
 function buildWikipediaUrl(season: string) {
   return `https://en.wikipedia.org/wiki/${season.replace("-", "–")}_Top_14_season`;
-}
-
-function resolveTeamSlug(teamName: string) {
-  const slug = TEAM_SLUG_BY_WIKIPEDIA_NAME[teamName];
-
-  if (!slug) {
-    throw new Error(`Unknown Top 14 team name: ${teamName}`);
-  }
-
-  return slug;
 }
 
 function lastSundayOfMonthUtc(year: number, monthIndex: number) {
@@ -182,10 +169,11 @@ export function parseTop14ResultsHtml(
   html: string,
   season: string,
   sourceUrl = buildWikipediaUrl(season),
-): HistoricalMatchResult[] {
+): Top14ResultsParseResult {
   const parsedSeason = parseSeason(season);
   const $ = load(html);
   const results: HistoricalMatchResult[] = [];
+  const skippedMatches: SkippedTop14Result[] = [];
 
   for (const element of $("div.vevent.summary").toArray()) {
     const block = $(element);
@@ -219,11 +207,28 @@ export function parseTop14ResultsHtml(
       throw new Error("Unable to parse Top 14 team names from a vevent block.");
     }
 
+    const homeTeamSlug = resolveTop14TeamSlug(homeTeamName);
+    const awayTeamSlug = resolveTop14TeamSlug(awayTeamName);
+
+    if (!homeTeamSlug || !awayTeamSlug) {
+      skippedMatches.push({
+        awayTeamName,
+        homeTeamName,
+        round,
+        unknownTeamNames: [
+          ...(!homeTeamSlug ? [homeTeamName] : []),
+          ...(!awayTeamSlug ? [awayTeamName] : []),
+        ],
+        wikipediaEventId: block.attr("id") ?? null,
+      });
+      continue;
+    }
+
     results.push({
       away_score: score.awayScore,
-      away_team_slug: resolveTeamSlug(awayTeamName),
+      away_team_slug: awayTeamSlug,
       home_score: score.homeScore,
-      home_team_slug: resolveTeamSlug(homeTeamName),
+      home_team_slug: homeTeamSlug,
       kickoff_at: parseKickoffText(dateTable.text()),
       round,
       season: parsedSeason,
@@ -237,11 +242,18 @@ export function parseTop14ResultsHtml(
     });
   }
 
-  if (results.length === 0) {
+  if (results.length === 0 && skippedMatches.length === 0) {
     throw new Error("No finished Top 14 playoff matches were found.");
   }
 
-  return results;
+  return {
+    results,
+    skippedMatchCount: skippedMatches.length,
+    skippedMatches,
+    unknownTeamNames: [
+      ...new Set(skippedMatches.flatMap((match) => match.unknownTeamNames)),
+    ],
+  };
 }
 
 export const wikipediaTop14ResultsScraper: CompetitionResultScraper = {
