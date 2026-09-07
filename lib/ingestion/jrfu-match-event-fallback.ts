@@ -161,6 +161,16 @@ function eventScoresMatch(events: ParsedMatchEvent[], match: JapanMatchRow) {
   };
 }
 
+function hasNondecreasingMinutes(events: ParsedMatchEvent[]) {
+  return events.every(
+    (event, index) =>
+      index === 0 ||
+      event.minute === null ||
+      events[index - 1]!.minute === null ||
+      event.minute >= events[index - 1]!.minute!,
+  );
+}
+
 export async function applyJrfuMatchEventFallback(
   jrfuResults: JrfuScheduleResult[],
 ): Promise<JrfuMatchEventFallbackResult> {
@@ -219,20 +229,13 @@ export async function applyJrfuMatchEventFallback(
     }
 
     const scoreCheck = eventScoresMatch(parsed.events, candidate.match);
-
-    const isMonotonic = parsed.events.every(
-      (event, index) =>
-        index === 0 ||
-        event.minute === null ||
-        parsed.events[index - 1]!.minute === null ||
-        event.minute >= parsed.events[index - 1]!.minute!,
-    );
-    const firstHalfTotals = eventTotals(
-      parsed.events.filter((event) => event.minute !== null && event.minute <= 40),
-    );
+    const firstHalfEvents = parsed.events.slice(0, parsed.firstHalfEventCount);
+    const secondHalfEvents = parsed.events.slice(parsed.firstHalfEventCount);
+    const firstHalfTotals = eventTotals(firstHalfEvents);
 
     if (
-      !isMonotonic ||
+      !hasNondecreasingMinutes(firstHalfEvents) ||
+      !hasNondecreasingMinutes(secondHalfEvents) ||
       firstHalfTotals.home > scoreCheck.totals.home ||
       firstHalfTotals.away > scoreCheck.totals.away
     ) {

@@ -32,6 +32,7 @@ describe("JRFU match event scraper", () => {
 
     expect(result.hasUnsupportedScoringEvent).toBe(false);
     expect(result.hasHalfHeadings).toBe(true);
+    expect(result.firstHalfEventCount).toBe(10);
     expect(result.events).toHaveLength(18);
     expect(result.events).toEqual(
       expect.arrayContaining([
@@ -70,6 +71,10 @@ describe("JRFU match event scraper", () => {
       teamSide: "home",
       type: "conversion",
     });
+    expect(result.events.slice(9, 11).map((event) => event.minute)).toEqual([
+      43,
+      41,
+    ]);
     expect(result.events.filter((event) => event.minute === 19)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
