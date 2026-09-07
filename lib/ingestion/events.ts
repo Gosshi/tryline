@@ -5,6 +5,69 @@ import { notifyEventIngestionIdentityAlert } from "@/lib/llm/notify";
 import type { Json } from "@/lib/db/types";
 import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
 
+const EVENT_INSERTION_PAGE_SIZE = 500;
+
+type FixtureMatch = { external_ids: Json; id: string };
+type ExistingEvent = {
+  match_id: string;
+  metadata: Json;
+  minute: number | null;
+  type: string;
+};
+
+type EventInsertionValidationSnapshot = {
+  existingEvents: ExistingEvent[];
+  fixtureMatches: FixtureMatch[];
+};
+
+let eventInsertionValidationSnapshot: Promise<EventInsertionValidationSnapshot> | null =
+  null;
+
+async function loadAllFixtureMatches() {
+  const db = getSupabaseServerClient();
+  const matches: FixtureMatch[] = [];
+
+  for (let from = 0; ; from += EVENT_INSERTION_PAGE_SIZE) {
+    const { data, error } = await db
+      .from("matches")
+      .select("id, external_ids")
+      .range(from, from + EVENT_INSERTION_PAGE_SIZE - 1);
+
+    if (error) throw error;
+    matches.push(...((data ?? []) as FixtureMatch[]));
+    if ((data ?? []).length < EVENT_INSERTION_PAGE_SIZE) return matches;
+  }
+}
+
+async function loadAllExistingEvents() {
+  const db = getSupabaseServerClient();
+  const events: ExistingEvent[] = [];
+
+  for (let from = 0; ; from += EVENT_INSERTION_PAGE_SIZE) {
+    const { data, error } = await db
+      .from("match_events")
+      .select("match_id, minute, type, metadata")
+      .range(from, from + EVENT_INSERTION_PAGE_SIZE - 1);
+
+    if (error) throw error;
+    events.push(...((data ?? []) as ExistingEvent[]));
+    if ((data ?? []).length < EVENT_INSERTION_PAGE_SIZE) return events;
+  }
+}
+
+function getEventInsertionValidationSnapshot() {
+  eventInsertionValidationSnapshot ??= Promise.all([
+    loadAllFixtureMatches(),
+    loadAllExistingEvents(),
+  ]).then(([fixtureMatches, existingEvents]) => ({ fixtureMatches, existingEvents }));
+
+  return eventInsertionValidationSnapshot;
+}
+
+export function resetEventInsertionValidationSnapshotForTest() {
+  eventInsertionValidationSnapshot = null;
+}
+
 type MatchEventMetadata = {
   card?: string;
   is_penalty_try?: boolean;
@@ -96,26 +159,15 @@ export async function upsertMatchEvents(params: {
     throw canonicalMatchError;
   }
 
-  const [{ data: fixtureMatches, error: fixtureMatchesError }, { data: existingEvents, error: existingEventsError }] = await Promise.all([
-    db.from("matches").select("id, external_ids"),
-    db
-      .from("match_events")
-      .select("match_id, minute, type, metadata")
-      .neq("match_id", params.matchId),
-  ]);
-
-  if (fixtureMatchesError) {
-    throw fixtureMatchesError;
-  }
-  if (existingEventsError) {
-    throw existingEventsError;
-  }
+  const { existingEvents, fixtureMatches } =
+    await getEventInsertionValidationSnapshot();
 
   const signaturesByMatch = new Map<
     string,
     Array<{ metadata: Json; minute: number | null; type: string }>
   >();
-  for (const event of existingEvents ?? []) {
+  for (const event of existingEvents) {
+    if (event.match_id === params.matchId) continue;
     const events = signaturesByMatch.get(event.match_id) ?? [];
     events.push({ metadata: event.metadata, minute: event.minute, type: event.type });
     signaturesByMatch.set(event.match_id, events);
@@ -132,7 +184,7 @@ export async function upsertMatchEvents(params: {
       status: canonicalMatch.status,
     },
     existingSignatureGroups: [...signaturesByMatch].map(([matchId, events]) => ({ matchId, events })),
-    matchesWithFixtureIdentifiers: (fixtureMatches ?? []).map((match) => ({
+    matchesWithFixtureIdentifiers: fixtureMatches.map((match) => ({
       externalIds: match.external_ids,
       id: match.id,
     })),
