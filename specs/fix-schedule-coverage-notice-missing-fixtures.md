@@ -136,6 +136,32 @@ missingFixtures = expected - actual
 - `teams` が 0（`competition_standings` が空。`top-14-2026-27` と `league-one-2025-26` が該当）
 - `teams` が奇数（bye が発生し `teams / 2` が整数にならない）
 - `expected < actual`（期待より多い。データの前提が崩れているので欠落数として報告しない）
+- **`missingRounds > 0`（2026-09-07 追加。下記参照）**
+
+#### `missingRounds > 0` のとき試合数を報告してはならない
+
+**初版の受け入れ条件 4 は誤りだった。** `wikipedia_round` が null のバケツには、**プレーオフと「節の解析に失敗した通常節試合」の両方**が入る。日付だけでは機械的に区別できない。
+
+本番実測（2026-09-07）:
+
+| 大会 | null-round | 中身 |
+|---|---|---|
+| `premiership-2025-26` | 3 件・2026-06-12 | 第18節（6/6）の後 → **本物のプレーオフ** |
+| `premiership-2026-27` | 5 件・2026-10-23〜25 | 第3節（10/11）と第5節（10/30）の間・5 試合ちょうど → **第4節**。`missingRounds = 1` の正体でもある |
+
+`premiership-2026-27` で `missingFixtures = 5` と出すと、**存在する 5 試合を「足りない」と表示することになる。**
+
+`missingRounds > 0` は「節が 1 つ以上取り込めていない」であり、その節の試合が null-round バケツにいる可能性が高い。**節が欠けている間は引き算が信用できないので、試合数の判定を `null` にする。**
+
+この条件を入れた結果:
+
+| 大会 | missingRounds | missingFixtures | 表示 |
+|---|---:|---|---|
+| `premiership-2026-27` | 1 | **null** | 節の不足のみ |
+| `urc-2026-27` | 0 | 0 | 表示しない |
+| `premiership-2025-26` | 0 | **18** | 正しく検出（`total_rounds` が入れば） |
+
+**検出したい `premiership-2025-26` の 18 試合は残り、誤検出だけが消える。**
 
 **`null` と `0` を混同しないこと。** `null` は「分からない」、`0` は「欠落なし」である。
 
@@ -162,7 +188,9 @@ missingFixtures = expected - actual
 1. 節が欠けている大会で「全<N>節中<M>節」の形式の数字が表示される
 2. 節も試合も揃っている大会で通知が表示されない
 3. `missingFixtures` が `null`（判定不能）と `0`（欠落なし）を区別することを検証するテストがある
-4. **`premiership-2026-27` 相当の fixture**（total_rounds 18 / teams 10 / 通常節 85 / 節外 5）で `missingFixtures === 5` になることを検証するテストがある。**節外の 5 件を actual に数えていたら 0 になるので、この値が計算の正しさを示す**
+4. **`premiership-2026-27` 相当の fixture**（total_rounds 18 / teams 10 / 通常節 85 / 節外 5 / 取り込み節 17）で **`missingRounds === 1` かつ `missingFixtures === null`** になることを検証するテストがある。
+
+   **初版はここを `missingFixtures === 5` としていた。誤りだった。** 実データではこの 5 件は第4節（2026-10-23〜25、第3節 10/11 と第5節 10/30 の間）で、**存在する試合である**。5 と報告すると読者に嘘をつく。`missingRounds > 0` のときは試合数を報告しない
 5. **`urc-2026-27` 相当の fixture**（total_rounds 18 / teams 16 / 通常節 144）で `missingFixtures === 0` になることを検証するテストがある
 5-b. `total_rounds` が null、`teams` が 0、`teams` が奇数、`expected < actual` の 4 ケースでそれぞれ `missingFixtures === null` になることを検証するテストがある
 5-c. **`premiership-2025-26` 相当の fixture**（total_rounds 18 / teams 10 / 通常節 72 / 節外 3）で `missingFixtures === 18` になることを検証するテストがある。**本番では `total_rounds` が null のため実際には算出されないが、値が入れば検出できることをテストで示す**
