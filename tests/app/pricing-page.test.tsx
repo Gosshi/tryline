@@ -13,6 +13,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import PricingPage, { metadata } from "@/app/pricing/page";
 import { PricingForm } from "@/app/pricing/pricing-form";
+import { PricingBillingSummary } from "@/components/pricing-billing-copy";
+import { PricingFaq } from "@/components/pricing-faq";
+import { TokushoDisclosure } from "@/components/tokusho-disclosure";
+import { BILLING_TERMS, createBillingTerms } from "@/lib/billing/terms";
 import { PRIMARY_SAMPLE_MATCH_ID } from "@/lib/sample-matches";
 
 const competitionFaqAnswer =
@@ -155,12 +159,19 @@ describe("PricingPage", () => {
       screen.getByText("どの大会のコンテンツが読めますか？"),
     ).toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole("button", { name: /どの大会のコンテンツが読めますか？/ }),
+      screen.getByRole("button", {
+        name: /どの大会のコンテンツが読めますか？/,
+      }),
     );
     expect(screen.getByText(competitionFaqAnswer)).toBeInTheDocument();
     expect(
       [...document.querySelectorAll('script[type="application/ld+json"]')].some(
         (script) => script.textContent?.includes(competitionFaqAnswer),
+      ),
+    ).toBe(true);
+    expect(
+      [...document.querySelectorAll('script[type="application/ld+json"]')].some(
+        (script) => script.textContent?.includes(BILLING_TERMS.trialFaqAnswer),
       ),
     ).toBe(true);
     expect(screen.getByText("支払い方法は？")).toBeInTheDocument();
@@ -182,6 +193,56 @@ describe("PricingPage", () => {
       screen.queryByText("公開済みレビューを準備中です。"),
     ).not.toBeInTheDocument();
   });
+
+  it.each([
+    {
+      billingTerms: createBillingTerms({ monthlyPriceYen: 980, trialDays: 7 }),
+      paymentTiming:
+        "無料トライアル終了後に初回課金、以降は毎月の契約更新日に自動課金",
+      pricingSummary:
+        "7日間無料 · その後 ¥980/月 · いつでもキャンセル可能 · Stripe 決済",
+      trialFaqAnswer:
+        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・試合 AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
+    },
+    {
+      billingTerms: createBillingTerms({ monthlyPriceYen: 980, trialDays: 0 }),
+      paymentTiming: "申し込み時に課金、以降は毎月の契約更新日に自動課金",
+      pricingSummary:
+        "¥980/月 · 申し込み時に課金 · いつでもキャンセル可能 · Stripe 決済",
+      trialFaqAnswer:
+        "現在、無料トライアルはありません。申し込み時から ¥980/月 の課金が始まります。いつでもキャンセル可能です。",
+    },
+  ])(
+    "keeps pricing and tokusho payment timing aligned when billing terms change",
+    async ({ billingTerms, paymentTiming, pricingSummary, trialFaqAnswer }) => {
+      const { unmount: unmountTokusho } = render(
+        <TokushoDisclosure billingTerms={billingTerms} />,
+      );
+      expect(screen.getByText(paymentTiming)).toBeInTheDocument();
+      expect(
+        screen.getByText(billingTerms.serviceProvisionTiming),
+      ).toBeInTheDocument();
+      unmountTokusho();
+
+      const { unmount: unmountPricingSummary } = render(
+        <PricingBillingSummary billingTerms={billingTerms} />,
+      );
+      expect(screen.getByText(pricingSummary)).toBeInTheDocument();
+      unmountPricingSummary();
+
+      render(
+        <PricingFaq
+          faqs={[
+            {
+              answer: billingTerms.trialFaqAnswer,
+              question: "無料トライアルはありますか？",
+            },
+          ]}
+        />,
+      );
+      expect(screen.getByText(trialFaqAnswer)).toBeInTheDocument();
+    },
+  );
 });
 
 describe("PricingForm", () => {

@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { BILLING_TERMS } from "@/lib/billing/terms";
+
 const authMocks = vi.hoisted(() => ({
   requireUser: vi.fn(),
 }));
@@ -45,7 +47,7 @@ describe("POST /api/stripe/checkout", () => {
     vi.clearAllMocks();
   });
 
-  it("creates a checkout subscription with a 7-day trial", async () => {
+  it("creates a checkout subscription with the configured trial", async () => {
     const { POST } = await import("@/app/api/stripe/checkout/route");
 
     await POST();
@@ -54,7 +56,7 @@ describe("POST /api/stripe/checkout", () => {
       expect.objectContaining({
         subscription_data: {
           metadata: { userId: "user-1" },
-          trial_period_days: 7,
+          trial_period_days: BILLING_TERMS.trialDays,
           trial_settings: {
             end_behavior: { missing_payment_method: "cancel" },
           },
