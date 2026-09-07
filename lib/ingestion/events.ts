@@ -1,7 +1,72 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { validateEventInsertion } from "@/lib/ingestion/event-integrity";
+import { notifyEventIngestionIdentityAlert } from "@/lib/llm/notify";
 
 import type { Json } from "@/lib/db/types";
 import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
+
+const EVENT_INSERTION_PAGE_SIZE = 500;
+
+type FixtureMatch = { external_ids: Json; id: string };
+type ExistingEvent = {
+  match_id: string;
+  metadata: Json;
+  minute: number | null;
+  type: string;
+};
+
+type EventInsertionValidationSnapshot = {
+  existingEvents: ExistingEvent[];
+  fixtureMatches: FixtureMatch[];
+};
+
+let eventInsertionValidationSnapshot: Promise<EventInsertionValidationSnapshot> | null =
+  null;
+
+async function loadAllFixtureMatches() {
+  const db = getSupabaseServerClient();
+  const matches: FixtureMatch[] = [];
+
+  for (let from = 0; ; from += EVENT_INSERTION_PAGE_SIZE) {
+    const { data, error } = await db
+      .from("matches")
+      .select("id, external_ids")
+      .range(from, from + EVENT_INSERTION_PAGE_SIZE - 1);
+
+    if (error) throw error;
+    matches.push(...((data ?? []) as FixtureMatch[]));
+    if ((data ?? []).length < EVENT_INSERTION_PAGE_SIZE) return matches;
+  }
+}
+
+async function loadAllExistingEvents() {
+  const db = getSupabaseServerClient();
+  const events: ExistingEvent[] = [];
+
+  for (let from = 0; ; from += EVENT_INSERTION_PAGE_SIZE) {
+    const { data, error } = await db
+      .from("match_events")
+      .select("match_id, minute, type, metadata")
+      .range(from, from + EVENT_INSERTION_PAGE_SIZE - 1);
+
+    if (error) throw error;
+    events.push(...((data ?? []) as ExistingEvent[]));
+    if ((data ?? []).length < EVENT_INSERTION_PAGE_SIZE) return events;
+  }
+}
+
+function getEventInsertionValidationSnapshot() {
+  eventInsertionValidationSnapshot ??= Promise.all([
+    loadAllFixtureMatches(),
+    loadAllExistingEvents(),
+  ]).then(([fixtureMatches, existingEvents]) => ({ fixtureMatches, existingEvents }));
+
+  return eventInsertionValidationSnapshot;
+}
+
+export function resetEventInsertionValidationSnapshotForTest() {
+  eventInsertionValidationSnapshot = null;
+}
 
 type MatchEventMetadata = {
   card?: string;
@@ -13,6 +78,18 @@ type MatchEventMetadata = {
   player_out_name?: string;
   source?: string;
 };
+
+export type MatchEventUpsertResult = Awaited<ReturnType<typeof upsertMatchEvents>>;
+
+export function assertEventInsertionAccepted(
+  result: Pick<MatchEventUpsertResult, "rejected">,
+): void {
+  if (result.rejected?.length > 0) {
+    throw new Error(
+      `Event insertion rejected: ${result.rejected.map((issue) => `${issue.reason}: ${issue.detail}`).join("; ")}`,
+    );
+  }
+}
 
 async function resolvePlayerId(params: {
   playerName: string;
@@ -63,8 +140,67 @@ export async function upsertMatchEvents(params: {
   awayTeamId: string;
   events: ParsedMatchEvent[];
   onUnresolvedPlayer?: (params: { playerName: string; teamId: string }) => void;
-}): Promise<{ inserted: number }> {
+}): Promise<{
+  inserted: number;
+  rejected: Array<{
+    detail: string;
+    reason: "fixture_conflict" | "score_mismatch" | "third_team";
+  }>;
+  warnings: Array<{ detail: string; reason: "duplicate_signature" }>;
+}> {
   const db = getSupabaseServerClient();
+  const { data: canonicalMatch, error: canonicalMatchError } = await db
+    .from("matches")
+    .select("id, status, home_team_id, away_team_id, home_score, away_score, external_ids")
+    .eq("id", params.matchId)
+    .single();
+
+  if (canonicalMatchError) {
+    throw canonicalMatchError;
+  }
+
+  const { existingEvents, fixtureMatches } =
+    await getEventInsertionValidationSnapshot();
+
+  const signaturesByMatch = new Map<
+    string,
+    Array<{ metadata: Json; minute: number | null; type: string }>
+  >();
+  for (const event of existingEvents) {
+    if (event.match_id === params.matchId) continue;
+    const events = signaturesByMatch.get(event.match_id) ?? [];
+    events.push({ metadata: event.metadata, minute: event.minute, type: event.type });
+    signaturesByMatch.set(event.match_id, events);
+  }
+  const validation = validateEventInsertion({
+    candidateEvents: params.events,
+    canonicalMatch: {
+      awayScore: canonicalMatch.away_score,
+      awayTeamId: canonicalMatch.away_team_id,
+      externalIds: canonicalMatch.external_ids,
+      homeScore: canonicalMatch.home_score,
+      homeTeamId: canonicalMatch.home_team_id,
+      id: canonicalMatch.id,
+      status: canonicalMatch.status,
+    },
+    existingSignatureGroups: [...signaturesByMatch].map(([matchId, events]) => ({ matchId, events })),
+    matchesWithFixtureIdentifiers: fixtureMatches.map((match) => ({
+      externalIds: match.external_ids,
+      id: match.id,
+    })),
+    suppliedAwayTeamId: params.awayTeamId,
+    suppliedHomeTeamId: params.homeTeamId,
+  });
+
+  for (const issue of [...validation.rejected, ...validation.warnings]) {
+    console.warn("[event-ingestion] identity guard", { matchId: params.matchId, ...issue });
+    await notifyEventIngestionIdentityAlert({ matchId: params.matchId, ...issue });
+  }
+
+  if (validation.rejected.length > 0) {
+    return { inserted: 0, ...validation };
+  }
+
   const deleteResult = await db
     .from("match_events")
     .delete()
@@ -75,7 +211,7 @@ export async function upsertMatchEvents(params: {
   }
 
   if (params.events.length === 0) {
-    return { inserted: 0 };
+    return { inserted: 0, ...validation };
   }
 
   const rows = await Promise.all(
@@ -114,5 +250,5 @@ export async function upsertMatchEvents(params: {
     throw error;
   }
 
-  return { inserted: data.length };
+  return { inserted: data.length, ...validation };
 }
