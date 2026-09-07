@@ -122,6 +122,7 @@ describe("JRFU match event fallback", () => {
     eventMocks.resolvePlayerId.mockResolvedValue("player-id");
     scraperMocks.fetchJrfuMatchEvents.mockResolvedValue({
       events: scoreMatchingEvents,
+      firstHalfEventCount: scoreMatchingEvents.length,
       hasHalfHeadings: true,
       hasUnsupportedScoringEvent: false,
     });
@@ -171,6 +172,100 @@ describe("JRFU match event fallback", () => {
       expect.objectContaining({
         actualScore: { away: 0, home: 7 },
         expectedScore: { away: 0, home: 8 },
+      }),
+    );
+    warn.mockRestore();
+  });
+
+  it("skips events when half headings are missing", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    createClient([createMatch()]);
+    scraperMocks.fetchJrfuMatchEvents.mockResolvedValue({
+      events: scoreMatchingEvents,
+      firstHalfEventCount: scoreMatchingEvents.length,
+      hasHalfHeadings: false,
+      hasUnsupportedScoringEvent: false,
+    });
+
+    await expect(
+      applyJrfuMatchEventFallback([createResult()]),
+    ).resolves.toMatchObject({
+      counts: { half_headings_skipped: 1, matches_inserted: 0 },
+    });
+    expect(eventMocks.upsertMatchEvents).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      "[jrfu-match-event-fallback] half headings missing; skipped",
+      { matchId: "japan-canada" },
+    );
+    warn.mockRestore();
+  });
+
+  it("allows the 43 minute to 41 minute half boundary", async () => {
+    createClient([createMatch()]);
+    const events = [
+      { ...scoreMatchingEvents[0]!, minute: 43 },
+      { ...scoreMatchingEvents[1]!, minute: 41 },
+    ];
+    scraperMocks.fetchJrfuMatchEvents.mockResolvedValue({
+      events,
+      firstHalfEventCount: 1,
+      hasHalfHeadings: true,
+      hasUnsupportedScoringEvent: false,
+    });
+
+    await expect(
+      applyJrfuMatchEventFallback([createResult()]),
+    ).resolves.toMatchObject({
+      counts: { matches_inserted: 1, timeline_order_skipped: 0 },
+    });
+    expect(eventMocks.upsertMatchEvents).toHaveBeenCalled();
+  });
+
+  it("skips a minute decrease within one half", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    createClient([createMatch()]);
+    const events = [
+      { ...scoreMatchingEvents[0]!, minute: 43 },
+      { ...scoreMatchingEvents[1]!, minute: 42 },
+    ];
+    scraperMocks.fetchJrfuMatchEvents.mockResolvedValue({
+      events,
+      firstHalfEventCount: events.length,
+      hasHalfHeadings: true,
+      hasUnsupportedScoringEvent: false,
+    });
+
+    await expect(
+      applyJrfuMatchEventFallback([createResult()]),
+    ).resolves.toMatchObject({
+      counts: { matches_inserted: 0, timeline_order_skipped: 1 },
+    });
+    expect(eventMocks.upsertMatchEvents).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      "[jrfu-match-event-fallback] invalid event timeline; skipped",
+      { matchId: "japan-canada" },
+    );
+    warn.mockRestore();
+  });
+
+  it("skips events when every player is unresolved", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    createClient([createMatch()]);
+    eventMocks.resolvePlayerId.mockResolvedValue(null);
+
+    await expect(
+      applyJrfuMatchEventFallback([createResult()]),
+    ).resolves.toMatchObject({
+      counts: { matches_inserted: 0, unresolved_players_all_skipped: 1 },
+    });
+    expect(eventMocks.upsertMatchEvents).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      "[jrfu-match-event-fallback] all players unresolved; skipped",
+      expect.objectContaining({
+        attemptedPlayerNames: ["岡部崇人", "松永拓朗"],
+        eventCount: 2,
+        matchId: "japan-canada",
+        resolvedPlayerCount: 0,
       }),
     );
     warn.mockRestore();
