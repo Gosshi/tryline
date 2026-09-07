@@ -1017,6 +1017,124 @@ describe("fetchSourcedFactsForMatch", () => {
     warn.mockRestore();
   });
 
+  it("prioritizes manual cached facts before automatic facts up to the stored-facts limit", async () => {
+    const automaticFacts = Array.from({ length: 10 }, (_, index) =>
+      cachedFact({
+        fact: `automatic fact ${index + 1}`,
+        fetched_at: `2026-06-10T${String(9 - index).padStart(2, "0")}:00:00.000Z`,
+      }),
+    );
+    const manualFacts = Array.from({ length: 3 }, (_, index) =>
+      cachedFact({
+        fact: `manual fact ${index + 1}`,
+        fetched_at: `2026-06-09T${String(9 - index).padStart(2, "0")}:00:00.000Z`,
+        metadata: { entry_method: "manual" },
+      }),
+    );
+    dbMock.from.mockReturnValue(
+      createSourcedFactsBuilder([...automaticFacts, ...manualFacts]),
+    );
+
+    const facts = await loadSourcedFactsForMatch("match-1", "preview");
+
+    expect(facts.map(({ fact }) => fact)).toEqual([
+      "manual fact 1",
+      "manual fact 2",
+      "manual fact 3",
+      "automatic fact 1",
+      "automatic fact 2",
+      "automatic fact 3",
+      "automatic fact 4",
+      "automatic fact 5",
+    ]);
+  });
+
+  it("uses only the newest manual cached facts when at least eight exist", async () => {
+    const automaticFacts = Array.from({ length: 2 }, (_, index) =>
+      cachedFact({
+        fact: `automatic fact ${index + 1}`,
+        fetched_at: `2026-06-11T${String(9 - index).padStart(2, "0")}:00:00.000Z`,
+      }),
+    );
+    const manualFacts = Array.from({ length: 10 }, (_, index) =>
+      cachedFact({
+        fact: `manual fact ${index + 1}`,
+        fetched_at: `2026-06-09T${String(9 - index).padStart(2, "0")}:00:00.000Z`,
+        metadata: { entry_method: "manual" },
+      }),
+    );
+    dbMock.from.mockReturnValue(
+      createSourcedFactsBuilder([...automaticFacts, ...manualFacts]),
+    );
+
+    const facts = await loadSourcedFactsForMatch("match-1", "preview");
+
+    expect(facts.map(({ fact }) => fact)).toEqual([
+      "manual fact 1",
+      "manual fact 2",
+      "manual fact 3",
+      "manual fact 4",
+      "manual fact 5",
+      "manual fact 6",
+      "manual fact 7",
+      "manual fact 8",
+    ]);
+  });
+
+  it("keeps the previous newest-first selection when no cached facts are manual", async () => {
+    const automaticFacts = Array.from({ length: 10 }, (_, index) =>
+      cachedFact({
+        fact: `automatic fact ${index + 1}`,
+        fetched_at: `2026-06-10T${String(9 - index).padStart(2, "0")}:00:00.000Z`,
+      }),
+    );
+    dbMock.from.mockReturnValue(createSourcedFactsBuilder(automaticFacts));
+
+    const facts = await loadSourcedFactsForMatch("match-1", "preview");
+
+    expect(facts.map(({ fact }) => fact)).toEqual([
+      "automatic fact 1",
+      "automatic fact 2",
+      "automatic fact 3",
+      "automatic fact 4",
+      "automatic fact 5",
+      "automatic fact 6",
+      "automatic fact 7",
+      "automatic fact 8",
+    ]);
+  });
+
+  it("fills the stored-facts limit after excluding non-allowlisted automatic facts", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const excludedFacts = Array.from({ length: 3 }, (_, index) =>
+      cachedFact({
+        fact: `excluded fact ${index + 1}`,
+        fetched_at: `2026-06-11T${String(9 - index).padStart(2, "0")}:00:00.000Z`,
+        source_domain: "allblacks.com",
+      }),
+    );
+    const allowedFacts = Array.from({ length: 8 }, (_, index) =>
+      cachedFact({
+        fact: `allowed fact ${index + 1}`,
+        fetched_at: `2026-06-10T${String(9 - index).padStart(2, "0")}:00:00.000Z`,
+      }),
+    );
+    dbMock.from.mockReturnValue(
+      createSourcedFactsBuilder([...excludedFacts, ...allowedFacts]),
+    );
+
+    const facts = await loadSourcedFactsForMatch("match-1", "preview");
+
+    expect(facts.map(({ fact }) => fact)).toEqual(
+      allowedFacts.map(({ fact }) => fact),
+    );
+    expect(warn).toHaveBeenCalledWith(
+      "[sourced-facts] Excluded 3 non-allowlisted cached fact(s) for match_id=match-1.",
+    );
+
+    warn.mockRestore();
+  });
+
   it("returns a manually entered fact from a non-allowlisted domain", async () => {
     const manualFact = cachedFact({
       metadata: {

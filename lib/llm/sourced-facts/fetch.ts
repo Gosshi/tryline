@@ -380,8 +380,7 @@ export async function loadSourcedFactsForMatch(
     .eq("match_id", matchId)
     .in("content_type", [contentType, "shared"])
     .in("confidence", ["high", "medium"])
-    .order("fetched_at", { ascending: false })
-    .limit(MAX_STORED_FACTS);
+    .order("fetched_at", { ascending: false });
 
   if (error) {
     throw error;
@@ -400,7 +399,12 @@ export async function loadSourcedFactsForMatch(
     );
   }
 
-  return allowedRows;
+  const manualRows = allowedRows.filter(isManualSourcedFact);
+  const automaticRows = allowedRows.filter(
+    (row) => !isManualSourcedFact(row),
+  );
+
+  return [...manualRows, ...automaticRows].slice(0, MAX_STORED_FACTS);
 }
 
 export async function fetchSourcedFactsForMatch(options: {
