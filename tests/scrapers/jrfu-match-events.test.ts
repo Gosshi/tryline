@@ -60,9 +60,17 @@ describe("JRFU match event scraper", () => {
       teamSide: "away",
       type: "try",
     });
-    expect(result.events.find((event) => event.minute === 43)).toMatchObject({
-      playerName: "下川甲嗣",
-    });
+    expect(
+      result.events.filter((event) => event.minute === 43),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ playerName: "下川甲嗣", type: "try" }),
+        expect.objectContaining({
+          playerName: "松永拓朗",
+          type: "conversion",
+        }),
+      ]),
+    );
   });
 
   it.each([
