@@ -14,7 +14,7 @@ type MatchEventMetadata = {
   source?: string;
 };
 
-async function resolvePlayerId(params: {
+export async function resolvePlayerId(params: {
   playerName: string;
   teamId: string;
 }): Promise<string | null> {
