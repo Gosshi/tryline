@@ -1,5 +1,9 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
 import {
+  assertEventInsertionAccepted,
+  upsertMatchEvents,
+} from "@/lib/ingestion/events";
+import {
   fetchWorldRugbyMatchDetail,
   type WorldRugbyEvent,
   type WorldRugbyPlayer,
@@ -11,6 +15,7 @@ import {
 } from "@/lib/scrapers/world-rugby-schedule";
 
 import type { Json } from "@/lib/db/types";
+import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
 
 type TeamLookup = Record<string, string>;
 
@@ -502,52 +507,23 @@ async function upsertMatchLineups(params: {
   return dedupedLineups.length;
 }
 
-async function upsertMatchEvents(params: {
-  awayPlayerIds: Map<string, string>;
-  awayTeamId: string;
-  events: WorldRugbyEvent[];
-  homePlayerIds: Map<string, string>;
-  homeTeamId: string;
-  matchId: string;
-}) {
-  const client = getSupabaseServerClient();
-  const deleteResult = await client
-    .from("match_events")
-    .delete()
-    .eq("match_id", params.matchId);
+function toParsedWorldRugbyEvents(events: WorldRugbyEvent[]): ParsedMatchEvent[] {
+  const seen = new Set<string>();
 
-  if (deleteResult.error) {
-    throw deleteResult.error;
-  }
-
-  if (params.events.length === 0) {
-    return 0;
-  }
-
-  const rows: MatchEventRow[] = params.events.map((event) => {
-    const teamId =
-      event.team_side === "home" ? params.homeTeamId : params.awayTeamId;
-    const playerIds =
-      event.team_side === "home" ? params.homePlayerIds : params.awayPlayerIds;
-
-    return {
-      match_id: params.matchId,
-      metadata: { player_name: event.player_name, source: SOURCE } as Json,
+  return events.flatMap((event) => {
+    const type = EVENT_TYPE_TO_DB[event.event_type];
+    const key = `${event.team_side}\u0000${event.minute ?? "null"}\u0000${type}\u0000${event.player_name}`;
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [{
+      isPenaltyTry: false,
       minute: event.minute,
-      player_id: playerIds.get(event.player_name) ?? null,
-      team_id: teamId,
-      type: EVENT_TYPE_TO_DB[event.event_type],
-    };
+      playerName: event.player_name,
+      source: SOURCE,
+      teamSide: event.team_side,
+      type: type as Exclude<ParsedMatchEvent["type"], "substitution">,
+    } as ParsedMatchEvent];
   });
-
-  const dedupedEvents = dedupeWorldRugbyEventRows(rows);
-  const { error } = await client.from("match_events").insert(dedupedEvents);
-
-  if (error) {
-    throw error;
-  }
-
-  return dedupedEvents.length;
 }
 
 async function importMatchDetail(
@@ -578,16 +554,15 @@ async function importMatchDetail(
     players: detail.players,
     sourceUrl: entry.match_url,
   });
-  const eventsInserted = await upsertMatchEvents({
-    awayPlayerIds,
+  const eventResult = await upsertMatchEvents({
     awayTeamId: match.away_team_id,
-    events: detail.events,
-    homePlayerIds,
+    events: toParsedWorldRugbyEvents(detail.events),
     homeTeamId: match.home_team_id,
     matchId: match.id,
   });
+  assertEventInsertionAccepted(eventResult);
 
-  return { eventsInserted, lineupsInserted };
+  return { eventsInserted: eventResult.inserted, lineupsInserted };
 }
 
 export async function runWorldRugbyFullImport(
