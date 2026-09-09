@@ -13,6 +13,7 @@ import {
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
 import { getStatusPresentation } from "@/lib/format/status";
+import { formatVenueDisplay } from "@/lib/format/venue-timezone";
 
 import type { CalendarMatch } from "@/lib/db/queries/matches";
 
@@ -211,7 +212,7 @@ function MobileMatchRow({
             </div>
             {match.venue && (
               <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
-                {match.venue}
+                {formatVenueDisplay(match.venue)}
               </p>
             )}
           </div>

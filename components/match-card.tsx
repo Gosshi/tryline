@@ -3,6 +3,7 @@ import Link from "next/link";
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
 import { getTeamColor, getTeamStripe } from "@/lib/format/team-identity";
+import { formatVenueDisplay } from "@/lib/format/venue-timezone";
 import { cn } from "@/lib/utils";
 
 import { StatusBadge } from "./status-badge";
@@ -22,8 +23,7 @@ export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
   const homeWon = outcome === "home_win";
   const awayWon = outcome === "away_win";
   const shouldShowContentStatus =
-    contentStatus &&
-    (contentStatus.hasPreview || contentStatus.hasRecap);
+    contentStatus && (contentStatus.hasPreview || contentStatus.hasRecap);
 
   return (
     <Link
@@ -180,9 +180,9 @@ export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
         {match.venue && (
           <p
             className="mt-4 truncate text-xs text-slate-400"
-            title={match.venue}
+            title={formatVenueDisplay(match.venue)}
           >
-            {match.venue}
+            {formatVenueDisplay(match.venue)}
           </p>
         )}
 
@@ -194,7 +194,7 @@ export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
               </span>
             )}
             {contentStatus.hasRecap && (
-              <span className="rounded-full bg-[var(--color-accent)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)]">
+              <span className="bg-[var(--color-accent)]/10 rounded-full px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)]">
                 レビューあり
               </span>
             )}
