@@ -333,6 +333,8 @@ export type Database = {
           name: string;
           name_ja: string | null;
           season: string;
+          season_status: string;
+          replacement_competition_id: string | null;
           slug: string;
           start_date: string | null;
           total_rounds: number | null;
@@ -348,6 +350,8 @@ export type Database = {
           name: string;
           name_ja?: string | null;
           season: string;
+          season_status?: string;
+          replacement_competition_id?: string | null;
           slug: string;
           start_date?: string | null;
           total_rounds?: number | null;
@@ -363,6 +367,8 @@ export type Database = {
           name?: string;
           name_ja?: string | null;
           season?: string;
+          season_status?: string;
+          replacement_competition_id?: string | null;
           slug?: string;
           start_date?: string | null;
           total_rounds?: number | null;

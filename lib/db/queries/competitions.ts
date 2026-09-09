@@ -21,6 +21,8 @@ export type CompetitionRow = {
   name: string;
   nameJa?: string | null;
   season: string;
+  seasonStatus?: "held" | "not_held" | "unknown";
+  replacementCompetition?: { slug: string; name: string; nameJa: string | null; season: string } | null;
   startDate: string | null;
   endDate: string | null;
   totalRounds: number | null;
@@ -66,6 +68,8 @@ type CompetitionDbRow = {
   name: string;
   name_ja?: string | null;
   season: string;
+  season_status: "held" | "not_held" | "unknown";
+  replacement_competition: Array<{ slug: string; name: string; name_ja: string | null; season: string }> | null;
   start_date: string | null;
   end_date: string | null;
   total_rounds: number | null;
@@ -134,6 +138,10 @@ function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
     nameJa: row.name_ja ?? null,
     publishedContentCount: 0,
     season: row.season,
+    seasonStatus: row.season_status,
+    replacementCompetition: row.replacement_competition?.[0]
+      ? { name: row.replacement_competition[0].name, nameJa: row.replacement_competition[0].name_ja, season: row.replacement_competition[0].season, slug: row.replacement_competition[0].slug }
+      : null,
     slug: row.slug,
     startDate: row.start_date,
     totalRounds: row.total_rounds ?? null,
@@ -244,7 +252,7 @@ export async function listSeasonsByFamily(
   const [seasonsResult, contentCountsResult] = await Promise.all([
     client
       .from("competitions")
-      .select("*, matches(count)")
+      .select("*, replacement_competition:competitions!competitions_replacement_competition_id_fkey(slug, name, name_ja, season), matches(count)")
       .eq("family", family)
       .order("season", { ascending: false }),
     client
@@ -303,7 +311,7 @@ export async function listSeasonsByFamilies(
       families.map((family) =>
         client
           .from("competitions")
-          .select("*, matches(count)")
+          .select("*, replacement_competition:competitions!competitions_replacement_competition_id_fkey(slug, name, name_ja, season), matches(count)")
           .eq("family", family)
           .order("season", { ascending: false }),
       ),
@@ -352,7 +360,7 @@ export async function getCompetitionBySlug(
   const client = getSupabasePublicServerClient();
   const { data, error } = await client
     .from("competitions")
-    .select("*, matches(count)")
+    .select("*, replacement_competition:competitions!competitions_replacement_competition_id_fkey(slug, name, name_ja, season), matches(count)")
     .eq("slug", slug)
     .maybeSingle();
 
