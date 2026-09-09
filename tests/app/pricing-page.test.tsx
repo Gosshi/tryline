@@ -76,7 +76,7 @@ describe("PricingPage", () => {
   it("exports pricing metadata for the root title template", () => {
     expect(metadata).toMatchObject({
       description:
-        "見逃した海外ラグビーを日本語レビューと試合Q&Aで深く追える Tryline Premium。",
+        "見逃した海外ラグビーを日本語レビューと試合Q&Aで深く追える Tryline Premium。7日間無料、その後 ¥980/月。",
       title: "プランを選ぶ",
     });
   });
@@ -89,6 +89,10 @@ describe("PricingPage", () => {
     expect(withoutTrial.pricingDescription).toContain("試合Q&A");
     expect(withTrial.pricingDescription).not.toContain("AI チャット");
     expect(withoutTrial.pricingDescription).not.toContain("AI チャット");
+    expect(withTrial.pricingDescription).toContain("7日間無料");
+    expect(withTrial.pricingDescription).toContain("¥980/月");
+    expect(withoutTrial.pricingDescription).toContain("¥980/月");
+    expect(withTrial.pricingDescription).not.toBe(withoutTrial.pricingDescription);
     expect(withTrial.pricingDescription).not.toContain("質問できる「この試合について質問する」");
     expect(withoutTrial.pricingDescription).not.toContain("質問できる「この試合について質問する」");
   });
