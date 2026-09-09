@@ -85,6 +85,7 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
   return (
     <section
       className="border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4"
+      id="newsletter-signup"
       ref={sectionRef}
     >
       <p className="text-sm font-bold text-[var(--color-ink)]">

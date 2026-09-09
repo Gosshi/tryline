@@ -206,15 +206,21 @@ describe("newsletter funnel instrumentation", () => {
     ).toBeInTheDocument();
   });
 
-  it("tracks newsletter confirmation without changing the confirmation page", () => {
+  it("tracks newsletter confirmation only after a completed confirmation redirect", async () => {
     const gtag = stubGtag();
 
-    render(<NewsletterConfirmedPage />);
+    render(await NewsletterConfirmedPage({ searchParams: Promise.resolve({ completed: "1" }) }));
 
     expect(gtag).toHaveBeenCalledTimes(1);
     expect(gtag).toHaveBeenCalledWith("event", "newsletter_confirmed", {});
     expect(
       screen.getByRole("link", { name: "今週の試合を見る" }),
     ).toHaveAttribute("href", "/calendar");
+  });
+
+  it("does not track when the confirmed page is opened directly", async () => {
+    const gtag = stubGtag();
+    render(await NewsletterConfirmedPage({ searchParams: Promise.resolve({}) }));
+    expect(gtag).not.toHaveBeenCalled();
   });
 });
