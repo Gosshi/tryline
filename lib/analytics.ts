@@ -125,7 +125,10 @@ export function trackSignUp() {
 
 export function trackPaywallView(params: {
   content_type: string;
+  is_sample?: boolean;
   match_id?: string;
+  paywall_location?: string;
+  viewer_type?: "anonymous" | "free";
 }) {
   trackEvent("paywall_view", params);
 }

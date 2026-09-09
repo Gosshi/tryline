@@ -14,6 +14,7 @@ type MatchContentSectionProps = {
   betweenLeadAndBody?: ReactNode;
   hasLockedContent?: boolean;
   isPremium: boolean;
+  isSample?: boolean;
   language?: "ja" | "en";
   lockedContentMd?: string | null;
   lockedLoading?: boolean;
@@ -40,6 +41,7 @@ export function MatchContentSection({
   contentType,
   hasLockedContent,
   isPremium,
+  isSample = false,
   language = "ja",
   lockedContentMd,
   lockedLoading,
@@ -110,9 +112,11 @@ export function MatchContentSection({
             hasLockedContent={hasLockedContent}
             hideLead
             isPremium={isPremium}
+            isSample={isSample}
             language={language}
             lockedContentMd={lockedContentMd}
             lockedLoading={lockedLoading}
+            matchId={match.id}
             matchTitle={matchTitle}
             nextLockedHeading={nextLockedHeading}
             showCta={showCta}

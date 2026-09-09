@@ -2,6 +2,7 @@ import { Fragment } from "react";
 
 import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
+import { PaywallViewTracker } from "@/components/paywall-view-tracker";
 import { TrackedLink } from "@/components/tracked-link";
 import { parseMarkdown } from "@/lib/match-content/markdown";
 
@@ -14,9 +15,11 @@ type MatchContentProps = {
   hasLockedContent?: boolean;
   hideLead?: boolean;
   isPremium: boolean;
+  isSample?: boolean;
   language?: "ja" | "en";
   lockedContentMd?: string | null;
   lockedLoading?: boolean;
+  matchId?: string;
   matchTitle?: string;
   nextLockedHeading?: string | null;
   showCta?: boolean;
@@ -284,9 +287,11 @@ export function MatchContent({
   hasLockedContent = false,
   hideLead = false,
   isPremium,
+  isSample = false,
   language = "ja",
   lockedContentMd = null,
   lockedLoading = false,
+  matchId,
   matchTitle,
   nextLockedHeading = null,
   showCta = true,
@@ -394,8 +399,15 @@ export function MatchContent({
         </div>
       )}
       {hasLockedBlocks && showCta && !lockedLoading && (
-        <div className="mt-4 flex flex-col items-center gap-3 text-center">
-          <p className="text-sm font-semibold text-slate-800">
+        <>
+          <PaywallViewTracker
+            contentType={contentType}
+            isSample={isSample}
+            matchId={matchId}
+            paywallLocation="match_content_locked_blocks"
+          />
+          <div className="mt-4 flex flex-col items-center gap-3 text-center">
+            <p className="text-sm font-semibold text-slate-800">
             {language === "en"
               ? matchTitle
                 ? `Read the full ${matchTitle} analysis with Premium`
@@ -426,8 +438,9 @@ export function MatchContent({
               : matchTitle
                 ? "7日間無料でレビュー全文を読む"
                 : "Premium で全文を読む"}
-          </TrackedLink>
-        </div>
+            </TrackedLink>
+          </div>
+        </>
       )}
       <XFollowCta />
       <p className="mt-6 text-xs text-slate-500">

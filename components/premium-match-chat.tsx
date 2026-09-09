@@ -5,10 +5,11 @@ import { useEffect, useState } from "react";
 import { MatchChat } from "@/components/match-chat";
 
 type Props = {
+  isSample?: boolean;
   matchId: string;
 };
 
-export function PremiumMatchChat({ matchId }: Props) {
+export function PremiumMatchChat({ isSample = false, matchId }: Props) {
   const [isPremium, setIsPremium] = useState<boolean | null>(null);
   const [hasFreeQuestion, setHasFreeQuestion] = useState<boolean | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -54,6 +55,7 @@ export function PremiumMatchChat({ matchId }: Props) {
       hasFreeQuestion={hasFreeQuestion}
       isLoggedIn={isLoggedIn}
       isPremium={isPremium}
+      isSample={isSample}
       matchId={matchId}
     />
   );

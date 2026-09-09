@@ -84,13 +84,23 @@ describe("gtag load race trackers", () => {
   });
 
   it("queues paywall_view with the existing parameters until gtag loads", () => {
-    render(<PaywallViewTracker contentType="recap" matchId="match-1" />);
+    render(
+      <PaywallViewTracker
+        contentType="recap"
+        matchId="match-1"
+        paywallLocation="paywall_overlay"
+        viewerType="anonymous"
+      />,
+    );
 
     const gtag = defineGtagAndFlush();
 
     expect(gtag).toHaveBeenCalledWith("event", "paywall_view", {
       content_type: "recap",
+      is_sample: false,
       match_id: "match-1",
+      paywall_location: "paywall_overlay",
+      viewer_type: "anonymous",
     });
   });
 });
