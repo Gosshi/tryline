@@ -132,47 +132,96 @@ Mobile density is comfortable: favor vertical stacking, readable text, and touch
 
 `WeekBoard` in `components/calendar/week-schedule.tsx` is the reference implementation for `density.desktop: compact`. Its desktop board is activated with `hidden lg:block`, changing to a columnar weekly arrangement at 1024px while the mobile presentation remains comfortable and stacked.
 
-## Surface Intent: Brand vs Data
+## Block Intent and Primary Task
 
-> **Status: draft (2026-09-06). Pending external design review — the thresholds below are not settled.** Added in response to audit finding A-6 #1 (`docs/audits/gpt6-full-audit-2026-09-05.md`, P2): 「ブランドの面」と「比較する表」の余白規則を区別する.
+> Adopted 2026-09-09 after external design review of the 2026-09-06 draft
+> (`docs/audits/gpt6-spec-review-followup-2026-09-08/design-review.md`).
+> The draft classified whole surfaces as Brand or Data; the review found that
+> unit wrong — a page mixes purposes, so the role belongs to the block.
 
-The Spacing, Layout, and Density rules above apply uniformly to every surface. That is the gap: they do not distinguish a surface whose job is to **establish the brand** from one whose job is to **let the reader compare rows**. The observed cost is that on hubs — where the reader arrives to check a schedule or a table — the combination of guide imagery, a tall header, and the newsletter block delays the first action.
+These rules apply only to new surfaces and explicitly scoped redesigns.
+A factual correction or maintenance change does not, by itself, make an
+existing surface a redesign. Existing pages are not required to adopt new
+layout rules retroactively.
 
-Every surface declares one of two intents. A surface may contain both kinds of blocks; the intent is decided by **what the reader came for**.
+Keep the existing spacing scale, container conventions, breakpoints,
+maxEmptyRatio rule, WeekBoard reference, and soft-modern brand direction.
+This section governs priority and grouping, not a replacement visual system.
 
-| | Brand surface | Data surface |
-|---|---|---|
-| Reader's goal | understand what this is, decide to care | find a fixture, a score, a standing |
-| Examples | home hero, pricing, competition family guide, newsletter landing | calendar, competition season hub, standings, match detail records, H2H |
-| Vertical rhythm | the 24–40px steps are the default between blocks | the 12–20px steps are the default; 24–40px only between top-level sections |
-| Imagery | may occupy a full-width band | must not push the first data element past the budget below |
-| Newsletter / subscribe blocks | may appear above the fold | placed after the first complete data unit, never between the header and the data |
+### Classify blocks, not URLs
 
-### First data element
+A page's specification names its primary reader task. Each major block has
+a role appropriate to that task:
 
-On a **data surface**, the first row of real data must be reachable without the reader hunting for it.
+- Brand: communicate the product's value and identity.
+- Data: find or compare fixtures, scores, standings, and records.
+- Reading: understand an article, guide, legal text, or explanation.
+- Task/state: make a choice, submit a form, understand a result, or recover
+  from an error.
 
-**The measurable budget is not yet fixed.** Measurements taken 2026-09-05 during the audit:
+These roles may coexist on one page and do not introduce new token sets.
+A language route is not a role. Pricing, home, and competition hubs must not
+be classified as brand-only simply because they contain a hero or imagery.
 
-- Calendar at 1440px: the first card sits about **591px** from the top of the page
-- Home at 375px: the hero alone consumes most of the first **900px**
+### Order around the primary task
 
-These are observations, not targets. **The threshold is an open question for the design review.**
+For a data-first task, group the title and necessary context, task controls,
+essential data-quality notices, and the first complete relevant data unit
+before unrelated promotion or long-form introductory content.
+Do not place a newsletter or subscription promotion between those controls
+and that data unit. A direct path to the primary task may precede longer
+explanations on a mixed-purpose page.
 
-### What this section does not change
+Use 12-20px steps between related data groups and 24-40px between larger
+sections as already defined by Spacing. Reading blocks retain their own
+paragraph and section rhythm. Do not compress the entire page because it
+contains a table, or expand every block because it contains brand imagery.
 
-- The 4px base unit and the 2–40px scale. Both surface intents draw from the same scale
-- `max-w-6xl` as the primary container, and the breakpoint set
-- `maxEmptyRatio: 0.25` for list rows
-- `WeekBoard` as the reference implementation for `density.desktop: compact`
-- The soft-modern direction, the paper/red palette, and the rounded Japanese type. The audit explicitly endorsed these（「8/25改稿後の方針を尊重する」）
+### First complete data unit
 
-### Open questions for design review
+The first complete data unit is the smallest visible, relevant record that
+lets the reader understand the advertised information and identify its
+associated action, when one exists. It is not a heading, count, skeleton,
+decorative badge, or a few pixels of the next card.
 
-1. **What is the budget for "first data element"?** A fixed px value, a viewport-height fraction, or a rule expressed in blocks ("at most one brand block above the first data unit")? A px value is easy to check but brittle across breakpoints
-2. **Where does the competition family guide sit?** It reads as brand copy but lives on a hub that readers reach for data. Does `/c/<family>` become a brand surface and `/c/<family>/<season>` a data surface, or does one page carry both intents with an ordering rule?
-3. **Does the home page have a single intent?** It currently mixes a brand hero with the Matchday Board. If it is a data surface, the hero budget shrinks; if it is a brand surface, the board moves down
-4. **Should this be enforceable?** The `maxEmptyRatio: 0.25` precedent shows a measurable rule can live in `design.md` and be checked. Is the first-data-element budget worth the same treatment, or does it stay guidance?
+- Fixture/result: the two teams, required competition/date context, match
+  state, kickoff time or permitted result, and the route to match details.
+- Standings: a complete team row with the labels needed to interpret rank
+  and points. The entire standings table need not fit at once.
+- Weekly board: one complete relevant match card with its day/time context,
+  not the entire week's board.
+
+Required labels may live in an adjacent group header if they remain visibly
+associated with the record. Spoiler settings still apply: do not reveal a
+hidden score in order to satisfy the layout rule.
+
+For no-data, loading, or error states, evaluate the corresponding state
+message and useful next action. Record the real-data metric as not applicable;
+do not invent a record or count a skeleton as real data.
+
+### Measurement and budgets
+
+For new or redesigned data-first surfaces, the specification records the
+target unit, fixed data fixture, viewport width and height, zoom/text size,
+locale, login/spoiler state, and the selectors used to measure it.
+Measure after fonts and relevant content have settled, from scroll position
+zero with temporary menus closed. Record the unit's top and bottom in CSS
+pixels and any persistent header or overlay that obstructs the usable area.
+
+Record both the distance to the unit and the scroll needed to see the complete
+unit. If the unit cannot fit within the unobstructed viewport, record that
+condition separately. Do not hide labels, shrink essential text, or clip the
+unit solely to pass a height budget.
+
+No universal pixel or viewport-fraction limit is established by this section.
+An individual redesign may adopt a numerical budget after comparing the
+current and proposed layouts under the same fixtures and viewport conditions.
+Once the Owner accepts that budget, include it in that specification's
+acceptance criteria. Ordering and measurement requirements can be checked
+before a global numerical budget exists.
+
+The September 5 audit measurements are historical observations, not targets
+or evidence of the current deployment's layout.
 
 ## Elevation & Depth
 
