@@ -43,7 +43,7 @@ export function SampleRecapCta({
       <p className="mt-1 text-sm leading-6 text-[var(--color-ink-muted)]">
         {isEnglish
           ? "Premium unlocks full reviews for every match, plus match chat. Start from the pricing page."
-          : "この品質で、他の試合のレビュー全文と試合 AI チャットも利用できます。Premium は ¥980/月、初回7日間無料です。"}
+          : "この品質で、他の試合のレビュー全文と「この試合について質問する」も利用できます。Premium は ¥980/月、初回7日間無料です。"}
       </p>
       <Link
         className="mt-3 inline-flex w-fit rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
