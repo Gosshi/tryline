@@ -98,6 +98,17 @@ describe("Top 14 LNR live source", () => {
     ]);
   });
 
+  it("marks missing kickoff times for existing-match preservation", () => {
+    const [match] = toParsedTop14LnrLiveMatches([
+      { ...RESULT, kickoff_at: null },
+    ]);
+
+    expect(match).toMatchObject({
+      kickoffAt: "",
+      preserveExistingKickoffAt: true,
+    });
+  });
+
   it("caps explicit round fetches and waits between each requested round", async () => {
     const waitBetweenRounds = vi.fn().mockResolvedValue(undefined);
     top14LnrResultsMock.fetchTop14LnrRoundResultsWithDiagnostics

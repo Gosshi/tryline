@@ -9,6 +9,8 @@ export type ParsedLiveMatch = ParsedWikipediaMatch & {
   awayTeamSlug?: string;
   externalIds?: Record<string, Json>;
   homeTeamSlug?: string;
+  // The source has no time, so its existing DB kickoff must not be overwritten.
+  preserveExistingKickoffAt?: boolean;
 };
 
 const SCORE_PATTERN = /(\d+)\s*[–-]\s*(\d+)/;
@@ -44,7 +46,7 @@ export function clearFutureZeroScores(
       match.status !== "finished" ||
       match.homeScore !== 0 ||
       match.awayScore !== 0 ||
-      new Date(match.kickoffAt) <= now
+      match.preserveExistingKickoffAt || new Date(match.kickoffAt) <= now
     ) {
       return match;
     }

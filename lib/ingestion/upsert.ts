@@ -9,7 +9,7 @@ export type ResolvedMatchCandidate = {
   externalIds: Record<string, Json>;
   homeScore: number | null;
   homeTeamId: string;
-  kickoffAt: string;
+  kickoffAt: string | null;
   status: "finished" | "scheduled";
   venue: string | null;
 };
@@ -74,7 +74,7 @@ function buildMatchUpdate(
     home_score: keepExistingFinishedScore
       ? existing.home_score
       : candidate.homeScore,
-    kickoff_at: candidate.kickoffAt,
+    kickoff_at: candidate.kickoffAt ?? existing?.kickoff_at,
     status: keepExistingFinishedScore ? "finished" : candidate.status,
     venue: candidate.venue,
   };
@@ -108,6 +108,10 @@ async function findExistingMatch(candidate: ResolvedMatchCandidate) {
     if (matchByStableExternalId.data) {
       return matchByStableExternalId.data;
     }
+  }
+
+  if (!candidate.kickoffAt) {
+    return null;
   }
 
   const exactMatch = await client
@@ -194,6 +198,14 @@ export async function upsertMatches(
         status: candidate.status,
         statusChangedToFinished:
           previousStatus !== "finished" && candidate.status === "finished",
+      });
+      continue;
+    }
+
+    if (!candidate.kickoffAt) {
+      console.warn("[ingestion] skipped match without kickoff_at", {
+        externalIds: candidate.externalIds,
+        teams: `${candidate.homeTeamId} vs ${candidate.awayTeamId}`,
       });
       continue;
     }

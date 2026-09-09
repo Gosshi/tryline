@@ -1,6 +1,7 @@
+import { load } from "cheerio";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   buildTop14LnrCalendarUrl,
@@ -52,64 +53,105 @@ describe("top14-lnr-results", () => {
     ).toBe("finale");
   });
 
-  it("parses all seven J1 fixtures from the captured LNR page", () => {
+  it("parses all seven scored J1 fixtures from the captured LNR page", () => {
     const parsed = parseFixture();
 
     expect(parsed.unknownTeamNames).toEqual([]);
+    expect(parsed.diagnostics).toEqual({
+      datesFound: 7,
+      fixtureElements: 7,
+      matchesReturned: 7,
+      teamsResolved: 7,
+      timesFound: 0,
+    });
     expect(parsed.matches).toHaveLength(7);
-    expect(
-      parsed.matches.map((match) => ({
-        away: match.away_team_slug,
-        home: match.home_team_slug,
-        kickoffAt: match.kickoff_at,
-        lnrId: match.lnr_id,
-      })),
-    ).toEqual(
+    expect(parsed.matches).toEqual(
       expect.arrayContaining([
-        {
-          away: "toulon",
-          home: "bayonne",
-          kickoffAt: "2026-09-05T17:05:00.000Z",
-          lnrId: "11819",
-        },
-        {
-          away: "vannes",
-          home: "castres",
-          kickoffAt: "2026-09-05T17:05:00.000Z",
-          lnrId: "11821",
-        },
-        {
-          away: "racing-92",
-          home: "bordeaux-begles",
-          kickoffAt: "2026-09-05T19:15:00.000Z",
-          lnrId: "11820",
-        },
-        {
-          away: "perpignan",
-          home: "stade-francais",
-          kickoffAt: "2026-09-05T17:05:00.000Z",
-          lnrId: "11825",
-        },
-        {
-          away: "pau",
-          home: "montpellier",
-          kickoffAt: "2026-09-05T17:05:00.000Z",
-          lnrId: "11824",
-        },
-        {
-          away: "clermont",
-          home: "lyon",
-          kickoffAt: "2026-09-05T17:05:00.000Z",
-          lnrId: "11823",
-        },
-        {
-          away: "toulouse",
-          home: "la-rochelle",
-          kickoffAt: "2026-09-06T19:05:00.000Z",
-          lnrId: "11822",
-        },
+        expect.objectContaining({
+          away_score: 26,
+          away_team_slug: "toulon",
+          home_score: 27,
+          home_team_slug: "bayonne",
+          kickoff_at: null,
+          lnr_id: "11819",
+          status: "finished",
+        }),
+        expect.objectContaining({
+          away_score: 27,
+          home_score: 30,
+          kickoff_at: null,
+          lnr_id: "11822",
+          status: "finished",
+        }),
       ]),
     );
+  });
+
+  it("assigns each fixture the nearest date when a captured round spans multiple days", () => {
+    const $ = load(readFileSync(FIXTURE_PATH, "utf8"));
+
+    $(".match-calendar-line").each((index, element) => {
+      const time = index === 6 ? "21h05" : "19h05";
+      $(element)
+        .find(".match-line__result")
+        .first()
+        .prepend(`<p class="match-line__time">${time}</p>`);
+    });
+
+    const parsed = parseFixture($.html());
+
+    expect(
+      parsed.matches.find((match) => match.lnr_id === "11819")?.kickoff_at,
+    ).toBe("2026-09-05T17:05:00.000Z");
+    expect(
+      parsed.matches.find((match) => match.lnr_id === "11822")?.kickoff_at,
+    ).toBe("2026-09-06T19:05:00.000Z");
+  });
+
+  it("keeps scored fixtures when the captured calendar has no kickoff times", () => {
+    const parsed = parseFixture();
+
+    expect(parsed.diagnostics).toEqual({
+      datesFound: 7,
+      fixtureElements: 7,
+      matchesReturned: 7,
+      teamsResolved: 7,
+      timesFound: 0,
+    });
+    expect(parsed.matches).toHaveLength(7);
+    expect(parsed.matches).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          away_score: 26,
+          home_score: 27,
+          kickoff_at: null,
+          lnr_id: "11819",
+          status: "finished",
+        }),
+      ]),
+    );
+  });
+
+  it("warns with diagnostics when fixture elements yield no matches", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    let html = readFileSync(FIXTURE_PATH, "utf8");
+
+    Object.keys(TOP14_TEAM_SLUG_BY_LNR_NAME).forEach((name, index) => {
+      html = html.replaceAll(name, `Unknown Top 14 ${index + 1}`);
+    });
+
+    const parsed = parseFixture(html);
+
+    expect(parsed.matches).toEqual([]);
+    expect(warn).toHaveBeenCalledWith("[top14-lnr] no fixtures parsed", {
+      datesFound: 7,
+      fixtureElements: 7,
+      matchesReturned: 0,
+      teamsResolved: 0,
+      timesFound: 0,
+    });
+
+    warn.mockRestore();
   });
 
   it("resolves the four LNR display-name differences", () => {

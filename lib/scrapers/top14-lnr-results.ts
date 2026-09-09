@@ -5,7 +5,7 @@ import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 export type Top14LnrMatchResult = {
   away_score: number | null;
   away_team_slug: string;
-  kickoff_at: string;
+  kickoff_at: string | null;
   home_score: number | null;
   home_team_slug: string;
   lnr_id: string;
@@ -19,6 +19,13 @@ export type Top14LnrMatchResult = {
 };
 
 export type Top14LnrCalendarParseResult = {
+  diagnostics: {
+    fixtureElements: number;
+    datesFound: number;
+    timesFound: number;
+    teamsResolved: number;
+    matchesReturned: number;
+  };
   matches: Top14LnrMatchResult[];
   unknownTeamNames: string[];
 };
@@ -231,13 +238,17 @@ function parseDateParts(dateText: string, lnrSeason: string) {
   };
 }
 
+function parseTimeParts(timeText: string) {
+  return normalizeFrenchText(timeText).match(/^(\d{1,2})h(\d{2})$/);
+}
+
 export function parseTop14LnrKickoffAt(params: {
   dateText: string;
   lnrSeason: string;
   timeText: string;
 }) {
   const date = parseDateParts(params.dateText, params.lnrSeason);
-  const time = normalizeFrenchText(params.timeText).match(/^(\d{1,2})h(\d{2})$/);
+  const time = parseTimeParts(params.timeText);
 
   if (!date || !time) {
     return null;
@@ -273,16 +284,30 @@ function parseScore(node: ReturnType<ReturnType<typeof load>>) {
 function findFixtureDateContext(
   $: ReturnType<typeof load>,
   element: Parameters<ReturnType<typeof load>>[0],
+  lnrSeason: string,
 ) {
-  return (
-    normalizeText(
-      $(element)
-        .closest(".calendar-results__line")
-        .prevAll(".calendar-results__fixture-date")
-        .first()
-        .text(),
-    ) || null
-  );
+  const fixtureLine = $(element).closest(".calendar-results__line").get(0);
+  const calendar = $(element).closest(".calendar-results__inner");
+
+  if (!fixtureLine || calendar.length === 0) {
+    return null;
+  }
+
+  let dateText: string | null = null;
+
+  calendar.children().each((_, child) => {
+    if (child === fixtureLine) {
+      return false;
+    }
+
+    const candidate = normalizeText($(child).text());
+
+    if (parseDateParts(candidate, lnrSeason)) {
+      dateText = candidate;
+    }
+  });
+
+  return dateText;
 }
 
 export function parseTop14LnrCalendarHtmlWithDiagnostics(params: {
@@ -295,6 +320,13 @@ export function parseTop14LnrCalendarHtmlWithDiagnostics(params: {
   const matches = new Map<string, Top14LnrMatchResult>();
   const unknownTeamNames = new Set<string>();
   const expectedLnrSeason = toLnrSeason(params.season);
+  const diagnostics = {
+    fixtureElements: $(".match-calendar-line").length,
+    datesFound: 0,
+    timesFound: 0,
+    teamsResolved: 0,
+    matchesReturned: 0,
+  };
 
   $(".match-calendar-line").each((_, element) => {
     const line = $(element);
@@ -318,6 +350,23 @@ export function parseTop14LnrCalendarHtmlWithDiagnostics(params: {
       return;
     }
 
+    const dateText = findFixtureDateContext($, element, expectedLnrSeason);
+    const timeText = line.find(".match-line__time").first().text();
+    const date = dateText
+      ? parseDateParts(dateText, expectedLnrSeason)
+      : null;
+    const time = parseTimeParts(timeText);
+
+    if (!date) {
+      return;
+    }
+
+    diagnostics.datesFound += 1;
+
+    if (time) {
+      diagnostics.timesFound += 1;
+    }
+
     const teamNames = line
       .find(".club-line__name")
       .toArray()
@@ -338,19 +387,15 @@ export function parseTop14LnrCalendarHtmlWithDiagnostics(params: {
       return;
     }
 
-    const dateText = findFixtureDateContext($, element);
-    const kickoffAt = dateText
+    diagnostics.teamsResolved += 1;
+
+    const kickoffAt = time
       ? parseTop14LnrKickoffAt({
-          dateText,
+          dateText: dateText!,
           lnrSeason: expectedLnrSeason,
-          timeText: line.find(".match-line__time").first().text(),
+          timeText,
         })
       : null;
-
-    if (!kickoffAt) {
-      return;
-    }
-
     const score = parseScore(line);
 
     matches.set(parsedPath.id, {
@@ -370,10 +415,18 @@ export function parseTop14LnrCalendarHtmlWithDiagnostics(params: {
     });
   });
 
+  const returnedMatches = [...matches.values()].sort((left, right) =>
+    (left.kickoff_at ?? "").localeCompare(right.kickoff_at ?? ""),
+  );
+  diagnostics.matchesReturned = returnedMatches.length;
+
+  if (diagnostics.fixtureElements > 0 && diagnostics.matchesReturned === 0) {
+    console.warn("[top14-lnr] no fixtures parsed", diagnostics);
+  }
+
   return {
-    matches: [...matches.values()].sort((left, right) =>
-      left.kickoff_at.localeCompare(right.kickoff_at),
-    ),
+    diagnostics,
+    matches: returnedMatches,
     unknownTeamNames: [...unknownTeamNames].sort(),
   };
 }
@@ -426,5 +479,10 @@ export async function fetchTop14LnrRegularSeasonResults(season: string) {
     results.push(...(await fetchTop14LnrRoundResults(season, roundSlug)));
   }
 
-  return results.sort((a, b) => a.kickoff_at.localeCompare(b.kickoff_at));
+  return results
+    .filter(
+      (result): result is Top14LnrMatchResult & { kickoff_at: string } =>
+        result.kickoff_at !== null,
+    )
+    .sort((a, b) => a.kickoff_at.localeCompare(b.kickoff_at));
 }
