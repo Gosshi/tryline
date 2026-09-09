@@ -284,12 +284,15 @@ export function MatchChat({
     <section className="rounded-[var(--radius-md)] bg-white p-5 text-center shadow-[var(--shadow-soft)] sm:p-7">
       <div className="mb-4 border-b border-slate-100 pb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-          AI CHAT
+          MATCH Q&A
         </p>
         <h2 className="mt-1 text-lg font-black text-[var(--color-ink)]">
           この試合について質問する
         </h2>
       </div>
+      <p className="mb-4 text-left text-xs leading-5 text-slate-500">
+        この回答は試合データと公開レビューをもとに AI が生成しています。記録にない事実や試合外の情報は確認できません。
+      </p>
 
       {isPremium ? (
         <MatchChatPanel matchId={matchId} />

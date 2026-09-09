@@ -35,7 +35,7 @@ const features = [
   { free: true, name: "大会アーカイブ閲覧", premium: true },
   { free: true, name: "日本語プレビュー全文", premium: true },
   { free: false, name: "日本語レビュー全文", premium: true },
-  { free: false, name: "試合 AI チャット", premium: true },
+  { free: false, name: "この試合について質問する", premium: true },
   { free: true, name: "試合更新・公開通知", premium: true },
 ];
 
@@ -47,7 +47,7 @@ function createFaqs(billingTerms: BillingTerms) {
     },
     {
       answer:
-        "試合スコア・順位表・ラインナップ・日本語プレビュー全文・試合更新通知は無料でご利用いただけます。日本語レビュー全文・試合 AI チャットは Premium 限定です。",
+        "試合スコア・順位表・ラインナップ・日本語プレビュー全文・試合更新通知は無料でご利用いただけます。日本語レビュー全文・「この試合について質問する」は Premium 限定です。",
       question: "無料でどこまで利用できますか？",
     },
     {
@@ -77,7 +77,7 @@ const pricingVideoJsonLd = {
   "@context": "https://schema.org",
   "@type": "VideoObject",
   description:
-    "海外ラグビーの試合を日本語で解説。プレビュー・レビュー・AI チャットが使える Tryline の紹介動画です。",
+    "海外ラグビーの試合を日本語で解説。プレビュー・レビュー・「この試合について質問する」が使える Tryline の紹介動画です。",
   embedUrl: "https://www.youtube.com/embed/2kFHgiaI-NA",
   name: "Tryline — ラグビー解説サービス紹介",
   thumbnailUrl: "https://img.youtube.com/vi/2kFHgiaI-NA/maxresdefault.jpg",
@@ -150,7 +150,7 @@ export default async function PricingPage() {
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65">
             DAZN、J SPORTS、WOWOW
             で追う試合が重なる週末でも、試合の流れ・勝負どころ・注目選手を
-            日本語レビューと試合 AI チャットで確認できます。
+            日本語レビューと「この試合について質問する」で確認できます。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <PricingForm
@@ -267,7 +267,7 @@ export default async function PricingPage() {
                 <p className="leading-7">
                   ノックアウト式の試合では、キックオフ後 30〜60 分で
                   日本語レビューが生成されます。プレビューは無料で読めます。レビュー全文と
-                  試合 AI チャットは Premium 限定です。
+                  「この試合について質問する」は Premium 限定です。
                 </p>
               </div>
             )}
@@ -291,7 +291,7 @@ export default async function PricingPage() {
             Premiumで使える機能
           </h2>
           <p className="mb-10 text-sm text-[var(--color-ink-muted)]">
-            詳細な日本語レビューと、試合データと公開レビューをもとに質問できるAIチャット。
+            詳細な日本語レビューと、試合データと公開レビューをもとに質問できる「この試合について質問する」。
           </p>
 
           <div className="space-y-12">
@@ -312,11 +312,11 @@ export default async function PricingPage() {
 
             <div>
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                試合 AI チャット
+                この試合について質問する
               </p>
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <Image
-                  alt="AI チャットの画面例"
+                  alt="「この試合について質問する」の画面例"
                   className="h-auto w-full"
                   height={1120}
                   src="/pricing/ai-chat.png"

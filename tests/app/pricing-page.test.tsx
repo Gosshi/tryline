@@ -76,9 +76,19 @@ describe("PricingPage", () => {
   it("exports pricing metadata for the root title template", () => {
     expect(metadata).toMatchObject({
       description:
-        "見逃した海外ラグビーの試合を日本語レビューと AI チャットで深く追える Tryline Premium。7日間無料、その後 ¥980/月。",
+        "見逃した海外ラグビーの試合を日本語レビューと「この試合について質問する」で深く追える Tryline Premium。7日間無料、その後 ¥980/月。",
       title: "プランを選ぶ",
     });
+  });
+
+  it("uses the same product name in both billing-term branches", () => {
+    const withTrial = createBillingTerms({ monthlyPriceYen: 980, trialDays: 7 });
+    const withoutTrial = createBillingTerms({ monthlyPriceYen: 980, trialDays: 0 });
+
+    expect(withTrial.pricingDescription).toContain("「この試合について質問する」");
+    expect(withoutTrial.pricingDescription).toContain("「この試合について質問する」");
+    expect(withTrial.pricingDescription).not.toContain("AI チャット");
+    expect(withoutTrial.pricingDescription).not.toContain("AI チャット");
   });
 
   it("renders the redesigned pricing landing page sections", async () => {
@@ -113,7 +123,7 @@ describe("PricingPage", () => {
       "大会アーカイブ閲覧",
       "日本語プレビュー全文",
       "日本語レビュー全文",
-      "試合 AI チャット",
+      "この試合について質問する",
       "試合更新・公開通知",
     ]) {
       expect(screen.getAllByText(feature).length).toBeGreaterThan(0);
@@ -137,7 +147,7 @@ describe("PricingPage", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・試合 AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
+        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・「この試合について質問する」を含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
       ),
     ).toBeInTheDocument();
 
@@ -146,7 +156,7 @@ describe("PricingPage", () => {
     );
     expect(
       screen.getByText(
-        "試合スコア・順位表・ラインナップ・日本語プレビュー全文・試合更新通知は無料でご利用いただけます。日本語レビュー全文・試合 AI チャットは Premium 限定です。",
+        "試合スコア・順位表・ラインナップ・日本語プレビュー全文・試合更新通知は無料でご利用いただけます。日本語レビュー全文・「この試合について質問する」は Premium 限定です。",
       ),
     ).toBeInTheDocument();
     expect(
@@ -174,6 +184,11 @@ describe("PricingPage", () => {
         (script) => script.textContent?.includes(BILLING_TERMS.trialFaqAnswer),
       ),
     ).toBe(true);
+    expect(metadata.description).not.toContain("AI チャット");
+    const jsonLdPayloads = [...document.querySelectorAll('script[type="application/ld+json"]')]
+      .map((script) => JSON.parse(script.textContent ?? "{}"));
+    const faqJsonLd = jsonLdPayloads.find((payload) => payload["@type"] === "FAQPage");
+    expect(JSON.stringify(faqJsonLd)).not.toContain("AI チャット");
     expect(screen.getByText("支払い方法は？")).toBeInTheDocument();
   });
 
@@ -187,7 +202,7 @@ describe("PricingPage", () => {
     ).toHaveAttribute("href", "/");
     expect(screen.getByText("試合直後に更新")).toBeInTheDocument();
     expect(
-      screen.getByText(/レビュー全文と 試合 AI チャットは Premium 限定です。/),
+      screen.getByText(/「この試合について質問する」は Premium 限定です。/),
     ).toBeInTheDocument();
     expect(
       screen.queryByText("公開済みレビューを準備中です。"),
@@ -202,7 +217,7 @@ describe("PricingPage", () => {
       pricingSummary:
         "7日間無料 · その後 ¥980/月 · いつでもキャンセル可能 · Stripe 決済",
       trialFaqAnswer:
-        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・試合 AI チャットを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
+        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・「この試合について質問する」を含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
     },
     {
       billingTerms: createBillingTerms({ monthlyPriceYen: 980, trialDays: 0 }),
