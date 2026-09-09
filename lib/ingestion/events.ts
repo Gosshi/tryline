@@ -56,12 +56,23 @@ async function loadAllExistingEvents() {
 }
 
 function getEventInsertionValidationSnapshot() {
-  eventInsertionValidationSnapshot ??= Promise.all([
+  if (eventInsertionValidationSnapshot !== null) {
+    return eventInsertionValidationSnapshot;
+  }
+
+  const snapshot = Promise.all([
     loadAllFixtureMatches(),
     loadAllExistingEvents(),
   ]).then(([fixtureMatches, existingEvents]) => ({ fixtureMatches, existingEvents }));
 
-  return eventInsertionValidationSnapshot;
+  eventInsertionValidationSnapshot = snapshot;
+  void snapshot.catch(() => {
+    if (eventInsertionValidationSnapshot === snapshot) {
+      eventInsertionValidationSnapshot = null;
+    }
+  });
+
+  return snapshot;
 }
 
 export function resetEventInsertionValidationSnapshotForTest() {
