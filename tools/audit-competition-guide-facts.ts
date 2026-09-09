@@ -25,7 +25,12 @@ const REVIEW_NOTE =
   "実データに無いことだけでガイドの誤りとは限りません。過去大会の優勝国・対戦相手など、現在の参加者ではない正しい言及もあり得るため、周辺文と確認先URLをOwnerが確認してください。";
 
 type Coverage = "complete" | "incomplete";
-type DataSource = "competition_standings" | "matches" | "none";
+type DataSource =
+  | "competition_teams"
+  | "competition_standings"
+  | "competition_standings_and_matches"
+  | "matches"
+  | "none";
 
 type CompetitionGuideRow = {
   family: string;
@@ -375,16 +380,6 @@ async function loadActualTeamIds(
 
   const standingRows = (standings ?? []) as StandingRow[];
 
-  if (standingRows.length > 0) {
-    return {
-      coverage: "complete",
-      coverageReason:
-        "順位表に行があるため、competition_standingsを参加チームの照合元として使用しました。",
-      dataSource: "competition_standings",
-      teamIds: new Set(standingRows.map((row) => row.team_id)),
-    };
-  }
-
   const { data: matches, error: matchesError } = await db
     .from("matches")
     .select("competition_id, home_team_id, away_team_id")
@@ -395,18 +390,100 @@ async function loadActualTeamIds(
   }
 
   const matchRows = (matches ?? []) as MatchRow[];
-  const teamIds = new Set<string>();
+
+  const { data: competitionTeams, error: competitionTeamsError } = await db
+    .from("competition_teams")
+    .select("competition_id, team_id")
+    .in("competition_id", competitionIds);
+
+  if (competitionTeamsError) {
+    throw competitionTeamsError;
+  }
+
+  const competitionTeamRows = (competitionTeams ?? []) as Array<{
+    competition_id: string;
+    team_id: string;
+  }>;
+
+  const standingTeamIdsByCompetition = new Map<string, Set<string>>();
+  const matchTeamIdsByCompetition = new Map<string, Set<string>>();
+  const expectedTeamIdsByCompetition = new Map<string, Set<string>>();
+
+  for (const row of standingRows) {
+    const teamIds =
+      standingTeamIdsByCompetition.get(row.competition_id) ?? new Set<string>();
+    teamIds.add(row.team_id);
+    standingTeamIdsByCompetition.set(row.competition_id, teamIds);
+  }
 
   for (const match of matchRows) {
+    const teamIds =
+      matchTeamIdsByCompetition.get(match.competition_id) ?? new Set<string>();
     teamIds.add(match.home_team_id);
     teamIds.add(match.away_team_id);
+    matchTeamIdsByCompetition.set(match.competition_id, teamIds);
   }
+
+  for (const row of competitionTeamRows) {
+    const teamIds =
+      expectedTeamIdsByCompetition.get(row.competition_id) ?? new Set<string>();
+    teamIds.add(row.team_id);
+    expectedTeamIdsByCompetition.set(row.competition_id, teamIds);
+  }
+
+  const hasCompleteStandingsCoverage = competitionIds.every((competitionId) => {
+    const standingTeamIds = standingTeamIdsByCompetition.get(competitionId);
+    const expectedTeamIds = expectedTeamIdsByCompetition.get(competitionId);
+
+    return (
+      standingTeamIds !== undefined &&
+      expectedTeamIds !== undefined &&
+      standingTeamIds.size > 0 &&
+      standingTeamIds.size === expectedTeamIds.size &&
+      [...standingTeamIds].every((teamId) => expectedTeamIds.has(teamId))
+    );
+  });
+
+  if (hasCompleteStandingsCoverage) {
+    return {
+      coverage: "complete",
+      coverageReason:
+        "competitionごとにcompetition_standingsのチーム集合をcompetition_teamsの期待参加チーム集合と照合し、全大会で一致しました。",
+      dataSource: "competition_standings",
+      teamIds: new Set(standingRows.map((row) => row.team_id)),
+    };
+  }
+
+  const teamIds = new Set<string>(standingRows.map((row) => row.team_id));
+
+  for (const matchTeamIds of matchTeamIdsByCompetition.values()) {
+    for (const teamId of matchTeamIds) {
+      teamIds.add(teamId);
+    }
+  }
+
+  for (const expectedTeamIds of expectedTeamIdsByCompetition.values()) {
+    for (const teamId of expectedTeamIds) {
+      teamIds.add(teamId);
+    }
+  }
+
+  const dataSource: DataSource =
+    standingRows.length > 0 && matchRows.length > 0
+      ? "competition_standings_and_matches"
+      : standingRows.length > 0
+        ? "competition_standings"
+        : matchRows.length > 0
+          ? "matches"
+          : competitionTeamRows.length > 0
+            ? "competition_teams"
+            : "none";
 
   return {
     coverage: "incomplete",
     coverageReason:
-      "順位表が無いためmatchesから参加チーム候補を作成しました。日程の取り込み範囲が完全とは限らないため、不参加を断定できません。",
-    dataSource: "matches",
+      "competitionごとの順位表をcompetition_teamsの期待参加チーム集合と照合して完全性を確認できなかったため、順位表・日程・参加チーム登録の和集合を候補として使用します。不参加を断定できません。",
+    dataSource,
     teamIds,
   };
 }

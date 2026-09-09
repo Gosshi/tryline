@@ -37,7 +37,7 @@ function createMockDb(): SupabaseClient<Database> {
   const guide = queryBuilder({
     family: "nations-championship",
     guide_ja:
-      "ネーションズチャンピオンシップは12カ国が参加する大会です。参加国にはジョージアが名を連ねます。",
+      "ネーションズチャンピオンシップは12カ国が参加する大会です。参加国にはイタリアが名を連ねます。",
     source_url: "https://example.com/nations-championship",
     updated_at: "2026-09-05T00:00:00.000Z",
     verified_at: null,
@@ -47,6 +47,18 @@ function createMockDb(): SupabaseClient<Database> {
   ]);
   const standings = queryBuilder([
     { competition_id: "competition-1", team_id: "fiji-id" },
+    { competition_id: "competition-1", team_id: "georgia-id" },
+  ]);
+  const matches = queryBuilder([
+    {
+      away_team_id: "georgia-id",
+      competition_id: "competition-1",
+      home_team_id: "fiji-id",
+    },
+  ]);
+  const competitionTeams = queryBuilder([
+    { competition_id: "competition-1", team_id: "fiji-id" },
+    { competition_id: "competition-1", team_id: "georgia-id" },
   ]);
   const teams = queryBuilder([
     {
@@ -63,6 +75,13 @@ function createMockDb(): SupabaseClient<Database> {
       name_ja: "ジョージア",
       slug: "georgia",
     },
+    {
+      english_name: "Italy",
+      id: "italy-id",
+      name: "Italy",
+      name_ja: "イタリア",
+      slug: "italy",
+    },
   ]);
 
   return {
@@ -70,6 +89,8 @@ function createMockDb(): SupabaseClient<Database> {
       if (table === "competition_guides") return guide;
       if (table === "competitions") return competitions;
       if (table === "competition_standings") return standings;
+      if (table === "matches") return matches;
+      if (table === "competition_teams") return competitionTeams;
       if (table === "teams") return teams;
       throw new Error(`Unexpected table: ${table}`);
     }),
@@ -88,7 +109,7 @@ describe("audit-competition-guide-facts", () => {
     });
   });
 
-  it("reports Georgia as guide-only and Fiji as actual standings data", async () => {
+  it("reports Italy as guide-only after validating complete standings coverage", async () => {
     const report = await auditCompetitionGuideFacts(
       createMockDb(),
       {
@@ -103,20 +124,21 @@ describe("audit-competition-guide-facts", () => {
     expect(report.dataSource).toBe("competition_standings");
     expect(report.guideOnlyCandidates).toEqual([
       expect.objectContaining({
-        candidateName: "ジョージア",
+        candidateName: "イタリア",
         classification: "guide_only_candidate",
-        context: expect.stringContaining("ジョージア"),
+        context: expect.stringContaining("イタリア"),
       }),
     ]);
     expect(report.actualDataTeams).toEqual([
+      { name: "ジョージア", slug: "georgia" },
       { name: "フィジー", slug: "fiji" },
     ]);
-    expect(report.dataOnlyTeams).toEqual([
-      expect.objectContaining({
-        candidateName: "フィジー",
-        classification: "data_only",
-      }),
-    ]);
+    expect(report.dataOnlyTeams).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ candidateName: "ジョージア" }),
+        expect.objectContaining({ candidateName: "フィジー" }),
+      ]),
+    );
 
     const json = reportToJson(report);
     expect(json.guide_updated_at).toBe("2026-09-05T00:00:00.000Z");
@@ -130,6 +152,57 @@ describe("audit-competition-guide-facts", () => {
         "伝説の名場面では、ジョージア戦で優勝を決めました。",
       ),
     ).toBe("historical_or_opponent_mention");
+  });
+
+  it("keeps partial standings incomplete and includes teams seen in another competition's schedule", async () => {
+    const responses = {
+      competition_guides: queryBuilder({
+        family: "synthetic",
+        guide_ja: "参加チームはTeam AとTeam B。",
+        source_url: null,
+        updated_at: "2026-09-08T00:00:00.000Z",
+        verified_at: null,
+      }),
+      competition_standings: queryBuilder([
+        { competition_id: "pool-a", team_id: "a" },
+      ]),
+      competition_teams: queryBuilder([
+        { competition_id: "pool-a", team_id: "a" },
+      ]),
+      competitions: queryBuilder([
+        { id: "pool-a", slug: "pool-a" },
+        { id: "pool-b", slug: "pool-b" },
+      ]),
+      matches: queryBuilder([
+        {
+          away_team_id: "c",
+          competition_id: "pool-b",
+          home_team_id: "b",
+        },
+      ]),
+      teams: queryBuilder(
+        ["a", "b", "c"].map((id) => ({
+          english_name: `Team ${id.toUpperCase()}`,
+          id,
+          name: `Team ${id.toUpperCase()}`,
+          name_ja: null,
+          slug: `team-${id}`,
+        })),
+      ),
+    };
+    const db = {
+      from: vi.fn((table: keyof typeof responses) => responses[table]),
+    } as unknown as SupabaseClient<Database>;
+
+    const report = await auditCompetitionGuideFacts(
+      db,
+      { family: "synthetic", outputDir: "unused", season: "2026" },
+      "2026-09-08T00:00:00.000Z",
+    );
+
+    expect(report.coverage).toBe("incomplete");
+    expect(report.actualDataTeams).toHaveLength(3);
+    expect(report.guideOnlyCandidates).toEqual([]);
   });
 
   it("contains no database write methods or LLM imports", () => {

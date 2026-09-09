@@ -40,6 +40,23 @@ function event(
   };
 }
 
+function substitutionEvent(
+  matchId: string,
+  minute: number,
+  teamId: string,
+): EventRow {
+  return {
+    match_id: matchId,
+    metadata: {
+      player_in_name: `Replacement ${minute}`,
+      player_out_name: `Starter ${minute}`,
+    },
+    minute,
+    team_id: teamId,
+    type: "substitution",
+  };
+}
+
 function fixtureEvents(matchId: string, reversed = false): EventRow[] {
   const swap = (teamId: string) =>
     !reversed ? teamId : teamId === HOME_TEAM_ID ? AWAY_TEAM_ID : HOME_TEAM_ID;
@@ -71,9 +88,7 @@ function fixtureEvents(matchId: string, reversed = false): EventRow[] {
   rows.push(event(matchId, 16, "penalty", swap(AWAY_TEAM_ID), "Away penalty"));
   rows.push(event(matchId, 17, "yellow_card", swap(HOME_TEAM_ID), "Home card"));
   rows.push(event(matchId, 18, "yellow_card", swap(AWAY_TEAM_ID), "Away card"));
-  rows.push(
-    event(matchId, 19, "substitution", swap(HOME_TEAM_ID), "Substitution"),
-  );
+  rows.push(substitutionEvent(matchId, 19, swap(HOME_TEAM_ID)));
 
   return rows;
 }
@@ -246,6 +261,69 @@ describe("audit-published-recap-event-integrity", () => {
     expect(report.summary.C3).toBe(0);
   });
 
+  it("does not use anonymous events as C3 or C4 evidence", async () => {
+    const anonymousEvents = [FIRST_MATCH_ID, SECOND_MATCH_ID].flatMap(
+      (matchId) =>
+        Array.from({ length: 4 }, (_, index) => ({
+          match_id: matchId,
+          metadata: {},
+          minute: index + 1,
+          team_id: matchId === FIRST_MATCH_ID ? HOME_TEAM_ID : AWAY_TEAM_ID,
+          type: "try",
+        })),
+    );
+    const report = await auditPublishedRecapEventIntegrity(
+      createMockDb({
+        events: anonymousEvents,
+        matches: [
+          match(FIRST_MATCH_ID, 25, 0),
+          match(SECOND_MATCH_ID, 0, 20),
+          match("contentless-finished", 20, 10),
+        ],
+      }),
+    );
+
+    expect(report.findings).toEqual([
+      expect.objectContaining({
+        matchId: FIRST_MATCH_ID,
+        checksHit: ["C1"],
+        severity: "suspect",
+      }),
+    ]);
+    expect(report.summary.C3).toBe(0);
+    expect(report.summary.C4).toBe(0);
+  });
+
+  it("uses player_in_name and player_out_name to identify substitutions", async () => {
+    const firstEvents = Array.from({ length: 4 }, (_, index) =>
+      substitutionEvent(FIRST_MATCH_ID, index + 1, HOME_TEAM_ID),
+    );
+    const secondEvents = Array.from({ length: 4 }, (_, index) =>
+      substitutionEvent(SECOND_MATCH_ID, index + 1, AWAY_TEAM_ID),
+    );
+    const report = await auditPublishedRecapEventIntegrity(
+      createMockDb({
+        events: [...firstEvents, ...secondEvents],
+        matches: [
+          match(FIRST_MATCH_ID, 0, 0),
+          match(SECOND_MATCH_ID, 0, 0),
+          match("contentless-finished", 20, 10),
+        ],
+      }),
+    );
+
+    expect(report.findings).toEqual([
+      expect.objectContaining({
+        matchId: FIRST_MATCH_ID,
+        checksHit: ["C3", "C4"],
+      }),
+      expect.objectContaining({
+        matchId: SECOND_MATCH_ID,
+        checksHit: ["C3", "C4"],
+      }),
+    ]);
+  });
+
   it("keeps a partial team-assignment reversal at suspect C3", async () => {
     const base = fixtureEvents(FIRST_MATCH_ID).slice(0, 4);
     const partial = base.map((row, index) => ({
@@ -399,12 +477,11 @@ describe("audit-published-recap-event-integrity", () => {
       (index === 0
         ? ["first", "second", "third", "fourth"]
         : ["first", "second"]
-      ).map(
-        (side) =>
-          match(`${index}-${side}`, null, null, {
-            wikipedia_event_id:
-              index === 0 ? "mw-content-text" : `anchor-${index}`,
-          }),
+      ).map((side) =>
+        match(`${index}-${side}`, null, null, {
+          wikipedia_event_id:
+            index === 0 ? "mw-content-text" : `anchor-${index}`,
+        }),
       ),
     ).flat();
     const report = await auditPublishedRecapEventIntegrity(
@@ -451,7 +528,9 @@ describe("audit-published-recap-event-integrity", () => {
       sample_match_ids: ["0-first", "0-fourth", "0-second"],
       value: "mw-content-text",
     });
-    expect(summary.identifier_quality.unreliable_key_collision_query_note).toContain(
+    expect(
+      summary.identifier_quality.unreliable_key_collision_query_note,
+    ).toContain(
       "select id from matches where external_ids->>'<key>' = '<value>';",
     );
     expect(readFileSync(paths.csvPath, "utf8")).not.toContain(
