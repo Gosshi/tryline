@@ -41,7 +41,9 @@
 match_content: id, match_id, content_type, status, language, prompt_version, generated_at
 match_events: match_id, team_id, minute, type, metadata
 matches: id, home_team_id, away_team_id, home_score, away_score, status, kickoff_at, competition_id, external_ids
-teams/competitionsを実際の外部キーでJOINし表示名とcompetition_slugを得る。CSVの日時列はrecap_generated_at/kickoff_atとする。
+teams/competitionsを実際の外部キーでJOINし表示名とcompetition_slugを得る。
+
+**2026-09-08 訂正**: この段落は当初「CSVの日時列はrecap_generated_at/kickoff_at」としていたが、**下の「出力」節および実装（`tools/audit-published-recap-event-integrity.ts:306,318`）は `kickoff_utc` / `recap_updated_at` を出力する。** DB から読む列（`matches.kickoff_at` / `match_content.generated_at`）と、CSV のヘッダ名は別物である。**CSV の列名は `kickoff_utc` / `recap_updated_at` で確定とし、改名しない。**
 ```
 
 ## API サーフェス

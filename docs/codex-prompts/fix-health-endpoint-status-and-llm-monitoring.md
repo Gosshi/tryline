@@ -30,7 +30,11 @@ app/api/health/route.ts
 
 `status` を `"ok" | "degraded" | "error"` にし、**`checks` から導出**してください。HTTP は `ok`/`degraded` が 200、`error`（Supabase 障害）が 503 です。
 
-`checks.generation` を足してください。**判定は `pipeline_runs` の最終成功時刻からの経過時間**です。閾値は名前付き定数にしてください（初期値48時間）。
+**【2026-09-08 訂正】この段落の指示は保留です。実装しないでください。**
+
+ここには「`checks.generation` を足す。判定は `pipeline_runs` の最終成功時刻からの経過時間、閾値 48 時間」とありましたが、**spec 側では「生成能力あり」の定義が未確定のままです。** stage 1 の success を生成成功とみなす実装は指示しません。
+
+**本 spec で着手するのは status 集約までです**（Supabase 障害で `status=error` / 503、OpenAI 障害で `degraded` / 200）。こちらは実装済み（PR #761）。`checks.generation` の追加は、判定定義を Owner が決めてから別 spec で行います。
 
 **health から生成 API を叩かないでください。** 外形監視が高頻度で叩く可能性があり、毎回課金が発生します。`checks.openai` は現状の `models.list()`（キーの有効性確認）のままでよく、**生成可能かどうかは `checks.generation` で見ます。** これで追加の LLM コストはゼロです。
 

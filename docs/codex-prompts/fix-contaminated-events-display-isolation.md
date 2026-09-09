@@ -15,7 +15,7 @@ components/match-events-section.tsx
 app/api/v1/matches/[id]/route.ts
 ```
 
-**`app/matches/[id]/page.tsx` には差分を作らないでください。** `MatchEventsSection` は `finalHomeScore` / `finalAwayScore` を既に props で受け取っています（L20-31 を見てください）。呼び出し側4箇所（L458, 473, 501, 518）はそのままで、コンポーネント内だけで判定できます。
+**【2026-09-08 取り消し】** ここには「`app/matches/[id]/page.tsx` には差分を作らないでください。呼び出し側 4 箇所はそのままでよい」という指示がありましたが、**誤りだったので取り消します。** 正しい指示はこの下の段落です。実装（PR #766、マージ済み）もそちらに従っています。
 
 ## 変えてはいけないもの
 

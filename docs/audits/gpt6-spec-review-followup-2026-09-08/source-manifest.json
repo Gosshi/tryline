@@ -1,0 +1,157 @@
+{
+  "head": "682a98b4984ad4067d5e4ce21c114d8fc515608a",
+  "files": [
+    {
+      "path": "specs/fix-event-ingestion-identity-guard.md",
+      "sha256": "98dabc3fd1dbab513642fe1ad7da219e4ae89ae9a02fb716787920cfdaf5240d"
+    },
+    {
+      "path": "specs/fix-generation-event-integrity-gate.md",
+      "sha256": "5ce07c89b30996acb7aa90143e43ce80e1088d291d6946178a96947943ae7048"
+    },
+    {
+      "path": "specs/fix-contaminated-events-display-isolation.md",
+      "sha256": "cfaf1f5bdd7f95bb1cb4550aaaf623bec4c28e3e6ba3dfcd2b37118aa0119849"
+    },
+    {
+      "path": "specs/audit-published-recap-event-integrity.md",
+      "sha256": "3dbfeb9341321527e76d24f9f7c1724f7d113954735fd2b98c3e89b29ae680e3"
+    },
+    {
+      "path": "specs/fix-rwc2027-match-count-and-broadcast-claims.md",
+      "sha256": "258454276bf92b482d0101e1f890531abecb063f624424931ba74b7ad6849e46"
+    },
+    {
+      "path": "specs/fix-season-faq-broadcast-hardcoding.md",
+      "sha256": "232bf2cc50f037e7cf4c1a45eca86da655b8cdfd6efb00fa3fb0d84c70764ddd"
+    },
+    {
+      "path": "specs/fix-competition-guide-participant-verification.md",
+      "sha256": "7db07978eeedd7903d2d591c8e11f1a3a2f671930a82ebbd7fff4638c67ab941"
+    },
+    {
+      "path": "specs/fix-stripe-webhook-db-error-propagation.md",
+      "sha256": "2c5d4318d8fc128b36e2fb12d566087e1c829161866e74ccae46aba88aa96494"
+    },
+    {
+      "path": "specs/fix-billing-terms-consistency.md",
+      "sha256": "81dbd12bc46e48a7852993e1ce234158863e06abbfdfab2b3244d3fb23cf6b13"
+    },
+    {
+      "path": "specs/fix-health-endpoint-status-and-llm-monitoring.md",
+      "sha256": "6c245766e3715394dc18025b463be3db3788e3decd715d92974abcdc009649b9"
+    },
+    {
+      "path": "specs/fix-h2h-latest-vs-next-match.md",
+      "sha256": "cfaf0d246c4d325a991129394a2ae9fe46acc2b8f478c79ff0d60e25a0cb30aa"
+    },
+    {
+      "path": "docs/codex-prompts/fix-event-ingestion-identity-guard.md",
+      "sha256": "3410b944d8cdaf0cdd55e399bf7c35baa635654d4ecca901a0e789a3ca04cdb3"
+    },
+    {
+      "path": "docs/codex-prompts/fix-generation-event-integrity-gate.md",
+      "sha256": "947cf5e962480ee776ec997bacd5e689a91437a0af70cbc20fb7315bd61f2ee4"
+    },
+    {
+      "path": "docs/codex-prompts/fix-contaminated-events-display-isolation.md",
+      "sha256": "9706fec1f75fd6fbd99eba22793e94e0f40a575b57141a49264e26d61a075a05"
+    },
+    {
+      "path": "docs/codex-prompts/audit-published-recap-event-integrity.md",
+      "sha256": "275ab2e162e812b8be86ba8736ec9d20b353a10edada641fa81592660268a37d"
+    },
+    {
+      "path": "docs/codex-prompts/fix-rwc2027-match-count-and-broadcast-claims.md",
+      "sha256": "4a0d5f7c28b8afa530495952aa70ac288025b8626774424b223410c0da8acb72"
+    },
+    {
+      "path": "docs/codex-prompts/fix-season-faq-broadcast-hardcoding.md",
+      "sha256": "c756cdb0b772d0677cf75a1c6fb221f488e79c5533f2a1a8725dd1023e8c932b"
+    },
+    {
+      "path": "docs/codex-prompts/fix-competition-guide-participant-verification.md",
+      "sha256": "e2821b28811fa98b711c3ecd5abda4e47aecc38ec20761f8a19c306ca477030d"
+    },
+    {
+      "path": "docs/codex-prompts/fix-stripe-webhook-db-error-propagation.md",
+      "sha256": "3a4a193e634596d8f8e761f3d9e90186b624e548472fc8bc97f9d1f94b40ea5d"
+    },
+    {
+      "path": "docs/codex-prompts/fix-billing-terms-consistency.md",
+      "sha256": "69e1b1a6019fac0f5c783be7868fceaaafac1f4f0a381b0f8bb5f2aff9c6ae9c"
+    },
+    {
+      "path": "docs/codex-prompts/fix-health-endpoint-status-and-llm-monitoring.md",
+      "sha256": "ba9f09ebd6862307589de2b3c134159ba582e5978290b95745e2da6298d11f42"
+    },
+    {
+      "path": "docs/codex-prompts/fix-h2h-latest-vs-next-match.md",
+      "sha256": "e9183b8ebe141dedd1010c48ea5eae648a6f91dce1340a2930a87337809cbff1"
+    },
+    {
+      "path": "lib/ingestion/events.ts",
+      "sha256": "0fc3a04f832f4d5b21151557f965758f672a2eb56435d065e76bbeafaa3b30a9"
+    },
+    {
+      "path": "lib/ingestion/event-integrity.ts",
+      "sha256": "e79bcc99da1a20fed0888746962597dd5b1157272f03c9101ce13e699429053d"
+    },
+    {
+      "path": "lib/ingestion/live-ingest.ts",
+      "sha256": "23113d43acea2fa5065fe8d3707c38a1f976fb73e51bdde3b0ccfda1fdb69376"
+    },
+    {
+      "path": "lib/ingestion/external-identifiers.ts",
+      "sha256": "2cd5e1ce4c583199d3f2813015d272ae25d731944fbbd40657350d141bad58bf"
+    },
+    {
+      "path": "lib/ingestion/jrfu-match-event-fallback.ts",
+      "sha256": "1be6d1e093da9dfacba291d4a3d5a304f6e2a721ea13d8a94fbf3e3223ae98a5"
+    },
+    {
+      "path": "app/api/cron/fill-event-gaps/route.ts",
+      "sha256": "f7e28e6ae7a285a9fe6dca632b36e5e8e5da8d328bbb81304b090657e3193930"
+    },
+    {
+      "path": "app/api/cron/fill-league-one-playoff-events/route.ts",
+      "sha256": "f3a0992e5cdf36ee9bd6873d469e3456d56f2d91936cc00d6519d97a412c6178"
+    },
+    {
+      "path": "scripts/fill-event-gaps.ts",
+      "sha256": "00eb7d180b16cfe1d56a28cdb533fc95d992a355736ab0557282b704ca0ebd3b"
+    },
+    {
+      "path": "scripts/backfill-top14-match-events.ts",
+      "sha256": "877ce433cfbf8644f03aaea32d9c63304bf14862f7ab69b00867141398cd4b52"
+    },
+    {
+      "path": "scripts/backfill-premiership-match-events.ts",
+      "sha256": "9b4db34f5839786bf06075c32d838666125207aad08992060fb2005f5617fb7a"
+    },
+    {
+      "path": "tools/audit-published-recap-event-integrity.ts",
+      "sha256": "b86296e39908dc75a55d97fce5edfd0a2118725ce1c062a2a5c1480c7edb19a6"
+    },
+    {
+      "path": "tools/audit-competition-guide-facts.ts",
+      "sha256": "877fbf44b1a862b07f7b3aea43a52b59f64197089c574a5a4e6189f0924fc2ce"
+    },
+    {
+      "path": "app/api/stripe/webhook/route.ts",
+      "sha256": "9c8bfa7a39005f2a7753261cb693f1e4c29c0c9dec8432232ed7d79ce0daff2b"
+    },
+    {
+      "path": "lib/llm/notify.ts",
+      "sha256": "3750241a9a54149f6040129380af6315b4a1edc8e88380f645220df82ff53362"
+    },
+    {
+      "path": "lib/db/types.ts",
+      "sha256": "4a48e4373b2e8f9d06bf429b1e7ef26e644805e4d0673c115bdef728f6d64d51"
+    },
+    {
+      "path": "docs/decisions.md",
+      "sha256": "946bf92c5b2026d39e9a1ea10c29e061c94d8ae1596c6a09a9a3f8e6f81d8523"
+    }
+  ]
+}

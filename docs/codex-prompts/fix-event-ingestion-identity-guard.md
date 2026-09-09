@@ -38,7 +38,9 @@ scripts/backfill-nations-championship-match-events.ts （再定義の削除）
 
 **V2 の設計に注意してください。** `events.ts:82-83` は `teamSide` から `homeTeamId`/`awayTeamId` を選ぶだけなので、**解決後の `team_id` がその2つに属するかを検査しても常に合格し、意味がありません。** 検査するのは入力側です（spec の V2 を読んでください）。
 
-**共通入口を通らない独立実装が2つあります**: `scripts/import-world-rugby-full.ts:505` と `scripts/import-league-one-full.ts:335`。ガードが効かないので、対応するか対象外とするかを PR 本文に書いてください。
+**共通入口を通らない独立実装が2つあります**: `scripts/import-world-rugby-full.ts:505` と `scripts/import-league-one-full.ts:335`。
+
+**【2026-09-08 訂正】「対象外とする」選択肢は無くなりました。** 2026-09-06 の Owner 判断（spec の未解決の質問 3）で**本 spec で共通化する**と確定し、PR #781 で実装済みです。両ファイルの独自 `upsertMatchEvents` は削除され、共通入口に統一されています。**この 2 経路を再び独自実装に戻さないでください。**
 
 **パーサ（`lib/scrapers/*`）を変更しないでください。** パーサが `teamSide` しか返さない前提のまま、入口で検証します。
 

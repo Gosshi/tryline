@@ -32,7 +32,11 @@ Nations Championship 2026 のシーズンページ `/c/nations-championship/2026
 なし。**読み取りのみ。**
 
 ```
-competition_guidesはfamily, guide_ja, source_url, verified_at, updated_atを読む。competition_standingsとmatchesからcompetition_id単位で対象チームを得て、teams.name/english_nameと管理済み別名で照合する。存在しないbody/status/teams.name_ja/name_en列を使わない。
+competition_guidesはfamily, guide_ja, source_url, verified_at, updated_atを読む。competition_standingsとmatchesからcompetition_id単位で対象チームを得て、teamsの名称列と管理済み別名で照合する。
+
+**2026-09-08 訂正**: この段落は当初「存在しない `teams.name_ja` / `name_en` 列を使わない」としていたが、**`name_ja` は実在する**（`lib/db/types.ts` の `teams.Row` に `name_ja: string | null`）。誤りだったので取り消す。
+
+`teams` の実際の名称列は **`name` / `name_ja` / `english_name`** の 3 つで、**`name_en` は存在しない**。照合にはこの 3 列を使う。存在しない `body` / `status` 列は引き続き使わない。テーブル名も `standings` ではなく **`competition_standings`** である。
 standings: competition_id, team_id
 matches:   competition_id, home_team_id, away_team_id
 teams:     id, name, name_ja, name_en, slug

@@ -1,0 +1,336 @@
+{
+  "head": "682a98b4984ad4067d5e4ce21c114d8fc515608a",
+  "skills": 30,
+  "agents": 3,
+  "weekly_ops_removed": true,
+  "entries": [
+    {
+      "path": ".claude/skills/backlink-outreach/SKILL.md",
+      "sha256": "d4075a7e019570a8a811bd00eb963184d7972e4f7cf4863a6420538979e1cd7d",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/billing-monitor/SKILL.md",
+      "sha256": "c623b260e94602354302774cf8cf254215a8cffcdb6950a3d03120bbf5a1eba2",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/bing-webmaster-analysis/SKILL.md",
+      "sha256": "5f1ac20011c4a34859ceedde815bc71ce89fdc4840190c6b209142a541c327e3",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/biz-strategy/SKILL.md",
+      "sha256": "36f5280b5873ccc9f77cc6fc286532b1af64325699e708c7ed16523ac00ba57a",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/codex-handoff/SKILL.md",
+      "sha256": "dc5910ebe7d9c46d8e5ac1227b61dad182cc744038173d5308ce01b8700e96e2",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/codex-review/SKILL.md",
+      "sha256": "93e84e495b8d16fbc96bf6ac3483bdd733dd75cd2fa2961e45295a7476bb34b4",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/competitor-watch/SKILL.md",
+      "sha256": "dc9c7f7be5f97f3e8936335991ad9275f3d0359957efc04e1ed91ab23c722825",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/content-plan/SKILL.md",
+      "sha256": "a6b37e2b91f196986faf49c682f1d0483dfcdf05f07cecbd82aacef3c393e6aa",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/content-qa/SKILL.md",
+      "sha256": "1a5d2afbd2ff9174eb0077cb733f35d2f56eab551c1371d49be5640a6ce7be3b",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/content-regen/SKILL.md",
+      "sha256": "d6ef599a2d866ba7bd9a3e2b3985a7fb1fb13dfb93b18e9cd6491c2a93c3e0f3",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/decision-log/SKILL.md",
+      "sha256": "4cc72e8c55f676ca95b879bec4a24c7f3fba5f355367c17c87a5509e7406290e",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/discord-ops/SKILL.md",
+      "sha256": "e365460e2d2ee5f54b6e2a24388a9f1b371ff7a7fdc942257cb06be35a28a643",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/email-delivery-qa/SKILL.md",
+      "sha256": "770626fb6bb20845b4dc279033f8b5194a4d1c444e6fee6eb859e28adf8ae79b",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/funnel-audit/SKILL.md",
+      "sha256": "136cbaceb5011fc36b3ca5b2089a18be7e4bcc76f40e528f93c78f69cb2b7a07",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/growth-analysis/SKILL.md",
+      "sha256": "40f725cd73c530d6171762bdd1e585943fdc1e645c7ad4fc8b7eb81bda25cbe0",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/hub-audit/SKILL.md",
+      "sha256": "81886e6fb4fa36e8004f3796e952b3f1f8cabbba1fe677c37c46ef30c9c20ecd",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/image-gen/SKILL.md",
+      "sha256": "1013ab37024d541b71ce692a6a0de07e30a0919dc68070d7c5765c493d73aefa",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/incident-postmortem/SKILL.md",
+      "sha256": "cda981f24e53c710e8ebb2bda0711cdb464d7a9915d6cdfc13464b680e486f87",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/note-weekly/SKILL.md",
+      "sha256": "aa181f0123da8d3a77c03ed521afc55fdda75e2d27d4d6783c86f52a638e7a00",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/performance-rum/SKILL.md",
+      "sha256": "065d90915fe087448f8025b96e5589dcf16d70cfe6abad0e57dd32270f089f26",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/pr-merge/SKILL.md",
+      "sha256": "02a03a877a7ac1310bedc653e409ff16a3a8d247782e96a002e828dce8576b46",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/prod-investigation/SKILL.md",
+      "sha256": "7da559575ea0e70e2d52ce053f3f0321529c206926b96d241f8d8345ad690ae7",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/production-data-integrity/SKILL.md",
+      "sha256": "5121c124d5573b9991282f3a527d61ad6c5b97193ef7e0c771babd84ad002a56",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/rugby-news/SKILL.md",
+      "sha256": "1007fb275308f684f00927c6f701a4d3ad67b7cf3af0a554f5a885e2abbbf5fd",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/rwc2027/SKILL.md",
+      "sha256": "d75dd80bb6661778eb0fd04464ab25417026b38267ef5abd669bc8e60e64538f",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/site-audit/SKILL.md",
+      "sha256": "2af0e195b64eef240255ee56d709a407ab7def411376bc9cbac25dfac97a57f6",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/spec-writing/SKILL.md",
+      "sha256": "c3cf5a36847259166aa375d2b29babb7437cf2482289158a541c4b21405fab20",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/today/SKILL.md",
+      "sha256": "5036803690fc08b20a86d333ae553f4657c70fff96c6ad536d4096b271f84850",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/x-post/SKILL.md",
+      "sha256": "b44a938eca29bc47e74784974f6477788e303b151d432069a0fb3a0c7dbf18e0",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/skills/x-reply/SKILL.md",
+      "sha256": "07d79992a7a481cf7348d468d890c294566f89fdb30a280854cacc01d166241c",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/agents/tryline-site-auditor.md",
+      "sha256": "9fd3000876110735687963d44f4c461d69ac1eee7f4619168eeda57759848659",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/agents/tryline-spec-checker.md",
+      "sha256": "d31a86c0420a35edc07fff8a570842aaf37f5af3ef4a42a37142d17e09246d43",
+      "matches_previous_draft": true
+    },
+    {
+      "path": ".claude/agents/tryline-web-researcher.md",
+      "sha256": "d70acad088e074dd13ce622c478406204f9dc18dff4f3e770c88311f27f7bc87",
+      "matches_previous_draft": true
+    }
+  ],
+  "relative_links": [
+    {
+      "source": ".claude/skills/backlink-outreach/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/billing-monitor/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/bing-webmaster-analysis/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/biz-strategy/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/codex-handoff/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/codex-review/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/competitor-watch/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/content-plan/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/content-qa/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/content-regen/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/decision-log/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/discord-ops/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/email-delivery-qa/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/funnel-audit/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/growth-analysis/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/hub-audit/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/incident-postmortem/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/note-weekly/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/performance-rum/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/pr-merge/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/prod-investigation/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/production-data-integrity/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/rugby-news/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/rwc2027/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/site-audit/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/spec-writing/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/today/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/x-post/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/skills/x-reply/SKILL.md",
+      "target": "../today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/agents/tryline-site-auditor.md",
+      "target": "../skills/today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/agents/tryline-spec-checker.md",
+      "target": "../skills/today/references/operating-baseline.md",
+      "exists": true
+    },
+    {
+      "source": ".claude/agents/tryline-web-researcher.md",
+      "target": "../skills/today/references/operating-baseline.md",
+      "exists": true
+    }
+  ],
+  "source_note": "Current active files compared with prior proposed drafts, not an execution of Claude agent tools."
+}
