@@ -83,7 +83,12 @@ type CompetitionTeamReference = TeamReference | TeamReference[] | null;
 
 type NormalizedAuditEvent = {
   integrityEvent: EventIntegrityEvent;
-  signature: string;
+  /**
+   * A C3/C4 identity signature, or null when the event has no reliable player
+   * identity. Null signatures are deliberately excluded from copy/reversal
+   * checks: equal minute/type alone does not identify the same event.
+   */
+  signature: string | null;
   teamId: string;
 };
 
@@ -170,10 +175,10 @@ function getJsonRecord(value: Json): Record<string, Json> | null {
     : null;
 }
 
-function getMetadataString(metadata: Json, key: string): string {
+function getMetadataString(metadata: Json, key: string): string | null {
   const value = getJsonRecord(metadata)?.[key];
 
-  return typeof value === "string" ? value : "";
+  return typeof value === "string" && value.trim() ? value : null;
 }
 
 function getMetadataBoolean(metadata: Json, key: string): boolean {
@@ -188,6 +193,26 @@ function normalizePlayerName(value: string): string {
     .toLocaleLowerCase();
 }
 
+function eventIdentity(event: AuditEventRow): string | null {
+  const normalizedType = event.type.trim().toLocaleLowerCase();
+
+  // A substitution's participants are its incoming and outgoing players.
+  // player_name is not an identity field for substitutions, so both names are
+  // required before it can contribute to a C3/C4 signature.
+  if (normalizedType === "substitution") {
+    const playerIn = getMetadataString(event.metadata, "player_in_name");
+    const playerOut = getMetadataString(event.metadata, "player_out_name");
+
+    return playerIn && playerOut
+      ? `substitution:${normalizePlayerName(playerIn)}\u0002${normalizePlayerName(playerOut)}`
+      : null;
+  }
+
+  const playerName = getMetadataString(event.metadata, "player_name");
+
+  return playerName ? `player:${normalizePlayerName(playerName)}` : null;
+}
+
 function toNormalizedEvent(
   event: AuditEventRow,
   teams: EventIntegrityTeams,
@@ -195,7 +220,7 @@ function toNormalizedEvent(
   const integrityEvent: EventIntegrityEvent = {
     isPenaltyTry: getMetadataBoolean(event.metadata, "is_penalty_try"),
     minute: event.minute,
-    playerName: getMetadataString(event.metadata, "player_name"),
+    playerName: getMetadataString(event.metadata, "player_name") ?? "",
     teamId: event.team_id,
     type: event.type,
   };
@@ -203,22 +228,31 @@ function toNormalizedEvent(
 
   return {
     integrityEvent,
-    signature: [
-      scoreEvent.minute ?? "",
-      scoreEvent.type.trim().toLocaleLowerCase(),
-      normalizePlayerName(scoreEvent.player_name),
-    ].join("\u0000"),
+    signature: (() => {
+      const identity = eventIdentity(event);
+
+      return identity
+        ? [
+            scoreEvent.minute ?? "",
+            scoreEvent.type.trim().toLocaleLowerCase(),
+            identity,
+          ].join("\u0000")
+        : null;
+    })(),
     teamId: event.team_id,
   };
 }
 
 function signatureKey(events: NormalizedAuditEvent[]): string | null {
-  if (events.length < 4) {
+  const identifiableSignatures = events
+    .map((event) => event.signature)
+    .filter((signature): signature is string => signature !== null);
+
+  if (identifiableSignatures.length < 4) {
     return null;
   }
 
-  return events
-    .map((event) => event.signature)
+  return identifiableSignatures
     .sort((left, right) => left.localeCompare(right))
     .join("\u0001");
 }
@@ -249,6 +283,10 @@ function countByEventKey(events: NormalizedAuditEvent[]): Map<string, number> {
   const counts = new Map<string, number>();
 
   for (const event of events) {
+    if (!event.signature) {
+      continue;
+    }
+
     const key = eventKey(event.signature, event.teamId);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
@@ -261,13 +299,25 @@ function allTeamAssignmentsAreReversed(
   right: NormalizedAuditEvent[],
   match: AuditMatchRow,
 ): boolean {
-  if (left.length !== right.length) {
+  const identifiableLeft = left.filter(
+    (event): event is NormalizedAuditEvent & { signature: string } =>
+      event.signature !== null,
+  );
+  const identifiableRight = right.filter(
+    (event): event is NormalizedAuditEvent & { signature: string } =>
+      event.signature !== null,
+  );
+
+  if (
+    identifiableLeft.length < 4 ||
+    identifiableLeft.length !== identifiableRight.length
+  ) {
     return false;
   }
 
-  const rightCounts = countByEventKey(right);
+  const rightCounts = countByEventKey(identifiableRight);
 
-  for (const event of left) {
+  for (const event of identifiableLeft) {
     const reversedTeamId =
       event.teamId === match.home_team_id
         ? match.away_team_id
