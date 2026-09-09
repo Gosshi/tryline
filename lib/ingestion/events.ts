@@ -92,13 +92,20 @@ type MatchEventMetadata = {
 
 export type MatchEventUpsertResult = Awaited<ReturnType<typeof upsertMatchEvents>>;
 
+export class EventInsertionRejectedError extends Error {
+  constructor(readonly rejected: MatchEventUpsertResult["rejected"]) {
+    super(
+      `Event insertion rejected: ${rejected.map((issue) => `${issue.reason}: ${issue.detail}`).join("; ")}`,
+    );
+    this.name = "EventInsertionRejectedError";
+  }
+}
+
 export function assertEventInsertionAccepted(
   result: Pick<MatchEventUpsertResult, "rejected">,
 ): void {
   if (result.rejected?.length > 0) {
-    throw new Error(
-      `Event insertion rejected: ${result.rejected.map((issue) => `${issue.reason}: ${issue.detail}`).join("; ")}`,
-    );
+    throw new EventInsertionRejectedError(result.rejected);
   }
 }
 

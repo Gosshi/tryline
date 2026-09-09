@@ -8,6 +8,7 @@ import {
 } from "@/lib/ingestion/jrfu-result-fallback";
 import {
   ingestLiveCompetition,
+  type EventInsertionRejection,
   type LiveCompetitionSource,
   type LiveIngestResult,
 } from "@/lib/ingestion/live-ingest";
@@ -141,7 +142,14 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
   },
 ];
 
-export async function ingestAllLiveCompetitions() {
+export type LiveCompetitionsIngestResult = {
+  rejections: EventInsertionRejection[];
+  results: Array<
+    JrfuMatchEventFallbackResult | JrfuResultFallbackResult | LiveIngestResult
+  >;
+};
+
+export async function ingestAllLiveCompetitions(): Promise<LiveCompetitionsIngestResult> {
   const results = await Promise.allSettled(
     LIVE_COMPETITION_SOURCES.map((source) => ingestLiveCompetition(source)),
   );
@@ -161,18 +169,20 @@ export async function ingestAllLiveCompetitions() {
         result.status === "fulfilled",
     )
     .map((result) => result.value);
+  const rejections = ingested.flatMap((result) => result.rejections ?? []);
 
   try {
     const jrfuResults = await fetchJrfuScheduleResults();
     const resultFallback = await applyJrfuResultFallback(jrfuResults);
     const eventFallback = await applyJrfuMatchEventFallback(jrfuResults);
 
-    return [...ingested, resultFallback, eventFallback];
+    return {
+      rejections: [...rejections, ...(eventFallback.rejections ?? [])],
+      results: [...ingested, resultFallback, eventFallback],
+    };
   } catch (error) {
     console.error("Failed to apply JRFU fallback:", error);
 
-    return ingested as Array<
-      JrfuMatchEventFallbackResult | JrfuResultFallbackResult | LiveIngestResult
-    >;
+    return { rejections, results: ingested };
   }
 }

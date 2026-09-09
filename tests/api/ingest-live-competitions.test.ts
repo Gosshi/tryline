@@ -23,8 +23,10 @@ describe("/api/cron/ingest-live-competitions", () => {
     process.env.WIKIPEDIA_SQUAD_URL =
       "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
 
-    liveCompetitionsMock.ingestAllLiveCompetitions.mockResolvedValue([
-      {
+    liveCompetitionsMock.ingestAllLiveCompetitions.mockResolvedValue({
+      rejections: [],
+      results: [
+        {
         competition: "super-rugby-pacific-2026",
         counts: {
           matches_inserted: 1,
@@ -32,8 +34,9 @@ describe("/api/cron/ingest-live-competitions", () => {
           unknown_teams: 1,
         },
         unknownTeamNames: ["Promoted Club"],
-      },
-    ]);
+        },
+      ],
+    });
   });
 
   it("returns 401 without a bearer token", async () => {
@@ -80,5 +83,39 @@ describe("/api/cron/ingest-live-competitions", () => {
     expect(liveCompetitionsMock.ingestAllLiveCompetitions).toHaveBeenCalledTimes(
       1,
     );
+  });
+
+  it("returns a failed run when an event insertion is rejected", async () => {
+    liveCompetitionsMock.ingestAllLiveCompetitions.mockResolvedValue({
+      rejections: [
+        {
+          detail: "synthetic score mismatch",
+          matchId: "match-rejected",
+          reason: "score_mismatch",
+        },
+      ],
+      results: [],
+    });
+    const { POST } = await import(
+      "@/app/api/cron/ingest-live-competitions/route"
+    );
+
+    const response = await POST(
+      new Request("http://localhost/api/cron/ingest-live-competitions", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      rejections: [
+        expect.objectContaining({
+          matchId: "match-rejected",
+          reason: "score_mismatch",
+        }),
+      ],
+      status: "failed",
+    });
   });
 });

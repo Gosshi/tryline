@@ -1,6 +1,7 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
 import {
   assertEventInsertionAccepted,
+  EventInsertionRejectedError,
   upsertMatchEvents,
 } from "@/lib/ingestion/events";
 import {
@@ -595,6 +596,29 @@ export async function runWorldRugbyFullImport(
   );
   const teamCount = await upsertCompetitionTeams(competitionIdInDb, teamLookup);
 
+  const detailResult = await importWorldRugbyMatchDetails(entries, matchByWorldRugbyId);
+
+  console.log(
+    `Imported World Rugby ${options.family} ${options.season}: matches=${matchByWorldRugbyId.size} teams=${teamCount} lineups=${detailResult.lineupsInserted} events=${detailResult.eventsInserted} failed=${detailResult.failedMatches}`,
+  );
+
+  return {
+    eventsInserted: detailResult.eventsInserted,
+    failedMatches: detailResult.failedMatches,
+    lineupsInserted: detailResult.lineupsInserted,
+    matchesImported: matchByWorldRugbyId.size,
+    teamsImported: teamCount,
+  };
+}
+
+export async function importWorldRugbyMatchDetails(
+  entries: WorldRugbyMatchEntry[],
+  matchByWorldRugbyId: Map<string, ImportedMatchRow>,
+  importDetail: (
+    entry: WorldRugbyMatchEntry,
+    match: ImportedMatchRow,
+  ) => Promise<{ eventsInserted: number; lineupsInserted: number }> = importMatchDetail,
+) {
   let lineupsInserted = 0;
   let eventsInserted = 0;
   let failedMatches = 0;
@@ -610,7 +634,7 @@ export async function runWorldRugbyFullImport(
     }
 
     try {
-      const result = await importMatchDetail(entry, match);
+      const result = await importDetail(entry, match);
       lineupsInserted += result.lineupsInserted;
       eventsInserted += result.eventsInserted;
 
@@ -618,6 +642,9 @@ export async function runWorldRugbyFullImport(
         `Imported World Rugby match ${entry.world_rugby_match_id}: lineups=${result.lineupsInserted} events=${result.eventsInserted}`,
       );
     } catch (error) {
+      if (error instanceof EventInsertionRejectedError) {
+        throw error;
+      }
       failedMatches += 1;
       console.error(
         `Failed to import World Rugby match ${entry.world_rugby_match_id}`,
@@ -626,16 +653,10 @@ export async function runWorldRugbyFullImport(
     }
   }
 
-  console.log(
-    `Imported World Rugby ${options.family} ${options.season}: matches=${matchByWorldRugbyId.size} teams=${teamCount} lineups=${lineupsInserted} events=${eventsInserted} failed=${failedMatches}`,
-  );
-
   return {
     eventsInserted,
     failedMatches,
     lineupsInserted,
-    matchesImported: matchByWorldRugbyId.size,
-    teamsImported: teamCount,
   };
 }
 
@@ -645,9 +666,18 @@ async function main() {
   await runWorldRugbyFullImport(options);
 }
 
-if (process.argv[1]?.endsWith("import-world-rugby-full.ts")) {
-  main().catch((error) => {
+export async function runCli(
+  run: () => Promise<void>,
+  exit: (code: number) => never = process.exit,
+) {
+  try {
+    await run();
+  } catch (error) {
     console.error(error);
-    process.exit(1);
-  });
+    exit(1);
+  }
+}
+
+if (process.argv[1]?.endsWith("import-world-rugby-full.ts")) {
+  void runCli(main);
 }

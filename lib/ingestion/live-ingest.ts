@@ -37,7 +37,14 @@ export type LiveIngestResult = {
     matches_updated: number;
     unknown_teams: number;
   };
+  rejections?: EventInsertionRejection[];
   unknownTeamNames: string[];
+};
+
+export type EventInsertionRejection = {
+  detail: string;
+  matchId: string;
+  reason: "fixture_conflict" | "score_mismatch" | "third_team";
 };
 
 type TeamLookup = {
@@ -372,6 +379,7 @@ export async function ingestLiveCompetition(
   );
 
   let eventsInserted = 0;
+  const rejections: EventInsertionRejection[] = [];
   const finishedRecordIds = result.records
     .filter((record) => record.status === "finished")
     .map((record) => record.id);
@@ -454,6 +462,15 @@ export async function ingestLiveCompetition(
         homeTeamId: match.homeTeamId,
         matchId: record.id,
       });
+      if ((upserted.rejected ?? []).length > 0) {
+        rejections.push(
+          ...upserted.rejected.map((rejection) => ({
+            ...rejection,
+            matchId: record.id,
+          })),
+        );
+        continue;
+      }
       eventsInserted += upserted.inserted;
     } catch (error) {
       console.warn(
@@ -475,6 +492,7 @@ export async function ingestLiveCompetition(
       matches_updated: result.matchesUpdated,
       unknown_teams: unknownTeamNames.length,
     },
+    ...(rejections.length > 0 ? { rejections } : {}),
     unknownTeamNames,
   };
 }

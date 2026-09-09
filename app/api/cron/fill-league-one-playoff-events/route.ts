@@ -259,6 +259,11 @@ export async function POST(request: Request) {
   let processed = 0;
   let skipped = 0;
   const errors: string[] = [];
+  const rejections: Array<{
+    detail: string;
+    matchId: string;
+    reason: "fixture_conflict" | "score_mismatch" | "third_team";
+  }> = [];
 
   for (const ref of refs) {
     if (ref.homeScore === null || ref.awayScore === null) {
@@ -291,8 +296,17 @@ export async function POST(request: Request) {
           matchId: match.id,
         });
 
-        processed += 1;
-        eventsInserted += result.inserted;
+        if ((result.rejected ?? []).length > 0) {
+          rejections.push(
+            ...result.rejected.map((rejection) => ({
+              ...rejection,
+              matchId: match.id,
+            })),
+          );
+        } else {
+          processed += 1;
+          eventsInserted += result.inserted;
+        }
       }
     } catch (error) {
       errors.push(`${ref.leagueOneMatchId}: ${String(error)}`);
@@ -301,11 +315,16 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({
+  const responseBody = {
     errors,
     eventsInserted,
     processed,
     season,
     skipped,
+    ...(rejections.length > 0 ? { rejections } : {}),
+  };
+
+  return NextResponse.json(responseBody, {
+    status: rejections.length > 0 ? 500 : 200,
   });
 }

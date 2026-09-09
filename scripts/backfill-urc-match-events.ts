@@ -6,7 +6,11 @@
  */
 
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { assertEventInsertionAccepted, upsertMatchEvents } from "@/lib/ingestion/events";
+import {
+  assertEventInsertionAccepted,
+  EventInsertionRejectedError,
+  upsertMatchEvents,
+} from "@/lib/ingestion/events";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 import { parseWikipediaUrcMatchDetailsHtml } from "@/lib/scrapers/wikipedia-urc-match-details";
 
@@ -225,8 +229,8 @@ async function fetchSeasonHtml(
   return html;
 }
 
-export async function main() {
-  const options = parseOptions(process.argv.slice(2));
+export async function main(argv = process.argv.slice(2)) {
+  const options = parseOptions(argv);
 
   if (!options.dryRun && !options.ownerApproved) {
     throw new Error(
@@ -307,6 +311,9 @@ export async function main() {
         `Inserted ${result.inserted} events for ${label} (${source.url})`,
       );
     } catch (error) {
+      if (error instanceof EventInsertionRejectedError) {
+        throw error;
+      }
       skipped += 1;
       console.warn(`[skip] ${label}: unable to upsert events`, error);
     }
@@ -317,9 +324,18 @@ export async function main() {
   );
 }
 
-if (process.argv[1]?.endsWith("backfill-urc-match-events.ts")) {
-  main().catch((error) => {
+export async function runCli(
+  run: () => Promise<void>,
+  exit: (code: number) => never = process.exit,
+) {
+  try {
+    await run();
+  } catch (error) {
     console.error(error);
-    process.exit(1);
-  });
+    exit(1);
+  }
+}
+
+if (process.argv[1]?.endsWith("backfill-urc-match-events.ts")) {
+  void runCli(main);
 }

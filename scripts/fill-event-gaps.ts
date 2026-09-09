@@ -11,6 +11,7 @@ import { pathToFileURL } from "node:url";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import {
   assertEventInsertionAccepted,
+  EventInsertionRejectedError,
   upsertMatchEvents,
 } from "@/lib/ingestion/events";
 import { fetchWithPolicy } from "@/lib/scrapers";
@@ -416,8 +417,8 @@ async function fillMatch(match: MatchGapRow): Promise<number> {
   return result.inserted;
 }
 
-async function main() {
-  const options = parseOptions(process.argv.slice(2));
+export async function main(argv = process.argv.slice(2)) {
+  const options = parseOptions(argv);
   const gaps = await loadGapMatches(options.limit);
 
   console.log(`Found ${gaps.length} matches with missing events`);
@@ -448,6 +449,9 @@ async function main() {
       console.log(`  -> upserted ${inserted} events`);
       filled += 1;
     } catch (error) {
+      if (error instanceof EventInsertionRejectedError) {
+        throw error;
+      }
       console.warn(`  -> warning: ${String(error)}; skipping`);
     }
 
@@ -457,9 +461,18 @@ async function main() {
   console.log(`Done. Filled ${filled}/${gaps.length} matches.`);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
-  main().catch((error) => {
+export async function runCli(
+  run: () => Promise<void>,
+  exit: (code: number) => never = process.exit,
+) {
+  try {
+    await run();
+  } catch (error) {
     console.error(error);
-    process.exit(1);
-  });
+    exit(1);
+  }
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  void runCli(main);
 }

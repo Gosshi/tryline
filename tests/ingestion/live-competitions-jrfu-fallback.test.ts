@@ -61,7 +61,7 @@ describe("live competition ingestion JRFU result fallback", () => {
     expect(fallbackMocks.fetchJrfuScheduleResults).toHaveBeenCalledTimes(1);
     expect(fallbackMocks.applyJrfuResultFallback).toHaveBeenCalledWith([]);
     expect(fallbackMocks.applyJrfuMatchEventFallback).toHaveBeenCalledWith([]);
-    expect(results.at(-1)).toEqual({
+    expect(results.results.at(-1)).toEqual({
       counts: {
         existing_events_skipped: 0,
         match_limit_skipped: 0,
@@ -77,8 +77,10 @@ describe("live competition ingestion JRFU result fallback", () => {
   it("runs the fallback when an existing source fails", async () => {
     ingestionMocks.ingestLiveCompetition.mockRejectedValueOnce(new Error("source failed"));
 
-    await ingestAllLiveCompetitions();
+    const results = await ingestAllLiveCompetitions();
 
+    expect(results.rejections).toEqual([]);
+    expect(results.results).toHaveLength(14);
     expect(fallbackMocks.applyJrfuResultFallback).toHaveBeenCalledTimes(1);
     expect(fallbackMocks.applyJrfuMatchEventFallback).toHaveBeenCalledTimes(1);
   });
@@ -89,11 +91,41 @@ describe("live competition ingestion JRFU result fallback", () => {
 
     const results = await ingestAllLiveCompetitions();
 
-    expect(results).toHaveLength(13);
+    expect(results.results).toHaveLength(13);
     expect(error).toHaveBeenCalledWith(
       "Failed to apply JRFU fallback:",
       expect.any(Error),
     );
     error.mockRestore();
+  });
+
+  it("preserves event insertion rejections from a live source", async () => {
+    ingestionMocks.ingestLiveCompetition.mockResolvedValueOnce({
+      competition: "source",
+      counts: {
+        events_inserted: 0,
+        matches_inserted: 0,
+        matches_updated: 0,
+        unknown_teams: 0,
+      },
+      rejections: [
+        {
+          detail: "synthetic score mismatch",
+          matchId: "match-rejected",
+          reason: "score_mismatch",
+        },
+      ],
+      unknownTeamNames: [],
+    });
+
+    const result = await ingestAllLiveCompetitions();
+
+    expect(result.rejections).toEqual([
+      {
+        detail: "synthetic score mismatch",
+        matchId: "match-rejected",
+        reason: "score_mismatch",
+      },
+    ]);
   });
 });

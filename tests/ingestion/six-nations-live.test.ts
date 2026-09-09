@@ -552,6 +552,92 @@ describe("Six Nations 2027 live ingestion", () => {
     );
   });
 
+  it("aggregates a rejected event insertion without counting it as inserted", async () => {
+    ingestionMocks.upsertMatchEvents.mockResolvedValueOnce({
+      inserted: 0,
+      rejected: [{ detail: "synthetic", reason: "score_mismatch" }],
+      warnings: [],
+    });
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+    const rawHtml = `
+      <div class="vevent summary">
+        <table><tr style="font-size:85%"><td><b>Try:</b> <a>Irish Scorer</a> 12'</td><td></td><td></td></tr></table>
+      </div>
+    `;
+
+    const result = await ingestLiveCompetition({
+      competitionName: "Six Nations 2027",
+      competitionSlug: "six-nations-2027",
+      family: "six-nations",
+      fetch: vi.fn().mockResolvedValue([
+        {
+          awayScore: 0,
+          awayTeamName: "England",
+          homeScore: 5,
+          homeTeamName: "Ireland",
+          kickoffAt: "2027-02-05T20:10:00.000Z",
+          lineupTableHtml: null,
+          rawHtml,
+          round: 1,
+          roundName: null,
+          status: "finished",
+          venue: "Aviva Stadium",
+          wikipediaUrl: null,
+        },
+      ]),
+      season: "2027",
+      sourceLabel: "wikipedia",
+    });
+
+    expect(result.counts.events_inserted).toBe(0);
+    expect(result.rejections).toEqual([
+      { detail: "synthetic", matchId: "match-1", reason: "score_mismatch" },
+    ]);
+  });
+
+  it("keeps warnings-only event insertions successful", async () => {
+    ingestionMocks.upsertMatchEvents.mockResolvedValueOnce({
+      inserted: 0,
+      rejected: [],
+      warnings: [{ detail: "synthetic", reason: "duplicate_signature" }],
+    });
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+    const rawHtml = `
+      <div class="vevent summary">
+        <table><tr style="font-size:85%"><td><b>Try:</b> <a>Irish Scorer</a> 12'</td><td></td><td></td></tr></table>
+      </div>
+    `;
+
+    const result = await ingestLiveCompetition({
+      competitionName: "Six Nations 2027",
+      competitionSlug: "six-nations-2027",
+      family: "six-nations",
+      fetch: vi.fn().mockResolvedValue([
+        {
+          awayScore: 0,
+          awayTeamName: "England",
+          homeScore: 5,
+          homeTeamName: "Ireland",
+          kickoffAt: "2027-02-05T20:10:00.000Z",
+          lineupTableHtml: null,
+          rawHtml,
+          round: 1,
+          roundName: null,
+          status: "finished",
+          venue: "Aviva Stadium",
+          wikipediaUrl: null,
+        },
+      ]),
+      season: "2027",
+      sourceLabel: "wikipedia",
+    });
+
+    expect(result.counts.events_inserted).toBe(0);
+    expect(result.rejections).toBeUndefined();
+  });
+
   it("logs an event retry when the event source has no HTML yet", async () => {
     const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
     ingestionMocks.upsertMatches.mockResolvedValueOnce({
