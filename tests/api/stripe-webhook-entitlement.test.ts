@@ -32,6 +32,7 @@ import { POST } from "@/app/api/stripe/webhook/route";
 const originalEnv = process.env;
 const periodEnd = 1_767_139_200;
 const periodEndIso = "2025-12-31T00:00:00.000Z";
+const userId = "00000000-0000-4000-8000-000000000001";
 let warnMock: ReturnType<typeof vi.spyOn> | undefined;
 
 function createRequest() {
@@ -49,7 +50,7 @@ function createSubscription(
     customer: "cus_test",
     id: "sub_test",
     items: { data: [{ current_period_end: periodEnd }] },
-    metadata: { userId: "user-1" },
+    metadata: { userId },
     status: "active",
     ...overrides,
   };
@@ -180,7 +181,7 @@ describe("Stripe premium entitlement webhook", () => {
         subscription_status: "cancelled",
       }),
     );
-    expect(dbMocks.eq).toHaveBeenCalledWith("id", "user-1");
+    expect(dbMocks.eq).toHaveBeenCalledWith("id", userId);
   });
 
   it("returns 500 and reports identifiers only when an entitlement upsert fails", async () => {
@@ -196,7 +197,7 @@ describe("Stripe premium entitlement webhook", () => {
       eventId: "evt_test",
       eventType: "customer.subscription.updated",
       issueCode: "subscription_upsert_failed",
-      userId: "user-1",
+      userId,
     });
   });
 
@@ -211,7 +212,7 @@ describe("Stripe premium entitlement webhook", () => {
       eventId: "evt_test",
       eventType: "customer.subscription.deleted",
       issueCode: "subscription_delete_failed",
-      userId: "user-1",
+      userId,
     });
   });
 
@@ -230,6 +231,26 @@ describe("Stripe premium entitlement webhook", () => {
       issueCode: "missing_user_id",
     });
     expect(dbMocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it("acknowledges an event with an invalid userId without writing to the database", async () => {
+    setEvent(
+      "customer.subscription.updated",
+      createSubscription({
+        metadata: { userId: "synthetic-user@example.invalid" },
+      }),
+    );
+
+    const response = await POST(createRequest());
+
+    expect(response.status).toBe(200);
+    expect(notificationMocks.notifyStripeWebhookIssue).toHaveBeenCalledWith({
+      eventId: "evt_test",
+      eventType: "customer.subscription.updated",
+      issueCode: "invalid_user_id_format",
+    });
+    expect(dbMocks.upsert).not.toHaveBeenCalled();
+    expect(dbMocks.update).not.toHaveBeenCalled();
   });
 
   it("keeps invalid signatures and unsupported event types acknowledged as before", async () => {
