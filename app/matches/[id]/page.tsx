@@ -175,7 +175,9 @@ export async function generateMetadata({
       type: "article",
       url: `${SITE_URL}/matches/${id}`,
     },
-    ...(shouldNoIndex ? { robots: { follow: true, index: false } } : {}),
+    ...(shouldNoIndex
+      ? { robots: { follow: true, index: false } }
+      : {}),
     title,
   };
 }
@@ -265,7 +267,8 @@ export default async function MatchDetailPage({
   const hasConfirmedLineups = lineups.length > 0;
   const eventPlayerLinks = buildMatchEventPlayerLinks(events, lineups);
   const isSample = await isSampleMatch(id);
-  const isFreeSampleRecap = isSample && publishedContent.recap !== null;
+  const isFreeSampleRecap =
+    isSample && publishedContent.recap !== null;
   const recapSplit = publishedContent.recap
     ? splitRecapForPaywall(publishedContent.recap.contentMdJa)
     : null;
@@ -374,269 +377,272 @@ export default async function MatchDetailPage({
         type="application/ld+json"
       />
       <UserStateProvider>
-        <main className="bg-paper min-h-screen">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 overflow-hidden px-3 py-6 sm:px-6 sm:py-8 md:px-8">
-            <nav aria-label="パンくずリスト">
-              <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
-                <li>
-                  <Link
-                    className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                    href={`/c/${match.competition.family}/${match.competition.season}`}
-                  >
-                    {formatCompetitionTitle(
-                      match.competition,
-                      match.competition.season,
-                    )}
-                  </Link>
-                </li>
-                {match.round !== null && (
-                  <>
-                    <li aria-hidden className="select-none">
-                      /
-                    </li>
-                    <li className="text-[var(--color-ink)]">
-                      {formatRoundLabel(match.round, match.competition.family)}
-                    </li>
-                  </>
-                )}
-              </ol>
-            </nav>
+      <main className="min-h-screen bg-paper">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 overflow-hidden px-3 py-6 sm:px-6 sm:py-8 md:px-8">
+          <nav aria-label="パンくずリスト">
+            <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
+              <li>
+                <Link
+                  className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                  href={`/c/${match.competition.family}/${match.competition.season}`}
+                >
+                  {formatCompetitionTitle(
+                    match.competition,
+                    match.competition.season,
+                  )}
+                </Link>
+              </li>
+              {match.round !== null && (
+                <>
+                  <li aria-hidden className="select-none">
+                    /
+                  </li>
+                  <li className="text-[var(--color-ink)]">
+                    {formatRoundLabel(match.round, match.competition.family)}
+                  </li>
+                </>
+              )}
+            </ol>
+          </nav>
 
-            <MatchDetailHeader headToHeadHref={headToHeadHref} match={match} />
+          <MatchDetailHeader
+            headToHeadHref={headToHeadHref}
+            match={match}
+          />
 
-            <MatchFavoriteTeamControls
-              teams={[
-                {
-                  id: match.homeTeamId,
-                  name: match.homeTeam.name,
-                  slug: match.homeTeam.slug,
-                  source: "match_detail_home_team",
-                },
-                {
-                  id: match.awayTeamId,
-                  name: match.awayTeam.name,
-                  slug: match.awayTeam.slug,
-                  source: "match_detail_away_team",
-                },
-              ]}
-            />
+          <MatchFavoriteTeamControls
+            teams={[
+              {
+                id: match.homeTeamId,
+                name: match.homeTeam.name,
+                slug: match.homeTeam.slug,
+                source: "match_detail_home_team",
+              },
+              {
+                id: match.awayTeamId,
+                name: match.awayTeam.name,
+                slug: match.awayTeam.slug,
+                source: "match_detail_away_team",
+              },
+            ]}
+          />
 
-            {hasEnglishContent && (
-              <div className="flex items-center justify-end">
-                <LangToggle currentLang="ja" matchId={match.id} />
-              </div>
+          {hasEnglishContent && (
+            <div className="flex items-center justify-end">
+              <LangToggle currentLang="ja" matchId={match.id} />
+            </div>
+          )}
+
+          <section className="space-y-4">
+            {match.status !== "finished" && (
+              <MatchContentSection
+                afterBody={
+                  publishedContent.preview ? (
+                    <MatchContentTrustStrip
+                      hasConfirmedLineups={hasConfirmedLineups}
+                      sourcedFactSources={sourcedFactSummary.previewSources}
+                    />
+                  ) : null
+                }
+                content={publishedContent.preview}
+                contentType="preview"
+                isPremium={true}
+                match={match}
+                showCta={false}
+              />
             )}
-
-            <section className="space-y-4">
-              {match.status !== "finished" && (
+            {isScheduledPoolMatch && poolTeams.length > 0 && (
+              <section
+                aria-labelledby="pool-info-heading"
+                className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)]"
+              >
+                <h2
+                  className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--color-ink-muted)]"
+                  id="pool-info-heading"
+                >
+                  {match.poolName} 参加チーム
+                </h2>
+                <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {poolTeams.map((team) => (
+                    <li key={team.slug}>
+                      <Link
+                        className="block rounded-lg border border-[var(--color-border)] px-3 py-2 text-center text-sm font-medium transition-colors hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                        href={`/teams/${team.slug}`}
+                      >
+                        {team.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            {isFreeSampleRecap ? (
+              <>
                 <MatchContentSection
                   afterBody={
-                    publishedContent.preview ? (
+                    <>
+                      <MatchContentTrustStrip
+                        eventIntegrity={recapEventIntegrity}
+                        hasConfirmedLineups={hasConfirmedLineups}
+                        sourcedFactSources={sourcedFactSummary.recapSources}
+                      />
+                      <MatchEventsSection
+                        awayTeamId={match.awayTeamId}
+                        awayTeamName={match.awayTeam.name}
+                        awayTeamSlug={match.awayTeam.slug}
+                        events={events}
+                        finalAwayScore={match.awayScore}
+                        finalHomeScore={match.homeScore}
+                        homeTeamId={match.homeTeamId}
+                        homeTeamName={match.homeTeam.name}
+                        homeTeamSlug={match.homeTeam.slug}
+                        playerLinks={eventPlayerLinks}
+                        status={match.status}
+                        variant="timeline"
+                      />
+                    </>
+                  }
+                  betweenLeadAndBody={
+                    <MatchEventsSection
+                      awayTeamId={match.awayTeamId}
+                      awayTeamName={match.awayTeam.name}
+                      awayTeamSlug={match.awayTeam.slug}
+                      events={events}
+                      finalAwayScore={match.awayScore}
+                      finalHomeScore={match.homeScore}
+                      homeTeamId={match.homeTeamId}
+                      homeTeamName={match.homeTeam.name}
+                      homeTeamSlug={match.homeTeam.slug}
+                      playerLinks={eventPlayerLinks}
+                      status={match.status}
+                    />
+                  }
+                  content={publishedContent.recap}
+                  contentType="recap"
+                  isPremium={true}
+                  match={match}
+                />
+                <SampleRecapCta matchId={id} />
+              </>
+            ) : (
+              <PremiumRecapSection
+                afterBody={
+                  publishedContent.recap ? (
+                    <>
+                      <MatchContentTrustStrip
+                        eventIntegrity={recapEventIntegrity}
+                        hasConfirmedLineups={hasConfirmedLineups}
+                        sourcedFactSources={sourcedFactSummary.recapSources}
+                      />
+                      <MatchEventsSection
+                        awayTeamId={match.awayTeamId}
+                        awayTeamName={match.awayTeam.name}
+                        awayTeamSlug={match.awayTeam.slug}
+                        events={events}
+                        finalAwayScore={match.awayScore}
+                        finalHomeScore={match.homeScore}
+                        homeTeamId={match.homeTeamId}
+                        homeTeamName={match.homeTeam.name}
+                        homeTeamSlug={match.homeTeam.slug}
+                        playerLinks={eventPlayerLinks}
+                        status={match.status}
+                        variant="timeline"
+                      />
+                    </>
+                  ) : null
+                }
+                betweenLeadAndBody={
+                  publishedContent.recap ? (
+                    <MatchEventsSection
+                      awayTeamId={match.awayTeamId}
+                      awayTeamName={match.awayTeam.name}
+                      awayTeamSlug={match.awayTeam.slug}
+                      events={events}
+                      finalAwayScore={match.awayScore}
+                      finalHomeScore={match.homeScore}
+                      homeTeamId={match.homeTeamId}
+                      homeTeamName={match.homeTeam.name}
+                      homeTeamSlug={match.homeTeam.slug}
+                      playerLinks={eventPlayerLinks}
+                      status={match.status}
+                    />
+                  ) : null
+                }
+                content={freeRecapContent}
+                hasLockedContent={recapSplit?.hasLocked ?? false}
+                isSample={isSample}
+                match={match}
+                nextLockedHeading={recapSplit?.nextHeadingText ?? null}
+              />
+            )}
+            {match.status === "finished" && publishedContent.preview && (
+              <details className="group rounded-[var(--radius-md)] bg-white shadow-[var(--shadow-soft)]">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-bold text-[var(--color-ink)] marker:content-none sm:px-7">
+                  試合前のプレビューを表示
+                  <span
+                    aria-hidden
+                    className="text-lg text-[var(--color-ink-muted)] transition-transform group-open:rotate-45"
+                  >
+                    +
+                  </span>
+                </summary>
+                <div className="space-y-4 border-t border-[var(--color-rule)] bg-[var(--color-panel)] p-3 sm:p-4">
+                  <MatchContentSection
+                    afterBody={
                       <MatchContentTrustStrip
                         hasConfirmedLineups={hasConfirmedLineups}
                         sourcedFactSources={sourcedFactSummary.previewSources}
                       />
-                    ) : null
-                  }
-                  content={publishedContent.preview}
-                  contentType="preview"
-                  isPremium={true}
-                  match={match}
-                  showCta={false}
-                />
-              )}
-              {isScheduledPoolMatch && poolTeams.length > 0 && (
-                <section
-                  aria-labelledby="pool-info-heading"
-                  className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)]"
-                >
-                  <h2
-                    className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--color-ink-muted)]"
-                    id="pool-info-heading"
-                  >
-                    {match.poolName} 参加チーム
-                  </h2>
-                  <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    {poolTeams.map((team) => (
-                      <li key={team.slug}>
-                        <Link
-                          className="block rounded-lg border border-[var(--color-border)] px-3 py-2 text-center text-sm font-medium transition-colors hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                          href={`/teams/${team.slug}`}
-                        >
-                          {team.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-              {isFreeSampleRecap ? (
-                <>
-                  <MatchContentSection
-                    afterBody={
-                      <>
-                        <MatchContentTrustStrip
-                          eventIntegrity={recapEventIntegrity}
-                          hasConfirmedLineups={hasConfirmedLineups}
-                          sourcedFactSources={sourcedFactSummary.recapSources}
-                        />
-                        <MatchEventsSection
-                          awayTeamId={match.awayTeamId}
-                          awayTeamName={match.awayTeam.name}
-                          awayTeamSlug={match.awayTeam.slug}
-                          events={events}
-                          finalAwayScore={match.awayScore}
-                          finalHomeScore={match.homeScore}
-                          homeTeamId={match.homeTeamId}
-                          homeTeamName={match.homeTeam.name}
-                          homeTeamSlug={match.homeTeam.slug}
-                          playerLinks={eventPlayerLinks}
-                          status={match.status}
-                          variant="timeline"
-                        />
-                      </>
                     }
-                    betweenLeadAndBody={
-                      <MatchEventsSection
-                        awayTeamId={match.awayTeamId}
-                        awayTeamName={match.awayTeam.name}
-                        awayTeamSlug={match.awayTeam.slug}
-                        events={events}
-                        finalAwayScore={match.awayScore}
-                        finalHomeScore={match.homeScore}
-                        homeTeamId={match.homeTeamId}
-                        homeTeamName={match.homeTeam.name}
-                        homeTeamSlug={match.homeTeam.slug}
-                        playerLinks={eventPlayerLinks}
-                        status={match.status}
-                      />
-                    }
-                    content={publishedContent.recap}
-                    contentType="recap"
-                    isPremium={true}
+                    content={publishedContent.preview}
+                    contentType="preview"
+                    isPremium
                     match={match}
+                    showCta={false}
                   />
-                  <SampleRecapCta matchId={id} />
-                </>
-              ) : (
-                <PremiumRecapSection
-                  afterBody={
-                    publishedContent.recap ? (
-                      <>
-                        <MatchContentTrustStrip
-                          eventIntegrity={recapEventIntegrity}
-                          hasConfirmedLineups={hasConfirmedLineups}
-                          sourcedFactSources={sourcedFactSummary.recapSources}
-                        />
-                        <MatchEventsSection
-                          awayTeamId={match.awayTeamId}
-                          awayTeamName={match.awayTeam.name}
-                          awayTeamSlug={match.awayTeam.slug}
-                          events={events}
-                          finalAwayScore={match.awayScore}
-                          finalHomeScore={match.homeScore}
-                          homeTeamId={match.homeTeamId}
-                          homeTeamName={match.homeTeam.name}
-                          homeTeamSlug={match.homeTeam.slug}
-                          playerLinks={eventPlayerLinks}
-                          status={match.status}
-                          variant="timeline"
-                        />
-                      </>
-                    ) : null
-                  }
-                  betweenLeadAndBody={
-                    publishedContent.recap ? (
-                      <MatchEventsSection
-                        awayTeamId={match.awayTeamId}
-                        awayTeamName={match.awayTeam.name}
-                        awayTeamSlug={match.awayTeam.slug}
-                        events={events}
-                        finalAwayScore={match.awayScore}
-                        finalHomeScore={match.homeScore}
-                        homeTeamId={match.homeTeamId}
-                        homeTeamName={match.homeTeam.name}
-                        homeTeamSlug={match.homeTeam.slug}
-                        playerLinks={eventPlayerLinks}
-                        status={match.status}
-                      />
-                    ) : null
-                  }
-                  content={freeRecapContent}
-                  hasLockedContent={recapSplit?.hasLocked ?? false}
-                  isSample={isSample}
-                  match={match}
-                  nextLockedHeading={recapSplit?.nextHeadingText ?? null}
-                />
-              )}
-              {match.status === "finished" && publishedContent.preview && (
-                <details className="group rounded-[var(--radius-md)] bg-white shadow-[var(--shadow-soft)]">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-bold text-[var(--color-ink)] marker:content-none sm:px-7">
-                    試合前のプレビューを表示
-                    <span
-                      aria-hidden
-                      className="text-lg text-[var(--color-ink-muted)] transition-transform group-open:rotate-45"
-                    >
-                      +
-                    </span>
-                  </summary>
-                  <div className="space-y-4 border-t border-[var(--color-rule)] bg-[var(--color-panel)] p-3 sm:p-4">
-                    <MatchContentSection
-                      afterBody={
-                        <MatchContentTrustStrip
-                          hasConfirmedLineups={hasConfirmedLineups}
-                          sourcedFactSources={sourcedFactSummary.previewSources}
-                        />
-                      }
-                      content={publishedContent.preview}
-                      contentType="preview"
-                      isPremium
-                      match={match}
-                      showCta={false}
-                    />
-                  </div>
-                </details>
-              )}
-            </section>
+                </div>
+              </details>
+            )}
+          </section>
 
-            <NextWatchSection
-              nextMatches={nextMatches}
-              relatedRecaps={relatedRecaps}
-              teams={[
-                {
-                  id: match.homeTeamId,
-                  name: match.homeTeam.name,
-                  slug: match.homeTeam.slug,
-                },
-                {
-                  id: match.awayTeamId,
-                  name: match.awayTeam.name,
-                  slug: match.awayTeam.slug,
-                },
-              ]}
-            />
+          <NextWatchSection
+            nextMatches={nextMatches}
+            relatedRecaps={relatedRecaps}
+            teams={[
+              {
+                id: match.homeTeamId,
+                name: match.homeTeam.name,
+                slug: match.homeTeam.slug,
+              },
+              {
+                id: match.awayTeamId,
+                name: match.awayTeam.name,
+                slug: match.awayTeam.slug,
+              },
+            ]}
+          />
 
-            <MatchLineupsSection
-              awayTeamName={match.awayTeam.name}
-              homeTeamId={match.homeTeamId}
-              homeTeamName={match.homeTeam.name}
-              players={lineups}
-            />
+          <MatchLineupsSection
+            awayTeamName={match.awayTeam.name}
+            homeTeamId={match.homeTeamId}
+            homeTeamName={match.homeTeam.name}
+            players={lineups}
+          />
 
-            <StandingsTable
-              highlightedTeams={[
-                match.homeTeam.name,
-                match.homeTeam.shortCode,
-                match.awayTeam.name,
-                match.awayTeam.shortCode,
-              ]}
-              standings={standings}
-              title="順位への影響"
-            />
+          <StandingsTable
+            highlightedTeams={[
+              match.homeTeam.name,
+              match.homeTeam.shortCode,
+              match.awayTeam.name,
+              match.awayTeam.shortCode,
+            ]}
+            standings={standings}
+            title="順位への影響"
+          />
 
-            <PremiumMatchChat isSample={isSample} matchId={id} />
-          </div>
-        </main>
+          <PremiumMatchChat isSample={isSample} matchId={id} />
+        </div>
+      </main>
       </UserStateProvider>
     </>
   );
