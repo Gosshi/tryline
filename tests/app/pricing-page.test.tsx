@@ -76,7 +76,7 @@ describe("PricingPage", () => {
   it("exports pricing metadata for the root title template", () => {
     expect(metadata).toMatchObject({
       description:
-        "見逃した海外ラグビーの試合を日本語レビューと試合について質問できる機能で深く追える Tryline Premium。7日間無料、その後 ¥980/月。",
+        "見逃した海外ラグビーを日本語レビューと試合Q&Aで深く追える Tryline Premium。",
       title: "プランを選ぶ",
     });
   });
@@ -85,8 +85,8 @@ describe("PricingPage", () => {
     const withTrial = createBillingTerms({ monthlyPriceYen: 980, trialDays: 7 });
     const withoutTrial = createBillingTerms({ monthlyPriceYen: 980, trialDays: 0 });
 
-    expect(withTrial.pricingDescription).toContain("試合について質問できる機能");
-    expect(withoutTrial.pricingDescription).toContain("試合について質問できる機能");
+    expect(withTrial.pricingDescription).toContain("試合Q&A");
+    expect(withoutTrial.pricingDescription).toContain("試合Q&A");
     expect(withTrial.pricingDescription).not.toContain("AI チャット");
     expect(withoutTrial.pricingDescription).not.toContain("AI チャット");
     expect(withTrial.pricingDescription).not.toContain("質問できる「この試合について質問する」");
@@ -149,7 +149,7 @@ describe("PricingPage", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・試合について質問できる機能を含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
+        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・試合Q&Aを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
       ),
     ).toBeInTheDocument();
 
@@ -193,7 +193,7 @@ describe("PricingPage", () => {
     const videoJsonLd = jsonLdPayloads.find((payload) => payload["@type"] === "VideoObject");
     expect(JSON.stringify(faqJsonLd)).not.toContain("AI チャット");
     expect(videoJsonLd?.description).toBe(
-      "海外ラグビーの試合を日本語で解説。プレビュー・レビュー・試合について質問できる機能を紹介する Tryline の動画です。",
+      "海外ラグビーの試合を日本語で解説。プレビュー・レビュー・試合Q&Aを紹介する Tryline の動画です。",
     );
     expect(screen.getByText("支払い方法は？")).toBeInTheDocument();
   });
@@ -223,7 +223,7 @@ describe("PricingPage", () => {
       pricingSummary:
         "7日間無料 · その後 ¥980/月 · いつでもキャンセル可能 · Stripe 決済",
       trialFaqAnswer:
-        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・試合について質問できる機能を含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
+        "はい。初回登録時に 7 日間の無料トライアルをご利用いただけます。トライアル期間中は日本語レビュー全文・試合Q&Aを含むすべての Premium 機能をお使いいただけます。トライアル終了後は自動的に ¥980/月の課金が始まります。期間中はいつでもキャンセル可能です。",
     },
     {
       billingTerms: createBillingTerms({ monthlyPriceYen: 980, trialDays: 0 }),

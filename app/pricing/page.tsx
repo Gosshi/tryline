@@ -77,7 +77,7 @@ const pricingVideoJsonLd = {
   "@context": "https://schema.org",
   "@type": "VideoObject",
   description:
-    "海外ラグビーの試合を日本語で解説。プレビュー・レビュー・試合について質問できる機能を紹介する Tryline の動画です。",
+    "海外ラグビーの試合を日本語で解説。プレビュー・レビュー・試合Q&Aを紹介する Tryline の動画です。",
   embedUrl: "https://www.youtube.com/embed/2kFHgiaI-NA",
   name: "Tryline — ラグビー解説サービス紹介",
   thumbnailUrl: "https://img.youtube.com/vi/2kFHgiaI-NA/maxresdefault.jpg",
@@ -150,7 +150,7 @@ export default async function PricingPage() {
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65">
             DAZN、J SPORTS、WOWOW
             で追う試合が重なる週末でも、試合の流れ・勝負どころ・注目選手を
-            日本語レビューと試合について質問できる機能で確認できます。
+            日本語レビューと試合Q&Aで確認できます。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <PricingForm
