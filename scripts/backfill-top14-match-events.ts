@@ -14,7 +14,11 @@
 import { load } from "cheerio";
 
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { assertEventInsertionAccepted, upsertMatchEvents } from "@/lib/ingestion/events";
+import {
+  assertEventInsertionAccepted,
+  EventInsertionRejectedError,
+  upsertMatchEvents,
+} from "@/lib/ingestion/events";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 import {
@@ -255,8 +259,8 @@ async function fetchSeasonEntries(competition: CompetitionRow) {
   };
 }
 
-export async function main() {
-  const options = parseOptions(process.argv.slice(2));
+export async function main(argv = process.argv.slice(2)) {
+  const options = parseOptions(argv);
   const competitions = await loadCompetitions(options.season);
   const matches = await loadTargetMatches(competitions);
   const matchesByCompetition = new Map<string, MatchRow[]>();
@@ -332,10 +336,7 @@ export async function main() {
           `Inserted ${result.inserted} events for ${competition.season} ${homeTeamName} v ${awayTeamName} (${seasonEvents.sourceUrl})`,
         );
       } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message.startsWith("Event insertion rejected:")
-        ) {
+        if (error instanceof EventInsertionRejectedError) {
           throw error;
         }
         console.warn(

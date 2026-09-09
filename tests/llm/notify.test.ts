@@ -18,6 +18,7 @@ import {
   notifyBroadcastIngestReport,
   notifyCostAlert,
   notifyDataIntegrityReport,
+  notifyEventIngestionIdentityAlert,
   notifyEventIntegrityMismatch,
   notifyNewsletterDelivery,
   notifyPrekickoffReadinessAudit,
@@ -84,6 +85,26 @@ describe("llm notify", () => {
       "問題点: tone_mismatch / insufficient_evidence",
     );
     expect(payload.content).toContain("戦術的深さ(tactical_depth) 2/5");
+  });
+
+  it("includes a rejected event match id and URL in the ops notification", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyEventIngestionIdentityAlert({
+      detail: "synthetic score mismatch",
+      matchId: "match-rejected",
+      reason: "score_mismatch",
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const payload = JSON.parse(String((request as RequestInit).body));
+    expect(payload.content).toContain("試合ID: match-rejected");
+    expect(payload.content).toContain(
+      "https://www.trylinerugby.com/matches/match-rejected",
+    );
   });
 
   it("posts Stripe webhook identifiers without payment or customer details", async () => {

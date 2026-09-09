@@ -1,5 +1,9 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { assertEventInsertionAccepted, upsertMatchEvents } from "@/lib/ingestion/events";
+import {
+  assertEventInsertionAccepted,
+  EventInsertionRejectedError,
+  upsertMatchEvents,
+} from "@/lib/ingestion/events";
 import { parsePremiershipLiveHtml } from "@/lib/ingestion/sources/wikipedia-premiership";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
@@ -183,8 +187,8 @@ async function fetchSeasonEvents(competition: CompetitionRow) {
   };
 }
 
-async function main() {
-  const options = parseOptions(process.argv.slice(2));
+export async function main(argv = process.argv.slice(2)) {
+  const options = parseOptions(argv);
   const competitions = await loadCompetitions(options.season);
   const matches = await loadTargetMatches(competitions);
 
@@ -271,10 +275,7 @@ async function main() {
           `Inserted ${result.inserted} events for ${competition.season} ${homeTeamName} v ${awayTeamName} (${seasonEvents.sourceUrl})`,
         );
       } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message.startsWith("Event insertion rejected:")
-        ) {
+        if (error instanceof EventInsertionRejectedError) {
           throw error;
         }
         console.warn(

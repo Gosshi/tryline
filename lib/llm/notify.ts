@@ -72,7 +72,7 @@ export async function notifyEventIngestionIdentityAlert(params: {
   await postOpsAlert([
     `⚠️ イベント取り込み同一性 ${params.reason === "duplicate_signature" ? "警告" : "拒否"}`,
     `試合ID: ${params.matchId}`,
-    matchPageUrl(params.matchId),
+    `試合URL: ${matchPageUrl(params.matchId)}`,
     `詳細: ${params.detail}`,
   ].join("\n"));
 }
