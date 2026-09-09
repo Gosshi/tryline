@@ -9,6 +9,7 @@ import { MatchLineupsSection } from "@/components/match-lineups-section";
 import { PremiumMatchChat } from "@/components/premium-match-chat";
 import { PremiumRecapSection } from "@/components/premium-recap-section";
 import { SampleRecapCta } from "@/components/sample-recap-cta";
+import { UserStateProvider } from "@/components/user-state-provider";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
 import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
 import {
@@ -127,8 +128,9 @@ export default async function MatchEnglishPage({
 
   const homeDisplayName = match.homeTeam.englishName ?? match.homeTeam.name;
   const awayDisplayName = match.awayTeam.englishName ?? match.awayTeam.name;
+  const isSample = await isSampleMatch(id);
   const isFreeSampleRecap =
-    (await isSampleMatch(id)) && englishContent.recap !== null;
+    isSample && englishContent.recap !== null;
   const recapSplit = englishContent.recap
     ? splitRecapForPaywall(englishContent.recap.contentMdJa)
     : null;
@@ -138,8 +140,9 @@ export default async function MatchEnglishPage({
       : englishContent.recap;
 
   return (
-    <main className="min-h-screen bg-paper">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
+    <UserStateProvider>
+      <main className="min-h-screen bg-paper">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
         <nav aria-label="Breadcrumb">
           <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
             <li>
@@ -174,7 +177,7 @@ export default async function MatchEnglishPage({
           match={match}
         />
 
-        <PremiumMatchChat matchId={id} />
+        <PremiumMatchChat isSample={isSample} matchId={id} />
 
         <div className="flex items-center justify-end">
           <LangToggle currentLang="en" matchId={match.id} />
@@ -232,7 +235,8 @@ export default async function MatchEnglishPage({
             )
           )}
         </section>
-      </div>
-    </main>
+        </div>
+      </main>
+    </UserStateProvider>
   );
 }

@@ -13,6 +13,7 @@ type MatchChatProps = {
   hasFreeQuestion: boolean | null;
   isLoggedIn: boolean | null;
   isPremium: boolean | null;
+  isSample?: boolean;
   matchId: string;
 };
 
@@ -268,6 +269,7 @@ export function MatchChat({
   hasFreeQuestion: initialHasFreeQuestion,
   isLoggedIn,
   isPremium,
+  isSample = false,
   matchId,
 }: MatchChatProps) {
   const [hasFreeQuestion, setHasFreeQuestion] = useState<boolean | null>(
@@ -324,7 +326,13 @@ export function MatchChat({
           <p className="mb-3 text-sm font-semibold text-slate-700">
             1問使用済み。続きは Premium で
           </p>
-          <Paywall contentType="chat" isPremium={false} matchId={matchId}>
+          <Paywall
+            contentType="chat"
+            isPremium={false}
+            isSample={isSample}
+            matchId={matchId}
+            viewerType={isLoggedIn ? "free" : "anonymous"}
+          >
             <MatchChatPanel disabled matchId={matchId} />
           </Paywall>
           {showSamples && <SampleQaList />}

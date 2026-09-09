@@ -265,8 +265,9 @@ export default async function MatchDetailPage({
     englishContent.preview !== null || englishContent.recap !== null;
   const hasConfirmedLineups = lineups.length > 0;
   const eventPlayerLinks = buildMatchEventPlayerLinks(events, lineups);
+  const isSample = await isSampleMatch(id);
   const isFreeSampleRecap =
-    (await isSampleMatch(id)) && publishedContent.recap !== null;
+    isSample && publishedContent.recap !== null;
   const recapSplit = publishedContent.recap
     ? splitRecapForPaywall(publishedContent.recap.contentMdJa)
     : null;
@@ -568,6 +569,7 @@ export default async function MatchDetailPage({
                 }
                 content={freeRecapContent}
                 hasLockedContent={recapSplit?.hasLocked ?? false}
+                isSample={isSample}
                 match={match}
                 nextLockedHeading={recapSplit?.nextHeadingText ?? null}
               />
@@ -637,7 +639,7 @@ export default async function MatchDetailPage({
             title="順位への影響"
           />
 
-          <PremiumMatchChat matchId={id} />
+          <PremiumMatchChat isSample={isSample} matchId={id} />
         </div>
       </main>
       </UserStateProvider>

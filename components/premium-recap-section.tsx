@@ -11,6 +11,7 @@ type Props = {
   >["betweenLeadAndBody"];
   content: React.ComponentProps<typeof MatchContentSection>["content"];
   hasLockedContent: boolean;
+  isSample?: boolean;
   language?: React.ComponentProps<typeof MatchContentSection>["language"];
   match: React.ComponentProps<typeof MatchContentSection>["match"];
   nextLockedHeading: string | null;
@@ -21,6 +22,7 @@ export function PremiumRecapSection({
   betweenLeadAndBody,
   content,
   hasLockedContent,
+  isSample = false,
   language = "ja",
   match,
   nextLockedHeading,
@@ -66,6 +68,7 @@ export function PremiumRecapSection({
       contentType="recap"
       hasLockedContent={hasLockedContent}
       isPremium={state.isPremium}
+      isSample={isSample}
       language={language}
       lockedContentMd={state.lockedMd}
       lockedLoading={hasLockedContent && !state.loaded}

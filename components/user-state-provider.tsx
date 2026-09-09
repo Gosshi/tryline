@@ -10,7 +10,7 @@ import {
 
 import { getClientUserState, type ClientUserState } from "@/lib/auth/client";
 
-const UserStateContext = createContext<ClientUserState | null>(null);
+const UserStateContext = createContext<ClientUserState | null | undefined>(undefined);
 
 export function UserStateProvider({ children }: { children: ReactNode }) {
   const [userState, setUserState] = useState<ClientUserState | null>(null);
