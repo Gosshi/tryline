@@ -24,7 +24,7 @@ describe("Paywall", () => {
     vi.unstubAllGlobals();
   });
 
-  it("tracks a paywall view when locked", async () => {
+  it("tracks a paywall view without a UserStateProvider", async () => {
     const gtag = stubGtag();
 
     render(
@@ -36,7 +36,10 @@ describe("Paywall", () => {
     await waitFor(() => {
       expect(gtag).toHaveBeenCalledWith("event", "paywall_view", {
         content_type: "recap",
+        is_sample: false,
         match_id: "match-1",
+        paywall_location: "paywall_overlay",
+        viewer_type: "anonymous",
       });
     });
   });
