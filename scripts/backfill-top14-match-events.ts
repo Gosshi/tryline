@@ -332,6 +332,12 @@ export async function main() {
           `Inserted ${result.inserted} events for ${competition.season} ${homeTeamName} v ${awayTeamName} (${seasonEvents.sourceUrl})`,
         );
       } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.startsWith("Event insertion rejected:")
+        ) {
+          throw error;
+        }
         console.warn(
           `Unable to backfill Top 14 events for ${competition.season} ${homeTeamName} v ${awayTeamName}:`,
           error,
@@ -345,9 +351,18 @@ export async function main() {
   );
 }
 
-if (process.argv[1]?.endsWith("backfill-top14-match-events.ts")) {
-  main().catch((error) => {
+export async function runCli(
+  run: () => Promise<void>,
+  exit: (code: number) => never = process.exit,
+) {
+  try {
+    await run();
+  } catch (error) {
     console.error(error);
-    process.exit(1);
-  });
+    exit(1);
+  }
+}
+
+if (process.argv[1]?.endsWith("backfill-top14-match-events.ts")) {
+  void runCli(main);
 }

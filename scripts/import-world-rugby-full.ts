@@ -618,6 +618,12 @@ export async function runWorldRugbyFullImport(
         `Imported World Rugby match ${entry.world_rugby_match_id}: lineups=${result.lineupsInserted} events=${result.eventsInserted}`,
       );
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith("Event insertion rejected:")
+      ) {
+        throw error;
+      }
       failedMatches += 1;
       console.error(
         `Failed to import World Rugby match ${entry.world_rugby_match_id}`,
@@ -645,9 +651,18 @@ async function main() {
   await runWorldRugbyFullImport(options);
 }
 
-if (process.argv[1]?.endsWith("import-world-rugby-full.ts")) {
-  main().catch((error) => {
+export async function runCli(
+  run: () => Promise<void>,
+  exit: (code: number) => never = process.exit,
+) {
+  try {
+    await run();
+  } catch (error) {
     console.error(error);
-    process.exit(1);
-  });
+    exit(1);
+  }
+}
+
+if (process.argv[1]?.endsWith("import-world-rugby-full.ts")) {
+  void runCli(main);
 }

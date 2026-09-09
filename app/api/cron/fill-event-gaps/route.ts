@@ -143,6 +143,11 @@ export async function POST(request: Request) {
   );
   let filled = 0;
   const errors: string[] = [];
+  const rejections: Array<{
+    detail: string;
+    matchId: string;
+    reason: "fixture_conflict" | "score_mismatch" | "third_team";
+  }> = [];
 
   for (const match of gaps) {
     const source = getWikipediaSource(match.external_ids);
@@ -159,13 +164,22 @@ export async function POST(request: Request) {
       );
 
       if (events.length > 0) {
-        await upsertMatchEvents({
+        const result = await upsertMatchEvents({
           awayTeamId: match.away_team_id,
           events,
           homeTeamId: match.home_team_id,
           matchId: match.id,
         });
-        filled += 1;
+        if ((result.rejected ?? []).length > 0) {
+          rejections.push(
+            ...result.rejected.map((rejection) => ({
+              ...rejection,
+              matchId: match.id,
+            })),
+          );
+        } else {
+          filled += 1;
+        }
       }
     } catch (error) {
       errors.push(`${match.id}: ${String(error)}`);
@@ -174,5 +188,14 @@ export async function POST(request: Request) {
     await sleep(1_500);
   }
 
-  return NextResponse.json({ errors, filled, gaps: gaps.length });
+  const responseBody = {
+    errors,
+    filled,
+    gaps: gaps.length,
+    ...(rejections.length > 0 ? { rejections } : {}),
+  };
+
+  return NextResponse.json(responseBody, {
+    status: rejections.length > 0 ? 500 : 200,
+  });
 }

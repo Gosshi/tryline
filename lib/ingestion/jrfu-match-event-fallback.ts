@@ -4,6 +4,7 @@ import { resolvePlayerId, upsertMatchEvents } from "@/lib/ingestion/events";
 import { JRFU_OPPONENT_SLUGS } from "@/lib/ingestion/jrfu-result-fallback";
 import { fetchJrfuMatchEvents } from "@/lib/scrapers/jrfu-match-events";
 
+import type { EventInsertionRejection } from "@/lib/ingestion/live-ingest";
 import type { JrfuScheduleResult } from "@/lib/scrapers/jrfu-schedule-results";
 import type { ParsedMatchEvent } from "@/lib/scrapers/wikipedia-match-events";
 
@@ -21,6 +22,7 @@ export type JrfuMatchEventFallbackResult = {
     unresolved_player_names: number;
     unsupported_timeline_skipped: number;
   };
+  rejections?: EventInsertionRejection[];
   source: "jrfu-match-events";
 };
 
@@ -186,6 +188,7 @@ export async function applyJrfuMatchEventFallback(
     unsupported_timeline_skipped: 0,
   };
   const unresolvedPlayerNames = new Set<string>();
+  const rejections: EventInsertionRejection[] = [];
   const candidates = candidatesForResults(
     await loadJapanMatches(),
     jrfuResults,
@@ -306,6 +309,16 @@ export async function applyJrfuMatchEventFallback(
       },
     });
 
+    if ((inserted.rejected ?? []).length > 0) {
+      rejections.push(
+        ...inserted.rejected.map((rejection) => ({
+          ...rejection,
+          matchId: candidate.match.id,
+        })),
+      );
+      continue;
+    }
+
     if (inserted.inserted > 0) {
       counts.matches_inserted += 1;
     }
@@ -313,5 +326,9 @@ export async function applyJrfuMatchEventFallback(
 
   counts.unresolved_player_names = unresolvedPlayerNames.size;
 
-  return { counts, source: "jrfu-match-events" };
+  return {
+    counts,
+    ...(rejections.length > 0 ? { rejections } : {}),
+    source: "jrfu-match-events",
+  };
 }

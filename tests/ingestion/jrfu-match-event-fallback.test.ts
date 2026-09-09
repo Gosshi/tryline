@@ -313,6 +313,28 @@ describe("JRFU match event fallback", () => {
     warn.mockRestore();
   });
 
+  it("aggregates a rejected event insertion without counting the match", async () => {
+    createClient([createMatch()]);
+    eventMocks.upsertMatchEvents.mockResolvedValue({
+      inserted: 0,
+      rejected: [{ detail: "synthetic", reason: "score_mismatch" }],
+      warnings: [],
+    });
+
+    await expect(
+      applyJrfuMatchEventFallback([createResult()]),
+    ).resolves.toMatchObject({
+      counts: { matches_inserted: 0 },
+      rejections: [
+        {
+          detail: "synthetic",
+          matchId: "japan-canada",
+          reason: "score_mismatch",
+        },
+      ],
+    });
+  });
+
   it("limits match-page requests to the configured maximum", async () => {
     const rows = Array.from(
       { length: JRFU_MATCH_EVENT_FALLBACK_LIMIT + 1 },

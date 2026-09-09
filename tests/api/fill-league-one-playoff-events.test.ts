@@ -9,6 +9,7 @@ const scraperMocks = vi.hoisted(() => ({
   fetchLeagueOneMatchDetail: vi.fn(),
   fetchLeagueOnePlayoffMatchRefs: vi.fn(),
 }));
+const eventMocks = vi.hoisted(() => ({ upsertMatchEvents: vi.fn() }));
 
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: dbMock.getSupabaseServerClient,
@@ -19,6 +20,7 @@ vi.mock("@/lib/scrapers/league-one-match", () => ({
 vi.mock("@/lib/scrapers/wikipedia-league-one-playoffs", () => ({
   fetchLeagueOnePlayoffMatchRefs: scraperMocks.fetchLeagueOnePlayoffMatchRefs,
 }));
+vi.mock("@/lib/ingestion/events", () => eventMocks);
 
 function createCompetitionQuery() {
   const query = {
@@ -93,5 +95,77 @@ describe("/api/cron/fill-league-one-playoff-events", () => {
       error: "league_one_competition_not_found",
     });
     expect(scraperMocks.fetchLeagueOnePlayoffMatchRefs).not.toHaveBeenCalled();
+  });
+
+  it("reports rejected playoff events as a failed run", async () => {
+    dbMock.competition = {
+      id: "competition-1",
+      season: "2025-26",
+      slug: "league-one-2025-26",
+    };
+    const competitionQuery = createCompetitionQuery();
+    const matchesQuery = {
+      eq: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      then: (resolve: (value: unknown) => unknown) =>
+        Promise.resolve({
+          data: [
+            {
+              away_team_id: "away",
+              external_ids: { wikipedia_event_id: "match_123" },
+              home_team_id: "home",
+              id: "match-rejected",
+              match_events: [],
+              status: "finished",
+            },
+          ],
+          error: null,
+        }).then(resolve),
+    };
+    dbMock.getSupabaseServerClient.mockReturnValue({
+      from: vi.fn((table: string) =>
+        table === "competitions" ? competitionQuery : matchesQuery,
+      ),
+    });
+    scraperMocks.fetchLeagueOnePlayoffMatchRefs.mockResolvedValue([
+      { awayScore: 0, homeScore: 5, leagueOneMatchId: 123 },
+    ]);
+    scraperMocks.fetchLeagueOneMatchDetail.mockResolvedValue({
+      events: [
+        {
+          event_type: "try",
+          minute: 1,
+          player_name: "Synthetic",
+          team_side: "home",
+        },
+      ],
+    });
+    eventMocks.upsertMatchEvents.mockResolvedValue({
+      inserted: 0,
+      rejected: [{ detail: "synthetic", reason: "score_mismatch" }],
+      warnings: [],
+    });
+    const { POST } =
+      await import("@/app/api/cron/fill-league-one-playoff-events/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/cron/fill-league-one-playoff-events", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      eventsInserted: 0,
+      processed: 0,
+      rejections: [
+        {
+          detail: "synthetic",
+          matchId: "match-rejected",
+          reason: "score_mismatch",
+        },
+      ],
+    });
   });
 });

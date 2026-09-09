@@ -271,6 +271,12 @@ async function main() {
           `Inserted ${result.inserted} events for ${competition.season} ${homeTeamName} v ${awayTeamName} (${seasonEvents.sourceUrl})`,
         );
       } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.startsWith("Event insertion rejected:")
+        ) {
+          throw error;
+        }
         console.warn(
           `Unable to backfill events for ${competition.season} ${homeTeamName} v ${awayTeamName}:`,
           error,
@@ -284,7 +290,18 @@ async function main() {
   );
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+export async function runCli(
+  run: () => Promise<void>,
+  exit: (code: number) => never = process.exit,
+) {
+  try {
+    await run();
+  } catch (error) {
+    console.error(error);
+    exit(1);
+  }
+}
+
+if (process.argv[1]?.endsWith("backfill-premiership-match-events.ts")) {
+  void runCli(main);
+}

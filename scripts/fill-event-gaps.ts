@@ -448,6 +448,12 @@ async function main() {
       console.log(`  -> upserted ${inserted} events`);
       filled += 1;
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith("Event insertion rejected:")
+      ) {
+        throw error;
+      }
       console.warn(`  -> warning: ${String(error)}; skipping`);
     }
 
@@ -457,9 +463,18 @@ async function main() {
   console.log(`Done. Filled ${filled}/${gaps.length} matches.`);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
-  main().catch((error) => {
+export async function runCli(
+  run: () => Promise<void>,
+  exit: (code: number) => never = process.exit,
+) {
+  try {
+    await run();
+  } catch (error) {
     console.error(error);
-    process.exit(1);
-  });
+    exit(1);
+  }
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  void runCli(main);
 }

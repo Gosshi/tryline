@@ -11,11 +11,23 @@ export async function POST(request: Request) {
   try {
     assertCronAuthorized(request);
 
-    const results = await ingestAllLiveCompetitions();
+    const result = await ingestAllLiveCompetitions();
+
+    if (result.rejections.length > 0) {
+      return NextResponse.json(
+        {
+          duration_ms: Date.now() - startedAt,
+          rejections: result.rejections,
+          results: result.results,
+          status: "failed",
+        },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({
       duration_ms: Date.now() - startedAt,
-      results,
+      results: result.results,
       status: "ok",
     });
   } catch (error) {

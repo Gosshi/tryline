@@ -272,6 +272,12 @@ export async function main() {
     try {
       html = await fetchSeasonHtml(htmlCache, source.url);
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith("Event insertion rejected:")
+      ) {
+        throw error;
+      }
       skipped += 1;
       console.warn(`[skip] ${label}: unable to fetch ${source.url}`, error);
       continue;
@@ -317,9 +323,18 @@ export async function main() {
   );
 }
 
-if (process.argv[1]?.endsWith("backfill-urc-match-events.ts")) {
-  main().catch((error) => {
+export async function runCli(
+  run: () => Promise<void>,
+  exit: (code: number) => never = process.exit,
+) {
+  try {
+    await run();
+  } catch (error) {
     console.error(error);
-    process.exit(1);
-  });
+    exit(1);
+  }
+}
+
+if (process.argv[1]?.endsWith("backfill-urc-match-events.ts")) {
+  void runCli(main);
 }
