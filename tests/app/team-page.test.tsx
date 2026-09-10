@@ -36,6 +36,9 @@ const navigationMocks = vi.hoisted(() => ({
   notFound: vi.fn(),
 }));
 
+// The upcoming fixture kicks off at 2026-09-10T14:00:00.000Z.
+const TEAM_PAGE_FIXTURE_NOW = new Date("2026-09-10T13:59:59.999Z");
+
 vi.mock("next/navigation", () => ({
   notFound: navigationMocks.notFound,
   useRouter: () => ({ refresh: vi.fn() }),
@@ -64,9 +67,12 @@ vi.mock("@/lib/db/queries/team-stats", () => ({
 describe("TeamPage", () => {
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(TEAM_PAGE_FIXTURE_NOW);
     navigationMocks.notFound.mockReset();
     navigationMocks.notFound.mockImplementation(() => {
       throw new Error("NEXT_NOT_FOUND");
@@ -216,6 +222,21 @@ describe("TeamPage", () => {
       "_blank",
     );
     expect(container.querySelector("a a")).toBeNull();
+  });
+
+  it.each([
+    "2026-09-01T00:00:00.000Z",
+    "2026-12-31T00:00:00.000Z",
+    "2027-06-01T00:00:00.000Z",
+  ])("keeps the upcoming fixture stable after simulated host time %s", async (hostTime) => {
+    // beforeEach always restores the fixture-derived clock before rendering.
+    vi.setSystemTime(new Date(hostTime));
+    vi.setSystemTime(TEAM_PAGE_FIXTURE_NOW);
+
+    render(await TeamPage({ params: Promise.resolve({ slug: "bath" }) }));
+
+    expect(screen.getByText("次戦")).toBeInTheDocument();
+    expect(screen.getByText("直近の試合")).toBeInTheDocument();
   });
 
   it("falls back to the English team name and hides empty upcoming matches", async () => {
