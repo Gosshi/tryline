@@ -945,11 +945,15 @@ export default async function SeasonPage({ params }: Props) {
                 {comp.seasonStatus === "not_held" ? "この年度の大会は開催されません" : "試合データを確認中です"}
               </p>
               <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
-                {comp.seasonStatus === "held" ? "試合情報を確認しています。公式日程をご確認ください。" : "このシーズンの試合情報は確認できていません。"}
+                {comp.seasonStatus === "not_held"
+                  ? "この年度は開催されないため、試合情報はありません。"
+                  : comp.seasonStatus === "held"
+                    ? "試合情報を確認しています。公式日程をご確認ください。"
+                    : "このシーズンの試合情報は確認できていません。"}
               </p>
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 {comp.seasonStatus === "not_held" && comp.replacementCompetition && (
-                  <Link className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4" href={`/c/${comp.replacementCompetition.slug}`}>
+                  <Link className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4" href={`/c/${comp.replacementCompetition.family}/${comp.replacementCompetition.season}`}>
                     {comp.replacementCompetition.nameJa ?? comp.replacementCompetition.name} を見る
                   </Link>
                 )}
