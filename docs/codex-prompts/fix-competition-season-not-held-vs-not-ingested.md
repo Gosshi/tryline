@@ -24,11 +24,52 @@ rugby-championship-2026   matches=0  total_rounds=null
 
 ## やること
 
-`competitions` に「その年度に開催するか」を表す列を追加してください。既存 12 列にこれを表せるものはありません（確認済み: `id` / `slug` / `name` / `country` / `season` / `start_date` / `end_date` / `created_at` / `updated_at` / `family` / `champion` / `name_ja` / `total_rounds`）。
+`competitions` に列を **2 つ**追加してください（**2026-09-09 訂正。あなたの指摘で 1 → 2 に変更**）。既存 12 列にこれを表せるものはありません（確認済み: `id` / `slug` / `name` / `country` / `season` / `start_date` / `end_date` / `created_at` / `updated_at` / `family` / `champion` / `name_ja` / `total_rounds`）。
+
+**列 1: 開催の有無**
 
 - **3 値**を表せること: 開催する / 開催しない / 未確認
 - **既定は「未確認」。** 既存 38 行が「開催する」と断定されないこと
 - **`start_date` / `end_date` の有無で代用しないでください。** 日程未発表と開催しないは別です
+
+**列 2: 対応する大会（nullable・自己参照）**
+
+`competitions.id` を参照する nullable な列です。
+
+**指摘は正しかったです。** 初版は 3 値の列 1 つだけを指定しながら、受け入れ条件 4 で「対応する大会への導線」を要求していました。どの大会へ送るかを表すデータが無いので、実装するには `rugby-championship` → `nations-championship` をコードに固定するしかなく、受け入れ条件 11 に反します。自己矛盾でした。止めてもらって助かりました。
+
+**null のときは既存のフォールバックをそのまま使ってください。** 0 件ブロックには既に導線が 2 本あります。
+
+```
+app/c/[competition]/[season]/page.tsx:951   「他のシーズンを見る」  /c/${competition}
+app/c/[competition]/[season]/page.tsx:959   「トップへ戻る」        /
+```
+
+| 列 2 の値 | 導線 |
+|---|---|
+| 設定あり | その大会へのリンク + 既存の 2 本 |
+| null | 既存の 2 本のみ |
+
+**列 2 だけを見て「開催しない」と判定しないでください。** 判定は列 1 が行い、列 2 は導線先だけを表します。
+
+### 列 2 の引き方（2026-09-10 追記・5 回ビルドが落ちた経緯）
+
+**PostgREST の自己参照 embed を使わないでください。**
+
+```ts
+// これは使わない
+.select("*, replacement_competition:competitions!competitions_replacement_competition_id_fkey(...)")
+```
+
+初版はこの形を `lib/db/queries/competitions.ts:255` / `:314` / `:363` で使い、Vercel が 5 回連続で `PGRST200` で落ちました。
+
+```
+Could not find a relationship between 'competitions' and 'competitions' in the schema cache
+```
+
+切り分け済みです。`pg_constraint` に FK は**実在**し、`NOTIFY pgrst, 'reload schema'` を 2 経路（MCP / SQL Editor）で実行しても変化なし、適用から 1.5 時間経過しても変化なし、Supabase のブランチ DB も無し（プレビューも本番 DB）。**PostgREST が自己参照をこの制約名ヒントで解決できていません。**
+
+**`replacement_competition_id` を使って別クエリで引いてください。** キャッシュにも自己参照解決にも制約名にも依存しなくなります。制約名を文字列で埋め込む依存も消えます（今のままだとリネームでビルドが落ちます）。
 
 そのうえで `:941` の 0 件ブロックを分岐させてください。
 
@@ -60,6 +101,8 @@ rugby-championship-2026   matches=0  total_rounds=null
 受け入れ条件 1〜12 を満たすこと。特に:
 
 - **既定値が「未確認」**で既存 38 行が「開催する」にならない（条件 2）
+- **列 2 が null でも行き止まりにならない**（条件 4-a）
+- **列 2 だけでは「開催しない」と判定されない**（条件 4-b）
 - 「開催しない」で「まもなく公開予定」が出ない（条件 3）
 - 「未確認」で開催を断定する文言が出ない（条件 5）
 - 試合 1 件以上の表示に差分が無い（条件 7）
@@ -70,6 +113,10 @@ rugby-championship-2026   matches=0  total_rounds=null
 
 git worktree で `origin/main` から切ってください（`docs/runbooks/codex-worktree.md`）。
 
-**実装しただけでは全大会が「未確認」表示になります。** 列を埋めるのは Owner の作業です。「大会ハブを正しくした」と報告しないでください。
+**Owner の判断は実装をブロックしません**（2026-09-09 訂正）。列の既定値が「未確認」なので、**列を 1 行も埋めないままマージできます**。受け入れ条件 3〜6 はすべて fixture で検証でき、本番データを必要としません。
+
+初版の spec は「実装前に必要なのは 1 だけ」と書いており、直後の「2 と 3 は実装をブロックしない」と矛盾していました。**止めて指摘してもらったのは正しい読み方です。** 修正しました。
+
+**実装しただけでは全大会が「未確認」表示になります。** 列を埋めるのは Owner のデータ入力です。「大会ハブを正しくした」と報告しないでください。
 
 仕様と現状が食い違うと判断したら、実装を止めて指摘してください。

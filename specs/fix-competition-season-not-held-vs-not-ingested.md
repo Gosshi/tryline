@@ -40,11 +40,60 @@
 
 ## データモデル変更
 
-`competitions` に列を 1 つ追加する。**既存 12 列に「開催の有無」を表せるものが無い**ことを確認済み（`id` / `slug` / `name` / `country` / `season` / `start_date` / `end_date` / `created_at` / `updated_at` / `family` / `champion` / `name_ja` / `total_rounds`）。
+`competitions` に列を **2 つ**追加する（**2026-09-09 訂正。初版は 1 列としていたが、それでは受け入れ条件 4 と 11 が両立しない。後述**）。
+
+### 列 1: 開催の有無
+
+**既存 12 列に「開催の有無」を表せるものが無い**ことを確認済み（`id` / `slug` / `name` / `country` / `season` / `start_date` / `end_date` / `created_at` / `updated_at` / `family` / `champion` / `name_ja` / `total_rounds`）。
 
 - 3 値を表せること: **開催する** / **開催しない** / **未確認**
 - 既定は **未確認**。既存 38 行が「開催する」と断定されないこと
 - `start_date` / `end_date` の有無で代用しないこと。日程未発表と開催しないは別である
+
+### 列 2: 対応する大会（nullable）
+
+「開催しない」年度から誘導する先の大会を指す、**nullable な自己参照**。`competitions.id` を参照する。
+
+**なぜ必要か（2026-09-09 追記）**: 初版は 3 値の列 1 つだけを指定しながら、受け入れ条件 4 で「**対応する大会への導線**が出る」ことを要求していた。**どの大会へ送るかを表すデータが無いため、実装するには `rugby-championship` → `nations-championship` をコードに固定するしかなく、受け入れ条件 11「開催の有無をコードにハードコードしていない」に反する。** 自己矛盾だったので列を足す。Codex が実装を止めて指摘した。
+
+**null のときは既存のフォールバックをそのまま使う。** 0 件ブロックには既に導線が 2 本ある（`app/c/[competition]/[season]/page.tsx:951` の「他のシーズンを見る」＝`/c/${competition}`、`:959` の「トップへ戻る」＝`/`）。**対応先が未設定でも画面が行き止まりにならない。**
+
+| 列 2 の値 | 導線 |
+|---|---|
+| 設定あり | その大会へのリンク + 既存の 2 本 |
+| null | 既存の 2 本のみ |
+
+**列 2 だけを見て「開催しない」と判定しないこと。** 判定は列 1 が行う。列 2 は導線先だけを表す。
+
+### 列 2 の引き方（2026-09-10 追記・PR #797 が 5 回ビルド失敗した経緯）
+
+**PostgREST の自己参照 embed を使わないこと。**
+
+```ts
+// これは使わない
+.select("*, replacement_competition:competitions!competitions_replacement_competition_id_fkey(slug, name, name_ja, season)")
+```
+
+PR #797 の初版はこの形を 3 箇所（`lib/db/queries/competitions.ts:255` / `:314` / `:363`）で使い、**Vercel のビルドが 5 回連続で `PGRST200` で落ちた**。
+
+```
+Could not find a relationship between 'competitions' and 'competitions' in the schema cache
+hint: competitions_replacement_competition_id_fkey
+```
+
+切り分け済みの事実:
+
+| 確認したこと | 結果 |
+|---|---|
+| `pg_constraint` に FK が存在するか | **存在する**（本番で確認） |
+| `NOTIFY pgrst, 'reload schema'`（MCP 経由） | 変化なし |
+| `NOTIFY pgrst, 'reload schema'`（SQL Editor から） | 変化なし |
+| マイグレーション適用から 1.5 時間経過 | 変化なし |
+| Supabase のブランチ DB | **無し**。プレビューも本番 DB を見ている |
+
+**PostgREST が自己参照（`competitions` → `competitions`）をこの制約名ヒントで解決できていない。** エラー文の "in the schema cache" は定型句で、キャッシュが古いことの証明にはならない。
+
+**`replacement_competition_id` を使って別クエリで引くこと。** PostgREST のキャッシュにも自己参照の解決能力にも制約名にも依存しなくなる。加えて、制約名を文字列でコードに埋め込む依存が消える（現状はリネームされるとビルドが落ちる）。
 
 **マイグレーションはマージ前に本番適用する**（`feedback_migration_before_merge`。#577 等で複数回事故）。適用は Owner または Codex が行い、Claude Code は実行しない。
 
@@ -78,10 +127,18 @@
 
 ## 受け入れ条件
 
-1. マイグレーションが `supabase/` 配下にあり、**3 値（開催する / 開催しない / 未確認）を表現できる**
+1. マイグレーションが `supabase/` 配下にあり、**列 1 が 3 値（開催する / 開催しない / 未確認）を表現でき、列 2 が `competitions.id` を参照する nullable な列である**
+1-a. **PostgREST の自己参照 embed（`competitions!<制約名>(...)`）をソース中で使っていない**
+1-b. **制約名（`competitions_replacement_competition_id_fkey`）が文字列としてソースに現れない**
 2. **既定値が「未確認」**で、既存 38 行が「開催する」と断定されない
 3. 「開催しない」の大会シーズンで、**「まもなく公開予定」が表示されない**ことを検証するテストがある
-4. 「開催しない」の大会シーズンで、対応する大会への導線が出ることを検証するテストがある
+4. 「開催しない」かつ**列 2 が設定済み**の大会シーズンで、その大会への導線が出ることを検証するテストがある
+4-a. 「開催しない」かつ**列 2 が null** の大会シーズンで、**既存の「他のシーズンを見る」「トップへ戻る」だけが出て、行き止まりにならない**ことを検証するテストがある
+4-b. **列 2 だけでは「開催しない」と判定されない**ことを検証するテストがある（列 1 が「未確認」で列 2 が設定済みのケース）
+4-c. **対応大会へのリンクが `app/c/[competition]/[season]` のルート形式に一致する**ことを検証するテストがある。`family` と `season` が分離されており、**slug を 1 セグメントに埋めていない**
+4-d. **`not_held` の補足文が、未取得用の文言と別である**ことを検証するテストがある。「開催されない」と言った直後に「情報が確認できていない」と続けない
+
+**4-c を追加した理由（2026-09-10）**: PR #797 は `href={`/c/${slug}`}` と書き、`/c/nations-championship-2026` を出力していた。本番実測で **404**（正しくは `/c/nations-championship/2026`）。**当時のテストはその 404 の URL をそのまま期待値に固定していたため CI は緑だった。** 受け入れ条件 4 が「導線が出る」としか書いておらず、リンク先の形を問わなかったのが原因である。**a 要素の存在だけを検証しない。**
 5. 「未確認」の大会シーズンで、**開催を断定する文言が出ない**ことを検証するテストがある
 6. 「開催する（未取得）」で、確認状況と公式参照が出ることを検証するテストがある
 7. 試合が 1 件以上ある大会シーズンの表示に**差分が無い**ことを検証するテストがある
@@ -95,13 +152,17 @@
 
 ## 未解決の質問
 
-**Owner が決めること（実装前に必要なのは 1 だけ）**:
+**どの判断も実装をブロックしない**（2026-09-09 訂正）。列の既定値が「未確認」なので、**コードは列を 1 行も埋めないままマージできる**。受け入れ条件 3〜6 はいずれも fixture で検証でき、本番データを必要としない。
 
-1. **`rugby-championship-2026` を「開催しない」に設定してよいか。** `project_nations_championship_absorbs_rugby_championship` に基づく想定だが、DB への書き込みは Owner の判断
+**初版は「実装前に必要なのは 1 だけ」と書いており、直後の「2 と 3 は実装をブロックしない」と矛盾していた。** Codex はこれを読んで実装を止めた（正しい読み方である）。**Owner が列を埋めるのはマージ後のデータ入力であって、実装の前提条件ではない。**
+
+**Owner が決めること（すべてマージ後でよい）**:
+
+1. **`rugby-championship-2026` を「開催しない」に設定し、対応先を `nations-championship-2026` にしてよいか。** `project_nations_championship_absorbs_rugby_championship` に基づく想定だが、DB への書き込みは Owner の判断
 2. `autumn-nations-2026` が 2026 年に開催されるか（**未確認。調査が必要**）
 3. 「開催しない」年度を noindex にするか
 
-**2 と 3 は実装をブロックしない。** 既定が「未確認」なので、列を埋めるのは後からでよい。
+**1 の判断材料（2026-09-09 本番実測）**: `nations-championship-2026` の `competition_standings` に **Rugby Championship の 4 カ国が全部含まれている**（Argentina / Australia / New Zealand / South Africa）。6 カ国 + Fiji + Japan と合わせて 12 チーム。統合は実データで確認できる。
 
 **本 spec で解決しないと明示するもの**:
 
