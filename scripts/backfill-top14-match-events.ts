@@ -127,7 +127,10 @@ function getWikipediaEventId(externalIds: Json): string | null {
 }
 
 function normalizeComparableName(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function wikiTeamMatchesDbTeam(wikiName: string, dbName: string): boolean {
@@ -138,7 +141,10 @@ function wikiTeamMatchesDbTeam(wikiName: string, dbName: string): boolean {
   return db === mapped || db === raw || db.includes(mapped) || db.includes(raw);
 }
 
-function sameMatchDate(sourceDateKey: string | null, kickoffAt: string): boolean {
+function sameMatchDate(
+  sourceDateKey: string | null,
+  kickoffAt: string,
+): boolean {
   return !sourceDateKey || kickoffAt.slice(0, 10) === sourceDateKey;
 }
 
@@ -244,7 +250,8 @@ async function loadTargetMatches(competitions: CompetitionRow[]) {
 
   return ((data ?? []) as MatchRow[]).filter(
     (match) =>
-      match.match_events.length === 0 && getWikipediaEventId(match.external_ids),
+      match.match_events.length === 0 &&
+      getWikipediaEventId(match.external_ids),
   );
 }
 
@@ -271,10 +278,13 @@ export async function main(argv = process.argv.slice(2)) {
     matchesByCompetition.set(match.competition_id, group);
   }
 
-  console.log(`Target finished Top 14 matches without events: ${matches.length}`);
+  console.log(
+    `Target finished Top 14 matches without events: ${matches.length}`,
+  );
 
   let eventsFound = 0;
   let eventsInserted = 0;
+  const rejections: Array<{ matchId: string; reasons: string[] }> = [];
   let firstSeason = true;
 
   for (const competition of competitions) {
@@ -337,7 +347,15 @@ export async function main(argv = process.argv.slice(2)) {
         );
       } catch (error) {
         if (error instanceof EventInsertionRejectedError) {
-          throw error;
+          rejections.push({
+            matchId: match.id,
+            reasons: error.rejected.map((rejection) => rejection.reason),
+          });
+          console.warn("Event insertion rejected; continuing", {
+            matchId: match.id,
+            reasons: error.rejected.map((rejection) => rejection.reason),
+          });
+          continue;
         }
         console.warn(
           `Unable to backfill Top 14 events for ${competition.season} ${homeTeamName} v ${awayTeamName}:`,
@@ -350,6 +368,12 @@ export async function main(argv = process.argv.slice(2)) {
   console.log(
     `Backfill Top 14 match events complete: target_matches=${matches.length} events_found=${eventsFound} events_inserted=${eventsInserted} dry_run=${options.dryRun}`,
   );
+
+  if (rejections.length > 0) {
+    throw new Error(
+      `Event insertion rejected: ${rejections.map(({ matchId, reasons }) => `${matchId}: ${reasons.join(", ")}`).join("; ")}`,
+    );
+  }
 }
 
 export async function runCli(

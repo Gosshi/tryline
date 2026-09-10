@@ -25,7 +25,7 @@ vi.mock("@/lib/scrapers/wikipedia-season-parser", () => ({
   parseWikipediaSeasonMatches: mocks.parseSeasonMatches,
 }));
 
-it("reaches exit 1 through the Top 14 match loop when an insertion is rejected", async () => {
+it("continues after a rejected Top 14 insertion before reaching exit 1", async () => {
   const competitionsQuery = {
     like: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
@@ -53,6 +53,17 @@ it("reaches exit 1 through the Top 14 match loop when an insertion is rejected",
             home_team_id: "home",
             id: "match-rejected",
             kickoff_at: "2025-08-01T12:00:00.000Z",
+            match_events: [],
+          },
+          {
+            away_team: { name: "Away" },
+            away_team_id: "away-two",
+            competition_id: "top14",
+            external_ids: { wikipedia_event_id: "event" },
+            home_team: { name: "Home" },
+            home_team_id: "home-two",
+            id: "match-normal",
+            kickoff_at: "2025-08-02T12:00:00.000Z",
             match_events: [],
           },
         ],
@@ -84,12 +95,15 @@ it("reaches exit 1 through the Top 14 match loop when an insertion is rejected",
       type: "try",
     },
   ]);
-  mocks.upsertMatchEvents.mockResolvedValue({
-    inserted: 0,
-    rejected: [{ detail: "synthetic", reason: "score_mismatch" }],
-    warnings: [],
-  });
-  const { main, runCli } = await import("@/scripts/backfill-top14-match-events");
+  mocks.upsertMatchEvents
+    .mockResolvedValueOnce({
+      inserted: 0,
+      rejected: [{ detail: "synthetic", reason: "score_mismatch" }],
+      warnings: [],
+    })
+    .mockResolvedValueOnce({ inserted: 1, rejected: [], warnings: [] });
+  const { main, runCli } =
+    await import("@/scripts/backfill-top14-match-events");
   const exit = vi.fn(() => {
     throw new Error("exit");
   }) as unknown as (code: number) => never;
@@ -100,6 +114,10 @@ it("reaches exit 1 through the Top 14 match loop when an insertion is rejected",
   expect(mocks.upsertMatchEvents).toHaveBeenCalledWith(
     expect.objectContaining({ matchId: "match-rejected" }),
   );
+  expect(mocks.upsertMatchEvents).toHaveBeenCalledWith(
+    expect.objectContaining({ matchId: "match-normal" }),
+  );
+  expect(mocks.upsertMatchEvents).toHaveBeenCalledTimes(2);
   expect(exit).toHaveBeenCalledWith(1);
   error.mockRestore();
 });
