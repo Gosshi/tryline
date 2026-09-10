@@ -2,7 +2,7 @@ import { Fragment } from "react";
 
 import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
-import { PaywallViewTracker } from "@/components/paywall-view-tracker";
+import { PaywallViewBoundary } from "@/components/paywall-view-tracker";
 import { TrackedLink } from "@/components/tracked-link";
 import { parseMarkdown } from "@/lib/match-content/markdown";
 
@@ -399,48 +399,47 @@ export function MatchContent({
         </div>
       )}
       {hasLockedBlocks && showCta && !lockedLoading && (
-        <>
-          <PaywallViewTracker
-            contentType={contentType}
-            isSample={isSample}
-            matchId={matchId}
-            paywallLocation="match_content_locked_blocks"
-          />
+        <PaywallViewBoundary
+          contentType={contentType}
+          isSample={isSample}
+          matchId={matchId}
+          paywallLocation="match_content_locked_blocks"
+        >
           <div className="mt-4 flex flex-col items-center gap-3 text-center">
             <p className="text-sm font-semibold text-slate-800">
-            {language === "en"
-              ? matchTitle
-                ? `Read the full ${matchTitle} analysis with Premium`
-                : "The full article is available with Premium"
-              : matchTitle
-                ? `${matchTitle} の勝負どころを最後まで読む`
-                : "続きは Premium でご覧いただけます"}
-          </p>
-          <TrackedLink
-            analytics={{
-              content_type: contentType,
-              cta_id: "match_content_locked_pricing",
-              cta_location: "match_content_locked_blocks",
-              destination: "pricing",
-              label:
-                language === "en"
-                  ? "Read with Premium"
-                  : matchTitle
-                    ? "7日間無料でレビュー全文を読む"
-                    : "Premium で全文を読む",
-              language,
-            }}
-            className="rounded-full bg-gradient-to-br from-[#c93a40] to-[#a83464] px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-soft)] hover:opacity-90"
-            href="/pricing"
-          >
-            {language === "en"
-              ? "Read with Premium"
-              : matchTitle
-                ? "7日間無料でレビュー全文を読む"
-                : "Premium で全文を読む"}
+              {language === "en"
+                ? matchTitle
+                  ? `Read the full ${matchTitle} analysis with Premium`
+                  : "The full article is available with Premium"
+                : matchTitle
+                  ? `${matchTitle} の勝負どころを最後まで読む`
+                  : "続きは Premium でご覧いただけます"}
+            </p>
+            <TrackedLink
+              analytics={{
+                content_type: contentType,
+                cta_id: "match_content_locked_pricing",
+                cta_location: "match_content_locked_blocks",
+                destination: "pricing",
+                label:
+                  language === "en"
+                    ? "Read with Premium"
+                    : matchTitle
+                      ? "7日間無料でレビュー全文を読む"
+                      : "Premium で全文を読む",
+                language,
+              }}
+              className="rounded-full bg-gradient-to-br from-[#c93a40] to-[#a83464] px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-soft)] hover:opacity-90"
+              href="/pricing"
+            >
+              {language === "en"
+                ? "Read with Premium"
+                : matchTitle
+                  ? "7日間無料でレビュー全文を読む"
+                  : "Premium で全文を読む"}
             </TrackedLink>
           </div>
-        </>
+        </PaywallViewBoundary>
       )}
       <XFollowCta />
       <p className="mt-6 text-xs text-slate-500">
