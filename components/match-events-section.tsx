@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ScoreGraph } from "@/components/score-graph";
 import { deriveMatchEventHighlights } from "@/lib/format/match-key-moment";
 import { buildScoreTimeline } from "@/lib/format/match-timeline";
+import { formatPlayerNameDisplay } from "@/lib/format/player-name-display";
 import { getTeamColor } from "@/lib/format/team-identity";
 import {
   computeEventPointTotals,
@@ -122,7 +123,12 @@ export function MatchEventsSection({
 
   const homeColor = getTeamColor(homeTeamSlug);
   const awayColor = getTeamColor(awayTeamSlug);
-  const sorted = sortEvents(events);
+  const sorted = sortEvents(
+    events.map((event) => ({
+      ...event,
+      playerName: formatPlayerNameDisplay(event.playerName) ?? event.playerName,
+    })),
+  );
   const timeline = buildScoreTimeline(sorted, homeTeamId);
   const highlights = deriveMatchEventHighlights({
     events: sorted,

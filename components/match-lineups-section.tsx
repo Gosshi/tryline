@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { formatPlayerNameDisplay } from "@/lib/format/player-name-display";
+
 import type { MatchLineupPlayer } from "@/lib/db/queries/match-lineups";
 
 type MatchLineupsSectionProps = {
@@ -180,10 +182,12 @@ function PlayerRow({
             className="inline-block max-w-full truncate align-bottom font-medium underline-offset-4 transition-colors hover:text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             href={`/players/${player.playerSlug}`}
           >
-            {player.playerName}
+            {formatPlayerNameDisplay(player.playerName)}
           </Link>
         ) : (
-          <span className="truncate">{player.playerName}</span>
+          <span className="truncate">
+            {formatPlayerNameDisplay(player.playerName)}
+          </span>
         )}
         {player.position && (
           <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">

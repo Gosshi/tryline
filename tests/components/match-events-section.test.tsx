@@ -112,6 +112,25 @@ describe("MatchEventsSection", () => {
     expect(screen.getByText("23'")).toBeInTheDocument();
   });
 
+  it("uses the compact Japanese name display in the event timeline", () => {
+    render(
+      <MatchEventsSection
+        awayTeamName="France"
+        awayTeamSlug="france"
+        events={[{ ...event, playerName: "齋藤 直人" }]}
+        finalAwayScore={0}
+        finalHomeScore={5}
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        homeTeamSlug="ireland"
+        variant="timeline"
+      />,
+    );
+
+    expect(screen.getByText("齋藤直人 トライ")).toBeInTheDocument();
+    expect(screen.queryByText("齋藤 直人 トライ")).not.toBeInTheDocument();
+  });
+
   it("links an event scorer only when a player link is resolved", () => {
     render(
       <MatchEventsSection
