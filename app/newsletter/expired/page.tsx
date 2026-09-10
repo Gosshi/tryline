@@ -12,9 +12,9 @@ export default function NewsletterExpiredPage() {
         </p>
         <Link
           className="mt-5 inline-flex rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
-          href="/calendar"
+          href="/#newsletter-signup"
         >
-          カレンダーへ戻る
+          登録フォームへ戻る
         </Link>
       </section>
     </main>
