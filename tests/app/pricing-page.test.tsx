@@ -199,6 +199,13 @@ describe("PricingPage", () => {
     expect(videoJsonLd?.description).toBe(
       "海外ラグビーの試合を日本語で解説。プレビュー・レビュー・試合Q&Aを紹介する Tryline の動画です。",
     );
+    expect(videoJsonLd?.uploadDate).toBe("2026-05-18");
+    expect(videoJsonLd?.uploadDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(faqJsonLd?.mainEntity).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "無料トライアルはありますか？" }),
+      ]),
+    );
     expect(screen.getByText("支払い方法は？")).toBeInTheDocument();
   });
 
