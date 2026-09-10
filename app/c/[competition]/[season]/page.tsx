@@ -37,6 +37,7 @@ import {
   getCompetitionFamilyColor,
   formatPoolName,
 } from "@/lib/format/competition";
+import { getCompetitionMetadataTeams } from "@/lib/format/competition-metadata";
 import {
   formatKickoffJstDate,
   formatKickoffJstTime,
@@ -346,33 +347,6 @@ function getCompetitionHubMetadataCopy({
             title: "最新結果・次戦・日程",
           };
   }
-}
-
-function getMetadataTeamName(team: {
-  name: string;
-  nameJa?: string | null;
-}): string {
-  return team.nameJa?.trim() || team.name.trim();
-}
-
-export function getCompetitionMetadataTeams(
-  matches: MatchListItem[],
-  standings: StandingRow[],
-): string[] {
-  const standingTeams = standings
-    .map((standing) => standing.teamName.trim())
-    .filter((teamName) => teamName && teamName !== "-");
-  const teamNames =
-    standingTeams.length > 0
-      ? standingTeams
-      : matches.flatMap((match) => [
-          getMetadataTeamName(match.homeTeam),
-          getMetadataTeamName(match.awayTeam),
-        ]).filter(Boolean);
-
-  return [...new Set(teamNames)].sort((left, right) =>
-    left.localeCompare(right, "ja"),
-  );
 }
 
 function formatMetadataTitle(

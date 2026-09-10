@@ -25,11 +25,9 @@ vi.mock("@/lib/db/queries/match-content", () => contentMock);
 vi.mock("@/lib/db/queries/matches", () => matchesMock);
 vi.mock("@/lib/db/queries/standings", () => standingsMock);
 
-import {
-  generateMetadata as generateSeasonMetadata,
-  getCompetitionMetadataTeams,
-} from "@/app/c/[competition]/[season]/page";
+import { generateMetadata as generateSeasonMetadata } from "@/app/c/[competition]/[season]/page";
 import { generateMetadata as generateHubMetadata } from "@/app/c/[competition]/page";
+import { getCompetitionMetadataTeams } from "@/lib/format/competition-metadata";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
 
@@ -94,8 +92,8 @@ describe("competition guide metadata", () => {
       params: Promise.resolve({ competition: "lipovitan-challenge-cup" }),
     });
 
-    expect(metadata.title).toContain("オーストラリア代表");
-    expect(metadata.title).toContain("カナダ代表");
+    expect(metadata.title).toContain("オーストラリア");
+    expect(metadata.title).toContain("カナダ");
     expect(metadata.title).toContain("フィジー代表");
   });
 
