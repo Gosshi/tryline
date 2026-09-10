@@ -81,7 +81,7 @@ const pricingVideoJsonLd = {
   embedUrl: "https://www.youtube.com/embed/2kFHgiaI-NA",
   name: "Tryline — ラグビー解説サービス紹介",
   thumbnailUrl: "https://img.youtube.com/vi/2kFHgiaI-NA/maxresdefault.jpg",
-  uploadDate: "2025-01-01",
+  uploadDate: "2026-05-18",
 };
 
 function createPricingFaqJsonLd(billingTerms: BillingTerms) {

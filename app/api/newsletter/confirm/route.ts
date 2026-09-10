@@ -4,8 +4,18 @@ import { getSupabaseServerClient } from "@/lib/db/server";
 
 const CONFIRMATION_TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
-function redirectToResult(request: Request, result: string) {
-  return NextResponse.redirect(new URL(`/newsletter/${result}`, request.url));
+function redirectToResult(
+  request: Request,
+  result: string,
+  searchParams?: Record<string, string>,
+) {
+  const url = new URL(`/newsletter/${result}`, request.url);
+
+  for (const [key, value] of Object.entries(searchParams ?? {})) {
+    url.searchParams.set(key, value);
+  }
+
+  return NextResponse.redirect(url);
 }
 
 export async function GET(request: Request) {
@@ -21,7 +31,24 @@ export async function GET(request: Request) {
     .eq("confirmation_token", token)
     .maybeSingle();
 
-  if (error || !subscriber || subscriber.status !== "pending") {
+  if (error) {
+    console.error("[newsletter] subscriber confirmation lookup failed", error);
+    return redirectToResult(request, "confirmation-error");
+  }
+
+  if (!subscriber) {
+    return redirectToResult(request, "invalid-link");
+  }
+
+  if (subscriber.status === "confirmed") {
+    return redirectToResult(request, "already-confirmed");
+  }
+
+  if (subscriber.status === "unsubscribed") {
+    return redirectToResult(request, "unsubscribed-link");
+  }
+
+  if (subscriber.status !== "pending") {
     return redirectToResult(request, "invalid-link");
   }
 
@@ -44,9 +71,8 @@ export async function GET(request: Request) {
 
   if (updateError) {
     console.error("[newsletter] subscriber confirmation failed", updateError);
-
-    return redirectToResult(request, "invalid-link");
+    return redirectToResult(request, "confirmation-error");
   }
 
-  return redirectToResult(request, "confirmed");
+  return redirectToResult(request, "confirmed", { completed: "1" });
 }
