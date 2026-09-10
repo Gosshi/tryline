@@ -1,9 +1,14 @@
 // @vitest-environment jsdom
 
-import { cleanup, render } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  observers: [] as Array<{
+    callback: IntersectionObserverCallback;
+    disconnect: ReturnType<typeof vi.fn>;
+    observe: ReturnType<typeof vi.fn>;
+  }>,
   trackPaywallView: vi.fn(),
   userState: { user: null as { id: string } | null },
 }));
@@ -28,13 +33,46 @@ const content = {
 
 describe("MatchContent paywall view tracking", () => {
   beforeEach(() => {
+    mocks.observers = [];
     mocks.trackPaywallView.mockReset();
     mocks.userState.user = null;
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        readonly disconnect = vi.fn();
+        readonly observe = vi.fn();
+
+        constructor(callback: IntersectionObserverCallback) {
+          mocks.observers.push({
+            callback,
+            disconnect: this.disconnect,
+            observe: this.observe,
+          });
+        }
+      },
+    );
   });
 
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
 
-  it("tracks the visible article boundary once with its comparison axes", () => {
+  function enterBoundary(observerIndex = 0) {
+    const observer = mocks.observers[observerIndex];
+    if (!observer) {
+      throw new Error("Expected an IntersectionObserver instance");
+    }
+
+    act(() => {
+      observer.callback(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+    });
+  }
+
+  it("waits for the article boundary to enter the viewport, then tracks it once with its comparison axes", () => {
     const { rerender } = render(
       <MatchContent
         content={content}
@@ -44,6 +82,11 @@ describe("MatchContent paywall view tracking", () => {
         matchId="match-1"
       />,
     );
+
+    expect(mocks.trackPaywallView).not.toHaveBeenCalled();
+    expect(mocks.observers).toHaveLength(1);
+
+    enterBoundary();
 
     expect(mocks.trackPaywallView).toHaveBeenCalledTimes(1);
     expect(mocks.trackPaywallView).toHaveBeenCalledWith({
@@ -54,6 +97,9 @@ describe("MatchContent paywall view tracking", () => {
       viewer_type: "anonymous",
     });
 
+    enterBoundary();
+    expect(mocks.trackPaywallView).toHaveBeenCalledTimes(1);
+
     rerender(
       <MatchContent
         content={content}
@@ -63,11 +109,13 @@ describe("MatchContent paywall view tracking", () => {
         matchId="match-1"
       />,
     );
+
+    enterBoundary();
     expect(mocks.trackPaywallView).toHaveBeenCalledTimes(1);
   });
 
-  it("does not track the loading skeleton or premium content", () => {
-    const { rerender } = render(
+  it("does not observe while loading", () => {
+    render(
       <MatchContent
         content={content}
         contentType="preview"
@@ -77,8 +125,11 @@ describe("MatchContent paywall view tracking", () => {
       />,
     );
     expect(mocks.trackPaywallView).not.toHaveBeenCalled();
+    expect(mocks.observers).toHaveLength(0);
+  });
 
-    rerender(
+  it("does not observe premium content", () => {
+    render(
       <MatchContent
         content={content}
         contentType="preview"
@@ -87,5 +138,20 @@ describe("MatchContent paywall view tracking", () => {
       />,
     );
     expect(mocks.trackPaywallView).not.toHaveBeenCalled();
+    expect(mocks.observers).toHaveLength(0);
+  });
+
+  it("does not observe an article without locked blocks", () => {
+    render(
+      <MatchContent
+        content={{ ...content, contentMdJa: "# 概要\n\n無料本文" }}
+        contentType="preview"
+        isPremium={false}
+        matchId="match-1"
+      />,
+    );
+
+    expect(mocks.trackPaywallView).not.toHaveBeenCalled();
+    expect(mocks.observers).toHaveLength(0);
   });
 });

@@ -17,6 +17,10 @@ GA4 は `app/layout.tsx` で `NEXT_PUBLIC_GA_MEASUREMENT_ID` 経由で稼働。`
 | `sample_recap_cta_click` | `components/sample-recap-cta.tsx` | サンプル recap 専用の補助イベント |
 | `purchase` | `components/checkout-success-tracker.tsx`（`?checkout=success` 着地時） | `currency: JPY`, `value: 980` |
 
+### `paywall_view` の計測条件
+
+記事の `paywall_view`（`paywall_location: match_content_locked_blocks`）は、記事末尾の有料境界が viewport に到達したときに送る。一方、チャットの `paywall_view`（`paywall_location: paywall_overlay`）は既存データとの連続性を保つため mount 時に送る。両者は測定条件が異なるため、件数を直接比較しない。
+
 ### 実在する `cta_id`（全11種・grep 出典）
 
 **→ /pricing or checkout（課金導線）**
