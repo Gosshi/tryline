@@ -171,7 +171,7 @@ describe("/api/cron/audit-prekickoff-readiness", () => {
     expect(response.status).toBe(200);
     expect(matchesMock.getMatchesInRange).toHaveBeenCalledWith(
       "2026-08-21T13:05:00.000Z",
-      "2026-08-23T01:05:00.000Z",
+      "2026-08-22T15:00:00.000Z",
     );
     expect(notifyMock.notifyPrekickoffReadinessAudit).toHaveBeenCalledWith(
       expect.arrayContaining([

@@ -1,10 +1,10 @@
+import { previewDueUpperBound } from "./preview-window";
+
 import type { Database } from "@/lib/db/types";
 import type { ContentLanguage, ContentType } from "@/lib/llm/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const EXISTING_CONTENT_STATUSES = ["draft", "published"] as const;
-const PREVIEW_WINDOW_START_HOURS = 12;
-const PREVIEW_WINDOW_END_HOURS = 48;
 const RECAP_BATCH_SIZE = 10;
 
 type LineupIngestOutcome = "triggered" | "no_url";
@@ -63,10 +63,6 @@ export type RunOrchestrateDeps = {
   now?: Date;
   sendPushNotification?: (info: PushMatchInfo) => Promise<void>;
 };
-
-function toIsoDate(base: Date, addHours: number) {
-  return new Date(base.getTime() + addHours * 60 * 60 * 1000).toISOString();
-}
 
 function firstRelation<T>(relation: Relation<T>): T | null {
   if (Array.isArray(relation)) {
@@ -221,8 +217,8 @@ export async function runOrchestrate(
     db: deps.db,
     status: "scheduled",
     contentType: "preview",
-    kickoffGte: toIsoDate(now, PREVIEW_WINDOW_START_HOURS),
-    kickoffLte: toIsoDate(now, PREVIEW_WINDOW_END_HOURS),
+    kickoffGte: now.toISOString(),
+    kickoffLte: previewDueUpperBound(now),
   });
 
   const recapCandidates = await getMatchIdsMissingContent({

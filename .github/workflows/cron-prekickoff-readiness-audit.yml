@@ -2,7 +2,7 @@ name: Cron pre-kickoff readiness audit
 
 on:
   schedule:
-    # 22:05 JST: one hour after the Thu/Fri 21:05 JST preview refresh.
+    # 22:05 JST: after the 15:00 JST generation and the 21:00 JST retry run.
     - cron: "5 13 * * *"
   workflow_dispatch:
 

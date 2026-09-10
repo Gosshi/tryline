@@ -1,11 +1,6 @@
-name: Cron — Weekend Preview Refresh
+name: Manual — Preview Regeneration
 
 on:
-  schedule:
-    # Thu 21:05 JST: refresh previews for Thu-Sat JST kickoff matches.
-    - cron: "5 12 * * 4"
-    # Fri 21:05 JST: refresh previews for Sunday JST kickoff matches.
-    - cron: "5 12 * * 5"
   workflow_dispatch:
     inputs:
       from:
@@ -32,7 +27,6 @@ jobs:
     env:
       BASE: ${{ secrets.PRODUCTION_URL }}
       EVENT_NAME: ${{ github.event_name }}
-      EVENT_SCHEDULE: ${{ github.event.schedule }}
       INPUT_FROM: ${{ inputs.from }}
       INPUT_TO: ${{ inputs.to }}
     steps:
@@ -48,18 +42,8 @@ jobs:
             trigger="manual"
             from="$INPUT_FROM"
             to="$INPUT_TO"
-          elif [ "$EVENT_SCHEDULE" = "5 12 * * 4" ]; then
-            trigger="thursday-fri-sat"
-            base_date=$(TZ=Asia/Tokyo date +%F)
-            from="$base_date"
-            to=$(TZ=Asia/Tokyo date -d "$base_date +2 days" +%F)
-          elif [ "$EVENT_SCHEDULE" = "5 12 * * 5" ]; then
-            trigger="friday-sunday"
-            base_date=$(TZ=Asia/Tokyo date +%F)
-            from=$(TZ=Asia/Tokyo date -d "$base_date +1 day" +%F)
-            to=$(TZ=Asia/Tokyo date -d "$base_date +2 days" +%F)
           else
-            echo "Unsupported trigger schedule: $EVENT_SCHEDULE" >&2
+            echo "Unsupported trigger event: $EVENT_NAME" >&2
             exit 1
           fi
           echo "trigger=$trigger" >> "$GITHUB_OUTPUT"

@@ -4,6 +4,7 @@ import {
   PRIVATE_CACHE_CONTROL,
 } from "@/lib/api/v1/response";
 import { CronUnauthorizedError, assertCronAuthorized } from "@/lib/cron/auth";
+import { previewDueUpperBound } from "@/lib/cron/preview-window";
 import { getMatchesInRange } from "@/lib/db/queries/matches";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { formatKickoffJst } from "@/lib/format/kickoff";
@@ -13,8 +14,6 @@ import {
 } from "@/lib/llm/notify";
 
 import type { Json } from "@/lib/db/types";
-
-const AUDIT_WINDOW_HOURS = 36;
 
 function hasWikipediaUrl(externalIds: Json): boolean {
   return Boolean(
@@ -40,7 +39,7 @@ export async function POST(request: Request) {
   const now = new Date();
   const matches = (await getMatchesInRange(
     now.toISOString(),
-    new Date(now.getTime() + AUDIT_WINDOW_HOURS * 60 * 60 * 1000).toISOString(),
+    previewDueUpperBound(now),
   )).filter((match) => match.status === "scheduled");
   const matchIds = matches.map((match) => match.id);
 
