@@ -130,7 +130,13 @@ title の長さに上限を設ける。**日本語の検索結果は概ね 30 �
 5. **チームの並び順が決定論的である**ことを検証するテストがある（同じ入力で 2 回呼んで同一文字列）
 6. `/c/pnc/2026` の description が**「〜の日程・見どころを掲載。」のテンプレのままでない**ことを検証するテストがある
 7. **description に放送・配信サービス名が含まれない**ことを検証するテストがある
-8. **`generateMetadata` に新しい DB クエリが追加されていない**（`listMatchesForCompetition` と `getStandingsForCompetition` の 2 本のまま）
+8. **`generateMetadata` に新しい DB クエリが追加されていない**
+
+    **2026-09-10 訂正**: 初版は「`listMatchesForCompetition` と `getStandingsForCompetition` の 2 本のまま」と書いていたが、**事実誤認だった**。main の `generateMetadata` は実際には `getCompetitionBySlug` / `listMatchesForCompetition` / `getStandingsForCompetition` / `getMatchBroadcastPresenceForMatches` / `getContentStatusForMatches` の **5 本**を呼んでいた。「2 本に減らせ」と読める書き方になっており、PR #807 は放送クエリを削除した。**削除自体は妥当**（放送データは今後 321 試合中 0 試合で `hasBroadcasts` は常に false、分岐は死んでいる。metadata から 1 クエリ減るのはキャッシュにも効く）。**条件は「増やさない」であって「本数を固定する」ではない。**
+
+8-a. **Page ファイル（`app/c/[competition]/[season]/page.tsx`）から、Next.js が許可しない名前を export していない**
+
+    許可されるのは `default` / `generateMetadata` / `generateStaticParams` / `revalidate` / `dynamic` / `metadata` 等に限られる。テストのために helper を export すると **`next build` が失敗する**（PR #807 初版が `getCompetitionMetadataTeams` を export して Vercel が落ちた）。**`pnpm typecheck` はこの制約を検査しない。`next build` だけが検査する。** helper は `lib/format/` 等の別モジュールへ置き、page とテストの双方から import する。
 9. 既存の `tests/app/season-page-ia.test.ts` が green である（必要なら期待値を更新する）
 10. **画面表示（本文・レイアウト）に差分が無い**
 11. LLM 呼び出しが差分に含まれない（ソース中に `getOpenAIClient` / `MODELS` が現れない）
