@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  getCompetitionBySlug,
   listCompetitionScheduleCoverage,
+  listSeasonsByFamily,
   listSeasonsByFamilies,
 } from "@/lib/db/queries/competitions";
 
@@ -94,8 +96,116 @@ describe("listSeasonsByFamilies", () => {
     expect(
       dbMocks.from.mock.calls.filter(([table]) => table === "match_content"),
     ).toHaveLength(1);
+    expect(competitionQuery.select).toHaveBeenCalledWith("*, matches(count)");
     expect(result.get("six-nations")?.[0]?.publishedContentCount).toBe(2);
     expect(result.get("urc")?.[0]?.publishedContentCount).toBe(1);
+  });
+});
+
+describe("replacement competitions", () => {
+  const competitionRow = {
+    champion: null,
+    end_date: null,
+    family: "rugby-championship",
+    id: "rugby-championship-2026",
+    matches: [{ count: 0 }],
+    name: "Rugby Championship",
+    name_ja: "ザ・ラグビーチャンピオンシップ",
+    replacement_competition_id: "nations-championship-2026",
+    season: "2026",
+    season_status: "not_held" as const,
+    slug: "rugby-championship-2026",
+    start_date: null,
+    total_rounds: null,
+  };
+
+  const replacementCompetition = {
+    family: "nations-championship",
+    id: "nations-championship-2026",
+    name: "Nations Championship",
+    name_ja: "ネーションズ・チャンピオンシップ",
+    season: "2026",
+    slug: "nations-championship-2026",
+  };
+
+  it("loads a family replacement with a separate query", async () => {
+    const seasonsQuery = { eq: vi.fn(), order: vi.fn(), select: vi.fn() };
+    const contentQuery = { eq: vi.fn(), select: vi.fn() };
+    const replacementsQuery = { in: vi.fn(), select: vi.fn() };
+
+    seasonsQuery.select.mockReturnValue(seasonsQuery);
+    seasonsQuery.eq.mockReturnValue(seasonsQuery);
+    seasonsQuery.order.mockResolvedValue({ data: [competitionRow], error: null });
+    contentQuery.select.mockReturnValue(contentQuery);
+    contentQuery.eq.mockResolvedValue({ data: [], error: null });
+    replacementsQuery.select.mockReturnValue(replacementsQuery);
+    replacementsQuery.in.mockResolvedValue({
+      data: [replacementCompetition],
+      error: null,
+    });
+    let competitionQueryCalls = 0;
+    dbMocks.from.mockImplementation((table: string) => {
+      if (table === "match_content") {
+        return contentQuery;
+      }
+
+      competitionQueryCalls += 1;
+      return competitionQueryCalls === 1 ? seasonsQuery : replacementsQuery;
+    });
+    dbMocks.getSupabasePublicServerClient.mockReturnValue({ from: dbMocks.from });
+
+    await expect(listSeasonsByFamily("rugby-championship")).resolves.toMatchObject([
+      {
+        replacementCompetition: {
+          family: "nations-championship",
+          name: "Nations Championship",
+          nameJa: "ネーションズ・チャンピオンシップ",
+          season: "2026",
+          slug: "nations-championship-2026",
+        },
+      },
+    ]);
+    expect(seasonsQuery.select).toHaveBeenCalledWith("*, matches(count)");
+    expect(replacementsQuery.select).toHaveBeenCalledWith(
+      "id, slug, name, name_ja, family, season",
+    );
+    expect(replacementsQuery.in).toHaveBeenCalledWith("id", [
+      "nations-championship-2026",
+    ]);
+  });
+
+  it("loads a single competition replacement with a separate query", async () => {
+    const competitionQuery = { eq: vi.fn(), maybeSingle: vi.fn(), select: vi.fn() };
+    const replacementsQuery = { in: vi.fn(), select: vi.fn() };
+
+    competitionQuery.select.mockReturnValue(competitionQuery);
+    competitionQuery.eq.mockReturnValue(competitionQuery);
+    competitionQuery.maybeSingle.mockResolvedValue({ data: competitionRow, error: null });
+    replacementsQuery.select.mockReturnValue(replacementsQuery);
+    replacementsQuery.in.mockResolvedValue({
+      data: [replacementCompetition],
+      error: null,
+    });
+    let competitionQueryCalls = 0;
+    dbMocks.from.mockImplementation(() => {
+      competitionQueryCalls += 1;
+      return competitionQueryCalls === 1 ? competitionQuery : replacementsQuery;
+    });
+    dbMocks.getSupabasePublicServerClient.mockReturnValue({ from: dbMocks.from });
+
+    await expect(getCompetitionBySlug("rugby-championship-2026")).resolves.toMatchObject({
+      replacementCompetition: {
+        family: "nations-championship",
+        name: "Nations Championship",
+        nameJa: "ネーションズ・チャンピオンシップ",
+        season: "2026",
+        slug: "nations-championship-2026",
+      },
+    });
+    expect(competitionQuery.select).toHaveBeenCalledWith("*, matches(count)");
+    expect(replacementsQuery.in).toHaveBeenCalledWith("id", [
+      "nations-championship-2026",
+    ]);
   });
 });
 

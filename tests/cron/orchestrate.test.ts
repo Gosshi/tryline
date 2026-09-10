@@ -252,7 +252,7 @@ describe("runOrchestrate", () => {
     expect(calls).toEqual(["facts", "generate"]);
   });
 
-  it("includes next-day early UTC kickoffs in the 12-48h preview window", async () => {
+  it("includes due matches without a pre-kickoff lower bound", async () => {
     const db = createMockDb({
       scheduledIds: ["too-soon", "srp-next-day", "too-late"],
       scheduledKickoffAt: {
@@ -272,10 +272,78 @@ describe("runOrchestrate", () => {
       now: new Date("2026-05-15T12:00:00.000Z"),
     });
 
-    expect(generateContent).toHaveBeenCalledTimes(1);
+    expect(generateContent).toHaveBeenCalledTimes(2);
     expect(generateContent).toHaveBeenCalledWith("srp-next-day", "preview");
+    expect(generateContent).toHaveBeenCalledWith("too-soon", "preview");
     expect(ingestLineups).toHaveBeenCalledWith("srp-next-day", null);
-    expect(result.previews).toEqual({ triggered: 1, skipped: 0 });
+    expect(ingestLineups).toHaveBeenCalledWith("too-soon", null);
+    expect(result.previews).toEqual({ triggered: 2, skipped: 0 });
+  });
+
+  it("does not generate a next-day preview before 15:00 JST", async () => {
+    const db = createMockDb({
+      scheduledIds: ["next-day"],
+      scheduledKickoffAt: {
+        "next-day": "2026-09-11T11:00:00.000Z",
+      },
+      finishedIds: [],
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now: new Date("2026-09-10T05:00:00.000Z"),
+    });
+
+    expect(generateContent).not.toHaveBeenCalledWith("next-day", "preview");
+  });
+
+  it("generates a next-day preview at 15:00 JST", async () => {
+    const db = createMockDb({
+      scheduledIds: ["next-day"],
+      scheduledKickoffAt: {
+        "next-day": "2026-09-11T11:00:00.000Z",
+      },
+      finishedIds: [],
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now: new Date("2026-09-10T06:00:00.000Z"),
+    });
+
+    expect(generateContent).toHaveBeenCalledWith("next-day", "preview");
+  });
+
+  it("generates a preview six hours before kickoff", async () => {
+    const db = createMockDb({
+      scheduledIds: ["six-hours-away"],
+      scheduledKickoffAt: {
+        "six-hours-away": "2026-09-11T11:00:00.000Z",
+      },
+      finishedIds: [],
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now: new Date("2026-09-11T05:00:00.000Z"),
+    });
+
+    expect(generateContent).toHaveBeenCalledWith(
+      "six-hours-away",
+      "preview",
+    );
   });
 
   it("skips preview generation when preview content already exists", async () => {

@@ -153,7 +153,7 @@ describe("newsletter API routes", () => {
     );
 
     expect(response.headers.get("location")).toBe(
-      "http://localhost/newsletter/confirmed",
+      "http://localhost/newsletter/confirmed?completed=1",
     );
     expect(dbMock.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -181,6 +181,30 @@ describe("newsletter API routes", () => {
     expect(response.headers.get("location")).toBe(
       "http://localhost/newsletter/expired",
     );
+    expect(dbMock.update).not.toHaveBeenCalled();
+  });
+
+  it("routes an already confirmed token without updating it", async () => {
+    dbMock.lookupResults.push({ data: { created_at: new Date().toISOString(), id: "subscriber-1", status: "confirmed" }, error: null });
+    const { GET } = await import("@/app/api/newsletter/confirm/route");
+    const response = await GET(new Request("http://localhost/api/newsletter/confirm?token=confirmed"));
+    expect(response.headers.get("location")).toBe("http://localhost/newsletter/already-confirmed");
+    expect(dbMock.update).not.toHaveBeenCalled();
+  });
+
+  it("routes confirmation update failures to a server-error page", async () => {
+    dbMock.lookupResults.push({ data: { created_at: new Date().toISOString(), id: "subscriber-1", status: "pending" }, error: null });
+    dbMock.updateError = { message: "database unavailable" };
+    const { GET } = await import("@/app/api/newsletter/confirm/route");
+    const response = await GET(new Request("http://localhost/api/newsletter/confirm?token=pending"));
+    expect(response.headers.get("location")).toBe("http://localhost/newsletter/confirmation-error");
+  });
+
+  it("does not resubscribe an unsubscribed token", async () => {
+    dbMock.lookupResults.push({ data: { created_at: new Date().toISOString(), id: "subscriber-1", status: "unsubscribed" }, error: null });
+    const { GET } = await import("@/app/api/newsletter/confirm/route");
+    const response = await GET(new Request("http://localhost/api/newsletter/confirm?token=unsubscribed"));
+    expect(response.headers.get("location")).toBe("http://localhost/newsletter/unsubscribed-link");
     expect(dbMock.update).not.toHaveBeenCalled();
   });
 

@@ -2,7 +2,7 @@ import { Fragment } from "react";
 
 import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
-import { PaywallViewTracker } from "@/components/paywall-view-tracker";
+import { PaywallViewBoundary } from "@/components/paywall-view-tracker";
 import { TrackedLink } from "@/components/tracked-link";
 import { parseMarkdown } from "@/lib/match-content/markdown";
 
@@ -399,13 +399,12 @@ export function MatchContent({
         </div>
       )}
       {hasLockedBlocks && showCta && !lockedLoading && (
-        <>
-          <PaywallViewTracker
-            contentType={contentType}
-            isSample={isSample}
-            matchId={matchId}
-            paywallLocation="match_content_locked_blocks"
-          />
+        <PaywallViewBoundary
+          contentType={contentType}
+          isSample={isSample}
+          matchId={matchId}
+          paywallLocation="match_content_locked_blocks"
+        >
           <div className="mt-4 flex flex-col items-center gap-3 text-center">
             <p className="text-sm font-semibold text-slate-800">
             {language === "en"
@@ -440,7 +439,7 @@ export function MatchContent({
                 : "Premium で全文を読む"}
             </TrackedLink>
           </div>
-        </>
+        </PaywallViewBoundary>
       )}
       <XFollowCta />
       <p className="mt-6 text-xs text-slate-500">

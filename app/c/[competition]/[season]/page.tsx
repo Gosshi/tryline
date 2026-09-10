@@ -515,6 +515,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     alternates: { canonical: `${SITE_URL}/c/${competition}/${season}` },
     description,
+    robots: comp.seasonStatus === "not_held" ? { index: false, follow: true } : undefined,
     openGraph: {
       description,
       images: [
@@ -941,12 +942,24 @@ export default async function SeasonPage({ params }: Props) {
           {matches.length === 0 ? (
             <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
               <p className="text-sm font-medium text-[var(--color-ink)]">
-                試合データを準備中です
+                {comp.seasonStatus === "not_held" ? "この年度の大会は開催されません" : "試合データを確認中です"}
               </p>
               <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
-                このシーズンの試合情報はまもなく公開予定です。
+                {comp.seasonStatus === "not_held"
+                  ? "この年度は開催されないため、試合情報はありません。"
+                  : comp.seasonStatus === "held"
+                    ? "試合情報を確認しています。公式日程をご確認ください。"
+                    : "このシーズンの試合情報は確認できていません。"}
               </p>
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                {comp.seasonStatus === "not_held" && comp.replacementCompetition && (
+                  <Link className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4" href={`/c/${comp.replacementCompetition.family}/${comp.replacementCompetition.season}`}>
+                    {comp.replacementCompetition.nameJa ?? comp.replacementCompetition.name} を見る
+                  </Link>
+                )}
+                {comp.seasonStatus === "held" && (
+                  <a className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4" href="https://www.world.rugby/competitions" rel="noreferrer" target="_blank">公式日程を確認する</a>
+                )}
                 <Link
                   className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
                   href={`/c/${competition}`}

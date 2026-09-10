@@ -508,7 +508,9 @@ async function upsertMatchLineups(params: {
   return dedupedLineups.length;
 }
 
-function toParsedWorldRugbyEvents(events: WorldRugbyEvent[]): ParsedMatchEvent[] {
+function toParsedWorldRugbyEvents(
+  events: WorldRugbyEvent[],
+): ParsedMatchEvent[] {
   const seen = new Set<string>();
 
   return events.flatMap((event) => {
@@ -516,14 +518,16 @@ function toParsedWorldRugbyEvents(events: WorldRugbyEvent[]): ParsedMatchEvent[]
     const key = `${event.team_side}\u0000${event.minute ?? "null"}\u0000${type}\u0000${event.player_name}`;
     if (seen.has(key)) return [];
     seen.add(key);
-    return [{
-      isPenaltyTry: false,
-      minute: event.minute,
-      playerName: event.player_name,
-      source: SOURCE,
-      teamSide: event.team_side,
-      type: type as Exclude<ParsedMatchEvent["type"], "substitution">,
-    } as ParsedMatchEvent];
+    return [
+      {
+        isPenaltyTry: false,
+        minute: event.minute,
+        playerName: event.player_name,
+        source: SOURCE,
+        teamSide: event.team_side,
+        type: type as Exclude<ParsedMatchEvent["type"], "substitution">,
+      } as ParsedMatchEvent,
+    ];
   });
 }
 
@@ -596,7 +600,10 @@ export async function runWorldRugbyFullImport(
   );
   const teamCount = await upsertCompetitionTeams(competitionIdInDb, teamLookup);
 
-  const detailResult = await importWorldRugbyMatchDetails(entries, matchByWorldRugbyId);
+  const detailResult = await importWorldRugbyMatchDetails(
+    entries,
+    matchByWorldRugbyId,
+  );
 
   console.log(
     `Imported World Rugby ${options.family} ${options.season}: matches=${matchByWorldRugbyId.size} teams=${teamCount} lineups=${detailResult.lineupsInserted} events=${detailResult.eventsInserted} failed=${detailResult.failedMatches}`,
@@ -617,11 +624,15 @@ export async function importWorldRugbyMatchDetails(
   importDetail: (
     entry: WorldRugbyMatchEntry,
     match: ImportedMatchRow,
-  ) => Promise<{ eventsInserted: number; lineupsInserted: number }> = importMatchDetail,
+  ) => Promise<{
+    eventsInserted: number;
+    lineupsInserted: number;
+  }> = importMatchDetail,
 ) {
   let lineupsInserted = 0;
   let eventsInserted = 0;
   let failedMatches = 0;
+  const rejections: Array<{ matchId: string; reasons: string[] }> = [];
 
   for (const entry of entries) {
     const match = matchByWorldRugbyId.get(entry.world_rugby_match_id);
@@ -643,7 +654,15 @@ export async function importWorldRugbyMatchDetails(
       );
     } catch (error) {
       if (error instanceof EventInsertionRejectedError) {
-        throw error;
+        rejections.push({
+          matchId: match.id,
+          reasons: error.rejected.map((rejection) => rejection.reason),
+        });
+        console.warn("Event insertion rejected; continuing", {
+          matchId: match.id,
+          reasons: error.rejected.map((rejection) => rejection.reason),
+        });
+        continue;
       }
       failedMatches += 1;
       console.error(
@@ -651,6 +670,12 @@ export async function importWorldRugbyMatchDetails(
         error,
       );
     }
+  }
+
+  if (rejections.length > 0) {
+    throw new Error(
+      `Event insertion rejected: ${rejections.map(({ matchId, reasons }) => `${matchId}: ${reasons.join(", ")}`).join("; ")}`,
+    );
   }
 
   return {

@@ -148,6 +148,129 @@ describe("MatchContentSection", () => {
     ).toBeInTheDocument();
   });
 
+  it("calculates Japanese reading time from rendered Markdown text, not syntax", () => {
+    render(
+      <MatchContentSection
+        content={{
+          ...content,
+          contentMdJa: `# 見出し\n\n${"あ".repeat(490)}**強調** [表示](https://example.com/${"x".repeat(1_000)})`,
+        }}
+        contentType="preview"
+        isPremium
+        match={match}
+      />,
+    );
+
+    expect(screen.getByText("約1分")).toBeInTheDocument();
+  });
+
+  it("does not count a Markdown URL toward Japanese reading time", () => {
+    render(
+      <MatchContentSection
+        content={{
+          ...content,
+          contentMdJa: `${"あ".repeat(497)} [表示](https://example.com/${"x".repeat(1_000)})`,
+        }}
+        contentType="preview"
+        isPremium
+        match={match}
+      />,
+    );
+
+    expect(screen.getByText("約1分")).toBeInTheDocument();
+  });
+
+  it("uses the full article reading time for Premium users with locked content", () => {
+    render(
+      <MatchContentSection
+        content={{ ...content, contentMdJa: "あ".repeat(499) }}
+        contentType="recap"
+        hasLockedContent
+        isPremium
+        lockedContentMd={"い".repeat(1_000)}
+        match={match}
+      />,
+    );
+
+    expect(screen.getByText("約3分")).toBeInTheDocument();
+    expect(screen.queryByText(/無料部分/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the free-section reading time stable while locked content loads", () => {
+    const { rerender } = render(
+      <MatchContentSection
+        content={{ ...content, contentMdJa: "あ".repeat(499) }}
+        contentType="recap"
+        hasLockedContent
+        isPremium={false}
+        lockedContentMd={null}
+        lockedLoading
+        match={match}
+      />,
+    );
+
+    expect(screen.getByText("無料部分で約1分")).toBeInTheDocument();
+
+    rerender(
+      <MatchContentSection
+        content={{ ...content, contentMdJa: "あ".repeat(499) }}
+        contentType="recap"
+        hasLockedContent
+        isPremium={false}
+        lockedContentMd={"い".repeat(1_000)}
+        lockedLoading={false}
+        match={match}
+      />,
+    );
+
+    expect(screen.getByText("無料部分で約1分")).toBeInTheDocument();
+  });
+
+  it("keeps a one-minute minimum for empty and Markdown-only content", () => {
+    render(
+      <MatchContentSection
+        content={{ ...content, contentMdJa: "# **" }}
+        contentType="preview"
+        isPremium
+        match={match}
+      />,
+    );
+
+    expect(screen.getByText("約1分")).toBeInTheDocument();
+  });
+
+  it("keeps English word-based reading time after Markdown is parsed", () => {
+    render(
+      <MatchContentSection
+        content={{
+          ...content,
+          contentMdJa: `# Heading\n\n${Array.from({ length: 220 }, () => "word").join(" ")}`,
+        }}
+        contentType="preview"
+        isPremium
+        language="en"
+        match={match}
+      />,
+    );
+
+    expect(screen.getByText("About 2 min read")).toBeInTheDocument();
+  });
+
+  it("does not add source or timeline content to reading time", () => {
+    render(
+      <MatchContentSection
+        afterBody={<p>{"after body ".repeat(1_000)}</p>}
+        betweenLeadAndBody={<p>{"timeline ".repeat(1_000)}</p>}
+        content={{ ...content, contentMdJa: "あ".repeat(499) }}
+        contentType="preview"
+        isPremium
+        match={match}
+      />,
+    );
+
+    expect(screen.getByText("約1分")).toBeInTheDocument();
+  });
+
   it("renders ContentPlaceholder when content is null", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2027-02-03T00:00:00.000Z"));
@@ -164,5 +287,6 @@ describe("MatchContentSection", () => {
     expect(
       screen.getByText("プレビューは試合開始 48 時間前に公開予定"),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/無料部分で約/)).not.toBeInTheDocument();
   });
 });

@@ -49,6 +49,20 @@ describe("MatchLineupsSection", () => {
     expect(screen.getAllByText("Fly-half")[0]).toBeInTheDocument();
   });
 
+  it("uses the compact Japanese name display for lineups", () => {
+    render(
+      <MatchLineupsSection
+        awayTeamName="France"
+        homeTeamId="home-team"
+        homeTeamName="Ireland"
+        players={[{ ...player, playerName: "齋藤 直人" }]}
+      />,
+    );
+
+    expect(screen.getAllByText("齋藤直人")[0]).toBeInTheDocument();
+    expect(screen.queryByText("齋藤 直人")).not.toBeInTheDocument();
+  });
+
   it("links lineup players when a player slug is available", () => {
     render(
       <MatchLineupsSection

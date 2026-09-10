@@ -122,7 +122,11 @@ function normalizeWikipediaUrl(match: MatchGapRow, url: string | null) {
     }
   }
 
-  if (family === "league-one" && season && url?.startsWith("https://es.wikipedia.org/")) {
+  if (
+    family === "league-one" &&
+    season &&
+    url?.startsWith("https://es.wikipedia.org/")
+  ) {
     return buildLeagueOneEnglishUrl(season) ?? url;
   }
 
@@ -257,7 +261,9 @@ function blockContainsDate(blockHtml: string, kickoffDate: string): boolean {
   const blockDays = extractEnglishDateDays($.text());
   const oneDay = 24 * 60 * 60 * 1000;
 
-  return blockDays.some((blockDay) => Math.abs(blockDay - kickoffDay) <= oneDay);
+  return blockDays.some(
+    (blockDay) => Math.abs(blockDay - kickoffDay) <= oneDay,
+  );
 }
 
 export function findEventBlockByTeams(
@@ -433,6 +439,7 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   let filled = 0;
+  const rejections: Array<{ matchId: string; reasons: string[] }> = [];
 
   for (const match of gaps) {
     const source = getWikipediaSource(match);
@@ -450,7 +457,15 @@ export async function main(argv = process.argv.slice(2)) {
       filled += 1;
     } catch (error) {
       if (error instanceof EventInsertionRejectedError) {
-        throw error;
+        rejections.push({
+          matchId: match.id,
+          reasons: error.rejected.map((rejection) => rejection.reason),
+        });
+        console.warn("  -> event insertion rejected; continuing", {
+          matchId: match.id,
+          reasons: error.rejected.map((rejection) => rejection.reason),
+        });
+        continue;
       }
       console.warn(`  -> warning: ${String(error)}; skipping`);
     }
@@ -459,6 +474,12 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   console.log(`Done. Filled ${filled}/${gaps.length} matches.`);
+
+  if (rejections.length > 0) {
+    throw new Error(
+      `Event insertion rejected: ${rejections.map(({ matchId, reasons }) => `${matchId}: ${reasons.join(", ")}`).join("; ")}`,
+    );
+  }
 }
 
 export async function runCli(

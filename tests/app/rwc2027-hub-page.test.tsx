@@ -86,6 +86,9 @@ const competition = {
   slug: "rwc-2027",
 };
 
+// The scheduled Japan fixture starts on 2027-10-01.
+const RWC2027_FIXTURE_NOW = new Date("2026-07-17T03:00:00.000Z");
+
 function containsSuspenseBoundary(node: ReactNode): boolean {
   if (Array.isArray(node)) {
     return node.some(containsSuspenseBoundary);
@@ -167,6 +170,8 @@ function buildMatch(
 
 describe("RWC 2027 hub page", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(RWC2027_FIXTURE_NOW);
     vi.clearAllMocks();
     competitionsMock.getCompetitionBySlug.mockResolvedValue(competition);
     competitionsMock.getCompetitionGuide.mockResolvedValue({
@@ -184,6 +189,7 @@ describe("RWC 2027 hub page", () => {
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
   it("prioritizes the schedule and renders compact pool teams before the tournament starts", async () => {
