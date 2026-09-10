@@ -82,8 +82,14 @@ describe("PricingPage", () => {
   });
 
   it("uses the same product name in both billing-term branches", () => {
-    const withTrial = createBillingTerms({ monthlyPriceYen: 980, trialDays: 7 });
-    const withoutTrial = createBillingTerms({ monthlyPriceYen: 980, trialDays: 0 });
+    const withTrial = createBillingTerms({
+      monthlyPriceYen: 980,
+      trialDays: 7,
+    });
+    const withoutTrial = createBillingTerms({
+      monthlyPriceYen: 980,
+      trialDays: 0,
+    });
 
     expect(withTrial.pricingDescription).toContain("試合Q&A");
     expect(withoutTrial.pricingDescription).toContain("試合Q&A");
@@ -92,9 +98,15 @@ describe("PricingPage", () => {
     expect(withTrial.pricingDescription).toContain("7日間無料");
     expect(withTrial.pricingDescription).toContain("¥980/月");
     expect(withoutTrial.pricingDescription).toContain("¥980/月");
-    expect(withTrial.pricingDescription).not.toBe(withoutTrial.pricingDescription);
-    expect(withTrial.pricingDescription).not.toContain("質問できる「この試合について質問する」");
-    expect(withoutTrial.pricingDescription).not.toContain("質問できる「この試合について質問する」");
+    expect(withTrial.pricingDescription).not.toBe(
+      withoutTrial.pricingDescription,
+    );
+    expect(withTrial.pricingDescription).not.toContain(
+      "質問できる「この試合について質問する」",
+    );
+    expect(withoutTrial.pricingDescription).not.toContain(
+      "質問できる「この試合について質問する」",
+    );
   });
 
   it("renders the redesigned pricing landing page sections", async () => {
@@ -191,13 +203,25 @@ describe("PricingPage", () => {
       ),
     ).toBe(true);
     expect(metadata.description).not.toContain("AI チャット");
-    const jsonLdPayloads = [...document.querySelectorAll('script[type="application/ld+json"]')]
-      .map((script) => JSON.parse(script.textContent ?? "{}"));
-    const faqJsonLd = jsonLdPayloads.find((payload) => payload["@type"] === "FAQPage");
-    const videoJsonLd = jsonLdPayloads.find((payload) => payload["@type"] === "VideoObject");
+    const jsonLdPayloads = [
+      ...document.querySelectorAll('script[type="application/ld+json"]'),
+    ].map((script) => JSON.parse(script.textContent ?? "{}"));
+    const faqJsonLd = jsonLdPayloads.find(
+      (payload) => payload["@type"] === "FAQPage",
+    );
+    const videoJsonLd = jsonLdPayloads.find(
+      (payload) => payload["@type"] === "VideoObject",
+    );
     expect(JSON.stringify(faqJsonLd)).not.toContain("AI チャット");
     expect(videoJsonLd?.description).toBe(
       "海外ラグビーの試合を日本語で解説。プレビュー・レビュー・試合Q&Aを紹介する Tryline の動画です。",
+    );
+    expect(videoJsonLd?.uploadDate).toBe("2026-05-18");
+    expect(videoJsonLd?.uploadDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(faqJsonLd?.mainEntity).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "無料トライアルはありますか？" }),
+      ]),
     );
     expect(screen.getByText("支払い方法は？")).toBeInTheDocument();
   });
