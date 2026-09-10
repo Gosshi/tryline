@@ -91,7 +91,7 @@ describe("MatchHeader", () => {
       ).toBeInTheDocument();
       expect(screen.getByText("2026-08-15 (土) 14:00 JST")).toBeInTheDocument();
       expect(
-        screen.getByText("North Queensland Stadium, Townsville[17]"),
+        screen.getByText("North Queensland Stadium, Townsville"),
       ).toBeInTheDocument();
       expect(screen.queryByText(/BST/)).not.toBeInTheDocument();
     },

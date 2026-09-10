@@ -240,6 +240,29 @@ describe("match sample recap page", () => {
     setCommonMocks({});
   });
 
+  it("removes venue footnotes from the SportsEvent JSON-LD location", async () => {
+    setCommonMocks({
+      match: { venue: "Twickenham Stadium, London[9]" },
+    });
+
+    const element = await MatchDetailPage({
+      params: Promise.resolve({ id: sampleMatchId }),
+    });
+    const { container } = render(element);
+    const jsonLd = container.querySelector(
+      'script[type="application/ld+json"]',
+    );
+    const payload = JSON.parse(jsonLd?.textContent ?? "{}") as Array<{
+      "@type": string;
+      location?: { name?: string };
+    }>;
+    const sportsEvent = payload.find(
+      (entry) => entry["@type"] === "SportsEvent",
+    );
+
+    expect(sportsEvent?.location?.name).toBe("Twickenham Stadium, London");
+  });
+
   it("server-renders the full sample recap without PremiumRecapSection", async () => {
     const element = await MatchDetailPage({
       params: Promise.resolve({ id: sampleMatchId }),
