@@ -675,12 +675,14 @@ describe("season page information architecture", () => {
   it("explains a not-held season and links to its configured replacement", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({});
-    competitionMocks.getCompetitionBySlug.mockResolvedValue({ ...competition, seasonStatus: "not_held", replacementCompetition: { name: "Nations Championship", nameJa: "ネーションズ・チャンピオンシップ", season: "2026", slug: "nations-championship-2026" } });
+    competitionMocks.getCompetitionBySlug.mockResolvedValue({ ...competition, seasonStatus: "not_held", replacementCompetition: { family: "nations-championship", name: "Nations Championship", nameJa: "ネーションズ・チャンピオンシップ", season: "2026", slug: "nations-championship-2026" } });
 
     render(await SeasonPage({ params: Promise.resolve({ competition: "premiership", season: "2025-26" }) }));
     expect(screen.getByText("この年度の大会は開催されません")).toBeInTheDocument();
+    expect(screen.getByText("この年度は開催されないため、試合情報はありません。")).toBeInTheDocument();
+    expect(screen.queryByText("このシーズンの試合情報は確認できていません。")).toBeNull();
     expect(screen.queryByText("このシーズンの試合情報はまもなく公開予定です。")).toBeNull();
-    expect(screen.getByRole("link", { name: "ネーションズ・チャンピオンシップ を見る" })).toHaveAttribute("href", "/c/nations-championship-2026");
+    expect(screen.getByRole("link", { name: "ネーションズ・チャンピオンシップ を見る" })).toHaveAttribute("href", "/c/nations-championship/2026");
   });
 
   it("keeps the existing fallback links when a replacement is not configured", async () => {
@@ -696,7 +698,7 @@ describe("season page information architecture", () => {
   it("does not infer not-held from a configured replacement", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({});
-    competitionMocks.getCompetitionBySlug.mockResolvedValue({ ...competition, seasonStatus: "unknown", replacementCompetition: { name: "Nations Championship", nameJa: null, season: "2026", slug: "nations-championship-2026" } });
+    competitionMocks.getCompetitionBySlug.mockResolvedValue({ ...competition, seasonStatus: "unknown", replacementCompetition: { family: "nations-championship", name: "Nations Championship", nameJa: null, season: "2026", slug: "nations-championship-2026" } });
 
     render(await SeasonPage({ params: Promise.resolve({ competition: "premiership", season: "2025-26" }) }));
     expect(screen.getByText("試合データを確認中です")).toBeInTheDocument();

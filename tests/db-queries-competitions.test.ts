@@ -120,6 +120,7 @@ describe("replacement competitions", () => {
   };
 
   const replacementCompetition = {
+    family: "nations-championship",
     id: "nations-championship-2026",
     name: "Nations Championship",
     name_ja: "ネーションズ・チャンピオンシップ",
@@ -156,6 +157,7 @@ describe("replacement competitions", () => {
     await expect(listSeasonsByFamily("rugby-championship")).resolves.toMatchObject([
       {
         replacementCompetition: {
+          family: "nations-championship",
           name: "Nations Championship",
           nameJa: "ネーションズ・チャンピオンシップ",
           season: "2026",
@@ -165,7 +167,7 @@ describe("replacement competitions", () => {
     ]);
     expect(seasonsQuery.select).toHaveBeenCalledWith("*, matches(count)");
     expect(replacementsQuery.select).toHaveBeenCalledWith(
-      "id, slug, name, name_ja, season",
+      "id, slug, name, name_ja, family, season",
     );
     expect(replacementsQuery.in).toHaveBeenCalledWith("id", [
       "nations-championship-2026",
@@ -193,6 +195,7 @@ describe("replacement competitions", () => {
 
     await expect(getCompetitionBySlug("rugby-championship-2026")).resolves.toMatchObject({
       replacementCompetition: {
+        family: "nations-championship",
         name: "Nations Championship",
         nameJa: "ネーションズ・チャンピオンシップ",
         season: "2026",

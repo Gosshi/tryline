@@ -22,7 +22,13 @@ export type CompetitionRow = {
   nameJa?: string | null;
   season: string;
   seasonStatus?: "held" | "not_held" | "unknown";
-  replacementCompetition?: { slug: string; name: string; nameJa: string | null; season: string } | null;
+  replacementCompetition?: {
+    family: string;
+    slug: string;
+    name: string;
+    nameJa: string | null;
+    season: string;
+  } | null;
   startDate: string | null;
   endDate: string | null;
   totalRounds: number | null;
@@ -76,6 +82,7 @@ type CompetitionDbRow = {
 };
 
 type ReplacementCompetitionDbRow = {
+  family: string;
   id: string;
   slug: string;
   name: string;
@@ -157,6 +164,7 @@ function mapCompetitionRow(
     seasonStatus: row.season_status,
     replacementCompetition: replacementCompetition
       ? {
+          family: replacementCompetition.family,
           name: replacementCompetition.name,
           nameJa: replacementCompetition.name_ja,
           season: replacementCompetition.season,
@@ -187,7 +195,7 @@ async function loadReplacementCompetitions(
 
   const { data, error } = await client
     .from("competitions")
-    .select("id, slug, name, name_ja, season")
+    .select("id, slug, name, name_ja, family, season")
     .in("id", replacementCompetitionIds);
 
   if (error) {
