@@ -405,67 +405,15 @@ async function loadActualTeamIds(
     team_id: string;
   }>;
 
-  const standingTeamIdsByCompetition = new Map<string, Set<string>>();
-  const matchTeamIdsByCompetition = new Map<string, Set<string>>();
-  const expectedTeamIdsByCompetition = new Map<string, Set<string>>();
-
-  for (const row of standingRows) {
-    const teamIds =
-      standingTeamIdsByCompetition.get(row.competition_id) ?? new Set<string>();
-    teamIds.add(row.team_id);
-    standingTeamIdsByCompetition.set(row.competition_id, teamIds);
-  }
+  const teamIds = new Set<string>(standingRows.map((row) => row.team_id));
 
   for (const match of matchRows) {
-    const teamIds =
-      matchTeamIdsByCompetition.get(match.competition_id) ?? new Set<string>();
     teamIds.add(match.home_team_id);
     teamIds.add(match.away_team_id);
-    matchTeamIdsByCompetition.set(match.competition_id, teamIds);
   }
 
   for (const row of competitionTeamRows) {
-    const teamIds =
-      expectedTeamIdsByCompetition.get(row.competition_id) ?? new Set<string>();
     teamIds.add(row.team_id);
-    expectedTeamIdsByCompetition.set(row.competition_id, teamIds);
-  }
-
-  const hasCompleteStandingsCoverage = competitionIds.every((competitionId) => {
-    const standingTeamIds = standingTeamIdsByCompetition.get(competitionId);
-    const expectedTeamIds = expectedTeamIdsByCompetition.get(competitionId);
-
-    return (
-      standingTeamIds !== undefined &&
-      expectedTeamIds !== undefined &&
-      standingTeamIds.size > 0 &&
-      standingTeamIds.size === expectedTeamIds.size &&
-      [...standingTeamIds].every((teamId) => expectedTeamIds.has(teamId))
-    );
-  });
-
-  if (hasCompleteStandingsCoverage) {
-    return {
-      coverage: "complete",
-      coverageReason:
-        "competitionごとにcompetition_standingsのチーム集合をcompetition_teamsの期待参加チーム集合と照合し、全大会で一致しました。",
-      dataSource: "competition_standings",
-      teamIds: new Set(standingRows.map((row) => row.team_id)),
-    };
-  }
-
-  const teamIds = new Set<string>(standingRows.map((row) => row.team_id));
-
-  for (const matchTeamIds of matchTeamIdsByCompetition.values()) {
-    for (const teamId of matchTeamIds) {
-      teamIds.add(teamId);
-    }
-  }
-
-  for (const expectedTeamIds of expectedTeamIdsByCompetition.values()) {
-    for (const teamId of expectedTeamIds) {
-      teamIds.add(teamId);
-    }
   }
 
   const dataSource: DataSource =
@@ -482,7 +430,7 @@ async function loadActualTeamIds(
   return {
     coverage: "incomplete",
     coverageReason:
-      "competitionごとの順位表をcompetition_teamsの期待参加チーム集合と照合して完全性を確認できなかったため、順位表・日程・参加チーム登録の和集合を候補として使用します。不参加を断定できません。",
+      "順位表・日程・competition_teamsはいずれも同じ取り込みの欠落を共有し得るため、独立した完全性の根拠がありません。順位表・日程・参加チーム登録の和集合を候補として使用し、不参加を断定できません。",
     dataSource,
     teamIds,
   };

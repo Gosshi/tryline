@@ -109,7 +109,7 @@ describe("audit-competition-guide-facts", () => {
     });
   });
 
-  it("reports Italy as guide-only after validating complete standings coverage", async () => {
+  it("keeps matching standings and competition teams incomplete without independent coverage evidence", async () => {
     const report = await auditCompetitionGuideFacts(
       createMockDb(),
       {
@@ -120,8 +120,9 @@ describe("audit-competition-guide-facts", () => {
       "2026-09-05T01:02:03.000Z",
     );
 
-    expect(report.coverage).toBe("complete");
-    expect(report.dataSource).toBe("competition_standings");
+    expect(report.coverage).toBe("incomplete");
+    expect(report.coverageReason).toContain("独立した完全性の根拠");
+    expect(report.dataSource).toBe("competition_standings_and_matches");
     expect(report.guideOnlyCandidates).toEqual([
       expect.objectContaining({
         candidateName: "イタリア",
@@ -202,6 +203,62 @@ describe("audit-competition-guide-facts", () => {
 
     expect(report.coverage).toBe("incomplete");
     expect(report.actualDataTeams).toHaveLength(3);
+    expect(report.guideOnlyCandidates).toEqual([]);
+  });
+
+  it("keeps schedule-only teams in the actual set when standings and competition teams match", async () => {
+    const responses = {
+      competition_guides: queryBuilder({
+        family: "synthetic",
+        guide_ja: "参加チームはTeam AとTeam B。",
+        source_url: null,
+        updated_at: "2026-09-10T00:00:00.000Z",
+        verified_at: null,
+      }),
+      competition_standings: queryBuilder([
+        { competition_id: "competition-1", team_id: "a" },
+      ]),
+      competition_teams: queryBuilder([
+        { competition_id: "competition-1", team_id: "a" },
+      ]),
+      competitions: queryBuilder([
+        { id: "competition-1", slug: "synthetic-2026" },
+      ]),
+      matches: queryBuilder([
+        {
+          away_team_id: "b",
+          competition_id: "competition-1",
+          home_team_id: "a",
+        },
+      ]),
+      teams: queryBuilder(
+        ["a", "b"].map((id) => ({
+          english_name: `Team ${id.toUpperCase()}`,
+          id,
+          name: `Team ${id.toUpperCase()}`,
+          name_ja: null,
+          slug: `team-${id}`,
+        })),
+      ),
+    };
+    const db = {
+      from: vi.fn((table: keyof typeof responses) => responses[table]),
+    } as unknown as SupabaseClient<Database>;
+
+    const report = await auditCompetitionGuideFacts(
+      db,
+      { family: "synthetic", outputDir: "unused", season: "2026" },
+      "2026-09-10T00:00:00.000Z",
+    );
+
+    expect(report.coverage).toBe("incomplete");
+    expect(report.coverageReason).toContain("独立した完全性の根拠");
+    expect(report.actualDataTeams).toEqual(
+      expect.arrayContaining([
+        { name: "Team A", slug: "team-a" },
+        { name: "Team B", slug: "team-b" },
+      ]),
+    );
     expect(report.guideOnlyCandidates).toEqual([]);
   });
 
