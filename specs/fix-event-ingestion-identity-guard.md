@@ -87,7 +87,9 @@ matches:      id, home_team_id, away_team_id, home_score, away_score, status, ex
 
 **共通入口を通らない独立実装が 2 つある**: `scripts/import-world-rugby-full.ts:505` と `scripts/import-league-one-full.ts:335` の同名ローカル関数。**これらは本 spec のガードが効かない。** 別経路として AC に列挙し、対応するか意図的に対象外とするかを明示すること。
 
-追加する検証は次の 4 つ。**いずれかに該当したら書き込まず、理由付きで拒否する。**
+追加する検証は次の 4 つ。**V1 / V2 / V4 に該当したら書き込まず、理由付きで拒否する。V3 は警告のみで取り込みは続行する。**
+
+**2026-09-10 訂正（GPT-6 再監査 N6）**: 初版は「いずれかに該当したら書き込まず拒否する」と書いていたが、**V3 は AC5 のとおり警告であり拒否ではない。** 本文と返却型が AC5 と衝突していた。実装（`lib/ingestion/event-integrity.ts`）は AC5 側が正しい。
 
 | # | 検証 | 拒否条件 |
 |---|---|---|
@@ -108,8 +110,18 @@ V4 は既に別 match_id に登録された同一 source namespace・fixture ID 
 
 ### 4. 拒否時の挙動
 
-- 例外を投げず、**戻り値で拒否理由を返す**（`{ inserted: number; rejected: Array<{ reason: "score_mismatch" | "third_team" | "duplicate_signature" | "fixture_conflict"; detail: string }> }` 相当）
-- 呼び出し側の cron / スクリプトは、拒否があった場合に**その run を失敗として扱う**（`exit 1` 相当。`cron-weekend-preview-refresh` が PR #758 で採った失敗伝播と同じ方針）
+- 例外を投げず、**戻り値で拒否理由と警告を返す**
+
+```ts
+{
+  inserted: number;
+  rejected: Array<{ reason: "score_mismatch" | "third_team" | "fixture_conflict"; detail: string }>;
+  warnings: Array<{ reason: "duplicate_signature"; detail: string }>;
+}
+```
+
+**2026-09-10 訂正**: 初版は `duplicate_signature` を `rejected` の union に入れていたが、**V3 は警告なので `warnings` 側である**（AC5 と実装が正しい）。
+- 呼び出し側の cron / スクリプトは、拒否があった場合に**その run を失敗として扱う**（`exit 1` 相当。`cron-weekend-preview-refresh` が PR #758 で採った失敗伝播と同じ方針）。**`warnings` だけの run は成功のまま。** 具体的な伝播方法は `specs/fix-event-rejection-aggregation-and-ci-coverage.md`（集約して続行）で定める
 - 拒否内容を `console.warn` に加えて Discord ops 通知へ送る。通知は `lib/llm/notify.ts` の既存パターンに合わせ、**match_id と該当試合の URL を含める**（件数だけの通知にしない。本 spec の背景で述べた埋没の再発防止）
 
 ## 受け入れ条件

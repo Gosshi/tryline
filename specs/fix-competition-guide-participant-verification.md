@@ -37,9 +37,9 @@ competition_guidesはfamily, guide_ja, source_url, verified_at, updated_atを読
 **2026-09-08 訂正**: この段落は当初「存在しない `teams.name_ja` / `name_en` 列を使わない」としていたが、**`name_ja` は実在する**（`lib/db/types.ts` の `teams.Row` に `name_ja: string | null`）。誤りだったので取り消す。
 
 `teams` の実際の名称列は **`name` / `name_ja` / `english_name`** の 3 つで、**`name_en` は存在しない**。照合にはこの 3 列を使う。存在しない `body` / `status` 列は引き続き使わない。テーブル名も `standings` ではなく **`competition_standings`** である。
-standings: competition_id, team_id
+competition_standings: competition_id, team_id
 matches:   competition_id, home_team_id, away_team_id
-teams:     id, name, name_ja, name_en, slug
+teams:     id, name, name_ja, english_name, slug
 ```
 
 実装前に、大会ガイドの実際の保存先を `lib/db/types.ts` と `specs/feat-evergreen-competition-guides.md` で確認すること。
@@ -56,7 +56,7 @@ teams:     id, name, name_ja, name_en, slug
 
 **なし。コスト $0。**
 
-チーム名の抽出は `teams` の `name` / `name_ja` / `name_en` を辞書とした文字列マッチで行う。**LLM に「参加国を列挙して」と尋ねない**（それ自体が捏造の経路になる）。
+チーム名の抽出は `teams` の `name` / `name_ja` / `english_name` を辞書とした文字列マッチで行う。**LLM に「参加国を列挙して」と尋ねない**（それ自体が捏造の経路になる）。
 
 ## 変更詳細
 

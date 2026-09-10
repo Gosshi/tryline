@@ -97,7 +97,9 @@ L63 の早期 return の後に整合判定を追加し、不一致なら代替�
 5. `GET /api/v1/matches/2c276057-bb3a-4617-a5b1-b7742e65f034`（第1戦。合計 32–35 が最終スコアと一致）が `event_integrity === "verified"` を返し、`events` が 19 件のまま返る
 6. 試合前の試合（`status !== "finished"`）で `event_integrity === "unavailable"` を返し、UI に代替表示が出ないことを検証するテストがある
 7. イベント 0 件の finished 試合で、従来どおり `MatchEventsSection` が `null` を返すことを検証するテストがある（代替表示を出さない）
-8. `app/matches/[id]/page.tsx` の `MatchEventsSection` 呼び出し 4 箇所に差分が無い
+8. `app/matches/[id]/page.tsx` の `MatchEventsSection` 呼び出し **4 箇所すべてに `status` / `awayTeamId` / nullable な最終スコアが渡っている**ことを検証するテストがある
+
+    **2026-09-10 訂正（GPT-6 再監査 N6）**: 初版は「4 箇所に差分が無い」と書いていたが、UI 節が同じ 4 箇所の props 変更を要求しており**両立しない**。props を渡すことが目的なので、差分が無いことではなく**必要な props が渡っていること**を検証する。**null を 0 へ変換して整合判定しないこと**（UI 節のとおり）。
 9. `eventTotalsMatchFinalScore` 相当の判定が本 spec で新規に書き起こされていない（既存実装を import している）
 10. `pnpm test` と `pnpm typecheck` が green
 11. **`match_events` および `match_content` に対する DELETE / UPDATE が差分に含まれない**
