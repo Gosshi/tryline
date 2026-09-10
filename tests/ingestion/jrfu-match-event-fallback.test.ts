@@ -335,6 +335,67 @@ describe("JRFU match event fallback", () => {
     });
   });
 
+  it("keeps a rejection and continues after a later match fetch fails", async () => {
+    const rows = [
+      createMatch({
+        id: "match-rejected",
+        kickoff_at: "2026-08-01T05:50:00.000Z",
+      }),
+      createMatch({
+        id: "match-fetch-failed",
+        kickoff_at: "2026-08-04T05:50:00.000Z",
+      }),
+      createMatch({
+        id: "match-after-failure",
+        kickoff_at: "2026-08-07T05:50:00.000Z",
+      }),
+    ];
+    const results = rows.map((_, index) =>
+      createResult({
+        dateJrfu: `2026-08-${String(index * 3 + 1).padStart(2, "0")}`,
+        matchUrl: `https://www.rugby-japan.jp/match/${index}`,
+      }),
+    );
+    createClient(rows);
+    eventMocks.upsertMatchEvents
+      .mockResolvedValueOnce({
+        inserted: 0,
+        rejected: [{ detail: "synthetic", reason: "score_mismatch" }],
+        warnings: [],
+      })
+      .mockResolvedValueOnce({ inserted: 2, rejected: [], warnings: [] });
+    scraperMocks.fetchJrfuMatchEvents
+      .mockResolvedValueOnce({
+        events: scoreMatchingEvents,
+        firstHalfEventCount: scoreMatchingEvents.length,
+        hasHalfHeadings: true,
+        hasUnsupportedScoringEvent: false,
+      })
+      .mockRejectedValueOnce(new Error("temporary fetch failure"))
+      .mockResolvedValueOnce({
+        events: scoreMatchingEvents,
+        firstHalfEventCount: scoreMatchingEvents.length,
+        hasHalfHeadings: true,
+        hasUnsupportedScoringEvent: false,
+      });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await expect(applyJrfuMatchEventFallback(results)).resolves.toMatchObject({
+      counts: { matches_inserted: 1 },
+      rejections: [
+        {
+          detail: "synthetic",
+          matchId: "match-rejected",
+          reason: "score_mismatch",
+        },
+      ],
+    });
+    expect(eventMocks.upsertMatchEvents).toHaveBeenCalledWith(
+      expect.objectContaining({ matchId: "match-after-failure" }),
+    );
+    warn.mockRestore();
+  });
+
   it("limits match-page requests to the configured maximum", async () => {
     const rows = Array.from(
       { length: JRFU_MATCH_EVENT_FALLBACK_LIMIT + 1 },

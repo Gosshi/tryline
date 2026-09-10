@@ -205,6 +205,7 @@ export async function main(argv = process.argv.slice(2)) {
 
   let eventsFound = 0;
   let eventsInserted = 0;
+  const rejections: Array<{ matchId: string; reasons: string[] }> = [];
   let firstSeason = true;
 
   for (const competition of competitions) {
@@ -276,7 +277,15 @@ export async function main(argv = process.argv.slice(2)) {
         );
       } catch (error) {
         if (error instanceof EventInsertionRejectedError) {
-          throw error;
+          rejections.push({
+            matchId: match.id,
+            reasons: error.rejected.map((rejection) => rejection.reason),
+          });
+          console.warn("Event insertion rejected; continuing", {
+            matchId: match.id,
+            reasons: error.rejected.map((rejection) => rejection.reason),
+          });
+          continue;
         }
         console.warn(
           `Unable to backfill events for ${competition.season} ${homeTeamName} v ${awayTeamName}:`,
@@ -289,6 +298,12 @@ export async function main(argv = process.argv.slice(2)) {
   console.log(
     `Backfill Premiership match events complete: target_matches=${matches.length} events_found=${eventsFound} events_inserted=${eventsInserted} dry_run=${options.dryRun}`,
   );
+
+  if (rejections.length > 0) {
+    throw new Error(
+      `Event insertion rejected: ${rejections.map(({ matchId, reasons }) => `${matchId}: ${reasons.join(", ")}`).join("; ")}`,
+    );
+  }
 }
 
 export async function runCli(

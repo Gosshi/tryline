@@ -126,9 +126,7 @@ function getWikipediaSource(
         ? ids.wikipedia
         : null;
   const eventId =
-    typeof ids.wikipedia_event_id === "string"
-      ? ids.wikipedia_event_id
-      : null;
+    typeof ids.wikipedia_event_id === "string" ? ids.wikipedia_event_id : null;
 
   if (!url || !eventId || !isUrcSeasonUrl(url)) {
     return null;
@@ -257,6 +255,7 @@ export async function main(argv = process.argv.slice(2)) {
   let eventsFound = 0;
   let eventsInserted = 0;
   let skipped = 0;
+  const rejections: Array<{ matchId: string; reasons: string[] }> = [];
 
   for (const match of matches) {
     const source = getWikipediaSource(match.external_ids);
@@ -312,7 +311,15 @@ export async function main(argv = process.argv.slice(2)) {
       );
     } catch (error) {
       if (error instanceof EventInsertionRejectedError) {
-        throw error;
+        rejections.push({
+          matchId: match.id,
+          reasons: error.rejected.map((rejection) => rejection.reason),
+        });
+        console.warn("Event insertion rejected; continuing", {
+          matchId: match.id,
+          reasons: error.rejected.map((rejection) => rejection.reason),
+        });
+        continue;
       }
       skipped += 1;
       console.warn(`[skip] ${label}: unable to upsert events`, error);
@@ -322,6 +329,12 @@ export async function main(argv = process.argv.slice(2)) {
   console.log(
     `Backfill URC match events complete: target_matches=${matches.length} events_found=${eventsFound} events_inserted=${eventsInserted} skipped=${skipped} dry_run=${options.dryRun} season_pages_fetched=${htmlCache.size}`,
   );
+
+  if (rejections.length > 0) {
+    throw new Error(
+      `Event insertion rejected: ${rejections.map(({ matchId, reasons }) => `${matchId}: ${reasons.join(", ")}`).join("; ")}`,
+    );
+  }
 }
 
 export async function runCli(

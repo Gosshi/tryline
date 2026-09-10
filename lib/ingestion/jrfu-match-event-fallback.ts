@@ -212,115 +212,137 @@ export async function applyJrfuMatchEventFallback(
     eventlessCandidates.length - cappedCandidates.length;
 
   for (const candidate of cappedCandidates) {
-    const parsed = await fetchJrfuMatchEvents(candidate.result.matchUrl!);
+    try {
+      const parsed = await fetchJrfuMatchEvents(candidate.result.matchUrl!);
 
-    if (!parsed.hasHalfHeadings) {
-      counts.half_headings_skipped += 1;
-      console.warn("[jrfu-match-event-fallback] half headings missing; skipped", {
-        matchId: candidate.match.id,
-      });
-      continue;
-    }
-
-    if (parsed.hasUnsupportedScoringEvent) {
-      counts.unsupported_timeline_skipped += 1;
-      console.warn(
-        "[jrfu-match-event-fallback] unsupported scoring indicator; skipped",
-        { matchId: candidate.match.id },
-      );
-      continue;
-    }
-
-    const scoreCheck = eventScoresMatch(parsed.events, candidate.match);
-    const firstHalfEvents = parsed.events.slice(0, parsed.firstHalfEventCount);
-    const secondHalfEvents = parsed.events.slice(parsed.firstHalfEventCount);
-    const firstHalfTotals = eventTotals(firstHalfEvents);
-
-    if (
-      !hasNondecreasingMinutes(firstHalfEvents) ||
-      !hasNondecreasingMinutes(secondHalfEvents) ||
-      firstHalfTotals.home > scoreCheck.totals.home ||
-      firstHalfTotals.away > scoreCheck.totals.away
-    ) {
-      counts.timeline_order_skipped += 1;
-      console.warn("[jrfu-match-event-fallback] invalid event timeline; skipped", {
-        matchId: candidate.match.id,
-      });
-      continue;
-    }
-
-    if (!scoreCheck.matches) {
-      counts.score_mismatches_skipped += 1;
-      console.warn(
-        "[jrfu-match-event-fallback] event total mismatch; skipped",
-        {
-          actualScore: scoreCheck.totals,
-          expectedScore: {
-            away: candidate.match.away_score,
-            home: candidate.match.home_score,
+      if (!parsed.hasHalfHeadings) {
+        counts.half_headings_skipped += 1;
+        console.warn(
+          "[jrfu-match-event-fallback] half headings missing; skipped",
+          {
+            matchId: candidate.match.id,
           },
+        );
+        continue;
+      }
+
+      if (parsed.hasUnsupportedScoringEvent) {
+        counts.unsupported_timeline_skipped += 1;
+        console.warn(
+          "[jrfu-match-event-fallback] unsupported scoring indicator; skipped",
+          { matchId: candidate.match.id },
+        );
+        continue;
+      }
+
+      const scoreCheck = eventScoresMatch(parsed.events, candidate.match);
+      const firstHalfEvents = parsed.events.slice(
+        0,
+        parsed.firstHalfEventCount,
+      );
+      const secondHalfEvents = parsed.events.slice(parsed.firstHalfEventCount);
+      const firstHalfTotals = eventTotals(firstHalfEvents);
+
+      if (
+        !hasNondecreasingMinutes(firstHalfEvents) ||
+        !hasNondecreasingMinutes(secondHalfEvents) ||
+        firstHalfTotals.home > scoreCheck.totals.home ||
+        firstHalfTotals.away > scoreCheck.totals.away
+      ) {
+        counts.timeline_order_skipped += 1;
+        console.warn(
+          "[jrfu-match-event-fallback] invalid event timeline; skipped",
+          {
+            matchId: candidate.match.id,
+          },
+        );
+        continue;
+      }
+
+      if (!scoreCheck.matches) {
+        counts.score_mismatches_skipped += 1;
+        console.warn(
+          "[jrfu-match-event-fallback] event total mismatch; skipped",
+          {
+            actualScore: scoreCheck.totals,
+            expectedScore: {
+              away: candidate.match.away_score,
+              home: candidate.match.home_score,
+            },
+            matchId: candidate.match.id,
+          },
+        );
+        continue;
+      }
+
+      const playerNameForResolution = (event: ParsedMatchEvent) =>
+        event.type === "substitution" ? event.playerInName : event.playerName;
+      const attemptedPlayerNames = parsed.events.map(playerNameForResolution);
+      const resolvedPlayerCount = (
+        await Promise.all(
+          parsed.events.map((event) =>
+            resolvePlayerId({
+              playerName: playerNameForResolution(event),
+              teamId:
+                event.teamSide === "home"
+                  ? candidate.match.home_team!.id
+                  : candidate.match.away_team!.id,
+            }),
+          ),
+        )
+      ).filter((playerId) => playerId !== null).length;
+
+      if (parsed.events.length > 0 && resolvedPlayerCount === 0) {
+        counts.unresolved_players_all_skipped += 1;
+        console.warn(
+          "[jrfu-match-event-fallback] all players unresolved; skipped",
+          {
+            attemptedPlayerNames,
+            eventCount: parsed.events.length,
+            matchId: candidate.match.id,
+            resolvedPlayerCount,
+          },
+        );
+        continue;
+      }
+
+      const inserted = await upsertMatchEvents({
+        awayTeamId: candidate.match.away_team!.id,
+        events: parsed.events,
+        homeTeamId: candidate.match.home_team!.id,
+        matchId: candidate.match.id,
+        onUnresolvedPlayer: ({ playerName }) => {
+          if (!unresolvedPlayerNames.has(playerName)) {
+            unresolvedPlayerNames.add(playerName);
+            console.warn("[jrfu-match-event-fallback] unresolved player", {
+              matchId: candidate.match.id,
+              playerName,
+            });
+          }
+        },
+      });
+
+      if ((inserted.rejected ?? []).length > 0) {
+        rejections.push(
+          ...inserted.rejected.map((rejection) => ({
+            ...rejection,
+            matchId: candidate.match.id,
+          })),
+        );
+        continue;
+      }
+
+      if (inserted.inserted > 0) {
+        counts.matches_inserted += 1;
+      }
+    } catch (error) {
+      console.warn(
+        "[jrfu-match-event-fallback] failed to process match; skipped",
+        {
+          error,
           matchId: candidate.match.id,
         },
       );
-      continue;
-    }
-
-    const playerNameForResolution = (event: ParsedMatchEvent) =>
-      event.type === "substitution" ? event.playerInName : event.playerName;
-    const attemptedPlayerNames = parsed.events.map(playerNameForResolution);
-    const resolvedPlayerCount = (
-      await Promise.all(
-        parsed.events.map((event) =>
-          resolvePlayerId({
-            playerName: playerNameForResolution(event),
-            teamId:
-              event.teamSide === "home"
-                ? candidate.match.home_team!.id
-                : candidate.match.away_team!.id,
-          }),
-        ),
-      )
-    ).filter((playerId) => playerId !== null).length;
-
-    if (parsed.events.length > 0 && resolvedPlayerCount === 0) {
-      counts.unresolved_players_all_skipped += 1;
-      console.warn("[jrfu-match-event-fallback] all players unresolved; skipped", {
-        attemptedPlayerNames,
-        eventCount: parsed.events.length,
-        matchId: candidate.match.id,
-        resolvedPlayerCount,
-      });
-      continue;
-    }
-
-    const inserted = await upsertMatchEvents({
-      awayTeamId: candidate.match.away_team!.id,
-      events: parsed.events,
-      homeTeamId: candidate.match.home_team!.id,
-      matchId: candidate.match.id,
-      onUnresolvedPlayer: ({ playerName }) => {
-        if (!unresolvedPlayerNames.has(playerName)) {
-          unresolvedPlayerNames.add(playerName);
-          console.warn("[jrfu-match-event-fallback] unresolved player", {
-            matchId: candidate.match.id,
-            playerName,
-          });
-        }
-      },
-    });
-
-    if ((inserted.rejected ?? []).length > 0) {
-      rejections.push(
-        ...inserted.rejected.map((rejection) => ({
-          ...rejection,
-          matchId: candidate.match.id,
-        })),
-      );
-      continue;
-    }
-
-    if (inserted.inserted > 0) {
-      counts.matches_inserted += 1;
     }
   }
 

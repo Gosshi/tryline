@@ -25,7 +25,7 @@ vi.mock("@/lib/scrapers/wikipedia-match-events", () => ({
   parseMatchEventsFromVeventHtml: mocks.parseMatchEvents,
 }));
 
-it("reaches exit 1 through the Premiership match loop when an insertion is rejected", async () => {
+it("continues after a rejected Premiership insertion before reaching exit 1", async () => {
   const competitionsQuery = {
     like: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
@@ -60,6 +60,16 @@ it("reaches exit 1 through the Premiership match loop when an insertion is rejec
             id: "match-rejected",
             match_events: [],
           },
+          {
+            away_team: { name: "Away Two" },
+            away_team_id: "away-two",
+            competition_id: "premiership",
+            external_ids: { wikipedia_event_id: "event-normal" },
+            home_team: { name: "Home Two" },
+            home_team_id: "home-two",
+            id: "match-normal",
+            match_events: [],
+          },
         ],
         error: null,
       }).then(resolve),
@@ -70,7 +80,10 @@ it("reaches exit 1 through the Premiership match loop when an insertion is rejec
     ),
   });
   mocks.fetchWithPolicy.mockResolvedValue({ text: async () => "<html />" });
-  mocks.parseLiveHtml.mockReturnValue([{ eventId: "event", rawHtml: "<div />" }]);
+  mocks.parseLiveHtml.mockReturnValue([
+    { eventId: "event", rawHtml: "<div />" },
+    { eventId: "event-normal", rawHtml: "<div />" },
+  ]);
   mocks.parseMatchEvents.mockReturnValue([
     {
       isPenaltyTry: false,
@@ -80,14 +93,15 @@ it("reaches exit 1 through the Premiership match loop when an insertion is rejec
       type: "try",
     },
   ]);
-  mocks.upsertMatchEvents.mockResolvedValue({
-    inserted: 0,
-    rejected: [{ detail: "synthetic", reason: "score_mismatch" }],
-    warnings: [],
-  });
-  const { main, runCli } = await import(
-    "@/scripts/backfill-premiership-match-events"
-  );
+  mocks.upsertMatchEvents
+    .mockResolvedValueOnce({
+      inserted: 0,
+      rejected: [{ detail: "synthetic", reason: "score_mismatch" }],
+      warnings: [],
+    })
+    .mockResolvedValueOnce({ inserted: 1, rejected: [], warnings: [] });
+  const { main, runCli } =
+    await import("@/scripts/backfill-premiership-match-events");
   const exit = vi.fn(() => {
     throw new Error("exit");
   }) as unknown as (code: number) => never;
@@ -98,6 +112,10 @@ it("reaches exit 1 through the Premiership match loop when an insertion is rejec
   expect(mocks.upsertMatchEvents).toHaveBeenCalledWith(
     expect.objectContaining({ matchId: "match-rejected" }),
   );
+  expect(mocks.upsertMatchEvents).toHaveBeenCalledWith(
+    expect.objectContaining({ matchId: "match-normal" }),
+  );
+  expect(mocks.upsertMatchEvents).toHaveBeenCalledTimes(2);
   expect(exit).toHaveBeenCalledWith(1);
   error.mockRestore();
 });
