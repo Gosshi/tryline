@@ -919,3 +919,45 @@ Owner 以外は Discord のユーザー ID で拒否されるため、実際の�
 - **プレビュー・レビューの両方・全大会の生成入力が変わる**（`assemble.ts:965` の1箇所から呼ばれる）
 
 **未解決**: 手動が多い試合で公式記録（反則数・出場記録）が締め出されうる。運用してから枠を分ける必要があるか判断する。
+
+## D030 — プレビュー生成を「JST キックオフ前日 15:00」に一本化する（2026-09-10、Owner 承認済み。D029 とは独立）
+
+**背景**:
+
+プレビューの生成が2系統に分かれ、どちらも意図と合っていなかった。
+
+初回生成（`lib/cron/orchestrate.ts`）は**キックオフの12〜48時間前**の窓に入った最初の回で作られ、以後この経路では作り直されない。多くの協会のメンバー発表（24〜48時間前）より前に確定してしまう。
+
+上書きは `cron-weekend-preview-refresh`（木21:05 / 金21:05 JST）の2本だけで、**構造的な穴があった。**
+
+| 問題 | 内容 |
+|---|---|
+| 水曜キックオフ | 木・金どちらの窓にも入らずリフレッシュが **0回** |
+| 日曜キックオフ | 金21:05 の **1回きり**。失敗時のリカバリが無い |
+| 土曜キックオフ | 木・金の**両方**の窓に入り、LLM コストが2倍かかる |
+
+**決定**:
+
+1. **プレビューは JST キックオフ日の前日 15:00 に1回だけ生成する。** それより前にプレビューは存在しない
+2. **判定は JST の暦日で行う。** 「キックオフの N 時間前」では表現できない（JST 20:00 キックオフなら29時間前、JST 03:00 キックオフなら12時間前になり、単一の固定窓では両立しない）
+3. **`cron-weekend-preview-refresh` の `schedule` を削除し、`workflow_dispatch` 専用の復旧ツールとして残す。** 定期の上書き生成はしない
+3-b. **ラインアップ遅延の救済を毎日 21:05 JST に1本だけ置く**（2026-09-10 追加）。`GET /api/cron/matches-with-late-lineups` が「ラインアップが記事より後に届き、まだキックオフ前」の試合だけを返し、0件なら LLM を1回も呼ばない。**本番実測で該当は0件**（キックオフ前に取り込めた6試合はすべて前日15:00 に間に合い、最小マージン4.8時間）だが、**URC・プレミアシップ・Top 14 の発表習慣に実績がゼロのまま週230試合が加わる**ため、安全網を同時に外さない。判定は `greatest(created_at, updated_at)` を使う（**upsert が `onConflict: match_id,team_id,jersey_number` なので、選手交代では `created_at` が動かない**）
+4. **キックオフ直前の下限（`PREVIEW_WINDOW_START_HOURS = 12`）を撤廃する。** GitHub Actions の cron は実測で1〜10時間遅れるため、下限があると深夜キックオフが恒久的に落ちる。下限を外すことで、失敗した試合を次の回（21:00 / 03:00 / 09:00 / 15:00）が自動で拾う
+5. **ChatGPT の調査枠を木金 18:00 から木金土 12:00 に移す。** 各回は翌日1日分だけを見る。締切は生成の30分前＝当日 14:30。**土曜の回は月曜未明の欧州戦も扱う**（その分の生成が日曜 15:00 で、日曜に調査枠が無いため）
+
+**代償（Owner が承認済み）**:
+
+- **土曜キックオフの記事公開が、現状の木 21:05 から金 15:00 へ約18時間後ろ倒しになる。** 事前に読める期間が縮む
+- 締切 14:30 を過ぎて入れた事実は、手動で `workflow_dispatch` を回さない限り反映されない
+
+**対象試合数は増えない。** 旧窓は最大48時間先まで拾っていたが、新しい上限は最大33時間先（前日15:00 の回から見た翌日23:59）である。
+
+**影響**:
+- `specs/feat-preview-generation-day-before-1500.md` / 同名 codex-prompt
+- `lib/cron/preview-window.ts`（新規）・`lib/cron/orchestrate.ts`・`app/api/cron/audit-prekickoff-readiness/route.ts`
+- `app/api/cron/matches-with-late-lineups/route.ts`（新規）・`.github/workflows/cron-preview-lineup-catchup.yml`（新規）
+- `.github/workflows/cron-weekend-preview-refresh.yml`（`schedule` 削除）・`cron-prekickoff-readiness-audit.yml`（コメントのみ）
+- `docs/chatgpt-prompts/README.md` / `weekend-preview-facts.md`（更新済み。ChatGPT 側のスケジュール登録は Owner が手で入れ直す必要がある）
+- `specs/feat-thursday-weekend-preview-refresh.md` と `specs/fix-preview-generation-window-timing.md` は本決定で置き換えられる（履歴として残す）
+
+**未解決**: ラインアップ救済の発火実績が0件のまま数ヶ月続いたら削除してよい。あわせて、プレビュー候補に件数上限が無い（recap には `RECAP_BATCH_SIZE = 10` がある）。9/25 の URC・プレミアシップ開幕後に1回あたりの `previews.triggered` を実測し、上限が要るか判断する。

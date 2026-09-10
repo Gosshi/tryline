@@ -32,7 +32,7 @@ lib/billing/terms.ts:52    pricingDescription（trialDays === 0 の分岐）
 
 | 定数 | 出力先 |
 |---|---|
-| `pricingDescription`（`:37` / `:52`） | `app/pricing/page.tsx:21` の `metadata.description` と `:23` |
+| `pricingDescription`（`:37` / `:52`） | `app/pricing/page.tsx:21` の `metadata.description` と `:23` | 
 | `trialFaqAnswer`（`:41`） | `app/pricing/page.tsx:45` の FAQ 回答 → `createPricingFaqJsonLd` 経由で **FAQPage JSON-LD** |
 
 **つまり検索結果に出る説明文と構造化データに「AI チャット」が残る。** 画面本文だけ置換すると、最も露出する場所が直らない。
@@ -98,11 +98,19 @@ lib/billing/terms.ts:52    pricingDescription（trialDays === 0 の分岐）
 | 文中で名詞が要る位置 | **「試合Q&A」** | `lib/billing/terms.ts:37` / `:52`、`app/pricing/page.tsx:80` / `:153` |
 | 装飾の英語見出し | `MATCH Q&A` | `components/match-chat.tsx:287` |
 
-確定文（`metadata.description`。**検索結果に出る**）:
+確定文（`lib/billing/terms.ts` の `pricingDescription`。`app/pricing/page.tsx:21` 経由で **`metadata.description` として検索結果に出る**）。**テンプレートリテラルの補間を含む全文である。**
 
+```ts
+// trialDays > 0（:37）
+`見逃した海外ラグビーを日本語レビューと試合Q&Aで深く追える Tryline Premium。${trialHeroLabel}、その後 ${monthlyPriceLabel}。`
+
+// trialDays === 0（:52）
+`見逃した海外ラグビーを日本語レビューと試合Q&Aで深く追える Tryline Premium。${monthlyPriceLabel}。`
 ```
-見逃した海外ラグビーを日本語レビューと試合Q&Aで深く追える Tryline Premium。
-```
+
+**接尾辞の `${trialHeroLabel}` / `${monthlyPriceLabel}` を落とさないこと。** 落とすと検索結果の説明文から「7日間無料」と「¥980/月」が消え、さらに 2 分岐が同一文字列になってトライアル設定が description に反映されなくなる。
+
+**2026-09-09 の事故**: 本 spec の初版はここに前半の言い回しだけを「確定文」と書き、接尾辞を落としていた。PR #794 はそのとおり実装し、価格情報が消えた。**部分文字列を「確定文」と書かないこと。** 補間を含む全文を書く。
 
 表記揺れ（`AI チャット` / `AIチャット` / `AI CHAT`）も同時に解消する。
 
@@ -122,6 +130,8 @@ D の「敵は AI でなく間違い」に照らすと、**開示は「AI だか
 1-a. **CTA・見出し・主語の位置は「この試合について質問する」、文中の名詞位置は「試合Q&A」**になっている
 1-b. **名詞が要る位置に動詞句が置かれていない。** 「質問できる『この試合について質問する』」のような重複・循環表現が無い
 1-c. **`metadata.description` と VideoObject `description` の全文が PR 本文にあり、日本語として読める**
+1-d. **`pricingDescription` の両分岐に `${monthlyPriceLabel}` が含まれ、`trialDays > 0` の分岐には `${trialHeroLabel}` も含まれる**
+1-e. **2 つの分岐の `pricingDescription` が同一文字列にならない**
 2. 表記揺れ（`AI チャット` / `AIチャット` / `AI CHAT`）が解消している
 3. **チャットの利用箇所に、回答が生成物であることの開示がある**ことを検証するテストがある
 4. **開示に、何をもとに答えているかの範囲が含まれる**ことを検証するテストがある

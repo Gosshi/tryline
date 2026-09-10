@@ -1,0 +1,80 @@
+name: Cron — Preview Lineup Catchup
+
+on:
+  schedule:
+    # 21:05 JST: refresh previews when lineups arrived after the 15:00 run.
+    - cron: "5 12 * * *"
+  workflow_dispatch:
+
+jobs:
+  resolve-targets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      count: ${{ steps.targets.outputs.count }}
+      match_ids: ${{ steps.targets.outputs.match_ids }}
+    env:
+      AUTH: "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+      BASE: ${{ secrets.PRODUCTION_URL }}
+    steps:
+      - name: Fetch matches with late lineups
+        id: targets
+        run: |
+          set -euo pipefail
+          code=$(curl -s -o /tmp/late-lineups.json -w "%{http_code}" -H "$AUTH" "$BASE/api/cron/matches-with-late-lineups")
+          echo "Late lineups HTTP status: $code"
+          cat /tmp/late-lineups.json
+          echo
+          if [ "$code" != "200" ]; then
+            echo "ERROR: late lineups API returned non-200 status: $code" >&2
+            exit 1
+          fi
+          ids=$(jq -r '.match_ids | join(" ")' /tmp/late-lineups.json)
+          count=$(jq -r '.count' /tmp/late-lineups.json)
+          truncated=$(jq -r '.truncated' /tmp/late-lineups.json)
+          echo "match_ids=$ids" >> "$GITHUB_OUTPUT"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Late lineup match count: $count"
+          echo "Late lineup matches truncated: $truncated"
+          if [ "$count" -gt 0 ]; then
+            echo "Target match IDs: $ids"
+          fi
+
+  refresh:
+    needs: resolve-targets
+    if: needs.resolve-targets.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AUTH: "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+      BASE: ${{ secrets.PRODUCTION_URL }}
+      MATCH_IDS: ${{ needs.resolve-targets.outputs.match_ids }}
+    steps:
+      - name: Refresh preview facts and content
+        run: |
+          set -uo pipefail
+          failure=0
+          for match_id in $MATCH_IDS; do
+            echo "Refreshing preview sourced facts: match_id=$match_id"
+            fetch_code=$(curl -s -o /tmp/fetch-sourced-facts.json -w "%{http_code}" -X POST -H "$AUTH" "$BASE/api/cron/fetch-sourced-facts?match_id=$match_id&content_type=preview&force=true")
+            echo "fetch-sourced-facts HTTP status: $fetch_code"
+            cat /tmp/fetch-sourced-facts.json
+            echo
+            if [ "$fetch_code" != "200" ]; then
+              echo "WARN: fetch-sourced-facts failed for match_id=$match_id; skipping generate-content" >&2
+              failure=$((failure + 1))
+              continue
+            fi
+            echo "Generating preview content: match_id=$match_id"
+            generate_code=$(curl -s -o /tmp/generate-content.json -w "%{http_code}" -X POST -H "$AUTH" -H "Content-Type: application/json" --data "{\"contentType\":\"preview\",\"matchIds\":[\"$match_id\"],\"language\":\"ja\"}" "$BASE/api/cron/generate-content")
+            echo "generate-content HTTP status: $generate_code"
+            cat /tmp/generate-content.json
+            echo
+            if [ "$generate_code" != "200" ]; then
+              echo "WARN: generate-content failed for match_id=$match_id" >&2
+              failure=$((failure + 1))
+            fi
+          done
+          if [ "$failure" -gt 0 ]; then
+            exit 1
+          fi
