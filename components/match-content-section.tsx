@@ -90,9 +90,16 @@ export function MatchContentSection({
   const blocks = content ? parseMarkdown(content.contentMdJa) : [];
   const contentHeading = blocks.find((block) => block.type === "heading");
   const lead = blocks.find((block) => block.type === "paragraph");
+  const includesLockedContent =
+    hasLockedContent === true && isPremium && Boolean(lockedContentMd);
+  const readingBlocks = includesLockedContent
+    ? [...blocks, ...parseMarkdown(lockedContentMd ?? "")]
+    : blocks;
   const readingMinutes = content
-    ? getReadingMinutes(getReadableText(blocks), language)
+    ? getReadingMinutes(getReadableText(readingBlocks), language)
     : null;
+  const isFreeSectionReadingTime =
+    hasLockedContent === true && !includesLockedContent;
   const sectionTitle = contentHeading?.text ?? TITLES[language][contentType];
 
   return (
@@ -113,9 +120,13 @@ export function MatchContentSection({
             </span>
             <span aria-hidden>・</span>
             <span>
-              {language === "en"
-                ? `About ${readingMinutes} min for the free section`
-                : `無料部分で約${readingMinutes}分`}
+              {isFreeSectionReadingTime
+                ? language === "en"
+                  ? `About ${readingMinutes} min for the free section`
+                  : `無料部分で約${readingMinutes}分`
+                : language === "en"
+                  ? `About ${readingMinutes} min read`
+                  : `約${readingMinutes}分`}
             </span>
             <span className="ml-auto rounded-full bg-[var(--color-accent-subtle)] px-3 py-1 font-bold text-[var(--color-accent)]">
               {TITLES[language][contentType]}

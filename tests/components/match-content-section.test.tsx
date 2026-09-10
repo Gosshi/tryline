@@ -161,7 +161,7 @@ describe("MatchContentSection", () => {
       />,
     );
 
-    expect(screen.getByText("無料部分で約1分")).toBeInTheDocument();
+    expect(screen.getByText("約1分")).toBeInTheDocument();
   });
 
   it("does not count a Markdown URL toward Japanese reading time", () => {
@@ -177,21 +177,23 @@ describe("MatchContentSection", () => {
       />,
     );
 
-    expect(screen.getByText("無料部分で約1分")).toBeInTheDocument();
+    expect(screen.getByText("約1分")).toBeInTheDocument();
   });
 
-  it("labels reading time as the free section when locked content exists", () => {
+  it("uses the full article reading time for Premium users with locked content", () => {
     render(
       <MatchContentSection
         content={{ ...content, contentMdJa: "あ".repeat(499) }}
         contentType="recap"
+        hasLockedContent
         isPremium
         lockedContentMd={"い".repeat(1_000)}
         match={match}
       />,
     );
 
-    expect(screen.getByText("無料部分で約1分")).toBeInTheDocument();
+    expect(screen.getByText("約3分")).toBeInTheDocument();
+    expect(screen.queryByText(/無料部分/)).not.toBeInTheDocument();
   });
 
   it("keeps the free-section reading time stable while locked content loads", () => {
@@ -199,6 +201,7 @@ describe("MatchContentSection", () => {
       <MatchContentSection
         content={{ ...content, contentMdJa: "あ".repeat(499) }}
         contentType="recap"
+        hasLockedContent
         isPremium={false}
         lockedContentMd={null}
         lockedLoading
@@ -212,6 +215,7 @@ describe("MatchContentSection", () => {
       <MatchContentSection
         content={{ ...content, contentMdJa: "あ".repeat(499) }}
         contentType="recap"
+        hasLockedContent
         isPremium={false}
         lockedContentMd={"い".repeat(1_000)}
         lockedLoading={false}
@@ -232,7 +236,7 @@ describe("MatchContentSection", () => {
       />,
     );
 
-    expect(screen.getByText("無料部分で約1分")).toBeInTheDocument();
+    expect(screen.getByText("約1分")).toBeInTheDocument();
   });
 
   it("keeps English word-based reading time after Markdown is parsed", () => {
@@ -249,9 +253,7 @@ describe("MatchContentSection", () => {
       />,
     );
 
-    expect(
-      screen.getByText("About 2 min for the free section"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("About 2 min read")).toBeInTheDocument();
   });
 
   it("does not add source or timeline content to reading time", () => {
@@ -266,7 +268,7 @@ describe("MatchContentSection", () => {
       />,
     );
 
-    expect(screen.getByText("無料部分で約1分")).toBeInTheDocument();
+    expect(screen.getByText("約1分")).toBeInTheDocument();
   });
 
   it("renders ContentPlaceholder when content is null", () => {
