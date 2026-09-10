@@ -55,7 +55,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     COMPETITION_DESCRIPTIONS[competition] ??
     `${name} の全シーズン試合結果・順位表・日本語レビュー一覧。`;
   const description = `${overview} 最新シーズンの順位表・日程・試合結果と、日本での視聴方法を掲載。`;
-  const title = `${name} 順位表・日程・日本での視聴方法`;
+  const title =
+    competition === "lipovitan-challenge-cup"
+      ? `${name} オーストラリア・カナダ・フィジー代表`
+      : `${name} 順位表・日程・日本での視聴方法`;
 
   return {
     description,

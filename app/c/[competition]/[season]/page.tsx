@@ -21,10 +21,7 @@ import {
   listFamilies,
   listSeasonsByFamily,
 } from "@/lib/db/queries/competitions";
-import {
-  getMatchBroadcastPresenceForMatches,
-  getMatchBroadcastsForMatches,
-} from "@/lib/db/queries/match-broadcasts";
+import { getMatchBroadcastsForMatches } from "@/lib/db/queries/match-broadcasts";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import {
   getNextMatchForTeamSlug,
@@ -286,6 +283,10 @@ function getMatchLabel(match: MatchListItem): string {
 
 type CompetitionHubState = "active" | "information" | "post" | "pre";
 
+const MAX_TEAMS_IN_METADATA_TITLE = 4;
+const MAX_METADATA_TITLE_LENGTH = 72;
+const TRYLINE_TITLE_SUFFIX = " | Tryline";
+
 function getCompetitionHubState(matches: MatchListItem[]): CompetitionHubState {
   const activeMatches = matches.filter((match) => match.status !== "cancelled");
 
@@ -305,12 +306,10 @@ function getCompetitionHubState(matches: MatchListItem[]): CompetitionHubState {
 }
 
 function getCompetitionHubMetadataCopy({
-  hasBroadcasts,
   hasRecap,
   hasStandings,
   state,
 }: {
-  hasBroadcasts: boolean;
   hasRecap: boolean;
   hasStandings: boolean;
   state: CompetitionHubState;
@@ -322,15 +321,10 @@ function getCompetitionHubMetadataCopy({
         title: "大会情報・見どころ",
       };
     case "pre":
-      return hasBroadcasts
-        ? {
-            description: "日程・放送予定・見どころを掲載。",
-            title: "日程・放送予定・見どころ",
-          }
-        : {
-            description: "日程・見どころを掲載。",
-            title: "日程・見どころ",
-          };
+      return {
+        description: "日程・見どころを掲載。",
+        title: "日程・見どころ",
+      };
     case "post":
       return hasRecap
         ? {
@@ -352,6 +346,116 @@ function getCompetitionHubMetadataCopy({
             title: "最新結果・次戦・日程",
           };
   }
+}
+
+function getMetadataTeamName(team: {
+  name: string;
+  nameJa?: string | null;
+}): string {
+  return team.nameJa?.trim() || team.name.trim();
+}
+
+export function getCompetitionMetadataTeams(
+  matches: MatchListItem[],
+  standings: StandingRow[],
+): string[] {
+  const standingTeams = standings
+    .map((standing) => standing.teamName.trim())
+    .filter((teamName) => teamName && teamName !== "-");
+  const teamNames =
+    standingTeams.length > 0
+      ? standingTeams
+      : matches.flatMap((match) => [
+          getMetadataTeamName(match.homeTeam),
+          getMetadataTeamName(match.awayTeam),
+        ]).filter(Boolean);
+
+  return [...new Set(teamNames)].sort((left, right) =>
+    left.localeCompare(right, "ja"),
+  );
+}
+
+function formatMetadataTitle(
+  competitionTitle: string,
+  metadataCopyTitle: string,
+  teams: string[],
+): string {
+  if (teams.length < 2 || teams.length > MAX_TEAMS_IN_METADATA_TITLE) {
+    return `${competitionTitle} ${metadataCopyTitle}`;
+  }
+
+  const teamTitle = `${competitionTitle} ${teams.join("・")}`;
+
+  return teamTitle.length + TRYLINE_TITLE_SUFFIX.length <=
+    MAX_METADATA_TITLE_LENGTH
+    ? teamTitle
+    : `${competitionTitle} ${metadataCopyTitle}`;
+}
+
+function formatMetadataDate(kickoffAt: string): string {
+  const date = new Date(kickoffAt);
+
+  return new Intl.DateTimeFormat("ja-JP", {
+    day: "numeric",
+    month: "numeric",
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatMetadataDateRange(matches: MatchListItem[]): string | null {
+  const kickoffTimes = matches
+    .filter((match) => match.status !== "cancelled")
+    .map((match) => match.kickoffAt)
+    .sort();
+  const firstKickoff = kickoffTimes[0];
+  const lastKickoff = kickoffTimes.at(-1);
+
+  if (!firstKickoff || !lastKickoff) {
+    return null;
+  }
+
+  const firstDate = formatMetadataDate(firstKickoff);
+  const lastDate = formatMetadataDate(lastKickoff);
+
+  return firstDate === lastDate ? firstDate : `${firstDate}〜${lastDate}`;
+}
+
+function formatCompetitionHubDescription({
+  competitionTitle,
+  hasRecap,
+  hasStandings,
+  matches,
+  metadataCopy,
+  teams,
+}: {
+  competitionTitle: string;
+  hasRecap: boolean;
+  hasStandings: boolean;
+  matches: MatchListItem[];
+  metadataCopy: { description: string; title: string };
+  teams: string[];
+}): string {
+  const activeMatches = matches.filter((match) => match.status !== "cancelled");
+  const dateRange = formatMetadataDateRange(matches);
+
+  if (activeMatches.length === 0 || !dateRange) {
+    return `${competitionTitle} の${metadataCopy.description}`;
+  }
+
+  const participants =
+    teams.length > 0 && teams.length <= MAX_TEAMS_IN_METADATA_TITLE
+      ? teams.join("・")
+      : `${teams.length}チーム`;
+  const details = [
+    hasStandings ? "順位表" : null,
+    hasRecap ? "日本語レビュー" : null,
+  ]
+    .filter((detail): detail is string => detail !== null)
+    .join("・");
+  const suffix = details ? `・${details}` : "";
+
+  return `${competitionTitle}は${participants}が参加する全${activeMatches.length}試合。${dateRange}の${metadataCopy.title}${suffix}を掲載。`;
 }
 
 function selectStandingsExcerpt<
@@ -494,23 +598,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     getStandingsForCompetition(comp.slug),
   ]);
   const matchIds = matches.map((match) => match.id);
-  const [broadcastMatchIds, contentStatusMap] = await Promise.all([
-    getMatchBroadcastPresenceForMatches(matchIds),
-    getContentStatusForMatches(matchIds),
-  ]);
+  const contentStatusMap = await getContentStatusForMatches(matchIds);
   const metadataCopy = getCompetitionHubMetadataCopy({
-    hasBroadcasts: broadcastMatchIds.size > 0,
     hasRecap: Object.values(contentStatusMap).some((status) => status.hasRecap),
     hasStandings: standings.length > 0,
     state: getCompetitionHubState(matches),
   });
   const competitionTitle = formatCompetitionTitle(comp, comp.season);
-  const title = `${competitionTitle} ${metadataCopy.title}`;
+  const teams = getCompetitionMetadataTeams(matches, standings);
+  const title = formatMetadataTitle(
+    competitionTitle,
+    metadataCopy.title,
+    teams,
+  );
   const competitionDescriptionTitle =
     comp.family === "six-nations"
       ? `${competitionTitle}（6カ国対抗）`
       : competitionTitle;
-  const description = `${competitionDescriptionTitle} の${metadataCopy.description}`;
+  const description = formatCompetitionHubDescription({
+    competitionTitle: competitionDescriptionTitle,
+    hasRecap: Object.values(contentStatusMap).some((status) => status.hasRecap),
+    hasStandings: standings.length > 0,
+    matches,
+    metadataCopy,
+    teams,
+  });
 
   return {
     alternates: { canonical: `${SITE_URL}/c/${competition}/${season}` },
