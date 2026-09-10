@@ -2,9 +2,33 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
+  formatVenueDisplay,
   normalizeVenue,
   resolveVenueTimezone,
 } from "@/lib/format/venue-timezone";
+
+describe("formatVenueDisplay", () => {
+  it.each([
+    ["Eden Park, Auckland[a]", "Eden Park, Auckland"],
+    [
+      "  Navigation Homes Stadium, Pukekohe[e][f]  ",
+      "Navigation Homes Stadium, Pukekohe",
+    ],
+    ["Hnry Stadium,\n Wellington[42][a]", "Hnry Stadium, Wellington"],
+  ])(
+    "removes all footnotes while preserving display casing for %s",
+    (venue, expected) => {
+      expect(formatVenueDisplay(venue)).toBe(expected);
+    },
+  );
+
+  it.each([null, "", "   "])(
+    "returns an empty display value for %s",
+    (venue) => {
+      expect(formatVenueDisplay(venue)).toBe("");
+    },
+  );
+});
 
 describe("normalizeVenue", () => {
   it.each([

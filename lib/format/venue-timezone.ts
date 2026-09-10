@@ -84,6 +84,17 @@ const VENUE_TIMEZONES: Record<string, string> = {
   "twickenham stadium": "Europe/London", // London, United Kingdom
 };
 
+export function formatVenueDisplay(venue: string | null): string {
+  if (!venue) {
+    return "";
+  }
+
+  return venue
+    .replace(/\[[^\]]*\]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 export function normalizeVenue(venue: string): string {
   return venue
     .replace(/\[[^\]]*\]/g, "")

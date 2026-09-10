@@ -37,6 +37,7 @@ import {
 } from "@/lib/format/competition";
 import { buildMatchEventPlayerLinks } from "@/lib/format/match-event-player-links";
 import { formatRoundLabel } from "@/lib/format/round-label";
+import { formatVenueDisplay } from "@/lib/format/venue-timezone";
 import {
   computeEventPointTotals,
   eventTotalsMatchFinalScore,
@@ -323,7 +324,7 @@ export default async function MatchDetailPage({
       ? {
           location: {
             "@type": "Place",
-            name: match.venue,
+            name: formatVenueDisplay(match.venue),
           },
         }
       : {}),

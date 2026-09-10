@@ -5,7 +5,10 @@ import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { getTeamColor } from "@/lib/format/team-identity";
-import { resolveVenueTimezone } from "@/lib/format/venue-timezone";
+import {
+  formatVenueDisplay,
+  resolveVenueTimezone,
+} from "@/lib/format/venue-timezone";
 import { cn } from "@/lib/utils";
 
 import { SpoilerScore } from "./spoiler-score";
@@ -178,7 +181,7 @@ export function MatchHeader({
         )}
         {match.venue && (
           <span className="rounded-full bg-white/15 px-3 py-1.5 backdrop-blur-sm">
-            {match.venue}
+            {formatVenueDisplay(match.venue)}
           </span>
         )}
       </div>
