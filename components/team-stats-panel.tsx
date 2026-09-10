@@ -1,3 +1,5 @@
+import { formatPlayerNameDisplay } from "@/lib/format/player-name-display";
+
 import type {
   TeamRecord,
   TeamScoringStats,
@@ -186,7 +188,7 @@ export function TeamStatsPanel({
                   {topScorers.map((scorer) => (
                     <tr key={scorer.playerName}>
                       <td className="max-w-[12rem] truncate py-2 pr-3 font-medium text-[var(--color-ink)]">
-                        {scorer.playerName}
+                        {formatPlayerNameDisplay(scorer.playerName)}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums text-[var(--color-ink)]">
                         {scorer.tries}
