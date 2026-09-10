@@ -21,6 +21,8 @@ export type CompetitionRow = {
   name: string;
   nameJa?: string | null;
   season: string;
+  seasonStatus?: "held" | "not_held" | "unknown";
+  replacementCompetition?: { slug: string; name: string; nameJa: string | null; season: string } | null;
   startDate: string | null;
   endDate: string | null;
   totalRounds: number | null;
@@ -66,9 +68,19 @@ type CompetitionDbRow = {
   name: string;
   name_ja?: string | null;
   season: string;
+  season_status: "held" | "not_held" | "unknown";
+  replacement_competition_id: string | null;
   start_date: string | null;
   end_date: string | null;
   total_rounds: number | null;
+};
+
+type ReplacementCompetitionDbRow = {
+  id: string;
+  slug: string;
+  name: string;
+  name_ja: string | null;
+  season: string;
 };
 
 type CompetitionScheduleCoverageDbRow = {
@@ -116,14 +128,22 @@ function countPublishedContentByCompetition(
 function withPublishedContentCounts(
   rows: CompetitionDbRow[],
   countByCompetitionId: Map<string, number>,
+  replacementCompetitionsById: Map<string, ReplacementCompetitionDbRow>,
 ): CompetitionRow[] {
   return rows.map((row) => ({
-    ...mapCompetitionRow(row),
+    ...mapCompetitionRow(row, replacementCompetitionsById),
     publishedContentCount: countByCompetitionId.get(row.id) ?? 0,
   }));
 }
 
-function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
+function mapCompetitionRow(
+  row: CompetitionDbRow,
+  replacementCompetitionsById = new Map<string, ReplacementCompetitionDbRow>(),
+): CompetitionRow {
+  const replacementCompetition = row.replacement_competition_id
+    ? replacementCompetitionsById.get(row.replacement_competition_id) ?? null
+    : null;
+
   return {
     champion: row.champion,
     endDate: row.end_date,
@@ -134,10 +154,52 @@ function mapCompetitionRow(row: CompetitionDbRow): CompetitionRow {
     nameJa: row.name_ja ?? null,
     publishedContentCount: 0,
     season: row.season,
+    seasonStatus: row.season_status,
+    replacementCompetition: replacementCompetition
+      ? {
+          name: replacementCompetition.name,
+          nameJa: replacementCompetition.name_ja,
+          season: replacementCompetition.season,
+          slug: replacementCompetition.slug,
+        }
+      : null,
     slug: row.slug,
     startDate: row.start_date,
     totalRounds: row.total_rounds ?? null,
   };
+}
+
+async function loadReplacementCompetitions(
+  client: ReturnType<typeof getSupabasePublicServerClient>,
+  rows: CompetitionDbRow[],
+): Promise<Map<string, ReplacementCompetitionDbRow>> {
+  const replacementCompetitionIds = [
+    ...new Set(
+      rows.flatMap((row) =>
+        row.replacement_competition_id ? [row.replacement_competition_id] : [],
+      ),
+    ),
+  ];
+
+  if (replacementCompetitionIds.length === 0) {
+    return new Map();
+  }
+
+  const { data, error } = await client
+    .from("competitions")
+    .select("id, slug, name, name_ja, season")
+    .in("id", replacementCompetitionIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return new Map(
+    ((data ?? []) as ReplacementCompetitionDbRow[]).map((competition) => [
+      competition.id,
+      competition,
+    ]),
+  );
 }
 
 function hasNumericWikipediaRound(externalIds: Json): boolean {
@@ -264,10 +326,16 @@ export async function listSeasonsByFamily(
   const countByCompetitionId = countPublishedContentByCompetition(
     (contentCountsResult.data ?? []) as MatchContentCompetitionRow[],
   );
+  const seasons = (seasonsResult.data ?? []) as CompetitionDbRow[];
+  const replacementCompetitionsById = await loadReplacementCompetitions(
+    client,
+    seasons,
+  );
 
   return withPublishedContentCounts(
-    (seasonsResult.data ?? []) as CompetitionDbRow[],
+    seasons,
     countByCompetitionId,
+    replacementCompetitionsById,
   );
 }
 
@@ -321,13 +389,20 @@ export async function listSeasonsByFamilies(
   const countByCompetitionId = countPublishedContentByCompetition(
     (contentCountsResult.data ?? []) as MatchContentCompetitionRow[],
   );
-  const seasonsByFamily = new Map<string, CompetitionRow[]>();
-
-  for (const [index, result] of seasonsResults.entries()) {
+  const seasons = seasonsResults.flatMap((result) => {
     if (result.error) {
       throw result.error;
     }
 
+    return (result.data ?? []) as CompetitionDbRow[];
+  });
+  const replacementCompetitionsById = await loadReplacementCompetitions(
+    client,
+    seasons,
+  );
+  const seasonsByFamily = new Map<string, CompetitionRow[]>();
+
+  for (const [index, result] of seasonsResults.entries()) {
     const family = families[index];
 
     if (!family) {
@@ -339,6 +414,7 @@ export async function listSeasonsByFamilies(
       withPublishedContentCounts(
         (result.data ?? []) as CompetitionDbRow[],
         countByCompetitionId,
+        replacementCompetitionsById,
       ),
     );
   }
@@ -360,7 +436,16 @@ export async function getCompetitionBySlug(
     throw error;
   }
 
-  return data ? mapCompetitionRow(data as CompetitionDbRow) : null;
+  if (!data) {
+    return null;
+  }
+
+  const competition = data as CompetitionDbRow;
+  const replacementCompetitionsById = await loadReplacementCompetitions(client, [
+    competition,
+  ]);
+
+  return mapCompetitionRow(competition, replacementCompetitionsById);
 }
 
 async function loadCompetitionGuide(
