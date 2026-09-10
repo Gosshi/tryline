@@ -1044,26 +1044,7 @@ describe("season page information architecture", () => {
     });
   });
 
-  it("uses the pre-tournament title based on broadcast availability", async () => {
-    broadcastMocks.getMatchBroadcastPresenceForMatches.mockResolvedValue(
-      new Set([match.id]),
-    );
-
-    await expect(
-      generateMetadata({
-        params: Promise.resolve({
-          competition: "premiership",
-          season: "2025-26",
-        }),
-      }),
-    ).resolves.toMatchObject({
-      title: "プレミアシップ 2025-26 日程・放送予定・見どころ",
-    });
-
-    broadcastMocks.getMatchBroadcastPresenceForMatches.mockResolvedValue(
-      new Set(),
-    );
-
+  it("uses the pre-tournament title without broadcast metadata", async () => {
     await expect(
       generateMetadata({
         params: Promise.resolve({
@@ -1128,7 +1109,7 @@ describe("season page information architecture", () => {
         }),
       }),
     ).resolves.toMatchObject({
-      title: "ネーションズチャンピオンシップ 2026 最新結果・次戦・日程",
+      title: "ネーションズチャンピオンシップ 2026 Bath・Saracens",
     });
   });
 
@@ -1151,7 +1132,7 @@ describe("season page information architecture", () => {
         }),
       }),
     ).resolves.toMatchObject({
-      title: "リポビタンDチャレンジカップ 2026 日程・見どころ",
+      title: "リポビタンDチャレンジカップ 2026 Bath・Saracens",
     });
   });
 
@@ -1193,7 +1174,7 @@ describe("season page information architecture", () => {
     ).resolves.toMatchObject({ title: "プレミアシップ 2025-26 全試合結果" });
   });
 
-  it("keeps the Six Nations label in the description and propagates broadcast query errors", async () => {
+  it("keeps the Six Nations label in the description", async () => {
     competitionMocks.getCompetitionBySlug.mockResolvedValue({
       ...competition,
       family: "six-nations",
@@ -1209,15 +1190,5 @@ describe("season page information architecture", () => {
     ).resolves.toMatchObject({
       description: expect.stringContaining("6カ国対抗"),
     });
-
-    broadcastMocks.getMatchBroadcastPresenceForMatches.mockRejectedValue(
-      new Error("broadcast query failed"),
-    );
-
-    await expect(
-      generateMetadata({
-        params: Promise.resolve({ competition: "six-nations", season: "2026" }),
-      }),
-    ).rejects.toThrow("broadcast query failed");
   });
 });
