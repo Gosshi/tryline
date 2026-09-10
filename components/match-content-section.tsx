@@ -23,6 +23,34 @@ type MatchContentSectionProps = {
   showCta?: boolean;
 };
 
+function getReadableText(blocks: ReturnType<typeof parseMarkdown>): string {
+  const text = blocks
+    .flatMap((block) => {
+      if (block.type === "list" || block.type === "ordered-list") {
+        return block.items;
+      }
+
+      if (block.type === "table") {
+        return block.rows.flat();
+      }
+
+      return [block.text];
+    })
+    .join(" ");
+
+  return text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/[*_~`]/g, "")
+    .trim();
+}
+
+function getReadingMinutes(text: string, language: "ja" | "en"): number {
+  return language === "en"
+    ? Math.max(1, Math.ceil(text.split(/\s+/).length / 220))
+    : Math.max(1, Math.ceil(text.length / 500));
+}
+
 const TITLES = {
   en: {
     preview: "Preview",
@@ -63,9 +91,7 @@ export function MatchContentSection({
   const contentHeading = blocks.find((block) => block.type === "heading");
   const lead = blocks.find((block) => block.type === "paragraph");
   const readingMinutes = content
-    ? language === "en"
-      ? Math.max(1, Math.ceil(content.contentMdJa.split(/\s+/).length / 220))
-      : Math.max(1, Math.ceil(content.contentMdJa.length / 500))
+    ? getReadingMinutes(getReadableText(blocks), language)
     : null;
   const sectionTitle = contentHeading?.text ?? TITLES[language][contentType];
 
@@ -87,8 +113,9 @@ export function MatchContentSection({
             </span>
             <span aria-hidden>・</span>
             <span>
-              {readingMinutes}
-              {language === "en" ? " min read" : "分で読める"}
+              {language === "en"
+                ? `About ${readingMinutes} min for the free section`
+                : `無料部分で約${readingMinutes}分`}
             </span>
             <span className="ml-auto rounded-full bg-[var(--color-accent-subtle)] px-3 py-1 font-bold text-[var(--color-accent)]">
               {TITLES[language][contentType]}
