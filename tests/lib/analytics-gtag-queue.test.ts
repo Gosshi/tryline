@@ -162,9 +162,9 @@ describe("analytics gtag queue", () => {
 
     const reservedKeys = ["source", "medium", "campaign", "term", "content"];
     for (const [, , params] of gtag.mock.calls) {
-      expect(Object.keys(params)).not.toEqual(
-        expect.arrayContaining(reservedKeys),
-      );
+      for (const key of reservedKeys) {
+        expect(Object.keys(params)).not.toContain(key);
+      }
     }
   });
 });
