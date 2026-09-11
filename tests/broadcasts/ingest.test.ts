@@ -21,6 +21,11 @@ const PAGE = {
   sourceUrl: SOURCE_URL,
 };
 
+const NOVEMBER_PAGE = {
+  ...PAGE,
+  dateLabel: "11.07 Sat",
+};
+
 const japanMatch = {
   awayTeam: { name: "オーストラリア", slug: "australia" },
   homeTeam: { name: "日本", slug: "japan" },
@@ -69,16 +74,121 @@ describe("runBroadcastIngest", () => {
     expect(result.unlinkedPages).toEqual([]);
   });
 
-  it("does not link when the JST date condition is missing", async () => {
+  it("does not link when the JST date is outside the allowed window", async () => {
     const upsertBroadcasts = async () => {
       throw new Error("must not upsert");
     };
     const result = await runBroadcastIngest(
       dependencies({
         listScheduledMatches: async () => [
-          { ...japanMatch, kickoffAt: "2026-08-09T10:05:00.000Z" },
+          { ...japanMatch, kickoffAt: "2026-08-10T10:05:00.000Z" },
         ],
         upsertBroadcasts,
+      }),
+    );
+
+    expect(result.linked).toEqual([]);
+    expect(result.unlinkedPages[0]?.reason).toContain("0件");
+  });
+
+  it("links a Japan match whose JST date is the day after the JRFU local date", async () => {
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchMatchPage: async () => NOVEMBER_PAGE,
+        listScheduledMatches: async () => [
+          {
+            ...japanMatch,
+            id: "match-wales-japan",
+            kickoffAt: "2026-11-07T16:40:00.000Z",
+          },
+        ],
+      }),
+    );
+
+    expect(result.linked).toHaveLength(4);
+    expect(result.linked[0]).toMatchObject({
+      matchId: "match-wales-japan",
+    });
+    expect(result.unlinkedPages).toEqual([]);
+  });
+
+  it("links a domestic Japan match on the JRFU local date", async () => {
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchMatchPage: async () => ({ ...PAGE, dateLabel: "09.05 Sat" }),
+        listScheduledMatches: async () => [
+          {
+            ...japanMatch,
+            id: "match-japan-canada",
+            kickoffAt: "2026-09-05T05:50:00.000Z",
+          },
+        ],
+      }),
+    );
+
+    expect(result.linked).toHaveLength(4);
+    expect(result.unlinkedPages).toEqual([]);
+  });
+
+  it("does not link a Japan match outside the local-date and next-day window", async () => {
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchMatchPage: async () => NOVEMBER_PAGE,
+        listScheduledMatches: async () => [
+          {
+            ...japanMatch,
+            kickoffAt: "2026-11-09T16:40:00.000Z",
+          },
+        ],
+        upsertBroadcasts: async () => {
+          throw new Error("must not upsert");
+        },
+      }),
+    );
+
+    expect(result.linked).toEqual([]);
+    expect(result.unlinkedPages[0]?.reason).toContain("0件");
+  });
+
+  it("does not link when one Japan match falls on each allowed JST date", async () => {
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchMatchPage: async () => NOVEMBER_PAGE,
+        listScheduledMatches: async () => [
+          {
+            ...japanMatch,
+            id: "match-local-date",
+            kickoffAt: "2026-11-06T15:40:00.000Z",
+          },
+          {
+            ...japanMatch,
+            id: "match-next-day",
+            kickoffAt: "2026-11-07T16:40:00.000Z",
+          },
+        ],
+        upsertBroadcasts: async () => {
+          throw new Error("must not upsert");
+        },
+      }),
+    );
+
+    expect(result.linked).toEqual([]);
+    expect(result.unlinkedPages[0]?.reason).toContain("2件");
+  });
+
+  it("does not link a Japan match on the day before the JRFU local date", async () => {
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchMatchPage: async () => NOVEMBER_PAGE,
+        listScheduledMatches: async () => [
+          {
+            ...japanMatch,
+            kickoffAt: "2026-11-05T16:40:00.000Z",
+          },
+        ],
+        upsertBroadcasts: async () => {
+          throw new Error("must not upsert");
+        },
       }),
     );
 

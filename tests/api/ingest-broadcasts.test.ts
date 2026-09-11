@@ -66,4 +66,81 @@ describe("/api/cron/ingest-broadcasts", () => {
     });
     expect(notifyMock.notifyBroadcastIngestReport).toHaveBeenCalledWith(report);
   });
+
+  it.each([
+    {
+      name: "an unlinked page",
+      report: { ...report, unlinkedPages: [{ dateLabel: "11.07 Sat" }] },
+    },
+    {
+      name: "a match still missing broadcasts",
+      report: { ...report, matchesStillMissing: [{ matchId: "match-1" }] },
+    },
+  ])(
+    "returns 500 when nothing linked and there is $name",
+    async ({ report }) => {
+      ingestMock.runBroadcastIngest.mockResolvedValue(report);
+      const { POST } = await import("@/app/api/cron/ingest-broadcasts/route");
+
+      const response = await POST(
+        new Request("http://localhost/api/cron/ingest-broadcasts", {
+          headers: { Authorization: "Bearer test-secret" },
+          method: "POST",
+        }),
+      );
+
+      expect(response.status).toBe(500);
+      await expect(response.json()).resolves.toEqual({
+        result: report,
+        status: "ok",
+      });
+      expect(notifyMock.notifyBroadcastIngestReport).toHaveBeenCalledWith(
+        report,
+      );
+    },
+  );
+
+  it("returns 200 when nothing needs linking", async () => {
+    ingestMock.runBroadcastIngest.mockResolvedValue(report);
+    const { POST } = await import("@/app/api/cron/ingest-broadcasts/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/cron/ingest-broadcasts", {
+        headers: { Authorization: "Bearer test-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+  });
+
+  it("returns 200 when at least one broadcast was linked", async () => {
+    const linkedReport = {
+      ...report,
+      linked: [
+        {
+          kind: "tv",
+          label: "日本 対 ウェールズ",
+          matchId: "match-1",
+          serviceName: "BS日テレ",
+        },
+      ],
+      unlinkedPages: [{ dateLabel: "09.19 Sat" }],
+    };
+    ingestMock.runBroadcastIngest.mockResolvedValue(linkedReport);
+    const { POST } = await import("@/app/api/cron/ingest-broadcasts/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/cron/ingest-broadcasts", {
+        headers: { Authorization: "Bearer test-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      result: linkedReport,
+      status: "ok",
+    });
+  });
 });
