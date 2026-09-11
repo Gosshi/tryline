@@ -48,7 +48,10 @@ export function TeamPicker({ initialSelected, teams }: TeamPickerProps) {
       for (const slug of selected.filter(
         (slug) => !initialSelected.includes(slug),
       )) {
-        trackFavoriteTeamAdded({ source: "team_picker", team_slug: slug });
+        trackFavoriteTeamAdded({
+          entry_surface: "team_picker",
+          team_slug: slug,
+        });
       }
 
       router.refresh();

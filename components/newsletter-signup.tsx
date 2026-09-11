@@ -38,7 +38,7 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
         }
 
         hasTrackedView.current = true;
-        trackNewsletterView({ source });
+        trackNewsletterView({ entry_surface: source });
         observer.disconnect();
       },
       { threshold: 0.5 },
@@ -51,7 +51,7 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
-    trackNewsletterSubmit({ source });
+    trackNewsletterSubmit({ entry_surface: source });
     setMessage("");
 
     try {
@@ -63,20 +63,27 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
 
       if (response.status === 429) {
         setMessage("しばらくしてから、もう一度お試しください。");
-        trackNewsletterResult({ source, status: "rate_limited" });
+        trackNewsletterResult({
+          entry_surface: source,
+          status: "rate_limited",
+        });
       } else if (!response.ok) {
-        setMessage("登録を受け付けられませんでした。入力内容を確認してください。");
-        trackNewsletterResult({ source, status: "error" });
+        setMessage(
+          "登録を受け付けられませんでした。入力内容を確認してください。",
+        );
+        trackNewsletterResult({ entry_surface: source, status: "error" });
       } else {
         setEmail("");
         setMessage(
           "必要な手続きをメールでお知らせします。受信箱をご確認ください。",
         );
-        trackNewsletterResult({ source, status: "ok" });
+        trackNewsletterResult({ entry_surface: source, status: "ok" });
       }
     } catch {
-      setMessage("通信に失敗しました。しばらくしてから、もう一度お試しください。");
-      trackNewsletterResult({ source, status: "network_error" });
+      setMessage(
+        "通信に失敗しました。しばらくしてから、もう一度お試しください。",
+      );
+      trackNewsletterResult({ entry_surface: source, status: "network_error" });
     } finally {
       setSubmitting(false);
     }
@@ -94,7 +101,10 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
       <p className="mt-1 text-sm leading-6 text-[var(--color-ink-muted)]">
         週に1回、週末の海外ラグビーの試合結果を日本語でまとめて送ります。
       </p>
-      <form className="mt-3 flex flex-col gap-2 sm:flex-row" onSubmit={onSubmit}>
+      <form
+        className="mt-3 flex flex-col gap-2 sm:flex-row"
+        onSubmit={onSubmit}
+      >
         <label className="sr-only" htmlFor={`newsletter-email-${source}`}>
           メールアドレス
         </label>
@@ -116,7 +126,10 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
           {submitting ? "送信中…" : "無料で受け取る"}
         </button>
       </form>
-      <p aria-live="polite" className="mt-2 text-xs text-[var(--color-ink-muted)]">
+      <p
+        aria-live="polite"
+        className="mt-2 text-xs text-[var(--color-ink-muted)]"
+      >
         {message || "登録後、確認メールのリンクを開くと配信が始まります。"}
       </p>
     </section>

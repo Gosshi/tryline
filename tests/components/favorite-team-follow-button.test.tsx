@@ -53,7 +53,7 @@ describe("FavoriteTeamFollowButton", () => {
       favorite_team_slugs: ["france", "japan"],
     });
     expect(gtag).toHaveBeenCalledWith("event", "favorite_team_added", {
-      source: "test",
+      entry_surface: "test",
       team_slug: "japan",
     });
     expect(routerMock.refresh).toHaveBeenCalledTimes(1);

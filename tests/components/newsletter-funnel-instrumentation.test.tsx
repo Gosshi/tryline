@@ -120,7 +120,7 @@ describe("newsletter funnel instrumentation", () => {
 
     expect(gtag).toHaveBeenCalledTimes(1);
     expect(gtag).toHaveBeenCalledWith("event", "newsletter_view", {
-      source: "calendar",
+      entry_surface: "calendar",
     });
     expect(observer.disconnect).toHaveBeenCalled();
   });
@@ -143,7 +143,7 @@ describe("newsletter funnel instrumentation", () => {
 
     await waitFor(() => {
       expect(gtag).toHaveBeenCalledWith("event", "newsletter_result", {
-        source: "home",
+        entry_surface: "home",
         status: "ok",
       });
     });
@@ -163,7 +163,7 @@ describe("newsletter funnel instrumentation", () => {
 
     await waitFor(() => {
       expect(gtag).toHaveBeenCalledWith("event", "newsletter_result", {
-        source: "competition",
+        entry_surface: "competition",
         status,
       });
     });
@@ -179,7 +179,7 @@ describe("newsletter funnel instrumentation", () => {
 
     await waitFor(() => {
       expect(gtag).toHaveBeenCalledWith("event", "newsletter_result", {
-        source: "calendar",
+        entry_surface: "calendar",
         status: "network_error",
       });
     });

@@ -16,6 +16,12 @@ export type CtaClickParams = {
 
 export type NewsletterSource = "calendar" | "competition" | "home";
 
+// `entry_surface` replaced GA4's reserved `source` parameter on 2026-09-11.
+// Keep pre-change and post-change event data separate when analyzing it.
+type EntrySurfaceParams = {
+  entry_surface: string;
+};
+
 const GTAG_POLL_INTERVAL_MS = 250;
 const GTAG_MAX_WAIT_MS = 10_000;
 const MAX_QUEUED_EVENTS = 50;
@@ -100,10 +106,9 @@ export function trackCtaClick(params: CtaClickParams) {
   trackEvent("cta_click", params);
 }
 
-export function trackFavoriteTeamAdded(params: {
-  team_slug: string;
-  source: string;
-}) {
+export function trackFavoriteTeamAdded(
+  params: EntrySurfaceParams & { team_slug: string },
+) {
   trackEvent("favorite_team_added", params);
 }
 
@@ -133,16 +138,20 @@ export function trackPaywallView(params: {
   trackEvent("paywall_view", params);
 }
 
-export function trackNewsletterView(params: { source: NewsletterSource }) {
+export function trackNewsletterView(
+  params: EntrySurfaceParams & { entry_surface: NewsletterSource },
+) {
   trackEvent("newsletter_view", params);
 }
 
-export function trackNewsletterSubmit(params: { source: NewsletterSource }) {
+export function trackNewsletterSubmit(
+  params: EntrySurfaceParams & { entry_surface: NewsletterSource },
+) {
   trackEvent("newsletter_submit", params);
 }
 
 export function trackNewsletterResult(params: {
-  source: NewsletterSource;
+  entry_surface: NewsletterSource;
   status: "error" | "network_error" | "ok" | "rate_limited";
 }) {
   trackEvent("newsletter_result", params);
