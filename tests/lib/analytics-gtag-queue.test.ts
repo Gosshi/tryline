@@ -2,7 +2,20 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { trackEvent } from "@/lib/analytics";
+import {
+  trackCtaClick,
+  trackEvent,
+  trackFavoriteTeamAdded,
+  trackNewsletterConfirmed,
+  trackNewsletterResult,
+  trackNewsletterSubmit,
+  trackNewsletterView,
+  trackPaywallView,
+  trackPushPermissionGranted,
+  trackReturnVisit,
+  trackSignUp,
+  trackTrialStart,
+} from "@/lib/analytics";
 
 function setGtag(gtag: ReturnType<typeof vi.fn> | undefined) {
   Object.defineProperty(window, "gtag", {
@@ -56,10 +69,10 @@ describe("analytics gtag queue", () => {
     const gtag = vi.fn();
     setGtag(gtag);
 
-    trackEvent("immediate", { source: "test" });
+    trackEvent("immediate", { entry_surface: "test" });
 
     expect(gtag).toHaveBeenCalledWith("event", "immediate", {
-      source: "test",
+      entry_surface: "test",
     });
     expect(vi.getTimerCount()).toBe(0);
   });
@@ -110,5 +123,48 @@ describe("analytics gtag queue", () => {
     trackEvent("server-rendered");
 
     expect(setIntervalSpy).not.toHaveBeenCalled();
+  });
+
+  it("does not pass GA4 reserved attribution keys from any analytics event", () => {
+    const gtag = vi.fn();
+    setGtag(gtag);
+
+    trackEvent("custom_event", { custom_value: "value" });
+    trackCtaClick({
+      content_type: "preview",
+      cta_id: "subscribe",
+      cta_location: "header",
+      destination: "/newsletter",
+      is_sample: true,
+      label: "登録",
+      language: "ja",
+      match_id: "match-1",
+    });
+    trackFavoriteTeamAdded({
+      entry_surface: "team_picker",
+      team_slug: "all-blacks",
+    });
+    trackPushPermissionGranted();
+    trackReturnVisit({ days_since_last_visit: 7 });
+    trackTrialStart();
+    trackSignUp();
+    trackPaywallView({
+      content_type: "preview",
+      is_sample: true,
+      match_id: "match-1",
+      paywall_location: "article",
+      viewer_type: "anonymous",
+    });
+    trackNewsletterView({ entry_surface: "home" });
+    trackNewsletterSubmit({ entry_surface: "competition" });
+    trackNewsletterResult({ entry_surface: "calendar", status: "ok" });
+    trackNewsletterConfirmed();
+
+    const reservedKeys = ["source", "medium", "campaign", "term", "content"];
+    for (const [, , params] of gtag.mock.calls) {
+      for (const key of reservedKeys) {
+        expect(Object.keys(params)).not.toContain(key);
+      }
+    }
   });
 });

@@ -47,7 +47,7 @@ export function FavoriteTeamFollowButton({
       }
 
       setFavoriteSlugs(nextSlugs);
-      trackFavoriteTeamAdded({ source, team_slug: teamSlug });
+      trackFavoriteTeamAdded({ entry_surface: source, team_slug: teamSlug });
       router.refresh();
     } finally {
       setSaving(false);
