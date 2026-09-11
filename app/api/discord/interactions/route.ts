@@ -2,7 +2,10 @@ import { after } from "next/server";
 import { createPublicKey, verify } from "node:crypto";
 
 import { getSupabaseServerClient } from "@/lib/db/server";
-import { validateSourceUrl } from "@/lib/discord/source-url";
+import {
+  OWNER_VERIFIABLE_SOURCE_URL_STATUSES,
+  validateSourceUrl,
+} from "@/lib/discord/source-url";
 import { getServerEnv } from "@/lib/env";
 import {
   loadAllowedSourcedFactRows,
@@ -28,6 +31,7 @@ const RESEARCH_MODAL_ID_PATTERN = new RegExp(
   `^${RESEARCH_FACT_ENTRY_MODAL_PREFIX}$`,
 );
 const CONFIDENCES = new Set<SourcedFactConfidence>(["high", "medium", "low"]);
+const SOURCE_CHECKS = new Set(["auto", "owner_verified"]);
 
 type DiscordInteraction = {
   application_id?: unknown;
@@ -197,6 +201,26 @@ function buildResearchFactEntryModal(matches: ResearchMatchCandidate[]) {
           label: "確度",
           type: 18,
         },
+        // Discord modals allow at most five components; future fields must be merged.
+        {
+          component: {
+            custom_id: "source_check",
+            options: [
+              { default: true, label: "自動で確認する", value: "auto" },
+              {
+                label: "目視で確認済み（403/429 のサイト用）",
+                value: "owner_verified",
+              },
+            ],
+            placeholder: "出典の確認方法",
+            required: false,
+            type: 3,
+          },
+          description:
+            "ボット拒否で弾かれたときだけ「目視で確認済み」を選ぶ",
+          label: "出典確認",
+          type: 18,
+        },
       ],
       custom_id: RESEARCH_FACT_ENTRY_MODAL_PREFIX,
       title: "調査事実を追加",
@@ -313,12 +337,15 @@ function parseResearchModalSubmission(interaction: DiscordInteraction) {
     "confidence",
   );
   const confidence = confidenceValue ?? "medium";
+  const sourceCheck =
+    findComponentValue(interaction.data.components, "source_check") ?? "auto";
 
   if (
     !matchId ||
     !factsValue ||
     !sourceUrl ||
-    !CONFIDENCES.has(confidence as SourcedFactConfidence)
+    !CONFIDENCES.has(confidence as SourcedFactConfidence) ||
+    !SOURCE_CHECKS.has(sourceCheck)
   ) {
     return null;
   }
@@ -327,6 +354,7 @@ function parseResearchModalSubmission(interaction: DiscordInteraction) {
     confidence: confidence as SourcedFactConfidence,
     facts: parseResearchFactLines(factsValue),
     matchId,
+    sourceCheck,
     sourceUrl,
   };
 }
@@ -393,7 +421,20 @@ async function processResearchFactEntry(interaction: DiscordInteraction) {
   }
 
   const urlValidation = await validateSourceUrl(submission.sourceUrl);
-  if (!urlValidation.ok) {
+  const ownerVerifiedStatus =
+    !urlValidation.ok &&
+    submission.sourceCheck === "owner_verified" &&
+    urlValidation.status !== null &&
+    OWNER_VERIFIABLE_SOURCE_URL_STATUSES.has(urlValidation.status)
+      ? urlValidation.status
+      : null;
+  if (!urlValidation.ok && ownerVerifiedStatus === null) {
+    if (
+      urlValidation.status !== null &&
+      OWNER_VERIFIABLE_SOURCE_URL_STATUSES.has(urlValidation.status)
+    ) {
+      return `${urlValidation.reason}\nボット拒否の可能性があります。リンクを開いて内容を確認済みなら、「出典確認」で「目視で確認済み」を選んで送り直してください。`;
+    }
     return urlValidation.reason;
   }
 
@@ -421,9 +462,18 @@ async function processResearchFactEntry(interaction: DiscordInteraction) {
     metadata: {
       entry_method: "manual",
       entry_path: "discord_research_command",
+      ...(ownerVerifiedStatus === null
+        ? {}
+        : {
+            source_url_check: "owner_verified",
+            source_url_http_status: ownerVerifiedStatus,
+          }),
     },
     model_version: "manual",
-    source_domain: urlValidation.sourceDomain,
+    source_domain:
+      urlValidation.ok
+        ? urlValidation.sourceDomain
+        : new URL(submission.sourceUrl).hostname,
     source_url: submission.sourceUrl,
   }));
   const { data: savedRows, error: upsertError } = await db
@@ -438,7 +488,11 @@ async function processResearchFactEntry(interaction: DiscordInteraction) {
   }
 
   const savedCount = savedRows?.length ?? 0;
-  const successMessage = `保存: ${savedCount}件、重複スキップ: ${rows.length - savedCount}件。`;
+  const successMessage = `保存: ${savedCount}件、重複スキップ: ${rows.length - savedCount}件。${
+    ownerVerifiedStatus === null
+      ? ""
+      : `\n出典 URL は自動確認できなかったため（HTTP ${ownerVerifiedStatus}）、目視確認済みとして保存しました。`
+  }`;
   try {
     const allowedRows = await loadAllowedSourcedFactRows(
       submission.matchId,
