@@ -49,7 +49,7 @@ export async function GET(request: Request) {
       .in("status", ["draft", "published"])
       .eq("match.status", "scheduled")
       .gt("match.kickoff_at", now.toISOString())
-      .lte("match.kickoff_at", previewDueUpperBound(now));
+      .lt("match.kickoff_at", previewDueUpperBound(now));
 
     if (contentError) {
       throw contentError;

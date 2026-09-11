@@ -71,6 +71,12 @@
 
 **既存ルートの変更**: `POST /api/cron/orchestrate` と `POST /api/cron/audit-prekickoff-readiness` は、**対象試合の選び方だけ**が変わる。リクエスト・レスポンス形式は変えない。
 
+## 境界定義の訂正（2026-09-11）
+
+初版は「翌日の終わり」を、直近に過ぎた JST 15:00 から **+33 時間**後、すなわち翌々日 00:00 JST と表現しながら、`lte`（以下）で比較していた。33 時間という距離自体は、翌日の全時刻を覆うために必要である。しかし inclusive な比較では、翌々日 00:00 ちょうどの試合まで対象になり、その試合は本来の前日 15:00 より24時間早く候補になる。
+
+このため、33 時間後の **翌々日 00:00 JST を排他的上限**として返し、3経路すべてで `lt`（未満）を使う。対象になる最後の時刻は翌日 23:59:59.999 JST である。JST 15:00 の公開時刻、cron スケジュール、下限 `kickoff_at >= now` は変えない。
+
 ## 判定ロジック（この定義に従って実装すること）
 
 **JST は夏時間を持たないため、固定オフセット +9 時間で計算してよい。** `Intl` を使う必要はない。
@@ -83,8 +89,8 @@ const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 
 /**
- * 「JST キックオフ日の前日 15:00」に到達している試合の kickoff_at 上限を ISO 文字列で返す。
- * この値以下の kickoff_at を持つ試合が、その時点で生成期限に達している。
+ * 「JST キックオフ日の前日 15:00」に到達している試合の kickoff_at の排他的上限を ISO 文字列で返す。
+ * この値より前の kickoff_at を持つ試合が、その時点で生成期限に達している。
  */
 export function previewDueUpperBound(now: Date): string {
   // now を JST の壁時計に移す（UTC の getter で JST の年月日時が読める状態にする）
@@ -105,7 +111,7 @@ export function previewDueUpperBound(now: Date): string {
       ? todayReleaseJst - 24 * HOUR_MS
       : todayReleaseJst;
 
-  // その 15:00 が担当する JST キックオフ日は「翌日」。その日の終わり = +33 時間
+  // その 15:00 が担当する JST キックオフ日は「翌日」。翌々日 00:00 を排他的上限にする。
   return new Date(lastReleaseJst + 33 * HOUR_MS - JST_OFFSET_MS).toISOString();
 }
 ```
@@ -114,7 +120,7 @@ export function previewDueUpperBound(now: Date): string {
 
 ```ts
 kickoffGte: now.toISOString(),
-kickoffLte: previewDueUpperBound(now),
+kickoffLt: previewDueUpperBound(now),
 ```
 
 **検算（この4件をユニットテストにすること）**
@@ -126,7 +132,7 @@ kickoffLte: previewDueUpperBound(now),
 | `2026-09-11T12:00:00.000Z` | 09-11 21:00 | `2026-09-12T15:00:00.000Z` | 15:00 の回と同じ（＝21:00 の回はリトライ枠） |
 | `2026-09-11T18:00:00.000Z` | 09-12 03:00 | `2026-09-12T15:00:00.000Z` | 09-12 まで（15:00 前なので上限は動かない） |
 
-**この表の「意味」列は、`kickoff_at <= 戻り値` かつ `kickoff_at >= now` を満たす範囲を JST の暦日で言い換えたものである。** テストは戻り値の ISO 文字列を直接アサートすること。
+**この表の「意味」列は、`kickoff_at < 戻り値` かつ `kickoff_at >= now` を満たす範囲を JST の暦日で言い換えたものである。** 翌々日 00:00 JST は含まず、翌日 23:59:59.999 JST までを含む。テストは戻り値の ISO 文字列を直接アサートすること。
 
 **なぜ「N 時間前」では書けないか。** 前日 15:00 はキックオフ時刻によって「何時間前」かが変わる。JST 20:00 キックオフなら 29 時間前、JST 03:00 キックオフなら 12 時間前になる。単一の固定時間窓では両立しない。**JST の暦日で判定する以外に方法が無い。**
 
@@ -138,7 +144,7 @@ kickoffLte: previewDueUpperBound(now),
 - 生成済みの試合は `EXISTING_CONTENT_STATUSES` で除外されるため、下限を外しても二重生成は起きない
 - 下限を外すことで、前日 15:00 の回が失敗した試合を **当日 21:00 / 03:00 / 09:00 / 15:00 の回が自動で拾う**（自己修復）
 
-**対象試合数は増えない。** 旧窓は最大48時間先まで拾っていたが、新しい上限は最大でも33時間先（前日15:00 の回から見た翌日23:59）である。近い側が 12h→0h に広がる分を、遠い側が 48h→33h に狭まる分が上回る。
+**対象試合数は増えない。** 旧窓は最大48時間先まで拾っていたが、新しい上限は最大でも33時間未満先（前日15:00 の回から見た翌日23:59:59.999）である。近い側が 12h→0h に広がる分を、遠い側が 48h→33h 未満に狭まる分が上回る。
 
 ## リフレッシュ workflow の扱い
 
@@ -185,7 +191,7 @@ kickoffLte: previewDueUpperBound(now),
 対象条件は次の4つすべてを満たす試合。
 
 1. `matches.status = 'scheduled'` かつ `kickoff_at > now()`
-2. `kickoff_at <= previewDueUpperBound(now)` — **既に生成期限を過ぎた試合に限る。** この条件が対象集合の上限を与える
+2. `kickoff_at < previewDueUpperBound(now)` — **既に生成期限を過ぎた試合に限る。** この条件が対象集合の上限を与える
 3. `match_content` に `content_type = 'preview'` / `language = 'ja'` / `status in ('draft','published')` の行が存在する
 4. その試合の `match_lineups` について `max(greatest(created_at, updated_at)) > match_content.generated_at`
 
@@ -219,7 +225,7 @@ kickoffLte: previewDueUpperBound(now),
 
 1. `lib/cron/preview-window.ts` に `previewDueUpperBound(now: Date): string` が存在し、上の「検算」表の4件すべてで期待値どおりの ISO 文字列を返すユニットテストがある
 2. `lib/cron/orchestrate.ts` から `PREVIEW_WINDOW_START_HOURS` と `PREVIEW_WINDOW_END_HOURS` が削除されている（`grep -n "PREVIEW_WINDOW" lib/cron/orchestrate.ts` が0件）
-3. `runOrchestrate` のプレビュー候補取得が `kickoffGte: now.toISOString()` / `kickoffLte: previewDueUpperBound(now)` になっている
+3. `runOrchestrate` のプレビュー候補取得が `kickoffGte: now.toISOString()` / `kickoffLt: previewDueUpperBound(now)` になっている
 4. `tests/cron/orchestrate.test.ts` に次の3ケースが追加され、パスする。**いずれも `now` を明示的に渡して判定すること**
    - `now` = JST 前日 14:00 のとき、翌日キックオフの試合が `previews.triggered` に**含まれない**（`generateContent` がその match_id で呼ばれていないことをモックの呼び出し引数で確認する）
    - `now` = JST 前日 15:00 のとき、翌日キックオフの試合が `previews.triggered` に**含まれる**
@@ -237,7 +243,7 @@ kickoffLte: previewDueUpperBound(now),
     - ラインアップの `created_at` は古いが `updated_at` が `generated_at` より後の試合が**含まれる**（**`created_at` だけを見ていないことの確認。upsert で選手が入れ替わるケース**）
     - `generated_at` のほうが後の試合が**含まれない**
     - preview コンテンツがまだ無い試合が**含まれない**
-14. 同エンドポイントが `kickoff_at <= previewDueUpperBound(now)` で上限を絞っている（`orchestrate` と同じ関数を使うこと。**別途 33 などの数値をハードコードしないこと**）
+14. 同エンドポイントが `kickoff_at < previewDueUpperBound(now)` で上限を絞っている（`orchestrate` と同じ関数を使うこと。**別途 33 などの数値をハードコードしないこと**）
 15. `MAX_LATE_LINEUP_MATCHES = 30` を超えたとき、`kickoff_at` **昇順**で30件に切り `truncated: true` を返すテストがある
 16. `.github/workflows/cron-preview-lineup-catchup.yml` が存在し、`schedule` が `5 12 * * *` の1本だけで、`workflow_dispatch` を持つ
 17. 同ワークフローが `count == 0` のとき **`fetch-sourced-facts` も `generate-content` も1回も呼ばない**（`if:` 条件でジョブ自体をスキップすること。ループ内で握りつぶす形にしないこと）

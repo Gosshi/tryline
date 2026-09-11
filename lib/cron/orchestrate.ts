@@ -81,6 +81,7 @@ async function getMatchIdsMissingContent(params: {
   status: "scheduled" | "finished";
   contentType: ContentType;
   kickoffGte?: string;
+  kickoffLt?: string;
   kickoffLte?: string;
   orderByKickoff?: "asc" | "desc";
 }): Promise<{ eligibleMatches: MatchCandidate[]; skippedCount: number }> {
@@ -95,6 +96,10 @@ async function getMatchIdsMissingContent(params: {
 
   if (params.kickoffLte) {
     matchQuery = matchQuery.lte("kickoff_at", params.kickoffLte);
+  }
+
+  if (params.kickoffLt) {
+    matchQuery = matchQuery.lt("kickoff_at", params.kickoffLt);
   }
 
   if (params.orderByKickoff) {
@@ -218,7 +223,7 @@ export async function runOrchestrate(
     status: "scheduled",
     contentType: "preview",
     kickoffGte: now.toISOString(),
-    kickoffLte: previewDueUpperBound(now),
+    kickoffLt: previewDueUpperBound(now),
   });
 
   const recapCandidates = await getMatchIdsMissingContent({

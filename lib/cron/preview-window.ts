@@ -3,8 +3,8 @@ const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 
 /**
- * 「JST キックオフ日の前日 15:00」に到達している試合の kickoff_at 上限を ISO 文字列で返す。
- * この値以下の kickoff_at を持つ試合が、その時点で生成期限に達している。
+ * 「JST キックオフ日の前日 15:00」に到達している試合の kickoff_at の排他的上限を ISO 文字列で返す。
+ * この値より前の kickoff_at を持つ試合が、その時点で生成期限に達している。
  */
 export function previewDueUpperBound(now: Date): string {
   // now を JST の壁時計に移す（UTC の getter で JST の年月日時が読める状態にする）
@@ -25,6 +25,6 @@ export function previewDueUpperBound(now: Date): string {
       ? todayReleaseJst - 24 * HOUR_MS
       : todayReleaseJst;
 
-  // その 15:00 が担当する JST キックオフ日は「翌日」。その日の終わり = +33 時間
+  // その 15:00 が担当する JST キックオフ日は「翌日」。翌々日 00:00 を排他的上限にする。
   return new Date(lastReleaseJst + 33 * HOUR_MS - JST_OFFSET_MS).toISOString();
 }
