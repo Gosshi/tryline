@@ -4,6 +4,10 @@ import { createPublicKey, verify } from "node:crypto";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { validateSourceUrl } from "@/lib/discord/source-url";
 import { getServerEnv } from "@/lib/env";
+import {
+  loadAllowedSourcedFactRows,
+  selectSourcedFactsForGeneration,
+} from "@/lib/llm/sourced-facts/fetch";
 
 import type { SourcedFactConfidence } from "@/lib/llm/sourced-facts/types";
 import type { ContentType } from "@/lib/llm/types";
@@ -252,6 +256,43 @@ function parseResearchFactLines(value: string) {
   return facts;
 }
 
+function truncateDiscordFact(value: string) {
+  const characters = [...value];
+  return characters.length <= 40
+    ? value
+    : `${characters.slice(0, 39).join("")}…`;
+}
+
+function formatManualFactsGenerationNotice(params: {
+  droppedManual: Array<{ fact: string }>;
+  manualTotal: number;
+  prefix: string;
+}) {
+  if (params.manualTotal <= 8) {
+    return params.prefix;
+  }
+  if (params.droppedManual.length === 0) {
+    return `${params.prefix}\nこの試合の手動事実は${params.manualTotal}件です。全件が生成に使われ、自動取得の事実は使われません。`;
+  }
+
+  const notice = `この試合の手動事実は${params.manualTotal}件で、生成に使われるのは新しい順に16件です。次の${params.droppedManual.length}件は使われません:`;
+  const lines: string[] = [];
+  let listed = 0;
+  for (const fact of params.droppedManual) {
+    const line = `- ${truncateDiscordFact(fact.fact)}`;
+    const remaining = params.droppedManual.length - listed - 1;
+    const suffix = remaining > 0 ? `\n…ほか${remaining}件` : "";
+    if (`${params.prefix}\n${notice}\n${[...lines, line].join("\n")}${suffix}`.length > 2_000) {
+      break;
+    }
+    lines.push(line);
+    listed += 1;
+  }
+  const remaining = params.droppedManual.length - listed;
+  const suffix = remaining > 0 ? `\n…ほか${remaining}件` : "";
+  return `${params.prefix}\n${notice}\n${lines.join("\n")}${suffix}`;
+}
+
 function parseResearchModalSubmission(interaction: DiscordInteraction) {
   if (
     interaction.type !== 5 ||
@@ -397,7 +438,26 @@ async function processResearchFactEntry(interaction: DiscordInteraction) {
   }
 
   const savedCount = savedRows?.length ?? 0;
-  return `保存: ${savedCount}件、重複スキップ: ${rows.length - savedCount}件。`;
+  const successMessage = `保存: ${savedCount}件、重複スキップ: ${rows.length - savedCount}件。`;
+  try {
+    const allowedRows = await loadAllowedSourcedFactRows(
+      submission.matchId,
+      contentType,
+    );
+    const selection = selectSourcedFactsForGeneration(allowedRows);
+    if (selection.droppedManual.length > 0) {
+      console.warn(
+        `[sourced-facts] Dropped ${selection.droppedManual.length} manual fact(s) over the generation cap for match_id=${submission.matchId}.`,
+      );
+    }
+    return formatManualFactsGenerationNotice({
+      droppedManual: selection.droppedManual,
+      manualTotal: selection.manualTotal,
+      prefix: successMessage,
+    });
+  } catch {
+    return `${successMessage}\n（件数の確認に失敗しました）`;
+  }
 }
 
 async function editDeferredInteractionResponse(params: {

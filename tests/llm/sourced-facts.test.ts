@@ -14,14 +14,19 @@ import {
   buildSearchPrompt,
   fetchSourcedFactsForMatch,
   isManualSourcedFact,
+  loadAllowedSourcedFactRows,
   isSourcedFactsEnabledForMatch,
   loadSourcedFactsForMatch,
   parseSourcedFactsResponse,
   replaceSourcedFactsForSourceDomains,
+  selectSourcedFactsForGeneration,
 } from "@/lib/llm/sourced-facts/fetch";
 import { parseJrfuMatchLineupHtml } from "@/lib/scrapers/jrfu-lineups";
 
-import type { SourcedFactRejection } from "@/lib/llm/sourced-facts/types";
+import type {
+  SourcedFactRejection,
+  StoredSourcedFact,
+} from "@/lib/llm/sourced-facts/types";
 
 const dbMock = vi.hoisted(() => ({
   delete: vi.fn(),
@@ -145,7 +150,9 @@ const japanMatch = {
   kickoff_at: "2026-08-15T06:15:00.000Z",
 };
 
-function cachedFact(overrides: Record<string, unknown> = {}) {
+function cachedFact(
+  overrides: Record<string, unknown> = {},
+): StoredSourcedFact {
   return {
     confidence: "high",
     content_type: "preview",
@@ -1049,7 +1056,7 @@ describe("fetchSourcedFactsForMatch", () => {
     ]);
   });
 
-  it("uses only the newest manual cached facts when at least eight exist", async () => {
+  it("uses all manual cached facts when they are within the generation cap", async () => {
     const automaticFacts = Array.from({ length: 2 }, (_, index) =>
       cachedFact({
         fact: `automatic fact ${index + 1}`,
@@ -1078,7 +1085,126 @@ describe("fetchSourcedFactsForMatch", () => {
       "manual fact 6",
       "manual fact 7",
       "manual fact 8",
+      "manual fact 9",
+      "manual fact 10",
     ]);
+  });
+
+  it("selects manual facts before automatic facts within the generation cap", () => {
+    const manualFacts = Array.from({ length: 3 }, (_, index) =>
+      cachedFact({
+        fact: `manual fact ${index + 1}`,
+        metadata: { entry_method: "manual" },
+      }),
+    );
+    const automaticFacts = Array.from({ length: 10 }, (_, index) =>
+      cachedFact({ fact: `automatic fact ${index + 1}` }),
+    );
+
+    expect(
+      selectSourcedFactsForGeneration([...manualFacts, ...automaticFacts]),
+    ).toMatchObject({
+      automaticSelected: 5,
+      automaticTotal: 10,
+      droppedManual: [],
+      manualTotal: 3,
+      selected: [...manualFacts, ...automaticFacts.slice(0, 5)],
+    });
+  });
+
+  it("uses eight manual facts without automatic facts", () => {
+    const manualFacts = Array.from({ length: 8 }, (_, index) =>
+      cachedFact({
+        fact: `manual fact ${index + 1}`,
+        metadata: { entry_method: "manual" },
+      }),
+    );
+    const automaticFacts = [cachedFact({ fact: "automatic fact" })];
+
+    expect(
+      selectSourcedFactsForGeneration([...manualFacts, ...automaticFacts]),
+    ).toMatchObject({
+      automaticSelected: 0,
+      automaticTotal: 1,
+      droppedManual: [],
+      manualTotal: 8,
+      selected: manualFacts,
+    });
+  });
+
+  it("uses all twelve manual facts without automatic facts", () => {
+    const manualFacts = Array.from({ length: 12 }, (_, index) =>
+      cachedFact({
+        fact: `manual fact ${index + 1}`,
+        metadata: { entry_method: "manual" },
+      }),
+    );
+    const automaticFacts = Array.from({ length: 5 }, (_, index) =>
+      cachedFact({ fact: `automatic fact ${index + 1}` }),
+    );
+
+    expect(
+      selectSourcedFactsForGeneration([...manualFacts, ...automaticFacts]),
+    ).toMatchObject({
+      automaticSelected: 0,
+      automaticTotal: 5,
+      droppedManual: [],
+      manualTotal: 12,
+      selected: manualFacts,
+    });
+  });
+
+  it("keeps up to sixteen manual facts and drops older manual facts", () => {
+    const manualFacts = Array.from({ length: 17 }, (_, index) =>
+      cachedFact({
+        fact: `manual fact ${index + 1}`,
+        metadata: { entry_method: "manual" },
+      }),
+    );
+    const selection = selectSourcedFactsForGeneration(manualFacts);
+
+    expect(selection).toMatchObject({
+      automaticSelected: 0,
+      automaticTotal: 0,
+      droppedManual: [manualFacts[16]],
+      manualTotal: 17,
+      selected: manualFacts.slice(0, 16),
+    });
+  });
+
+  it("selects the newest eight automatic facts when there are no manual facts", () => {
+    const automaticFacts = Array.from({ length: 10 }, (_, index) =>
+      cachedFact({ fact: `automatic fact ${index + 1}` }),
+    );
+
+    expect(selectSourcedFactsForGeneration(automaticFacts)).toMatchObject({
+      automaticSelected: 8,
+      automaticTotal: 10,
+      droppedManual: [],
+      manualTotal: 0,
+      selected: automaticFacts.slice(0, 8),
+    });
+    expect(selectSourcedFactsForGeneration([])).toMatchObject({
+      automaticSelected: 0,
+      automaticTotal: 0,
+      droppedManual: [],
+      manualTotal: 0,
+      selected: [],
+    });
+  });
+
+  it("orders allowed sourced facts by newest fetch and fact", async () => {
+    const builder = createSourcedFactsBuilder();
+    dbMock.from.mockReturnValue(builder);
+
+    await loadAllowedSourcedFactRows("match-1", "preview");
+
+    expect(builder.order).toHaveBeenNthCalledWith(1, "fetched_at", {
+      ascending: false,
+    });
+    expect(builder.order).toHaveBeenNthCalledWith(2, "fact", {
+      ascending: true,
+    });
   });
 
   it("keeps the previous newest-first selection when no cached facts are manual", async () => {
@@ -1186,6 +1312,50 @@ describe("fetchSourcedFactsForMatch", () => {
     expect(result.cached).toBe(true);
     expect(result.facts).toHaveLength(1);
     expect(openAIMock.createWebSearchJsonResponse).not.toHaveBeenCalled();
+  });
+
+  it("uses nine manual facts and current automatic facts from cache unless forced", async () => {
+    const manualFacts = Array.from({ length: 9 }, (_, index) =>
+      cachedFact({
+        fact: `manual fact ${index + 1}`,
+        metadata: { entry_method: "manual" },
+      }),
+    );
+    const automaticFacts = Array.from({ length: 3 }, (_, index) =>
+      cachedFact({ fact: `automatic fact ${index + 1}` }),
+    );
+    const cachedRows = [...manualFacts, ...automaticFacts];
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder(cachedRows);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    const cachedResult = await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(cachedResult).toMatchObject({ cached: true, fetched: false });
+    expect(cachedResult.facts).toEqual(manualFacts);
+    expect(openAIMock.createWebSearchJsonResponse).not.toHaveBeenCalled();
+
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+    await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
   });
 
   it("refetches recap cached facts from stale prompt versions", async () => {

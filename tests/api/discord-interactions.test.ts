@@ -23,6 +23,11 @@ const supabaseMocks = vi.hoisted(() => ({
   matchMaybeSingle: vi.fn(),
   matchSelect: vi.fn(),
   sourcedFactsSelect: vi.fn(),
+  sourcedFactsQueryEq: vi.fn(),
+  sourcedFactsQueryIn: vi.fn(),
+  sourcedFactsQueryOrder: vi.fn(),
+  sourcedFactsQueryError: null as Error | null,
+  sourcedFactsQueryRows: [] as unknown[],
   sourcedFactsUpsert: vi.fn(),
 }));
 
@@ -117,6 +122,19 @@ function researchSubmission(params: {
   };
 }
 
+function manualSourcedFactRows(count: number) {
+  return Array.from({ length: count }, (_, index) => ({
+    confidence: "medium",
+    content_type: "preview",
+    fact: `手動事実 ${index + 1}`,
+    fetched_at: `2026-08-27T${String(23 - (index % 20)).padStart(2, "0")}:00:00.000Z`,
+    metadata: { entry_method: "manual" },
+    model_version: "manual",
+    source_domain: "www.rnz.co.nz",
+    source_url: sourceUrl,
+  }));
+}
+
 async function runAfterCallbacks() {
   const callbacks = afterMocks.callbacks.splice(0);
   await Promise.all(callbacks.map((callback) => callback()));
@@ -147,6 +165,25 @@ const candidateMatchBuilder = {
 const sourcedFactsBuilder = {
   select: supabaseMocks.sourcedFactsSelect,
 };
+const sourcedFactsQueryBuilder = {
+  eq: supabaseMocks.sourcedFactsQueryEq,
+  in: supabaseMocks.sourcedFactsQueryIn,
+  order: supabaseMocks.sourcedFactsQueryOrder,
+  select: vi.fn().mockReturnThis(),
+  then: (
+    resolve: (value: { data: unknown[]; error: Error | null }) => unknown,
+  ) =>
+    Promise.resolve(
+      resolve({
+        data: supabaseMocks.sourcedFactsQueryRows,
+        error: supabaseMocks.sourcedFactsQueryError,
+      }),
+    ),
+};
+const sourcedFactsTableBuilder = {
+  select: vi.fn(() => sourcedFactsQueryBuilder),
+  upsert: supabaseMocks.sourcedFactsUpsert,
+};
 
 describe("POST /api/discord/interactions", () => {
   beforeEach(() => {
@@ -173,10 +210,15 @@ describe("POST /api/discord/interactions", () => {
       data: [{ fact: "saved" }],
       error: null,
     });
+    supabaseMocks.sourcedFactsQueryRows = [];
+    supabaseMocks.sourcedFactsQueryError = null;
+    supabaseMocks.sourcedFactsQueryEq.mockReturnValue(sourcedFactsQueryBuilder);
+    supabaseMocks.sourcedFactsQueryIn.mockReturnValue(sourcedFactsQueryBuilder);
+    supabaseMocks.sourcedFactsQueryOrder.mockReturnValue(sourcedFactsQueryBuilder);
     supabaseMocks.from.mockImplementation((table: string) => {
       if (table === "matches") return matchBuilder;
       if (table === "match_sourced_facts") {
-        return { upsert: supabaseMocks.sourcedFactsUpsert };
+        return sourcedFactsTableBuilder;
       }
       throw new Error(`Unexpected table: ${table}`);
     });
@@ -404,6 +446,88 @@ describe("POST /api/discord/interactions", () => {
         }),
       ],
       expect.any(Object),
+    );
+  });
+
+  it("does not append a generation-cap notice for five manual facts", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+    supabaseMocks.sourcedFactsQueryRows = manualSourcedFactRows(5);
+
+    await POST(createRequest(researchSubmission({ facts: "新しい事実。" })));
+    await runAfterCallbacks();
+
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toBe(
+      "保存: 1件、重複スキップ: 0件。",
+    );
+  });
+
+  it("notifies the owner when all twelve manual facts will be used", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+    supabaseMocks.sourcedFactsQueryRows = manualSourcedFactRows(12);
+
+    await POST(createRequest(researchSubmission({ facts: "新しい事実。" })));
+    await runAfterCallbacks();
+
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toBe(
+      "保存: 1件、重複スキップ: 0件。\nこの試合の手動事実は12件です。全件が生成に使われ、自動取得の事実は使われません。",
+    );
+  });
+
+  it("lists dropped manual facts when more than sixteen exist", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+    supabaseMocks.sourcedFactsQueryRows = manualSourcedFactRows(17);
+
+    await POST(createRequest(researchSubmission({ facts: "新しい事実。" })));
+    await runAfterCallbacks();
+
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toBe(
+      "保存: 1件、重複スキップ: 0件。\nこの試合の手動事実は17件で、生成に使われるのは新しい順に16件です。次の1件は使われません:\n- 手動事実 17",
+    );
+  });
+
+  it("keeps a hundred-manual-fact notice within Discord's content limit", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+    supabaseMocks.sourcedFactsQueryRows = Array.from(
+      { length: 100 },
+      (_, index) => ({
+        ...manualSourcedFactRows(1)[0],
+        fact: `手動事実 ${index + 1} ${"長".repeat(100)}`,
+      }),
+    );
+
+    await POST(createRequest(researchSubmission({ facts: "新しい事実。" })));
+    await runAfterCallbacks();
+
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    const content = JSON.parse(String(patchCall?.[1]?.body)).content as string;
+    expect(content.length).toBeLessThanOrEqual(2_000);
+    expect(content).toContain("この試合の手動事実は100件");
+    expect(content).toMatch(/…ほか\d+件$/u);
+  });
+
+  it("keeps a saved fact successful when generation-counting fails", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+    supabaseMocks.sourcedFactsQueryError = new Error("count failed");
+
+    await POST(createRequest(researchSubmission({ facts: "新しい事実。" })));
+    await runAfterCallbacks();
+
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toBe(
+      "保存: 1件、重複スキップ: 0件。\n（件数の確認に失敗しました）",
     );
   });
 
