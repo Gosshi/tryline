@@ -15,15 +15,13 @@ export function getCompetitionMetadataTeams(
   const standingTeams = standings
     .map((standing) => standing.teamName.trim())
     .filter((teamName) => teamName && teamName !== "-");
-  const teamNames =
-    standingTeams.length > 0
-      ? standingTeams
-      : matches
-          .flatMap((match) => [
-            getMetadataTeamName(match.homeTeam),
-            getMetadataTeamName(match.awayTeam),
-          ])
-          .filter(Boolean);
+  const matchTeams = matches
+    .flatMap((match) => [
+      getMetadataTeamName(match.homeTeam),
+      getMetadataTeamName(match.awayTeam),
+    ])
+    .filter(Boolean);
+  const teamNames = [...standingTeams, ...matchTeams];
 
   return [...new Set(teamNames)].sort((left, right) =>
     left.localeCompare(right, "ja"),

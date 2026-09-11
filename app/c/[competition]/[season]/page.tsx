@@ -401,11 +401,13 @@ function formatCompetitionHubDescription({
   hasStandings,
   matches,
   metadataCopy,
+  hasIncompleteSchedule,
   teams,
 }: {
   competitionTitle: string;
   hasRecap: boolean;
   hasStandings: boolean;
+  hasIncompleteSchedule: boolean;
   matches: MatchListItem[];
   metadataCopy: { description: string; title: string };
   teams: string[];
@@ -428,6 +430,12 @@ function formatCompetitionHubDescription({
     .filter((detail): detail is string => detail !== null)
     .join("・");
   const suffix = details ? `・${details}` : "";
+
+  if (hasIncompleteSchedule) {
+    const observedParticipants = teams.length > 0 ? `${participants}の` : "";
+
+    return `${competitionTitle}の掲載中${activeMatches.length}試合。${observedParticipants}確認できた日程・見どころ${suffix}を掲載。`;
+  }
 
   return `${competitionTitle}は${participants}が参加する全${activeMatches.length}試合。${dateRange}の${metadataCopy.title}${suffix}を掲載。`;
 }
@@ -589,10 +597,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     comp.family === "six-nations"
       ? `${competitionTitle}（6カ国対抗）`
       : competitionTitle;
+  const metadataIngestedRoundCount = new Set(
+    matches
+      .map((match) => match.round)
+      .filter((round): round is number => round !== null),
+  ).size;
+  const hasIncompleteMetadataSchedule = hasMissingScheduleData(
+    hasIncompleteSchedule({
+      ingestedRegularSeasonFixtureCount: matches.filter(
+        (match) => match.round !== null,
+      ).length,
+      ingestedRoundCount: metadataIngestedRoundCount,
+      standingTeamCount: standings.length,
+      totalRounds: comp.totalRounds,
+    }),
+  );
   const description = formatCompetitionHubDescription({
     competitionTitle: competitionDescriptionTitle,
     hasRecap: Object.values(contentStatusMap).some((status) => status.hasRecap),
     hasStandings: standings.length > 0,
+    hasIncompleteSchedule: hasIncompleteMetadataSchedule,
     matches,
     metadataCopy,
     teams,

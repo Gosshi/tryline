@@ -5,9 +5,17 @@ type SubscriberLookup = {
   error: { message: string } | null;
 };
 
+type StatefulSubscriber = {
+  confirmationToken: string | null;
+  created_at: string;
+  id: string;
+  status: string;
+};
+
 const dbMock = vi.hoisted(() => {
   const state = {
     lookupResults: [] as SubscriberLookup[],
+    statefulSubscriber: null as StatefulSubscriber | null,
     updateError: null as { message: string } | null,
     upsert: vi.fn(),
     update: vi.fn(),
@@ -29,23 +37,81 @@ vi.mock("@/lib/db/server", () => ({
 
       return {
         select: () => {
+          const filters: Array<[string, unknown]> = [];
           const query = {
-            eq: () => query,
-            maybeSingle: () =>
-              Promise.resolve(
+            eq: (column: string, value: unknown) => {
+              filters.push([column, value]);
+              return query;
+            },
+            maybeSingle: () => {
+              const token = filters.find(
+                ([column]) => column === "confirmation_token",
+              )?.[1];
+              const subscriber = dbMock.statefulSubscriber;
+
+              if (subscriber) {
+                return Promise.resolve({
+                  data:
+                    token === subscriber.confirmationToken
+                      ? {
+                          created_at: subscriber.created_at,
+                          id: subscriber.id,
+                          status: subscriber.status,
+                        }
+                      : null,
+                  error: null,
+                });
+              }
+
+              return Promise.resolve(
                 dbMock.lookupResults.shift() ?? { data: null, error: null },
-              ),
+              );
+            },
           };
 
           return query;
         },
         update: (values: unknown) => {
           dbMock.update(values);
+          const filters: Array<[string, unknown]> = [];
           const query = {
-            eq: () => query,
+            eq: (column: string, value: unknown) => {
+              filters.push([column, value]);
+              return query;
+            },
             then: <T>(
               resolve: (value: { error: { message: string } | null }) => T,
-            ) => Promise.resolve(resolve({ error: dbMock.updateError })),
+            ) => {
+              const subscriber = dbMock.statefulSubscriber;
+              const subscriberId = filters.find(
+                ([column]) => column === "id",
+              )?.[1];
+              const token = filters.find(
+                ([column]) => column === "confirmation_token",
+              )?.[1];
+
+              if (
+                subscriber &&
+                !dbMock.updateError &&
+                subscriber.id === subscriberId &&
+                subscriber.confirmationToken === token
+              ) {
+                const updatedValues = values as {
+                  confirmation_token?: string | null;
+                  status?: string;
+                };
+
+                if ("confirmation_token" in updatedValues) {
+                  subscriber.confirmationToken =
+                    updatedValues.confirmation_token ?? null;
+                }
+                if (updatedValues.status) {
+                  subscriber.status = updatedValues.status;
+                }
+              }
+
+              return Promise.resolve(resolve({ error: dbMock.updateError }));
+            },
           };
 
           return query;
@@ -71,6 +137,7 @@ describe("newsletter API routes", () => {
     vi.resetModules();
     vi.clearAllMocks();
     dbMock.lookupResults = [];
+    dbMock.statefulSubscriber = null;
     dbMock.updateError = null;
     dbMock.upsert.mockResolvedValue({ error: null });
     newsletterMock.sendConfirmationEmail.mockResolvedValue(undefined);
@@ -138,7 +205,7 @@ describe("newsletter API routes", () => {
     expect(newsletterMock.sendConfirmationEmail).toHaveBeenCalledTimes(3);
   });
 
-  it("confirms a fresh pending subscriber and invalidates its token", async () => {
+  it("confirms a fresh pending subscriber while keeping its token", async () => {
     dbMock.lookupResults.push({
       data: {
         created_at: new Date().toISOString(),
@@ -157,11 +224,41 @@ describe("newsletter API routes", () => {
     );
     expect(dbMock.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        confirmation_token: null,
         confirmed_at: expect.any(String),
         status: "confirmed",
       }),
     );
+    expect(dbMock.update.mock.calls[0]?.[0]).not.toHaveProperty(
+      "confirmation_token",
+    );
+  });
+
+  it("routes a second visit to a confirmed link as already confirmed", async () => {
+    dbMock.statefulSubscriber = {
+      confirmationToken: "token-1",
+      created_at: new Date().toISOString(),
+      id: "subscriber-1",
+      status: "pending",
+    };
+    const { GET } = await import("@/app/api/newsletter/confirm/route");
+    const request = new Request(
+      "http://localhost/api/newsletter/confirm?token=token-1",
+    );
+
+    const firstResponse = await GET(request);
+    const secondResponse = await GET(request);
+
+    expect(firstResponse.headers.get("location")).toBe(
+      "http://localhost/newsletter/confirmed?completed=1",
+    );
+    expect(secondResponse.headers.get("location")).toBe(
+      "http://localhost/newsletter/already-confirmed",
+    );
+    expect(dbMock.statefulSubscriber).toMatchObject({
+      confirmationToken: "token-1",
+      status: "confirmed",
+    });
+    expect(dbMock.update).toHaveBeenCalledTimes(1);
   });
 
   it("does not confirm an expired token", async () => {
