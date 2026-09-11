@@ -23,6 +23,7 @@ export const SEARCH_PROMPT_VERSION = "sourced-facts@1.4.0";
 const PREVIEW_REFRESH_WINDOW_HOURS = 72;
 const PREVIEW_FRESHNESS_HOURS = 24;
 const MAX_STORED_FACTS = 8;
+export const MAX_MANUAL_FACTS_FOR_GENERATION = 16;
 const JRFU_LINEUP_MODEL_VERSION = "jrfu-lineups@1.0.0";
 
 type MatchForSourcedFacts = {
@@ -71,6 +72,14 @@ type SourcedFactInsert =
 export function isManualSourcedFact(row: Pick<StoredSourcedFact, "metadata">) {
   return row.metadata?.entry_method === "manual";
 }
+
+export type SourcedFactSelection = {
+  automaticSelected: number;
+  automaticTotal: number;
+  droppedManual: StoredSourcedFact[];
+  manualTotal: number;
+  selected: StoredSourcedFact[];
+};
 
 /**
  * A search response is a complete latest snapshot for each source domain.
@@ -367,7 +376,7 @@ function metadataForFact(params: {
   };
 }
 
-export async function loadSourcedFactsForMatch(
+export async function loadAllowedSourcedFactRows(
   matchId: string,
   contentType: ContentType,
 ): Promise<StoredSourcedFact[]> {
@@ -380,7 +389,8 @@ export async function loadSourcedFactsForMatch(
     .eq("match_id", matchId)
     .in("content_type", [contentType, "shared"])
     .in("confidence", ["high", "medium"])
-    .order("fetched_at", { ascending: false });
+    .order("fetched_at", { ascending: false })
+    .order("fact", { ascending: true });
 
   if (error) {
     throw error;
@@ -399,12 +409,43 @@ export async function loadSourcedFactsForMatch(
     );
   }
 
-  const manualRows = allowedRows.filter(isManualSourcedFact);
-  const automaticRows = allowedRows.filter(
-    (row) => !isManualSourcedFact(row),
-  );
+  return allowedRows;
+}
 
-  return [...manualRows, ...automaticRows].slice(0, MAX_STORED_FACTS);
+export function selectSourcedFactsForGeneration(
+  rows: StoredSourcedFact[],
+): SourcedFactSelection {
+  const manual = rows.filter(isManualSourcedFact);
+  const automatic = rows.filter((row) => !isManualSourcedFact(row));
+  const selectedManual = manual.slice(0, MAX_MANUAL_FACTS_FOR_GENERATION);
+  const automaticSlots = Math.max(0, MAX_STORED_FACTS - selectedManual.length);
+  const selectedAutomatic = automatic.slice(0, automaticSlots);
+
+  return {
+    automaticSelected: selectedAutomatic.length,
+    automaticTotal: automatic.length,
+    droppedManual: manual.slice(MAX_MANUAL_FACTS_FOR_GENERATION),
+    manualTotal: manual.length,
+    selected: [...selectedManual, ...selectedAutomatic],
+  };
+}
+
+function warnDroppedManualFacts(matchId: string, selection: SourcedFactSelection) {
+  if (selection.droppedManual.length > 0) {
+    console.warn(
+      `[sourced-facts] Dropped ${selection.droppedManual.length} manual fact(s) over the generation cap for match_id=${matchId}.`,
+    );
+  }
+}
+
+export async function loadSourcedFactsForMatch(
+  matchId: string,
+  contentType: ContentType,
+): Promise<StoredSourcedFact[]> {
+  const rows = await loadAllowedSourcedFactRows(matchId, contentType);
+  const selection = selectSourcedFactsForGeneration(rows);
+  warnDroppedManualFacts(matchId, selection);
+  return selection.selected;
 }
 
 export async function fetchSourcedFactsForMatch(options: {
@@ -446,10 +487,12 @@ export async function fetchSourcedFactsForMatch(options: {
     };
   }
 
-  const cachedFacts = await loadSourcedFactsForMatch(
+  const cachedRows = await loadAllowedSourcedFactRows(
     options.matchId,
     options.contentType,
   );
+  const cachedSelection = selectSourcedFactsForGeneration(cachedRows);
+  warnDroppedManualFacts(options.matchId, cachedSelection);
   const jrfuFacts =
     options.contentType === "preview"
       ? await fetchJrfuLineupSourcedFacts(typedMatch)
@@ -467,7 +510,7 @@ export async function fetchSourcedFactsForMatch(options: {
     await replaceSourcedFactsForSourceDomains(db, jrfuRows);
   }
 
-  const cachedSearchFacts = cachedFacts.filter(
+  const cachedSearchFacts = cachedRows.filter(
     (fact) => typeof fact.metadata?.prompt_version === "string",
   );
   const newestFetchedAt = cachedSearchFacts[0]?.fetched_at ?? null;
@@ -485,7 +528,7 @@ export async function fetchSourcedFactsForMatch(options: {
   ) {
     return {
       cached: true,
-      facts: [...jrfuRows, ...cachedFacts] as StoredSourcedFact[],
+      facts: [...jrfuRows, ...cachedSelection.selected] as StoredSourcedFact[],
       fetched: false,
       skippedReason: null,
     };
