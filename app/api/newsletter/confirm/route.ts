@@ -62,7 +62,6 @@ export async function GET(request: Request) {
   const { error: updateError } = await db
     .from("email_subscribers")
     .update({
-      confirmation_token: null,
       confirmed_at: new Date().toISOString(),
       status: "confirmed",
     })

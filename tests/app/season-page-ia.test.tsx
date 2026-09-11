@@ -1013,7 +1013,7 @@ describe("season page information architecture", () => {
     );
   });
 
-  it("uses the information title when there are no matches or every match is cancelled", async () => {
+  it("uses the information title when there are no matches and team names when cancelled fixtures identify two teams", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({});
 
@@ -1040,7 +1040,7 @@ describe("season page information architecture", () => {
         }),
       }),
     ).resolves.toMatchObject({
-      title: "プレミアシップ 2025-26 大会情報・見どころ",
+      title: "プレミアシップ 2025-26 Bath・Saracens",
     });
   });
 
@@ -1053,7 +1053,7 @@ describe("season page information architecture", () => {
         }),
       }),
     ).resolves.toMatchObject({
-      title: "プレミアシップ 2025-26 日程・見どころ",
+      title: "プレミアシップ 2025-26 Bath・Saracens",
     });
   });
 
@@ -1071,7 +1071,7 @@ describe("season page information architecture", () => {
         }),
       }),
     ).resolves.toMatchObject({
-      title: "プレミアシップ 2025-26 日程・見どころ",
+      title: "プレミアシップ 2025-26 Bath・Saracens",
     });
   });
 
@@ -1096,7 +1096,7 @@ describe("season page information architecture", () => {
         }),
       }),
     ).resolves.toMatchObject({
-      title: "ネーションズチャンピオンシップ 2026 最新結果・次戦・日程・順位",
+      title: "ネーションズチャンピオンシップ 2026 Bath・Saracens",
     });
 
     standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
@@ -1159,7 +1159,7 @@ describe("season page information architecture", () => {
         }),
       }),
     ).resolves.toMatchObject({
-      title: "プレミアシップ 2025-26 全試合結果・日本語レビュー",
+      title: "プレミアシップ 2025-26 Bath・Saracens",
     });
 
     contentMocks.getContentStatusForMatches.mockResolvedValue({});
@@ -1171,7 +1171,7 @@ describe("season page information architecture", () => {
           season: "2025-26",
         }),
       }),
-    ).resolves.toMatchObject({ title: "プレミアシップ 2025-26 全試合結果" });
+    ).resolves.toMatchObject({ title: "プレミアシップ 2025-26 Bath・Saracens" });
   });
 
   it("keeps the Six Nations label in the description", async () => {

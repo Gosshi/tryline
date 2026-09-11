@@ -30,6 +30,7 @@ import { generateMetadata as generateHubMetadata } from "@/app/c/[competition]/p
 import { getCompetitionMetadataTeams } from "@/lib/format/competition-metadata";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
+import type { StandingRow } from "@/lib/db/queries/standings";
 
 const scheduledMatches = [
   {
@@ -54,6 +55,24 @@ const scheduledMatches = [
     status: "scheduled",
   },
 ];
+
+function standingRow(teamName: string): StandingRow {
+  return {
+    bonusPointsLosing: 0,
+    bonusPointsTry: 0,
+    drawn: 0,
+    lost: 0,
+    played: 0,
+    pointsAgainst: 0,
+    pointsFor: 0,
+    position: 1,
+    teamName,
+    teamShortCode: "TST",
+    totalPoints: 0,
+    triesFor: 0,
+    won: 0,
+  };
+}
 
 describe("competition guide metadata", () => {
   beforeEach(() => {
@@ -231,6 +250,103 @@ describe("competition guide metadata", () => {
     expect(metadata.description).not.toMatch(/DAZN|J SPORTS|WOWOW/);
   });
 
+  it("limits partial schedules to listed matches and includes teams from standings and fixtures", async () => {
+    competitionsMock.getCompetitionBySlug.mockResolvedValue({
+      champion: null,
+      endDate: null,
+      family: "test-competition",
+      id: "competition-id",
+      matchCount: 1,
+      name: "Partial Competition 2026",
+      nameJa: "部分取得テスト大会",
+      publishedContentCount: 0,
+      season: "2026",
+      slug: "test-competition-2026",
+      startDate: null,
+      totalRounds: 18,
+    });
+    matchesMock.listMatchesForCompetition.mockResolvedValue([
+      {
+        awayTeam: {
+          name: "Team B",
+          nameJa: "チームB",
+          shortCode: "TMB",
+          slug: "team-b",
+        },
+        id: "match-id-1",
+        homeTeam: {
+          name: "Team A",
+          nameJa: "チームA",
+          shortCode: "TMA",
+          slug: "team-a",
+        },
+        kickoffAt: "2026-08-09T05:00:00.000Z",
+        round: 1,
+        status: "scheduled",
+      },
+    ]);
+    standingsMock.getStandingsForCompetition.mockResolvedValue([
+      { teamName: "チームA" },
+    ]);
+
+    const metadata = await generateSeasonMetadata({
+      params: Promise.resolve({ competition: "test-competition", season: "2026" }),
+    });
+
+    expect(metadata.description).toBe(
+      "部分取得テスト大会 2026の掲載中1試合。チームA・チームBの確認できた日程・見どころ・順位表を掲載。",
+    );
+    expect(metadata.description).not.toContain("全1試合");
+    expect(metadata.description).toContain("チームB");
+  });
+
+  it("keeps the full-match wording for a complete schedule", async () => {
+    competitionsMock.getCompetitionBySlug.mockResolvedValue({
+      champion: null,
+      endDate: null,
+      family: "test-competition",
+      id: "competition-id",
+      matchCount: 1,
+      name: "Complete Competition 2026",
+      nameJa: "完全取得テスト大会",
+      publishedContentCount: 0,
+      season: "2026",
+      slug: "complete-competition-2026",
+      startDate: null,
+      totalRounds: 1,
+    });
+    matchesMock.listMatchesForCompetition.mockResolvedValue([
+      {
+        awayTeam: {
+          name: "Team B",
+          nameJa: "チームB",
+          shortCode: "TMB",
+          slug: "team-b",
+        },
+        id: "match-id-1",
+        homeTeam: {
+          name: "Team A",
+          nameJa: "チームA",
+          shortCode: "TMA",
+          slug: "team-a",
+        },
+        kickoffAt: "2026-08-09T05:00:00.000Z",
+        round: 1,
+        status: "scheduled",
+      },
+    ]);
+    standingsMock.getStandingsForCompetition.mockResolvedValue([
+      { teamName: "チームA" },
+      { teamName: "チームB" },
+    ]);
+
+    const metadata = await generateSeasonMetadata({
+      params: Promise.resolve({ competition: "test-competition", season: "2026" }),
+    });
+
+    expect(metadata.description).toContain("全1試合");
+  });
+
   it("does not enumerate teams above the title threshold", async () => {
     competitionsMock.getCompetitionBySlug.mockResolvedValue({
       champion: null,
@@ -283,5 +399,28 @@ describe("competition guide metadata", () => {
 
     expect(first).toEqual(["Alpha", "Beta"]);
     expect(second).toEqual(first);
+  });
+
+  it("unions standings and fixture teams", () => {
+    const matches: MatchListItem[] = [
+      {
+        awayTeam: { name: "Beta", nameJa: "チームB", shortCode: "BET", slug: "beta" },
+        awayScore: null,
+        homeTeam: { name: "Alpha", nameJa: "チームA", shortCode: "ALP", slug: "alpha" },
+        homeScore: null,
+        id: "match-id",
+        kickoffAt: "2026-08-09T05:00:00.000Z",
+        poolName: null,
+        round: 1,
+        roundName: null,
+        status: "scheduled",
+        venue: null,
+      },
+    ];
+
+    expect(getCompetitionMetadataTeams(matches, [standingRow("チームA")])).toEqual([
+      "チームA",
+      "チームB",
+    ]);
   });
 });
