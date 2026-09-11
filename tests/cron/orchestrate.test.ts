@@ -28,6 +28,7 @@ type DbFixture = {
 type MatchQueryState = {
   id?: string;
   kickoffGte?: string;
+  kickoffLt?: string;
   kickoffLte?: string;
   orderByKickoff?: "asc" | "desc";
   status?: "scheduled" | "finished";
@@ -63,6 +64,12 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
     lte: vi.fn((column: string, value: unknown) => {
       if (column === "kickoff_at" && typeof value === "string") {
         matchesBuilder.state.kickoffLte = value;
+      }
+      return matchesBuilder;
+    }),
+    lt: vi.fn((column: string, value: unknown) => {
+      if (column === "kickoff_at" && typeof value === "string") {
+        matchesBuilder.state.kickoffLt = value;
       }
       return matchesBuilder;
     }),
@@ -105,6 +112,12 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
           if (
             matchesBuilder.state.kickoffLte &&
             kickoffAt > matchesBuilder.state.kickoffLte
+          ) {
+            return false;
+          }
+          if (
+            matchesBuilder.state.kickoffLt &&
+            kickoffAt >= matchesBuilder.state.kickoffLt
           ) {
             return false;
           }
@@ -342,6 +355,34 @@ describe("runOrchestrate", () => {
 
     expect(generateContent).toHaveBeenCalledWith(
       "six-hours-away",
+      "preview",
+    );
+  });
+
+  it("includes the target JST day through its final millisecond, but not the following midnight", async () => {
+    const db = createMockDb({
+      scheduledIds: ["target-day-start", "target-day-last", "following-day-start"],
+      scheduledKickoffAt: {
+        "following-day-start": "2026-09-12T15:00:00.000Z",
+        "target-day-last": "2026-09-12T14:59:59.999Z",
+        "target-day-start": "2026-09-11T15:00:00.000Z",
+      },
+      finishedIds: [],
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      now: new Date("2026-09-11T06:00:00.000Z"),
+    });
+
+    expect(generateContent).toHaveBeenCalledWith("target-day-start", "preview");
+    expect(generateContent).toHaveBeenCalledWith("target-day-last", "preview");
+    expect(generateContent).not.toHaveBeenCalledWith(
+      "following-day-start",
       "preview",
     );
   });

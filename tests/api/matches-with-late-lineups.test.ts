@@ -39,8 +39,8 @@ function createQuery<T>(
       filters.push({ column, operator: "in", value });
       return query;
     },
-    lte(column: string, value: unknown) {
-      filters.push({ column, operator: "lte", value });
+    lt(column: string, value: unknown) {
+      filters.push({ column, operator: "lt", value });
       return query;
     },
     select: vi.fn(() => query),
@@ -191,7 +191,7 @@ describe("/api/cron/matches-with-late-lineups", () => {
         },
         {
           column: "match.kickoff_at",
-          operator: "lte",
+          operator: "lt",
           value: "2026-09-12T15:00:00.000Z",
         },
       ]),
