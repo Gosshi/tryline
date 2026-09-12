@@ -35,10 +35,18 @@ export type LiveIngestResult = {
     events_inserted: number;
     matches_inserted: number;
     matches_updated: number;
+    skipped_matches: number;
     unknown_teams: number;
   };
   rejections?: EventInsertionRejection[];
+  skippedMatches?: SkippedMatch[];
   unknownTeamNames: string[];
+};
+
+export type SkippedMatch = {
+  awayTeamName: string;
+  homeTeamName: string;
+  kickoffAt: string;
 };
 
 export type EventInsertionRejection = {
@@ -325,6 +333,7 @@ export async function ingestLiveCompetition(
         events_inserted: 0,
         matches_inserted: 0,
         matches_updated: 0,
+        skipped_matches: 0,
         unknown_teams: unknownTeamNames.length,
       },
       unknownTeamNames,
@@ -332,6 +341,7 @@ export async function ingestLiveCompetition(
   }
 
   const teamLookup = await getTeamLookup(parsedMatches);
+  const skippedMatches: SkippedMatch[] = [];
   const resolvedMatches = parsedMatches.flatMap((match) => {
     const homeTeamId =
       (match.homeTeamSlug ? teamLookup.bySlug[match.homeTeamSlug] : null) ??
@@ -344,6 +354,11 @@ export async function ingestLiveCompetition(
       console.warn(
         `Skipping unknown team: ${match.homeTeamName} vs ${match.awayTeamName}`,
       );
+      skippedMatches.push({
+        awayTeamName: match.awayTeamName,
+        homeTeamName: match.homeTeamName,
+        kickoffAt: match.kickoffAt,
+      });
       return [];
     }
 
@@ -481,7 +496,7 @@ export async function ingestLiveCompetition(
   }
 
   console.info(
-    `[${source.competitionSlug}] inserted=${result.matchesInserted} updated=${result.matchesUpdated} events_inserted=${eventsInserted} unknown_teams=${unknownTeamNames.length}`,
+    `[${source.competitionSlug}] inserted=${result.matchesInserted} updated=${result.matchesUpdated} events_inserted=${eventsInserted} unknown_teams=${unknownTeamNames.length} skipped=${skippedMatches.length}`,
   );
 
   return {
@@ -490,9 +505,11 @@ export async function ingestLiveCompetition(
       events_inserted: eventsInserted,
       matches_inserted: result.matchesInserted,
       matches_updated: result.matchesUpdated,
+      skipped_matches: skippedMatches.length,
       unknown_teams: unknownTeamNames.length,
     },
     ...(rejections.length > 0 ? { rejections } : {}),
+    ...(skippedMatches.length > 0 ? { skippedMatches } : {}),
     unknownTeamNames,
   };
 }
