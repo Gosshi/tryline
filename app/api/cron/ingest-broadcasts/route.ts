@@ -21,8 +21,11 @@ export async function POST(request: Request) {
   try {
     const result = await runBroadcastIngest();
     await notifyBroadcastIngestReport(result);
+    const hasRemainingWork =
+      result.unlinkedPages.length > 0 || result.matchesStillMissing.length > 0;
+    const status = result.linked.length === 0 && hasRemainingWork ? 500 : 200;
 
-    return NextResponse.json({ result, status: "ok" });
+    return NextResponse.json({ result, status: "ok" }, { status });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : String(error) },

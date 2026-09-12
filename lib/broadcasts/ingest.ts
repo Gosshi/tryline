@@ -133,6 +133,13 @@ function parseJrfuDate(dateLabel: string, year: number | null) {
   return `${year}-${match[1]!.padStart(2, "0")}-${match[2]!.padStart(2, "0")}`;
 }
 
+function addDays(date: string, days: number) {
+  const value = new Date(`${date}T00:00:00.000Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+
+  return value.toISOString().slice(0, 10);
+}
+
 function isJapanMatch(match: BroadcastMatch) {
   return match.homeTeam?.slug === "japan" || match.awayTeam?.slug === "japan";
 }
@@ -271,12 +278,14 @@ export async function runBroadcastIngest(
       if (date && date < getJstDate(now.toISOString())) {
         continue;
       }
-      const candidates = date
-        ? scheduledMatches.filter(
-            (match) =>
-              isJapanMatch(match) && getJstDate(match.kickoffAt) === date,
-          )
-        : [];
+      const allowedJstDates = date
+        ? new Set([date, addDays(date, 1)])
+        : new Set<string>();
+      const candidates = scheduledMatches.filter(
+        (match) =>
+          isJapanMatch(match) &&
+          allowedJstDates.has(getJstDate(match.kickoffAt)),
+      );
 
       if (candidates.length !== 1) {
         unlinkedPages.push({
