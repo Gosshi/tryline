@@ -88,8 +88,20 @@ function researchSubmission(params: {
   confidence?: string;
   facts: string;
   matchId?: string;
+  sourceCheck?: string;
   sourceUrl?: string;
 }) {
+  const sourceCheckComponent =
+    params.sourceCheck === undefined
+      ? []
+      : [
+          {
+            component: {
+              custom_id: "source_check",
+              values: [params.sourceCheck],
+            },
+          },
+        ];
   return {
     application_id: discordApplicationId,
     data: {
@@ -113,6 +125,7 @@ function researchSubmission(params: {
             values: params.confidence ? [params.confidence] : [],
           },
         },
+        ...sourceCheckComponent,
       ],
       custom_id: "research-fact-entry",
     },
@@ -255,7 +268,7 @@ describe("POST /api/discord/interactions", () => {
     expect(supabaseMocks.from).not.toHaveBeenCalled();
   });
 
-  it("opens a four-field research modal with the nearest 25 matches", async () => {
+  it("opens a five-field research modal with the nearest 25 matches", async () => {
     const matches = Array.from({ length: 26 }, (_, index) => ({
       away_team: {
         name: index === 0 ? "New Zealand" : `Away ${index}`,
@@ -296,7 +309,7 @@ describe("POST /api/discord/interactions", () => {
       "kickoff_at",
       "2026-09-10T00:00:00.000Z",
     );
-    expect(payload.data.components).toHaveLength(4);
+    expect(payload.data.components).toHaveLength(5);
     expect(
       payload.data.components.every(
         (component: Record<string, unknown>) =>
@@ -304,7 +317,7 @@ describe("POST /api/discord/interactions", () => {
       ),
     ).toBe(true);
 
-    const [matchField, factsField, sourceUrlField, confidenceField] =
+    const [matchField, factsField, sourceUrlField, confidenceField, sourceCheckField] =
       payload.data.components;
     expect(matchField).toMatchObject({
       component: {
@@ -351,6 +364,21 @@ describe("POST /api/discord/interactions", () => {
     });
     expect(confidenceField.component).not.toHaveProperty("min_values");
     expect(confidenceField.component).not.toHaveProperty("max_values");
+    expect(sourceCheckField).toMatchObject({
+      component: {
+        custom_id: "source_check",
+        required: false,
+        type: 3,
+      },
+      description:
+        "ボット拒否で弾かれたときだけ「目視で確認済み」を選ぶ",
+      label: "出典確認",
+    });
+    expect(sourceCheckField.component.options).toContainEqual({
+      default: true,
+      label: "自動で確認する",
+      value: "auto",
+    });
     expect(supabaseMocks.from).toHaveBeenCalledTimes(1);
   });
 
@@ -446,6 +474,139 @@ describe("POST /api/discord/interactions", () => {
         }),
       ],
       expect.any(Object),
+    );
+  });
+
+  it("rejects a 429 source URL in automatic mode with owner guidance", async () => {
+    const fetchMock = stubFetchWithSourceStatus(429);
+
+    await POST(
+      createRequest(
+        researchSubmission({
+          facts: "事実。",
+          sourceCheck: "auto",
+        }),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    const content = JSON.parse(String(patchCall?.[1]?.body)).content as string;
+    expect(content).toContain("出典 URL が HTTP 429 を返しました。");
+    expect(content).toContain("「目視で確認済み」を選んで送り直してください");
+  });
+
+  it("stores a 429 source URL verified by the owner", async () => {
+    const fetchMock = stubFetchWithSourceStatus(429);
+    supabaseMocks.sourcedFactsQueryRows = manualSourcedFactRows(12);
+
+    await POST(
+      createRequest(
+        researchSubmission({
+          facts: "事実。",
+          sourceCheck: "owner_verified",
+        }),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          metadata: {
+            entry_method: "manual",
+            entry_path: "discord_research_command",
+            source_url_check: "owner_verified",
+            source_url_http_status: 429,
+          },
+          source_domain: "www.rnz.co.nz",
+          source_url: sourceUrl,
+        }),
+      ],
+      expect.any(Object),
+    );
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toBe(
+      "保存: 1件、重複スキップ: 0件。\n出典 URL は自動確認できなかったため（HTTP 429）、目視確認済みとして保存しました。\nこの試合の手動事実は12件です。全件が生成に使われ、自動取得の事実は使われません。",
+    );
+  });
+
+  it("stores a 403 source URL verified by the owner", async () => {
+    stubFetchWithSourceStatus(403);
+
+    await POST(
+      createRequest(
+        researchSubmission({
+          facts: "事実。",
+          sourceCheck: "owner_verified",
+        }),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            source_url_check: "owner_verified",
+            source_url_http_status: 403,
+          }),
+        }),
+      ],
+      expect.any(Object),
+    );
+  });
+
+  it("does not add owner-verification metadata for a 200 source URL", async () => {
+    stubFetchWithSourceStatus();
+
+    await POST(
+      createRequest(
+        researchSubmission({
+          facts: "事実。",
+          sourceCheck: "owner_verified",
+        }),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          metadata: {
+            entry_method: "manual",
+            entry_path: "discord_research_command",
+          },
+        }),
+      ],
+      expect.any(Object),
+    );
+  });
+
+  it("rejects an unknown source-check value without fetching or saving", async () => {
+    const fetchMock = stubFetchWithSourceStatus();
+
+    await POST(
+      createRequest(
+        researchSubmission({ facts: "事実。", sourceCheck: "skip" }),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    expect(
+      fetchMock.mock.calls.filter(([, init]) => init?.method !== "PATCH"),
+    ).toHaveLength(0);
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toBe(
+      "入力内容を確認してください。",
     );
   });
 
@@ -560,19 +721,26 @@ describe("POST /api/discord/interactions", () => {
     );
   });
 
-  it("does not save any research facts when the source returns 404", async () => {
+  it("does not save a 404 source URL even when the owner verified it", async () => {
     const fetchMock = stubFetchWithSourceStatus(404);
 
-    await POST(createRequest(researchSubmission({ facts: "事実A\n事実B" })));
+    await POST(
+      createRequest(
+        researchSubmission({
+          facts: "事実A\n事実B",
+          sourceCheck: "owner_verified",
+        }),
+      ),
+    );
     await runAfterCallbacks();
 
     expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
     const patchCall = fetchMock.mock.calls.find(
       ([, init]) => init?.method === "PATCH",
     );
-    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
-      "HTTP 404",
-    );
+    const content = JSON.parse(String(patchCall?.[1]?.body)).content as string;
+    expect(content).toBe("出典 URL が HTTP 404 を返しました。");
+    expect(content).not.toContain("目視で確認済みを選んで");
   });
 
   it("does not save any research facts when the source connection fails", async () => {
@@ -586,7 +754,14 @@ describe("POST /api/discord/interactions", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    await POST(createRequest(researchSubmission({ facts: "事実A\n事実B" })));
+    await POST(
+      createRequest(
+        researchSubmission({
+          facts: "事実A\n事実B",
+          sourceCheck: "owner_verified",
+        }),
+      ),
+    );
     await runAfterCallbacks();
 
     expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
@@ -614,7 +789,14 @@ describe("POST /api/discord/interactions", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    await POST(createRequest(researchSubmission({ facts: "事実A\n事実B" })));
+    await POST(
+      createRequest(
+        researchSubmission({
+          facts: "事実A\n事実B",
+          sourceCheck: "owner_verified",
+        }),
+      ),
+    );
     const afterPromise = runAfterCallbacks();
     await vi.advanceTimersByTimeAsync(5_000);
     await afterPromise;
@@ -671,11 +853,14 @@ describe("POST /api/discord/interactions", () => {
   });
 
   it("identifies the original line when a research fact exceeds 300 characters", async () => {
-    const fetchMock = stubFetchWithSourceStatus();
+    const fetchMock = stubFetchWithSourceStatus(429);
 
     await POST(
       createRequest(
-        researchSubmission({ facts: `短い事実。\n${"長".repeat(301)}` }),
+        researchSubmission({
+          facts: `短い事実。\n${"長".repeat(301)}`,
+          sourceCheck: "owner_verified",
+        }),
       ),
     );
     await runAfterCallbacks();

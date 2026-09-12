@@ -1,6 +1,10 @@
 export const SOURCE_URL_VALIDATION_TIMEOUT_MS = 5_000;
 
 const HEAD_FALLBACK_STATUSES = new Set([405, 501]);
+export const OWNER_VERIFIABLE_SOURCE_URL_STATUSES: ReadonlySet<number> = new Set([
+  403,
+  429,
+]);
 
 type FetchImplementation = typeof fetch;
 
@@ -12,6 +16,7 @@ export type SourceUrlValidationResult =
   | {
       ok: false;
       reason: string;
+      status: number | null;
     };
 
 export async function validateSourceUrl(
@@ -25,13 +30,18 @@ export async function validateSourceUrl(
   try {
     parsedUrl = new URL(sourceUrl);
   } catch {
-    return { ok: false, reason: "出典 URL の形式が正しくありません。" };
+    return {
+      ok: false,
+      reason: "出典 URL の形式が正しくありません。",
+      status: null,
+    };
   }
 
   if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
     return {
       ok: false,
       reason: "出典 URL は http または https で指定してください。",
+      status: null,
     };
   }
 
@@ -64,6 +74,7 @@ export async function validateSourceUrl(
       return {
         ok: false,
         reason: `出典 URL が HTTP ${response.status} を返しました。`,
+        status: response.status,
       };
     }
 
@@ -73,10 +84,15 @@ export async function validateSourceUrl(
       return {
         ok: false,
         reason: `出典 URL の確認が ${timeoutMs / 1_000} 秒でタイムアウトしました。`,
+        status: null,
       };
     }
 
-    return { ok: false, reason: "出典 URL に接続できませんでした。" };
+    return {
+      ok: false,
+      reason: "出典 URL に接続できませんでした。",
+      status: null,
+    };
   } finally {
     clearTimeout(timeout);
   }

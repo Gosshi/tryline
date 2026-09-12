@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { validateSourceUrl } from "@/lib/discord/source-url";
+import {
+  OWNER_VERIFIABLE_SOURCE_URL_STATUSES,
+  validateSourceUrl,
+} from "@/lib/discord/source-url";
 
 function asFetchImplementation(
   implementation: (
@@ -46,6 +49,24 @@ describe("validateSourceUrl", () => {
     ).resolves.toEqual({
       ok: false,
       reason: "出典 URL が HTTP 404 を返しました。",
+      status: 404,
+    });
+    expect(fetchImplementation).toHaveBeenCalledOnce();
+  });
+
+  it("returns a 429 status without trying GET", async () => {
+    const fetchImplementation = vi.fn(
+      async () => new Response(null, { status: 429 }),
+    );
+
+    await expect(
+      validateSourceUrl("https://example.com/rate-limited", {
+        fetchImplementation: asFetchImplementation(fetchImplementation),
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "出典 URL が HTTP 429 を返しました。",
+      status: 429,
     });
     expect(fetchImplementation).toHaveBeenCalledOnce();
   });
@@ -78,6 +99,23 @@ describe("validateSourceUrl", () => {
     expect(cancel).toHaveBeenCalledOnce();
   });
 
+  it("returns the final GET status after a HEAD fallback", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 405 }))
+      .mockResolvedValueOnce(new Response(null, { status: 403 }));
+
+    await expect(
+      validateSourceUrl("https://example.com/story", {
+        fetchImplementation: asFetchImplementation(fetchImplementation),
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "出典 URL が HTTP 403 を返しました。",
+      status: 403,
+    });
+  });
+
   it("rejects non-http schemes without making a request", async () => {
     const fetchImplementation = vi.fn();
 
@@ -88,6 +126,7 @@ describe("validateSourceUrl", () => {
     ).resolves.toEqual({
       ok: false,
       reason: "出典 URL は http または https で指定してください。",
+      status: null,
     });
     expect(fetchImplementation).not.toHaveBeenCalled();
   });
@@ -112,6 +151,7 @@ describe("validateSourceUrl", () => {
     await expect(validation).resolves.toEqual({
       ok: false,
       reason: "出典 URL の確認が 0.025 秒でタイムアウトしました。",
+      status: null,
     });
   });
 
@@ -127,6 +167,15 @@ describe("validateSourceUrl", () => {
     ).resolves.toEqual({
       ok: false,
       reason: "出典 URL に接続できませんでした。",
+      status: null,
     });
+  });
+
+  it("limits owner-verifiable statuses to bot rejections", () => {
+    expect(OWNER_VERIFIABLE_SOURCE_URL_STATUSES).toEqual(
+      new Set([403, 429]),
+    );
+    expect(OWNER_VERIFIABLE_SOURCE_URL_STATUSES.has(401)).toBe(false);
+    expect(OWNER_VERIFIABLE_SOURCE_URL_STATUSES.has(404)).toBe(false);
   });
 });
