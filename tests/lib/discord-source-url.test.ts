@@ -71,6 +71,23 @@ describe("validateSourceUrl", () => {
     expect(fetchImplementation).toHaveBeenCalledOnce();
   });
 
+  it("returns a 401 status without trying GET", async () => {
+    const fetchImplementation = vi.fn(
+      async () => new Response(null, { status: 401 }),
+    );
+
+    await expect(
+      validateSourceUrl("https://example.com/subscriber-only", {
+        fetchImplementation: asFetchImplementation(fetchImplementation),
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "出典 URL が HTTP 401 を返しました。",
+      status: 401,
+    });
+    expect(fetchImplementation).toHaveBeenCalledOnce();
+  });
+
   it("falls back to GET when HEAD is not allowed", async () => {
     const cancel = vi.fn(async () => undefined);
     const fetchImplementation = vi
@@ -171,11 +188,11 @@ describe("validateSourceUrl", () => {
     });
   });
 
-  it("limits owner-verifiable statuses to bot rejections", () => {
+  it("limits owner-verifiable statuses to bot and subscription rejections", () => {
     expect(OWNER_VERIFIABLE_SOURCE_URL_STATUSES).toEqual(
-      new Set([403, 429]),
+      new Set([401, 403, 429]),
     );
-    expect(OWNER_VERIFIABLE_SOURCE_URL_STATUSES.has(401)).toBe(false);
     expect(OWNER_VERIFIABLE_SOURCE_URL_STATUSES.has(404)).toBe(false);
+    expect(OWNER_VERIFIABLE_SOURCE_URL_STATUSES.has(500)).toBe(false);
   });
 });

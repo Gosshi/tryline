@@ -1,8 +1,8 @@
-# Discord 事実入力で、ボット拒否（403/429）の出典を Owner の目視確認で保存できるようにする
+# Discord 事実入力で、ボット拒否（401/403/429）の出典を Owner の目視確認で保存できるようにする
 
 ## 背景
 
-**D032（2026-09-12、Owner 承認済み）の実装 spec。D026 の決定3（200 以外はすべて拒否）を 403/429 に限って改める。** 元の設計は `specs/feat-discord-research-fact-entry.md`（実装済み）。
+**D032・D033（2026-09-12、Owner 承認済み）の実装 spec。D026 の決定3（200 以外はすべて拒否）を 401/403/429 に限って改める。** 元の設計は `specs/feat-discord-research-fact-entry.md`（実装済み）。
 
 2026-09-12、米国代表の公式発表 `https://eagles.rugby/news/usa-eagles-set-to-kick-off-pacific-nations-cup-against-japan-202699` を出典にした事実を `/調査事実を追加` で送ったところ、`出典 URL が HTTP 429 を返しました。` で拒否された。**ページは実在し、Owner がブラウザで開いて内容を確認していた。** 同サイトは robots.txt にも 403 を返すボット拒否だった。Owner が SQL で直接入れて回避した。
 
@@ -19,18 +19,20 @@ if (response.status !== 200) {
 
 **403/429 はボット対策が URL の実在と無関係に返すので、存在確認として機能しない。** D026 が防ぎたかったのは「404 の捏造 URL」で、こちらは今後も拒否し続ける。代表チームの公式サイトはボット拒否が多く、同じ詰まりが繰り返し起きる見込み。
 
+**追記（D033、同日）**: 上記を実装した PR #815 のマージ後、Reuters の記事 `https://www.reuters.com/sports/springboks-make-two-changes-starting-xv-final-new-zealand-test-2026-09-07/` を出典にした事実が、今度は **HTTP 401** で拒否された。許容集合が `{403, 429}` だったため「目視で確認済み」を選んでも通らなかった。**401 も購読判定・ボット判定が実在と無関係に返すので、403/429 と同じ扱いにする。**
+
 ## スコープ
 
 対象:
 
 - `lib/discord/source-url.ts`: 失敗結果に HTTP ステータスを載せる
-- `app/api/discord/interactions/route.ts`: モーダルに「出典確認」欄を追加し、403/429 のときだけ Owner の選択で保存する
+- `app/api/discord/interactions/route.ts`: モーダルに「出典確認」欄を追加し、401/403/429 のときだけ Owner の選択で保存する
 
 対象外:
 
-- **404・その他の 4xx/5xx・タイムアウト・接続失敗の扱い。** 目視確認済みを選んでも拒否のまま
+- **404・401/403/429 以外の 4xx/5xx・タイムアウト・接続失敗の扱い。** 目視確認済みを選んでも拒否のまま
 - robots.txt の参照・本文の読み取り（D026 のとおり、どちらもしない）
-- 403/429 を返すドメインの自動記憶・許可リスト化
+- 401/403/429 を返すドメインの自動記憶・許可リスト化
 - 拒否後にモーダルを入力済みの状態で開き直すこと（後述「制約」参照）
 - 自動取得（`lib/llm/sourced-facts/`）・allowlist
 - `supabase/`（データモデル変更なし。`metadata` は jsonb）
@@ -72,7 +74,7 @@ export type SourceUrlValidationResult =
 `reason` の文言は変えない。あわせて次の定数を export する。
 
 ```ts
-export const OWNER_VERIFIABLE_SOURCE_URL_STATUSES: ReadonlySet<number> = new Set([403, 429]);
+export const OWNER_VERIFIABLE_SOURCE_URL_STATUSES: ReadonlySet<number> = new Set([401, 403, 429]);
 ```
 
 **HEAD が 405/501 で GET にフォールバックする既存の動き（`:3`・`:54-61`）は変えない。** GET の最終応答が 429 なら `status: 429`。
@@ -91,7 +93,7 @@ export const OWNER_VERIFIABLE_SOURCE_URL_STATUSES: ReadonlySet<number> = new Set
     custom_id: "source_check",
     options: [
       { default: true, label: "自動で確認する", value: "auto" },
-      { label: "目視で確認済み（403/429 のサイト用）", value: "owner_verified" },
+      { label: "目視で確認済み（401/403/429 のサイト用）", value: "owner_verified" },
     ],
     placeholder: "出典の確認方法",
     required: false,
@@ -114,11 +116,11 @@ export const OWNER_VERIFIABLE_SOURCE_URL_STATUSES: ReadonlySet<number> = new Set
 | 検証結果 | `source_check` | 動作 |
 |---|---|---|
 | `ok: true` | どちらでも | 今と同じく保存。`metadata` に2キーを付けない |
-| `ok: false` かつ `status` が 403/429 | `owner_verified` | **保存する。** `source_domain` は入力 URL の `hostname`、`metadata` に2キーを付ける |
-| `ok: false` かつ `status` が 403/429 | `auto` | 拒否。`reason` の後ろに下記の案内文を付けて返す |
+| `ok: false` かつ `status` が 401/403/429 | `owner_verified` | **保存する。** `source_domain` は入力 URL の `hostname`、`metadata` に2キーを付ける |
+| `ok: false` かつ `status` が 401/403/429 | `auto` | 拒否。`reason` の後ろに下記の案内文を付けて返す |
 | `ok: false` かつ上記以外（`status` が 404 等・`null`） | どちらでも | 今と同じく `reason` だけ返して拒否 |
 
-403/429 で `auto` のときの案内文（`reason` の直後に改行して付ける）:
+401/403/429 で `auto` のときの案内文（`reason` の直後に改行して付ける）:
 
 ```
 ボット拒否の可能性があります。リンクを開いて内容を確認済みなら、「出典確認」で「目視で確認済み」を選んで送り直してください。
@@ -153,7 +155,7 @@ export const OWNER_VERIFIABLE_SOURCE_URL_STATUSES: ReadonlySet<number> = new Set
 4. タイムアウト → `status: null`（既存テストの期待値に追加）
 5. 接続失敗 → `status: null`（同上）
 6. `ftp://` などの非 http(s) → `status: null`（同上）
-7. `OWNER_VERIFIABLE_SOURCE_URL_STATUSES` が 403 と 429 だけを含む（`has(401) === false`、`has(404) === false`）
+7. `OWNER_VERIFIABLE_SOURCE_URL_STATUSES` が 401・403・429 だけを含む（`has(404) === false`、`has(500) === false`）
 
 ### モーダル（`tests/api/discord-interactions.test.ts`）
 
@@ -166,7 +168,7 @@ fetch をモックし、保存（`match_sourced_facts` の upsert）に渡った
 9. URL が 200・`source_check` 未選択 → 保存される。`metadata` は `{ entry_method: "manual", entry_path: "discord_research_command" }` のみ（今と同じ）
 10. URL が 429・`source_check = "auto"` → 保存されない（upsert が呼ばれない）。応答に `出典 URL が HTTP 429 を返しました。` と `「目視で確認済み」を選んで送り直してください` を含む
 11. URL が 429・`source_check = "owner_verified"` → 保存される。各行の `metadata.source_url_check === "owner_verified"`、`metadata.source_url_http_status === 429`、`source_domain` が入力 URL の hostname、`source_url` が入力値そのもの。応答に `目視確認済みとして保存しました` を含む
-12. URL が 403・`owner_verified` → 11 と同じく保存され、`source_url_http_status === 403`
+12. URL が 403・`owner_verified` → 11 と同じく保存され、`source_url_http_status === 403`。**401 でも同様に保存され、`source_url_http_status === 401`**（Reuters など購読判定のサイト）
 13. URL が 404・`owner_verified` → 保存されない。応答は `出典 URL が HTTP 404 を返しました。` で、目視確認の案内文を含まない
 14. URL がタイムアウト・`owner_verified` → 保存されない
 15. URL が 200・`owner_verified` → 保存され、`metadata` に2キーが**付かない**

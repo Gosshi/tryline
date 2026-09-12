@@ -562,6 +562,54 @@ describe("POST /api/discord/interactions", () => {
     );
   });
 
+  it("stores a 401 source URL verified by the owner", async () => {
+    stubFetchWithSourceStatus(401);
+
+    await POST(
+      createRequest(
+        researchSubmission({
+          facts: "事実。",
+          sourceCheck: "owner_verified",
+        }),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            source_url_check: "owner_verified",
+            source_url_http_status: 401,
+          }),
+        }),
+      ],
+      expect.any(Object),
+    );
+  });
+
+  it("rejects a 401 source URL in automatic mode with owner guidance", async () => {
+    const fetchMock = stubFetchWithSourceStatus(401);
+
+    await POST(
+      createRequest(
+        researchSubmission({
+          facts: "事実。",
+          sourceCheck: "auto",
+        }),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    const content = JSON.parse(String(patchCall?.[1]?.body)).content as string;
+    expect(content).toContain("出典 URL が HTTP 401 を返しました。");
+    expect(content).toContain("「目視で確認済み」を選んで送り直してください");
+  });
+
   it("does not add owner-verification metadata for a 200 source URL", async () => {
     stubFetchWithSourceStatus();
 

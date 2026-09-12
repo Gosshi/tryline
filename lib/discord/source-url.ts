@@ -2,6 +2,7 @@ export const SOURCE_URL_VALIDATION_TIMEOUT_MS = 5_000;
 
 const HEAD_FALLBACK_STATUSES = new Set([405, 501]);
 export const OWNER_VERIFIABLE_SOURCE_URL_STATUSES: ReadonlySet<number> = new Set([
+  401,
   403,
   429,
 ]);
