@@ -212,15 +212,142 @@ describe("Six Nations 2027 live ingestion", () => {
         events_inserted: 1,
         matches_inserted: 0,
         matches_updated: 1,
+        skipped_matches: 0,
         unknown_teams: 1,
       },
       unknownTeamNames: ["Promoted Club"],
     });
+    expect("skippedMatches" in result).toBe(false);
     expect(warn).toHaveBeenCalledWith(
       "[six-nations-2027] skipped unknown teams",
       { count: 1, names: ["Promoted Club"] },
     );
     warn.mockRestore();
+  });
+
+  it("reports two unresolved placeholder matches without failing the ingest", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    ingestionMocks.upsertMatches.mockResolvedValueOnce({
+      matchesInserted: 0,
+      matchesUpdated: 2,
+      records: [],
+    });
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+
+    const result = await ingestLiveCompetition({
+      competitionName: "Pacific Nations Cup 2026",
+      competitionSlug: "pnc-2026",
+      family: "pnc",
+      fetch: vi.fn().mockResolvedValue([
+        {
+          awayScore: null,
+          awayTeamName: "England",
+          homeScore: null,
+          homeTeamName: "Ireland",
+          kickoffAt: "2026-09-12T07:00:00.000Z",
+          rawHtml: "",
+          round: null,
+          roundName: null,
+          status: "scheduled",
+          venue: null,
+          wikipediaUrl: null,
+        },
+        {
+          awayScore: null,
+          awayTeamName: "England",
+          homeScore: null,
+          homeTeamName: "Ireland",
+          kickoffAt: "2026-09-12T10:05:00.000Z",
+          rawHtml: "",
+          round: null,
+          roundName: null,
+          status: "scheduled",
+          venue: null,
+          wikipediaUrl: null,
+        },
+        {
+          awayScore: null,
+          awayTeamName: "Loser SF2",
+          homeScore: null,
+          homeTeamName: "Loser SF1",
+          kickoffAt: "2026-09-19T07:00:00.000Z",
+          rawHtml: "",
+          round: null,
+          roundName: null,
+          status: "scheduled",
+          venue: null,
+          wikipediaUrl: null,
+        },
+        {
+          awayScore: null,
+          awayTeamName: "Winner SF2",
+          homeScore: null,
+          homeTeamName: "Winner SF1",
+          kickoffAt: "2026-09-19T10:05:00.000Z",
+          rawHtml: "",
+          round: null,
+          roundName: null,
+          status: "scheduled",
+          venue: null,
+          wikipediaUrl: null,
+        },
+      ]),
+      season: "2026",
+      sourceLabel: "wikipedia",
+    });
+
+    expect(result.counts.skipped_matches).toBe(2);
+    expect(result.skippedMatches).toEqual([
+      {
+        awayTeamName: "Loser SF2",
+        homeTeamName: "Loser SF1",
+        kickoffAt: "2026-09-19T07:00:00.000Z",
+      },
+      {
+        awayTeamName: "Winner SF2",
+        homeTeamName: "Winner SF1",
+        kickoffAt: "2026-09-19T10:05:00.000Z",
+      },
+    ]);
+    expect(warn).toHaveBeenCalledWith("Skipping unknown team: Loser SF1 vs Loser SF2");
+    expect(warn).toHaveBeenCalledWith("Skipping unknown team: Winner SF1 vs Winner SF2");
+    expect(info).toHaveBeenCalledWith(
+      "[pnc-2026] inserted=0 updated=2 events_inserted=0 unknown_teams=0 skipped=2",
+    );
+    warn.mockRestore();
+    info.mockRestore();
+  });
+
+  it("returns a zero skipped-match count before resolving teams", async () => {
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+
+    const result = await ingestLiveCompetition({
+      competitionName: "Top 14 2026-27",
+      competitionSlug: "top-14-2026-27",
+      family: "top-14",
+      fetch: vi.fn().mockResolvedValue({
+        matches: [],
+        unknownTeamNames: ["Promoted Club"],
+      }),
+      season: "2026-27",
+      sourceLabel: "lnr.fr",
+    });
+
+    expect(result).toEqual({
+      competition: "top-14-2026-27",
+      counts: {
+        events_inserted: 0,
+        matches_inserted: 0,
+        matches_updated: 0,
+        skipped_matches: 0,
+        unknown_teams: 1,
+      },
+      unknownTeamNames: ["Promoted Club"],
+    });
+    expect("skippedMatches" in result).toBe(false);
   });
 
   it("retries event parsing for a finished record when an event source is available", async () => {
