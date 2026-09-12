@@ -208,7 +208,7 @@ function buildResearchFactEntryModal(matches: ResearchMatchCandidate[]) {
             options: [
               { default: true, label: "自動で確認する", value: "auto" },
               {
-                label: "目視で確認済み（403/429 のサイト用）",
+                label: "目視で確認済み（401/403/429 のサイト用）",
                 value: "owner_verified",
               },
             ],
