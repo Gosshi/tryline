@@ -1,0 +1,89 @@
+import { describe, expect, it } from "vitest";
+
+import { pointsForMatchEvent } from "@/lib/format/match-event-points";
+import {
+  buildTop14LnrMatchEventsUrl,
+  parseTop14LnrGameFactsHtml,
+} from "@/lib/scrapers/top14-lnr-match-events";
+import clermontParisFacts from "@/tests/fixtures/top14-lnr-11828-clermont-paris.json";
+import toulouseBordeauxFacts from "@/tests/fixtures/top14-lnr-11832-toulouse-bordeaux.json";
+
+function fixtureHtml(facts: unknown) {
+  return `<header-timeline :game-facts='${JSON.stringify(facts)}'></header-timeline>`;
+}
+
+function pointTotals(events: ReturnType<typeof parseTop14LnrGameFactsHtml>) {
+  return events.reduce(
+    (totals, event) => ({
+      ...totals,
+      [event.teamSide]: totals[event.teamSide] + pointsForMatchEvent(event),
+    }),
+    { away: 0, home: 0 },
+  );
+}
+
+describe("Top 14 LNR match events", () => {
+  it("builds the resumes-replays URL without double suffixes", () => {
+    expect(
+      buildTop14LnrMatchEventsUrl(
+        "/feuille-de-match/2026-2027/j2/11832-toulouse-bordeaux-begles",
+      ),
+    ).toBe(
+      "https://top14.lnr.fr/feuille-de-match/2026-2027/j2/11832-toulouse-bordeaux-begles/resumes-replays",
+    );
+    expect(
+      buildTop14LnrMatchEventsUrl(
+        "/feuille-de-match/2026-2027/j2/11832-toulouse-bordeaux-begles/resumes-replays",
+      ),
+    ).toBe(
+      "https://top14.lnr.fr/feuille-de-match/2026-2027/j2/11832-toulouse-bordeaux-begles/resumes-replays",
+    );
+  });
+
+  it("parses the real Clermont–Paris facts with derived anonymous conversions", () => {
+    const events = parseTop14LnrGameFactsHtml(fixtureHtml(clermontParisFacts));
+
+    expect(events).toHaveLength(13);
+    expect(events.filter((event) => event.type === "try")).toHaveLength(4);
+    expect(events.filter((event) => event.type === "conversion")).toHaveLength(3);
+    expect(events.filter((event) => event.type === "penalty_goal")).toHaveLength(5);
+    expect(events.filter((event) => event.type === "yellow_card")).toHaveLength(1);
+    expect(events.filter((event) => event.type === "try").map((event) => event.minute)).toEqual([52, 63, 71, 73]);
+    expect(events.filter((event) => event.type === "conversion").map((event) => event.minute)).toEqual([52, 63, 71]);
+    expect(events.filter((event) => event.type === "conversion").every((event) => event.playerName === "")).toBe(true);
+    expect(pointTotals(events)).toEqual({ away: 16, home: 25 });
+    expect(events.find((event) => event.minute === 6)?.teamSide).toBe("away");
+    expect(events.find((event) => event.minute === 16)?.teamSide).toBe("home");
+  });
+
+  it("parses real Toulouse–Bordeaux facts without changing added-time minutes", () => {
+    const events = parseTop14LnrGameFactsHtml(fixtureHtml(toulouseBordeauxFacts));
+
+    expect(events.filter((event) => event.type === "try")).toHaveLength(10);
+    expect(events.filter((event) => event.type === "conversion")).toHaveLength(5);
+    expect(events.filter((event) => event.type === "penalty_goal")).toHaveLength(0);
+    expect(events.filter((event) => event.type === "yellow_card")).toHaveLength(0);
+    expect(events.some((event) => event.minute === 40)).toBe(true);
+    expect(events.some((event) => event.minute === 80)).toBe(true);
+    expect(events.some((event) => event.minute === 42 || event.minute === 83)).toBe(false);
+    expect(pointTotals(events)).toEqual({ away: 12, home: 48 });
+  });
+
+  it("rejects an unknown game-fact subtype instead of ignoring it", () => {
+    const unknown = structuredClone(clermontParisFacts);
+    unknown[0]!.slugSubType = "drop-inconnu";
+
+    expect(() => parseTop14LnrGameFactsHtml(fixtureHtml(unknown))).toThrow(
+      /Point.*drop-inconnu/,
+    );
+  });
+
+  it("rejects a try whose score increment is not five or seven", () => {
+    const invalid = structuredClone(toulouseBordeauxFacts);
+    invalid[0]!.score = [6, 0];
+
+    expect(() => parseTop14LnrGameFactsHtml(fixtureHtml(invalid))).toThrow(
+      /Unexpected try score increment/,
+    );
+  });
+});

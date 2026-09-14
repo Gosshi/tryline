@@ -113,6 +113,10 @@ export async function resolvePlayerId(params: {
   playerName: string;
   teamId: string;
 }): Promise<string | null> {
+  if (!params.playerName.trim()) {
+    return null;
+  }
+
   const db = getSupabaseServerClient();
   const { data, error } = await db
     .from("players")
