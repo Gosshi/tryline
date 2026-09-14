@@ -314,7 +314,7 @@ describe("runOrchestrate", () => {
     expect(generateContent).not.toHaveBeenCalledWith("next-day", "preview");
   });
 
-  it("generates a next-day preview at 15:00 JST", async () => {
+  it("does not generate a next-day preview more than 24 hours before kickoff", async () => {
     const db = createMockDb({
       scheduledIds: ["next-day"],
       scheduledKickoffAt: {
@@ -332,7 +332,7 @@ describe("runOrchestrate", () => {
       now: new Date("2026-09-10T06:00:00.000Z"),
     });
 
-    expect(generateContent).toHaveBeenCalledWith("next-day", "preview");
+    expect(generateContent).not.toHaveBeenCalledWith("next-day", "preview");
   });
 
   it("generates a preview six hours before kickoff", async () => {
@@ -359,7 +359,7 @@ describe("runOrchestrate", () => {
     );
   });
 
-  it("includes the target JST day through its final millisecond, but not the following midnight", async () => {
+  it("includes only previews within the 24-hour candidate window", async () => {
     const db = createMockDb({
       scheduledIds: ["target-day-start", "target-day-last", "following-day-start"],
       scheduledKickoffAt: {
@@ -380,7 +380,7 @@ describe("runOrchestrate", () => {
     });
 
     expect(generateContent).toHaveBeenCalledWith("target-day-start", "preview");
-    expect(generateContent).toHaveBeenCalledWith("target-day-last", "preview");
+    expect(generateContent).not.toHaveBeenCalledWith("target-day-last", "preview");
     expect(generateContent).not.toHaveBeenCalledWith(
       "following-day-start",
       "preview",

@@ -1,4 +1,7 @@
-import { previewDueUpperBound } from "./preview-window";
+import {
+  previewCandidateUpperBound,
+  recapCandidateUpperBound,
+} from "./content-windows";
 
 import type { Database } from "@/lib/db/types";
 import type { ContentLanguage, ContentType } from "@/lib/llm/types";
@@ -236,13 +239,14 @@ export async function runOrchestrate(
     status: "scheduled",
     contentType: "preview",
     kickoffGte: now.toISOString(),
-    kickoffLt: previewDueUpperBound(now),
+    kickoffLt: previewCandidateUpperBound(now),
   });
 
   const recapCandidates = await getMatchIdsMissingContent({
     db: deps.db,
     status: "finished",
     contentType: "recap",
+    kickoffLte: recapCandidateUpperBound(now),
     orderByKickoff: "desc",
   });
 
