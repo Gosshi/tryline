@@ -216,8 +216,7 @@ function buildResearchFactEntryModal(matches: ResearchMatchCandidate[]) {
             required: false,
             type: 3,
           },
-          description:
-            "ボット拒否で弾かれたときだけ「目視で確認済み」を選ぶ",
+          description: "ボット拒否で弾かれたときだけ「目視で確認済み」を選ぶ",
           label: "出典確認",
           type: 18,
         },
@@ -244,7 +243,10 @@ function findComponentValue(
       if (typeof record.value === "string") {
         return record.value;
       }
-      if (Array.isArray(record.values) && typeof record.values[0] === "string") {
+      if (
+        Array.isArray(record.values) &&
+        typeof record.values[0] === "string"
+      ) {
         return record.values[0];
       }
     }
@@ -306,7 +308,10 @@ function formatManualFactsGenerationNotice(params: {
     const line = `- ${truncateDiscordFact(fact.fact)}`;
     const remaining = params.droppedManual.length - listed - 1;
     const suffix = remaining > 0 ? `\n…ほか${remaining}件` : "";
-    if (`${params.prefix}\n${notice}\n${[...lines, line].join("\n")}${suffix}`.length > 2_000) {
+    if (
+      `${params.prefix}\n${notice}\n${[...lines, line].join("\n")}${suffix}`
+        .length > 2_000
+    ) {
       break;
     }
     lines.push(line);
@@ -470,10 +475,9 @@ async function processResearchFactEntry(interaction: DiscordInteraction) {
           }),
     },
     model_version: "manual",
-    source_domain:
-      urlValidation.ok
-        ? urlValidation.sourceDomain
-        : new URL(submission.sourceUrl).hostname,
+    source_domain: urlValidation.ok
+      ? urlValidation.sourceDomain
+      : new URL(submission.sourceUrl).hostname,
     source_url: submission.sourceUrl,
   }));
   const { data: savedRows, error: upsertError } = await db
