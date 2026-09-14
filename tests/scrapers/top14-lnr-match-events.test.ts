@@ -5,6 +5,7 @@ import {
   buildTop14LnrMatchEventsUrl,
   parseTop14LnrGameFactsHtml,
 } from "@/lib/scrapers/top14-lnr-match-events";
+import perpignanCastresFacts from "@/tests/fixtures/top14-lnr-11826-perpignan-castres.json";
 import clermontParisFacts from "@/tests/fixtures/top14-lnr-11828-clermont-paris.json";
 import toulouseBordeauxFacts from "@/tests/fixtures/top14-lnr-11832-toulouse-bordeaux.json";
 
@@ -69,6 +70,39 @@ describe("Top 14 LNR match events", () => {
     expect(pointTotals(events)).toEqual({ away: 12, home: 48 });
   });
 
+  it("derives every Perpignan–Castres score delta, including a conversion on a card fact", () => {
+    const events = parseTop14LnrGameFactsHtml(
+      fixtureHtml(perpignanCastresFacts),
+    );
+
+    expect(events).toHaveLength(23);
+    expect(events.filter((event) => event.type === "try")).toHaveLength(10);
+    expect(events.filter((event) => event.type === "conversion")).toHaveLength(
+      8,
+    );
+    expect(
+      events.filter((event) => event.type === "penalty_goal"),
+    ).toHaveLength(2);
+    expect(events.filter((event) => event.type === "yellow_card")).toHaveLength(
+      3,
+    );
+    expect(
+      events
+        .filter((event) => event.type === "conversion")
+        .map((event) => event.minute),
+    ).toEqual([15, 19, 25, 31, 47, 52, 63, 75]);
+    expect(pointTotals(events)).toEqual({ away: 29, home: 43 });
+  });
+
+  it("rejects an unsupported score increment on any game fact", () => {
+    const invalid = structuredClone(perpignanCastresFacts);
+    invalid[9]!.score = [30, 15];
+
+    expect(() => parseTop14LnrGameFactsHtml(fixtureHtml(invalid))).toThrow(
+      /1.*47/,
+    );
+  });
+
   it("rejects an unknown game-fact subtype instead of ignoring it", () => {
     const unknown = structuredClone(clermontParisFacts);
     unknown[0]!.slugSubType = "drop-inconnu";
@@ -83,7 +117,7 @@ describe("Top 14 LNR match events", () => {
     invalid[0]!.score = [6, 0];
 
     expect(() => parseTop14LnrGameFactsHtml(fixtureHtml(invalid))).toThrow(
-      /Unexpected try score increment/,
+      /Unexpected Top 14 score increment/,
     );
   });
 });

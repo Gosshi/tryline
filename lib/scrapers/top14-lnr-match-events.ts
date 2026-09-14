@@ -75,6 +75,56 @@ function eventType(fact: GameFact): ParsedPlayerMatchEvent["type"] {
   );
 }
 
+function scoreEventsForIncrement(params: {
+  fact: GameFact;
+  factType: ParsedPlayerMatchEvent["type"];
+  increment: number;
+  scoreSide: TeamSide;
+}): ParsedPlayerMatchEvent[] {
+  const { fact, factType, increment, scoreSide } = params;
+  const event = (type: ParsedPlayerMatchEvent["type"], playerName: string) => ({
+    isPenaltyTry: false,
+    minute: fact.minute,
+    playerName,
+    source: "top14.lnr.fr",
+    teamSide: scoreSide,
+    type,
+  });
+  const isFactTeam = scoreSide === teamSide(fact);
+
+  if (increment === 0) return [];
+
+  if (increment === 2) {
+    return [event("conversion", "")];
+  }
+
+  if (increment === 3) {
+    return [
+      event(
+        "penalty_goal",
+        isFactTeam && factType === "penalty_goal" ? playerName(fact) : "",
+      ),
+    ];
+  }
+
+  if (increment === 5) {
+    return [
+      event("try", isFactTeam && factType === "try" ? playerName(fact) : ""),
+    ];
+  }
+
+  if (increment === 7) {
+    return [
+      event("try", isFactTeam && factType === "try" ? playerName(fact) : ""),
+      event("conversion", ""),
+    ];
+  }
+
+  throw new Error(
+    `Unexpected Top 14 score increment: ${increment} for ${scoreSide} at minute ${fact.minute ?? "unknown"}`,
+  );
+}
+
 export function buildTop14LnrMatchEventsUrl(matchPath: string): string {
   const normalized = matchPath.startsWith("http")
     ? matchPath
@@ -100,46 +150,28 @@ export function parseTop14LnrGameFactsHtml(
   let previousScore: [number, number] = [0, 0];
 
   for (const fact of facts) {
-    const type = eventType(fact);
-    const side = teamSide(fact);
+    const factType = eventType(fact);
+    const factSide = teamSide(fact);
 
-    if (type === "try") {
-      const scoreIndex = side === "home" ? 0 : 1;
-      const increment = fact.score[scoreIndex] - previousScore[scoreIndex];
+    for (const [index, scoreSide] of (["home", "away"] as const).entries()) {
+      events.push(
+        ...scoreEventsForIncrement({
+          fact,
+          factType,
+          increment: fact.score[index]! - previousScore[index]!,
+          scoreSide,
+        }),
+      );
+    }
 
-      if (increment !== 5 && increment !== 7) {
-        throw new Error(
-          `Unexpected try score increment: ${increment} for ${side} at minute ${fact.minute ?? "unknown"}`,
-        );
-      }
-
+    if (factType === "yellow_card") {
       events.push({
         isPenaltyTry: false,
         minute: fact.minute,
         playerName: playerName(fact),
         source: "top14.lnr.fr",
-        teamSide: side,
-        type,
-      });
-
-      if (increment === 7) {
-        events.push({
-          isPenaltyTry: false,
-          minute: fact.minute,
-          playerName: "",
-          source: "top14.lnr.fr",
-          teamSide: side,
-          type: "conversion",
-        });
-      }
-    } else {
-      events.push({
-        isPenaltyTry: false,
-        minute: fact.minute,
-        playerName: playerName(fact),
-        source: "top14.lnr.fr",
-        teamSide: side,
-        type,
+        teamSide: factSide,
+        type: factType,
       });
     }
 
