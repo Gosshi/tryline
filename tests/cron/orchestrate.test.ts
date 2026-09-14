@@ -588,12 +588,15 @@ describe("runOrchestrate", () => {
     expect(generateContent).toHaveBeenNthCalledWith(2, "old-finished", "recap");
   });
 
-  it("counts skipped recap generation results without triggering push notifications", async () => {
+  it("counts recap skips when the recap-skip notifier is unset", async () => {
     const db = createMockDb({
       scheduledIds: [],
       finishedIds: ["finished-1"],
     });
-    const generateContent = vi.fn().mockResolvedValue({ status: "skipped" });
+    const generateContent = vi.fn().mockResolvedValue({
+      skipReason: "events_unavailable",
+      status: "skipped",
+    });
     const ingestLineups = vi.fn().mockResolvedValue("triggered");
     const sendPushNotification = vi.fn().mockResolvedValue(undefined);
     const consoleInfoSpy = vi
@@ -617,6 +620,127 @@ describe("runOrchestrate", () => {
     );
 
     consoleInfoSpy.mockRestore();
+  });
+
+  it("reports all events-unavailable recap skips once per batch", async () => {
+    const finishedIds = Array.from({ length: 10 }, (_, index) => `finished-${index + 1}`);
+    const db = createMockDb({ scheduledIds: [], finishedIds });
+    const generateContent = vi.fn().mockResolvedValue({
+      skipReason: "events_unavailable",
+      status: "skipped",
+    });
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+    const notifyRecapSkipped = vi.fn().mockResolvedValue(undefined);
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      notifyRecapSkipped,
+      now,
+    });
+
+    expect(notifyRecapSkipped).toHaveBeenCalledTimes(1);
+    expect(notifyRecapSkipped).toHaveBeenCalledWith({
+      batchSize: 10,
+      matches: finishedIds.map((matchId) => ({
+        competitionFamily: null,
+        matchId,
+        reason: "events_unavailable",
+      })),
+      skippedCount: 10,
+    });
+  });
+
+  it("does not report recap skips when no recap is skipped", async () => {
+    const db = createMockDb({ scheduledIds: [], finishedIds: ["finished-1"] });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+    const notifyRecapSkipped = vi.fn().mockResolvedValue(undefined);
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      notifyRecapSkipped,
+      now,
+    });
+
+    expect(notifyRecapSkipped).not.toHaveBeenCalled();
+  });
+
+  it("reports only the events-unavailable recap skips in a mixed batch", async () => {
+    const skippedIds = ["finished-1", "finished-2", "finished-3"];
+    const finishedIds = [
+      ...skippedIds,
+      "finished-4",
+      "finished-5",
+      "finished-6",
+      "finished-7",
+      "finished-8",
+      "finished-9",
+      "finished-10",
+    ];
+    const db = createMockDb({
+      competitionFamilies: Object.fromEntries(
+        skippedIds.map((id) => [id, "top-14"]),
+      ),
+      scheduledIds: [],
+      finishedIds,
+    });
+    const generateContent = vi.fn().mockImplementation((matchId: string) =>
+      Promise.resolve(
+        skippedIds.includes(matchId)
+          ? { skipReason: "events_unavailable", status: "skipped" }
+          : undefined,
+      ),
+    );
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+    const notifyRecapSkipped = vi.fn().mockResolvedValue(undefined);
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      notifyRecapSkipped,
+      now,
+    });
+
+    expect(notifyRecapSkipped).toHaveBeenCalledTimes(1);
+    expect(notifyRecapSkipped).toHaveBeenCalledWith({
+      batchSize: 10,
+      matches: skippedIds.map((matchId) => ({
+        competitionFamily: "top-14",
+        matchId,
+        reason: "events_unavailable",
+      })),
+      skippedCount: 3,
+    });
+  });
+
+  it("returns the orchestration result when recap-skip notification fails", async () => {
+    const db = createMockDb({ scheduledIds: [], finishedIds: ["finished-1"] });
+    const generateContent = vi.fn().mockResolvedValue({
+      skipReason: "events_unavailable",
+      status: "skipped",
+    });
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+    const notifyRecapSkipped = vi.fn().mockRejectedValue(new Error("Discord down"));
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    await expect(
+      runOrchestrate({
+        db,
+        generateContent,
+        ingestLineups,
+        notifyRecapSkipped,
+        now,
+      }),
+    ).resolves.toMatchObject({ recaps: { skipped: 1, triggered: 0 } });
+
+    consoleErrorSpy.mockRestore();
   });
 
   it("sends a push notification after successful recap generation", async () => {

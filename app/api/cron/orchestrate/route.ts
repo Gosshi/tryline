@@ -6,6 +6,7 @@ import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { runOrchestrate } from "@/lib/cron/orchestrate";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
+import { notifyRecapGenerationSkipped } from "@/lib/llm/notify";
 import { generateMatchContent } from "@/lib/llm/pipeline";
 import { fetchSourcedFactsForMatch } from "@/lib/llm/sourced-facts/fetch";
 
@@ -80,6 +81,7 @@ export async function POST(request: Request) {
       },
       generateContent: generateMatchContent,
       ingestLineups,
+      notifyRecapSkipped: notifyRecapGenerationSkipped,
       sendPushNotification,
     });
 
