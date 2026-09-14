@@ -227,7 +227,9 @@ describe("POST /api/discord/interactions", () => {
     supabaseMocks.sourcedFactsQueryError = null;
     supabaseMocks.sourcedFactsQueryEq.mockReturnValue(sourcedFactsQueryBuilder);
     supabaseMocks.sourcedFactsQueryIn.mockReturnValue(sourcedFactsQueryBuilder);
-    supabaseMocks.sourcedFactsQueryOrder.mockReturnValue(sourcedFactsQueryBuilder);
+    supabaseMocks.sourcedFactsQueryOrder.mockReturnValue(
+      sourcedFactsQueryBuilder,
+    );
     supabaseMocks.from.mockImplementation((table: string) => {
       if (table === "matches") return matchBuilder;
       if (table === "match_sourced_facts") {
@@ -317,8 +319,13 @@ describe("POST /api/discord/interactions", () => {
       ),
     ).toBe(true);
 
-    const [matchField, factsField, sourceUrlField, confidenceField, sourceCheckField] =
-      payload.data.components;
+    const [
+      matchField,
+      factsField,
+      sourceUrlField,
+      confidenceField,
+      sourceCheckField,
+    ] = payload.data.components;
     expect(matchField).toMatchObject({
       component: {
         custom_id: "match_id",
@@ -370,8 +377,7 @@ describe("POST /api/discord/interactions", () => {
         required: false,
         type: 3,
       },
-      description:
-        "ボット拒否で弾かれたときだけ「目視で確認済み」を選ぶ",
+      description: "ボット拒否で弾かれたときだけ「目視で確認済み」を選ぶ",
       label: "出典確認",
     });
     expect(sourceCheckField.component.options).toContainEqual({
