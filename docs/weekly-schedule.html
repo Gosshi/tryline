@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tryline 週次スケジュール — cron と ChatGPT 調査枠</title>
+<style>
+  :root{
+    --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --paper:#ffffff; --bg:#f9fafb;
+    --ingest:#0ea5e9; --ingest-bg:#e0f2fe;
+    --preview:#8b5cf6; --preview-bg:#ede9fe;
+    --recap:#16a34a; --recap-bg:#dcfce7;
+    --chatgpt:#ea580c; --chatgpt-bg:#ffedd5;
+    --alert:#dc2626; --alert-bg:#fee2e2;
+    --fix:#ca8a04; --fix-bg:#fef9c3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    line-height:1.7;font-size:15px}
+  .wrap{max-width:1100px;margin:0 auto;padding:40px 20px 80px}
+  header{border-bottom:3px solid var(--ink);padding-bottom:16px;margin-bottom:32px}
+  h1{font-size:26px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:13px;margin:0}
+  h2{font-size:19px;margin:44px 0 14px;padding-left:10px;border-left:5px solid var(--ink)}
+  h3{font-size:15px;margin:26px 0 10px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.08em}
+  table{width:100%;border-collapse:collapse;background:var(--paper);font-size:13.5px;
+    border:1px solid var(--line);margin:12px 0}
+  th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:var(--bg);font-weight:700;font-size:12.5px;color:var(--muted)}
+  tr:last-child td{border-bottom:none}
+  td.t{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700}
+  .tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;
+    font-weight:700;white-space:nowrap}
+  .tag.ingest{background:var(--ingest-bg);color:#0369a1}
+  .tag.preview{background:var(--preview-bg);color:#6d28d9}
+  .tag.recap{background:var(--recap-bg);color:#15803d}
+  .tag.alert{background:var(--alert-bg);color:#b91c1c}
+  .tag.fix{background:var(--fix-bg);color:#a16207}
+  .lane{background:var(--paper);border:1px solid var(--line);margin:14px 0;overflow:hidden}
+  .lane-h{padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--line);
+    font-weight:700;font-size:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .lane-h .ko{color:var(--muted);font-weight:400;font-size:12.5px}
+  .steps{display:flex;flex-wrap:wrap;gap:0;padding:14px}
+  .step{flex:1 1 150px;min-width:140px;padding:10px 12px;border-left:4px solid var(--line);
+    margin-right:10px;margin-bottom:8px;background:var(--bg)}
+  .step .when{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .step .what{font-weight:700;font-size:13px;margin-top:2px}
+  .step .note{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .step.chatgpt{border-left-color:var(--chatgpt)}
+  .step.preview{border-left-color:var(--preview)}
+  .step.recap{border-left-color:var(--recap)}
+  .step.bad{border-left-color:var(--alert);background:var(--alert-bg)}
+  .step.good{border-left-color:var(--fix);background:var(--fix-bg)}
+  .box{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--alert);
+    padding:14px 16px;margin:14px 0}
+  .box.ok{border-left-color:var(--recap)}
+  .box h4{margin:0 0 6px;font-size:14px}
+  .box p{margin:5px 0;font-size:13.5px}
+  .small{font-size:12.5px;color:var(--muted)}
+  code{background:var(--bg);padding:1px 5px;border-radius:3px;font-size:12.5px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 0;font-size:12px}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .sw{width:12px;height:12px;border-radius:2px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>週次スケジュール — cron と ChatGPT 調査枠</h1>
+  <p class="sub">
+    すべて <strong>JST</strong>。作成 2026-09-14。
+    一次情報は <code>.github/workflows/cron-*.yml</code> / <code>vercel.json</code> /
+    <code>lib/cron/preview-window.ts</code> / <code>docs/chatgpt-prompts/README.md</code>。
+  </p>
+</header>
+
+<div class="box">
+  <h4>最初に読むこと — cron は名目時刻どおりに走らない</h4>
+  <p>GitHub Actions の cron は<strong>実測で1〜10時間遅延</strong>する。2026-09-14 の月曜 09:05 の回は
+  実際には <strong>13:47</strong> に走った。本書の時刻はすべて名目値である。</p>
+  <p class="small">したがって「実行時の時計が21時台か」で分岐する実装は採ってはいけない。
+  遅延した回が永久に条件を満たさず、生成が止まる。判定は必ず「直近に過ぎた境界」で行う。</p>
+</div>
+
+<h2>A. 固定スケジュール</h2>
+
+<table>
+<thead><tr><th style="width:96px">時刻</th><th style="width:90px">頻度</th><th>処理</th><th style="width:74px">種別</th></tr></thead>
+<tbody>
+<tr><td class="t">03:00 / 09:00<br>15:00 / 21:00</td><td>毎日</td>
+  <td><strong>live-pipeline</strong>：結果取込 → League One 補完 → 生成（<strong>直列</strong>・後続は <code>if: always()</code>）</td>
+  <td><span class="tag ingest">取込</span><span class="tag recap">生成</span></td></tr>
+<tr><td class="t">11:00</td><td>日</td><td>ingest-squads</td><td><span class="tag ingest">取込</span></td></tr>
+<tr><td class="t">11:00</td><td>月</td><td>ingest-fixtures</td><td><span class="tag ingest">取込</span></td></tr>
+<tr><td class="t">12:00</td><td>毎日</td><td><strong>X 下書き通知</strong>（notify-discord）</td><td><span class="tag recap">配信</span></td></tr>
+<tr><td class="t">12:00</td><td>月</td><td>ingest-world-rankings</td><td><span class="tag ingest">取込</span></td></tr>
+<tr><td class="t">12:15</td><td>毎日</td><td>ingest-broadcasts</td><td><span class="tag ingest">取込</span></td></tr>
+<tr><td class="t">12:30</td><td>日</td><td>audit-data-integrity</td><td><span class="tag ingest">監査</span></td></tr>
+<tr><td class="t">12:30</td><td>月</td><td>ingest-standings</td><td><span class="tag ingest">取込</span></td></tr>
+<tr><td class="t">13:00</td><td>毎日</td><td>cleanup-raw-data</td><td><span class="tag ingest">保守</span></td></tr>
+<tr><td class="t">15:00</td><td>日</td><td>fill-event-gaps</td><td><span class="tag ingest">取込</span></td></tr>
+<tr><td class="t">21:00</td><td>月</td><td>weekly-digest（<code>vercel.json</code>。GitHub Actions ではない）</td><td><span class="tag recap">配信</span></td></tr>
+<tr><td class="t">21:05</td><td>毎日</td><td>preview-lineup-catchup（ラインアップ遅延の救済）</td><td><span class="tag preview">救済</span></td></tr>
+<tr><td class="t">22:00</td><td>毎日</td><td>X 下書き通知</td><td><span class="tag recap">配信</span></td></tr>
+<tr><td class="t">22:05</td><td>毎日</td><td>prekickoff-readiness-audit</td><td><span class="tag preview">監査</span></td></tr>
+<tr><td class="t">01:00</td><td>日・月</td><td>X 下書き通知（UTC 土日 16:00）</td><td><span class="tag recap">配信</span></td></tr>
+<tr><td class="t">09:05</td><td><strong>月</strong></td>
+  <td><strong>レビュー再生成</strong>：木〜月の<strong>終了済み全試合</strong>を <code>force=true</code> で作り直す（上限40件・5件ずつ最大3並列）</td>
+  <td><span class="tag recap">再生成</span></td></tr>
+<tr><td class="t">09:05</td><td><strong>火</strong></td>
+  <td>レビュー再生成：<strong>直近24hに手動事実が入った試合のみ</strong></td>
+  <td><span class="tag recap">再生成</span></td></tr>
+<tr><td class="t">30分ごと</td><td>—</td><td>send-content-notifications（読者への公開通知）</td><td><span class="tag recap">配信</span></td></tr>
+<tr><td class="t">毎時</td><td>—</td><td>send-prematch-notifications（試合前通知）</td><td><span class="tag preview">配信</span></td></tr>
+<tr><td class="t">—</td><td>—</td>
+  <td>ingest-top14-match-events（<strong>schedule 無効・未稼働</strong>）</td>
+  <td><span class="tag alert">停止中</span></td></tr>
+</tbody>
+</table>
+
+<h2>B. ChatGPT 調査枠</h2>
+
+<p class="small">2本のスケジュールタスクで運用する。どちらも
+<code>https://www.trylinerugby.com/calendar?week=&lt;その週の月曜&gt;</code> を読む。
+匿名アクセスではスポイラーガードが無効になるため、<strong>終了状態とスコアは読める</strong>
+（<code>getSpoilerGuardEnabledForUser</code> は <code>userId</code> が無ければ即 <code>false</code>）。
+ページは <code>revalidate = 1800</code> なので<strong>最大30分古い</strong>。</p>
+
+<table>
+<thead><tr><th style="width:130px">枠</th><th style="width:150px">対象</th><th style="width:110px">入力の締切</th><th>締切の根拠</th></tr></thead>
+<tbody>
+<tr><td class="t">木 12:00</td><td>金曜キックオフ</td><td class="t">木 14:30</td><td>前日 15:00 の生成</td></tr>
+<tr><td class="t">金 12:00</td><td>土曜キックオフ</td><td class="t">金 14:30</td><td>前日 15:00 の生成</td></tr>
+<tr><td class="t">土 12:00</td><td>日曜 ＋ <strong>月曜未明</strong><br><span class="small">カレンダーを2ページ読む</span></td><td class="t">土 14:30</td><td>土 15:00 と 日 15:00 の生成</td></tr>
+<tr><td class="t">土 18:00</td><td>その時点で終了済み</td><td class="t">土 20:30</td><td>土 21:00 の初回生成</td></tr>
+<tr><td class="t">日 18:00</td><td>その時点で終了済み</td><td class="t">日 20:30</td><td>日 21:00 の初回生成</td></tr>
+<tr><td class="t"><span class="tag fix">新設</span> 月 18:00</td><td><strong>月曜未明に終了した試合</strong></td><td class="t">月 20:30</td><td>月 21:00 の初回生成</td></tr>
+</tbody>
+</table>
+
+<p class="small"><strong>12:00 はプレビュー専用、18:00 はレビュー専用。</strong>
+12:00 の枠で試合結果は取れない（プロンプトの対象が「翌日キックオフ」に固定されている）。</p>
+
+<h2>C. 試合タイプ別のタイムライン</h2>
+
+<div class="legend">
+  <span><i class="sw" style="background:var(--chatgpt)"></i>ChatGPT 調査</span>
+  <span><i class="sw" style="background:var(--preview)"></i>プレビュー</span>
+  <span><i class="sw" style="background:var(--recap)"></i>レビュー</span>
+  <span><i class="sw" style="background:var(--alert)"></i>修正前の問題</span>
+  <span><i class="sw" style="background:var(--fix)"></i>修正後</span>
+</div>
+
+<div class="lane">
+  <div class="lane-h"><span>金曜夜の試合</span><span class="ko">例：金 21:00 キックオフ／23:00 終了</span></div>
+  <div class="steps">
+    <div class="step chatgpt"><div class="when">木 12:00 → 14:30</div><div class="what">プレビュー調査</div></div>
+    <div class="step preview"><div class="when">木 15:00</div><div class="what">プレビュー生成</div></div>
+    <div class="step bad"><div class="when">土 03:00</div><div class="what">【修正前】レビュー初回</div><div class="note">土18:00の調査枠より前。事実なしで公開され、X下書きもこの版で出る</div></div>
+    <div class="step chatgpt"><div class="when">土 18:00 → 20:30</div><div class="what">レビュー調査</div></div>
+    <div class="step good"><div class="when">土 21:00</div><div class="what">【修正後】レビュー初回</div><div class="note">調査枠の後。初回から事実入り</div></div>
+  </div>
+</div>
+
+<div class="lane">
+  <div class="lane-h"><span>土曜昼の試合</span><span class="ko">例：土 14:00 キックオフ／16:00 終了</span></div>
+  <div class="steps">
+    <div class="step chatgpt"><div class="when">金 12:00 → 14:30</div><div class="what">プレビュー調査</div></div>
+    <div class="step preview"><div class="when">金 15:00</div><div class="what">プレビュー生成</div></div>
+    <div class="step chatgpt"><div class="when">土 18:00 → 20:30</div><div class="what">レビュー調査</div></div>
+    <div class="step good"><div class="when">日 03:00</div><div class="what">レビュー初回</div><div class="note">12時間ゲートにより土21:00→日03:00へ。事実は既に入っている</div></div>
+  </div>
+</div>
+
+<div class="lane">
+  <div class="lane-h"><span>土曜夜の試合（日本代表戦を含む）</span><span class="ko">例：土 19:05 キックオフ／21:05 終了</span></div>
+  <div class="steps">
+    <div class="step chatgpt"><div class="when">金 12:00 → 14:30</div><div class="what">プレビュー調査</div></div>
+    <div class="step preview"><div class="when">金 15:00</div><div class="what">プレビュー生成</div></div>
+    <div class="step bad"><div class="when">日 00:16（実測）</div><div class="what">【修正前】レビュー初回</div><div class="note">土20:30の締切後に終了したため、調査枠に入っていない</div></div>
+    <div class="step chatgpt"><div class="when">日 18:00 → 20:30</div><div class="what">レビュー調査</div></div>
+    <div class="step good"><div class="when">日 21:00</div><div class="what">【修正後】レビュー初回</div><div class="note">約21時間後退する。Owner 承認済みの代償</div></div>
+  </div>
+</div>
+
+<div class="lane">
+  <div class="lane-h"><span>日曜夜の試合</span><span class="ko">例：日 21:00 キックオフ／23:00 終了</span></div>
+  <div class="steps">
+    <div class="step chatgpt"><div class="when">土 12:00 → 14:30</div><div class="what">プレビュー調査</div></div>
+    <div class="step preview"><div class="when">土 15:00</div><div class="what">プレビュー生成</div></div>
+    <div class="step chatgpt"><div class="when">日 18:00 → 20:30</div><div class="what">レビュー調査</div><div class="note">試合前なので結果は入らない</div></div>
+    <div class="step recap"><div class="when">月 09:05</div><div class="what">月曜の再生成が先に走る</div></div>
+  </div>
+</div>
+
+<div class="lane">
+  <div class="lane-h"><span>月曜未明の試合（欧州の日曜夜）</span><span class="ko">例：月 04:05 キックオフ／06:05 終了</span></div>
+  <div class="steps">
+    <div class="step chatgpt"><div class="when">土 12:00 → 14:30</div><div class="what">プレビュー調査</div><div class="note">キックオフの約1.5日前。最も古い</div></div>
+    <div class="step preview"><div class="when">日 15:00</div><div class="what">プレビュー生成</div></div>
+    <div class="step bad"><div class="when">水 09:28（実測）</div><div class="what">【修正前】レビュー初回</div><div class="note">終了から53時間。自動の調査枠が存在せず、手動枠は2週連続で未実行だった</div></div>
+    <div class="step good"><div class="when">月 18:00 → 20:30</div><div class="what">【修正後】レビュー調査</div><div class="note">月曜枠を自動化</div></div>
+    <div class="step good"><div class="when">火 09:05</div><div class="what">【修正後】事実入りで再生成</div></div>
+  </div>
+</div>
+
+<h2>D. 修正内容</h2>
+
+<h3>1. レビューの初回生成を後ろ倒しする</h3>
+<p>候補選択に上限を1つ足す。<strong>2条件の AND</strong>。</p>
+<table>
+<thead><tr><th style="width:210px">条件</th><th>意図</th></tr></thead>
+<tbody>
+<tr><td><code>kickoff_at ≤ now − 12時間</code></td>
+  <td>試合直後は各社の記事が存在せず、自動取得が空振りする。<br>
+  <span class="small">※実測では経過時間と取得件数に相関は無く、支配要因は大会だった（Top 14 は119時間待っても1〜3件）。
+  <strong>件数が増える根拠は無い。試合直後の空振りを防ぐ安全弁として置く。</strong></span></td></tr>
+<tr><td><code>kickoff_at ≤ 直近の20:30 − 2時間</code></td>
+  <td>ChatGPT の調査枠（18:00、締切20:30）が終わってから生成する。<br>
+  <span class="small">−2時間は試合時間の見込み。<code>matches</code> に終了時刻の列が無いため、推定をここ1箇所に閉じ込める。</span></td></tr>
+</tbody>
+</table>
+
+<h3>2. プレビューをキックオフ24時間以内に限定する</h3>
+<p>現在は「前日 15:00」固定のため、キックオフ時刻によって<strong>9.5〜33時間前</strong>とばらつく。
+翌日23:00の試合は32時間前に確定し、<strong>多くの協会のメンバー発表（24〜48時間前）より前</strong>になる（D030 の背景が指摘した問題）。</p>
+<p class="small"><strong>3経路のうち <code>orchestrate</code> の候補選択にだけ入れる。</strong>
+<code>audit-prekickoff-readiness</code> と <code>matches-with-late-lineups</code> は
+「前日15:00 までに生成されるべきだった試合」を探す用途なので、24時間に狭めると点検漏れ・救済漏れになる。</p>
+
+<h3>3. ChatGPT のレビュー枠に月曜を足す</h3>
+<p>既存タスクの発火日を1日増やすだけで、<strong>ChatGPT のスケジュール枠は消費しない</strong>。
+月曜未明の試合は<strong>その月曜から始まる週のページ</strong>に載るため、
+プレビュー側の土曜のような2ページ読みは不要。</p>
+
+<div class="box ok">
+  <h4>実装状況</h4>
+  <p>1と2：<code>specs/fix-content-generation-timing-windows.md</code>（Codex 未着手）</p>
+  <p>3：<code>docs/chatgpt-prompts/weekend-recap-facts.md</code> を更新済み。
+  <strong>Owner が ChatGPT 側のタスク発火日に月曜を追加する必要がある。</strong></p>
+</div>
+
+<h2>E. 残る既知の穴</h2>
+
+<div class="box">
+  <h4>Top 14 のレビューは、上記のどのタイミングでも生成されない</h4>
+  <p><code>ingest-top14-match-events</code> の <code>schedule</code> がコメントアウトのままであり、
+  得点イベントが入らないため <code>events_unavailable</code> で毎朝スキップされ続ける。</p>
+  <p class="small">有効化には本番 <code>--dry-run</code>（lnr.fr へ最大14リクエスト）と、
+  取得量方針（2026-08-29 の sui generis 判断）についての Owner 承認が要る。</p>
+</div>
+
+<p class="small" style="margin-top:40px;border-top:1px solid var(--line);padding-top:14px">
+関連：<code>docs/chatgpt-prompts/README.md</code>（調査枠の権威）/
+<code>docs/runbooks/cron-live-pipeline.md</code>（手動実行）/
+<code>docs/runbooks/daily-ops.md</code>（日次の判断フロー）/
+<code>docs/decisions.md</code> D030（前日15:00 への一本化）
+</p>
+
+</div>
+</body>
+</html>
