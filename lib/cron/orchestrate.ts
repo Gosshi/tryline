@@ -16,6 +16,18 @@ type MatchCandidate = {
   competition: Relation<{ family: string | null }>;
 };
 
+export type RecapSkipEntry = {
+  competitionFamily: string | null;
+  matchId: string;
+  reason: string;
+};
+
+export type RecapSkipReport = {
+  batchSize: number;
+  matches: RecapSkipEntry[];
+  skippedCount: number;
+};
+
 export type OrchestrateResult = {
   previews: {
     triggered: number;
@@ -51,7 +63,7 @@ export type RunOrchestrateDeps = {
     matchId: string,
     contentType: ContentType,
     language?: ContentLanguage,
-  ) => Promise<{ status?: string } | void>;
+  ) => Promise<{ skipReason?: string; status?: string } | void>;
   fetchSourcedFacts?: (
     matchId: string,
     contentType: ContentType,
@@ -61,6 +73,7 @@ export type RunOrchestrateDeps = {
     competitionFamily?: string | null,
   ) => Promise<LineupIngestOutcome>;
   now?: Date;
+  notifyRecapSkipped?: (report: RecapSkipReport) => Promise<void>;
   sendPushNotification?: (info: PushMatchInfo) => Promise<void>;
 };
 
@@ -290,6 +303,8 @@ export async function runOrchestrate(
     }),
   );
 
+  const recapSkips: RecapSkipEntry[] = [];
+
   for (const match of recapCandidates.eligibleMatches.slice(
     0,
     RECAP_BATCH_SIZE,
@@ -323,6 +338,13 @@ export async function runOrchestrate(
         console.info("[orchestrate] recap generation skipped", {
           matchId,
         });
+        if (generated.skipReason === "events_unavailable") {
+          recapSkips.push({
+            competitionFamily,
+            matchId,
+            reason: generated.skipReason,
+          });
+        }
         continue;
       }
 
@@ -332,6 +354,20 @@ export async function runOrchestrate(
     } catch (error) {
       console.error("[orchestrate] recap generation failed", {
         matchId,
+        error,
+      });
+    }
+  }
+
+  if (recapSkips.length > 0 && deps.notifyRecapSkipped) {
+    try {
+      await deps.notifyRecapSkipped({
+        batchSize: RECAP_BATCH_SIZE,
+        matches: recapSkips,
+        skippedCount: recapSkips.length,
+      });
+    } catch (error) {
+      console.error("[orchestrate] recap skipped notification failed", {
         error,
       });
     }

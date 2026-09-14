@@ -20,6 +20,7 @@ import {
   notifyDataIntegrityReport,
   notifyEventIngestionIdentityAlert,
   notifyEventIntegrityMismatch,
+  notifyRecapGenerationSkipped,
   notifyNewsletterDelivery,
   notifyPrekickoffReadinessAudit,
   notifyStripeWebhookIssue,
@@ -367,6 +368,60 @@ describe("llm notify", () => {
     expect(body).toContain("https://www.trylinerugby.com/matches/match-1");
     expect(body).toContain("最終スコア: 56–17");
     expect(body).toContain("イベント合計: 32–35");
+  });
+
+  it("posts one bounded recap-skip report with the remaining match count", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyRecapGenerationSkipped({
+      batchSize: 10,
+      matches: Array.from({ length: 5 }, (_, index) => ({
+        competitionFamily: "top-14",
+        matchId: `match-${index + 1}`,
+        reason: "events_unavailable",
+      })),
+      skippedCount: 5,
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(body).toContain("⚠️ recap 生成をスキップ（イベント不足）");
+    expect(body).toContain("スキップ: 5件 / バッチ枠 10件");
+    expect(body).toContain("理由別: events_unavailable 5件");
+    expect(body).toContain("https://www.trylinerugby.com/matches/match-1");
+    expect(body).toContain("https://www.trylinerugby.com/matches/match-4");
+    expect(body).not.toContain("https://www.trylinerugby.com/matches/match-5");
+    expect(body).toContain("ほか1件");
+    expect(body).toContain("対応: 得点イベントの取り込み状況を確認してください");
+    expect(body.length).toBeLessThanOrEqual(2_000);
+  });
+
+  it("does not throw when the recap-skip webhook is not configured", async () => {
+    getServerEnvMock.mockReturnValue({ DISCORD_WEBHOOK_OPS: undefined });
+    const errorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    await expect(
+      notifyRecapGenerationSkipped({
+        batchSize: 10,
+        matches: [
+          {
+            competitionFamily: null,
+            matchId: "match-1",
+            reason: "events_unavailable",
+          },
+        ],
+        skippedCount: 1,
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(fetch).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it("posts weekly newsletter delivery counts to Discord ops", async () => {

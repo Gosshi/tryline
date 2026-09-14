@@ -11,6 +11,10 @@ vi.mock("@/lib/db/server", () => ({
 vi.mock("@/lib/llm/pipeline", () => ({
   generateMatchContent: vi.fn(),
 }));
+const notifyMock = vi.hoisted(() => ({
+  notifyRecapGenerationSkipped: vi.fn(),
+}));
+vi.mock("@/lib/llm/notify", () => notifyMock);
 
 describe("/api/cron/orchestrate", () => {
   beforeEach(() => {
@@ -75,6 +79,11 @@ describe("/api/cron/orchestrate", () => {
       },
       recaps: { triggered: 0, skipped: 0 },
     });
+    expect(orchestrateMock.runOrchestrate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        notifyRecapSkipped: notifyMock.notifyRecapGenerationSkipped,
+      }),
+    );
   });
 
   it("returns zeroed lineup counters when orchestration fails", async () => {

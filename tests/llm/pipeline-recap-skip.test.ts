@@ -195,6 +195,7 @@ describe("generateMatchContent recap event guard", () => {
       contentType: "recap",
       matchId: "match-1",
       qa: null,
+      skipReason: "events_unavailable",
       status: "skipped",
     });
     expect(dbMock.from).toHaveBeenCalledWith("pipeline_runs");
@@ -266,6 +267,7 @@ describe("generateMatchContent recap event guard", () => {
       contentType: "recap",
       matchId: "match-3",
       qa: null,
+      skipReason: "score_mismatch",
       status: "skipped",
     });
 
@@ -457,6 +459,7 @@ describe("generateMatchContent recap event guard", () => {
     const result = await generateMatchContent("match-2", "recap");
 
     expect(result.status).toBe("published");
+    expect("skipReason" in result).toBe(false);
     expect(dbMock.upsert).toHaveBeenCalled();
     expect(indexNowMock.submitUrlsToIndexNow).toHaveBeenCalledWith([
       "https://www.trylinerugby.com/matches/match-2",

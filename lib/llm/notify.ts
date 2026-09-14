@@ -1,6 +1,7 @@
 import { getServerEnv, hasConfiguredValue } from "@/lib/env";
 
 import type { BroadcastIngestResult } from "@/lib/broadcasts/ingest";
+import type { RecapSkipReport } from "@/lib/cron/orchestrate";
 import type {
   ActionableDataIntegrityMatch,
   DataIntegrityAuditReport,
@@ -353,6 +354,31 @@ export async function notifyEventIntegrityMismatch(
     `最終スコア: ${alert.expectedHome}–${alert.expectedAway}`,
     `イベント合計: ${alert.actualHome}–${alert.actualAway}`,
     "対応: 試合記録を確認し、イベントの再取得または修正は個別specに従って判断してください",
+  ].join("\n");
+
+  await postOpsAlert(message);
+}
+
+export async function notifyRecapGenerationSkipped(
+  report: RecapSkipReport,
+): Promise<void> {
+  const reasons = new Map<string, number>();
+  for (const match of report.matches) {
+    reasons.set(match.reason, (reasons.get(match.reason) ?? 0) + 1);
+  }
+  const shownMatches = report.matches.slice(0, DATA_INTEGRITY_ACTION_ITEM_LIMIT);
+  const remainingMatchCount = report.matches.length - shownMatches.length;
+  const message = [
+    "⚠️ recap 生成をスキップ（イベント不足）",
+    `スキップ: ${report.skippedCount}件 / バッチ枠 ${report.batchSize}件`,
+    `理由別: ${[...reasons.entries()].map(([reason, count]) => `${reason} ${count}件`).join(" / ")}`,
+    ...(shownMatches.length > 0
+      ? [
+          `試合: ${shownMatches.map((match) => matchPageUrl(match.matchId)).join(" / ")}`,
+        ]
+      : []),
+    ...(remainingMatchCount > 0 ? [`ほか${remainingMatchCount}件`] : []),
+    "対応: 得点イベントの取り込み状況を確認してください",
   ].join("\n");
 
   await postOpsAlert(message);

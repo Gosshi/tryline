@@ -110,6 +110,7 @@ export type PipelineResult = {
   status: "published" | "draft" | "skipped";
   qa: QaResult | null;
   cacheRevalidationSkipped?: boolean;
+  skipReason?: "events_unavailable" | "score_mismatch";
 };
 
 function hashInput(input: unknown) {
@@ -242,6 +243,7 @@ export async function generateMatchContent(
       contentType,
       status: "skipped",
       qa: null,
+      skipReason: "score_mismatch",
     };
   }
 
@@ -254,6 +256,7 @@ export async function generateMatchContent(
       contentType,
       status: "skipped",
       qa: null,
+      skipReason: "events_unavailable",
     };
   }
 
