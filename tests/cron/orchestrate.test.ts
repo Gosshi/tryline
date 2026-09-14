@@ -125,6 +125,17 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
         });
       }
 
+      if (matchesBuilder.state.status === "finished") {
+        ids = ids.filter((id) => {
+          const kickoffAt = fixture.finishedKickoffAt?.[id];
+          if (!kickoffAt) return true;
+          return !(
+            matchesBuilder.state.kickoffLte &&
+            kickoffAt > matchesBuilder.state.kickoffLte
+          );
+        });
+      }
+
       if (
         matchesBuilder.state.status === "finished" &&
         matchesBuilder.state.orderByKickoff
@@ -314,7 +325,7 @@ describe("runOrchestrate", () => {
     expect(generateContent).not.toHaveBeenCalledWith("next-day", "preview");
   });
 
-  it("generates a next-day preview at 15:00 JST", async () => {
+  it("does not generate a next-day preview more than 24 hours before kickoff", async () => {
     const db = createMockDb({
       scheduledIds: ["next-day"],
       scheduledKickoffAt: {
@@ -332,7 +343,7 @@ describe("runOrchestrate", () => {
       now: new Date("2026-09-10T06:00:00.000Z"),
     });
 
-    expect(generateContent).toHaveBeenCalledWith("next-day", "preview");
+    expect(generateContent).not.toHaveBeenCalledWith("next-day", "preview");
   });
 
   it("generates a preview six hours before kickoff", async () => {
@@ -359,7 +370,50 @@ describe("runOrchestrate", () => {
     );
   });
 
-  it("includes the target JST day through its final millisecond, but not the following midnight", async () => {
+  it("includes a next-day 23:00 JST preview after it enters the 24-hour window", async () => {
+    const createDeps = (now: Date) => ({
+      db: createMockDb({
+        scheduledIds: ["next-day-2300"],
+        scheduledKickoffAt: { "next-day-2300": "2026-09-19T14:00:00.000Z" },
+        finishedIds: [],
+      }),
+      generateContent: vi.fn().mockResolvedValue(undefined),
+      ingestLineups: vi.fn().mockResolvedValue("triggered"),
+      now,
+    });
+    const friday = createDeps(new Date("2026-09-18T06:00:00.000Z"));
+    const saturday = createDeps(new Date("2026-09-18T18:00:00.000Z"));
+
+    await runOrchestrate(friday);
+    await runOrchestrate(saturday);
+
+    expect(friday.generateContent).not.toHaveBeenCalledWith("next-day-2300", "preview");
+    expect(saturday.generateContent).toHaveBeenCalledWith("next-day-2300", "preview");
+  });
+
+  it.each([
+    ["2026-09-19T06:00:00.000Z", false],
+    ["2026-09-19T12:00:00.000Z", true],
+  ])("delays Friday-night recaps until the eligible window", async (now, eligible) => {
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    await runOrchestrate({
+      db: createMockDb({
+        finishedIds: ["friday-night"],
+        finishedKickoffAt: { "friday-night": "2026-09-18T12:00:00.000Z" },
+        scheduledIds: [],
+      }),
+      generateContent,
+      ingestLineups: vi.fn().mockResolvedValue("triggered"),
+      now: new Date(now),
+    });
+    if (eligible) {
+      expect(generateContent).toHaveBeenCalledWith("friday-night", "recap");
+    } else {
+      expect(generateContent).not.toHaveBeenCalledWith("friday-night", "recap");
+    }
+  });
+
+  it("includes only previews within the 24-hour candidate window", async () => {
     const db = createMockDb({
       scheduledIds: ["target-day-start", "target-day-last", "following-day-start"],
       scheduledKickoffAt: {
@@ -380,7 +434,7 @@ describe("runOrchestrate", () => {
     });
 
     expect(generateContent).toHaveBeenCalledWith("target-day-start", "preview");
-    expect(generateContent).toHaveBeenCalledWith("target-day-last", "preview");
+    expect(generateContent).not.toHaveBeenCalledWith("target-day-last", "preview");
     expect(generateContent).not.toHaveBeenCalledWith(
       "following-day-start",
       "preview",
@@ -581,7 +635,7 @@ describe("runOrchestrate", () => {
       db,
       generateContent,
       ingestLineups,
-      now,
+      now: new Date("2026-01-03T12:00:00.000Z"),
     });
 
     expect(generateContent).toHaveBeenNthCalledWith(1, "new-finished", "recap");
