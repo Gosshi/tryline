@@ -341,7 +341,7 @@ function getCompetitionHubMetadataCopy({
       return hasStandings
         ? {
             description: "最新結果・次戦・日程・順位を掲載。",
-            title: "最新結果・次戦・日程・順位",
+            title: "順位・最新結果・次戦・日程",
           }
         : {
             description: "最新結果・次戦・日程を掲載。",
@@ -355,16 +355,18 @@ function formatMetadataTitle(
   metadataCopyTitle: string,
   teams: string[],
 ): string {
+  const metadataTitle = `${competitionTitle} ${metadataCopyTitle}`;
+
   if (teams.length < 2 || teams.length > MAX_TEAMS_IN_METADATA_TITLE) {
-    return `${competitionTitle} ${metadataCopyTitle}`;
+    return metadataTitle;
   }
 
-  const teamTitle = `${competitionTitle} ${teams.join("・")}`;
+  const teamTitle = `${metadataTitle} ${teams.join("・")}`;
 
   return teamTitle.length + TRYLINE_TITLE_SUFFIX.length <=
     MAX_METADATA_TITLE_LENGTH
     ? teamTitle
-    : `${competitionTitle} ${metadataCopyTitle}`;
+    : metadataTitle;
 }
 
 function formatMetadataDate(kickoffAt: string): string {
