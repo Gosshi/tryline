@@ -27,6 +27,11 @@ const authMocks = vi.hoisted(() => ({
   signInWithOtp: vi.fn(),
 }));
 
+const analyticsMocks = vi.hoisted(() => ({
+  trackBeginCheckout: vi.fn(),
+  trackCtaClick: vi.fn(),
+}));
+
 const matchMocks = vi.hoisted(() => ({
   getRecentlyReviewedMatchById: vi.fn(),
 }));
@@ -43,6 +48,8 @@ vi.mock("@/lib/auth/client", () => ({
     },
   }),
 }));
+
+vi.mock("@/lib/analytics", () => analyticsMocks);
 
 vi.mock("@/lib/db/queries/matches", () => ({
   getRecentlyReviewedMatchById: matchMocks.getRecentlyReviewedMatchById,
@@ -281,6 +288,8 @@ describe("PricingForm", () => {
   beforeEach(() => {
     authMocks.getUser.mockReset();
     authMocks.signInWithOtp.mockReset();
+    analyticsMocks.trackBeginCheckout.mockReset();
+    analyticsMocks.trackCtaClick.mockReset();
   });
 
   afterEach(() => {
@@ -291,7 +300,18 @@ describe("PricingForm", () => {
   it("shows the auth modal instead of posting checkout when user is not signed in", async () => {
     authMocks.getUser.mockResolvedValue({ data: { user: null } });
 
-    render(<PricingForm buttonLabel="Premium を始める — ¥980/月" />);
+    const analytics = {
+      cta_id: "pricing_hero_checkout",
+      cta_location: "pricing_hero",
+      destination: "checkout",
+      label: "Premium を始める — ¥980/月",
+    };
+    render(
+      <PricingForm
+        analytics={analytics}
+        buttonLabel="Premium を始める — ¥980/月"
+      />,
+    );
     fireEvent.click(
       screen.getByRole("button", { name: "Premium を始める — ¥980/月" }),
     );
@@ -305,6 +325,8 @@ describe("PricingForm", () => {
       screen.getByText("ログイン後、自動的に決済ページに移動します。"),
     ).toBeInTheDocument();
     expect(screen.getByPlaceholderText("メールアドレス")).toBeInTheDocument();
+    expect(analyticsMocks.trackCtaClick).toHaveBeenCalledWith(analytics);
+    expect(analyticsMocks.trackBeginCheckout).not.toHaveBeenCalled();
 
     const panel = screen.getByRole("heading", {
       name: "Premium を始める",
@@ -322,6 +344,44 @@ describe("PricingForm", () => {
   });
 
   it("submits the checkout form when user is signed in", async () => {
+    const analytics = {
+      cta_id: "pricing_hero_checkout",
+      cta_location: "pricing_hero",
+      destination: "checkout",
+      label: "Premium を始める — ¥980/月",
+    };
+    const submit = vi
+      .spyOn(HTMLFormElement.prototype, "submit")
+      .mockImplementation(() => {
+        expect(analyticsMocks.trackBeginCheckout).toHaveBeenCalledWith(
+          analytics,
+        );
+      });
+    authMocks.getUser.mockResolvedValue({
+      data: { user: { id: "user-1", email: "fan@example.com" } },
+    });
+
+    render(
+      <PricingForm
+        analytics={analytics}
+        buttonLabel="Premium を始める — ¥980/月"
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Premium を始める — ¥980/月" }),
+    );
+
+    await waitFor(() => {
+      expect(submit).toHaveBeenCalledTimes(1);
+    });
+    expect(analyticsMocks.trackCtaClick).toHaveBeenCalledWith(analytics);
+    expect(analyticsMocks.trackBeginCheckout).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("heading", { name: "Premium を始める" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps checkout submission without begin_checkout when analytics is absent", async () => {
     const submit = vi
       .spyOn(HTMLFormElement.prototype, "submit")
       .mockImplementation(() => undefined);
@@ -337,8 +397,6 @@ describe("PricingForm", () => {
     await waitFor(() => {
       expect(submit).toHaveBeenCalledTimes(1);
     });
-    expect(
-      screen.queryByRole("heading", { name: "Premium を始める" }),
-    ).not.toBeInTheDocument();
+    expect(analyticsMocks.trackBeginCheckout).not.toHaveBeenCalled();
   });
 });

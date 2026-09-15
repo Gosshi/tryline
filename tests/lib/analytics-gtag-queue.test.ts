@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  trackBeginCheckout,
   trackCtaClick,
   trackEvent,
   trackFavoriteTeamAdded,
@@ -140,6 +141,12 @@ describe("analytics gtag queue", () => {
       language: "ja",
       match_id: "match-1",
     });
+    trackBeginCheckout({
+      cta_id: "pricing_hero_checkout",
+      cta_location: "pricing_hero",
+      destination: "checkout",
+      label: "7日間無料でレビュー全文を読む",
+    });
     trackFavoriteTeamAdded({
       entry_surface: "team_picker",
       team_slug: "all-blacks",
@@ -166,5 +173,20 @@ describe("analytics gtag queue", () => {
         expect(Object.keys(params)).not.toContain(key);
       }
     }
+  });
+
+  it("sends begin_checkout with the supplied CTA payload", () => {
+    const gtag = vi.fn();
+    setGtag(gtag);
+    const params = {
+      cta_id: "pricing_hero_checkout",
+      cta_location: "pricing_hero",
+      destination: "checkout",
+      label: "7日間無料でレビュー全文を読む",
+    };
+
+    trackBeginCheckout(params);
+
+    expect(gtag).toHaveBeenCalledWith("event", "begin_checkout", params);
   });
 });

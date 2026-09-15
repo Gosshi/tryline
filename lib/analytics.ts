@@ -108,6 +108,10 @@ export function trackCtaClick(params: CtaClickParams) {
   trackEvent("cta_click", params);
 }
 
+export function trackBeginCheckout(params: CtaClickParams) {
+  trackEvent("begin_checkout", params);
+}
+
 export function trackFavoriteTeamAdded(
   params: EntrySurfaceParams & { team_slug: string },
 ) {

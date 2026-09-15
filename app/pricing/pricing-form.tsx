@@ -3,7 +3,11 @@
 import { useState } from "react";
 
 import { AuthModal } from "@/components/auth-modal";
-import { trackCtaClick, type CtaClickParams } from "@/lib/analytics";
+import {
+  trackBeginCheckout,
+  trackCtaClick,
+  type CtaClickParams,
+} from "@/lib/analytics";
 import { getSupabaseBrowserClient } from "@/lib/auth/client";
 
 import type { FormEvent } from "react";
@@ -40,6 +44,9 @@ export function PricingForm({
       return;
     }
 
+    if (analytics) {
+      trackBeginCheckout(analytics);
+    }
     form.submit();
   }
 
