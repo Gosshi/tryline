@@ -25,6 +25,12 @@ export async function POST(request: Request) {
     }
 
     console.error("[ingest-top14-match-events] failed", error);
-    return NextResponse.json({ error: "ingestion_failed" }, { status: 500 });
+    return NextResponse.json(
+      {
+        detail: error instanceof Error ? error.message : String(error),
+        error: "ingestion_failed",
+      },
+      { status: 500 },
+    );
   }
 }
