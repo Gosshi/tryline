@@ -1,8 +1,9 @@
 name: Cron — Ingest Top 14 match events
 
 on:
-  # schedule:
-  #   - cron: "0 5 * * *"
+  schedule:
+    # 14:00 JST. The route processes at most seven finished matches per run.
+    - cron: "0 5 * * *"
   workflow_dispatch:
 
 jobs:
