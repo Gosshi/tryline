@@ -46,27 +46,55 @@ describe("Top 14 LNR match events", () => {
 
     expect(events).toHaveLength(13);
     expect(events.filter((event) => event.type === "try")).toHaveLength(4);
-    expect(events.filter((event) => event.type === "conversion")).toHaveLength(3);
-    expect(events.filter((event) => event.type === "penalty_goal")).toHaveLength(5);
-    expect(events.filter((event) => event.type === "yellow_card")).toHaveLength(1);
-    expect(events.filter((event) => event.type === "try").map((event) => event.minute)).toEqual([52, 63, 71, 73]);
-    expect(events.filter((event) => event.type === "conversion").map((event) => event.minute)).toEqual([52, 63, 71]);
-    expect(events.filter((event) => event.type === "conversion").every((event) => event.playerName === "")).toBe(true);
+    expect(events.filter((event) => event.type === "conversion")).toHaveLength(
+      3,
+    );
+    expect(
+      events.filter((event) => event.type === "penalty_goal"),
+    ).toHaveLength(5);
+    expect(events.filter((event) => event.type === "yellow_card")).toHaveLength(
+      1,
+    );
+    expect(
+      events
+        .filter((event) => event.type === "try")
+        .map((event) => event.minute),
+    ).toEqual([52, 63, 71, 73]);
+    expect(
+      events
+        .filter((event) => event.type === "conversion")
+        .map((event) => event.minute),
+    ).toEqual([52, 63, 71]);
+    expect(
+      events
+        .filter((event) => event.type === "conversion")
+        .every((event) => event.playerName === ""),
+    ).toBe(true);
     expect(pointTotals(events)).toEqual({ away: 16, home: 25 });
     expect(events.find((event) => event.minute === 6)?.teamSide).toBe("away");
     expect(events.find((event) => event.minute === 16)?.teamSide).toBe("home");
   });
 
   it("parses real Toulouse–Bordeaux facts without changing added-time minutes", () => {
-    const events = parseTop14LnrGameFactsHtml(fixtureHtml(toulouseBordeauxFacts));
+    const events = parseTop14LnrGameFactsHtml(
+      fixtureHtml(toulouseBordeauxFacts),
+    );
 
     expect(events.filter((event) => event.type === "try")).toHaveLength(10);
-    expect(events.filter((event) => event.type === "conversion")).toHaveLength(5);
-    expect(events.filter((event) => event.type === "penalty_goal")).toHaveLength(0);
-    expect(events.filter((event) => event.type === "yellow_card")).toHaveLength(0);
+    expect(events.filter((event) => event.type === "conversion")).toHaveLength(
+      5,
+    );
+    expect(
+      events.filter((event) => event.type === "penalty_goal"),
+    ).toHaveLength(0);
+    expect(events.filter((event) => event.type === "yellow_card")).toHaveLength(
+      0,
+    );
     expect(events.some((event) => event.minute === 40)).toBe(true);
     expect(events.some((event) => event.minute === 80)).toBe(true);
-    expect(events.some((event) => event.minute === 42 || event.minute === 83)).toBe(false);
+    expect(
+      events.some((event) => event.minute === 42 || event.minute === 83),
+    ).toBe(false);
     expect(pointTotals(events)).toEqual({ away: 12, home: 48 });
   });
 
@@ -109,6 +137,23 @@ describe("Top 14 LNR match events", () => {
 
     expect(() => parseTop14LnrGameFactsHtml(fixtureHtml(unknown))).toThrow(
       /Point.*drop-inconnu/,
+    );
+  });
+
+  it("parses LNR red-card facts", () => {
+    const factsWithRedCard = structuredClone(clermontParisFacts);
+    const redCardFact = factsWithRedCard[3]!;
+    redCardFact.slugSubType = "rouge";
+
+    const events = parseTop14LnrGameFactsHtml(fixtureHtml(factsWithRedCard));
+
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        minute: redCardFact.minute,
+        playerName: "Tanginoa Palu HALAIFONUA",
+        teamSide: redCardFact.club,
+        type: "red_card",
+      }),
     );
   });
 

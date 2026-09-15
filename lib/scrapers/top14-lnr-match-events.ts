@@ -69,6 +69,9 @@ function eventType(fact: GameFact): ParsedPlayerMatchEvent["type"] {
   if (fact.type === "Exclusion joueur" && fact.slugSubType === "jaune") {
     return "yellow_card";
   }
+  if (fact.type === "Exclusion joueur" && fact.slugSubType === "rouge") {
+    return "red_card";
+  }
 
   throw new Error(
     `Unknown Top 14 game-fact subtype: type=${fact.type} slugSubType=${fact.slugSubType}`,
@@ -164,7 +167,7 @@ export function parseTop14LnrGameFactsHtml(
       );
     }
 
-    if (factType === "yellow_card") {
+    if (factType === "yellow_card" || factType === "red_card") {
       events.push({
         isPenaltyTry: false,
         minute: fact.minute,
@@ -184,7 +187,9 @@ export function parseTop14LnrGameFactsHtml(
 export async function fetchTop14LnrMatchEvents(
   matchPath: string,
 ): Promise<ParsedPlayerMatchEvent[]> {
-  const response = await fetchWithPolicy(buildTop14LnrMatchEventsUrl(matchPath));
+  const response = await fetchWithPolicy(
+    buildTop14LnrMatchEventsUrl(matchPath),
+  );
 
   return parseTop14LnrGameFactsHtml(await response.text());
 }
