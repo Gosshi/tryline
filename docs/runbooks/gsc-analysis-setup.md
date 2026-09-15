@@ -2,6 +2,21 @@
 
 `tools/gsc-pull.ts`（仕様: `specs/feat-gsc-analysis-script.md`）を実行できるようにするための一回限りの準備手順。Codex の実装と並行で進められる。所要 15〜20 分程度。
 
+## Codex MCP として使う
+
+通常の CLI に加え、GSC と Bing の検索データはローカル MCP として Codex に渡せる。認証情報はこのリポジトリや Codex 設定に書かず、**Codex を起動するシェル環境**にだけ設定する。
+
+1. シェルで、リポジトリ外のサービスアカウントキーへの `GSC_SA_KEY_PATH`、`GSC_SITE_URL`、`BING_API_KEY`、`BING_SITE_URL` を設定する。値そのものをチャットや設定ファイルへ貼り付けない。
+2. リポジトリのルートで一度だけ次を実行する。
+
+   ```bash
+   codex mcp add tryline-analytics -- node tools/run-ts.cjs tools/analytics-mcp.ts
+   ```
+
+3. 同じシェルから新しい `codex` セッションを開始し、`/mcp` で `tryline-analytics` が connected と表示されることを確認する。
+
+このサーバーが公開するのは `gsc_search_performance`、`bing_search_performance`、`bing_accessible_sites` の読み取り専用3ツールだけである。URL Inspection と書き込み API は公開しない。
+
 前提: `trylinerugby.com` の Google Search Console プロパティの **オーナー権限**を持っていること（ユーザー追加に必要）。
 
 ---
