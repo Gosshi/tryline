@@ -68,8 +68,8 @@ export async function generateMetadata({
   }
 
   const matchupTitle = `${data.teamA.name} 対 ${data.teamB.name}`;
-  const title = `${matchupTitle} 対戦成績`;
-  const description = `${data.teamA.name}と${data.teamB.name}の対戦成績（Tryline 収録分）。直近の対戦結果とスコア、日本語レビューへのリンク。`;
+  const title = `ラグビー ${matchupTitle} 対戦成績`;
+  const description = `ラグビー${data.teamA.name}と${data.teamB.name}の対戦成績（Tryline 収録分）。直近の対戦結果とスコア、日本語レビューへのリンク。`;
   const canonical = `${SITE_URL}/h2h/${data.canonicalSlug}`;
 
   return {
