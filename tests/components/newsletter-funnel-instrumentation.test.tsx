@@ -97,6 +97,18 @@ describe("newsletter funnel instrumentation", () => {
 
     render(<NewsletterSignup source="calendar" />);
 
+    expect(
+      screen.getByText("今週の海外ラグビーを、見逃さず追う"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "週に1回、注目試合の日程と公開した日本語レビューをまとめて送ります。",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "無料で今週のまとめを受け取る" }),
+    ).toBeInTheDocument();
+
     expect(observer.options).toEqual({ threshold: 0.5 });
     expect(observer.observe).toHaveBeenCalledTimes(1);
     observer.callback(
@@ -209,7 +221,11 @@ describe("newsletter funnel instrumentation", () => {
   it("tracks newsletter confirmation only after a completed confirmation redirect", async () => {
     const gtag = stubGtag();
 
-    render(await NewsletterConfirmedPage({ searchParams: Promise.resolve({ completed: "1" }) }));
+    render(
+      await NewsletterConfirmedPage({
+        searchParams: Promise.resolve({ completed: "1" }),
+      }),
+    );
 
     expect(gtag).toHaveBeenCalledTimes(1);
     expect(gtag).toHaveBeenCalledWith("event", "newsletter_confirmed", {});
@@ -220,7 +236,9 @@ describe("newsletter funnel instrumentation", () => {
 
   it("does not track when the confirmed page is opened directly", async () => {
     const gtag = stubGtag();
-    render(await NewsletterConfirmedPage({ searchParams: Promise.resolve({}) }));
+    render(
+      await NewsletterConfirmedPage({ searchParams: Promise.resolve({}) }),
+    );
     expect(gtag).not.toHaveBeenCalled();
   });
 });
