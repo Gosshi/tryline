@@ -330,12 +330,17 @@ describe("H2H page", () => {
       alternates: {
         canonical: "https://www.trylinerugby.com/h2h/leinster-vs-toulouse",
       },
+      description:
+        "ラグビーLeinsterとStade Toulousainの対戦成績（Tryline 収録分）。直近の対戦結果とスコア、日本語レビューへのリンク。",
       openGraph: {
+        description:
+          "ラグビーLeinsterとStade Toulousainの対戦成績（Tryline 収録分）。直近の対戦結果とスコア、日本語レビューへのリンク。",
         locale: "ja_JP",
-        title: "Leinster 対 Stade Toulousain 対戦成績 | Tryline",
+        title: "ラグビー Leinster 対 Stade Toulousain 対戦成績 | Tryline",
       },
       title: {
-        absolute: "Leinster 対 Stade Toulousain 対戦成績 | Tryline",
+        absolute:
+          "ラグビー Leinster 対 Stade Toulousain 対戦成績 | Tryline",
       },
     });
   });
