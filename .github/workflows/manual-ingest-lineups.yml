@@ -74,7 +74,7 @@ jobs:
               else
                 echo "- facts: NOT RUN"
               fi
-              echo "- regenerate: ${regenerate_status}"
+              echo "- regenerate: OK ${regenerate_ok} / FAIL ${regenerate_fail}"
               echo "- failure total: ${failure_total}"
             } | tee -a "$GITHUB_STEP_SUMMARY"
           }
@@ -90,7 +90,8 @@ jobs:
             ingest_fail=0
             facts_ok=0
             facts_fail=0
-            regenerate_status="NOT RUN"
+            regenerate_ok=0
+            regenerate_fail=0
             failure_total=1
             write_summary
             exit 1
@@ -108,7 +109,8 @@ jobs:
             ingest_fail=0
             facts_ok=0
             facts_fail=0
-            regenerate_status="NOT RUN"
+            regenerate_ok=0
+            regenerate_fail=0
             failure_total=1
             write_summary
             exit 1
@@ -138,7 +140,8 @@ jobs:
           ingest_fail=0
           facts_ok=0
           facts_fail=0
-          regenerate_status="NOT RUN"
+          regenerate_ok=0
+          regenerate_fail=0
           failure_total=$invalid_count
 
           request() {
@@ -220,22 +223,23 @@ jobs:
             done
           fi
 
-          if [ "$REGENERATE" = "true" ] && [ "$valid_count" -gt 0 ]; then
-            match_ids_json=$(node -e 'process.stdout.write(JSON.stringify(process.argv.slice(1)))' "${valid_ids[@]}")
-            response_file=$(mktemp)
-            echo "== generate-content ($CONTENT_TYPE): ${valid_count} match_ids =="
-            code=$(request "$response_file" -X POST "$BASE/api/cron/generate-content" -H "Authorization: Bearer $CRON_SECRET" -H "Content-Type: application/json" --data "{\"contentType\":\"$CONTENT_TYPE\",\"matchIds\":$match_ids_json,\"language\":\"$LANGUAGE\"}")
-            body=$(<"$response_file")
-            rm "$response_file"
-            regenerate_status="HTTP $code"
-            echo "HTTP $code"
-            echo "$body"
-            if [ "$code" != "200" ]; then
-              echo "FAIL: content regeneration error"
-              failure_total=$((failure_total + 1))
-            fi
-          elif [ "$REGENERATE" = "true" ]; then
-            regenerate_status="NOT RUN (no valid match_ids)"
+          if [ "$REGENERATE" = "true" ]; then
+            for match_id in "${valid_ids[@]}"; do
+              response_file=$(mktemp)
+              echo "== generate-content ($CONTENT_TYPE): $match_id =="
+              code=$(request "$response_file" -X POST "$BASE/api/cron/generate-content" -H "Authorization: Bearer $CRON_SECRET" -H "Content-Type: application/json" --data "{\"contentType\":\"$CONTENT_TYPE\",\"matchIds\":[\"$match_id\"],\"language\":\"$LANGUAGE\"}")
+              body=$(<"$response_file")
+              rm "$response_file"
+              echo "HTTP $code"
+              echo "$body"
+              if [ "$code" = "200" ]; then
+                regenerate_ok=$((regenerate_ok + 1))
+              else
+                echo "FAIL: content regeneration error for $match_id"
+                regenerate_fail=$((regenerate_fail + 1))
+                failure_total=$((failure_total + 1))
+              fi
+            done
           fi
 
           if [ "$INGEST_LINEUPS" = "true" ] && [ "$ingest_ok" -eq 0 ]; then
