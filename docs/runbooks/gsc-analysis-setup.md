@@ -10,7 +10,8 @@
 2. リポジトリのルートで一度だけ次を実行する。
 
    ```bash
-   codex mcp add tryline-analytics -- node tools/run-ts.cjs tools/analytics-mcp.ts
+   codex mcp remove tryline-analytics
+   codex mcp add tryline-analytics -- node "$(pwd)/tools/run-analytics-mcp.cjs"
    ```
 
 3. 同じシェルから新しい `codex` セッションを開始し、`/mcp` で `tryline-analytics` が connected と表示されることを確認する。

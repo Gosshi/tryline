@@ -2,7 +2,7 @@
  * Local, read-only MCP server for Tryline search analytics.
  *
  * Register it from a shell where the required environment variables are set:
- *   codex mcp add tryline-analytics -- node tools/run-ts.cjs tools/analytics-mcp.ts
+ *   codex mcp add tryline-analytics -- node "$(pwd)/tools/run-analytics-mcp.cjs"
  */
 
 import { google } from "googleapis";

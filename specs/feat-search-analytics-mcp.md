@@ -42,7 +42,7 @@ GSC は `webmasters.readonly` スコープだけを要求する。Bing は既存
 3. Bing の2ツールは既存 allowlist を経由し、結果を最大20行ずつに圧縮する。
 4. 認証情報、API キー、Bing リクエスト URL が MCP 応答またはエラーに現れない。
 5. モックによる MCP プロトコルと各ツールのユニットテストが通る。実 API はテストしない。
-6. Owner が `codex mcp add` で登録し、新しい Codex セッションの `/mcp` で接続を確認できる。
+6. Owner が作業ディレクトリに依存しない絶対パスの `codex mcp add` で登録し、新しい Codex セッションの `/mcp` で接続を確認できる。
 
 ## 未解決の質問
 
