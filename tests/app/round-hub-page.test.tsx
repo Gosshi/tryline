@@ -17,6 +17,7 @@ const contentStatusMock = vi.hoisted(() => ({
 const matchesMock = vi.hoisted(() => ({
   getRoundMatches: vi.fn(),
   listRoundHubParams: vi.fn(),
+  listPrerenderRoundHubParams: vi.fn(),
   listRoundsForCompetition: vi.fn(),
 }));
 
@@ -55,7 +56,7 @@ describe("round hub page", () => {
   });
 
   it("generates static params from numeric round hubs", async () => {
-    matchesMock.listRoundHubParams.mockResolvedValue([
+    matchesMock.listPrerenderRoundHubParams.mockResolvedValue([
       { competition: "six-nations", round: 3, season: "2025" },
     ]);
 

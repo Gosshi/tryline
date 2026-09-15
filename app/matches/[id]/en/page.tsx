@@ -15,8 +15,7 @@ import { getMatchLineupsForMatch } from "@/lib/db/queries/match-lineups";
 import {
   getMatchById,
   getMatchContentEn,
-  listAllMatchIds,
-  listMatchIdsWithContent,
+  listPrerenderMatchIds,
 } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
@@ -37,17 +36,10 @@ type MatchEnglishPageProps = {
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  const [matchesWithContent, allMatches] = await Promise.all([
-    listMatchIdsWithContent(),
-    listAllMatchIds(),
-  ]);
-  const contentIds = new Set(matchesWithContent.map(({ id }) => id));
+  const matches = await listPrerenderMatchIds();
 
-  return allMatches
-    .filter(
-      (match) =>
-        contentIds.has(match.id) && match.competitionFamily === "league-one",
-    )
+  return matches
+    .filter((match) => match.competitionFamily === "league-one")
     .map(({ id }) => ({ id }));
 }
 

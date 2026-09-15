@@ -4,11 +4,14 @@ vi.mock("@/lib/db/queries/competitions", () => ({
   listFamilies: vi.fn().mockResolvedValue([]),
   listSeasonsByFamily: vi.fn().mockResolvedValue([]),
 }));
-vi.mock("@/lib/db/queries/matches", () => ({
+const matchesMock = vi.hoisted(() => ({
   listHeadToHeadPairs: vi.fn().mockResolvedValue([]),
   listMatchIdsWithContent: vi.fn().mockResolvedValue([]),
+  listPrerenderMatchIds: vi.fn().mockResolvedValue([]),
   listRoundHubParams: vi.fn().mockResolvedValue([]),
 }));
+
+vi.mock("@/lib/db/queries/matches", () => matchesMock);
 vi.mock("@/lib/db/queries/players", () => ({
   listIndexablePlayerSlugs: vi.fn().mockResolvedValue([]),
 }));
@@ -26,6 +29,28 @@ vi.mock("@/lib/db/queries/teams", () => ({
 }));
 
 describe("sitemap static routes", () => {
+  it("keeps old published match URLs in the sitemap", async () => {
+    matchesMock.listMatchIdsWithContent.mockResolvedValueOnce([
+      {
+        competitionFamily: "six-nations",
+        id: "published-100-days-ago",
+        updatedAt: "2026-06-08T00:00:00.000Z",
+      },
+    ]);
+
+    const { default: sitemap } = await import("@/app/sitemap");
+    const entries = await sitemap();
+
+    expect(entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          url: "https://www.trylinerugby.com/matches/published-100-days-ago",
+        }),
+      ]),
+    );
+    expect(matchesMock.listPrerenderMatchIds).not.toHaveBeenCalled();
+  });
+
   it("includes /calendar and standings pages while excluding /news", async () => {
     const { default: sitemap } = await import("@/app/sitemap");
 
