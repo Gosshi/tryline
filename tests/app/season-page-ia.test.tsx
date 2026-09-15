@@ -569,12 +569,12 @@ describe("season page information architecture", () => {
     );
 
     expect(
-      screen.getByRole("link", { name: "この大会を購読" }),
+      screen.getByRole("link", { name: "この大会の日程をカレンダーに追加" }),
     ).toHaveAttribute(
       "href",
       "webcal://www.trylinerugby.com/api/calendar/premiership-2025-26.ics",
     );
-    expect(screen.getByRole("link", { name: "大会iCal URL" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "iCal URL を開く" })).toHaveAttribute(
       "href",
       "https://www.trylinerugby.com/api/calendar/premiership-2025-26.ics",
     );

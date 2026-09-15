@@ -8,10 +8,12 @@ export type CtaClickParams = {
   cta_location: string;
   destination: string;
   content_type?: string;
+  competition_slug?: string;
   is_sample?: boolean;
   label?: string;
   language?: "en" | "ja";
   match_id?: string;
+  season?: string;
 };
 
 export type NewsletterSource = "calendar" | "competition" | "home";

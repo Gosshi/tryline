@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
+import { CompetitionCalendarLinks } from "@/components/competition-calendar-links";
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
 import { IosAppCta } from "@/components/ios-app-cta";
 import { NewsletterSignup } from "@/components/newsletter-signup";
@@ -961,18 +962,12 @@ export default async function SeasonPage({ params }: Props) {
           )}
           <div className="bg-white px-5 py-5 sm:px-8">
             <div className="flex flex-wrap gap-2">
-              <Link
-                className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
-                href={getWebcalUrl(competitionCalendarFeedUrl)}
-              >
-                この大会を購読
-              </Link>
-              <Link
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-                href={competitionCalendarFeedUrl}
-              >
-                大会iCal URL
-              </Link>
+              <CompetitionCalendarLinks
+                competitionSlug={competition}
+                icalHref={competitionCalendarFeedUrl}
+                season={season}
+                webcalHref={getWebcalUrl(competitionCalendarFeedUrl)}
+              />
               <TrackedLink
                 analytics={{
                   cta_id: "hub_hero_calendar",
