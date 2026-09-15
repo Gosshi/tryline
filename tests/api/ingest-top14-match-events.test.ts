@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const dbMock = vi.hoisted(() => ({ getSupabaseServerClient: vi.fn(() => ({})) }));
+const dbMock = vi.hoisted(() => ({
+  getSupabaseServerClient: vi.fn(() => ({})),
+}));
 const backfillMock = vi.hoisted(() => ({
   MAX_TOP14_LNR_MATCHES_PER_RUN: 7,
   runTop14LnrMatchEventBackfill: vi.fn(),
@@ -30,15 +32,21 @@ describe("/api/cron/ingest-top14-match-events", () => {
   });
 
   it("rejects an unauthorized request", async () => {
-    const { POST } = await import("@/app/api/cron/ingest-top14-match-events/route");
+    const { POST } =
+      await import("@/app/api/cron/ingest-top14-match-events/route");
 
     expect(
-      await POST(new Request("http://localhost/api/cron/ingest-top14-match-events", { method: "POST" })),
+      await POST(
+        new Request("http://localhost/api/cron/ingest-top14-match-events", {
+          method: "POST",
+        }),
+      ),
     ).toMatchObject({ status: 401 });
   });
 
   it("runs the bounded non-dry-run backfill", async () => {
-    const { POST } = await import("@/app/api/cron/ingest-top14-match-events/route");
+    const { POST } =
+      await import("@/app/api/cron/ingest-top14-match-events/route");
     const response = await POST(
       new Request("http://localhost/api/cron/ingest-top14-match-events", {
         headers: { Authorization: "Bearer test-cron-secret" },
@@ -47,10 +55,34 @@ describe("/api/cron/ingest-top14-match-events", () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ eventsInserted: 13, targetMatches: 1 });
+    await expect(response.json()).resolves.toEqual({
+      eventsInserted: 13,
+      targetMatches: 1,
+    });
     expect(backfillMock.runTop14LnrMatchEventBackfill).toHaveBeenCalledWith(
       { dryRun: false, limit: 7 },
       expect.anything(),
     );
+  });
+
+  it("returns the safe ingestion failure detail to the authorized caller", async () => {
+    backfillMock.runTop14LnrMatchEventBackfill.mockRejectedValue(
+      new Error("Top 14 event totals mismatch for match-1"),
+    );
+    const { POST } =
+      await import("@/app/api/cron/ingest-top14-match-events/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/cron/ingest-top14-match-events", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      detail: "Top 14 event totals mismatch for match-1",
+      error: "ingestion_failed",
+    });
   });
 });
