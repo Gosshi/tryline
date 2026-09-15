@@ -37,6 +37,7 @@ const DISCORD_TRUNCATION_SUFFIX = "\n…(切り詰め)";
 const MATCH_PAGE_URL_ORIGIN = "https://www.trylinerugby.com/matches";
 const DATA_INTEGRITY_TEXT_MAX_LENGTH = 72;
 const STALE_STANDINGS_DETAIL_LIMIT = 3;
+const STALE_SCHEDULED_MATCH_DETAIL_LIMIT = 3;
 
 /**
  * The number of published recaps listed in a weekly integrity report. Keeping
@@ -147,6 +148,27 @@ function formatStaleStandings(
       .map(
         (competition) =>
           `${shortenDataIntegrityText(competition.slug)} (${competition.daysStale}日 stale)`,
+      )
+      .join(" / "),
+    ...(remaining > 0 ? [`ほか${remaining}件`] : []),
+  ].join(" / ");
+}
+
+function formatStaleScheduledMatches(report: DataIntegrityAuditReport): string {
+  const matches = report.staleScheduledMatches.matches;
+
+  if (matches.length === 0) {
+    return "なし";
+  }
+
+  const shown = matches.slice(0, STALE_SCHEDULED_MATCH_DETAIL_LIMIT);
+  const remaining = matches.length - shown.length;
+
+  return [
+    shown
+      .map(
+        (match) =>
+          `${shortenDataIntegrityText(match.matchLabel)} (${match.hoursOverdue}時間超過)`,
       )
       .join(" / "),
     ...(remaining > 0 ? [`ほか${remaining}件`] : []),
@@ -313,6 +335,7 @@ export async function notifyDataIntegrityReport(
   const remainingActionableMatchCount =
     actionableMatches.length - shownActionableMatches.length;
   const staleStandings = formatStaleStandings(report);
+  const staleScheduledMatches = formatStaleScheduledMatches(report);
   const message = [
     "🧪 データ整合性 週次監査",
     `生成日時: ${report.generatedAt}`,
@@ -331,6 +354,7 @@ export async function notifyDataIntegrityReport(
     `3. finished イベント0件: matches=${report.emptyFinishedEvents.count}`,
     `4. draft滞留: total=${report.draftBacklog.total} recent7d=${report.draftBacklog.recent7Days}`,
     `5. 順位表 stale: competitions=${report.staleStandings.count} ${staleStandings}`,
+    `6. 終了未反映: matches=${report.staleScheduledMatches.count} ${staleScheduledMatches}`,
     "記録: published recapのない試合、draftのみの試合、および他の監査項目は上記件数を参照してください",
     "対応: 要対応の試合URLから記録と公開済みrecapを確認し、修正は個別specで対応してください",
   ].join("\n");

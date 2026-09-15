@@ -248,6 +248,17 @@ describe("llm notify", () => {
       emptyFinishedEvents: { count: 3, matchIds: [] },
       generatedAt: "2026-07-08T00:00:00.000Z",
       scoreMismatches: { count: 4, matches: [] },
+      staleScheduledMatches: {
+        count: 1,
+        matches: [
+          {
+            competitionLabel: "Greatest Rivalry 2026",
+            hoursOverdue: 72,
+            matchId: "stale-match",
+            matchLabel: "South Africa 対 New Zealand",
+          },
+        ],
+      },
       staleStandings: {
         competitions: [
           {
@@ -272,6 +283,8 @@ describe("llm notify", () => {
     expect(body).toContain("3. finished イベント0件");
     expect(body).toContain("4. draft滞留");
     expect(body).toContain("5. 順位表 stale");
+    expect(body).toContain("6. 終了未反映");
+    expect(body).toContain("South Africa 対 New Zealand (72時間超過)");
     expect(body).toContain("premiership-2025-26 (9日 stale)");
     expect(body).toContain("要対応: 1件");
     expect(body).toContain("f01f68e2-bdd6-47c8-8910-0ea37a382b0a");
@@ -297,6 +310,7 @@ describe("llm notify", () => {
       emptyFinishedEvents: { count: 0, matchIds: [] },
       generatedAt: "2026-07-08T00:00:00.000Z",
       scoreMismatches: { count: 1, matches: [] },
+      staleScheduledMatches: { count: 0, matches: [] },
       staleStandings: { competitions: [], count: 0 },
     });
 
@@ -333,6 +347,7 @@ describe("llm notify", () => {
       emptyFinishedEvents: { count: 0, matchIds: [] },
       generatedAt: "2026-07-08T00:00:00.000Z",
       scoreMismatches: { count: 50, matches: [] },
+      staleScheduledMatches: { count: 0, matches: [] },
       staleStandings: { competitions: [], count: 0 },
     });
 

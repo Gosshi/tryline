@@ -6,6 +6,7 @@ import {
   summarizeDuplicateEvents,
   summarizeEmptyFinishedEvents,
   summarizeScoreMismatches,
+  summarizeStaleScheduledMatches,
   summarizeStaleStandings,
   type AuditFinishedMatchRow,
 } from "@/lib/data-integrity/audit";
@@ -258,6 +259,50 @@ describe("data integrity audit summaries", () => {
       competitionId: "active-stale",
       daysStale: 18,
       slug: "active-stale-2026",
+    });
+  });
+
+  it("reports scheduled matches that remain past their kickoff", () => {
+    const summary = summarizeStaleScheduledMatches(
+      [
+        {
+          away_team: { name: "New Zealand" },
+          competition: {
+            name: "Greatest Rivalry",
+            season: "2026",
+            slug: "greatest-rivalry-2026",
+          },
+          home_team: { name: "South Africa" },
+          id: "stale-match",
+          kickoff_at: "2026-09-12T21:00:00.000Z",
+        },
+        {
+          away_team: { name: "Away" },
+          competition: null,
+          home_team: { name: "Home" },
+          id: "less-stale-match",
+          kickoff_at: "2026-09-14T18:00:00.000Z",
+        },
+      ],
+      new Date("2026-09-15T21:00:00.000Z"),
+    );
+
+    expect(summary).toEqual({
+      count: 2,
+      matches: [
+        {
+          competitionLabel: "Greatest Rivalry 2026",
+          hoursOverdue: 72,
+          matchId: "stale-match",
+          matchLabel: "South Africa 対 New Zealand",
+        },
+        {
+          competitionLabel: "",
+          hoursOverdue: 27,
+          matchId: "less-stale-match",
+          matchLabel: "Home 対 Away",
+        },
+      ],
     });
   });
 });

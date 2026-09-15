@@ -13,6 +13,7 @@ import { computeScoreTimeline } from "@/lib/llm/stages/assemble";
 import type { Json } from "@/lib/db/types";
 
 const STALE_STANDINGS_THRESHOLD_DAYS = 7;
+const STALE_SCHEDULED_MATCH_THRESHOLD_HOURS = 24;
 const RECENT_DRAFT_WINDOW_DAYS = 7;
 
 type AuditClient = ReturnType<typeof getSupabaseServerClient>;
@@ -97,6 +98,24 @@ export type StaleStandingsSummary = {
   count: number;
 };
 
+export type StaleScheduledMatchRow = {
+  away_team: { name: string } | null;
+  competition: { name: string; season: string; slug: string } | null;
+  home_team: { name: string } | null;
+  id: string;
+  kickoff_at: string;
+};
+
+export type StaleScheduledMatchesSummary = {
+  count: number;
+  matches: Array<{
+    competitionLabel: string;
+    hoursOverdue: number;
+    matchId: string;
+    matchLabel: string;
+  }>;
+};
+
 export type ActionableDataIntegrityMatch = {
   competitionLabel: string;
   duplicateEvents: Array<{
@@ -121,6 +140,7 @@ export type DataIntegrityAuditReport = {
   emptyFinishedEvents: EmptyFinishedEventsSummary;
   generatedAt: string;
   scoreMismatches: ScoreMismatchSummary;
+  staleScheduledMatches: StaleScheduledMatchesSummary;
   staleStandings: StaleStandingsSummary;
 };
 
@@ -385,6 +405,27 @@ export function summarizeStaleStandings(
   };
 }
 
+export function summarizeStaleScheduledMatches(
+  matches: StaleScheduledMatchRow[],
+  now: Date,
+): StaleScheduledMatchesSummary {
+  return {
+    count: matches.length,
+    matches: matches
+      .map((match) => ({
+        competitionLabel: [match.competition?.name, match.competition?.season]
+          .filter(Boolean)
+          .join(" "),
+        hoursOverdue: Math.floor(
+          (now.getTime() - new Date(match.kickoff_at).getTime()) / 3_600_000,
+        ),
+        matchId: match.id,
+        matchLabel: `${match.home_team?.name ?? "不明"} 対 ${match.away_team?.name ?? "不明"}`,
+      }))
+      .sort((left, right) => right.hoursOverdue - left.hoursOverdue),
+  };
+}
+
 async function loadFinishedMatches(client: AuditClient) {
   const { data, error } = await client
     .from("matches")
@@ -447,14 +488,40 @@ async function loadStandingFreshnessRows(client: AuditClient) {
   return (data ?? []) as StandingFreshnessRow[];
 }
 
+async function loadStaleScheduledMatches(client: AuditClient, now: Date) {
+  const cutoff = new Date(
+    now.getTime() - STALE_SCHEDULED_MATCH_THRESHOLD_HOURS * 3_600_000,
+  ).toISOString();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        id,
+        kickoff_at,
+        home_team:teams!matches_home_team_id_fkey(name),
+        away_team:teams!matches_away_team_id_fkey(name),
+        competition:competitions!matches_competition_id_fkey(name, season, slug)
+      `,
+    )
+    .eq("status", "scheduled")
+    .lt("kickoff_at", cutoff);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as StaleScheduledMatchRow[];
+}
+
 export async function runDataIntegrityAudit(
   client: AuditClient = getSupabaseServerClient(),
   now = new Date(),
 ): Promise<DataIntegrityAuditReport> {
-  const [finishedMatches, draftRows, standingsRows] = await Promise.all([
+  const [finishedMatches, draftRows, standingsRows, staleScheduledMatches] = await Promise.all([
     loadFinishedMatches(client),
     loadDraftContent(client),
     loadStandingFreshnessRows(client),
+    loadStaleScheduledMatches(client, now),
   ]);
 
   const duplicateEvents = summarizeDuplicateEvents(finishedMatches);
@@ -471,6 +538,10 @@ export async function runDataIntegrityAudit(
     emptyFinishedEvents: summarizeEmptyFinishedEvents(finishedMatches),
     generatedAt: now.toISOString(),
     scoreMismatches,
+    staleScheduledMatches: summarizeStaleScheduledMatches(
+      staleScheduledMatches,
+      now,
+    ),
     staleStandings: summarizeStaleStandings(standingsRows, now),
   };
 }

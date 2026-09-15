@@ -48,6 +48,7 @@ describe("/api/cron/audit-data-integrity", () => {
       emptyFinishedEvents: { count: 3, matchIds: ["match-1"] },
       generatedAt: "2026-07-08T00:00:00.000Z",
       scoreMismatches: { count: 4, matches: [] },
+      staleScheduledMatches: { count: 0, matches: [] },
       staleStandings: { competitions: [], count: 5 },
     };
     auditMock.runDataIntegrityAudit.mockResolvedValue(report);
