@@ -1,3 +1,6 @@
+import { spawnSync } from "node:child_process";
+import os from "node:os";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 
 import { handleMcpRequest, parseMcpRange } from "@/tools/analytics-mcp";
@@ -58,21 +61,17 @@ describe("analytics-mcp", () => {
   });
 
   it("compacts Bing data and keeps credentials out of failures", async () => {
-    const bing = vi
-      .fn()
-      .mockResolvedValue({
-        rankAndTrafficStats: [
-          { date: "2026-09-01", Clicks: 3, Impressions: 12 },
-        ],
-        queryStats: [{ Query: "ラグビー", Clicks: 5, Impressions: 20 }],
-        pageStats: [
-          {
-            Url: "https://www.trylinerugby.com/c/pnc",
-            Clicks: 4,
-            Impressions: 18,
-          },
-        ],
-      });
+    const bing = vi.fn().mockResolvedValue({
+      rankAndTrafficStats: [{ date: "2026-09-01", Clicks: 3, Impressions: 12 }],
+      queryStats: [{ Query: "ラグビー", Clicks: 5, Impressions: 20 }],
+      pageStats: [
+        {
+          Url: "https://www.trylinerugby.com/c/pnc",
+          Clicks: 4,
+          Impressions: 18,
+        },
+      ],
+    });
     const response = await handleMcpRequest(
       {
         id: 2,
@@ -103,5 +102,27 @@ describe("analytics-mcp", () => {
       },
     );
     expect(JSON.stringify(failure)).not.toContain("secret-value");
+  });
+
+  it("starts from a directory outside the repository", () => {
+    const launcher = fileURLToPath(
+      new URL("../../tools/run-analytics-mcp.cjs", import.meta.url),
+    );
+    const result = spawnSync(process.execPath, [launcher], {
+      cwd: os.tmpdir(),
+      encoding: "utf8",
+      input: `${JSON.stringify({
+        id: 1,
+        jsonrpc: "2.0",
+        method: "initialize",
+        params: { protocolVersion: "2025-06-18" },
+      })}\n`,
+    });
+
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      id: 1,
+      result: { serverInfo: { name: "tryline-analytics" } },
+    });
   });
 });
