@@ -473,20 +473,33 @@ function selectStandingsExcerpt<
 function SeasonSummaryBand({
   leaderLabel,
   latestReviewMatch,
+  competition,
   nextJapanCompetitionLabel,
   nextJapanMatch,
   nextMatch,
+  season,
 }: {
+  competition: string;
   leaderLabel: string | null;
   latestReviewMatch: MatchListItem | null;
   nextJapanCompetitionLabel: string | null;
   nextJapanMatch: MatchListItem | null;
   nextMatch: MatchListItem | null;
+  season: string;
 }) {
   const items = [
     nextMatch
       ? {
           href: `/matches/${nextMatch.id}`,
+          analytics: {
+            competition_slug: competition,
+            cta_id: "hub_summary_next_match",
+            cta_location: "hub_summary",
+            destination: "match",
+            label: "次戦",
+            match_id: nextMatch.id,
+            season,
+          },
           label: "次戦",
           primary: getMatchLabel(nextMatch),
           secondary: formatMatchKickoffJst(nextMatch.kickoffAt),
@@ -503,6 +516,15 @@ function SeasonSummaryBand({
     latestReviewMatch
       ? {
           href: `/matches/${latestReviewMatch.id}`,
+          analytics: {
+            competition_slug: competition,
+            cta_id: "hub_summary_latest_review",
+            cta_location: "hub_summary",
+            destination: "match",
+            label: "最新レビュー",
+            match_id: latestReviewMatch.id,
+            season,
+          },
           label: "最新レビュー",
           primary: getMatchLabel(latestReviewMatch),
           secondary: formatMatchKickoffJst(latestReviewMatch.kickoffAt),
@@ -511,6 +533,15 @@ function SeasonSummaryBand({
     nextJapanMatch
       ? {
           href: `/matches/${nextJapanMatch.id}`,
+          analytics: {
+            competition_slug: competition,
+            cta_id: "hub_summary_japan_next_match",
+            cta_location: "hub_summary",
+            destination: "match",
+            label: "日本代表の次戦",
+            match_id: nextJapanMatch.id,
+            season,
+          },
           label: "日本代表の次戦",
           primary: getMatchLabel(nextJapanMatch),
           secondary: [
@@ -548,13 +579,14 @@ function SeasonSummaryBand({
         );
 
         return item.href ? (
-          <Link
+          <TrackedLink
+            analytics={item.analytics}
             className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-white"
             href={item.href}
             key={item.label}
           >
             {content}
-          </Link>
+          </TrackedLink>
         ) : (
           <div
             className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3"
@@ -626,7 +658,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     alternates: { canonical: `${SITE_URL}/c/${competition}/${season}` },
     description,
-    robots: comp.seasonStatus === "not_held" ? { index: false, follow: true } : undefined,
+    robots:
+      comp.seasonStatus === "not_held"
+        ? { index: false, follow: true }
+        : undefined,
     openGraph: {
       description,
       images: [
@@ -994,11 +1029,13 @@ export default async function SeasonPage({ params }: Props) {
         />
 
         <SeasonSummaryBand
+          competition={competition}
           leaderLabel={leaderLabel}
           latestReviewMatch={latestReviewMatch}
           nextJapanCompetitionLabel={nextJapanCompetitionLabel}
           nextJapanMatch={hasJapanInSeason ? nextJapanMatch : null}
           nextMatch={nextMatch}
+          season={season}
         />
 
         <IosAppCta surface="hub" />
@@ -1047,7 +1084,9 @@ export default async function SeasonPage({ params }: Props) {
           {matches.length === 0 ? (
             <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
               <p className="text-sm font-medium text-[var(--color-ink)]">
-                {comp.seasonStatus === "not_held" ? "この年度の大会は開催されません" : "試合データを確認中です"}
+                {comp.seasonStatus === "not_held"
+                  ? "この年度の大会は開催されません"
+                  : "試合データを確認中です"}
               </p>
               <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
                 {comp.seasonStatus === "not_held"
@@ -1057,13 +1096,26 @@ export default async function SeasonPage({ params }: Props) {
                     : "このシーズンの試合情報は確認できていません。"}
               </p>
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                {comp.seasonStatus === "not_held" && comp.replacementCompetition && (
-                  <Link className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4" href={`/c/${comp.replacementCompetition.family}/${comp.replacementCompetition.season}`}>
-                    {comp.replacementCompetition.nameJa ?? comp.replacementCompetition.name} を見る
-                  </Link>
-                )}
+                {comp.seasonStatus === "not_held" &&
+                  comp.replacementCompetition && (
+                    <Link
+                      className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+                      href={`/c/${comp.replacementCompetition.family}/${comp.replacementCompetition.season}`}
+                    >
+                      {comp.replacementCompetition.nameJa ??
+                        comp.replacementCompetition.name}{" "}
+                      を見る
+                    </Link>
+                  )}
                 {comp.seasonStatus === "held" && (
-                  <a className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4" href="https://www.world.rugby/competitions" rel="noreferrer" target="_blank">公式日程を確認する</a>
+                  <a
+                    className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+                    href="https://www.world.rugby/competitions"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    公式日程を確認する
+                  </a>
                 )}
                 <Link
                   className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
