@@ -96,10 +96,10 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
       ref={sectionRef}
     >
       <p className="text-sm font-bold text-[var(--color-ink)]">
-        週次ニュースレター
+        今週の海外ラグビーを、見逃さず追う
       </p>
       <p className="mt-1 text-sm leading-6 text-[var(--color-ink-muted)]">
-        週に1回、週末の海外ラグビーの試合結果を日本語でまとめて送ります。
+        週に1回、注目試合の日程と公開した日本語レビューをまとめて送ります。
       </p>
       <form
         className="mt-3 flex flex-col gap-2 sm:flex-row"
@@ -123,7 +123,7 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
           disabled={submitting}
           type="submit"
         >
-          {submitting ? "送信中…" : "無料で受け取る"}
+          {submitting ? "送信中…" : "無料で今週のまとめを受け取る"}
         </button>
       </form>
       <p
