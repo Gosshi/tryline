@@ -114,7 +114,11 @@ on:
 7. `.github/workflows/ci.yml` が main への push で起動することを検証するテストを `tests/workflows/` 配下に追加する（既存の `tests/workflows/cron-ingest-top14-match-events.test.ts` と同じ形式）。`pull_request` トリガーが残っていることも同時に assert する。
 8. `next.config.ts` に `eslint.ignoreDuringBuilds` と `typescript.ignoreBuildErrors` が `true` で設定されている。
 9. **PR のプレビュービルドログで `Generating static pages` の総数が 600 未満**（現在1564）。PR 本文にその行を引用する。
+   - **達成（PR #840、`dpl_3NL8ECygufUZfWAf1KLcxdUTwXvW`）: 446ページ。** 内訳は 試合52 ／ 試合/en 0 ／ ラウンド64 ／ h2h 200 ／ 大会ハブ37 ／ 順位表17 ／ DB非依存76。試合52は「公開コンテンツあり かつ 90日以内」の本番実測値と一致し、ラウンド64は120日境界の実測値と一致した。
 10. **プレビューデプロイの所要時間が3分未満**。Vercel のビルドログ末尾 `Build Completed in /vercel/output [Xm]` を PR 本文に引用する。
+   - **未達（3分26秒）。** ログ表記は `Build Completed in /vercel/output [3m]` だが、`buildingAt`→`ready` の実測は206秒＝3分26秒だった。従来の5分48秒からは **41%短縮**。目標の「3分未満」には届いていないため、達成したことにせず未達として記録する。
+   - 未達の理由は**残ったページの単価が上がったこと**。変更前は 1564ページ/249秒＝159ms/ページ、変更後は 446ページ/141秒＝**316ms/ページ**。試合ページは平均より軽く、h2h とラウンドが重かった（事前の見積もりは逆に想定しており、1分54秒と予測して外した）。あわせてコンパイルが 10.4秒→22.0秒 に増えている。
+   - さらに短縮する場合、残る最大の塊は h2h の200ページ（446中）。ただし D034 の決定3で「検索流入があるため削らない」と決めている。**この項目を再検討するときは、まず D034 決定3を見直すこと。**
 11. `pnpm typecheck` / `pnpm lint` / `pnpm test` が通る。テスト総数が現在の 308 files / 1,895 tests から**減っていない**。
 
 ## リスクと運用上の変化（Owner 向け）
