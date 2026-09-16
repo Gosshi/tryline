@@ -1022,3 +1022,29 @@ D029 は「プロンプト長・コスト・QA 字数条件への影響を測っ
 **この決定が潰さないもの**: 401 を返すサイトでは、URL の打ち間違いを機械的に検出できなくなる。**401 は存在しないパスにも返る実装があり得るため、403/429 よりも誤検出を許す余地がわずかに広い。** Owner がリンクを開いて確認したことが唯一の担保になる。
 
 **影響**: `specs/feat-discord-source-url-owner-verified.md` / `lib/discord/source-url.ts` / `app/api/discord/interactions/route.ts`
+
+## D034 — ビルド時のプリレンダーは「直近90日＋今後」に絞り、Lint・型チェックは CI に一本化する（2026-09-16、Owner 承認済み）
+
+**背景**:
+
+本番デプロイが 5分48秒 かかっていた。PR #839 の本番デプロイ（`dpl_5oYWwMGgiGeGCJtRzmgjWqsKW7qJ`）のビルドログ実測で、**1564ページの静的生成が249秒＝全体の72%**を占めていた（1ページ約159ms）。内訳は 試合888 ／ 試合/en 143 ／ h2h 200 ／ ラウンド203 ／ 大会ハブ37 ／ 順位表17 ／ DB非依存76。
+
+**これらは全ルートが `revalidate` 15分〜1時間の ISR 設定を持ち、`dynamicParams` はどこにも設定が無い（＝既定 `true`）。** ビルド時に焼かなくてもオンデマンドで生成される。Vercel 公式も "Selective pre-rendering"（人気ページだけ焼いて残りはオンデマンド）を推奨構成として挙げている。
+
+公開コンテンツを持つ888試合のキックオフ分布は強く偏っており、**直近30日は24試合・90日で52試合**（本番実測）。30日から90日へ広げてもビルド時間の差は約5秒で、余裕を持たせても損が無い。
+
+Lint と型チェックの50秒は CI と完全に重複しているが、**CI は `pull_request` でしか走らず main では一度も走らない**（[[project_ci_runs_only_on_pull_request]] の事故もこれが原因）。外すだけでは main の検証がゼロになる。
+
+**決定**:
+
+1. **試合ページのプリレンダーは「キックオフが直近90日以降、または未来」に限る**（`PRERENDER_MATCH_WINDOW_DAYS = 90`）
+2. **ラウンドハブは「そのラウンドの最新キックオフが直近120日以降」に限る**（`PRERENDER_ROUND_WINDOW_DAYS = 120`）
+3. **h2h（200件）・大会ハブ（37件）・順位表（17件）は据え置く。** 絞り込み後は h2h が最大の塊になるが、検索流入があるため削らない
+4. **`app/sitemap.ts` の出力は1URLも変えない。** `listMatchIdsWithContent` と `listRoundHubParams` は sitemap と `generateStaticParams` の共用なので、**既存関数にフィルタを足さず新関数を追加して差し替える**（`specs/fix-sitemap-content-only.md` のインデックス品質方針を維持するため）
+5. **`next build` から Lint・型チェックを外し、同じ PR で main への push CI を追加する。** この2つを別 PR に分けない
+
+**この決定が潰さないもの**: **ISR キャッシュはデプロイごとに独立している**（Vercel 公式: "each new deployment uses its own ISR cache and does not reuse the cache from a previous deployment"）。そのため、プリレンダーを外した約1,100ページは**デプロイのたびに初回アクセスの1人だけサーバ生成を待つ**。ISR の読み取り・書き込み・関数実行の課金も増える方向。ただし実際にアクセスされたページしか生成されず、同時アクセスは request collapsing で1回の関数実行にまとまる。
+
+また、**main の検証は CI だけが担保になる**。CI が赤いまま放置すれば、それは main が壊れていることそのものを意味する。
+
+**影響**: `specs/fix-build-time-prerender-scope.md` / `docs/codex-prompts/fix-build-time-prerender-scope.md` / `lib/db/queries/matches.ts` / `app/matches/[id]/page.tsx` / `app/matches/[id]/en/page.tsx` / `app/c/[competition]/[season]/round/[round]/page.tsx` / `next.config.ts` / `.github/workflows/ci.yml`

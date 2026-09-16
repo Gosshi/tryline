@@ -75,3 +75,9 @@ tsconfig.tsbuildinfo
 
 # 監査時のスクリーンショット（再取得可能・容量が大きい）
 docs/site-audit-screenshots/
+
+# 調査用の一時クローン（数百MB。git add -A で embedded repo として混入するため除外）
+.tmp-*/
+
+# gh run のログキャッシュ（再取得可能）
+.gh-run-log-cache/
