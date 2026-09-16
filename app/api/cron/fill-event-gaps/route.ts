@@ -14,6 +14,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const CRON_BATCH_SIZE = 10;
+const CRON_CANDIDATE_LIMIT = 200;
 
 type MatchGapRow = {
   away_team_id: string;
@@ -121,26 +122,50 @@ export async function POST(request: Request) {
 
   let query = client
     .from("matches")
-    .select("id, home_team_id, away_team_id, external_ids, match_events!left(id)")
+    .select("id, home_team_id, away_team_id, external_ids")
     .eq("status", "finished")
-    .is("match_events.id", null)
     .order("kickoff_at", { ascending: false });
 
   if (body.matchIds) {
     query = query.in("id", body.matchIds);
   } else {
-    query = query.limit(CRON_BATCH_SIZE);
+    query = query.limit(CRON_CANDIDATE_LIMIT);
   }
 
-  const { data, error } = await query;
+  const { data: candidateRows, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const gaps = ((data ?? []) as MatchGapRow[]).filter(
-    (match) => getWikipediaSource(match.external_ids) !== null,
-  );
+  const candidates = (candidateRows ?? []) as MatchGapRow[];
+  const candidateIds = candidates.map((match) => match.id);
+  let existingMatchIds = new Set<string>();
+
+  if (candidateIds.length > 0) {
+    const { data: eventRows, error: eventError } = await client
+      .from("match_events")
+      .select("match_id")
+      .in("match_id", candidateIds);
+
+    if (eventError) {
+      return NextResponse.json({ error: eventError.message }, { status: 500 });
+    }
+
+    existingMatchIds = new Set(
+      ((eventRows ?? []) as Array<{ match_id: string }>).map(
+        ({ match_id }) => match_id,
+      ),
+    );
+  }
+
+  const gaps = candidates
+    .filter((match) => !existingMatchIds.has(match.id))
+    .filter((match) => getWikipediaSource(match.external_ids) !== null)
+    .slice(
+      0,
+      body.matchIds ? undefined : CRON_BATCH_SIZE,
+    );
   let filled = 0;
   const errors: string[] = [];
   const rejections: Array<{

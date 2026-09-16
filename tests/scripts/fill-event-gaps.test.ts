@@ -248,10 +248,9 @@ describe("buildLeagueOneEnglishUrl", () => {
 });
 
 describe("loadGapMatches", () => {
-  it("filters gaps in the database and orders them from most recent kickoff", async () => {
-    const query = {
+  it("excludes existing events after loading candidates and before applying the limit", async () => {
+    const matchesQuery = {
       eq: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
@@ -260,30 +259,90 @@ describe("loadGapMatches", () => {
           resolve({
             data: [
               {
+                id: "already-has-events",
                 external_ids: {
                   wikipedia_url: "https://en.wikipedia.org/wiki/example",
                 },
-                match_events: [],
+              },
+              {
+                id: "missing-events",
+                external_ids: {
+                  wikipedia_url: "https://en.wikipedia.org/wiki/example",
+                },
               },
             ],
             error: null,
           }),
         ),
     };
+    const eventsQuery = {
+      in: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
+        Promise.resolve(
+          resolve({ data: [{ match_id: "already-has-events" }], error: null }),
+        ),
+    };
     const client = {
-      from: vi.fn(() => query),
+      from: vi.fn((table: string) =>
+        table === "matches" ? matchesQuery : eventsQuery,
+      ),
     };
 
-    await expect(loadGapMatches(50, client as never)).resolves.toHaveLength(1);
+    await expect(loadGapMatches(50, client as never)).resolves.toMatchObject([
+      { id: "missing-events" },
+    ]);
 
     expect(client.from).toHaveBeenCalledWith("matches");
-    expect(query.select).toHaveBeenCalledWith(
-      expect.stringContaining("match_events!left(id)"),
-    );
-    expect(query.is).toHaveBeenCalledWith("match_events.id", null);
-    expect(query.order).toHaveBeenCalledWith("kickoff_at", {
+    expect(client.from).toHaveBeenCalledWith("match_events");
+    expect(matchesQuery.order).toHaveBeenCalledWith("kickoff_at", {
       ascending: false,
     });
-    expect(query.limit).toHaveBeenCalledWith(50);
+    expect(eventsQuery.in).toHaveBeenCalledWith("match_id", [
+      "already-has-events",
+      "missing-events",
+    ]);
+  });
+
+  it("fills the requested limit after excluding events from the front of the candidate list", async () => {
+    const matches = Array.from({ length: 12 }, (_, index) => ({
+      external_ids: {
+        wikipedia_url: "https://en.wikipedia.org/wiki/example",
+      },
+      id: `match-${index + 1}`,
+    }));
+    let selectedMatches = matches;
+    const matchesQuery = {
+      eq: vi.fn().mockReturnThis(),
+      limit: vi.fn(),
+      order: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
+        Promise.resolve(resolve({ data: selectedMatches, error: null })),
+    };
+    matchesQuery.limit.mockImplementation((count: number) => {
+      selectedMatches = count > 7 ? matches : matches.slice(0, count);
+      return matchesQuery;
+    });
+    const eventsQuery = {
+      in: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
+        Promise.resolve(
+          resolve({
+            data: matches.slice(0, 5).map(({ id: match_id }) => ({ match_id })),
+            error: null,
+          }),
+        ),
+    };
+    const client = {
+      from: vi.fn((table: string) =>
+        table === "matches" ? matchesQuery : eventsQuery,
+      ),
+    };
+
+    await expect(loadGapMatches(7, client as never)).resolves.toMatchObject(
+      matches.slice(5),
+    );
   });
 });

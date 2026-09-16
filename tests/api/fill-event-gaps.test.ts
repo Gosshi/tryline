@@ -15,16 +15,33 @@ vi.mock("@/lib/db/server", () => dbMock);
 vi.mock("@/lib/scrapers", () => fetcherMock);
 vi.mock("@/lib/ingestion/events", () => eventsMock);
 
-function createMatchesQuery(data: unknown[]) {
+function createQuery(data: unknown[]) {
   return {
     eq: vi.fn().mockReturnThis(),
     in: vi.fn().mockReturnThis(),
-    is: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
       Promise.resolve(resolve({ data, error: null })),
+  };
+}
+
+function createDb({ eventRows = [], matchRows = [] }: {
+  eventRows?: unknown[];
+  matchRows?: unknown[];
+}) {
+  const eventsQuery = createQuery(eventRows);
+  const matchesQuery = createQuery(matchRows);
+
+  return {
+    eventsQuery,
+    matchesQuery,
+    client: {
+      from: vi.fn((table: string) =>
+        table === "matches" ? matchesQuery : eventsQuery,
+      ),
+    },
   };
 }
 
@@ -47,10 +64,8 @@ describe("/api/cron/fill-event-gaps", () => {
   });
 
   it("returns a successful empty result without loading every match event", async () => {
-    const query = createMatchesQuery([]);
-    dbMock.getSupabaseServerClient.mockReturnValue({
-      from: vi.fn(() => query),
-    });
+    const { client, matchesQuery } = createDb({});
+    dbMock.getSupabaseServerClient.mockReturnValue(client);
     const { POST } = await import("@/app/api/cron/fill-event-gaps/route");
 
     const response = await POST(
@@ -65,20 +80,17 @@ describe("/api/cron/fill-event-gaps", () => {
       filled: 0,
       gaps: 0,
     });
-    expect(query.select).toHaveBeenCalledWith(
-      "id, home_team_id, away_team_id, external_ids, match_events!left(id)",
+    expect(matchesQuery.select).toHaveBeenCalledWith(
+      "id, home_team_id, away_team_id, external_ids",
     );
-    expect(query.is).toHaveBeenCalledWith("match_events.id", null);
-    expect(query.order).toHaveBeenCalledWith("kickoff_at", {
+    expect(matchesQuery.order).toHaveBeenCalledWith("kickoff_at", {
       ascending: false,
     });
   });
 
   it("does not apply the scheduled batch limit to requested match ids", async () => {
-    const query = createMatchesQuery([]);
-    dbMock.getSupabaseServerClient.mockReturnValue({
-      from: vi.fn(() => query),
-    });
+    const { client, matchesQuery } = createDb({});
+    dbMock.getSupabaseServerClient.mockReturnValue(client);
     const { POST } = await import("@/app/api/cron/fill-event-gaps/route");
     const matchId = "a57f18e4-5f4f-45da-99e1-12efc47e0c22";
 
@@ -94,7 +106,39 @@ describe("/api/cron/fill-event-gaps", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(query.in).toHaveBeenCalledWith("id", [matchId]);
-    expect(query.limit).not.toHaveBeenCalled();
+    expect(matchesQuery.in).toHaveBeenCalledWith("id", [matchId]);
+    expect(matchesQuery.limit).not.toHaveBeenCalled();
+  });
+
+  it("excludes requested matches that already have events with a candidate-limited query", async () => {
+    const { client, eventsQuery } = createDb({
+      eventRows: [{ match_id: "already-has-events" }],
+      matchRows: [
+        {
+          away_team_id: "away-team",
+          external_ids: { wikipedia_url: "https://example.invalid/match" },
+          home_team_id: "home-team",
+          id: "already-has-events",
+        },
+      ],
+    });
+    dbMock.getSupabaseServerClient.mockReturnValue(client);
+    const { POST } = await import("@/app/api/cron/fill-event-gaps/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/cron/fill-event-gaps", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      errors: [],
+      filled: 0,
+      gaps: 0,
+    });
+    expect(eventsQuery.in).toHaveBeenCalledWith("match_id", [
+      "already-has-events",
+    ]);
   });
 });

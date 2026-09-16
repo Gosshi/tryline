@@ -16,6 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const MAX_TOP14_LNR_MATCHES_PER_RUN = 7;
 export const TOP14_LNR_MATCH_DELAY_MS = 3_000;
+const TOP14_LNR_CANDIDATE_MATCH_LIMIT = 100;
 
 type CliOptions = {
   dryRun: boolean;
@@ -94,23 +95,45 @@ async function loadTargetMatches(db: SupabaseClient, limit: number) {
         away_team_id,
         home_team:teams!matches_home_team_id_fkey(name),
         away_team:teams!matches_away_team_id_fkey(name),
-        competition:competitions!matches_competition_id_fkey!inner(family, season),
-        match_events!left(id)
+        competition:competitions!matches_competition_id_fkey!inner(family, season)
       `,
     )
     .eq("status", "finished")
     .eq("competition.family", "top-14")
     .eq("competition.season", "2026-27")
-    .is("match_events.id", null)
     .not("external_ids->>top14_lnr_match_path", "is", null)
     .order("kickoff_at", { ascending: false })
-    .limit(limit);
+    .limit(TOP14_LNR_CANDIDATE_MATCH_LIMIT);
 
   if (error) throw error;
 
-  return ((data ?? []) as unknown as TargetMatch[]).filter(
+  const candidates = ((data ?? []) as unknown as TargetMatch[]).filter(
     (match) => getMatchPath(match.external_ids) !== null,
   );
+
+  if (candidates.length === 0) {
+    return [];
+  }
+
+  const { data: eventRows, error: eventError } = await db
+    .from("match_events")
+    .select("match_id")
+    .in(
+      "match_id",
+      candidates.map((match) => match.id),
+    );
+
+  if (eventError) throw eventError;
+
+  const existingMatchIds = new Set(
+    ((eventRows ?? []) as Array<{ match_id: string }>).map(
+      ({ match_id }) => match_id,
+    ),
+  );
+
+  return candidates
+    .filter((match) => !existingMatchIds.has(match.id))
+    .slice(0, limit);
 }
 
 export async function runTop14LnrMatchEventBackfill(
