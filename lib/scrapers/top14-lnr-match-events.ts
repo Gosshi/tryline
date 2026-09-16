@@ -63,6 +63,9 @@ function eventType(fact: GameFact): ParsedPlayerMatchEvent["type"] {
   if (fact.type === "Point" && fact.slugSubType === "essai") {
     return "try";
   }
+  if (fact.type === "Point" && fact.slugSubType === "essai-de-penalite") {
+    return "try";
+  }
   if (fact.type === "Point" && fact.slugSubType === "penalite") {
     return "penalty_goal";
   }
@@ -80,6 +83,10 @@ function eventType(fact: GameFact): ParsedPlayerMatchEvent["type"] {
   );
 }
 
+function isPenaltyTryFact(fact: GameFact): boolean {
+  return fact.type === "Point" && fact.slugSubType === "essai-de-penalite";
+}
+
 function scoreEventsForIncrement(params: {
   fact: GameFact;
   factType: ParsedPlayerMatchEvent["type"];
@@ -87,8 +94,12 @@ function scoreEventsForIncrement(params: {
   scoreSide: TeamSide;
 }): ParsedPlayerMatchEvent[] {
   const { fact, factType, increment, scoreSide } = params;
-  const event = (type: ParsedPlayerMatchEvent["type"], playerName: string) => ({
-    isPenaltyTry: false,
+  const event = (
+    type: ParsedPlayerMatchEvent["type"],
+    playerName: string,
+    isPenaltyTry = false,
+  ) => ({
+    isPenaltyTry,
     minute: fact.minute,
     playerName,
     source: "top14.lnr.fr",
@@ -96,6 +107,13 @@ function scoreEventsForIncrement(params: {
     type,
   });
   const isFactTeam = scoreSide === teamSide(fact);
+  const isPenaltyTry = isFactTeam && isPenaltyTryFact(fact);
+
+  if (isPenaltyTry && increment !== 7) {
+    throw new Error(
+      `Unexpected Top 14 score increment: ${increment} for ${scoreSide} at minute ${fact.minute ?? "unknown"}`,
+    );
+  }
 
   if (increment === 0) return [];
 
@@ -119,10 +137,21 @@ function scoreEventsForIncrement(params: {
   }
 
   if (increment === 7) {
-    return [
-      event("try", isFactTeam && factType === "try" ? playerName(fact) : ""),
-      event("conversion", ""),
-    ];
+    const tryEvent = event(
+      "try",
+      isPenaltyTry
+        ? ""
+        : isFactTeam && factType === "try"
+          ? playerName(fact)
+          : "",
+      isPenaltyTry,
+    );
+
+    if (isPenaltyTry) {
+      return [tryEvent];
+    }
+
+    return [tryEvent, event("conversion", "")];
   }
 
   throw new Error(
