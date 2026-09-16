@@ -157,6 +157,26 @@ describe("Top 14 LNR match events", () => {
     );
   });
 
+  it("parses LNR orange-card facts without changing score totals", () => {
+    const factsWithOrangeCard = structuredClone(clermontParisFacts);
+    const orangeCardFact = factsWithOrangeCard[3]!;
+    orangeCardFact.slugSubType = "orange";
+
+    const events = parseTop14LnrGameFactsHtml(fixtureHtml(factsWithOrangeCard));
+
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        minute: orangeCardFact.minute,
+        playerName: "Tanginoa Palu HALAIFONUA",
+        teamSide: orangeCardFact.club,
+        type: "red_card",
+      }),
+    );
+    expect(pointTotals(events)).toEqual(
+      pointTotals(parseTop14LnrGameFactsHtml(fixtureHtml(clermontParisFacts))),
+    );
+  });
+
   it("rejects a try whose score increment is not five or seven", () => {
     const invalid = structuredClone(toulouseBordeauxFacts);
     invalid[0]!.score = [6, 0];
