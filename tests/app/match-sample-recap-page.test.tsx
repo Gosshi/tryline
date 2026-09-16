@@ -47,6 +47,7 @@ const matchMocks = vi.hoisted(() => ({
   getRelatedPublishedRecapsForMatch: vi.fn(),
   listAllMatchIds: vi.fn(),
   listMatchIdsWithContent: vi.fn(),
+  listPrerenderMatchIds: vi.fn(),
   normalizeHeadToHeadSlug: vi.fn(() => "sample-home-vs-sample-away"),
 }));
 
@@ -121,8 +122,13 @@ vi.mock("@/lib/db/queries/standings", () => standingsMocks);
 vi.mock("@/lib/sample-matches", () => sampleMatchMocks);
 vi.mock("next/navigation", () => navigationMocks);
 
-import MatchEnglishPage from "@/app/matches/[id]/en/page";
-import MatchDetailPage, { generateMetadata } from "@/app/matches/[id]/page";
+import MatchEnglishPage, {
+  generateStaticParams as generateEnglishStaticParams,
+} from "@/app/matches/[id]/en/page";
+import MatchDetailPage, {
+  generateMetadata,
+  generateStaticParams as generateMatchStaticParams,
+} from "@/app/matches/[id]/page";
 
 import type { PublishedMatchContentBundle } from "@/lib/db/queries/match-content";
 import type {
@@ -238,6 +244,23 @@ describe("match sample recap page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setCommonMocks({});
+  });
+
+  it("prerenders only recent content matches and their league-one English pages", async () => {
+    matchMocks.listPrerenderMatchIds.mockResolvedValue([
+      { competitionFamily: "league-one", id: "recent-league-one" },
+      { competitionFamily: "six-nations", id: "recent-six-nations" },
+    ]);
+
+    await expect(generateMatchStaticParams()).resolves.toEqual([
+      { id: "recent-league-one" },
+      { id: "recent-six-nations" },
+    ]);
+    await expect(generateEnglishStaticParams()).resolves.toEqual([
+      { id: "recent-league-one" },
+    ]);
+    expect(matchMocks.listAllMatchIds).not.toHaveBeenCalled();
+    expect(matchMocks.listMatchIdsWithContent).not.toHaveBeenCalled();
   });
 
   it("removes venue footnotes from the SportsEvent JSON-LD location", async () => {

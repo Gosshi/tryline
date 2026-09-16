@@ -26,7 +26,7 @@ import {
   getNextMatchesForTeams,
   getPoolTeamsForMatch,
   getRelatedPublishedRecapsForMatch,
-  listMatchIdsWithContent,
+  listPrerenderMatchIds,
   normalizeHeadToHeadSlug,
 } from "@/lib/db/queries/matches";
 import { getSourcedFactSummaryForMatch } from "@/lib/db/queries/sourced-facts";
@@ -65,7 +65,7 @@ export const revalidate = 3600;
 const THIN_FUTURE_MATCH_NOINDEX_DAYS = 7;
 
 export async function generateStaticParams() {
-  const matches = await listMatchIdsWithContent();
+  const matches = await listPrerenderMatchIds();
 
   return matches.map(({ id }) => ({ id }));
 }

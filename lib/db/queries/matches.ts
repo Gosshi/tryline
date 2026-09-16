@@ -190,6 +190,9 @@ export type RoundHubParam = {
   updatedAt: string;
 };
 
+export const PRERENDER_MATCH_WINDOW_DAYS = 90;
+export const PRERENDER_ROUND_WINDOW_DAYS = 120;
+
 export type EnglishMatchContent = {
   contentMdJa: string;
   contentType: "preview" | "recap";
@@ -353,6 +356,7 @@ type SitemapContentMatchRow = {
   generated_at: string;
   match_id: string;
   match: {
+    kickoff_at?: string;
     competition: {
       family: string | null;
       slug: string;
@@ -1790,10 +1794,18 @@ export async function listMatchIdsWithContent(): Promise<SitemapMatch[]> {
     throw error;
   }
 
+  return mapSitemapContentRows(
+    (data ?? []) as unknown as SitemapContentMatchRow[],
+  );
+}
+
+function mapSitemapContentRows(
+  rows: SitemapContentMatchRow[],
+): SitemapMatch[] {
   const seen = new Set<string>();
   const result: SitemapMatch[] = [];
 
-  for (const row of (data ?? []) as unknown as SitemapContentMatchRow[]) {
+  for (const row of rows) {
     if (seen.has(row.match_id)) {
       continue;
     }
@@ -1811,6 +1823,39 @@ export async function listMatchIdsWithContent(): Promise<SitemapMatch[]> {
   }
 
   return result;
+}
+
+export async function listPrerenderMatchIds(): Promise<SitemapMatch[]> {
+  const client = getSupabasePublicServerClient();
+  const since = new Date(
+    Date.now() - PRERENDER_MATCH_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const { data, error } = await client
+    .from("match_content")
+    .select(
+      `
+        generated_at,
+        match_id,
+        match:matches!inner (
+          kickoff_at,
+          competition:competitions!matches_competition_id_fkey (
+            family,
+            slug
+          )
+        )
+      `,
+    )
+    .eq("status", "published")
+    .gte("match.kickoff_at", since)
+    .order("generated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return mapSitemapContentRows(
+    (data ?? []) as unknown as SitemapContentMatchRow[],
+  );
 }
 
 export function mapRoundHubRowsToParams(
@@ -1870,6 +1915,33 @@ export async function listRoundHubParams(): Promise<RoundHubParam[]> {
         )
       `,
     )
+    .order("kickoff_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return mapRoundHubRowsToParams((data ?? []) as RoundHubQueryRow[]);
+}
+
+export async function listPrerenderRoundHubParams(): Promise<RoundHubParam[]> {
+  const client = getSupabasePublicServerClient();
+  const since = new Date(
+    Date.now() - PRERENDER_ROUND_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const { data, error } = await client
+    .from("matches")
+    .select(
+      `
+        kickoff_at,
+        external_ids,
+        competition:competitions!matches_competition_id_fkey (
+          family,
+          season
+        )
+      `,
+    )
+    .gte("kickoff_at", since)
     .order("kickoff_at", { ascending: true });
 
   if (error) {

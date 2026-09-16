@@ -10,7 +10,7 @@ import {
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import {
   getRoundMatches,
-  listRoundHubParams,
+  listPrerenderRoundHubParams,
   listRoundsForCompetition,
 } from "@/lib/db/queries/matches";
 import {
@@ -37,7 +37,7 @@ type Props = {
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  const roundHubs = await listRoundHubParams();
+  const roundHubs = await listPrerenderRoundHubParams();
 
   return roundHubs.map((hub) => ({
     competition: hub.competition,
