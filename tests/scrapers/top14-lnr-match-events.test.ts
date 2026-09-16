@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { pointsForMatchEvent } from "@/lib/format/match-event-points";
 import {
+  computeParsedMatchEventPointTotals,
+  eventTotalsMatchFinalScore,
+} from "@/lib/ingestion/event-integrity";
+import {
   buildTop14LnrMatchEventsUrl,
   parseTop14LnrGameFactsHtml,
 } from "@/lib/scrapers/top14-lnr-match-events";
+import castresVannesFacts from "@/tests/fixtures/top14-lnr-11821-castres-vannes.json";
 import perpignanCastresFacts from "@/tests/fixtures/top14-lnr-11826-perpignan-castres.json";
 import clermontParisFacts from "@/tests/fixtures/top14-lnr-11828-clermont-paris.json";
 import toulouseBordeauxFacts from "@/tests/fixtures/top14-lnr-11832-toulouse-bordeaux.json";
@@ -69,6 +74,11 @@ describe("Top 14 LNR match events", () => {
       events
         .filter((event) => event.type === "conversion")
         .every((event) => event.playerName === ""),
+    ).toBe(true);
+    expect(
+      events
+        .filter((event) => event.type === "try")
+        .every((event) => event.isPenaltyTry === false),
     ).toBe(true);
     expect(pointTotals(events)).toEqual({ away: 16, home: 25 });
     expect(events.find((event) => event.minute === 6)?.teamSide).toBe("away");
@@ -174,6 +184,68 @@ describe("Top 14 LNR match events", () => {
     );
     expect(pointTotals(events)).toEqual(
       pointTotals(parseTop14LnrGameFactsHtml(fixtureHtml(clermontParisFacts))),
+    );
+  });
+
+  it("parses the real Castres–Vannes penalty try as one seven-point try", () => {
+    const events = parseTop14LnrGameFactsHtml(fixtureHtml(castresVannesFacts));
+    const penaltyTryEvents = events.filter(
+      (event) =>
+        event.minute === 31 &&
+        event.teamSide === "home",
+    );
+
+    expect(penaltyTryEvents).toEqual([
+      expect.objectContaining({
+        isPenaltyTry: true,
+        minute: 31,
+        playerName: "n.a.",
+        teamSide: "home",
+        type: "try",
+      }),
+    ]);
+  });
+
+  it("does not derive a conversion for the real Castres–Vannes penalty try", () => {
+    const events = parseTop14LnrGameFactsHtml(fixtureHtml(castresVannesFacts));
+
+    expect(
+      events.filter(
+        (event) =>
+          event.minute === 31 &&
+          event.teamSide === "home" &&
+          event.type === "conversion",
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("keeps Castres–Vannes point totals equal to the final score", () => {
+    const events = parseTop14LnrGameFactsHtml(fixtureHtml(castresVannesFacts));
+
+    expect(computeParsedMatchEventPointTotals(events)).toEqual({
+      away: 20,
+      home: 29,
+    });
+    expect(
+      eventTotalsMatchFinalScore(
+        computeParsedMatchEventPointTotals(events),
+        { away_score: 20, home_score: 29 },
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects a penalty try whose own score increment is not seven", () => {
+    const invalid = structuredClone(castresVannesFacts);
+    const penaltyTryFact = invalid.find(
+      (fact) => fact.slugSubType === "essai-de-penalite",
+    );
+
+    if (!penaltyTryFact) throw new Error("Penalty try fixture is missing");
+
+    penaltyTryFact.score = [8, 3];
+
+    expect(() => parseTop14LnrGameFactsHtml(fixtureHtml(invalid))).toThrow(
+      /5.*31/,
     );
   });
 
