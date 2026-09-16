@@ -190,16 +190,14 @@ describe("Top 14 LNR match events", () => {
   it("parses the real Castres–Vannes penalty try as one seven-point try", () => {
     const events = parseTop14LnrGameFactsHtml(fixtureHtml(castresVannesFacts));
     const penaltyTryEvents = events.filter(
-      (event) =>
-        event.minute === 31 &&
-        event.teamSide === "home",
+      (event) => event.minute === 31 && event.teamSide === "home",
     );
 
     expect(penaltyTryEvents).toEqual([
       expect.objectContaining({
         isPenaltyTry: true,
         minute: 31,
-        playerName: "n.a.",
+        playerName: "",
         teamSide: "home",
         type: "try",
       }),
@@ -227,10 +225,10 @@ describe("Top 14 LNR match events", () => {
       home: 29,
     });
     expect(
-      eventTotalsMatchFinalScore(
-        computeParsedMatchEventPointTotals(events),
-        { away_score: 20, home_score: 29 },
-      ),
+      eventTotalsMatchFinalScore(computeParsedMatchEventPointTotals(events), {
+        away_score: 20,
+        home_score: 29,
+      }),
     ).toBe(true);
   });
 

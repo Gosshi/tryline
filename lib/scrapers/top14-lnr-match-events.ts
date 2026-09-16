@@ -139,7 +139,11 @@ function scoreEventsForIncrement(params: {
   if (increment === 7) {
     const tryEvent = event(
       "try",
-      isFactTeam && factType === "try" ? playerName(fact) : "",
+      isPenaltyTry
+        ? ""
+        : isFactTeam && factType === "try"
+          ? playerName(fact)
+          : "",
       isPenaltyTry,
     );
 
