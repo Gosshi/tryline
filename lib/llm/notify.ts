@@ -392,6 +392,12 @@ export async function notifyRecapGenerationSkipped(
   }
   const shownMatches = report.matches.slice(0, DATA_INTEGRITY_ACTION_ITEM_LIMIT);
   const remainingMatchCount = report.matches.length - shownMatches.length;
+  const shownExcludedMatches = report.excludedMatches.slice(
+    0,
+    DATA_INTEGRITY_ACTION_ITEM_LIMIT,
+  );
+  const remainingExcludedMatchCount =
+    report.excludedMatches.length - shownExcludedMatches.length;
   const message = [
     "⚠️ recap 生成をスキップ（イベント不足）",
     `スキップ: ${report.skippedCount}件 / バッチ枠 ${report.batchSize}件`,
@@ -402,6 +408,12 @@ export async function notifyRecapGenerationSkipped(
         ]
       : []),
     ...(remainingMatchCount > 0 ? [`ほか${remainingMatchCount}件`] : []),
+    ...(shownExcludedMatches.length > 0
+      ? [
+          `候補から除外（イベント未取得）: ${report.excludedMatches.length}件`,
+          `除外の例: ${shownExcludedMatches.map((match) => matchPageUrl(match.matchId)).join(" / ")}${remainingExcludedMatchCount > 0 ? ` ほか${remainingExcludedMatchCount}件` : ""}`,
+        ]
+      : []),
     "対応: 得点イベントの取り込み状況を確認してください",
   ].join("\n");
 

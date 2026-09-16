@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const EXISTING_CONTENT_STATUSES = ["draft", "published"] as const;
 const RECAP_BATCH_SIZE = 10;
+const RECAP_EVENT_LOOKUP_CANDIDATES = 60;
 
 type LineupIngestOutcome = "triggered" | "no_url";
 
@@ -25,8 +26,13 @@ export type RecapSkipEntry = {
   reason: string;
 };
 
+export type RecapExcludedEntry = {
+  matchId: string;
+};
+
 export type RecapSkipReport = {
   batchSize: number;
+  excludedMatches: RecapExcludedEntry[];
   matches: RecapSkipEntry[];
   skippedCount: number;
 };
@@ -249,6 +255,34 @@ export async function runOrchestrate(
     kickoffLte: recapCandidateUpperBound(now),
     orderByKickoff: "desc",
   });
+  const recapEventLookupMatches = recapCandidates.eligibleMatches.slice(
+    0,
+    RECAP_EVENT_LOOKUP_CANDIDATES,
+  );
+  const recapEventLookupMatchIds = recapEventLookupMatches.map(
+    (match) => match.id,
+  );
+  const { data: recapEventRows, error: recapEventError } =
+    recapEventLookupMatchIds.length === 0
+      ? { data: [], error: null }
+      : await deps.db
+          .from("match_events")
+          .select("match_id")
+          .in("match_id", recapEventLookupMatchIds);
+
+  if (recapEventError) {
+    throw recapEventError;
+  }
+
+  const recapMatchIdsWithEvents = new Set(
+    recapEventRows.map((event) => event.match_id),
+  );
+  const recapExcludedMatches = recapEventLookupMatches
+    .filter((match) => !recapMatchIdsWithEvents.has(match.id))
+    .map((match) => ({ matchId: match.id }));
+  const recapBatch = recapEventLookupMatches
+    .filter((match) => recapMatchIdsWithEvents.has(match.id))
+    .slice(0, RECAP_BATCH_SIZE);
 
   const result: OrchestrateResult = {
     previews: {
@@ -309,10 +343,7 @@ export async function runOrchestrate(
 
   const recapSkips: RecapSkipEntry[] = [];
 
-  for (const match of recapCandidates.eligibleMatches.slice(
-    0,
-    RECAP_BATCH_SIZE,
-  )) {
+  for (const match of recapBatch) {
     const matchId = match.id;
     const competitionFamily = firstRelation(match.competition)?.family ?? null;
     try {
@@ -363,10 +394,14 @@ export async function runOrchestrate(
     }
   }
 
-  if (recapSkips.length > 0 && deps.notifyRecapSkipped) {
+  if (
+    (recapSkips.length > 0 || recapExcludedMatches.length > 0) &&
+    deps.notifyRecapSkipped
+  ) {
     try {
       await deps.notifyRecapSkipped({
         batchSize: RECAP_BATCH_SIZE,
+        excludedMatches: recapExcludedMatches,
         matches: recapSkips,
         skippedCount: recapSkips.length,
       });
