@@ -72,7 +72,9 @@ function eventType(fact: GameFact): ParsedPlayerMatchEvent["type"] {
   if (fact.type === "Exclusion joueur" && fact.slugSubType === "rouge") {
     return "red_card";
   }
-
+  if (fact.type === "Exclusion joueur" && fact.slugSubType === "orange") {
+    return "red_card";
+  }
   throw new Error(
     `Unknown Top 14 game-fact subtype: type=${fact.type} slugSubType=${fact.slugSubType}`,
   );
