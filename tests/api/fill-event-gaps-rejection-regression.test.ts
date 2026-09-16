@@ -36,16 +36,24 @@ it("reports a score_mismatch rejection without counting it as filled", async () 
     ],
     error: null,
   };
-  const query = {
+  const matchesQuery = {
     eq: vi.fn().mockReturnThis(),
-    is: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     then: (resolve: (value: unknown) => unknown) =>
       Promise.resolve(result).then(resolve),
   };
-  mocks.db.mockReturnValue({ from: () => query });
+  const eventsQuery = {
+    in: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    then: (resolve: (value: unknown) => unknown) =>
+      Promise.resolve({ data: [], error: null }).then(resolve),
+  };
+  mocks.db.mockReturnValue({
+    from: (table: string) =>
+      table === "matches" ? matchesQuery : eventsQuery,
+  });
   mocks.upsert.mockResolvedValue({
     inserted: 0,
     rejected: [{ detail: "synthetic", reason: "score_mismatch" }],

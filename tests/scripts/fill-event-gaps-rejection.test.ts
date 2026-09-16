@@ -22,7 +22,6 @@ vi.mock("@/lib/scrapers/wikipedia-match-events", () => ({
 it("continues after a rejected insertion before reaching exit 1", async () => {
   const matchesQuery = {
     eq: vi.fn().mockReturnThis(),
-    is: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
@@ -51,8 +50,16 @@ it("continues after a rejected insertion before reaching exit 1", async () => {
         error: null,
       }).then(resolve),
   };
+  const eventsQuery = {
+    in: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    then: (resolve: (value: unknown) => unknown) =>
+      Promise.resolve({ data: [], error: null }).then(resolve),
+  };
   mocks.getSupabaseServerClient.mockReturnValue({
-    from: vi.fn(() => matchesQuery),
+    from: vi.fn((table: string) =>
+      table === "matches" ? matchesQuery : eventsQuery,
+    ),
   });
   mocks.fetchWithPolicy.mockResolvedValue({
     text: async () => '<div id="event"></div>',
@@ -79,7 +86,7 @@ it("continues after a rejected insertion before reaching exit 1", async () => {
   }) as unknown as (code: number) => never;
   const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-  await expect(runCli(() => main(["--limit=1"]), exit)).rejects.toThrow("exit");
+  await expect(runCli(() => main(["--limit=2"]), exit)).rejects.toThrow("exit");
 
   expect(mocks.upsertMatchEvents).toHaveBeenCalledWith(
     expect.objectContaining({ matchId: "match-rejected" }),

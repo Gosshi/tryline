@@ -16,19 +16,43 @@ const events: ParsedPlayerMatchEvent[] = [
   { isPenaltyTry: false, minute: 12, playerName: "", teamSide: "home", type: "conversion" },
 ];
 
-function createMockDb(rows: unknown[]) {
-  const query = {
+function createMockDb({
+  eventMatchIds = [],
+  matches,
+}: {
+  eventMatchIds?: string[];
+  matches: unknown[];
+}) {
+  const matchesQuery = {
     eq: vi.fn().mockReturnThis(),
-    is: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     not: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     then: (resolve: (result: { data: unknown[]; error: null }) => unknown) =>
-      Promise.resolve(resolve({ data: rows, error: null })),
+      Promise.resolve(resolve({ data: matches, error: null })),
+  };
+  const eventsQuery = {
+    in: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    then: (resolve: (result: { data: unknown[]; error: null }) => unknown) =>
+      Promise.resolve(
+        resolve({
+          data: eventMatchIds.map((match_id) => ({ match_id })),
+          error: null,
+        }),
+      ),
   };
 
-  return { db: { from: vi.fn(() => query) } as unknown as SupabaseClient, query };
+  return {
+    db: {
+      from: vi.fn((table: string) =>
+        table === "matches" ? matchesQuery : eventsQuery,
+      ),
+    } as unknown as SupabaseClient,
+    eventsQuery,
+    matchesQuery,
+  };
 }
 
 function match(id: string) {
@@ -52,7 +76,9 @@ describe("backfill-top14-lnr-match-events", () => {
   });
 
   it("dry-runs target matches without writing and waits between them", async () => {
-    const { db, query } = createMockDb([match("match-1"), match("match-2")]);
+    const { db, eventsQuery, matchesQuery } = createMockDb({
+      matches: [match("match-1"), match("match-2")],
+    });
     const fetchEvents = vi.fn().mockResolvedValue(events);
     const upsertEvents = vi.fn();
     const sleep = vi.fn().mockResolvedValue(undefined);
@@ -66,7 +92,13 @@ describe("backfill-top14-lnr-match-events", () => {
       ),
     ).resolves.toEqual({ eventsInserted: 0, targetMatches: 2 });
 
-    expect(query.limit).toHaveBeenCalledWith(MAX_TOP14_LNR_MATCHES_PER_RUN);
+    expect(matchesQuery.limit).not.toHaveBeenCalledWith(
+      MAX_TOP14_LNR_MATCHES_PER_RUN,
+    );
+    expect(eventsQuery.in).toHaveBeenCalledWith("match_id", [
+      "match-1",
+      "match-2",
+    ]);
     expect(upsertEvents).not.toHaveBeenCalled();
     expect(sleep).toHaveBeenCalledTimes(1);
     expect(sleep).toHaveBeenCalledWith(TOP14_LNR_MATCH_DELAY_MS);
@@ -77,7 +109,7 @@ describe("backfill-top14-lnr-match-events", () => {
   });
 
   it("stops and reports an insertion rejection", async () => {
-    const { db } = createMockDb([match("match-1")]);
+    const { db } = createMockDb({ matches: [match("match-1")] });
     const logger = { log: vi.fn(), warn: vi.fn() };
     const upsertEvents = vi.fn().mockResolvedValue({
       inserted: 0,
@@ -96,5 +128,69 @@ describe("backfill-top14-lnr-match-events", () => {
       "Top 14 event insertion rejected",
       expect.objectContaining({ matchId: "match-1" }),
     );
+  });
+
+  it("excludes Top 14 matches that already have events before applying the run limit", async () => {
+    const { db, eventsQuery } = createMockDb({
+      eventMatchIds: ["match-1", "match-2"],
+      matches: [match("match-1"), match("match-2"), match("match-3")],
+    });
+    const fetchEvents = vi.fn().mockResolvedValue(events);
+    const logger = { log: vi.fn(), warn: vi.fn() };
+
+    await expect(
+      runTop14LnrMatchEventBackfill(
+        { dryRun: true, limit: 7 },
+        db,
+        { fetchEvents, logger },
+      ),
+    ).resolves.toEqual({ eventsInserted: 0, targetMatches: 1 });
+
+    expect(fetchEvents).toHaveBeenCalledWith("/feuille-de-match/match-3");
+    expect(eventsQuery.in).toHaveBeenCalledWith("match_id", [
+      "match-1",
+      "match-2",
+      "match-3",
+    ]);
+  });
+
+  it("returns every missing match among the first seven candidates", async () => {
+    const matches = Array.from({ length: 7 }, (_, index) =>
+      match(`match-${index + 1}`),
+    );
+    const { db } = createMockDb({
+      eventMatchIds: matches.slice(0, 5).map(({ id }) => id),
+      matches,
+    });
+    const logger = { log: vi.fn(), warn: vi.fn() };
+    const sleep = vi.fn().mockResolvedValue(undefined);
+
+    await expect(
+      runTop14LnrMatchEventBackfill(
+        { dryRun: true, limit: 7 },
+        db,
+        { fetchEvents: async () => events, logger, sleep },
+      ),
+    ).resolves.toEqual({ eventsInserted: 0, targetMatches: 2 });
+  });
+
+  it("fills the requested limit after skipping existing events at the front of the candidate list", async () => {
+    const matches = Array.from({ length: 12 }, (_, index) =>
+      match(`match-${index + 1}`),
+    );
+    const { db } = createMockDb({
+      eventMatchIds: matches.slice(0, 5).map(({ id }) => id),
+      matches,
+    });
+    const logger = { log: vi.fn(), warn: vi.fn() };
+    const sleep = vi.fn().mockResolvedValue(undefined);
+
+    await expect(
+      runTop14LnrMatchEventBackfill(
+        { dryRun: true, limit: 7 },
+        db,
+        { fetchEvents: async () => events, logger, sleep },
+      ),
+    ).resolves.toEqual({ eventsInserted: 0, targetMatches: 7 });
   });
 });

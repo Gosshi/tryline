@@ -51,6 +51,7 @@ const EVENT_POINTS: Record<string, number> = {
   penalty_goal: 3,
   try: 5,
 };
+const EVENT_GAP_CANDIDATE_LIMIT = 200;
 
 export function parseOptions(argv: string[]): CliOptions {
   let dryRun = false;
@@ -356,22 +357,46 @@ export async function loadGapMatches(
         external_ids,
         competition:competitions!matches_competition_id_fkey(family, season),
         home_team:teams!matches_home_team_id_fkey(name, english_name),
-        away_team:teams!matches_away_team_id_fkey(name, english_name),
-        match_events!left(id)
+        away_team:teams!matches_away_team_id_fkey(name, english_name)
       `,
     )
     .eq("status", "finished")
-    .is("match_events.id", null)
     .order("kickoff_at", { ascending: false })
-    .limit(limit);
+    .limit(EVENT_GAP_CANDIDATE_LIMIT);
 
   if (error) {
     throw error;
   }
 
-  return ((data ?? []) as MatchGapRow[]).filter(
+  const candidates = ((data ?? []) as MatchGapRow[]).filter(
     (match) => getWikipediaSource(match) !== null,
   );
+
+  if (candidates.length === 0) {
+    return [];
+  }
+
+  const { data: eventRows, error: eventError } = await client
+    .from("match_events")
+    .select("match_id")
+    .in(
+      "match_id",
+      candidates.map((match) => match.id),
+    );
+
+  if (eventError) {
+    throw eventError;
+  }
+
+  const existingMatchIds = new Set(
+    ((eventRows ?? []) as Array<{ match_id: string }>).map(
+      ({ match_id }) => match_id,
+    ),
+  );
+
+  return candidates
+    .filter((match) => !existingMatchIds.has(match.id))
+    .slice(0, limit);
 }
 
 async function fillMatch(match: MatchGapRow): Promise<number> {
