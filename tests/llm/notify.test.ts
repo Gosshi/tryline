@@ -393,6 +393,7 @@ describe("llm notify", () => {
 
     await notifyRecapGenerationSkipped({
       batchSize: 10,
+      excludedMatches: [],
       matches: Array.from({ length: 5 }, (_, index) => ({
         competitionFamily: "top-14",
         matchId: `match-${index + 1}`,
@@ -411,7 +412,44 @@ describe("llm notify", () => {
     expect(body).toContain("https://www.trylinerugby.com/matches/match-4");
     expect(body).not.toContain("https://www.trylinerugby.com/matches/match-5");
     expect(body).toContain("ほか1件");
+    expect(body).not.toContain("候補から除外（イベント未取得）");
     expect(body).toContain("対応: 得点イベントの取り込み状況を確認してください");
+    expect(body.length).toBeLessThanOrEqual(2_000);
+  });
+
+  it("includes bounded eventless candidate exclusions separately from recap skips", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyRecapGenerationSkipped({
+      batchSize: 10,
+      excludedMatches: Array.from({ length: 5 }, (_, index) => ({
+        matchId: `excluded-${index + 1}`,
+      })),
+      matches: [
+        {
+          competitionFamily: "top-14",
+          matchId: "skipped-1",
+          reason: "events_unavailable",
+        },
+      ],
+      skippedCount: 1,
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(body).toContain("スキップ: 1件 / バッチ枠 10件");
+    expect(body).toContain("https://www.trylinerugby.com/matches/skipped-1");
+    expect(body).toContain("候補から除外（イベント未取得）: 5件");
+    expect(body).toContain("https://www.trylinerugby.com/matches/excluded-1");
+    expect(body).toContain("https://www.trylinerugby.com/matches/excluded-4");
+    expect(body).not.toContain(
+      "https://www.trylinerugby.com/matches/excluded-5",
+    );
+    expect(body).toContain("ほか1件");
     expect(body.length).toBeLessThanOrEqual(2_000);
   });
 
@@ -424,6 +462,7 @@ describe("llm notify", () => {
     await expect(
       notifyRecapGenerationSkipped({
         batchSize: 10,
+        excludedMatches: [],
         matches: [
           {
             competitionFamily: null,

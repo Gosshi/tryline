@@ -7,6 +7,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 type DbFixture = {
   competitionFamilies?: Record<string, string>;
+  matchEventIds?: string[];
+  onMatchEventLookup?: (matchIds: string[]) => void;
   scheduledIds: string[];
   finishedIds: string[];
   finishedKickoffAt?: Record<string, string>;
@@ -36,6 +38,10 @@ type MatchQueryState = {
 
 type ContentQueryState = {
   contentType?: "preview" | "recap";
+  matchIds?: string[];
+};
+
+type MatchEventQueryState = {
   matchIds?: string[];
 };
 
@@ -200,6 +206,37 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
     },
   };
 
+  const matchEventsBuilder = {
+    state: {} as MatchEventQueryState,
+    select: vi.fn().mockReturnThis(),
+    in: vi.fn((column: string, value: unknown) => {
+      if (column === "match_id" && Array.isArray(value)) {
+        const matchIds = value as string[];
+        matchEventsBuilder.state.matchIds = matchIds;
+        fixture.onMatchEventLookup?.(matchIds);
+      }
+      return matchEventsBuilder;
+    }),
+    then: (
+      resolve: (value: {
+        data: { match_id: string }[];
+        error: null;
+      }) => unknown,
+    ) => {
+      const matchEventIds = fixture.matchEventIds ?? fixture.finishedIds;
+      const matchIds = matchEventsBuilder.state.matchIds ?? [];
+
+      return Promise.resolve(
+        resolve({
+          data: matchEventIds
+            .filter((matchId) => matchIds.includes(matchId))
+            .map((match_id) => ({ match_id })),
+          error: null,
+        }),
+      );
+    },
+  };
+
   return {
     from: vi.fn((table: string) => {
       if (table === "matches") {
@@ -208,6 +245,10 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
 
       if (table === "match_content") {
         return contentBuilder;
+      }
+
+      if (table === "match_events") {
+        return matchEventsBuilder;
       }
 
       throw new Error(`Unexpected table: ${table}`);
@@ -642,6 +683,104 @@ describe("runOrchestrate", () => {
     expect(generateContent).toHaveBeenNthCalledWith(2, "old-finished", "recap");
   });
 
+  it("fills the recap batch with event-bearing matches and reports eventless candidates", async () => {
+    const finishedIds = [
+      "missing-events-1",
+      "with-events-1",
+      "missing-events-2",
+      "with-events-2",
+      "with-events-3",
+    ];
+    let lookedUpMatchIds: string[] | undefined;
+    const db = createMockDb({
+      finishedIds,
+      matchEventIds: ["with-events-1", "with-events-2", "with-events-3"],
+      onMatchEventLookup: (matchIds) => {
+        lookedUpMatchIds = matchIds;
+      },
+      scheduledIds: [],
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    const ingestLineups = vi.fn().mockResolvedValue("triggered");
+    const notifyRecapSkipped = vi.fn().mockResolvedValue(undefined);
+
+    const result = await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups,
+      notifyRecapSkipped,
+      now,
+    });
+
+    expect(lookedUpMatchIds).toEqual(finishedIds);
+    expect(generateContent).toHaveBeenCalledTimes(3);
+    expect(generateContent).toHaveBeenNthCalledWith(
+      1,
+      "with-events-1",
+      "recap",
+    );
+    expect(generateContent).toHaveBeenNthCalledWith(
+      2,
+      "with-events-2",
+      "recap",
+    );
+    expect(generateContent).toHaveBeenNthCalledWith(
+      3,
+      "with-events-3",
+      "recap",
+    );
+    expect(ingestLineups).not.toHaveBeenCalledWith("missing-events-1", null);
+    expect(ingestLineups).not.toHaveBeenCalledWith("missing-events-2", null);
+    expect(notifyRecapSkipped).toHaveBeenCalledWith({
+      batchSize: 10,
+      excludedMatches: [
+        { matchId: "missing-events-1" },
+        { matchId: "missing-events-2" },
+      ],
+      matches: [],
+      skippedCount: 0,
+    });
+    expect(result.recaps).toEqual({ triggered: 3, skipped: 0 });
+  });
+
+  it("looks past an eventless recap prefix to fill the batch", async () => {
+    const eventlessIds = Array.from(
+      { length: 10 },
+      (_, index) => `missing-events-${index + 1}`,
+    );
+    const eligibleIds = ["with-events-1", "with-events-2", "with-events-3"];
+    const db = createMockDb({
+      finishedIds: [...eventlessIds, ...eligibleIds],
+      matchEventIds: eligibleIds,
+      scheduledIds: [],
+    });
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+
+    await runOrchestrate({
+      db,
+      generateContent,
+      ingestLineups: vi.fn().mockResolvedValue("triggered"),
+      now,
+    });
+
+    expect(generateContent).toHaveBeenCalledTimes(3);
+    expect(generateContent).toHaveBeenNthCalledWith(
+      1,
+      "with-events-1",
+      "recap",
+    );
+    expect(generateContent).toHaveBeenNthCalledWith(
+      2,
+      "with-events-2",
+      "recap",
+    );
+    expect(generateContent).toHaveBeenNthCalledWith(
+      3,
+      "with-events-3",
+      "recap",
+    );
+  });
+
   it("counts recap skips when the recap-skip notifier is unset", async () => {
     const db = createMockDb({
       scheduledIds: [],
@@ -697,6 +836,7 @@ describe("runOrchestrate", () => {
     expect(notifyRecapSkipped).toHaveBeenCalledTimes(1);
     expect(notifyRecapSkipped).toHaveBeenCalledWith({
       batchSize: 10,
+      excludedMatches: [],
       matches: finishedIds.map((matchId) => ({
         competitionFamily: null,
         matchId,
@@ -763,6 +903,7 @@ describe("runOrchestrate", () => {
     expect(notifyRecapSkipped).toHaveBeenCalledTimes(1);
     expect(notifyRecapSkipped).toHaveBeenCalledWith({
       batchSize: 10,
+      excludedMatches: [],
       matches: skippedIds.map((matchId) => ({
         competitionFamily: "top-14",
         matchId,
