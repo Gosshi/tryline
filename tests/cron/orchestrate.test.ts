@@ -683,6 +683,152 @@ describe("runOrchestrate", () => {
     expect(generateContent).toHaveBeenNthCalledWith(2, "old-finished", "recap");
   });
 
+  it("stops starting recaps after the time budget and reports the unprocessed match", async () => {
+    let currentTime = 0;
+    const db = createMockDb({
+      scheduledIds: [],
+      finishedIds: ["finished-1", "finished-2", "finished-3"],
+    });
+    const generateContent = vi.fn().mockImplementation(async () => {
+      currentTime += 120_000;
+    });
+    const notifyRecapSkipped = vi.fn().mockResolvedValue(undefined);
+
+    const result = await runOrchestrate({
+      db,
+      generateContent,
+      getCurrentTime: () => currentTime,
+      ingestLineups: vi.fn().mockResolvedValue("triggered"),
+      notifyRecapSkipped,
+      now,
+    });
+
+    expect(generateContent).toHaveBeenNthCalledWith(1, "finished-1", "recap");
+    expect(generateContent).toHaveBeenNthCalledWith(2, "finished-2", "recap");
+    expect(generateContent).toHaveBeenCalledTimes(2);
+    expect(result.recaps).toEqual({ triggered: 2, skipped: 0 });
+    expect(notifyRecapSkipped).toHaveBeenCalledWith({
+      batchSize: 10,
+      excludedMatches: [],
+      matches: [],
+      skippedCount: 0,
+      timeBudgetSkipped: { preview: 0, recap: 1 },
+    });
+  });
+
+  it("stops preview generation after the time budget", async () => {
+    let currentTime = 0;
+    const generateContent = vi.fn().mockImplementation(async () => {
+      currentTime += 120_000;
+    });
+    const notifyRecapSkipped = vi.fn().mockResolvedValue(undefined);
+
+    const result = await runOrchestrate({
+      db: createMockDb({
+        scheduledIds: Array.from(
+          { length: 10 },
+          (_, index) => `scheduled-${index + 1}`,
+        ),
+        finishedIds: [],
+      }),
+      generateContent,
+      getCurrentTime: () => currentTime,
+      ingestLineups: vi.fn().mockResolvedValue("triggered"),
+      notifyRecapSkipped,
+      now,
+    });
+
+    expect(generateContent).toHaveBeenCalledTimes(3);
+    expect(result.previews).toEqual({ triggered: 3, skipped: 0 });
+    expect(notifyRecapSkipped).toHaveBeenCalledWith({
+      batchSize: 10,
+      excludedMatches: [],
+      matches: [],
+      skippedCount: 0,
+      timeBudgetSkipped: { preview: 7, recap: 0 },
+    });
+  });
+
+  it("limits preview generation concurrency", async () => {
+    let active = 0;
+    let maxActive = 0;
+    const generateContent = vi.fn().mockImplementation(async () => {
+      active += 1;
+      maxActive = Math.max(maxActive, active);
+      await Promise.resolve();
+      active -= 1;
+    });
+
+    await runOrchestrate({
+      db: createMockDb({
+        scheduledIds: Array.from(
+          { length: 10 },
+          (_, index) => `scheduled-${index + 1}`,
+        ),
+        finishedIds: [],
+      }),
+      generateContent,
+      ingestLineups: vi.fn().mockResolvedValue("triggered"),
+      now,
+    });
+
+    expect(maxActive).toBe(3);
+  });
+
+  it("limits concurrent previews and stops scheduling them after the time budget", async () => {
+    let active = 0;
+    let currentTime = 0;
+    let maxActive = 0;
+    const resolvers: Array<() => void> = [];
+    const generateContent = vi.fn().mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          active += 1;
+          maxActive = Math.max(maxActive, active);
+          resolvers.push(() => {
+            active -= 1;
+            resolve();
+          });
+        }),
+    );
+    const notifyRecapSkipped = vi.fn().mockResolvedValue(undefined);
+    const run = runOrchestrate({
+      db: createMockDb({
+        scheduledIds: Array.from(
+          { length: 10 },
+          (_, index) => `scheduled-${index + 1}`,
+        ),
+        finishedIds: [],
+      }),
+      generateContent,
+      getCurrentTime: () => currentTime,
+      ingestLineups: vi.fn().mockResolvedValue("triggered"),
+      notifyRecapSkipped,
+      now,
+    });
+
+    await vi.waitFor(() => expect(resolvers).toHaveLength(3));
+    currentTime = 120_000;
+    resolvers.splice(0).forEach((resolve) => resolve());
+
+    await vi.waitFor(() => expect(resolvers).toHaveLength(3));
+    currentTime = 240_000;
+    resolvers.splice(0).forEach((resolve) => resolve());
+
+    const result = await run;
+
+    expect(maxActive).toBe(3);
+    expect(generateContent).toHaveBeenCalledTimes(6);
+    expect(result.previews).toEqual({ triggered: 6, skipped: 0 });
+    expect(notifyRecapSkipped).toHaveBeenCalledWith({
+      batchSize: 10,
+      excludedMatches: [],
+      matches: [],
+      skippedCount: 0,
+      timeBudgetSkipped: { preview: 4, recap: 0 },
+    });
+  });
+
   it("fills the recap batch with event-bearing matches and reports eventless candidates", async () => {
     const finishedIds = [
       "missing-events-1",
@@ -739,6 +885,7 @@ describe("runOrchestrate", () => {
       ],
       matches: [],
       skippedCount: 0,
+      timeBudgetSkipped: { preview: 0, recap: 0 },
     });
     expect(result.recaps).toEqual({ triggered: 3, skipped: 0 });
   });
@@ -843,6 +990,7 @@ describe("runOrchestrate", () => {
         reason: "events_unavailable",
       })),
       skippedCount: 10,
+      timeBudgetSkipped: { preview: 0, recap: 0 },
     });
   });
 
@@ -910,6 +1058,7 @@ describe("runOrchestrate", () => {
         reason: "events_unavailable",
       })),
       skippedCount: 3,
+      timeBudgetSkipped: { preview: 0, recap: 0 },
     });
   });
 

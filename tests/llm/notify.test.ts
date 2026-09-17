@@ -400,6 +400,7 @@ describe("llm notify", () => {
         reason: "events_unavailable",
       })),
       skippedCount: 5,
+      timeBudgetSkipped: { preview: 0, recap: 0 },
     });
 
     const request = vi.mocked(fetch).mock.calls[0]?.[1];
@@ -413,6 +414,7 @@ describe("llm notify", () => {
     expect(body).not.toContain("https://www.trylinerugby.com/matches/match-5");
     expect(body).toContain("ほか1件");
     expect(body).not.toContain("候補から除外（イベント未取得）");
+    expect(body).not.toContain("時間切れで未処理");
     expect(body).toContain("対応: 得点イベントの取り込み状況を確認してください");
     expect(body.length).toBeLessThanOrEqual(2_000);
   });
@@ -436,6 +438,7 @@ describe("llm notify", () => {
         },
       ],
       skippedCount: 1,
+      timeBudgetSkipped: { preview: 0, recap: 0 },
     });
 
     const request = vi.mocked(fetch).mock.calls[0]?.[1];
@@ -471,11 +474,32 @@ describe("llm notify", () => {
           },
         ],
         skippedCount: 1,
+        timeBudgetSkipped: { preview: 0, recap: 0 },
       }),
     ).resolves.toBeUndefined();
 
     expect(fetch).not.toHaveBeenCalled();
     errorSpy.mockRestore();
+  });
+
+  it("includes time-budget unprocessed counts when present", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyRecapGenerationSkipped({
+      batchSize: 10,
+      excludedMatches: [],
+      matches: [],
+      skippedCount: 0,
+      timeBudgetSkipped: { preview: 4, recap: 2 },
+    });
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(body).toContain("時間切れで未処理: 6件（preview 4件 / recap 2件）");
   });
 
   it("posts weekly newsletter delivery counts to Discord ops", async () => {

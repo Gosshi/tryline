@@ -8,6 +8,8 @@ import type { ContentLanguage, ContentType } from "@/lib/llm/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const EXISTING_CONTENT_STATUSES = ["draft", "published"] as const;
+const ORCHESTRATE_TIME_BUDGET_MS = 210_000;
+const PREVIEW_CONCURRENCY = 3;
 const RECAP_BATCH_SIZE = 10;
 const RECAP_EVENT_LOOKUP_CANDIDATES = 60;
 
@@ -35,6 +37,10 @@ export type RecapSkipReport = {
   excludedMatches: RecapExcludedEntry[];
   matches: RecapSkipEntry[];
   skippedCount: number;
+  timeBudgetSkipped: {
+    preview: number;
+    recap: number;
+  };
 };
 
 export type OrchestrateResult = {
@@ -81,6 +87,7 @@ export type RunOrchestrateDeps = {
     matchId: string,
     competitionFamily?: string | null,
   ) => Promise<LineupIngestOutcome>;
+  getCurrentTime?: () => number;
   now?: Date;
   notifyRecapSkipped?: (report: RecapSkipReport) => Promise<void>;
   sendPushNotification?: (info: PushMatchInfo) => Promise<void>;
@@ -235,9 +242,50 @@ async function notifyRecapReady(
   }
 }
 
+async function processWithPreviewConcurrency<T>(params: {
+  canStart: () => boolean;
+  matches: T[];
+  processMatch: (match: T) => Promise<void>;
+}): Promise<number> {
+  let nextMatchIndex = 0;
+  let timeBudgetSkipped = 0;
+  let stopped = false;
+
+  const worker = async () => {
+    while (!stopped && nextMatchIndex < params.matches.length) {
+      if (!params.canStart()) {
+        timeBudgetSkipped += params.matches.length - nextMatchIndex;
+        nextMatchIndex = params.matches.length;
+        stopped = true;
+        return;
+      }
+
+      const match = params.matches[nextMatchIndex];
+      if (match === undefined) {
+        return;
+      }
+      nextMatchIndex += 1;
+      await params.processMatch(match);
+    }
+  };
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(PREVIEW_CONCURRENCY, params.matches.length) },
+      worker,
+    ),
+  );
+
+  return timeBudgetSkipped;
+}
+
 export async function runOrchestrate(
   deps: RunOrchestrateDeps,
 ): Promise<OrchestrateResult> {
+  const getCurrentTime = deps.getCurrentTime ?? Date.now;
+  const startedAt = getCurrentTime();
+  const canStartGeneration = () =>
+    getCurrentTime() - startedAt < ORCHESTRATE_TIME_BUDGET_MS;
   const now = deps.now ?? new Date();
 
   const previewCandidates = await getMatchIdsMissingContent({
@@ -303,8 +351,10 @@ export async function runOrchestrate(
     },
   };
 
-  await Promise.all(
-    previewCandidates.eligibleMatches.map(async (match) => {
+  const previewTimeBudgetSkipped = await processWithPreviewConcurrency({
+    canStart: canStartGeneration,
+    matches: previewCandidates.eligibleMatches,
+    processMatch: async (match) => {
       const matchId = match.id;
       const competitionFamily =
         firstRelation(match.competition)?.family ?? null;
@@ -338,12 +388,18 @@ export async function runOrchestrate(
           error,
         });
       }
-    }),
-  );
+    },
+  });
 
   const recapSkips: RecapSkipEntry[] = [];
+  let recapTimeBudgetSkipped = 0;
 
-  for (const match of recapBatch) {
+  for (const [index, match] of recapBatch.entries()) {
+    if (!canStartGeneration()) {
+      recapTimeBudgetSkipped = recapBatch.length - index;
+      break;
+    }
+
     const matchId = match.id;
     const competitionFamily = firstRelation(match.competition)?.family ?? null;
     try {
@@ -395,7 +451,10 @@ export async function runOrchestrate(
   }
 
   if (
-    (recapSkips.length > 0 || recapExcludedMatches.length > 0) &&
+    (recapSkips.length > 0 ||
+      recapExcludedMatches.length > 0 ||
+      previewTimeBudgetSkipped > 0 ||
+      recapTimeBudgetSkipped > 0) &&
     deps.notifyRecapSkipped
   ) {
     try {
@@ -404,6 +463,10 @@ export async function runOrchestrate(
         excludedMatches: recapExcludedMatches,
         matches: recapSkips,
         skippedCount: recapSkips.length,
+        timeBudgetSkipped: {
+          preview: previewTimeBudgetSkipped,
+          recap: recapTimeBudgetSkipped,
+        },
       });
     } catch (error) {
       console.error("[orchestrate] recap skipped notification failed", {

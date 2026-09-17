@@ -386,6 +386,8 @@ export async function notifyEventIntegrityMismatch(
 export async function notifyRecapGenerationSkipped(
   report: RecapSkipReport,
 ): Promise<void> {
+  const timeBudgetSkippedCount =
+    report.timeBudgetSkipped.preview + report.timeBudgetSkipped.recap;
   const reasons = new Map<string, number>();
   for (const match of report.matches) {
     reasons.set(match.reason, (reasons.get(match.reason) ?? 0) + 1);
@@ -412,6 +414,11 @@ export async function notifyRecapGenerationSkipped(
       ? [
           `候補から除外（イベント未取得）: ${report.excludedMatches.length}件`,
           `除外の例: ${shownExcludedMatches.map((match) => matchPageUrl(match.matchId)).join(" / ")}${remainingExcludedMatchCount > 0 ? ` ほか${remainingExcludedMatchCount}件` : ""}`,
+        ]
+      : []),
+    ...(timeBudgetSkippedCount > 0
+      ? [
+          `時間切れで未処理: ${timeBudgetSkippedCount}件（preview ${report.timeBudgetSkipped.preview}件 / recap ${report.timeBudgetSkipped.recap}件）`,
         ]
       : []),
     "対応: 得点イベントの取り込み状況を確認してください",
