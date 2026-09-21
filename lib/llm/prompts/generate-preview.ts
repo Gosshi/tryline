@@ -171,6 +171,7 @@ export function buildGeneratePreviewPrompt(
   const standingsBlock = buildStandingsBlock(
     assembled.competition_standings,
     "preview",
+    assembled.standings_freshness,
   );
   const dataSparseBlock = isDataSparse
     ? [
@@ -234,7 +235,10 @@ export function buildGeneratePreviewPrompt(
     return "";
   })();
   const japaneseNameGlossary = assembled.japanese_name_glossary ?? [];
-  const sanitizedAssembled = sanitizeUnconfirmedProjectedLineups(assembled);
+  const sanitizedAssembled = sanitizeUnconfirmedProjectedLineups({
+    ...assembled,
+    competition_standings: standingsBlock ? assembled.competition_standings : [],
+  });
   const japaneseNameGlossaryBlock =
     japaneseNameGlossary.length === 0
       ? ""

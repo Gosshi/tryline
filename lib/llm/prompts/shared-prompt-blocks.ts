@@ -63,11 +63,22 @@ export function buildSignalsBlock(signals: AdditionalSignal[]): string {
 export function buildStandingsBlock(
   standings: unknown[],
   contentType: "preview" | "recap",
+  freshness?: {
+    home: { expected_played: number; played: number | null };
+    away: { expected_played: number; played: number | null };
+  },
 ): string {
-  return standings.length === 0
+  const isCurrent =
+    !freshness ||
+    (freshness.home.played !== null &&
+      freshness.away.played !== null &&
+      freshness.home.played >= freshness.home.expected_played &&
+      freshness.away.played >= freshness.away.expected_played);
+
+  return standings.length === 0 || !isCurrent
     ? ""
     : [
-        `現在の大会順位表（この試合前時点）: ${JSON.stringify(standings)}`,
+        `最新の大会順位表: ${JSON.stringify(standings)}`,
         `順位争い・Grand Slam・木のスプーン等の大会文脈を${contentType === "preview" ? "プレビュー" : "レビュー"}に組み込むこと。`,
       ].join("\n");
 }

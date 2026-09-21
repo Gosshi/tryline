@@ -231,6 +231,10 @@ export type AssembledContentInput = {
     bonus_points_losing: number;
     total_points: number;
   }>;
+  standings_freshness?: {
+    home: { expected_played: number; played: number | null };
+    away: { expected_played: number; played: number | null };
+  };
   projected_lineups: {
     home: Array<{
       name: string;

@@ -25,7 +25,6 @@ export type SupportedFamily =
   | "rugby-championship"
   | "six-nations"
   | "super-rugby-pacific"
-  | "top-14"
   | "urc";
 
 type CliOptions = {
@@ -68,7 +67,6 @@ export const SUPPORTED_FAMILIES = new Set<SupportedFamily>([
   "rugby-championship",
   "six-nations",
   "super-rugby-pacific",
-  "top-14",
   "urc",
 ]);
 
@@ -108,8 +106,6 @@ export function resolveWikipediaStandingsUrl(
       return `https://en.wikipedia.org/wiki/${season}_Six_Nations_Championship`;
     case "super-rugby-pacific":
       return `https://en.wikipedia.org/wiki/${season}_Super_Rugby_Pacific_season`;
-    case "top-14":
-      return `https://en.wikipedia.org/wiki/${rangeSeason}_Top_14_season`;
     case "urc":
       return `https://en.wikipedia.org/wiki/${rangeSeason}_United_Rugby_Championship`;
   }

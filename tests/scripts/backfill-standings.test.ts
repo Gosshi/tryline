@@ -8,6 +8,7 @@ import {
   parseOptions,
   resolveWikipediaStandingsUrl,
   warnUnmatchedStandingsTeams,
+  SUPPORTED_FAMILIES,
 } from "@/scripts/backfill-standings";
 
 function standingsRow(teamName: string) {
@@ -63,6 +64,13 @@ describe("backfill-standings", () => {
       "Usage:",
     );
     expect(() => parseOptions(["--family=urc"])).toThrow("Usage:");
+  });
+
+  it("does not allow Top 14 Wikipedia standings ingestion", () => {
+    expect(SUPPORTED_FAMILIES.has("top-14" as never)).toBe(false);
+    expect(() =>
+      parseOptions(["--family=top-14", "--season=2025-26"]),
+    ).toThrow("Usage:");
   });
 
   it("builds Wikipedia URLs for annual and range seasons", () => {

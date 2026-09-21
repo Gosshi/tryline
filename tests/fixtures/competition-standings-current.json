@@ -1,0 +1,30 @@
+[
+  {
+    "position": 1,
+    "team_name": "ホーム",
+    "played": 5,
+    "won": 4,
+    "drawn": 0,
+    "lost": 1,
+    "points_for": 130,
+    "points_against": 80,
+    "tries_for": 18,
+    "bonus_points_try": 2,
+    "bonus_points_losing": 0,
+    "total_points": 18
+  },
+  {
+    "position": 2,
+    "team_name": "アウェイ",
+    "played": 5,
+    "won": 4,
+    "drawn": 0,
+    "lost": 1,
+    "points_for": 120,
+    "points_against": 85,
+    "tries_for": 16,
+    "bonus_points_try": 1,
+    "bonus_points_losing": 1,
+    "total_points": 18
+  }
+]

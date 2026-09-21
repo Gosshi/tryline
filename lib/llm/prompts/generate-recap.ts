@@ -49,7 +49,7 @@ function buildMatchContextBullet(matchPhase: MatchPhase | null): string {
     return "- プレーオフという文脈と一発勝負の重み（80字程度）";
   }
 
-  return "- 大会内での位置づけ（大会名・シーズン・順位表への影響、分かる場合はラウンド名）（80字程度）";
+  return "- 大会内での位置づけ（大会名・シーズン・分かる場合はラウンド名）（80字程度）";
 }
 
 export function buildGenerateRecapPrompt(
@@ -162,6 +162,7 @@ export function buildGenerateRecapPrompt(
   const standingsBlock = buildStandingsBlock(
     assembled.competition_standings,
     "recap",
+    assembled.standings_freshness,
   );
   const matchEventsBlock = !hasEvents
     ? ""
@@ -240,9 +241,8 @@ export function buildGenerateRecapPrompt(
       ].join("\n");
   const dataSparseBlock = isDataSparse
     ? [
-        "【データスパースモード】スコアラー・ラインアップデータは存在しない。スコアと順位変動のみを記述し、試合展開の描写は行わないこと。",
+        "【データスパースモード】スコアラー・ラインアップデータは存在しない。スコアのみを記述し、試合展開の描写は行わないこと。",
         "- recent_form の直近5試合から連勝/連敗ストリーク・平均得失点の傾向（攻撃型 or 守備型か）・直近の勝ち方の特徴を読み取り本文に反映すること。冒頭は「得点力」で始めず、直近の試合展開・プレースタイルの特徴・今節の文脈から書き始めること",
-        "- competition_standings の順位変動（この試合結果による上昇/下降）を必ず計算して記述すること",
         "- h2h_last_5 の直近対戦スコアを引用し、今回の結果との比較を行うこと",
         "- key_stats の直近平均得点・失点と今回のスコアを対比して試合の特徴を示すこと",
         "- key_stats.match.penalty_count の合計が 8 以上の場合、テリトリー・プレッシャー型の試合と評価すること",
@@ -315,7 +315,10 @@ export function buildGenerateRecapPrompt(
     return "";
   })();
   const japaneseNameGlossary = assembled.japanese_name_glossary ?? [];
-  const sanitizedAssembled = sanitizeUnconfirmedProjectedLineups(assembled);
+  const sanitizedAssembled = sanitizeUnconfirmedProjectedLineups({
+    ...assembled,
+    competition_standings: standingsBlock ? assembled.competition_standings : [],
+  });
   const japaneseNameGlossaryBlock =
     japaneseNameGlossary.length === 0
       ? ""
