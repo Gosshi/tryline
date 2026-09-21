@@ -66,15 +66,25 @@ export function parseOptions(argv: string[]): CliOptions {
     throw new Error(USAGE);
   }
 
-  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_TOP14_LNR_MATCHES_PER_RUN) {
-    throw new Error(`--limit must be an integer between 1 and ${MAX_TOP14_LNR_MATCHES_PER_RUN}`);
+  if (
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > MAX_TOP14_LNR_MATCHES_PER_RUN
+  ) {
+    throw new Error(
+      `--limit must be an integer between 1 and ${MAX_TOP14_LNR_MATCHES_PER_RUN}`,
+    );
   }
 
   return { dryRun, limit };
 }
 
 function getMatchPath(externalIds: Json): string | null {
-  if (!externalIds || typeof externalIds !== "object" || Array.isArray(externalIds)) {
+  if (
+    !externalIds ||
+    typeof externalIds !== "object" ||
+    Array.isArray(externalIds)
+  ) {
     return null;
   }
 
@@ -147,47 +157,67 @@ export async function runTop14LnrMatchEventBackfill(
   const upsertEvents = deps.upsertEvents ?? upsertMatchEvents;
   const matches = await loadTargetMatches(db, options.limit);
   let eventsInserted = 0;
+  const failedMatches: Array<{
+    label: string;
+    matchId: string;
+    reason: string;
+  }> = [];
 
-  logger.log(`Target finished Top 14 matches without events: ${matches.length}`);
+  logger.log(
+    `Target finished Top 14 matches without events: ${matches.length}`,
+  );
 
   for (const [index, match] of matches.entries()) {
     const matchPath = getMatchPath(match.external_ids);
     if (!matchPath) continue;
 
-    const events = await fetchEvents(matchPath);
-    const totals = computeParsedMatchEventPointTotals(events);
     const label = `${match.home_team?.name ?? "Unknown"} v ${match.away_team?.name ?? "Unknown"}`;
 
-    if (!eventTotalsMatchFinalScore(totals, match)) {
-      throw new Error(
-        `Top 14 event totals mismatch for ${match.id}: parsed=${totals.home}-${totals.away} final=${match.home_score}-${match.away_score}`,
-      );
-    }
+    try {
+      const events = await fetchEvents(matchPath);
+      const totals = computeParsedMatchEventPointTotals(events);
 
-    if (options.dryRun) {
-      logger.log(
-        `[dry-run] ${match.id} ${label}: ${events.length} events totals=${totals.home}-${totals.away} final=${match.home_score}-${match.away_score}`,
-      );
-    } else {
-      try {
-        const result = await upsertEvents({
-          awayTeamId: match.away_team_id,
-          events,
-          homeTeamId: match.home_team_id,
-          matchId: match.id,
-        });
-        assertEventInsertionAccepted(result);
-        eventsInserted += result.inserted;
-        logger.log(`Inserted ${result.inserted} events for ${match.id} ${label}`);
-      } catch (error) {
-        if (error instanceof EventInsertionRejectedError) {
-          logger.warn("Top 14 event insertion rejected", {
-            matchId: match.id,
-            rejected: error.rejected,
-          });
-        }
-        throw error;
+      if (!eventTotalsMatchFinalScore(totals, match)) {
+        throw new Error(
+          `Top 14 event totals mismatch for ${match.id}: parsed=${totals.home}-${totals.away} final=${match.home_score}-${match.away_score}`,
+        );
       }
+
+      if (options.dryRun) {
+        logger.log(
+          `[dry-run] ${match.id} ${label}: ${events.length} events totals=${totals.home}-${totals.away} final=${match.home_score}-${match.away_score}`,
+        );
+      } else {
+        try {
+          const result = await upsertEvents({
+            awayTeamId: match.away_team_id,
+            events,
+            homeTeamId: match.home_team_id,
+            matchId: match.id,
+          });
+          assertEventInsertionAccepted(result);
+          eventsInserted += result.inserted;
+          logger.log(
+            `Inserted ${result.inserted} events for ${match.id} ${label}`,
+          );
+        } catch (error) {
+          if (error instanceof EventInsertionRejectedError) {
+            logger.warn("Top 14 event insertion rejected", {
+              matchId: match.id,
+              rejected: error.rejected,
+            });
+          }
+          throw error;
+        }
+      }
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      failedMatches.push({ label, matchId: match.id, reason });
+      logger.warn("Top 14 match event backfill failed", {
+        label,
+        matchId: match.id,
+        reason,
+      });
     }
 
     if (index < matches.length - 1) {
@@ -195,7 +225,7 @@ export async function runTop14LnrMatchEventBackfill(
     }
   }
 
-  return { eventsInserted, targetMatches: matches.length };
+  return { eventsInserted, failedMatches, targetMatches: matches.length };
 }
 
 async function main() {
