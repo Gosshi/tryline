@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { determineEventIntegrity } from "@/lib/llm/stages/assemble";
+import {
+  calculateStandingsFreshness,
+  determineEventIntegrity,
+} from "@/lib/llm/stages/assemble";
 
 import type { ScoreTimeline } from "@/lib/llm/types";
 
@@ -15,6 +18,26 @@ const scoreTimeline: ScoreTimeline = {
 };
 
 describe("recap event integrity gate", () => {
+  it("uses team ids to compare expected games with standings coverage", () => {
+    expect(
+      calculateStandingsFreshness({
+        awayTeamId: "away-id",
+        finishedMatches: [
+          { away_team_id: "away-id", home_team_id: "other" },
+          { away_team_id: "other", home_team_id: "home-id" },
+        ],
+        homeTeamId: "home-id",
+        standings: [
+          { played: 1, team_id: "home-id" },
+          { played: 0, team_id: "away-id" },
+        ],
+      }),
+    ).toEqual({
+      away: { expected_played: 1, played: 0 },
+      home: { expected_played: 1, played: 1 },
+    });
+  });
+
   it("retains mismatch evidence while identifying a finished score mismatch", () => {
     expect(
       determineEventIntegrity(

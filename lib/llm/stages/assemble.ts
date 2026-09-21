@@ -569,6 +569,88 @@ async function loadCompetitionStandings(
   }));
 }
 
+type StandingsFreshness = NonNullable<
+  AssembledContentInput["standings_freshness"]
+>;
+
+type FinishedMatchForStandings = {
+  away_team_id: string;
+  home_team_id: string;
+};
+
+type StandingPlayedRow = {
+  played: number;
+  team_id: string;
+};
+
+export function calculateStandingsFreshness(params: {
+  finishedMatches: FinishedMatchForStandings[];
+  homeTeamId: string;
+  awayTeamId: string;
+  standings: StandingPlayedRow[];
+}): StandingsFreshness {
+  const { awayTeamId, finishedMatches, homeTeamId, standings } = params;
+  const expectedPlayed = (teamId: string) =>
+    finishedMatches.filter(
+      (match) =>
+        match.home_team_id === teamId || match.away_team_id === teamId,
+    ).length;
+  const standingPlayed = (teamId: string) =>
+    standings.find((standing) => standing.team_id === teamId)?.played ?? null;
+
+  return {
+    away: {
+      expected_played: expectedPlayed(awayTeamId),
+      played: standingPlayed(awayTeamId),
+    },
+    home: {
+      expected_played: expectedPlayed(homeTeamId),
+      played: standingPlayed(homeTeamId),
+    },
+  };
+}
+
+async function loadStandingsFreshness(params: {
+  awayTeamId: string;
+  competitionId: string | undefined;
+  contentType: ContentType;
+  homeTeamId: string;
+  kickoffAt: string;
+}): Promise<StandingsFreshness | undefined> {
+  const { awayTeamId, competitionId, contentType, homeTeamId, kickoffAt } = params;
+  if (!competitionId) {
+    return undefined;
+  }
+
+  const db = getSupabaseServerClient();
+  const cutoffOperator = contentType === "recap" ? "lte" : "lt";
+  const [matchesResult, standingsResult] = await Promise.all([
+    db
+      .from("matches")
+      .select("home_team_id, away_team_id")
+      .eq("competition_id", competitionId)
+      .eq("status", "finished")[cutoffOperator]("kickoff_at", kickoffAt),
+    db
+      .from("competition_standings")
+      .select("team_id, played")
+      .eq("competition_id", competitionId),
+  ]);
+
+  if (matchesResult.error) {
+    throw matchesResult.error;
+  }
+  if (standingsResult.error) {
+    throw standingsResult.error;
+  }
+
+  return calculateStandingsFreshness({
+    awayTeamId,
+    finishedMatches: (matchesResult.data ?? []) as FinishedMatchForStandings[],
+    homeTeamId,
+    standings: (standingsResult.data ?? []) as StandingPlayedRow[],
+  });
+}
+
 type PlayerNameReference = {
   player: { name: string; name_ja: string | null } | null;
 };
@@ -952,6 +1034,7 @@ export async function assembleMatchContentInput(
     homeProjectedLineups,
     awayProjectedLineups,
     competitionStandings,
+    standingsFreshness,
     loadedMatchEvents,
     rosterPlayerNameReferences,
     sourcedFacts,
@@ -960,6 +1043,13 @@ export async function assembleMatchContentInput(
     loadProjectedLineup(matchId, homeTeamId),
     loadProjectedLineup(matchId, awayTeamId),
     loadCompetitionStandings(match.competition_id, language),
+    loadStandingsFreshness({
+      awayTeamId,
+      competitionId: match.competition_id,
+      contentType,
+      homeTeamId,
+      kickoffAt: match.kickoff_at,
+    }),
     loadMatchEvents(matchId, match.status, language),
     loadTeamRosterPlayerNameReferences([homeTeamId, awayTeamId]),
     loadSourcedFactsForMatch(matchId, contentType),
@@ -1141,6 +1231,7 @@ export async function assembleMatchContentInput(
     eventIntegrity,
     match_events: hasScoreMismatch ? [] : matchEvents,
     competition_standings: competitionStandings,
+    standings_freshness: standingsFreshness,
     projected_lineups: projectedLineups,
     injuries: {
       home: [],

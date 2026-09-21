@@ -70,6 +70,7 @@ const QA_GENERATION_FIELD_DISPOSITIONS = {
   recent_form: "grounded",
   score_timeline: "grounded",
   sourced_facts: "grounded",
+  standings_freshness: "not_used_for_factual_grounding",
   team_stats: "grounded",
 } as const satisfies Record<
   keyof AssembledContentInput,

@@ -5,6 +5,7 @@ import {
   PROMPT_VERSION,
 } from "@/lib/llm/prompts/generate-recap";
 import { MATCH_DURATION_INSTRUCTION } from "@/lib/llm/prompts/shared-prompt-blocks";
+import standingsFixture from "@/tests/fixtures/competition-standings-current.json";
 
 import type { AssembledContentInput } from "@/lib/llm/types";
 
@@ -271,14 +272,14 @@ describe("buildGenerateRecapPrompt", () => {
     );
     expect(prompt).toContain("【データスパースモード】");
     expect(prompt).toContain("recent_form の直近5試合");
-    expect(prompt).toContain("competition_standings の順位変動");
+    expect(prompt).not.toContain("competition_standings の順位変動");
     expect(prompt).toContain("h2h_last_5 の直近対戦スコア");
     expect(prompt).toContain("key_stats の直近平均得点・失点");
     expect(prompt).toContain("key_stats.match.penalty_count");
     expect(prompt).toContain("key_stats.match.try_count");
     expect(prompt).toContain("key_stats.match.late_scoring");
     expect(prompt).toContain(
-      "スコアと順位変動のみを記述し、試合展開の描写は行わないこと",
+      "スコアのみを記述し、試合展開の描写は行わないこと",
     );
     expect(prompt).not.toContain("ペナルティ累積");
     expect(prompt).not.toContain("接戦の終盤");
@@ -364,7 +365,7 @@ describe("buildGenerateRecapPrompt", () => {
     );
 
     expect(prompt).toContain(
-      "大会内での位置づけ（大会名・シーズン・順位表への影響、分かる場合はラウンド名）（80字程度）",
+      "大会内での位置づけ（大会名・シーズン・分かる場合はラウンド名）（80字程度）",
     );
     expect(prompt).not.toContain("プレーオフという文脈と一発勝負の重み");
     expect(prompt).not.toContain("敗者はそこでシーズン終了となる一発勝負");
@@ -389,7 +390,7 @@ describe("buildGenerateRecapPrompt", () => {
     );
 
     expect(prompt).toContain(
-      "大会内での位置づけ（大会名・シーズン・順位表への影響、分かる場合はラウンド名）（80字程度）",
+      "大会内での位置づけ（大会名・シーズン・分かる場合はラウンド名）（80字程度）",
     );
     expect(prompt).not.toContain("プレーオフという文脈と一発勝負の重み");
     expect(prompt).not.toContain("この試合はプレーオフ戦");
@@ -816,9 +817,40 @@ describe("buildGenerateRecapPrompt", () => {
       [],
     );
 
-    expect(withoutStandings).not.toContain("現在の大会順位表");
-    expect(withStandings).toContain("現在の大会順位表");
+    expect(withoutStandings).not.toContain("最新の大会順位表");
+    expect(withStandings).toContain("最新の大会順位表");
     expect(withStandings).toContain("木のスプーン");
+  });
+
+  it("omits stale or incomplete standings while retaining current standings", () => {
+    const current = buildGenerateRecapPrompt(
+      { ...assembled, competition_standings: standingsFixture },
+      [],
+      [],
+    );
+    const stale = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        competition_standings: standingsFixture,
+        standings_freshness: { away: { expected_played: 5, played: 4 }, home: { expected_played: 5, played: 5 } },
+      },
+      [],
+      [],
+    );
+    const missing = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        competition_standings: standingsFixture,
+        standings_freshness: { away: { expected_played: 5, played: null }, home: { expected_played: 5, played: 5 } },
+      },
+      [],
+      [],
+    );
+
+    expect(current).toContain("最新の大会順位表");
+    expect(stale).not.toContain("大会順位表");
+    expect(missing).not.toContain("大会順位表");
+    expect(stale).not.toContain('"team_name":"ホーム"');
   });
 
   it("switches player-name style by competition family", () => {

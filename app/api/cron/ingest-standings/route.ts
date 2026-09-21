@@ -6,6 +6,7 @@ import {
 } from "@/lib/cache/public-data";
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { ingestWeeklyStandings } from "@/lib/ingestion/weekly-standings";
+import { calculateLatestTop14Standings } from "@/scripts/calculate-standings";
 
 export const maxDuration = 300;
 
@@ -15,13 +16,25 @@ export async function POST(request: Request) {
   try {
     assertCronAuthorized(request);
 
-    const result = await ingestWeeklyStandings();
+    const [weeklyResult, top14Result] = await Promise.allSettled([
+      ingestWeeklyStandings(),
+      calculateLatestTop14Standings(),
+    ]);
 
-    revalidatePublicData(PUBLIC_DATA_CACHE_TAGS.standings);
+    if (weeklyResult.status === "fulfilled" || top14Result.status === "fulfilled") {
+      revalidatePublicData(PUBLIC_DATA_CACHE_TAGS.standings);
+    }
+
+    if (weeklyResult.status === "rejected") {
+      throw weeklyResult.reason;
+    }
+    if (top14Result.status === "rejected") {
+      throw top14Result.reason;
+    }
 
     return NextResponse.json({
       duration_ms: Date.now() - startedAt,
-      result,
+      result: { top14: top14Result.value, weekly: weeklyResult.value },
       status: "ok",
     });
   } catch (error) {

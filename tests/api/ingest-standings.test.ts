@@ -8,8 +8,12 @@ vi.mock("@/lib/cache/public-data", () => ({
 const standingsMock = vi.hoisted(() => ({
   ingestWeeklyStandings: vi.fn(),
 }));
+const calculationMock = vi.hoisted(() => ({
+  calculateLatestTop14Standings: vi.fn(),
+}));
 
 vi.mock("@/lib/ingestion/weekly-standings", () => standingsMock);
+vi.mock("@/scripts/calculate-standings", () => calculationMock);
 
 describe("/api/cron/ingest-standings", () => {
   beforeEach(() => {
@@ -58,6 +62,11 @@ describe("/api/cron/ingest-standings", () => {
       skipped: 0,
       updated: 14,
     });
+    calculationMock.calculateLatestTop14Standings.mockResolvedValue({
+      competitionSlug: "top-14-2025-26",
+      status: "updated",
+      upserted: 14,
+    });
 
     const { POST } = await import("@/app/api/cron/ingest-standings/route");
 
@@ -73,7 +82,30 @@ describe("/api/cron/ingest-standings", () => {
 
     expect(response.status).toBe(200);
     expect(body.status).toBe("ok");
-    expect(body.result.updated).toBe(14);
+    expect(body.result.weekly.updated).toBe(14);
     expect(standingsMock.ingestWeeklyStandings).toHaveBeenCalledTimes(1);
+    expect(calculationMock.calculateLatestTop14Standings).toHaveBeenCalledTimes(1);
+  });
+
+  it("runs the Top 14 calculation even if Wikipedia ingestion fails", async () => {
+    standingsMock.ingestWeeklyStandings.mockRejectedValue(
+      new Error("wikipedia unavailable"),
+    );
+    calculationMock.calculateLatestTop14Standings.mockResolvedValue({
+      competitionSlug: "top-14-2025-26",
+      status: "updated",
+      upserted: 14,
+    });
+
+    const { POST } = await import("@/app/api/cron/ingest-standings/route");
+    const response = await POST(
+      new Request("http://localhost/api/cron/ingest-standings", {
+        headers: { authorization: "Bearer test-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    expect(calculationMock.calculateLatestTop14Standings).toHaveBeenCalledTimes(1);
   });
 });

@@ -5,6 +5,7 @@ import {
   PROMPT_VERSION,
 } from "@/lib/llm/prompts/generate-preview";
 import { MATCH_DURATION_INSTRUCTION } from "@/lib/llm/prompts/shared-prompt-blocks";
+import standingsFixture from "@/tests/fixtures/competition-standings-current.json";
 
 import type { AssembledContentInput } from "@/lib/llm/types";
 
@@ -543,9 +544,33 @@ describe("buildGeneratePreviewPrompt", () => {
       [],
     );
 
-    expect(withoutStandings).not.toContain("現在の大会順位表");
-    expect(withStandings).toContain("現在の大会順位表");
+    expect(withoutStandings).not.toContain("最新の大会順位表");
+    expect(withStandings).toContain("最新の大会順位表");
     expect(withStandings).toContain("Grand Slam");
+  });
+
+  it("omits stale standings while retaining standings ahead of expected games", () => {
+    const current = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        competition_standings: standingsFixture,
+        standings_freshness: { away: { expected_played: 4, played: 5 }, home: { expected_played: 4, played: 5 } },
+      },
+      [],
+      [],
+    );
+    const stale = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        competition_standings: standingsFixture,
+        standings_freshness: { away: { expected_played: 5, played: 4 }, home: { expected_played: 5, played: 5 } },
+      },
+      [],
+      [],
+    );
+
+    expect(current).toContain("最新の大会順位表");
+    expect(stale).not.toContain("大会順位表");
   });
 
   it("includes playoff final preview context", () => {

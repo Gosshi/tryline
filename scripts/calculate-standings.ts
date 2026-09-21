@@ -5,6 +5,7 @@ type CliOptions = {
 };
 
 type CompetitionRow = {
+  family: string | null;
   id: string;
   slug: string;
 };
@@ -25,6 +26,7 @@ type MatchRow = {
 type MatchEventRow = {
   match_id: string;
   team_id: string;
+  type: string;
 };
 
 type TeamStanding = {
@@ -68,7 +70,10 @@ function parseOptions(argv: string[]): CliOptions {
   return { slug };
 }
 
-function createEmptyStanding(teamId: string, teamName: string): TeamStanding {
+export function createEmptyStanding(
+  teamId: string,
+  teamName: string,
+): TeamStanding {
   return {
     bonusPointsLosing: 0,
     bonusPointsTry: 0,
@@ -99,12 +104,21 @@ function getStanding(
 }
 
 function addMatchResult(params: {
+  competitionFamily: string | null;
+  opponentTries: number;
   standing: TeamStanding;
   pointsFor: number;
   pointsAgainst: number;
   triesFor: number;
 }) {
-  const { pointsAgainst, pointsFor, standing, triesFor } = params;
+  const {
+    competitionFamily,
+    opponentTries,
+    pointsAgainst,
+    pointsFor,
+    standing,
+    triesFor,
+  } = params;
   const scoreDifference = pointsFor - pointsAgainst;
 
   standing.played += 1;
@@ -121,13 +135,18 @@ function addMatchResult(params: {
   } else {
     standing.lost += 1;
 
-    if (Math.abs(scoreDifference) <= 7) {
+    const losingBonusMargin = competitionFamily === "top-14" ? 5 : 7;
+    if (Math.abs(scoreDifference) <= losingBonusMargin) {
       standing.bonusPointsLosing += 1;
       standing.totalPoints += 1;
     }
   }
 
-  if (triesFor >= 4) {
+  const hasTryBonus =
+    competitionFamily === "top-14"
+      ? triesFor >= opponentTries + 3
+      : triesFor >= 4;
+  if (hasTryBonus) {
     standing.bonusPointsTry += 1;
     standing.totalPoints += 1;
   }
@@ -137,7 +156,7 @@ async function loadCompetition(slug: string): Promise<CompetitionRow | null> {
   const db = getSupabaseServerClient();
   const { data, error } = await db
     .from("competitions")
-    .select("id, slug")
+    .select("id, slug, family")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -197,18 +216,21 @@ async function loadFinishedMatches(competitionId: string): Promise<MatchRow[]> {
 
 async function loadTryCounts(
   matchIds: string[],
-): Promise<Map<string, Map<string, number>>> {
+): Promise<{
+  eventMatchIds: Set<string>;
+  triesByMatchAndTeam: Map<string, Map<string, number>>;
+}> {
   const triesByMatchAndTeam = new Map<string, Map<string, number>>();
+  const eventMatchIds = new Set<string>();
 
   if (matchIds.length === 0) {
-    return triesByMatchAndTeam;
+    return { eventMatchIds, triesByMatchAndTeam };
   }
 
   const db = getSupabaseServerClient();
   const { data, error } = await db
     .from("match_events")
-    .select("match_id, team_id")
-    .eq("type", "try")
+    .select("match_id, team_id, type")
     .in("match_id", matchIds);
 
   if (error) {
@@ -216,20 +238,35 @@ async function loadTryCounts(
   }
 
   for (const event of (data ?? []) as MatchEventRow[]) {
+    eventMatchIds.add(event.match_id);
+    if (event.type !== "try") {
+      continue;
+    }
     const teamCounts = triesByMatchAndTeam.get(event.match_id) ?? new Map();
     teamCounts.set(event.team_id, (teamCounts.get(event.team_id) ?? 0) + 1);
     triesByMatchAndTeam.set(event.match_id, teamCounts);
   }
 
-  return triesByMatchAndTeam;
+  return { eventMatchIds, triesByMatchAndTeam };
 }
 
-function calculateRows(params: {
+export function ensureMatchEventsAvailable(
+  matches: MatchRow[],
+  eventMatchIds: Set<string>,
+) {
+  const missingMatch = matches.find((match) => !eventMatchIds.has(match.id));
+  if (missingMatch) {
+    throw new Error(`finished_match_events_missing: ${missingMatch.id}`);
+  }
+}
+
+export function calculateRows(params: {
+  competitionFamily: string | null;
   standings: Map<string, TeamStanding>;
   matches: MatchRow[];
   triesByMatchAndTeam: Map<string, Map<string, number>>;
 }) {
-  const { matches, standings, triesByMatchAndTeam } = params;
+  const { competitionFamily, matches, standings, triesByMatchAndTeam } = params;
 
   for (const match of matches) {
     if (match.home_score === null || match.away_score === null) {
@@ -256,12 +293,16 @@ function calculateRows(params: {
     const awayTries = tryCounts?.get(match.away_team_id) ?? 0;
 
     addMatchResult({
+      competitionFamily,
+      opponentTries: awayTries,
       pointsAgainst: match.away_score,
       pointsFor: match.home_score,
       standing: getStanding(standings, match.home_team_id),
       triesFor: homeTries,
     });
     addMatchResult({
+      competitionFamily,
+      opponentTries: homeTries,
       pointsAgainst: match.home_score,
       pointsFor: match.away_score,
       standing: getStanding(standings, match.away_team_id),
@@ -324,6 +365,55 @@ async function upsertRows(competitionId: string, rows: TeamStanding[]) {
   return { upserted: data?.length ?? 0 };
 }
 
+export async function calculateStandings(slug: string) {
+  const competition = await loadCompetition(slug);
+
+  if (!competition) {
+    throw new Error(`Competition not found: ${slug}`);
+  }
+
+  const standings = await loadCompetitionTeams(competition.id);
+  const matches = await loadFinishedMatches(competition.id);
+  const { eventMatchIds, triesByMatchAndTeam } = await loadTryCounts(
+    matches.map((match) => match.id),
+  );
+  ensureMatchEventsAvailable(matches, eventMatchIds);
+  const rows = calculateRows({
+    competitionFamily: competition.family,
+    matches,
+    standings,
+    triesByMatchAndTeam,
+  });
+  const result = await upsertRows(competition.id, rows);
+
+  return { competition, matches, result, rows };
+}
+
+export async function calculateLatestTop14Standings() {
+  const db = getSupabaseServerClient();
+  const { data, error } = await db
+    .from("competitions")
+    .select("slug")
+    .eq("family", "top-14")
+    .order("season", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+  if (!data) {
+    return { reason: "competition_not_found", status: "skipped" as const };
+  }
+
+  const calculation = await calculateStandings(data.slug);
+  return {
+    competitionSlug: calculation.competition.slug,
+    status: "updated" as const,
+    upserted: calculation.result.upserted,
+  };
+}
+
 async function main() {
   const { slug } = parseOptions(process.argv.slice(2));
 
@@ -334,26 +424,16 @@ async function main() {
     process.exit(1);
   }
 
-  const competition = await loadCompetition(slug);
-
-  if (!competition) {
-    throw new Error(`Competition not found: ${slug}`);
-  }
-
-  const standings = await loadCompetitionTeams(competition.id);
-  const matches = await loadFinishedMatches(competition.id);
-  const triesByMatchAndTeam = await loadTryCounts(
-    matches.map((match) => match.id),
-  );
-  const rows = calculateRows({ matches, standings, triesByMatchAndTeam });
-  const result = await upsertRows(competition.id, rows);
+  const { competition, matches, result, rows } = await calculateStandings(slug);
 
   console.log(
     `Calculated standings for ${competition.slug}: teams=${rows.length} finished_matches=${matches.length} upserted=${result.upserted}`,
   );
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (process.argv[1]?.endsWith("calculate-standings.ts")) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
