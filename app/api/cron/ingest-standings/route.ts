@@ -21,14 +21,16 @@ export async function POST(request: Request) {
       calculateLatestTop14Standings(),
     ]);
 
+    if (weeklyResult.status === "fulfilled" || top14Result.status === "fulfilled") {
+      revalidatePublicData(PUBLIC_DATA_CACHE_TAGS.standings);
+    }
+
     if (weeklyResult.status === "rejected") {
       throw weeklyResult.reason;
     }
     if (top14Result.status === "rejected") {
       throw top14Result.reason;
     }
-
-    revalidatePublicData(PUBLIC_DATA_CACHE_TAGS.standings);
 
     return NextResponse.json({
       duration_ms: Date.now() - startedAt,
