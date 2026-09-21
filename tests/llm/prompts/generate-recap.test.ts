@@ -56,8 +56,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.20.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.20.0");
+  it("uses recap prompt version 4.21.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.21.0");
   });
 
   it("does not disclose missing system data while allowing factual limits", () => {
@@ -251,8 +251,8 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain("# 試合全体像");
     expect(prompt).not.toContain("# 試合全体像（550-700字）");
     expect(prompt).not.toContain("試合全体像とスコア分析");
-    expect(prompt).toContain("# 大会文脈と順位への影響");
-    expect(prompt).not.toContain("# 大会文脈と順位への影響（450-550字）");
+    expect(prompt).toContain("# 大会文脈と現在の順位");
+    expect(prompt).not.toContain("# 大会文脈と現在の順位（450-550字）");
     expect(prompt).toContain("# 両チームの近況と戦術傾向");
     expect(prompt).not.toContain("# 両チームの近況と戦術傾向（550-700字）");
     expect(prompt).toContain("# 次戦への示唆");
@@ -271,14 +271,16 @@ describe("buildGenerateRecapPrompt", () => {
     );
     expect(prompt).toContain("【データスパースモード】");
     expect(prompt).toContain("recent_form の直近5試合");
-    expect(prompt).toContain("competition_standings の順位変動");
+    expect(prompt).toContain(
+      "competition_standings に記載がある場合は、現在の順位・勝ち点のみを記述すること",
+    );
     expect(prompt).toContain("h2h_last_5 の直近対戦スコア");
     expect(prompt).toContain("key_stats の直近平均得点・失点");
     expect(prompt).toContain("key_stats.match.penalty_count");
     expect(prompt).toContain("key_stats.match.try_count");
     expect(prompt).toContain("key_stats.match.late_scoring");
     expect(prompt).toContain(
-      "スコアと順位変動のみを記述し、試合展開の描写は行わないこと",
+      "スコアと、現在の順位表に記載がある場合の順位・勝ち点のみを記述し、試合展開の描写は行わないこと",
     );
     expect(prompt).not.toContain("ペナルティ累積");
     expect(prompt).not.toContain("接戦の終盤");
@@ -286,6 +288,47 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).toContain(
       "各セクションが指定字数の**下限**を下回ってはならない",
     );
+  });
+
+  it("does not request standings deltas in sparse or event-based recaps", () => {
+    const sparsePrompt = buildGenerateRecapPrompt(assembled, [], []);
+    const eventPrompt = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        match_events: [
+          {
+            type: "try",
+            minute: 23,
+            team_name: "England",
+            player_name: "Marcus Smith",
+          },
+        ],
+      },
+      [],
+      [],
+    );
+
+    for (const prompt of [sparsePrompt, eventPrompt]) {
+      expect(prompt).not.toMatch(
+        /順位変動|順位表への影響|上昇\/下降|試合前の順位/,
+      );
+      expect(prompt).toContain(
+        "過去時点の順位・勝ち点を推測・創作してはならない",
+      );
+    }
+  });
+
+  it("uses the same five current-standings section headings and targets", () => {
+    const prompt = buildGenerateRecapPrompt(assembled, [], []);
+
+    expect(prompt.match(/^# .*/gm)).toEqual([
+      "# この試合の核心",
+      "# 試合全体像",
+      "# 大会文脈と現在の順位",
+      "# 両チームの近況と戦術傾向",
+      "# 次戦への示唆",
+    ]);
+    expect(prompt).toContain("- 大会文脈と現在の順位: 450-550字");
   });
 
   it("omits the MOM selection section when events exist but lineup data is unavailable", () => {
@@ -364,7 +407,7 @@ describe("buildGenerateRecapPrompt", () => {
     );
 
     expect(prompt).toContain(
-      "大会内での位置づけ（大会名・シーズン・順位表への影響、分かる場合はラウンド名）（80字程度）",
+      "大会内での位置づけ（大会名・シーズン・現在の順位表に記載がある場合は順位・勝ち点、分かる場合はラウンド名）（80字程度）",
     );
     expect(prompt).not.toContain("プレーオフという文脈と一発勝負の重み");
     expect(prompt).not.toContain("敗者はそこでシーズン終了となる一発勝負");
@@ -389,7 +432,7 @@ describe("buildGenerateRecapPrompt", () => {
     );
 
     expect(prompt).toContain(
-      "大会内での位置づけ（大会名・シーズン・順位表への影響、分かる場合はラウンド名）（80字程度）",
+      "大会内での位置づけ（大会名・シーズン・現在の順位表に記載がある場合は順位・勝ち点、分かる場合はラウンド名）（80字程度）",
     );
     expect(prompt).not.toContain("プレーオフという文脈と一発勝負の重み");
     expect(prompt).not.toContain("この試合はプレーオフ戦");

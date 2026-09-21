@@ -21,7 +21,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.20.0";
+export const PROMPT_VERSION = "recap@4.21.0";
 
 const MISSING_DATA_DISCLOSURE_BLOCK = [
   "【本文でシステム内部のデータ不在を開示しない】読者に向けて「入力データ」「提供されたデータ」等のシステム内部を指す語を出してはならない。",
@@ -49,7 +49,7 @@ function buildMatchContextBullet(matchPhase: MatchPhase | null): string {
     return "- プレーオフという文脈と一発勝負の重み（80字程度）";
   }
 
-  return "- 大会内での位置づけ（大会名・シーズン・順位表への影響、分かる場合はラウンド名）（80字程度）";
+  return "- 大会内での位置づけ（大会名・シーズン・現在の順位表に記載がある場合は順位・勝ち点、分かる場合はラウンド名）（80字程度）";
 }
 
 export function buildGenerateRecapPrompt(
@@ -91,14 +91,14 @@ export function buildGenerateRecapPrompt(
           "出力するセクション（この順番・この見出し名のみ使用、変更・追加・省略は禁止）:",
           "# この試合の核心",
           "# 試合全体像",
-          "# 大会文脈と順位への影響",
+          "# 大会文脈と現在の順位",
           "# 両チームの近況と戦術傾向",
           "# 次戦への示唆",
           "",
           "各セクションの字数目標と内容指示:",
           CORE_SECTION_INSTRUCTION,
           "- 試合全体像: 550-700字",
-          "- 大会文脈と順位への影響: 450-550字",
+          "- 大会文脈と現在の順位: 450-550字",
           "- 両チームの近況と戦術傾向: 550-700字",
           "- 次戦への示唆: 350-450字",
           "",
@@ -162,7 +162,7 @@ export function buildGenerateRecapPrompt(
   const standingsBlock = buildStandingsBlock(
     assembled.competition_standings,
     "recap",
-  );
+  ).replace("この試合前時点", "この試合を終えた時点");
   const matchEventsBlock = !hasEvents
     ? ""
     : `スコアリングイベント（tryスコアラー・コンバージョン・ペナルティ・カード等）は以下のデータのみを根拠に記述すること:\n${JSON.stringify(assembled.match_events)}`;
@@ -240,9 +240,9 @@ export function buildGenerateRecapPrompt(
       ].join("\n");
   const dataSparseBlock = isDataSparse
     ? [
-        "【データスパースモード】スコアラー・ラインアップデータは存在しない。スコアと順位変動のみを記述し、試合展開の描写は行わないこと。",
+        "【データスパースモード】スコアラー・ラインアップデータは存在しない。スコアと、現在の順位表に記載がある場合の順位・勝ち点のみを記述し、試合展開の描写は行わないこと。",
         "- recent_form の直近5試合から連勝/連敗ストリーク・平均得失点の傾向（攻撃型 or 守備型か）・直近の勝ち方の特徴を読み取り本文に反映すること。冒頭は「得点力」で始めず、直近の試合展開・プレースタイルの特徴・今節の文脈から書き始めること",
-        "- competition_standings の順位変動（この試合結果による上昇/下降）を必ず計算して記述すること",
+        "- competition_standings に記載がある場合は、現在の順位・勝ち点のみを記述すること。記載がない場合は順位表に触れないこと",
         "- h2h_last_5 の直近対戦スコアを引用し、今回の結果との比較を行うこと",
         "- key_stats の直近平均得点・失点と今回のスコアを対比して試合の特徴を示すこと",
         "- key_stats.match.penalty_count の合計が 8 以上の場合、テリトリー・プレッシャー型の試合と評価すること",
@@ -338,7 +338,7 @@ export function buildGenerateRecapPrompt(
     matchPhaseBlock,
     "各セクションが指定字数の**下限**を下回ってはならない。下限未満なら具体的な事実・戦術分析・選手描写を追加して下限まで書き足すこと。「字数確認済み」などのメタコメントは出力禁止。",
     "事実は入力データと一致させること。直接引用は15語以内。",
-    "事実は試合データと sourced_facts に含まれるものだけを使用すること。入力にない統計・スコア・負傷・欠場・発言・選手名を推測・創作してはならない。",
+    "事実は試合データと sourced_facts に含まれるものだけを使用すること。入力にない統計・スコア・順位・勝ち点・負傷・欠場・発言・選手名を推測・創作してはならない。過去時点の順位・勝ち点を推測・創作してはならない。",
     playerNameInstruction,
     lineupUsageBlock,
     "出力は日本語マークダウン本文のみ。",
