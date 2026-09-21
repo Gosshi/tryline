@@ -27,6 +27,7 @@ describe("/api/cron/ingest-top14-match-events", () => {
     process.env.WIKIPEDIA_SQUAD_URL = "https://example.invalid";
     backfillMock.runTop14LnrMatchEventBackfill.mockResolvedValue({
       eventsInserted: 13,
+      failedMatches: [],
       targetMatches: 1,
     });
   });
@@ -57,12 +58,44 @@ describe("/api/cron/ingest-top14-match-events", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       eventsInserted: 13,
+      failedMatches: [],
       targetMatches: 1,
     });
     expect(backfillMock.runTop14LnrMatchEventBackfill).toHaveBeenCalledWith(
       { dryRun: false, limit: 7 },
       expect.anything(),
     );
+  });
+
+  it("returns failed match details after the backfill completes", async () => {
+    backfillMock.runTop14LnrMatchEventBackfill.mockResolvedValue({
+      eventsInserted: 11,
+      failedMatches: [
+        {
+          label: "Home v Away",
+          matchId: "match-2",
+          reason: "LNR game facts unavailable",
+        },
+      ],
+      targetMatches: 3,
+    });
+    const { POST } =
+      await import("@/app/api/cron/ingest-top14-match-events/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/cron/ingest-top14-match-events", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "ingestion_failed",
+      eventsInserted: 11,
+      failedMatches: [expect.objectContaining({ matchId: "match-2" })],
+      targetMatches: 3,
+    });
   });
 
   it("returns the safe ingestion failure detail to the authorized caller", async () => {

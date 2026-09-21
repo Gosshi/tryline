@@ -69,6 +69,9 @@ function eventType(fact: GameFact): ParsedPlayerMatchEvent["type"] {
   if (fact.type === "Point" && fact.slugSubType === "penalite") {
     return "penalty_goal";
   }
+  if (fact.type === "Point" && fact.slugSubType === "drop") {
+    return "drop_goal";
+  }
   if (fact.type === "Exclusion joueur" && fact.slugSubType === "jaune") {
     return "yellow_card";
   }
@@ -108,8 +111,15 @@ function scoreEventsForIncrement(params: {
   });
   const isFactTeam = scoreSide === teamSide(fact);
   const isPenaltyTry = isFactTeam && isPenaltyTryFact(fact);
+  const isDropGoal = isFactTeam && factType === "drop_goal";
 
   if (isPenaltyTry && increment !== 7) {
+    throw new Error(
+      `Unexpected Top 14 score increment: ${increment} for ${scoreSide} at minute ${fact.minute ?? "unknown"}`,
+    );
+  }
+
+  if (isDropGoal && increment !== 3) {
     throw new Error(
       `Unexpected Top 14 score increment: ${increment} for ${scoreSide} at minute ${fact.minute ?? "unknown"}`,
     );
@@ -124,8 +134,10 @@ function scoreEventsForIncrement(params: {
   if (increment === 3) {
     return [
       event(
-        "penalty_goal",
-        isFactTeam && factType === "penalty_goal" ? playerName(fact) : "",
+        isDropGoal ? "drop_goal" : "penalty_goal",
+        isFactTeam && (factType === "penalty_goal" || factType === "drop_goal")
+          ? playerName(fact)
+          : "",
       ),
     ];
   }

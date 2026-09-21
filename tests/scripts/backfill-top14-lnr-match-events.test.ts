@@ -12,8 +12,20 @@ import type { ParsedPlayerMatchEvent } from "@/lib/scrapers/wikipedia-match-even
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const events: ParsedPlayerMatchEvent[] = [
-  { isPenaltyTry: false, minute: 12, playerName: "A", teamSide: "home", type: "try" },
-  { isPenaltyTry: false, minute: 12, playerName: "", teamSide: "home", type: "conversion" },
+  {
+    isPenaltyTry: false,
+    minute: 12,
+    playerName: "A",
+    teamSide: "home",
+    type: "try",
+  },
+  {
+    isPenaltyTry: false,
+    minute: 12,
+    playerName: "",
+    teamSide: "home",
+    type: "conversion",
+  },
 ];
 
 function createMockDb({
@@ -70,8 +82,14 @@ function match(id: string) {
 
 describe("backfill-top14-lnr-match-events", () => {
   it("parses the bounded limit and dry-run options", () => {
-    expect(parseOptions(["--limit=3", "--dry-run"])).toEqual({ dryRun: true, limit: 3 });
-    expect(parseOptions([])).toEqual({ dryRun: false, limit: MAX_TOP14_LNR_MATCHES_PER_RUN });
+    expect(parseOptions(["--limit=3", "--dry-run"])).toEqual({
+      dryRun: true,
+      limit: 3,
+    });
+    expect(parseOptions([])).toEqual({
+      dryRun: false,
+      limit: MAX_TOP14_LNR_MATCHES_PER_RUN,
+    });
     expect(() => parseOptions(["--limit=8"])).toThrow(/between 1 and 7/);
   });
 
@@ -85,12 +103,17 @@ describe("backfill-top14-lnr-match-events", () => {
     const logger = { log: vi.fn(), warn: vi.fn() };
 
     await expect(
-      runTop14LnrMatchEventBackfill(
-        { dryRun: true, limit: 7 },
-        db,
-        { fetchEvents, logger, sleep, upsertEvents },
-      ),
-    ).resolves.toEqual({ eventsInserted: 0, targetMatches: 2 });
+      runTop14LnrMatchEventBackfill({ dryRun: true, limit: 7 }, db, {
+        fetchEvents,
+        logger,
+        sleep,
+        upsertEvents,
+      }),
+    ).resolves.toEqual({
+      eventsInserted: 0,
+      failedMatches: [],
+      targetMatches: 2,
+    });
 
     expect(matchesQuery.limit).not.toHaveBeenCalledWith(
       MAX_TOP14_LNR_MATCHES_PER_RUN,
@@ -103,27 +126,42 @@ describe("backfill-top14-lnr-match-events", () => {
     expect(sleep).toHaveBeenCalledTimes(1);
     expect(sleep).toHaveBeenCalledWith(TOP14_LNR_MATCH_DELAY_MS);
     expect(logger.log).toHaveBeenCalledWith(
-      expect.stringContaining("Target finished Top 14 matches without events: 2"),
+      expect.stringContaining(
+        "Target finished Top 14 matches without events: 2",
+      ),
     );
-    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining("[dry-run] match-1"));
+    expect(logger.log).toHaveBeenCalledWith(
+      expect.stringContaining("[dry-run] match-1"),
+    );
   });
 
-  it("stops and reports an insertion rejection", async () => {
+  it("reports an insertion rejection as a failed match", async () => {
     const { db } = createMockDb({ matches: [match("match-1")] });
     const logger = { log: vi.fn(), warn: vi.fn() };
     const upsertEvents = vi.fn().mockResolvedValue({
       inserted: 0,
-      rejected: [{ detail: "expected=7-0; actual=0-0", reason: "score_mismatch" }],
+      rejected: [
+        { detail: "expected=7-0; actual=0-0", reason: "score_mismatch" },
+      ],
       warnings: [],
     });
 
     await expect(
-      runTop14LnrMatchEventBackfill(
-        { dryRun: false, limit: 1 },
-        db,
-        { fetchEvents: async () => events, logger, upsertEvents },
-      ),
-    ).rejects.toThrow(/score_mismatch/);
+      runTop14LnrMatchEventBackfill({ dryRun: false, limit: 1 }, db, {
+        fetchEvents: async () => events,
+        logger,
+        upsertEvents,
+      }),
+    ).resolves.toMatchObject({
+      eventsInserted: 0,
+      failedMatches: [
+        expect.objectContaining({
+          matchId: "match-1",
+          reason: expect.stringContaining("score_mismatch"),
+        }),
+      ],
+      targetMatches: 1,
+    });
     expect(logger.warn).toHaveBeenCalledWith(
       "Top 14 event insertion rejected",
       expect.objectContaining({ matchId: "match-1" }),
@@ -139,12 +177,15 @@ describe("backfill-top14-lnr-match-events", () => {
     const logger = { log: vi.fn(), warn: vi.fn() };
 
     await expect(
-      runTop14LnrMatchEventBackfill(
-        { dryRun: true, limit: 7 },
-        db,
-        { fetchEvents, logger },
-      ),
-    ).resolves.toEqual({ eventsInserted: 0, targetMatches: 1 });
+      runTop14LnrMatchEventBackfill({ dryRun: true, limit: 7 }, db, {
+        fetchEvents,
+        logger,
+      }),
+    ).resolves.toEqual({
+      eventsInserted: 0,
+      failedMatches: [],
+      targetMatches: 1,
+    });
 
     expect(fetchEvents).toHaveBeenCalledWith("/feuille-de-match/match-3");
     expect(eventsQuery.in).toHaveBeenCalledWith("match_id", [
@@ -166,12 +207,16 @@ describe("backfill-top14-lnr-match-events", () => {
     const sleep = vi.fn().mockResolvedValue(undefined);
 
     await expect(
-      runTop14LnrMatchEventBackfill(
-        { dryRun: true, limit: 7 },
-        db,
-        { fetchEvents: async () => events, logger, sleep },
-      ),
-    ).resolves.toEqual({ eventsInserted: 0, targetMatches: 2 });
+      runTop14LnrMatchEventBackfill({ dryRun: true, limit: 7 }, db, {
+        fetchEvents: async () => events,
+        logger,
+        sleep,
+      }),
+    ).resolves.toEqual({
+      eventsInserted: 0,
+      failedMatches: [],
+      targetMatches: 2,
+    });
   });
 
   it("fills the requested limit after skipping existing events at the front of the candidate list", async () => {
@@ -186,11 +231,96 @@ describe("backfill-top14-lnr-match-events", () => {
     const sleep = vi.fn().mockResolvedValue(undefined);
 
     await expect(
-      runTop14LnrMatchEventBackfill(
-        { dryRun: true, limit: 7 },
-        db,
-        { fetchEvents: async () => events, logger, sleep },
-      ),
-    ).resolves.toEqual({ eventsInserted: 0, targetMatches: 7 });
+      runTop14LnrMatchEventBackfill({ dryRun: true, limit: 7 }, db, {
+        fetchEvents: async () => events,
+        logger,
+        sleep,
+      }),
+    ).resolves.toEqual({
+      eventsInserted: 0,
+      failedMatches: [],
+      targetMatches: 7,
+    });
+  });
+
+  it("continues after one match fetch fails and reports that match", async () => {
+    const { db } = createMockDb({
+      matches: [match("match-1"), match("match-2"), match("match-3")],
+    });
+    const fetchEvents = vi.fn(async (matchPath: string) => {
+      if (matchPath.endsWith("match-2")) {
+        throw new Error("LNR game facts unavailable");
+      }
+      return events;
+    });
+    const upsertEvents = vi.fn().mockResolvedValue({
+      inserted: 2,
+      rejected: [],
+      warnings: [],
+    });
+    const sleep = vi.fn().mockResolvedValue(undefined);
+    const logger = { log: vi.fn(), warn: vi.fn() };
+
+    await expect(
+      runTop14LnrMatchEventBackfill({ dryRun: false, limit: 7 }, db, {
+        fetchEvents,
+        logger,
+        sleep,
+        upsertEvents,
+      }),
+    ).resolves.toEqual({
+      eventsInserted: 4,
+      failedMatches: [
+        {
+          label: "Home v Away",
+          matchId: "match-2",
+          reason: "LNR game facts unavailable",
+        },
+      ],
+      targetMatches: 3,
+    });
+
+    expect(fetchEvents).toHaveBeenCalledTimes(3);
+    expect(upsertEvents).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledWith(TOP14_LNR_MATCH_DELAY_MS);
+  });
+
+  it("continues after a score-total mismatch and reports that match", async () => {
+    const failedMatch = match("match-2");
+    failedMatch.home_score = 8;
+    const { db } = createMockDb({
+      matches: [match("match-1"), failedMatch, match("match-3")],
+    });
+    const fetchEvents = vi.fn().mockResolvedValue(events);
+    const upsertEvents = vi.fn().mockResolvedValue({
+      inserted: 2,
+      rejected: [],
+      warnings: [],
+    });
+    const sleep = vi.fn().mockResolvedValue(undefined);
+    const logger = { log: vi.fn(), warn: vi.fn() };
+
+    await expect(
+      runTop14LnrMatchEventBackfill({ dryRun: false, limit: 7 }, db, {
+        fetchEvents,
+        logger,
+        sleep,
+        upsertEvents,
+      }),
+    ).resolves.toMatchObject({
+      eventsInserted: 4,
+      failedMatches: [
+        expect.objectContaining({
+          matchId: "match-2",
+          reason: expect.stringContaining("event totals mismatch"),
+        }),
+      ],
+      targetMatches: 3,
+    });
+
+    expect(fetchEvents).toHaveBeenCalledTimes(3);
+    expect(upsertEvents).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(2);
   });
 });

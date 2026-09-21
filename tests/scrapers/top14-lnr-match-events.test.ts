@@ -13,6 +13,7 @@ import castresVannesFacts from "@/tests/fixtures/top14-lnr-11821-castres-vannes.
 import perpignanCastresFacts from "@/tests/fixtures/top14-lnr-11826-perpignan-castres.json";
 import clermontParisFacts from "@/tests/fixtures/top14-lnr-11828-clermont-paris.json";
 import toulouseBordeauxFacts from "@/tests/fixtures/top14-lnr-11832-toulouse-bordeaux.json";
+import vannesToulouseFacts from "@/tests/fixtures/top14-lnr-11835-vannes-toulouse.json";
 
 function fixtureHtml(facts: unknown) {
   return `<header-timeline :game-facts='${JSON.stringify(facts)}'></header-timeline>`;
@@ -250,6 +251,57 @@ describe("Top 14 LNR match events", () => {
   it("rejects a try whose score increment is not five or seven", () => {
     const invalid = structuredClone(toulouseBordeauxFacts);
     invalid[0]!.score = [6, 0];
+
+    expect(() => parseTop14LnrGameFactsHtml(fixtureHtml(invalid))).toThrow(
+      /Unexpected Top 14 score increment/,
+    );
+  });
+
+  it("parses the real Vannes–Toulouse drop goal without treating it as a penalty", () => {
+    const events = parseTop14LnrGameFactsHtml(fixtureHtml(vannesToulouseFacts));
+    const dropGoals = events.filter((event) => event.type === "drop_goal");
+
+    expect(dropGoals).toEqual([
+      expect.objectContaining({
+        minute: 21,
+        playerName: "Anthony BOUTHIER",
+        teamSide: "home",
+      }),
+    ]);
+    expect(
+      events.filter(
+        (event) => event.minute === 21 && event.type === "penalty_goal",
+      ),
+    ).toHaveLength(0);
+    expect(events.filter((event) => event.type === "try")).toHaveLength(6);
+    expect(events.filter((event) => event.type === "conversion")).toHaveLength(
+      5,
+    );
+    expect(
+      events.filter((event) => event.type === "penalty_goal"),
+    ).toHaveLength(3);
+    expect(events.filter((event) => event.type === "yellow_card")).toHaveLength(
+      2,
+    );
+    expect(computeParsedMatchEventPointTotals(events)).toEqual({
+      away: 29,
+      home: 23,
+    });
+    expect(
+      eventTotalsMatchFinalScore(computeParsedMatchEventPointTotals(events), {
+        away_score: 29,
+        home_score: 23,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects a drop goal whose own score increment is not three", () => {
+    const invalid = structuredClone(vannesToulouseFacts);
+    const dropGoalFact = invalid.find((fact) => fact.slugSubType === "drop");
+
+    if (!dropGoalFact) throw new Error("Drop-goal fixture is missing");
+
+    dropGoalFact.score = [15, 0];
 
     expect(() => parseTop14LnrGameFactsHtml(fixtureHtml(invalid))).toThrow(
       /Unexpected Top 14 score increment/,

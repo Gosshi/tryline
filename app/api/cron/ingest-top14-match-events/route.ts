@@ -18,6 +18,13 @@ export async function POST(request: Request) {
       getSupabaseServerClient(),
     );
 
+    if (result.failedMatches.length > 0) {
+      return NextResponse.json(
+        { error: "ingestion_failed", ...result },
+        { status: 500 },
+      );
+    }
+
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof CronUnauthorizedError) {
