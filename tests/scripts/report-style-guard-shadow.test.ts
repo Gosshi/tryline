@@ -9,22 +9,28 @@ import {
 import type { Database } from "@/lib/db/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-function createMockDb() {
+function createMockDb(
+  rows = [
+    {
+      content_md: "定型句を含む文章です。ことが浮き彫りになった。",
+      content_type: "recap",
+      id: "content-1",
+      qa_scores: { scores: { japanese_quality: 3 } },
+    },
+  ],
+) {
+  const state: { from: number; to: number } = { from: 0, to: 999 };
   const builder = {
     eq: vi.fn().mockReturnThis(),
     in: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue({
-      data: [
-        {
-          content_md: "定型句を含む文章です。ことが浮き彫りになった。",
-          content_type: "recap",
-          id: "content-1",
-          qa_scores: { scores: { japanese_quality: 3 } },
-        },
-      ],
-      error: null,
-    }),
+    limit: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
+    range: vi.fn((from: number, to: number) => {
+      state.from = from;
+      state.to = to;
+
+      return Promise.resolve({ data: rows.slice(from, to + 1), error: null });
+    }),
     select: vi.fn().mockReturnThis(),
   };
 
@@ -65,5 +71,18 @@ describe("report-style-guard-shadow", () => {
     const report = await runStyleGuardShadowReport(createMockDb(), 50);
 
     expect(report).toMatchObject({ retryEquivalentCount: 1, total: 1 });
+  });
+
+  it("loads every row beyond PostgREST's 1000-row default cap", async () => {
+    const rows = Array.from({ length: 1_001 }, (_, index) => ({
+      content_md: `記事 ${index}`,
+      content_type: "recap",
+      id: `content-${index}`,
+      qa_scores: { scores: { japanese_quality: 4 } },
+    }));
+
+    const report = await runStyleGuardShadowReport(createMockDb(rows));
+
+    expect(report.total).toBe(1_001);
   });
 });

@@ -197,9 +197,12 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
         contentBuilder.state.contentType === "preview"
           ? (fixture.existingPreviewIds ?? [])
           : (fixture.existingRecapIds ?? []);
+      const matchingIds = contentBuilder.state.matchIds
+        ? existingIds.filter((id) => contentBuilder.state.matchIds?.includes(id))
+        : existingIds.slice(0, 1_000);
       return Promise.resolve(
         resolve({
-          data: existingIds.map((match_id) => ({ match_id })),
+          data: matchingIds.map((match_id) => ({ match_id })),
           error: null,
         }),
       );
@@ -501,6 +504,26 @@ describe("runOrchestrate", () => {
     expect(ingestLineups).not.toHaveBeenCalled();
     expect(generateContent).not.toHaveBeenCalledWith("scheduled-1", "preview");
     expect(result.previews).toEqual({ triggered: 0, skipped: 1 });
+  });
+
+  it("excludes existing content beyond PostgREST's unfiltered 1000-row cap", async () => {
+    const ids = Array.from({ length: 1_001 }, (_, index) => `match-${index}`);
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+
+    const result = await runOrchestrate({
+      db: createMockDb({
+        existingPreviewIds: ids,
+        finishedIds: [],
+        scheduledIds: ids,
+      }),
+      generateContent,
+      getCurrentTime: () => 0,
+      ingestLineups: vi.fn().mockResolvedValue("triggered"),
+      now,
+    });
+
+    expect(generateContent).not.toHaveBeenCalledWith("match-1000", "preview");
+    expect(result.previews).toEqual({ skipped: 1_001, triggered: 0 });
   });
 
   it("generates English preview after Japanese preview for League One only", async () => {

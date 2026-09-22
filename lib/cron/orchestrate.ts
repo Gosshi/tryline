@@ -1,3 +1,5 @@
+import { chunkArray } from "@/lib/db/pagination";
+
 import {
   previewCandidateUpperBound,
   recapCandidateUpperBound,
@@ -12,6 +14,7 @@ const ORCHESTRATE_TIME_BUDGET_MS = 210_000;
 const PREVIEW_CONCURRENCY = 3;
 const RECAP_BATCH_SIZE = 10;
 const RECAP_EVENT_LOOKUP_CANDIDATES = 60;
+const MATCH_CONTENT_MATCH_ID_CHUNK_SIZE = 500;
 
 type LineupIngestOutcome = "triggered" | "no_url";
 
@@ -153,18 +156,28 @@ async function getMatchIdsMissingContent(params: {
     };
   }
 
-  const { data: existingContent, error: contentError } = await params.db
-    .from("match_content")
-    .select("match_id")
-    .eq("content_type", params.contentType)
-    .eq("language", "ja")
-    .in("status", [...EXISTING_CONTENT_STATUSES]);
+  const existingIds = new Set<string>();
 
-  if (contentError) {
-    throw contentError;
+  for (const matchIdChunk of chunkArray(
+    allMatchIds,
+    MATCH_CONTENT_MATCH_ID_CHUNK_SIZE,
+  )) {
+    const { data: existingContent, error: contentError } = await params.db
+      .from("match_content")
+      .select("match_id")
+      .eq("content_type", params.contentType)
+      .eq("language", "ja")
+      .in("status", [...EXISTING_CONTENT_STATUSES])
+      .in("match_id", matchIdChunk);
+
+    if (contentError) {
+      throw contentError;
+    }
+
+    for (const row of existingContent) {
+      existingIds.add(row.match_id);
+    }
   }
-
-  const existingIds = new Set(existingContent.map((row) => row.match_id));
   const eligibleMatches = allMatches.filter(
     (match) => !existingIds.has(match.id),
   );
