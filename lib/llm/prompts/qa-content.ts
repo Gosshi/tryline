@@ -23,6 +23,7 @@ export type QaMatchContext = {
   awayScore: number | null;
   awayTeam: string;
   competitionName?: string | null;
+  competitionStandings?: AssembledContentInput["competition_standings"];
   derivedStats?: DerivedMatchStats | null;
   formStats?: {
     away: TeamFormStats | null;
@@ -57,7 +58,7 @@ export function getRecapSourcedFactCoverage(
 }
 
 const QA_GENERATION_FIELD_DISPOSITIONS = {
-  competition_standings: "out_of_scope",
+  competition_standings: "grounded",
   derived_stats: "grounded",
   h2h_last_5: "out_of_scope",
   injuries: "not_used_for_factual_grounding",
@@ -86,6 +87,7 @@ type QaGroundedAssembledField = NonNullable<
 >;
 
 export const QA_GROUNDING_CONTEXT_FIELDS = {
+  competition_standings: ["competitionStandings"],
   derived_stats: ["derivedStats"],
   japanese_name_glossary: ["japanese_name_glossary"],
   key_stats: ["formStats"],
@@ -342,6 +344,16 @@ export function buildQaContentPrompt(
         "以下は得点イベントから機械的に算出された実数値です。本文がこれらの数値（連続得点・コンバージョン成否・シンビン中の失点等）に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
         JSON.stringify(matchContext.derivedStats),
       ].join("\n");
+  const competitionStandingsBlock =
+    !matchContext.competitionStandings ||
+    matchContext.competitionStandings.length === 0
+      ? ""
+      : [
+          "## competition_standings grounding",
+          "以下はこの試合時点をカバーする大会順位表です。本文が順位・勝点・勝敗・得失点・トライ数に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+          "ただし、この一覧に無い順位・勝点・成績、またはこの一覧と異なる数値を本文が述べている場合は factual_grounding を下げること。",
+          JSON.stringify(matchContext.competitionStandings),
+        ].join("\n");
   const teamStatsBlock = !matchContext.teamStats
     ? ""
     : [
@@ -468,6 +480,7 @@ export function buildQaContentPrompt(
     sourcedFactsBlock,
     sourcedFactsDensityBlock,
     recapSourcedFactsCoverageBlock,
+    competitionStandingsBlock,
     derivedStatsBlock,
     teamStatsBlock,
     matchMetadataBlock,

@@ -27,6 +27,7 @@ import {
   notifyEventIntegrityMismatch,
 } from "@/lib/llm/notify";
 import { calculateCostUsd } from "@/lib/llm/pricing";
+import { hasCurrentStandings } from "@/lib/llm/prompts/shared-prompt-blocks";
 import { assembleMatchContentInput } from "@/lib/llm/stages/assemble";
 import { extractTacticalPoints } from "@/lib/llm/stages/extract-facts";
 import {
@@ -330,6 +331,10 @@ export async function generateMatchContent(
           awayScore: assembled.match.away_score,
           awayTeam: assembled.match.away_team?.name ?? "Away",
           competitionName: assembled.match.competition?.name ?? null,
+          ...(hasCurrentStandings(assembled.standings_freshness) &&
+          assembled.competition_standings.length > 0
+            ? { competitionStandings: assembled.competition_standings }
+            : {}),
           derivedStats: assembled.derived_stats,
           formStats: {
             away: {
