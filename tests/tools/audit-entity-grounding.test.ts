@@ -77,10 +77,12 @@ function createMockDb(contentRows: ContentFixture[]): SupabaseClient<Database> {
   const state: {
     contentType: string[] | null;
     limit: number | null;
+    range: { from: number; to: number } | null;
     status: string | null;
   } = {
     contentType: null,
     limit: null,
+    range: null,
     status: null,
   };
   const forbiddenWrite = vi.fn(() => {
@@ -112,6 +114,11 @@ function createMockDb(contentRows: ContentFixture[]): SupabaseClient<Database> {
       return contentBuilder;
     }),
     order: vi.fn().mockReturnThis(),
+    range: vi.fn((from: number, to: number) => {
+      state.range = { from, to };
+
+      return contentBuilder;
+    }),
     select: vi.fn().mockReturnThis(),
     then: (
       resolve: (value: {
@@ -133,7 +140,10 @@ function createMockDb(contentRows: ContentFixture[]): SupabaseClient<Database> {
             state.contentType === null ||
             state.contentType.includes(row.contentType),
         )
-        .slice(0, state.limit ?? undefined)
+        .slice(
+          state.range?.from ?? 0,
+          state.range ? state.range.to + 1 : (state.limit ?? 1_000),
+        )
         .map((row) => ({
           content_md: row.contentMd,
           content_type: row.contentType,
@@ -229,6 +239,24 @@ describe("audit-entity-grounding", () => {
     });
     expect(assemble).not.toHaveBeenCalled();
     expect(verify).not.toHaveBeenCalled();
+  });
+
+  it("loads every published row beyond the default 1000-row cap", async () => {
+    const rows = Array.from({ length: 1_001 }, (_, index) => ({
+      contentId: `content-${index}`,
+      contentMd: "監査対象です。",
+      contentType: "recap" as const,
+      matchId: `match-${index}`,
+    }));
+    const result = await runEntityGroundingAudit({
+      assemble: vi.fn(),
+      db: createMockDb(rows),
+      logger: console,
+      options: parseArgs([]),
+      verify: vi.fn(),
+    });
+
+    expect(result.targetRows).toBe(1_001);
   });
 
   it("filters by content type and limit, then writes JSON report", async () => {

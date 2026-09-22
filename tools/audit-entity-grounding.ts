@@ -15,6 +15,7 @@ import {
   buildAllowedPersonEntities,
   buildKnownNonPersonNames,
 } from "@/lib/content/allowed-entities";
+import { loadAllPages } from "@/lib/db/pagination";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { assembleMatchContentInput } from "@/lib/llm/stages/assemble";
 import { verifyNarrativeEntities } from "@/lib/llm/stages/verify-entities";
@@ -256,29 +257,24 @@ async function loadPublishedContentRows(
   db: SupabaseClient<Database>,
   options: Pick<CliOptions, "contentType" | "limit">,
 ) {
-  let query = db
-    .from("match_content")
-    .select("id, match_id, content_type, content_md, language, generated_at")
-    .eq("status", "published")
-    .order("generated_at", { ascending: true });
+  return loadAllPages({
+    loadPage: async (from, to) => {
+      let query = db
+        .from("match_content")
+        .select("id, match_id, content_type, content_md, language, generated_at")
+        .eq("status", "published")
+        .order("generated_at", { ascending: true });
 
-  if (options.contentType) {
-    query = query.eq("content_type", options.contentType);
-  } else {
-    query = query.in("content_type", ["preview", "recap"]);
-  }
+      if (options.contentType) {
+        query = query.eq("content_type", options.contentType);
+      } else {
+        query = query.in("content_type", ["preview", "recap"]);
+      }
 
-  if (options.limit !== null) {
-    query = query.limit(options.limit);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  return (data ?? []) as unknown as PublishedContentRow[];
+      return query.range(from, to);
+    },
+    maxRows: options.limit ?? undefined,
+  }) as Promise<PublishedContentRow[]>;
 }
 
 function toAuditTarget(row: PublishedContentRow): AuditTarget {

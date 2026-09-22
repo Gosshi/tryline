@@ -1,3 +1,4 @@
+import { loadAllPages } from "@/lib/db/pagination";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import {
   evaluateStyleGuardShadow,
@@ -15,6 +16,13 @@ type BatchArticle = {
   contentType: "preview" | "recap";
   id: string;
   japaneseQuality: number;
+};
+
+type StyleGuardContentRow = {
+  content_md: string;
+  content_type: string;
+  id: string;
+  qa_scores: Json;
 };
 
 export type StyleGuardShadowReport = {
@@ -81,23 +89,25 @@ export function createStyleGuardShadowReport(
 
 export async function runStyleGuardShadowReport(
   db: SupabaseClient<Database>,
-  limit = 100,
+  limit: number | null = null,
 ) {
-  const { data, error } = await db
-    .from("match_content")
-    .select("id, content_type, content_md, qa_scores")
-    .eq("status", "published")
-    .eq("language", "ja")
-    .in("content_type", ["preview", "recap"])
-    .order("generated_at", { ascending: false })
-    .limit(limit);
+  const data = await loadAllPages<StyleGuardContentRow>({
+    loadPage: (from, to) => {
+      let query = db
+        .from("match_content")
+        .select("id, content_type, content_md, qa_scores")
+        .eq("status", "published")
+        .eq("language", "ja")
+        .in("content_type", ["preview", "recap"])
+        .order("generated_at", { ascending: false });
 
-  if (error) {
-    throw error;
-  }
+      return query.range(from, to);
+    },
+    maxRows: limit ?? undefined,
+  });
 
   return createStyleGuardShadowReport(
-    (data ?? []).map((article) => ({
+    data.map((article) => ({
       contentMd: article.content_md,
       contentType: article.content_type as "preview" | "recap",
       id: article.id,
