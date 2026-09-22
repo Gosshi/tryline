@@ -518,6 +518,85 @@ describe("generateMatchContent length revision", () => {
     ).toBe(assembledWithForm.score_timeline);
   });
 
+  it("passes current standings to QA and excludes stale standings", async () => {
+    const currentStandings = [
+      {
+        bonus_points_losing: 0,
+        bonus_points_try: 1,
+        drawn: 0,
+        lost: 0,
+        played: 3,
+        points_against: 30,
+        points_for: 80,
+        position: 1,
+        team_name: "Montpellier",
+        total_points: 13,
+        tries_for: 14,
+        won: 3,
+      },
+    ];
+    assembleMock.assembleMatchContentInput.mockResolvedValue({
+      ...assembled,
+      competition_standings: currentStandings,
+      standings_freshness: {
+        away: { expected_played: 3, played: 3 },
+        home: { expected_played: 3, played: 3 },
+      },
+    });
+
+    await generateMatchContent("match-1", "recap", "ja");
+
+    expect(
+      qaMock.evaluateNarrativeQuality.mock.calls[0]?.[0].matchContext
+        .competitionStandings,
+    ).toEqual(currentStandings);
+  });
+
+  it.each([
+    [
+      "played is behind",
+      {
+        away: { expected_played: 3, played: 2 },
+        home: { expected_played: 3, played: 3 },
+      },
+    ],
+    [
+      "a team played value is missing",
+      {
+        away: { expected_played: 3, played: null },
+        home: { expected_played: 3, played: 3 },
+      },
+    ],
+  ])("does not pass standings to QA when %s", async (_reason, freshness) => {
+    assembleMock.assembleMatchContentInput.mockResolvedValue({
+      ...assembled,
+      competition_standings: [
+        {
+          bonus_points_losing: 0,
+          bonus_points_try: 1,
+          drawn: 0,
+          lost: 0,
+          played: 3,
+          points_against: 30,
+          points_for: 80,
+          position: 1,
+          team_name: "Montpellier",
+          total_points: 13,
+          tries_for: 14,
+          won: 3,
+        },
+      ],
+      standings_freshness: freshness,
+    });
+
+    await generateMatchContent("match-1", "recap", "ja");
+
+    expect(
+      qaMock.evaluateNarrativeQuality.mock.calls[0]?.[0].matchContext
+        .competitionStandings,
+    ).toBeUndefined();
+  });
+
   it("blocks publishing when entity verification finds ungrounded names", async () => {
     verifyEntitiesMock.verifyNarrativeEntities.mockResolvedValue({
       attempts: 1,

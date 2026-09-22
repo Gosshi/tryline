@@ -9,6 +9,7 @@ import {
   PROMPT_VERSION,
   type QaMatchContext,
 } from "@/lib/llm/prompts/qa-content";
+import standingsFixture from "@/tests/fixtures/competition-standings-current.json";
 
 import type { SourcedFactInput } from "@/lib/llm/types";
 
@@ -34,6 +35,21 @@ const matchContext: QaMatchContext = {
 };
 
 describe("buildQaContentPrompt", () => {
+  it("grounds current competition standings but excludes stale or incomplete standings", () => {
+    const current = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      competitionStandings: standingsFixture,
+    });
+    const stale = buildQaContentPrompt("recap", "本文", "ja", {
+      ...matchContext,
+      competitionStandings: [],
+    });
+
+    expect(current).toContain("## competition_standings grounding");
+    expect(current).toContain('"tries_for":18');
+    expect(stale).not.toContain("## competition_standings grounding");
+  });
+
   it("uses qa prompt version 2.11.0", () => {
     expect(PROMPT_VERSION).toBe("qa@2.11.0");
   });

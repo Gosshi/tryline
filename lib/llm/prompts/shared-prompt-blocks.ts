@@ -60,22 +60,29 @@ export function buildSignalsBlock(signals: AdditionalSignal[]): string {
     : `外部シグナル(距離を取った帰属表現で利用): ${JSON.stringify(signals)}`;
 }
 
-export function buildStandingsBlock(
-  standings: unknown[],
-  contentType: "preview" | "recap",
-  freshness?: {
-    home: { expected_played: number; played: number | null };
-    away: { expected_played: number; played: number | null };
-  },
-): string {
-  const isCurrent =
+export type StandingsFreshness = {
+  home: { expected_played: number; played: number | null };
+  away: { expected_played: number; played: number | null };
+};
+
+export function hasCurrentStandings(
+  freshness: StandingsFreshness | undefined,
+): boolean {
+  return (
     !freshness ||
     (freshness.home.played !== null &&
       freshness.away.played !== null &&
       freshness.home.played >= freshness.home.expected_played &&
-      freshness.away.played >= freshness.away.expected_played);
+      freshness.away.played >= freshness.away.expected_played)
+  );
+}
 
-  return standings.length === 0 || !isCurrent
+export function buildStandingsBlock(
+  standings: unknown[],
+  contentType: "preview" | "recap",
+  freshness?: StandingsFreshness,
+): string {
+  return standings.length === 0 || !hasCurrentStandings(freshness)
     ? ""
     : [
         `最新の大会順位表: ${JSON.stringify(standings)}`,
