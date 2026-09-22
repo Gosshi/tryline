@@ -351,6 +351,7 @@ export function buildQaContentPrompt(
       : [
           "## competition_standings grounding",
           "以下はこの試合時点をカバーする大会順位表です。本文が順位・勝点・勝敗・得失点・トライ数に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+          "ただし、この一覧に無い順位・勝点・成績、またはこの一覧と異なる数値を本文が述べている場合は factual_grounding を下げること。",
           JSON.stringify(matchContext.competitionStandings),
         ].join("\n");
   const teamStatsBlock = !matchContext.teamStats

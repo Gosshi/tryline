@@ -47,6 +47,9 @@ describe("buildQaContentPrompt", () => {
 
     expect(current).toContain("## competition_standings grounding");
     expect(current).toContain('"tries_for":18');
+    expect(current).toContain(
+      "この一覧に無い順位・勝点・成績、またはこの一覧と異なる数値",
+    );
     expect(stale).not.toContain("## competition_standings grounding");
   });
 
