@@ -551,6 +551,15 @@ describe("llm notify", () => {
     vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
 
     await notifyBroadcastIngestReport({
+      changes: [
+        {
+          changeType: "first_destination",
+          kind: "tv",
+          label: "日本 対 オーストラリア",
+          matchId: "match-1",
+          serviceName: "BS日テレ",
+        },
+      ],
       generatedAt: "2026-08-06T00:00:00.000Z",
       linked: [
         {
@@ -567,6 +576,8 @@ describe("llm notify", () => {
           matchId: "match-2",
         },
       ],
+      pageErrors: [],
+      requiresReconfirmation: [],
       unknownServices: [
         {
           serviceName: "新しい配信サービス",
@@ -590,6 +601,21 @@ describe("llm notify", () => {
     expect(body).toContain("新しい配信サービス");
     expect(body).toContain("08.09 Sun: 一致する日本代表戦が0件です");
     expect(body).toContain("フランス 対 イングランド");
+  });
+
+  it("does not post an unchanged broadcast ingest report", async () => {
+    await notifyBroadcastIngestReport({
+      changes: [],
+      generatedAt: "2026-08-06T00:00:00.000Z",
+      linked: [],
+      matchesStillMissing: [],
+      pageErrors: [],
+      requiresReconfirmation: [],
+      unknownServices: [],
+      unlinkedPages: [],
+    });
+
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("truncates content over Discord's 2000 character limit with a visible suffix", async () => {

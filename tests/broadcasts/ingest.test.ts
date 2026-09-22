@@ -37,6 +37,7 @@ function dependencies(overrides: Record<string, unknown> = {}) {
   return {
     fetchMatchPage: async () => PAGE,
     fetchSchedule: async () => ({ matchUrls: [SOURCE_URL], year: 2026 }),
+    listExistingBroadcasts: async () => [],
     listMatchIdsWithBroadcasts: async () => new Set<string>(),
     listScheduledMatches: async () => [japanMatch],
     now: () => NOW,
@@ -46,6 +47,179 @@ function dependencies(overrides: Record<string, unknown> = {}) {
 }
 
 describe("runBroadcastIngest", () => {
+  it("does not report club-only broadcast gaps as missing", async () => {
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchSchedule: async () => ({ matchUrls: [], year: 2026 }),
+        listScheduledMatches: async () => [
+          {
+            ...japanMatch,
+            awayTeam: { name: "レスター", slug: "leicester" },
+            homeTeam: { name: "バース", slug: "bath" },
+          },
+        ],
+      }),
+    );
+
+    expect(result.matchesStillMissing).toEqual([]);
+  });
+
+  it("reports an unannounced near-term Japan match without treating it as a failure", async () => {
+    const result = await runBroadcastIngest(
+      dependencies({ fetchSchedule: async () => ({ matchUrls: [], year: 2026 }) }),
+    );
+
+    expect(result.matchesStillMissing).toEqual([
+      expect.objectContaining({ matchId: "match-japan-australia" }),
+    ]);
+    expect(result.pageErrors).toEqual([]);
+  });
+
+  it("detects a new broadcast for a Japan match more than fourteen days away", async () => {
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchMatchPage: async () => NOVEMBER_PAGE,
+        listScheduledMatches: async () => [
+          {
+            ...japanMatch,
+            id: "match-wales-japan",
+            kickoffAt: "2026-11-07T16:40:00.000Z",
+          },
+        ],
+      }),
+    );
+
+    expect(result.changes).toEqual([
+      expect.objectContaining({
+        changeType: "first_destination",
+        matchId: "match-wales-japan",
+      }),
+      expect.objectContaining({ changeType: "service_added" }),
+      expect.objectContaining({ changeType: "service_added" }),
+      expect.objectContaining({ changeType: "service_added" }),
+    ]);
+  });
+
+  it("does not report changes on an identical second run", async () => {
+    type StoredBroadcast = {
+      kind: "streaming" | "tv";
+      matchId: string;
+      serviceName: string;
+      sourceUrl: string;
+      url: string;
+    };
+    const stored = new Map<string, StoredBroadcast>();
+    const input = dependencies({
+      listExistingBroadcasts: async () => [...stored.values()],
+      upsertBroadcasts: async (broadcasts: StoredBroadcast[]) => {
+        for (const broadcast of broadcasts) {
+          stored.set(`${broadcast.matchId}:${broadcast.serviceName}`, broadcast);
+        }
+      },
+    });
+
+    await runBroadcastIngest(input);
+    const result = await runBroadcastIngest(input);
+
+    expect(stored).toHaveLength(4);
+    expect(result.changes).toEqual([]);
+    expect(result.linked).toEqual([]);
+  });
+
+  it("reports a URL or kind change but not an unchanged verified timestamp", async () => {
+    const result = await runBroadcastIngest(
+      dependencies({
+        listExistingBroadcasts: async () => [
+          {
+            kind: "streaming",
+            matchId: japanMatch.id,
+            serviceName: "BS日テレ",
+            sourceUrl: SOURCE_URL,
+            url: "https://example.com/old-url",
+          },
+        ],
+      }),
+    );
+
+    expect(result.changes).toContainEqual(
+      expect.objectContaining({
+        changeType: "updated",
+        serviceName: "BS日テレ",
+      }),
+    );
+  });
+
+  it("records an individual JRFU page failure while keeping other page results", async () => {
+    const failedUrl = "https://www.rugby-japan.jp/match/failed";
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchMatchPage: async (url: string) => {
+          if (url === failedUrl) {
+            throw new Error("invalid JRFU page");
+          }
+          return PAGE;
+        },
+        fetchSchedule: async () => ({
+          matchUrls: [SOURCE_URL, failedUrl],
+          year: 2026,
+        }),
+      }),
+    );
+
+    expect(result.linked).toHaveLength(4);
+    expect(result.pageErrors).toEqual([
+      { message: "invalid JRFU page", sourceUrl: failedUrl },
+    ]);
+  });
+
+  it("reuses a manually-entered service-name variant without reporting it as new", async () => {
+    const upserted: Array<{ serviceName: string }> = [];
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchMatchPage: async () => ({
+          ...PAGE,
+          broadcasts: [PAGE.broadcasts[3]!],
+        }),
+        listExistingBroadcasts: async () => [
+          {
+            kind: "streaming",
+            matchId: japanMatch.id,
+            serviceName: "J SPORTS オンデマンド",
+            sourceUrl: "https://manual.example.com/broadcast",
+            url: PAGE.broadcasts[3]!.url,
+          },
+        ],
+        upsertBroadcasts: async (broadcasts: Array<{ serviceName: string }>) =>
+          upserted.push(...broadcasts),
+      }),
+    );
+
+    expect(upserted).toEqual([
+      expect.objectContaining({ serviceName: "J SPORTS オンデマンド" }),
+    ]);
+    expect(result.changes).toEqual([]);
+  });
+
+  it("keeps a missing JRFU listing and flags it for owner reconfirmation", async () => {
+    const result = await runBroadcastIngest(
+      dependencies({
+        fetchMatchPage: async () => ({ ...PAGE, broadcasts: [] }),
+        listExistingBroadcasts: async () => [
+          {
+            kind: "tv",
+            matchId: japanMatch.id,
+            serviceName: "BS日テレ",
+            sourceUrl: SOURCE_URL,
+            url: PAGE.broadcasts[0]!.url,
+          },
+        ],
+      }),
+    );
+
+    expect(result.requiresReconfirmation).toEqual([
+      expect.objectContaining({ serviceName: "BS日テレ" }),
+    ]);
+  });
   it("links only an exact JST-date Japan match and preserves source values", async () => {
     const upserted: unknown[] = [];
     const result = await runBroadcastIngest(

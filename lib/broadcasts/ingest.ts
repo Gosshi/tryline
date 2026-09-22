@@ -32,7 +32,22 @@ type UpsertBroadcast = {
   url: string;
 };
 
+type ExistingBroadcast = {
+  kind: MatchBroadcastKind;
+  matchId: string;
+  serviceName: string;
+  sourceUrl: string;
+  url: string;
+};
+
 export type BroadcastIngestResult = {
+  changes: Array<{
+    changeType: "first_destination" | "service_added" | "updated";
+    kind: MatchBroadcastKind;
+    label: string;
+    matchId: string;
+    serviceName: string;
+  }>;
   generatedAt: string;
   linked: Array<{
     kind: MatchBroadcastKind;
@@ -44,6 +59,16 @@ export type BroadcastIngestResult = {
     kickoffAt: string;
     label: string;
     matchId: string;
+  }>;
+  pageErrors: Array<{
+    message: string;
+    sourceUrl: string;
+  }>;
+  requiresReconfirmation: Array<{
+    label: string;
+    matchId: string;
+    serviceName: string;
+    sourceUrl: string;
   }>;
   unknownServices: Array<{
     serviceName: string;
@@ -66,6 +91,7 @@ export type BroadcastIngestDependencies = {
     scheduleYear: number | null;
   }) => Promise<BroadcastMatch[]>;
   listMatchIdsWithBroadcasts?: (matchIds: string[]) => Promise<Set<string>>;
+  listExistingBroadcasts?: (matchIds: string[]) => Promise<ExistingBroadcast[]>;
   now?: () => Date;
   upsertBroadcasts?: (broadcasts: UpsertBroadcast[]) => Promise<void>;
 };
@@ -215,6 +241,32 @@ async function loadMatchIdsWithBroadcasts(
   return new Set((data ?? []).map((row) => row.match_id));
 }
 
+async function loadExistingBroadcasts(
+  db: SupabaseClient<Database>,
+  matchIds: string[],
+): Promise<ExistingBroadcast[]> {
+  if (matchIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await db
+    .from("match_broadcasts")
+    .select("kind, match_id, service_name, source_url, url")
+    .in("match_id", matchIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => ({
+    kind: row.kind as MatchBroadcastKind,
+    matchId: row.match_id,
+    serviceName: row.service_name,
+    sourceUrl: row.source_url ?? "",
+    url: row.url,
+  }));
+}
+
 async function upsertMatchBroadcasts(
   db: SupabaseClient<Database>,
   broadcasts: UpsertBroadcast[],
@@ -263,10 +315,32 @@ export async function runBroadcastIngest(
     dependencies.listScheduledMatches ??
     ((params) => loadScheduledMatches(getDb(), params))
   )({ now, scheduleYear: schedule.year });
+  const existingBroadcasts = await (
+    dependencies.listExistingBroadcasts ??
+    ((matchIds) => loadExistingBroadcasts(getDb(), matchIds))
+  )(scheduledMatches.map((match) => match.id));
   const linked: BroadcastIngestResult["linked"] = [];
+  const changes: BroadcastIngestResult["changes"] = [];
+  const pageErrors: BroadcastIngestResult["pageErrors"] = [];
+  const requiresReconfirmation: BroadcastIngestResult["requiresReconfirmation"] = [];
   const unknownServices: BroadcastIngestResult["unknownServices"] = [];
   const unlinkedPages: BroadcastIngestResult["unlinkedPages"] = [];
   const broadcastsToUpsert: UpsertBroadcast[] = [];
+  const existingByMatchAndService = new Map(
+    existingBroadcasts.map((broadcast) => [
+      `${broadcast.matchId}:${removeServiceNameSpaces(broadcast.serviceName)}`,
+      broadcast,
+    ]),
+  );
+  const existingByMatch = new Map<string, ExistingBroadcast[]>();
+  for (const existing of existingBroadcasts) {
+    const matchBroadcasts = existingByMatch.get(existing.matchId) ?? [];
+    matchBroadcasts.push(existing);
+    existingByMatch.set(existing.matchId, matchBroadcasts);
+  }
+  const observedJrfuBroadcastKeys = new Set<string>();
+  const pendingBroadcastKeys = new Set<string>();
+  const processedJrfuPageUrls = new Set<string>();
 
   for (const url of schedule.matchUrls) {
     try {
@@ -300,6 +374,7 @@ export async function runBroadcastIngest(
       }
 
       const match = candidates[0]!;
+      processedJrfuPageUrls.add(page.sourceUrl);
 
       for (const broadcast of page.broadcasts) {
         const { kind, serviceName } = resolveBroadcastService(
@@ -315,21 +390,66 @@ export async function runBroadcastIngest(
           continue;
         }
 
-        broadcastsToUpsert.push({
+        const broadcastKey = `${match.id}:${removeServiceNameSpaces(serviceName)}`;
+        const existing = existingByMatchAndService.get(broadcastKey);
+        const storedServiceName = existing?.serviceName ?? serviceName;
+        const isUnchanged =
+          existing?.kind === kind && existing.url === broadcast.url;
+        observedJrfuBroadcastKeys.add(broadcastKey);
+        const upsert = {
           kind,
           matchId: match.id,
-          serviceName,
-          sourceUrl: page.sourceUrl,
+          serviceName: storedServiceName,
+          sourceUrl: isUnchanged ? existing.sourceUrl : page.sourceUrl,
           url: broadcast.url,
-        });
+        };
+        if (!pendingBroadcastKeys.has(broadcastKey)) {
+          broadcastsToUpsert.push(upsert);
+          pendingBroadcastKeys.add(broadcastKey);
+        }
+        if (isUnchanged) {
+          observedJrfuBroadcastKeys.add(broadcastKey);
+          continue;
+        }
         linked.push({
           kind,
           label: getMatchLabel(match),
           matchId: match.id,
-          serviceName,
+          serviceName: storedServiceName,
         });
+
+        const matchBroadcasts = existingByMatch.get(match.id) ?? [];
+        if (!existingByMatch.has(match.id)) {
+          existingByMatch.set(match.id, matchBroadcasts);
+        }
+        if (existing) {
+          if (existing.kind !== kind || existing.url !== broadcast.url) {
+            changes.push({
+              changeType: "updated",
+              kind,
+              label: getMatchLabel(match),
+              matchId: match.id,
+              serviceName: storedServiceName,
+            });
+          }
+        } else {
+          changes.push({
+            changeType:
+              matchBroadcasts.length === 0 ? "first_destination" : "service_added",
+            kind,
+            label: getMatchLabel(match),
+            matchId: match.id,
+            serviceName: storedServiceName,
+          });
+        }
+        matchBroadcasts.push(upsert);
+        existingByMatchAndService.set(broadcastKey, upsert);
       }
     } catch (error) {
+      pageErrors.push({
+        message: error instanceof Error ? error.message : String(error),
+        sourceUrl: url,
+      });
       console.error("[broadcast-ingest] failed to process JRFU match page", {
         error,
         url,
@@ -346,7 +466,8 @@ export async function runBroadcastIngest(
 
   const fourteenDaysLater = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1_000);
   const nearTermMatches = scheduledMatches.filter(
-    (match) => new Date(match.kickoffAt) <= fourteenDaysLater,
+    (match) =>
+      isJapanMatch(match) && new Date(match.kickoffAt) <= fourteenDaysLater,
   );
   const matchIdsWithBroadcasts = await (
     dependencies.listMatchIdsWithBroadcasts ??
@@ -354,7 +475,26 @@ export async function runBroadcastIngest(
   )(nearTermMatches.map((match) => match.id));
   const linkedMatchIds = new Set(linked.map((broadcast) => broadcast.matchId));
 
+  for (const existing of existingBroadcasts) {
+    const key = `${existing.matchId}:${removeServiceNameSpaces(existing.serviceName)}`;
+    if (
+      processedJrfuPageUrls.has(existing.sourceUrl) &&
+      !observedJrfuBroadcastKeys.has(key)
+    ) {
+      const match = scheduledMatches.find((item) => item.id === existing.matchId);
+      if (match) {
+        requiresReconfirmation.push({
+          label: getMatchLabel(match),
+          matchId: existing.matchId,
+          serviceName: existing.serviceName,
+          sourceUrl: existing.sourceUrl,
+        });
+      }
+    }
+  }
+
   return {
+    changes,
     generatedAt: now.toISOString(),
     linked,
     matchesStillMissing: nearTermMatches
@@ -368,6 +508,8 @@ export async function runBroadcastIngest(
         label: getMatchLabel(match),
         matchId: match.id,
       })),
+    pageErrors,
+    requiresReconfirmation,
     unknownServices,
     unlinkedPages,
   };

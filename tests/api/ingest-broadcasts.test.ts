@@ -11,11 +11,14 @@ vi.mock("@/lib/broadcasts/ingest", () => ingestMock);
 vi.mock("@/lib/llm/notify", () => notifyMock);
 
 const report = {
+  changes: [],
   generatedAt: "2026-08-06T00:00:00.000Z",
   linked: [],
   matchesStillMissing: [],
   unknownServices: [],
   unlinkedPages: [],
+  pageErrors: [],
+  requiresReconfirmation: [],
 };
 
 describe("/api/cron/ingest-broadcasts", () => {
@@ -77,7 +80,7 @@ describe("/api/cron/ingest-broadcasts", () => {
       report: { ...report, matchesStillMissing: [{ matchId: "match-1" }] },
     },
   ])(
-    "returns 500 when nothing linked and there is $name",
+    "returns 200 when nothing linked and there is $name",
     async ({ report }) => {
       ingestMock.runBroadcastIngest.mockResolvedValue(report);
       const { POST } = await import("@/app/api/cron/ingest-broadcasts/route");
@@ -89,7 +92,7 @@ describe("/api/cron/ingest-broadcasts", () => {
         }),
       );
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(200);
       await expect(response.json()).resolves.toEqual({
         result: report,
         status: "ok",
@@ -99,6 +102,41 @@ describe("/api/cron/ingest-broadcasts", () => {
       );
     },
   );
+
+  it.each([
+    new Error("JRFU schedule fetch failed"),
+    new Error("database write failed"),
+  ])("returns 500 for an ingest technical failure", async (error) => {
+    ingestMock.runBroadcastIngest.mockRejectedValueOnce(error);
+    const { POST } = await import("@/app/api/cron/ingest-broadcasts/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/cron/ingest-broadcasts", {
+        headers: { Authorization: "Bearer test-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: error.message });
+  });
+
+  it("returns 500 when sending the report fails", async () => {
+    const error = new Error("broadcast notification failed");
+    ingestMock.runBroadcastIngest.mockResolvedValue(report);
+    notifyMock.notifyBroadcastIngestReport.mockRejectedValueOnce(error);
+    const { POST } = await import("@/app/api/cron/ingest-broadcasts/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/cron/ingest-broadcasts", {
+        headers: { Authorization: "Bearer test-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: error.message });
+  });
 
   it("returns 200 when nothing needs linking", async () => {
     ingestMock.runBroadcastIngest.mockResolvedValue(report);
@@ -112,6 +150,32 @@ describe("/api/cron/ingest-broadcasts", () => {
     );
 
     expect(response.status).toBe(200);
+  });
+
+  it("returns 500 after reporting an individual JRFU page failure", async () => {
+    const failedReport = {
+      ...report,
+      pageErrors: [
+        {
+          message: "invalid JRFU page",
+          sourceUrl: "https://www.rugby-japan.jp/match/failed",
+        },
+      ],
+    };
+    ingestMock.runBroadcastIngest.mockResolvedValue(failedReport);
+    const { POST } = await import("@/app/api/cron/ingest-broadcasts/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/cron/ingest-broadcasts", {
+        headers: { Authorization: "Bearer test-secret" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    expect(notifyMock.notifyBroadcastIngestReport).toHaveBeenCalledWith(
+      failedReport,
+    );
   });
 
   it("returns 200 when at least one broadcast was linked", async () => {
