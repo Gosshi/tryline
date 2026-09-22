@@ -430,11 +430,30 @@ export async function notifyRecapGenerationSkipped(
 export async function notifyBroadcastIngestReport(
   result: BroadcastIngestResult,
 ): Promise<void> {
+  if (
+    result.changes.length === 0 &&
+    result.matchesStillMissing.length === 0 &&
+    result.unknownServices.length === 0 &&
+    result.unlinkedPages.length === 0 &&
+    result.pageErrors.length === 0 &&
+    result.requiresReconfirmation.length === 0
+  ) {
+    return;
+  }
   const linked =
     result.linked.length === 0
       ? "なし"
       : result.linked
           .map((broadcast) => `${broadcast.label}: ${broadcast.serviceName}`)
+          .join(" / ");
+  const changes =
+    result.changes.length === 0
+      ? "なし"
+      : result.changes
+          .map(
+            (change) =>
+              `${change.label}: ${change.serviceName} (${change.changeType})`,
+          )
           .join(" / ");
   const unknownServices =
     result.unknownServices.length === 0
@@ -454,13 +473,28 @@ export async function notifyBroadcastIngestReport(
       : result.unlinkedPages
           .map((page) => `${page.dateLabel}: ${page.reason}`)
           .join(" / ");
+  const pageErrors =
+    result.pageErrors.length === 0
+      ? "なし"
+      : result.pageErrors
+          .map((page) => `${page.sourceUrl}: ${page.message}`)
+          .join(" / ");
+  const requiresReconfirmation =
+    result.requiresReconfirmation.length === 0
+      ? "なし"
+      : result.requiresReconfirmation
+          .map((broadcast) => `${broadcast.label}: ${broadcast.serviceName}`)
+          .join(" / ");
   const message = [
     "📺 放送情報 自動取得",
     `生成日時: ${result.generatedAt}`,
-    `1. 投入候補: ${result.linked.length}件 ${linked}`,
-    `2. 未対応サービス: ${result.unknownServices.length}件 ${unknownServices}`,
-    `3. 紐付け不可ページ: ${result.unlinkedPages.length}件 ${unlinkedPages}`,
-    `4. 14日以内で放送情報なし: ${result.matchesStillMissing.length}件 ${missingMatches}`,
+    `1. 変更: ${result.changes.length}件 ${changes}`,
+    `2. 投入候補: ${result.linked.length}件 ${linked}`,
+    `3. 未対応サービス: ${result.unknownServices.length}件 ${unknownServices}`,
+    `4. 紐付け不可ページ: ${result.unlinkedPages.length}件 ${unlinkedPages}`,
+    `5. 14日以内で放送情報なし: ${result.matchesStillMissing.length}件 ${missingMatches}`,
+    `6. ページ取得・解析失敗: ${result.pageErrors.length}件 ${pageErrors}`,
+    `7. JRFU掲載消滅の再確認: ${result.requiresReconfirmation.length}件 ${requiresReconfirmation}`,
   ].join("\n");
 
   await postOpsAlert(message);
