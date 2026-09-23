@@ -9,7 +9,11 @@ import {
   buildKnownNonPersonNames,
 } from "@/lib/content/allowed-entities";
 import { hasConfirmedSourcedFactLineup } from "@/lib/content/fabrication-guard";
-import { getRoundFromExternalIds } from "@/lib/db/queries/matches";
+import {
+  countHeadToHeadMatches,
+  getRoundFromExternalIds,
+  normalizeHeadToHeadSlug,
+} from "@/lib/db/queries/matches";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import {
@@ -876,6 +880,30 @@ export async function generateMatchContent(
     }
 
     urls.push(`${SITE_URL}/calendar`);
+
+    const homeTeamSlug = assembled.match.home_team?.slug;
+    const awayTeamSlug = assembled.match.away_team?.slug;
+    if (contentType === "preview" && homeTeamSlug && awayTeamSlug) {
+      try {
+        const h2hMatchCount = await countHeadToHeadMatches(
+          homeTeamSlug,
+          awayTeamSlug,
+        );
+
+        if (h2hMatchCount >= 2) {
+          urls.push(
+            `${SITE_URL}/h2h/${normalizeHeadToHeadSlug(homeTeamSlug, awayTeamSlug)}`,
+          );
+        }
+      } catch (error) {
+        console.error("[content-pipeline] H2H IndexNow lookup failed", {
+          awayTeamSlug,
+          error,
+          homeTeamSlug,
+          matchId,
+        });
+      }
+    }
 
     if (
       contentType === "recap" &&
