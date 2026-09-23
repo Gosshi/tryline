@@ -55,6 +55,9 @@ const dbMock = vi.hoisted(() => ({
 const indexNowMock = vi.hoisted(() => ({
   submitUrlsToIndexNow: vi.fn(),
 }));
+const headToHeadQueriesMock = vi.hoisted(() => ({
+  countHeadToHeadMatches: vi.fn(),
+}));
 
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: () => dbMock,
@@ -71,6 +74,11 @@ vi.mock("@/lib/llm/notify", () => ({
   notifyEventIntegrityMismatch: vi.fn(),
 }));
 vi.mock("@/lib/seo/indexnow", () => indexNowMock);
+vi.mock("@/lib/db/queries/matches", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/db/queries/matches")>();
+
+  return { ...actual, ...headToHeadQueriesMock };
+});
 
 import { generateMatchContent } from "@/lib/llm/pipeline";
 
@@ -152,6 +160,7 @@ const verifiedEventIntegrity = {
 describe("generateMatchContent recap event guard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    headToHeadQueriesMock.countHeadToHeadMatches.mockResolvedValue(0);
     dbMock.insert.mockResolvedValue({ error: null });
     dbMock.maybeSingle.mockResolvedValue({ data: null, error: null });
     const existingContentQuery = {
@@ -403,6 +412,83 @@ describe("generateMatchContent recap event guard", () => {
 
     warnSpy.mockRestore();
   });
+
+  it.each([
+    { contentType: "preview" as const, h2hCount: 2, includesH2h: true },
+    { contentType: "preview" as const, h2hCount: 1, includesH2h: false },
+    { contentType: "recap" as const, h2hCount: 2, includesH2h: false },
+  ])(
+    "includes an H2H IndexNow URL only for preview with at least two matches ($contentType, count=$h2hCount)",
+    async ({ contentType, h2hCount, includesH2h }) => {
+      headToHeadQueriesMock.countHeadToHeadMatches.mockResolvedValue(h2hCount);
+      assembleMock.assembleMatchContentInput.mockResolvedValue({
+        ...assembledWithoutEvents,
+        eventIntegrity: verifiedEventIntegrity,
+        match: {
+          ...assembledWithoutEvents.match,
+          home_team: {
+            country: "Japan",
+            english_name: "Japan",
+            id: "team-japan",
+            name: "日本",
+            short_code: "JPN",
+            slug: "japan",
+          },
+          away_team: {
+            country: "Wales",
+            english_name: "Wales",
+            id: "team-wales",
+            name: "ウェールズ",
+            short_code: "WAL",
+            slug: "wales",
+          },
+        },
+      });
+      extractFactsMock.extractTacticalPoints.mockResolvedValue({
+        modelVersion: "gpt-4o-mini",
+        result: { tactical_points: [] },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      });
+      generateNarrativeMock.generateNarrative.mockResolvedValue({
+        content: "# test content",
+        modelVersion: "gpt-4o",
+        promptVersion: "1.0.0",
+        usage: { inputTokens: 1, outputTokens: 1 },
+      });
+      qaMock.evaluateNarrativeQuality.mockResolvedValue({
+        modelVersion: "gpt-4o-mini",
+        result: {
+          issues: [],
+          scores: {
+            factual_grounding: 4,
+            information_density: 4,
+            japanese_quality: 4,
+            tactical_depth: 4,
+          },
+          verdict: "publish",
+        },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      });
+
+      await generateMatchContent("match-h2h", contentType);
+
+      const submittedUrls = indexNowMock.submitUrlsToIndexNow.mock.calls[0]?.[0] as
+        | string[]
+        | undefined;
+      expect(submittedUrls).toBeDefined();
+      expect(submittedUrls?.includes("https://www.trylinerugby.com/h2h/japan-vs-wales")).toBe(
+        includesH2h,
+      );
+      if (contentType === "preview") {
+        expect(headToHeadQueriesMock.countHeadToHeadMatches).toHaveBeenCalledWith(
+          "japan",
+          "wales",
+        );
+      } else {
+        expect(headToHeadQueriesMock.countHeadToHeadMatches).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   it("submits published league-one recap urls to IndexNow after persistence", async () => {
     dbMock.maybeSingle.mockResolvedValue({

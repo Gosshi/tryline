@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
 import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
+import { loadAllPages } from "@/lib/db/pagination";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import {
   getMatchBroadcastPresenceForMatches,
@@ -399,6 +400,7 @@ type HeadToHeadPairQueryRow = {
   away_team: HeadToHeadTeamRow | null;
   home_team: HeadToHeadTeamRow | null;
   kickoff_at: string;
+  status?: string;
 };
 
 const RECENTLY_REVIEWED_MATCH_SELECT = `
@@ -1999,8 +2001,14 @@ export function parseHeadToHeadSlug(
 export function mapHeadToHeadRowsToPairs(
   rows: HeadToHeadPairQueryRow[],
   limit = 200,
+  referenceDate: Date = new Date(),
 ): HeadToHeadPair[] {
-  const bySlug = new Map<string, HeadToHeadPair>();
+  const bySlug = new Map<
+    string,
+    { nextScheduledAt: string | null; pair: HeadToHeadPair }
+  >();
+  const windowStart = referenceDate.getTime();
+  const windowEnd = windowStart + 60 * 24 * 60 * 60 * 1000;
 
   for (const row of rows) {
     if (!row.home_team || !row.away_team) {
@@ -2010,46 +2018,76 @@ export function mapHeadToHeadRowsToPairs(
     const [teamA, teamB] = sortHeadToHeadTeamRows(row.home_team, row.away_team);
     const slug = normalizeHeadToHeadSlug(teamA.slug, teamB.slug);
     const existing = bySlug.get(slug);
+    const kickoffAt = new Date(row.kickoff_at).getTime();
+    const isUpcomingScheduled =
+      row.status === "scheduled" &&
+      kickoffAt >= windowStart &&
+      kickoffAt <= windowEnd;
 
     if (!existing) {
       bySlug.set(slug, {
-        matchCount: 1,
-        slug,
-        teamA: mapHeadToHeadTeam(teamA),
-        teamB: mapHeadToHeadTeam(teamB),
-        updatedAt: row.kickoff_at,
+        nextScheduledAt: isUpcomingScheduled ? row.kickoff_at : null,
+        pair: {
+          matchCount: 1,
+          slug,
+          teamA: mapHeadToHeadTeam(teamA),
+          teamB: mapHeadToHeadTeam(teamB),
+          updatedAt: row.kickoff_at,
+        },
       });
       continue;
     }
 
-    existing.matchCount += 1;
-    if (row.kickoff_at > existing.updatedAt) {
-      existing.updatedAt = row.kickoff_at;
+    existing.pair.matchCount += 1;
+    if (row.kickoff_at > existing.pair.updatedAt) {
+      existing.pair.updatedAt = row.kickoff_at;
+    }
+    if (
+      isUpcomingScheduled &&
+      (!existing.nextScheduledAt || row.kickoff_at < existing.nextScheduledAt)
+    ) {
+      existing.nextScheduledAt = row.kickoff_at;
     }
   }
 
   return [...bySlug.values()]
     .sort((left, right) => {
-      const countOrder = right.matchCount - left.matchCount;
+      if (left.nextScheduledAt && right.nextScheduledAt) {
+        const scheduledOrder = left.nextScheduledAt.localeCompare(
+          right.nextScheduledAt,
+        );
+        if (scheduledOrder !== 0) {
+          return scheduledOrder;
+        }
+      } else if (left.nextScheduledAt) {
+        return -1;
+      } else if (right.nextScheduledAt) {
+        return 1;
+      }
 
+      const countOrder = right.pair.matchCount - left.pair.matchCount;
       if (countOrder !== 0) {
         return countOrder;
       }
 
-      return right.updatedAt.localeCompare(left.updatedAt);
+      return right.pair.updatedAt.localeCompare(left.pair.updatedAt);
     })
-    .slice(0, limit);
+    .slice(0, limit)
+    .map(({ pair }) => pair);
 }
 
 export async function listHeadToHeadPairs(
   limit = 200,
 ): Promise<HeadToHeadPair[]> {
   const client = getSupabasePublicServerClient();
-  const { data, error } = await client
-    .from("matches")
-    .select(
-      `
+  const rows = await loadAllPages({
+    loadPage: (from, to) =>
+      client
+        .from("matches")
+        .select(
+          `
         kickoff_at,
+        status,
         home_team:teams!matches_home_team_id_fkey (
           id,
           slug,
@@ -2063,16 +2101,16 @@ export async function listHeadToHeadPairs(
           short_code
         )
       `,
-    )
-    .order("kickoff_at", { ascending: false });
-
-  if (error) {
-    throw error;
-  }
+        )
+        .order("kickoff_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+  });
 
   return mapHeadToHeadRowsToPairs(
-    (data ?? []) as unknown as HeadToHeadPairQueryRow[],
+    rows as unknown as HeadToHeadPairQueryRow[],
     limit,
+    new Date(),
   );
 }
 

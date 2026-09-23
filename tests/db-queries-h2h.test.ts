@@ -113,23 +113,115 @@ describe("head-to-head match queries", () => {
     ]);
   });
 
+  it("prioritizes pairs with scheduled matches in the next 60 days", () => {
+    const referenceDate = new Date("2026-09-23T00:00:00.000Z");
+    const rows = Array.from({ length: 250 }, (_, index) => {
+      const matchCount = index < 50 ? 3 : 2;
+      const homeTeam = {
+        ...leinster,
+        id: `club-home-${index}`,
+        slug: `club-home-${index}`,
+      };
+      const awayTeam = {
+        ...toulouse,
+        id: `club-away-${index}`,
+        slug: `club-away-${index}`,
+      };
+
+      return Array.from({ length: matchCount }, (_, matchIndex) => ({
+        away_team: awayTeam,
+        home_team: homeTeam,
+        kickoff_at: `2026-11-${String(matchIndex + 1).padStart(2, "0")}T12:00:00.000Z`,
+        status: "finished",
+      }));
+    }).flat();
+    const upcomingPairs = [
+      { away: "fiji", date: "2026-09-30", home: "japan" },
+      { away: "wales", date: "2026-10-10", home: "japan" },
+      { away: "japan", date: "2026-10-24", home: "england" },
+    ];
+
+    for (const pair of upcomingPairs) {
+      const homeTeam = { ...bath, id: pair.home, slug: pair.home };
+      const awayTeam = { ...leinster, id: pair.away, slug: pair.away };
+      rows.push(
+        {
+          away_team: awayTeam,
+          home_team: homeTeam,
+          kickoff_at: "2025-11-01T12:00:00.000Z",
+          status: "finished",
+        },
+        {
+          away_team: awayTeam,
+          home_team: homeTeam,
+          kickoff_at: `${pair.date}T12:00:00.000Z`,
+          status: "scheduled",
+        },
+      );
+    }
+
+    const result = mapHeadToHeadRowsToPairs(rows, 200, referenceDate);
+
+    expect(result.slice(0, 3).map(({ slug }) => slug)).toEqual([
+      "fiji-vs-japan",
+      "japan-vs-wales",
+      "england-vs-japan",
+    ]);
+    expect(result).toHaveLength(200);
+  });
+
+  it("loads all 1,407 stored matches in stable 1,000-row pages", async () => {
+    const allRows = Array.from({ length: 1407 }, (_, index) => ({
+      away_team: toulouse,
+      home_team: leinster,
+      kickoff_at: new Date(Date.UTC(2020, 0, 1 + index)).toISOString(),
+      status: "finished",
+    }));
+    const range = vi.fn((from: number, to: number) =>
+      Promise.resolve({ data: allRows.slice(from, to + 1), error: null }),
+    );
+    const order = vi.fn(() => query);
+    const query = {
+      order,
+      range,
+      select: vi.fn(() => query),
+    };
+    clientMock.from.mockReturnValue({ select: query.select });
+
+    const result = await listHeadToHeadPairs();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.matchCount).toBe(1407);
+    expect(range.mock.calls).toEqual([
+      [0, 999],
+      [1000, 1999],
+    ]);
+    expect(order.mock.calls).toEqual([
+      ["kickoff_at", { ascending: false }],
+      ["id"],
+      ["kickoff_at", { ascending: false }],
+      ["id"],
+    ]);
+  });
+
   it("lists H2H pairs from stored matches", async () => {
-    clientMock.from.mockReturnValue({
-      select: vi.fn(() => ({
-        order: vi.fn(() =>
-          Promise.resolve({
-            data: [
-              {
-                away_team: toulouse,
-                home_team: leinster,
-                kickoff_at: "2025-05-01T12:00:00.000Z",
-              },
-            ],
-            error: null,
-          }),
-        ),
-      })),
-    });
+    const query = {
+      order: vi.fn(() => query),
+      range: vi.fn(() =>
+        Promise.resolve({
+          data: [
+            {
+              away_team: toulouse,
+              home_team: leinster,
+              kickoff_at: "2025-05-01T12:00:00.000Z",
+            },
+          ],
+          error: null,
+        }),
+      ),
+      select: vi.fn(() => query),
+    };
+    clientMock.from.mockReturnValue({ select: query.select });
 
     await expect(listHeadToHeadPairs()).resolves.toMatchObject([
       { slug: "leinster-vs-toulouse" },

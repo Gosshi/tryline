@@ -9,7 +9,11 @@ import {
   buildKnownNonPersonNames,
 } from "@/lib/content/allowed-entities";
 import { hasConfirmedSourcedFactLineup } from "@/lib/content/fabrication-guard";
-import { getRoundFromExternalIds } from "@/lib/db/queries/matches";
+import {
+  countHeadToHeadMatches,
+  getRoundFromExternalIds,
+  normalizeHeadToHeadSlug,
+} from "@/lib/db/queries/matches";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import {
@@ -876,6 +880,19 @@ export async function generateMatchContent(
     }
 
     urls.push(`${SITE_URL}/calendar`);
+
+    const homeTeamSlug = assembled.match.home_team?.slug;
+    const awayTeamSlug = assembled.match.away_team?.slug;
+    if (
+      contentType === "preview" &&
+      homeTeamSlug &&
+      awayTeamSlug &&
+      (await countHeadToHeadMatches(homeTeamSlug, awayTeamSlug)) >= 2
+    ) {
+      urls.push(
+        `${SITE_URL}/h2h/${normalizeHeadToHeadSlug(homeTeamSlug, awayTeamSlug)}`,
+      );
+    }
 
     if (
       contentType === "recap" &&
