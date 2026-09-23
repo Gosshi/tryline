@@ -1,0 +1,3321 @@
+{{Short description|none}}
+Outside of the [[2026 Nations Championship]], the [[2026 World Rugby Nations Cup]], the [[2026 Six Nations Championship]] and other regional tournaments, a series of international matches will be played throughout the year. [[New Zealand national rugby union team|New Zealand]] will play an eight-match tour of [[South Africa]], playing against the [[United Rugby Championship]] (URC) sides and four tests against the [[South Africa national rugby union team|South Africa national team]], with the fourth test being played at [[M&T Bank Stadium]] in [[Baltimore]].<ref name="Springboks v All Blacks"/> Similarly, [[Australia national rugby union team|Australia]] and [[Japan national rugby union team|Japan]] will embark on a home-and-away tour of each other for the first time in their history; the former following that series with a [[2026 Australia rugby union tour of Argentina|tour of Argentina]].
+
+==Series and tours==
+===Series===
+{| class="wikitable"
+|-
+!style="width:275px"|Series
+!style="width:55px"|Result
+!style="width:150px"|Winner
+|-
+| [[2026 Australia rugby union tour of Argentina|Argentina–Australia test series]]
+| align=center|0–1{{efn|name=Arg-Aus|Australia won the two-test series 1–0 following a draw in the second test.<ref>{{cite news |last=Pentony |first=Luke |date=6 September 2026 |title=Wallabies vs Pumas second Test in Mendoza — live blog, stats and scores |url=https://www.abc.net.au/news/2026-09-06/australia-wallabies-pumas-argentina-rugby-test-live-blog/107120012?utm_campaign=abc_news_web&utm_content=link&utm_medium=content_shared&utm_source=abc_news_web#live-blog-post-337952 |work=[[ABC News (Australia)|ABC News]] |access-date=6 September 2026 }}</ref>}}
+| {{ru|AUS}}{{efn|name=Arg-Aus}}
+|-
+| [[2026 Australia–Japan rugby union test series|Australia–Japan test series]]
+| align=center|2–0
+| {{ru|AUS}}
+|-
+| [[2026 Bledisloe Cup|Bledisloe Cup test series]]
+| align=center|
+|
+|-
+| [[2026 New Zealand rugby union tour of South Africa|2026 Greatest Rivalry tour]]
+| align=center|3–1
+| {{ru|RSA}}
+|}
+
+==February==
+{{rugbybox
+|date = 6 February 2026
+|time = 17:30 [[Central European Time|CET]] ([[UTC+1]])
+|team1 = {{RuA-rt|ITA|name=Italy XV}}
+|score = 24–24
+|report = [https://scottishrugby.org/news-and-features/match-report-italy-xv-24-24-scotland-a/ Report]
+|team2 = {{ruA|SCO}}
+|try1 = [[Nicholas Gasperini|Gasperini]] 30' c<br />[[Nelson Casartelli|Casartelli]] 36' c<br />[[Marcos Gallorini|Gallorini]] 52' c
+|con1 = [[Giovanni Montemauri|Montemauri]] (3/3) 31', 37', 40'
+|pen1 = [[Giovanni Montemauri|Montemauri]] (1/1) 57'
+|try2 = [[Gregor Hiddleston|Hiddleston]] 17' c<br />[[Kyle Rowe|Rowe]] (2) 38' m, 61' m<br />[[Cameron Redpath|Redpath]] 49' c
+|con2 = [[Fergus Burke|Burke]] (2/4) 18', 50'
+|stadium = [[Stadio Centro d'Italia – Manlio Scopigno|Stadio Centro d'Italia]], [[Rieti]]
+|attendance =
+|referee = Daniele Pompa ([[Italian Rugby Federation|Italy]])
+}}
+----
+{{rugbybox
+|date = 6 February 2026
+|time = 17:30 [[Central European Time|CET]] ([[UTC+1]])
+|team1 = {{RuA-rt|IRE|name=Ireland XV}}
+|score = 14–42
+|report = [https://www.bbc.co.uk/sport/rugby-union/articles/cnvgvz7ny78o Report]
+|team2 = {{ruA|ENG|name=England A}}
+|try1 = [[Brian Gleeson (rugby union)|Gleeson]] 23' c<br />[[Joshua Kenny (rugby union)|Kenny]] 38' c
+|con1 = [[Ciarán Frawley|Frawley]] (2/2) 24, 38'
+|try2 = [[Ethan Roots|Roots]] (2) 8' c, 78' c<br />[[Billy Searle|Searle]] 17' m<br />[[Ollie Hassell-Collins|Hassell-Collins]] (2) 28' m, 50' c<br />[[Harry Randall (rugby union)|Randall]] 35' c<br />[[George Kloska|Kloska]] 43' c<br />[[Cadan Murley|Murley]] 61' c
+|con2 = [[Billy Searle|Searle]] (5/7) 9', 35', 44', 51', 62'<br />[[Charlie Atkinson (rugby union)|Atkinson]] (1/1) 79'
+|stadium = [[Thomond Park]], [[Limerick]]
+|attendance =
+|referee = Benoit Rousselet ([[French Rugby Federation|France]])
+}}
+
+==March==
+{{rugbybox
+|date = 6 March 2026
+|time = 17:00 [[Central European Time|CET]] ([[UTC+1]])
+|team1 = {{RuA-rt|ITA|name=Italy XV}}
+|score = 33–26
+|report = [https://www.world.rugby/beta/en/match/b31a9f9b-03af-43ce-b348-7be22d1c1f75 Report]
+|team2 = {{ru|CHI}}
+|try1 = [[Damiano Mazza (rugby union)|Mazza]] 14' c<br />[[Simone Brisighella|Brisighella]] 34' c<br />[[Nicholas Gasperini|Gasperini]] 44' c<br />[[Fabrizio Ciardullo-Oro|Ciardullo-Oro]] 69' m<br />[[Mirko Belloni|Belloni]] 72' c
+|con1 = [[Simone Brisighella|Brisighella]] (3/3) 15', 35', 45'<br />[[Giovanni Montemauri|Montemauri]] (1/2) 72'
+|try2 = [[Iñaki Gurruchaga|Gurruchaga]] (2) 10' c, 55' c<br />[[Rodrigo Fernández (rugby union)|Fernández]] 40' m<br />[[Federico Kennedy|Kennedy]] 80' c
+|con2 = [[Matias Garafulic|Garafulic]] (2/3) 11', 56'<br />[[Juan Cruz Reyes|Cruz Reyes]] (1/1) 80'
+|stadium = [[Stadio Tommaso Fattori]], [[L'Aquila]]<ref name="Italy XV">{{cite web|url=https://federugby.it/italia-xv-ufficializzato-il-calendario-delle-partite-in-campo-contro-scozia-a-e-cile/|title=Italy XV, the match schedule has been made official: on the pitch against Scotland A and Chile|date=16 December 2025|access-date=27 January 2026}}</ref>
+|attendance =
+|referee = Franco Rosella ([[Italian Rugby Federation|Italy]])
+}}
+----
+{{rugbybox
+|date = 21 March 2026
+|time = 13:30 [[Central European Time|CET]] ([[UTC+01:00|UTC+1]])
+|home = {{ru-rt|GIB}}
+|score = 13–37
+|report = [https://www.chronicle.gi/a-day-to-remember-as-gibraltar-rugby-took-on-34th-ranked-sweden/ Report]
+|away = {{ru|SWE}}
+|try1 = Morris 17' c
+|con1 = Morris (1/1) 18'
+|pen1 = Morris 37'
+|try2 = MacAodha 21' c<br />Neilson 26' m<br />Nylèn 28' m<br />Fryxell 40' m<br />Fransson 55' m<br />Carlsson 70' m<br />K Nilsson 80+4' m
+|con2 = Nylèn (1/4) 22'
+|cards2 = Xhizasnishvili {{yel|80}}
+|stadium = [[Europa Point Stadium]], [[Gibraltar]]
+|attendance =
+|referee = Harry Parsons ([[Rugby Football Union|RFU]])
+}}
+----
+{{rugbybox
+|date = 21 March 2026
+|time = 19:00 [[Eastern European Time|EET]] ([[UTC+2]])
+|team1 = {{Ru-rt|GRE}}
+|score = 22–12
+|report = [https://www.world.rugby/beta/en/match/7bf1e8de-bb63-4809-98a7-64e23e29a092 Report]
+|team2 = {{ru|KOS}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = Municipal stadium, [[Haidari]]<ref name="Double matches for Greece XVs">{{cite web |url=https://www.instagram.com/p/DWEyp8PDMX8/ |title=Greece makes history after 11 years |date=20 March 2026 }}</ref>
+|attendance =
+|referee =
+}}
+
+==April==
+{{rugbybox
+|date = 3 April 2026
+|time = 14:00 [[Central European Summer Time|CEST]] ([[UTC+2]])
+|team1 = {{Ru-rt|CZE}}
+|score = 54–27
+|report = [https://rugbyunion.cz/novinky/ragbiste-porazili-v-praze-mexicany?fbclid=IwdGRzaAQ9BkhjbGNrBD0GQ2V4dG4DYWVtAjExAHNydGMGYXBwX2lkDDM1MDY4NTUzMTcyOAABHlb-bxirZ5K2vwoof6C6bUKCjQr56RgwB0h2ZYd-4JiTjLrTKkzkVPeBJyqS_aem_x-LxWRT2TbcjYo3Q723iLQ Report]
+|team2 = {{ru|MEX}}
+|try1 = Surga 3' m<br />Havel 18' c<br />Sehnal (2) 22' c, 74' c<br />Sklensky 45' c<br />Komarek (2) 53' c, 80' c<br />Skop 57' c
+|con1 = Fojtik (3/4) 19', 23', 46'<br />Pracka (4/4) 54', 57', 75', 80'
+|try2 = Gaballero (2) 27' m, 50' c<br />Nichols 32' m<br />Martinez 63' c
+|con2 = Alvarez (2/4) 51', 63'
+|pen2 = Alvarez (1/1) 8'
+|stadium = [[Markéta Stadium]], [[Prague]]<ref>{{cite web|url=http://www.instagram.com/p/DWW8NklMAAw/|title=MEXIKO NA MARKÉTĚ|date=27 March 2026|access-date=30 March 2026}}</ref>
+|attendance =
+|referee = Nicolae Fratila ([[Romanian Rugby Federation|Romania]])
+}}
+----
+{{rugbybox
+|date = 10 April 2026
+|time = 19:00 [[Central European Summer Time|CEST]] ([[UTC+2]])
+|team1 = {{Ru-rt|CRO}}
+|score = 17–33
+|report = [https://www.world.rugby/beta/en/match/739823ae-c042-42ee-b666-8296e47e6014 Report]
+|team2 = {{ru|MEX}}
+|try1 = Proloscic 17' m<br />Proloscic 32' c<br />Vlasic 77' m
+|con1 = Vranesevic (1/3) 33'
+|try2 = Gaballero 5' c<br />Diaz 48' c<br />Olivo 56' c<br />Zuzaeta 73' m<br />Rodriguez 80' c
+|con2 = Alvarez (3/4) 6', 49', 57'<br />Rodriguez (1/1) 80'
+|stadium = [[Stadion Park Mladeži]], [[Split, Croatia|Split]]<ref>{{cite web|url=https://www.world.rugby/beta/en/match/739823ae-c042-42ee-b666-8296e47e6014|title=Croatia vs Mexico|date=8 April 2026|access-date=8 April 2026}}</ref>
+|attendance =
+|referee = Marco Sanatelli ([[Italian Rugby Federation|Italy]])
+}}
+----
+{{rugbybox
+|date = 25 April 2026
+|time = 15:30 [[Central Africa Time|CAT]] ([[UTC+2]])
+|team1 = {{Ru-rt|ZIM}}
+|score = 43–31
+|report =
+|team2 = {{ru|ZAM}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Harare Sports Club]], [[Harare]]<ref name="Zimbabwe vs Zambia">{{cite web|url=https://www.facebook.com/ZimbabweRugbyUnion/posts/pfbid06p7euNSZWw3HqTNqqFEkgZHKEKXP86bzby6b4DXDamR9JUcn7axNMz2oGywW2Sjtl|title=Zimbabwe vs Zambia|website=[[Facebook]] |date=10 April 2026|access-date=10 April 2026}}</ref>
+|attendance =
+|referee =
+}}
+
+==May==
+{{rugbybox
+|date = 2 May 2026
+|time = 15:30 [[Central Africa Time|CAT]] ([[UTC+2]])
+|team1 = {{Ru-rt|ZIM}}
+|score = 17–7
+|report =
+|team2 = {{ru|ZAM}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = Hartsfield Rugby Grounds, [[Bulawayo]]<ref name="Zimbabwe vs Zambia"/>
+|attendance =
+|referee =
+}}
+----
+{{rugbybox
+|date = 15 May 2026
+|time = 20:00 [[Arabia Standard Time|AST]] ([[UTC+3]])
+|team1 = {{Ru-rt|QAT}}
+|score = 58–12
+|report = [https://www.world.rugby/beta/en/match/2166d3be-1ebb-4869-b5d8-8d28344ea9a5 Report]
+|team2 = {{Ru|SAU}}
+|try1 = Botha (2) 6' m, 28' c<br />Weber 15' m<br />Hughes (2) 38' m, 55' m<br />Lock 41' c<br />Raper 48' m<br />Swart 60' m<br />Onsare 70' c<br />Ekron 80+2' m
+|con1 = Swart (4/10) 16', 29', 42', 71'
+|try2 = Wheeler 22' c<br />Karaali 76' m
+|con2 = Wheeler (1/1) 22'
+|stadium = Onaiza Park, [[Doha]]<ref>{{cite web |url=https://www.instagram.com/p/DYE1wbHjD27/ |title=Join us at Onazia Training Ground for Qatars first ever Test Match against Saudi Arabia |date=8 May 2026 |access-date=12 May 2026}}</ref>
+|attendance =
+|referee = Joanna Bezuidenhout ([[Qatar Rugby Federation|Qatar]])
+}}
+
+==June==
+{{rugbybox
+|date = 19 June 2026
+|time = 18:15 [[Central European Summer Time|CEST]] ([[UTC+02]])
+|team1 = {{RuA-rt|FRA|name=France XV}}
+|score = 35–19
+|report = [https://www.bbc.co.uk/sport/rugby-union/articles/c78y0pyeenro Report]
+|team2 = {{RuA|ENG|name=England XV}}
+|try1 = [[Nicolas Depoortère|Depoortère]] 8' c<br />[[Grégoire Arfeuil|Arfeuil]] 20' c<br />[[Nolann Le Garrec|Le Garrec]] 46' c<br />[[Antoine Hastoy|Hastoy]] 50' c<br />[[Fabien Brau-Boirie|Brau-Boirie]] 78' c
+|con1 = [[Antoine Hastoy|Hastoy]] (4/4) 9', 21', 47', 51'<br />[[Axel Desperes|Desperes]] (1/1) 79'
+|try2 = [[Cadan Murley|Murley]] 1' m<br />[[Marcus Smith (rugby union)|M Smith]] 40' c<br />[[Max Ojomoh|Ojomoh]] 80+2' c
+|con2 = [[George Ford (rugby union)|Ford]] (2/3) 40+1', 80+3'
+|stadium = [[Stade de la Rabine]], [[Vannes]]<ref name="France XV A v England XV">{{Cite web |title=Un match France - Angleterre officiellement programmé au Stade de La Rabine à Vannes |url=https://www.letelegramme.fr/morbihan/vannes-56000/un-match-france-angleterre-officiellement-programme-au-stade-de-la-rabine-a-vannes-7044392.php |access-date=15 May 2026 |website=Le Telegramme |date=14 May 2026 }}</ref>
+|attendance = 12,042
+|referee = [[Gianluca Gnecchi]] ([[Italian Rugby Federation|Italy]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Théo Attissogbe]]
+|-
+|RW ||'''14'''||[[Christian Ambadiang]]
+|-
+|OC ||'''13'''||[[Nicolas Depoortère]] || || {{suboff|54}}
+|-
+|IC ||'''12'''||[[Yoram Moefana]]
+|-
+|LW ||'''11'''||[[Grégoire Arfeuil]] || || {{suboff|21}}
+|-
+|FH ||'''10'''||[[Antoine Hastoy]]
+|-
+|SH ||'''9''' ||[[Nolann Le Garrec]] || || {{suboff|51}}
+|-
+|N8 ||'''8''' ||[[Marko Gazzotti]]
+|-
+|OF ||'''7''' ||[[Esteban Capilla]] || || {{suboff|44}}
+|-
+|BF ||'''6''' ||[[Temo Matiu]]
+|-
+|RL ||'''5''' ||[[Tom Staniforth]]
+|-
+|LL ||'''4''' ||[[Mickaël Guillard]] ([[Captain (sports)|c]]) || || {{suboff|51}}
+|-
+|TP ||'''3''' ||[[Sipili Falatea]] || || {{suboff|44}}
+|-
+|HK ||'''2''' ||[[Maxime Lamothe]] || || {{suboff|51}}
+|-
+|LP ||'''1''' ||[[Jefferson Poirot]] || || {{suboff|51}}
+|-
+|colspan="3"|'''Replacements:'''
+|-
+|HK ||'''16'''||[[Barnabé Massa]] || || {{subon|51}}
+|-
+|PR ||'''17'''||[[Reda Wardi]] || || {{subon|51}}
+|-
+|PR ||'''18'''||[[Régis Montagne]] || || {{subon|44}}
+|-
+|LK ||'''19'''||[[Boris Palu]] || || {{subon|51}}
+|-
+|BR ||'''20'''||[[Killian Tixeront]] || || {{subon|44}}
+|-
+|SH ||'''21'''||[[Baptiste Jauneau]] || || {{subon|51}}
+|-
+|FH ||'''22'''||[[Axel Desperes]] || || {{subon|21}}
+|-
+|CE ||'''23'''||[[Fabien Brau-Boirie]] || || {{subon|54}}
+|-
+|colspan="3"|'''Coach:'''
+|-
+|colspan="3"|{{flagicon|FRA}} [[Fabien Galthié]]
+|}
+|style="vertical-align:top"|
+|style="vertical-align:top; width:50%"|
+{| cellspacing="0" cellpadding="0" align="center"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Marcus Smith (rugby union)|Marcus Smith]]
+|-
+|RW ||'''14'''||[[Noah Caluori]]
+|-
+|OC ||'''13'''||[[Max Ojomoh]]
+|-
+|IC ||'''12'''||[[Seb Atkinson]] || || {{suboff|51}}
+|-
+|LW ||'''11'''||[[Cadan Murley]] || || {{suboff|51}}
+|-
+|FH ||'''10'''||[[George Ford (rugby union)|George Ford]]
+|-
+|SH ||'''9''' ||[[Harry Randall (rugby union)|Harry Randall]] ([[Captain (sports)|c]]) || || {{suboff|51}}
+|-
+|N8 ||'''8''' ||[[Alex Dombrandt]]
+|-
+|OF ||'''7''' ||[[Tom Curry (rugby union)|Tom Curry]] || || {{suboff|51}}
+|-
+|BF ||'''6''' ||[[Ted Hill (rugby union)|Ted Hill]]
+|-
+|RL ||'''5''' ||[[George Martin (rugby union)|George Martin]] || || {{suboff|51}}
+|-
+|LL ||'''4''' ||[[Charlie Ewels]]
+|-
+|TP ||'''3''' ||[[George Kloska]] || || {{suboff|51}}
+|-
+|HK ||'''2''' ||[[Theo Dan]] || || {{suboff|51}}
+|-
+|LP ||'''1''' ||[[Asher Opoku-Fordjour]] || || {{suboff|51}}
+|-
+|colspan="3"|'''Replacements:'''
+|-
+|HK ||'''16'''||[[Jamie Blamire]] || || {{subon|51}}
+|-
+|PR ||'''17'''||[[Beno Obano]] || || {{subon|51}}
+|-
+|PR ||'''18'''||[[Vilikesa Sela]] || || {{subon|51}}
+|-
+|LK ||'''19'''||[[Nick Isiekwe]] || || {{subon|51}}
+|-
+|BR ||'''20'''||[[Jack Kenningham]] || || {{subon|51}}
+|-
+|SH ||'''21'''||[[Raffi Quirke]] || || {{subon|51}}
+|-
+|CE ||'''22'''||[[Benhard Janse van Rensburg]] || || {{subon|51}}
+|-
+|WG ||'''23'''||[[Adam Radwan]] || || {{subon|51}}
+|-
+|colspan="3"|'''Coach:'''
+|-
+|colspan="3"|{{flagicon|ENG}} [[Steve Borthwick]]
+|}
+|}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+
+-->'''Assistant referees:'''
+<br />Julien Caulier ([[French Rugby Federation|France]])
+<br />Ludovic Carrillo ([[French Rugby Federation|France]])
+<br />'''Television match official:'''
+<br />Philippe Bonhoure ([[French Rugby Federation|France]])
+|}
+|}
+----
+{{rugbybox
+|date = 20 June 2026
+|time = 12:00 [[South African Standard Time|SAST]] ([[UTC+2]])
+|team1 = {{ruA-rt|RSA}}
+|score = 40–0
+|report = [https://rugby365.com/countries/south-africa/youngsters-impress-as-sa-a-blank-zimbabwe-sables/ Report]
+|team2 = {{ru|ZIM}}
+|try1 = [[Yaqeen Ahmed|Ahmed]] 17' c<br />[[Markus Muller (rugby union)|Muller]] 21' c<br />[[Haashim Pead|Pead]] 31' c<br />[[Nico Steyn|Steyn]] 54' c<br />[[Imad Khan|Khan]] 67' c<br />[[Jaco Williams|Williams]] 80' m
+|con1 = [[Yaqeen Ahmed|Ahmed]] (3/3) 18', 22', 32'<br />[[Luan Giliomee|Giliomee]] (2/3) 55', 68'
+|stadium = [[Nelson Mandela Bay Stadium]], [[Gqeberha]]<ref name="Springboks A v Zimbabwe">{{Cite web |title=SA 'A' to face Zimbabwe in Gqeberha double-header |url=https://saru-umbraco.azurewebsites.net//news-features/articles/2026/04/14/sa-a-to-face-zimbabwe-in-gqeberha-double-header/ |access-date=15 April 2026 |website=SA Rugby}}</ref>
+|attendance =
+|referee = [[Aimee Barrett-Theron]] ([[South African Rugby Union|South Africa]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Luan Giliomee]]
+|-
+|RW ||'''14'''||[[Jaco Williams]]
+|-
+|OC ||'''13'''||[[Markus Muller (rugby union)|Markus Muller]]
+|-
+|IC ||'''12'''||[[Lukhanyo Am]]
+|-
+|LW ||'''11'''||[[Zekhethelo Siyaya]] || || {{suboff|35}}
+|-
+|FH ||'''10'''||[[Yaqeen Ahmed]] || {{sent off|0|51}}
+|-
+|SH ||'''9''' ||[[Haashim Pead]] || || {{suboff|40}}
+|-
+|N8 ||'''8''' ||[[Phepsi Buthelezi]] || || {{suboff|54}}
+|-
+|OF ||'''7''' ||[[Bathobele Hlekani]] || || {{suboff|49}}
+|-
+|BF ||'''6''' ||[[Emmanuel Tshituka]]
+|-
+|RL ||'''5''' ||[[Ruben van Heerden]]
+|-
+|LL ||'''4''' ||[[Vincent Tshituka]] ([[Captain (sports)|c]])
+|-
+|TP ||'''3''' ||[[Neethling Fouche]] || || {{suboff|49}}
+|-
+|HK ||'''2''' ||[[Siphosethu Mnebelele]] || || {{suboff|61}}
+|-
+|LP ||'''1''' ||[[Boan Venter]] || || {{suboff|61}}
+|-
+|colspan="3"|'''Replacements:'''
+|-
+|HK ||'''16'''||[[Liam van Wyk]] || || {{subon|61}}
+|-
+|PR ||'''17'''||[[Oliver Reid]] || || {{subon|61}}
+|-
+|PR ||'''18'''||[[Hanro Jacobs]] || || {{subon|49}}
+|-
+|LK ||'''19'''||[[Adré Smith]] || || {{subon|54}}
+|-
+|BR ||'''20'''||[[Siba Mahashe]] || || {{subon|49}}
+|-
+|SH ||'''21'''||[[Nico Steyn]] || || {{subon|40}} || {{suboff|65}} || {{subon|71}}
+|-
+|SH ||'''22'''||[[Imad Khan]] || || || {{subon|65}}
+|-
+|WG ||'''23'''||[[Jurenzo Julius]] || || {{subon|35}}
+|-
+|colspan="3"|'''Coach:'''
+|-
+|colspan="3"|{{flagicon|RSA}} [[Mzwandile Stick]]
+|}
+|style="vertical-align:top"|
+|style="vertical-align:top; width:50%"|
+{| cellspacing="0" cellpadding="0" align="center"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Tapiwa Mafura]] || || {{suboff|52}} || {{subon|61}}
+|-
+|RW ||'''14'''||[[Trevor Gurwe]] || || || {{suboff|61}}
+|-
+|OC ||'''13'''||[[Brandon Mudzekenyedzi]]
+|-
+|IC ||'''12'''||[[Kudzai Mashawi]]
+|-
+|LW ||'''11'''||[[Edward Sigauke]]
+|-
+|FH ||'''10'''||[[Bruce Houston]]
+|-
+|SH ||'''9''' ||[[Hilton Mudariki]] ([[Captain (sports)|c]]) || || {{suboff|65}}
+|-
+|N8 ||'''8''' ||[[Tinotenda Mavesere]]
+|-
+|OF ||'''7''' ||[[Dylan Utete]] || || {{suboff|65}}
+|-
+|BF ||'''6''' ||[[Simbarashe Siraha]]
+|-
+|RL ||'''5''' ||[[Gary Porter (rugby union)|Gary Porter]] || || {{suboff|68}}
+|-
+|LL ||'''4''' ||[[Kudakwashe Nyakufaringwa]] || || {{suboff|59}}
+|-
+|TP ||'''3''' ||[[Bornwell Gwinji]] || || {{suboff|31}}
+|-
+|HK ||'''2''' ||[[Simba Mandioma]] || || {{suboff|63}}
+|-
+|LP ||'''1''' ||[[Victor Mupunga]] || || {{suboff|61}}
+|-
+|colspan="3"|'''Replacements:'''
+|-
+|HK ||'''16'''||[[Liam Larkan]] || || {{subon|63}}
+|-
+|PR ||'''17'''||[[Tijde Visser]] || || {{subon|61}}
+|-
+|PR ||'''18'''||[[Michael Kumbirai]] || || {{subon|31}}
+|-
+|LK ||'''19'''||[[Daniel Cooke (rugby union)|Daniel Cooke]] || || {{subon|68}}
+|-
+|LK ||'''20'''||[[Tadiwanashe Gwashu]] || || {{subon|59}}
+|-
+|BR ||'''21'''||[[Aiden Burnett]] || || {{subon|65}}
+|-
+|SH ||'''22'''||[[Keegan Joubert]] || || {{subon|65}}
+|-
+|CE ||'''23'''||[[Dion Khumalo]] || || {{subon|52}}
+|-
+|colspan="3"|'''Coach:'''
+|-
+|colspan="3"|{{flagicon|ZIM}} [[Pieter Benade]]
+|}
+|}
+{| width=100%
+|
+'''Player of the Match:'''
+<br />[[Ruben van Heerden]] (South Africa)
+
+'''Assistant referees:'''
+<br />Sean Muller ([[South African Rugby Union|South Africa]])
+<br />Dylen November ([[South African Rugby Union|South Africa]])
+<br />'''Television match official:'''
+<br />[[Marius Jonker]] ([[South African Rugby Union|South Africa]])
+<br />'''Foul play review officer:'''
+<br />[[Marius van der Westhuizen]] ([[South African Rugby Union|South Africa]])
+|}
+|}
+----
+{{rugbybox
+|date = 20 June 2026
+|time = 15:00 [[South African Standard Time|SAST]] ([[UTC+2]])
+|team1 = {{ru-rt|RSA}}
+|score = 80–31
+|report = [https://rugby365.com/countries/south-africa/van-der-merwe-hat-trick-horns-audition-headline-12-try-barbarians-rout/ Report]
+|team2 = [[Barbarian F.C.|Barbarians]]
+|try1 = [[Edwill van der Merwe|E. van der Merwe]] (3) 4' c, 14' c, 57' m<br />[[Pieter-Steph du Toit|Du Toit]] 11' c<br />[[Jasper Wiese|Wiese]] 19' c<br />[[Riley Norton|Norton]] 24' c<br />[[Cheslin Kolbe|Kolbe]] 40+2' m<br />[[JJ Kotze|Kotze]] 47' c<br />[[Faf de Klerk|De Klerk]] 63' m<br />[[Jesse Kriel|Kriel]] 73' c<br />[[André Esterhuizen|Esterhuizen]] 75' c<br />[[Zachary Porthen|Porthen]] 80' c
+|con1 = [[Cheslin Kolbe|Kolbe]] (8/10) 5', 12', 15', 20', 25', 48', 64', 74'<br />[[Vusi Moyo|Moyo]] 80+1'
+|try2 = [[Virimi Vakatawa|Vakatawa]] 9' c<br />[[Franco Molina|Molina]] 31' c<br />[[Andrew Kellaway (rugby union)|Kellaway]] (2) 35' m, 61' m<br />[[TJ Perenara|Perenara]] 37' c
+|con2 = [[Tomás Albornoz|Albornoz]] (3/5) 10', 32', 38'
+|stadium = [[Nelson Mandela Bay Stadium]], [[Gqeberha]]<ref name="Springboks v Barbarians">{{cite web|url=https://www.sarugby.co.za/news-features/articles/2026/02/24/boks-to-kick-off-season-against-baabaas-in-gqeberha/|title=Boks to kick off season against BaaBaas in Gqeberha|date=24 February 2026|access-date=24 February 2026}}</ref>
+|attendance = 26,398<ref>{{Cite web |date=21 June 2026 |title=Springboks rack up massive victory against Barbarians with 12 tries |url=https://sundayworld.co.za/rugby/springboks-rack-up-massive-victory-against-barbarians-with-12-tries/ |access-date=21 June 2026 |website=Sunday World }}</ref>
+|referee = [[Morné Ferreira]] ([[South African Rugby Union|South Africa]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Aphelele Fassi]] || {{yel|43}} || {{suboff|53}} || {{subon|64}}
+|-
+|RW ||'''14'''||[[Cheslin Kolbe]]
+|-
+|OC ||'''13'''||[[Jesse Kriel]]
+|-
+|IC ||'''12'''||[[André Esterhuizen]]
+|-
+|LW ||'''11'''||[[Edwill van der Merwe]] || || || {{suboff|64}}
+|-
+|FH ||'''10'''||[[Quan Horn]] || || || {{suboff|64}}
+|-
+|SH ||'''9''' ||[[Grant Williams (rugby union)|Grant Williams]] || {{yel|30}} || {{suboff|55}} || {{subon|64}}
+|-
+|N8 ||'''8''' ||[[Jasper Wiese]] || || {{suboff|46}}
+|-
+|OF ||'''7''' ||[[Pieter-Steph du Toit]] || || {{suboff|46}} || {{subon|56}}
+|-
+|BF ||'''6''' ||[[Siya Kolisi]] ([[Captain (sports)|c]]) || || {{suboff|46}}
+|-
+|RL ||'''5''' ||[[Franco Mostert]] || || || {{suboff|56}}
+|-
+|LL ||'''4''' ||[[Riley Norton]]
+|-
+|TP ||'''3''' ||[[Carlü Sadie]] || || {{suboff|46}}
+|-
+|HK ||'''2''' ||[[Andre-Hugo Venter]] || || {{suboff|44}} || {{subon|53}} || {{suboff|56}}
+|-
+|LP ||'''1''' ||[[Ox Nche]] || || {{suboff|46}}
+|-
+|colspan="3"|'''Replacements:'''
+|-
+|HK ||'''16'''||[[JJ Kotze]] || || {{subon|44}} || {{suboff|54}} || {{subon|56}}
+|-
+|PR ||'''17'''||[[Ntuthuko Mchunu]] || || {{subon|46}}
+|-
+|PR ||'''18'''||[[Zachary Porthen]] || || {{subon|46}}
+|-
+|LK ||'''19'''||[[Ben-Jason Dixon]] || || {{subon|46}}
+|-
+|FL ||'''20'''||[[Paul de Villiers]] || || {{subon|46}}
+|-
+|BR ||'''21'''||[[Evan Roos]] || || {{subon|46}}
+|-
+|SH ||'''22'''||[[Faf de Klerk]] || || {{subon|55}}
+|-
+|WG ||'''23'''||[[Vusi Moyo]] || || {{subon|53}}
+|-
+|colspan="3"|'''Coach:'''
+|-
+|colspan="3"|{{flagicon|RSA}} [[Rassie Erasmus]]
+|}
+|style="vertical-align:top"|
+|style="vertical-align:top; width:50%"|
+{| cellspacing="0" cellpadding="0" align="center"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||{{flagicon|RSA}} [[Warrick Gelant]]
+|-
+|RW ||'''14'''||{{flagicon|AUS}} [[Andrew Kellaway (rugby union)|Andrew Kellaway]]
+|-
+|OC ||'''13'''||{{flagicon|FRA}} [[Virimi Vakatawa]]
+|-
+|IC ||'''12'''||{{flagicon|NZL}} [[Alex Nankivell]]
+|-
+|LW ||'''11'''||{{flagicon|SCO}} [[Duhan van der Merwe]] || || {{suboff|53}}
+|-
+|FH ||'''10'''||{{flagicon|ARG}} [[Tomás Albornoz]] || || {{suboff|55}}
+|-
+|SH ||'''9''' ||{{flagicon|NZL}} [[TJ Perenara]] ([[Captain (sports)|c]]) || {{yel|11}} || {{suboff|64}}
+|-
+|N8 ||'''8''' ||{{flagicon|SAM}} [[Miracle Faiʻilagi]] || {{yel|13}}
+|-
+|OF ||'''7''' ||{{flagicon|NZL}} [[Lachlan Boshier]]
+|-
+|BF ||'''6''' ||{{flagicon|ARG}} [[Guido Petti]] || || {{suboff|74}}
+|-
+|RL ||'''5''' ||{{flagicon|AUS}} [[Izack Rodda]] || || {{suboff|53}}
+|-
+|LL ||'''4''' ||{{flagicon|ARG}} [[Franco Molina]]
+|-
+|TP ||'''3''' ||{{flagicon|SCO}} [[D'Arcy Rae]] || || {{suboff|46}}
+|-
+|HK ||'''2''' ||{{flagicon|WAL}} [[Elliot Dee]] || {{yel|52}} || {{suboff|63}}
+|-
+|LP ||'''1''' ||{{flagicon|ARG}} [[Mayco Vivas]] || || {{suboff|46}}
+|-
+|colspan="3"|'''Replacements:'''
+|-
+|HK ||'''16'''||{{flagicon|ARG}} [[Leonel Oviedo]] || || {{subon|53}}
+|-
+|PR ||'''17'''||{{flagicon|SCO}} [[Oli Kebble]] || || {{subon|46}}
+|-
+|PR ||'''18'''||{{flagicon|ARG}} [[Pedro Delgado (rugby union)|Pedro Delgado]] || || {{subon|46}}
+|-
+|LK ||'''19'''||{{flagicon|RSA}} [[Sintu Manjezi]] || || {{subon|74}}
+|-
+|FL ||'''20'''||{{flagicon|SCO}} [[Liam McConnell]] || || {{subon|53}}
+|-
+|SH ||'''21'''||{{flagicon|URU}} [[Santiago Arata]] || || {{subon|64}}
+|-
+|FH ||'''22'''||{{flagicon|NZL}} [[Harry Plummer (rugby union)|Harry Plummer]] || || {{subon|55}}
+|-
+|CE ||'''23'''||{{flagicon|FIJ}} [[Tuidraki Samusamuvodre]] || || {{subon|63}}
+|-
+|colspan="3"|'''Coach:'''
+|-
+|colspan="3"|{{flagicon|NZL}} [[Scott Robertson (rugby union)|Scott Robertson]]
+|}
+|}
+{| width=100%
+|
+'''Player of the Match:'''
+<br />[[Riley Norton]] (South Africa)
+
+'''Assistant referees:'''
+<br />Griffin Colby ([[South African Rugby Union|South Africa]])
+<br />Hanru van Rooyen ([[South African Rugby Union|South Africa]])
+<br />'''Television match official:'''
+<br />[[Marius van der Westhuizen]] ([[South African Rugby Union|South Africa]])
+<br />'''Foul play review officer:'''
+<br />[[Marius Jonker]] ([[South African Rugby Union|South Africa]])
+|}
+|}
+----
+{{rugbybox
+|date = 27 June 2026
+|time = 19:05 [[Japan Standard Time|JST]] ([[UTC+9]])
+|team1 = {{Ru-rt|JAP|name=Japan XV}}
+|score = 31–38
+|report = [https://en.rugby-japan.jp/2026/07/01/japan-xv-pipped-by-maori-all-blacks-in-nagoya-thriller/ Report]
+|team2 = {{ru|New Zealand Māori|name=Māori All Blacks}}
+|try1 = [[Kazuma Ueda|Ueda]] 8' c<br />[[Mamoru Harada|Harada]] 33' m<br />[[Dylan Riley (rugby union)|Riley]] 36' c<br />[[Inoke Burua|Burua]] 39' m<br />[[Takurō Matsunaga|Matsunaga]] 53' c
+|con1 = [[Takurō Matsunaga|Matsunaga]] (3/5) 8', 37', 54'
+|try2 = [[Adam Lennox|Lennox]] 14' c<br />[[Bailyn Sullivan|Sullivan]] 49' c<br />[[TK Howden|Howden]] 63' c<br />[[Sam Nock|Nock]] 67' c<br />[[Taha Kemara|Kemara]] 75' m<br />[[Xavi Taele|Taele]] 79' m
+|con2 = [[Rivez Reihana|Reihana]] (2/2) 15', 50'<br />[[Taha Kemara|Kemara]] (2/4) 64', 69'
+|stadium = [[Paloma Mizuho Stadium (2026)|Paloma Mizuho Stadium]], [[Nagoya]]<ref name="Japan1">{{cite web|url=https://en.rugby-japan.jp/2026/02/02/japan-mens-2026-domestic-match-schedule-announced/|title=Japan Men's 2026 Domestic Match Schedule Announced|date=2 February 2026|access-date=2 February 2026}}</ref>
+|attendance = 23,165
+|referee = [[Sam Grove-White]] ([[Scottish Rugby Union|Scotland]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Takurō Matsunaga]]
+|-
+|RW ||'''14'''||[[Kazuma Ueda]]
+|-
+|OC ||'''13'''||[[Dylan Riley (rugby union)|Dylan Riley]] || || {{suboff|69}}
+|-
+|IC ||'''12'''||[[Jisu Lee]] || || {{suboff|60}}
+|-
+|LW ||'''11'''||[[Inoke Burua]] || ||
+|-
+|FH ||'''10'''||[[Ryūnosuke Itō]]
+|-
+|SH ||'''9''' ||[[Takuro Hojo]] || || {{suboff|40}}
+|-
+|N8 ||'''8''' ||[[Waisake Raratubua]] || || {{suboff|34}} || {{subon|50}} || {{suboff|49}}
+|-
+|OF ||'''7''' ||[[Tiennan Costley]] || || {{suboff|66}}
+|-
+|BF ||'''6''' ||[[Kanji Shimokawa]]
+|-
+|RL ||'''5''' ||[[Michael Stolberg]]
+|-
+|LL ||'''4''' ||[[Esei Ha'angana]] || ||
+|-
+|TP ||'''3''' ||[[Shuhei Takeuchi]] || || {{suboff|72}}
+|-
+|HK ||'''2''' ||[[Mamoru Harada]] ([[Captain (sports)|c]]) || || {{suboff|61}}
+|-
+|LP ||'''1''' ||[[Takato Okabe]] || || {{suboff|40}}
+|-
+|colspan="3"|'''Replacements:'''
+|-
+|HK ||'''16'''||[[Kenji Sato]] || || {{subon|61}}
+|-
+|PR ||'''17'''||[[Sojiro Otsuka]] || || {{subon|40}}
+|-
+|PR ||'''18'''||[[Izi Sword]] || || {{subon|72}}
+|-
+|LK ||'''19'''||[[Shin Takeuchi]] || || {{subon|66}}
+|-
+|BR ||'''20'''||[[Aseri Masivou]] || || {{subon|34}} || {{suboff|50}} || {{subon|49}}
+|-
+|SH ||'''21'''||[[Haruto Watanabe]] || || {{subon|40}}
+|-
+|FH ||'''22'''||[[Sam Greene (rugby union)|Sam Greene]] || || {{subon|69}}
+|-
+|CE ||'''23'''||[[Taira Main]] || || {{subon|60}}
+|-
+|colspan="3"|'''Coach:'''
+|-
+|colspan="3"|{{flagicon|ENG}} [[Neal Hatley]]
+|}
+|style="vertical-align:top"|
+|style="vertical-align:top; width:50%"|
+{| cellspacing="0" cellpadding="0" align="center"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Cole Forbes]]
+|-
+|RW ||'''14'''||[[Payton Spencer]] || || {{suboff|71}}
+|-
+|OC ||'''13'''||[[Bailyn Sullivan]] ([[Captain (sports)|c]]) || {{yellow card|31}}
+|-
+|IC ||'''12'''||[[Xavi Taele]] || ||
+|-
+|LW ||'''11'''||[[Reon Paul]] || || {{suboff|39}}
+|-
+|FH ||'''10'''||[[Rivez Reihana]]
+|-
+|SH ||'''9''' ||[[Adam Lennox]] || || {{suboff|50}}
+|-
+|N8 ||'''8''' ||[[Torian Barnes]] || {{yellow card|32}}
+|-
+|OF ||'''7''' ||[[Jahrome Brown]] || || {{suboff|50}}
+|-
+|BF ||'''6''' ||[[TK Howden]]
+|-
+|RL ||'''5''' ||[[Tahlor Cahill]] || ||
+|-
+|LL ||'''4''' ||[[Laghlan McWhannell]] || || {{suboff|50}}
+|-
+|TP ||'''3''' ||[[Marcel Renata]] || || {{suboff|53}}
+|-
+|HK ||'''2''' ||[[Tyrone Thompson (rugby)|Tyrone Thompson]] || || {{suboff|53}}
+|-
+|LP ||'''1''' ||[[Ollie Norris]] || || {{suboff|53}}
+|-
+|colspan="3"|'''Replacements:'''
+|-
+|HK ||'''16'''||[[Jacob Devery]] || || {{subon|53}}
+|-
+|PR ||'''17'''||[[Pouri Rakete-Stones]] || || {{subon|53}}
+|-
+|PR ||'''18'''||[[Benet Kumeroa]] || || {{subon|53}}
+|-
+|LK ||'''19'''||[[Caleb Delany]] || || {{subon|50}}
+|-
+|BR ||'''20'''||[[Nikora Broughton]] || || {{subon|50}}
+|-
+|SH ||'''21'''||[[Sam Nock]] || || {{subon|39}}
+|-
+|FH ||'''22'''||[[Taha Kemara]] || || {{subon|50}}
+|-
+|WG ||'''23'''||[[Kyle Brown (rugby union, born 2002)|Kyle Brown]] || || {{subon|71}}
+|-
+|colspan="3"|'''Coach:'''
+|-
+|colspan="3"|{{flagicon|NZL}} [[Tamati Ellison]]
+|}
+|}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+
+-->'''Assistant referees:'''
+<br />Katsuki Furuse ([[Japan Rugby Football Union|Japan]])
+<br />[[Ibuki Tetsuka]] ([[Japan Rugby Football Union|Japan]])
+<br />'''Television match official:'''
+<br />Koki Yamauchi ([[Japan Rugby Football Union|Japan]])
+|}
+|}
+----
+{{rugbybox
+|date = 27 June 2026
+|time = 14:00 [[British Summer Time|BST]] ([[UTC+1]])
+|team1 = [[Barbarian F.C.|Barbarians]]
+|score = 31–33
+|report = [https://www.bbc.co.uk/sport/rugby-union/articles/c9q2exwqxlvo Report]
+|team2 = {{ru|WAL}}
+|try1 = [[Vincent Koch|Koch]] 8' m<br />[[George North|North]] (2) 48' m, 70' c<br />[[Alex Nankivell|Nankivell]] 60' c<br />[[Santiago Arata|Arata]] 80+3'
+|con1 = [[Harry Plummer (rugby union)|Plummer]] (2) 60', 71'<br />[[George North|North]] 80+4'
+|try2 = [[Kieran Hardy|Hardy]] 4' c<br />[[Dan Edwards (rugby union)|D. Edwards]] (2) 23', 45'<br />[[Reuben Morgan-Williams|Morgan-Williams]] 56'<br />[[Ellis Mee|Mee]] 67'
+|con2 = [[Dan Edwards (rugby union)|D. Edwards]] (2) 4', 24'<br />[[Sam Costelow|Costelow]] (2) 56', 68'
+|stadium = [[Twickenham Stadium]], [[London]]<ref>{{cite web|url=https://www.barbarianfc.co.uk/news/double-delight-barbarians-v-wales-men-women/|title=Double delight – Barbarians v Wales (Men & Women)|date=27 January 2026|access-date=27 January 2026}}</ref>
+|attendance = 20,000
+|referee = Anthony Woodthorpe ([[Rugby Football Union|England]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||{{flagicon|FRA}} [[Tom Spring (rugby union)|Tom Spring]]
+|-
+|RW ||'''14'''||{{flagicon|AUS}} [[Andrew Kellaway (rugby union)|Andrew Kellaway]] || || {{suboff|47}}
+|-
+|OC ||'''13'''||{{flagicon|RSA}} [[Jeremy Ward (rugby union)|Jeremy Ward]]
+|-
+|IC ||'''12'''||{{flagicon|NZL}} [[Alex Nankivell]]
+|-
+|LW ||'''11'''||{{flagicon|FRA}} [[Virimi Vakatawa]]
+|-
+|FH ||'''10'''||{{flagicon|NZL}} [[Harry Plummer (rugby union)|Harry Plummer]]
+|-
+|SH ||'''9''' ||{{flagicon|RSA}} [[Faf de Klerk]] ([[Captain (sports)|c]]) || || {{suboff|47}}
+|-
+|N8 ||'''8''' ||{{flagicon|ENG}} [[Nathan Hughes]] || || {{suboff|55}}
+|-
+|OF ||'''7''' ||{{flagicon|NZL}} [[Lachlan Boshier]]
+|-
+|BF ||'''6''' ||{{flagicon|AUS}} [[Lukhan Salakaia-Loto]]
+|-
+|RL ||'''5''' ||{{flagicon|FRA}} [[Romain Taofifénua]] || || {{suboff|61}}
+|-
+|LL ||'''4''' ||{{flagicon|AUS}} [[Izack Rodda]] || || {{suboff|50}}
+|-
+|TP ||'''3''' ||{{flagicon|RSA}} [[Vincent Koch]] || || {{suboff|47}}
+|-
+|HK ||'''2''' ||{{flagicon|WAL}} [[Elliot Dee]] || || {{suboff|55}}
+|-
+|LP ||'''1''' ||{{flagicon|GEO}} [[Giorgi Kharaishvili (rugby union)|Giorgi Kharaishvili]] || || {{suboff|26}}
+|-
+|colspan="3"|'''Replacements:'''
+|-
+|HK ||'''16'''||{{flagicon|ENG}} [[Harry Thacker]] || || {{subon|55}}
+|-
+|PR ||'''17'''||{{flagicon|USA}} [[Jack Iscaro]] || || {{subon|26}}
+|-
+|PR ||'''18'''||{{flagicon|SAM}} [[Paul Alo-Emile]] || || {{subon|47}}
+|-
+|LK ||'''19'''||{{flagicon|FRA}} [[Yoan Tanga]] || || {{subon|50}}
+|-
+|BR ||'''20'''||{{flagicon|FRA}} [[Jordan Joseph]] || || {{subon|55}}
+|-
+|SH ||'''21'''||{{flagicon|URU}} [[Santiago Arata]] || || {{subon|47}}
+|-
+|WG ||'''22'''||{{flagicon|WAL}} [[George North]] || || {{subon|47}}
+|-
+|BR ||'''23'''||{{flagicon|SCO}} [[Liam McConnell]] || || {{subon|61}}
+|-
+|colspan="3"|'''Coach:'''
+|-
+|colspan="3"|{{flagicon|NZL}} [[Scott Robertson (rugby union)|Scott Robertson]]
+|}
+|style="vertical-align:top"|
+|style="vertical-align:top; width:50%"|
+{| cellspacing="0" cellpadding="0" align="center"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Blair Murray]]
+|-
+|RW ||'''14'''||[[Tom Rogers (rugby union)|Tom Rogers]] || || || {{suboff|77}}
+|-
+|OC ||'''13'''||[[Eddie James (rugby union)|Eddie James]] || || {{suboff|52}}
+|-
+|IC ||'''12'''||[[Joe Hawkins]]
+|-
+|LW ||'''11'''||[[Ellis Mee]]
+|-
+|FH ||'''10'''||[[Dan Edwards (rugby union)|Dan Edwards]] || || {{suboff|52}} || {{subon|77}}
+|-
+|SH ||'''9''' ||[[Kieran Hardy]] || || {{suboff|50}}
+|-
+|N8 ||'''8''' ||[[Aaron Wainwright]] || || {{suboff|52}}
+|-
+|OF ||'''7''' ||[[Jac Morgan]]
+|-
+|BF ||'''6''' ||[[Taine Plumtree]]
+|-
+|RL ||'''5''' ||[[Teddy Williams (rugby union)|Teddy Williams]] || || {{suboff|58}}
+|-
+|LL ||'''4''' ||[[Ben Carter (rugby union)|Ben Carter]]
+|-
+|TP ||'''3''' ||[[Dillon Lewis]] || || {{suboff|40}}
+|-
+|HK ||'''2''' ||[[Dewi Lake]] ([[Captain (sports)|c]]) || || {{suboff|40}}
+|-
+|LP ||'''1''' ||[[Gareth Thomas (rugby union, born 1993)|Gareth Thomas]] || || {{suboff|40}}
+|-
+|colspan="3"|'''Replacements:'''
+|-
+|HK ||'''16'''||[[Ryan Elias]] || || {{subon|40}}
+|-
+|PR ||'''17'''||[[Rhys Barratt]] || || {{subon|40}}
+|-
+|PR ||'''18'''||[[Ben Warren (rugby union)|Ben Warren]] || || {{subon|40}}
+|-
+|BR ||'''19'''||[[Ryan Woodman]] || || {{subon|58}}
+|-
+|BR ||'''20'''||[[Harrison Keddie]] || || {{subon|52}}
+|-
+|SH ||'''21'''||[[Reuben Morgan-Williams]] || || {{subon|50}}
+|-
+|FH ||'''22'''||[[Sam Costelow]] || || {{subon|52}}
+|-
+|CE ||'''23'''||[[Mason Grady]] || || {{subon|52}}
+|-
+|colspan="3"|'''Coach:'''
+|-
+|colspan="3"|{{flagicon|WAL}} [[Steve Tandy]]
+|}
+|}
+{| width=100%
+|
+'''Player of the Match:'''
+<br />[[Aaron Wainwright]] (Wales)
+
+'''Assistant referees:'''
+<br />Alex Thomas ([[Rugby Football Union|England]])
+<br />Jamie Parr ([[Rugby Football Union|England]])
+<br />'''Television match official:'''
+<br />Stuart Terheege ([[Rugby Football Union|England]])
+|}
+|}
+----
+{{rugbybox
+|date = 27 June 2026
+|time = 14:00 [[Time in Chile|CLT]] ([[UTC−4]])
+|team1 = {{ru-rt|CHI|name=Chile XV}}
+|score = 14–47
+|report = [https://www.rugbychile.cl/2026/06/27/chile-xv-cae-ante-samoa-xv-en-su-ultimo-apronte-antes-de-la-nations-cup/ Report]
+|team2 = {{ru|SAM|name=Samoa XV}}
+|try1 = [[Marco Alvano|Alvano]] 10' c<br />[[Juan Cruz Reyes|Reyes]] 42' c
+|con1 = [[Juan Cruz Reyes|Reyes]] (2/2) 11', 43'
+|try2 = [[Miracle Faiʻilagi|Faiʻilagi]] 5' c<br />[[Duncan Paia'aua|Paia'aua]] 17' c<br />[[Tailieado Tuivaiti|Tuivaiti]] 25' c<br />[[Peter Umaga-Jensen|Umaga-Jensen]] 29' m<br />[[Taeao Pomale-Time|Pomale-Time]] 38' c<br />[[Joel Lam|Lam]] 49' c<br />[[Iakopo Mapu|Mapu]] 55' c
+|con2 = [[AJ Alatimu|Alatimu]] (6/7) 6', 18', 26', 39', 50', 56'
+|stadium = [[Saint George's College, Santiago|Saint George's College]], [[Santiago]]<ref>{{Cite news |url=https://www.rugbychile.cl/2026/06/26/chile-xv-vuelve-a-la-cancha-como-cuando-y-donde-ver-el-amistoso-ante-samoa-xv/ |title=Chile XV vuelve a la cancha: cómo, cuándo y dónde ver el amistoso ante Samoa XV |trans-title=Chile XV returns to the pitch: how, when and where to watch the friendly against Samoa XV |work=Rugby Chile |date=26 June 2026 |access-date=29 June 2026 |language=es }}</ref>
+|attendance =
+|referee = Raimundo Fuenzalida ([[Chilean Rugby Federation|Chile]])
+}}
+----
+{{rugbybox
+|date = 28 June 2026
+|time = 15:00 [[Central Africa Time|CAT]] ([[UTC+02]])
+|team1 = {{ru-rt|NAM}}
+|score = 71–12
+|report = [https://neweralive.na/welwitschia-invitational-xv-teach-zambia-a-lesson/ Report]
+|team2 = {{ru|ZAM}}
+|stadium = [[Hage Geingob Rugby Stadium]], [[Windhoek]]<ref name="Namibia">{{cite web|url=https://www.facebook.com/NamibiaRugby/posts/pfbid0329CCZN4Q2EQV3xUkxUgfxHrrXpJMY3ayhFRLXJt9MvsFU9Fcea8rNBTSaHZLLpThl|title=MATCHES ANNOUNCEMENT |website=[[Facebook]] |date=3 June 2026|access-date=3 June 2026}}</ref>
+|attendance =
+|referee = Johre Botha ([[Namibia Rugby Union|Namibia]])
+}}
+
+==July==
+{{rugbybox
+|date = 5 July 2026
+|time = 15:00 [[Time in Chile|CLT]] ([[UTC−4]])
+|team1 = {{ru-rt|CHI|name=Chile XV}}
+|score = 52–19
+|report = [https://www.americasrugbynews.com/2026/07/06/paraguay-open-2026-with-road-defeat-against-chile-xv/ Report]
+|team2 = {{ru|PAR}}
+|try1 =
+|con1 =
+|try2 =
+|con2 =
+|stadium = Centro de Alto Rendimiento del Rugby (CARR), [[La Reina]]
+|attendance =
+|referee =
+}}
+----
+{{rugbybox
+|date = 10 July 2026
+|time = 15:00 [[Time in Chile|CLT]] ([[UTC−4]])
+|team1 = {{ru-rt|CHI|name=Chile XV}}
+|score = 24–43
+|report =
+|team2 = {{ru|PAR}}
+|try1 =
+|con1 =
+|try2 =
+|con2 =
+|stadium = Centro de Alto Rendimiento del Rugby (CARR), [[La Reina]]
+|attendance =
+|referee =
+}}
+----
+{{rugbybox
+|date = 11 July 2026
+|time = 15:00 [[Central Africa Time|CAT]] ([[UTC+02]])
+|team1 = {{ru-rt|NAM}}
+|score = 47–50
+|report = [https://www.namibian.com.na/future-looks-bright-as-bulls-edge-thriller/ Report]
+|team2 = {{flagicon|RSA}} [[Bulls (rugby union)|Blue Bulls]]
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Hage Geingob Rugby Stadium]], [[Windhoek]]<ref name="Namibia"/>
+|attendance =
+|referee =
+}}
+----
+{{rugbybox
+|date = 25 July 2026
+|time = 15:00 [[British Summer Time|BST]] ([[UTC+1]])
+|team1 = Channel Islands RFC
+|score = 38–27
+|report = [https://www.bbc.com/sport/rugby-union/articles/cjwx2x8gwe6o Report]
+|team2 = {{ru|POL}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[St. Peter (rugby ground)|CoinShares Park]], [[St Peter, Jersey|St Peter]], [[Jersey]]<ref>{{cite web|url=https://www.bbc.co.uk/sport/rugby-union/articles/c77ey4vlxe8o|title=Combined Channel Islands rugby team to play Poland|date=9 March 2026|access-date=9 March 2026}}</ref>
+|attendance =
+|referee =
+}}
+
+==August==
+{{rugbybox
+|date = 8 August 2026
+|time = 19:05 [[Japan Standard Time|JST]] ([[UTC+9]])
+|team1 = {{ru-rt|JPN}}
+|score = 32–35
+|report = [https://www.rugbypass.com/news/wallabies-see-red-but-survive-osaka-thriller/ Report]
+|team2 = {{ru|AUS}}
+|try1 = [[Ryūnosuke Itō|Itō]] 12' c<br />[[Faulua Makisi|Makisi]] 34' c<br />[[Kazuma Ueda|Ueda]] 45' m<br />[[Warner Dearns|Dearns]] 78' c
+|con1 = [[Takurō Matsunaga|Matsunaga]] (3/4) 13', 35', 79'
+|pen1 = [[Takurō Matsunaga|Matsunaga]] (2/2) 53', 59'
+|try2 = [[Harry Potter (rugby union)|Potter]] 15' c<br />[[Tom Wright (rugby, born 1997)|Wright]] 26' c<br />[[Max Jorgensen|Jorgensen]] 42' c<br />[[Fraser McReight|McReight]] 49' c<br />[[Taniela Tupou (rugby union)|Tupou]] 70' m
+|con2 = [[Ryan Lonergan|Lonergan]] (4/4) 16', 27', 43', 50'<br />[[Ben Donaldson (rugby union)|Donaldson]] (1/1) 71'
+|stadium = [[Hanazono Rugby Stadium]], [[Higashiosaka]]<ref name="Japan1"/><ref name="Wallabies">{{cite web|url=https://www.rugby.com.au/news/wallabies-confirm-test-schedule-for-2026-season-20251125|title=Wallabies confirm Test schedule for 2026 season|website=Rugby.com.au|date=26 November 2025|access-date=10 December 2025}}</ref>
+|attendance = 21,322
+|referee = [[Eoghan Cross]] ([[Irish Rugby Football Union|Ireland]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Takurō Matsunaga]]
+|-
+|RW ||'''14'''||[[Kazuma Ueda]]
+|-
+|OC ||'''13'''||[[Dylan Riley (rugby union)|Dylan Riley]] || || {{suboff|66}}
+|-
+|IC ||'''12'''||[[Samisoni Tua]]
+|-
+|LW ||'''11'''||[[Taira Main]] || || {{suboff|57}}
+|-
+|FH ||'''10'''||[[Ryūnosuke Itō]]
+|-
+|SH ||'''9''' ||[[Naoto Saitō]]
+|-
+|N8 ||'''8''' ||[[Faulua Makisi]] || || {{suboff|63}}
+|-
+|OF ||'''7''' ||[[Kanji Shimokawa]] || || {{suboff|60}}
+|-
+|BF ||'''6''' ||[[Ben Gunter]]
+|-
+|RL ||'''5''' ||[[Warner Dearns]] ([[Captain (sports)|c]])
+|-
+|LL ||'''4''' ||[[Jack Cornelsen]] || || {{suboff|65}}
+|-
+|TP ||'''3''' ||[[Shuhei Takeuchi]] || || {{suboff|66}}
+|-
+|HK ||'''2''' ||[[Hayate Era]] || || {{suboff|56}}
+|-
+|LP ||'''1''' ||[[Takato Okabe]] || || {{suboff|63}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|PR ||'''16'''||[[Mamoru Harada]] || || {{subon|57}}
+|-
+|HK ||'''17'''||[[Sojiro Otsuka]] || || {{subon|63}}
+|-
+|PR ||'''18'''||[[Keijiro Tamefusa]] || || {{subon|66}}
+|-
+|LK ||'''19'''||[[Harry Hockings]] || || {{subon|65}}
+|-
+|BR ||'''20'''||[[Michael Leitch]] || || {{subon|60}}
+|-
+|BR ||'''21'''||[[Tiennan Costley]] || || {{subon|63}}
+|-
+|FB ||'''22'''||[[Shunsuke Uenobo]] || || {{subon|66}}
+|-
+|FB ||'''23'''||[[Yoshitaka Yazaki]] || || {{subon|56}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|AUS}} [[Eddie Jones (rugby union)|Eddie Jones]]
+|}
+|style="vertical-align:top"|
+|style="vertical-align:top; width:50%"|
+{| cellspacing="0" cellpadding="0" align="center"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Tom Wright (rugby, born 1997)|Tom Wright]] || || {{suboff|72}}
+|-
+|RW ||'''14'''||[[Max Jorgensen]]
+|-
+|OC ||'''13'''||[[Joseph Sua'ali'i]]
+|-
+|IC ||'''12'''||[[Hunter Paisami]]
+|-
+|LW ||'''11'''||[[Harry Potter (rugby union)|Harry Potter]] || || {{suboff|63}}
+|-
+|FH ||'''10'''||[[Declan Meredith]]
+|-
+|SH ||'''9''' ||[[Ryan Lonergan]] || || {{suboff|63}}
+|-
+|N8 ||'''8''' ||[[Harry Wilson (rugby union, born 1999)|Harry Wilson]] ([[Captain (sports)|c]])
+|-
+|OF ||'''7''' ||[[Fraser McReight]]
+|-
+|BF ||'''6''' ||[[Rob Valetini]] || || {{suboff|63}}
+|-
+|RL ||'''5''' ||[[Miles Amatosero]] || {{sent off|0|32}}
+|-
+|LL ||'''4''' ||[[Josh Canham]]
+|-
+|TP ||'''3''' ||[[Allan Alaalatoa]] || || {{suboff|54}}
+|-
+|HK ||'''2''' ||[[Josh Nasser]] || || {{suboff|54}}
+|-
+|LP ||'''1''' ||[[Aidan Ross]] || || {{suboff|40}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Billy Pollard]] || || {{subon|54}}
+|-
+|PR ||'''17'''||[[Angus Bell]] || || {{subon|40}}
+|-
+|PR ||'''18'''||[[Taniela Tupou (rugby union)|Taniela Tupou]] || || {{subon|54}}
+|-
+|LK ||'''19'''||[[Jeremy Williams (rugby union)|Jeremy Williams]] || || {{subon|54}}
+|-
+|BR ||'''20'''||[[Charlie Cale (rugby union)|Charlie Cale]] || || {{subon|63}}
+|-
+|SH ||'''21'''||[[Tate McDermott]] || || {{subon|63}}
+|-
+|FH ||'''22'''||[[Ben Donaldson (rugby union)|Ben Donaldson]] || || {{subon|63}}
+|-
+|CE ||'''23'''||[[Isaac Henry (rugby union)|Isaac Henry]] || || {{subon|72}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|AUS}} [[Les Kiss]]
+|}
+|}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+-->
+'''Assistant referees:'''
+<br />[[Paul Williams (rugby union referee)|Paul Williams]] ([[New Zealand Rugby|New Zealand]])
+<br />Morgan White ([[Hong Kong China Rugby Union|Hong Kong China]])
+<br />'''Television match official:'''
+<br />Richard Kelly ([[New Zealand Rugby|New Zealand]])
+<br />'''Foul play review officer:'''
+<br />Matt Rodden ([[Hong Kong China Rugby Union|Hong Kong China]])
+|}
+|}
+'''Notes:'''
+* [[Isaac Henry (rugby union)|Isaac Henry]] (Australia) made his international debut.<ref>{{cite news |last=Wenzel |first=Murray |date=9 August 2026 |title=Fresh ink: Wallaby No.999's hard road to Test debut |url=https://au.news.yahoo.com/fresh-ink-wallaby-no-999s-020000203.html |work=[[Yahoo News]] |via=[[Australian Associated Press]] |access-date=9 August 2026 }}</ref>
+* Japan's 32 points was the most they had scored against Australia in a [[Test match (rugby union)|test match]], surpassing their previous record of 30 set in [[2017 end-of-year rugby union internationals#3/4 November|2017]].<ref>{{cite news |date=8 August 2026 |trans-title=[Rugby] Japan scores a record number of points against the Wallabies, but falls short of a historic upset. Scrum-half Saito says, "Individual decision-making and movement are signs of team growth"... but loses 32-35 |title=【ラグビー】日本代表、ワラビーズから過去最多得点 歴史的大金星ならずもＳＨ斎藤「個々が判断して動くのは、チームの成長」…３２ー３５で競り負ける |url=https://news.yahoo.co.jp/articles/8e3831f882b86576e0405f0702fecf1f006431ce |language=Japanese |work=[[Yahoo Japan]] }}</ref>
+----
+{{rugbybox
+|date = 8 August 2026
+|time = 16:00 [[Time in Argentina|ART]] ([[UTC-03]])
+|team1 = {{ru-rt|ARG}}
+|score = 10–17
+|report = [https://www.rugbypass.com/news/argentina-springboks-match-report/ Report]
+|team2 = {{ru|RSA}}
+|try1 = [[Benjamín Grondona|Grondona]] 8' c
+|con1 = [[Santiago Carreras|Carreras]] (1/1) 9'
+|pen1 = [[Santiago Carreras|Carreras]] (1/2) 2'
+|try2 = [[Edwill van der Merwe|van der Merwe]] 39' c<br />[[Cameron Hanekom|Hanekom]] 62' c
+|con2 = [[Sacha Feinberg-Mngomezulu|Feinberg-Mngomezulu]] (1/1) 40', <br /> [[Handré Pollard|Pollard]] (1/1) 63'
+|pen2 = [[Sacha Feinberg-Mngomezulu|Feinberg-Mngomezulu]] (1/1) 6'
+|stadium = [[José Amalfitani Stadium]], [[Buenos Aires]]<ref name="Argentina">{{cite web|url=https://uar.com.ar/las-sedes-de-los-pumas-en-argentina/|title=Los Pumas' headquarters in Argentina|website=lospumas.com.ar|date=27 January 2026|access-date=27 January 2026}}</ref>
+|attendance =
+|referee = [[Christophe Ridley]] ([[Rugby Football Union|England]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Gerónimo Prisciantelli]]
+|-
+|RW ||'''14'''||[[Rodrigo Isgró]]
+|-
+|OC ||'''13'''||[[Lucio Cinti]]
+|-
+|IC ||'''12'''||[[Faustino Sánchez Valarolo]]
+|-
+|LW ||'''11'''||[[Ignacio Mendy]] || || {{suboff|56}}
+|-
+|FH ||'''10'''||[[Santiago Carreras]]
+|-
+|SH ||'''9''' ||[[Simon Benitez Cruz]] || || {{suboff|34}} || || {{subon|40}} || {{suboff|56}}
+|-
+|N8 ||'''8''' ||[[Joaquín Moro]] || || {{suboff|65}}
+|-
+|OF ||'''7''' ||[[Benjamín Grondona]] || || {{suboff|49}}
+|-
+|BF ||'''6''' ||[[Pablo Matera]] ([[Captain (sports)|c]])
+|-
+|RL ||'''5''' ||[[Tomás Lavanini]] || || {{suboff|43}}
+|-
+|LL ||'''4''' ||[[Guido Petti]]
+|-
+|TP ||'''3''' ||[[Francisco Moreno (rugby union)|Francisco Moreno]] || || {{suboff|40}}
+|-
+|HK ||'''2''' ||[[Ignacio Ruiz (rugby union)|Ignacio Ruiz]] || || {{suboff|65}}
+|-
+|LP ||'''1''' ||[[Boris Wenger]] || || {{suboff|56}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Leonel Oviedo]] || || {{subon|65}}
+|-
+|PR ||'''17'''||[[Mayco Vivas]] || || {{subon|56}}
+|-
+|PR ||'''18'''||[[Tomas Rapetti]] || || {{subon|40}}
+|-
+|LK ||'''19'''||[[Efraín Elías]] || || {{subon|43}}
+|-
+|BR ||'''20'''||[[Juan Penoucos]] || || {{subon|49}}
+|-
+|BR ||'''21'''||[[Juan Martín Scelzo]] || || {{subon|65}}
+|-
+|SH ||'''22'''||[[Agustín Moyano]] || || {{subon|34}} || || {{suboff|40}} || {{subon|56}}
+|-
+|CE ||'''23'''||[[Matías Moroni]] || || {{subon|56}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|ARG}} [[Felipe Contepomi]]
+|}
+|style="vertical-align:top"|
+|style="vertical-align:top; width:50%"|
+{| cellspacing="0" cellpadding="0" align="center"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Aphelele Fassi]] || || {{suboff|59}} || {{subon|65}}
+|-
+|RW ||'''14'''||[[Edwill van der Merwe]]
+|-
+|OC ||'''13'''||[[Canan Moodie]]
+|-
+|IC ||'''12'''||[[André Esterhuizen]] || || || {{suboff|65}}
+|-
+|LW ||'''11'''||[[Ethan Hooker]]
+|-
+|FH ||'''10'''||[[Sacha Feinberg-Mngomezulu]]
+|-
+|SH ||'''9''' ||[[Cobus Reinach]] || || {{suboff|59}}
+|-
+|N8 ||'''8''' ||[[Cameron Hanekom]] || || || {{suboff|77}}
+|-
+|BF ||'''7''' ||[[Elrigh Louw]] || || {{suboff|49}} || {{subon|77}}
+|-
+|OF ||'''6''' ||[[Siya Kolisi]] ([[Captain (sports)|c]]) || || {{suboff|24}}
+|-
+|RL ||'''5''' ||[[Lood de Jager]] || || {{suboff|49}}
+|-
+|LL ||'''4''' ||[[Eben Etzebeth]]
+|-
+|TP ||'''3''' ||[[Thomas du Toit]] || || {{suboff|49}}
+|-
+|HK ||'''2''' ||[[Johan Grobbelaar]] || || {{suboff|62}}
+|-
+|LP ||'''1''' ||[[Boan Venter]] || || {{suboff|49}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Jan-Hendrik Wessels]] || || {{subon|62}}
+|-
+|PR ||'''17'''||[[Gerhard Steenekamp]] || || {{subon|49}}
+|-
+|PR ||'''18'''||[[Zach Porthen]] || || {{subon|49}}
+|-
+|BR ||'''19'''||[[Ben-Jason Dixon]] || || {{subon|49}}
+|-
+|BR ||'''20'''||[[Cobus Wiese]] || || {{subon|49}}
+|-
+|BR ||'''21'''||[[Marco van Staden]] || || {{subon|24}}
+|-
+|SH ||'''22'''||[[Morné van den Berg]] || || {{subon|59}}
+|-
+|FH ||'''23'''||[[Handré Pollard]] || || {{subon|59}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|RSA}} [[Rassie Erasmus]]
+|}
+|}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+-->
+'''Assistant referees:'''
+<br />[[Luc Ramos]] ([[French Rugby Federation|France]])
+<br />[[Craig Evans (rugby union referee)|Craig Evans]] ([[Welsh Rugby Union|Wales]])
+<br />'''Television match official:'''
+<br />[[Ben Whitehouse]] ([[Welsh Rugby Union|Wales]])
+<br />'''Foul play review officer:'''
+<br />Ian Tempest ([[Rugby Football Union|England]])
+|}
+|}
+'''Notes:'''
+* [[Francisco Moreno (rugby union)|Francisco Moreno]], [[Leonel Oviedo]], [[Juan Penoucos]] and [[Juan Martín Scelzo]] (all Argentina) made their international debuts.
+----
+{{rugbybox
+|date = 15 August 2026
+|time = 15:00 [[Australian Eastern Standard Time|AEST]] ([[UTC+10]])
+|team1 = {{ru-rt|AUS}}
+|score = 56–17
+|report = [https://www.rugbypass.com/news/wallabies-pack-plough-japan-in-townsville-rout/ Report]
+|team2 = {{ru|JPN}}
+|try1 = [[Josh Nasser|Nasser]] 7' c<br />[[Taniela Tupou (rugby union)|Tupou]] (2) 17' c, 39' c<br />[[Angus Bell|Bell]] 51' c<br />[[Massimo de Lutiis|de Lutiis]] 58' c<br />[[Charlie Cale (rugby union)|Cale]] 73' c<br />[[Harry Wilson (rugby union, born 1999)|Wilson]] 75' c<br />[[Brandon Paenga-Amosa|Paenga-Amosa]] 81' c
+|con1 = [[Ryan Lonergan|Lonergan]] (5/5) 8', 18', 40', 52', 60'<br />[[Ben Donaldson (rugby union)|Donaldson]] (3/3) 74', 76', 82'
+|try2 = [[Harry Hockings|Hockings]] 5' m<br />[[Naoto Saitō|Saitō]] 26' c<br />[[Dylan Riley (rugby union)|Riley]] 34' m
+|con2 = [[Takurō Matsunaga|Matsunaga]] (1/3) 27'
+|stadium = [[North Queensland Stadium]], [[Townsville]]<ref>{{cite web |title=Townsville to Host Rugby Australia Wallabies vs Japan Test Match in August 2026 |url=https://www.townsvilleenterprise.com.au/townsville-to-host-rugby-australia-wallabies-vs-japan-test-match-in-august-2026/ |date=26 November 2025 |website=Townsville Enterprise |url-status=live |archive-url=https://web.archive.org/web/20251227114001/https://www.townsvilleenterprise.com.au/townsville-to-host-rugby-australia-wallabies-vs-japan-test-match-in-august-2026/ |archive-date=27 December 2025 |access-date=27 December 2025 }}</ref>
+|attendance = 18,076
+|referee = [[Paul Williams (rugby union referee)|Paul Williams]] ([[New Zealand Rugby|New Zealand]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Tom Wright (rugby, born 1997)|Tom Wright]]
+|-
+|RW ||'''14'''||[[Max Jorgensen]] || || {{suboff|66}}
+|-
+|OC ||'''13'''||[[Hunter Paisami]]
+|-
+|IC ||'''12'''||[[Isaac Henry (rugby union)|Isaac Henry]]
+|-
+|LW ||'''11'''||[[Harry Potter (rugby union)|Harry Potter]]
+|-
+|FH ||'''10'''||[[Carter Gordon]] || || {{suboff|60}}
+|-
+|SH ||'''9''' ||[[Ryan Lonergan]] || || {{suboff|60}}
+|-
+|N8 ||'''8''' ||[[Harry Wilson (rugby union, born 1999)|Harry Wilson]] ([[Captain (sports)|c]])
+|-
+|OF ||'''7''' ||[[Carlo Tizzano]]
+|-
+|BF ||'''6''' ||[[Charlie Cale (rugby union)|Charlie Cale]]
+|-
+|RL ||'''5''' ||[[Lukhan Salakaia-Loto]] || || {{suboff|50}}
+|-
+|LL ||'''4''' ||[[Lachlan Shaw (rugby union)|Lachlan Shaw]] || || {{suboff|69}}
+|-
+|TP ||'''3''' ||[[Taniela Tupou (rugby union)|Taniela Tupou]] || || {{suboff|50}}
+|-
+|HK ||'''2''' ||[[Josh Nasser]] || || {{suboff|41}}
+|-
+|LP ||'''1''' ||[[Angus Bell]] || || {{suboff|60}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Brandon Paenga-Amosa]] || || {{subon|41}}
+|-
+|PR||'''17'''||[[Aidan Ross]] || || {{subon|60}}
+|-
+|PR ||'''18'''||[[Massimo de Lutiis]] || || {{subon|50}}
+|-
+|LK ||'''19'''||[[Jeremy Williams (rugby union)|Jeremy Williams]] || || {{subon|50}}
+|-
+|BR ||'''20'''||[[Fraser McReight]] || || {{subon|69}}
+|-
+|SH ||'''21'''||[[Tate McDermott]] || || {{subon|60}}
+|-
+|FH ||'''22'''||[[Ben Donaldson (rugby union)|Ben Donaldson]] || || {{subon|60}}
+|-
+|CE ||'''23'''||[[Filipo Daugunu]] || || {{subon|66}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagicon|AUS}} [[Les Kiss]]
+|}
+|style="vertical-align:top"|
+|style="vertical-align:top; width:50%"|
+{| cellspacing="0" cellpadding="0" align="center"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Takurō Matsunaga]]
+|-
+|RW ||'''14'''||[[Yoshitaka Yazaki]]
+|-
+|OC ||'''13'''||[[Dylan Riley (rugby union)|Dylan Riley]]
+|-
+|IC ||'''12'''||[[Shunsuke Uenobo]]
+|-
+|LW ||'''11'''||[[Haruto Kida]] || || {{suboff|41}}
+|-
+|FH ||'''10'''||[[Ryūnosuke Itō]]
+|-
+|SH ||'''9''' ||[[Naoto Saitō]] || || {{suboff|71}}
+|-
+|N8 ||'''8''' ||[[Faulua Makisi]] || || {{suboff|59}}
+|-
+|OF ||'''7''' ||[[Tiennan Costley]] || || {{suboff|50}}
+|-
+|BF ||'''6''' ||[[Ben Gunter]] || || || {{suboff|77}}
+|-
+|RL ||'''5''' ||[[Warner Dearns]] ([[Captain (sports)|c]])
+|-
+|LL ||'''4''' ||[[Harry Hockings]]
+|-
+|TP ||'''3''' ||[[Shuhei Takeuchi]] || || {{suboff|68}}
+|-
+|HK ||'''2''' ||[[Hayate Era]] || || {{suboff|59}} || {{subon|77}}
+|-
+|LP ||'''1''' ||[[Takato Okabe]] || || {{suboff|50}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Mamoru Harada]] || {{yellow card|76}} || {{subon|59}}
+|-
+|PR ||'''17'''||[[Sojiro Otsuka]] || || {{subon|50}}
+|-
+|PR ||'''18'''||[[Izi Sword]] || || {{subon|68}}
+|-
+|LK ||'''19'''||[[Jack Cornelsen]] || || {{subon|59}}
+|-
+|BR ||'''20'''||[[Michael Leitch]] || || {{subon|50}}
+|-
+|SH ||'''21'''||[[Itsuki Kamimura]] || || {{subon|71}}
+|-
+|FH ||'''22'''||[[Samisoni Tua]] || || || {{subon|71}}
+|-
+|WG ||'''23'''||[[Kazuma Ueda]] || || {{subon|41}} || {{suboff|71}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagicon|AUS}} [[Eddie Jones (rugby union)|Eddie Jones]]
+|}
+|}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+-->
+'''Assistant referees:'''
+<br />[[Angus Mabey]] ([[New Zealand Rugby|New Zealand]])
+<br />[[Marcus Playle]] ([[New Zealand Rugby|New Zealand]])
+<br />'''Television match official:'''
+<br />Glenn Newman ([[New Zealand Rugby|New Zealand]])
+<br />'''Foul play review officer:'''
+<br />Richard Kelly ([[New Zealand Rugby|New Zealand]])
+|}
+|}
+'''Notes:'''
+* [[Massimo de Lutiis]] (Australia) made his international debut, becoming the [[List of Australia national rugby union players|1000th player]] for the Wallabies.<ref>{{cite news |last=Doyle |first=Michael |date=15 August 2026 |title=Wallabies vs Japan live: Australia scores 56 points in dominant win over Brave Blossoms |url=https://www.abc.net.au/news/2026-08-15/live-wallabies-japan-second-test-townsville/107027060 |work=[[ABC News (Australia)|ABC News]] |access-date=15 August 2026 }}</ref>
+----
+{{rugbybox
+|date = 15 August 2026
+|time = 19:30 [[Eastern Daylight Time|EDT]] ([[UTC-04]])
+|team1 = {{ru-rt|USA|name=United States XV}}
+|score = 25–24
+|report = [https://www.rugbypass.com/news/eagles-heavy-usa-xv-hold-on-for-nail-biting-win-over-argentina-xv/ Report]
+|team2 = {{ruA|ARG}}
+|try1 = [[Shilo Klein|Klein]] 22' m<br />[[Makeen Alikhan|Alikhan]] 34' c<br />[[Marno Redelinghuys|Redelinghuys]] 62' c
+|con1 = [[Luke Carty|Carty]] (2/3) 35', 63'
+|pen1 = [[Luke Carty|Carty]] (2/2) 4', 53'
+|try2 = [[Martín Vaca|Vaca]] 9' m<br />{{ill|Nicolás Viola|lt=Viola|es|Nicolás Viola}} 30' m<br />[[Franco Rossetto|Rossetto]] 40' c<br />[[Thiago Sbrocco|Sbrocco]] 71' c
+|con2 = [[Ignacio Dogliani|Dogliani]] (2/4) 40', 72'
+|stadium = [[Inter Miami CF Stadium]], [[Fort Lauderdale]]<ref name="USA Vs Argentina XV">{{cite web|url=https://eagles.rugby/news/usa-to-face-off-against-argentina-xv-in-south-florida-august-showcase-2026527|title=USA Men's Eagles to host Argentina XV in South Florida showcase|website=Rugby.com.au|date=29 May 2026|access-date=29 May 2026}}</ref>
+|attendance =
+|referee = Jeremy Rozier ([[French Rugby Federation|France]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Julian Roberts (rugby union)|Julian Roberts]]
+|-
+|RW ||'''14'''||[[Mark O'Keeffe]] || || {{suboff|44}}
+|-
+|OC ||'''13'''||[[Tavite Lopeti]]
+|-
+|IC ||'''12'''||[[Dominic Besag]]
+|-
+|LW ||'''11'''||[[Joe Mano]]
+|-
+|FH ||'''10'''||[[Luke Carty]]
+|-
+|SH ||'''9''' ||[[Ruben de Haas]] || || {{suboff|67}}
+|-
+|N8 ||'''8''' ||[[Makeen Alikhan]] || {{yel|40}} || {{suboff|77}}
+|-
+|OF ||'''7''' ||[[Paddy Ryan (rugby union, born 1998)|Paddy Ryan]]
+|-
+|BF ||'''6''' ||[[Marno Redelinghuys]]
+|-
+|RL ||'''5''' ||[[Nathan Den Hoedt]] || || {{suboff|47}}
+|-
+|LL ||'''4''' ||[[Jason Damm]] ([[Captain (sports)|c]]) || || {{suboff|67}}
+|-
+|TP ||'''3''' ||[[Charlie Abel]] || || {{suboff|67}}
+|-
+|HK ||'''2''' ||[[Shilo Klein]] || || {{suboff|51}}
+|-
+|LP ||'''1''' ||[[Payton Telea-Ilalio]] || || {{suboff|43}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|PR ||'''16'''||[[Alex Maughan]] || || {{subon|51}}
+|-
+|PR ||'''17'''||[[Fakaʻosi Pifeleti]] || || {{subon|43}}
+|-
+|PR ||'''18'''||[[Ma'ake Muti]] || || {{subon|67}}
+|-
+|LK ||'''19'''||[[Tevita Naqali]] || || {{subon|67}}
+|-
+|LK ||'''20'''||[[Brandon Harvey]] || || {{subon|47}}
+|-
+|BR ||'''21'''||[[Lance Williams (rugby union)|Lance Williams]] || || {{subon|77}}
+|-
+|SH ||'''22'''||[[Ethan McVeigh]] || || {{subon|67}}
+|-
+|FH ||'''23'''||[[Davy Coetzer]] || || {{subon|44}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|USA}} [[Scott Lawrence (rugby union)|Scott Lawrence]]
+|}
+|style="vertical-align:top"|
+|style="vertical-align:top; width:50%"|
+{| cellspacing="0" cellpadding="0" align="center"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Franco Rossetto]] || || {{suboff|74}}
+|-
+|RW ||'''14'''||[[Bautista Lescano]]
+|-
+|OC ||'''13'''||[[Tomás Elizalde]] || || {{suboff|37}}
+|-
+|IC ||'''12'''||[[Bautista Estelles]]
+|-
+|LW ||'''11'''||[[Mateo Pasquini]]
+|-
+|FH ||'''10'''||[[Ignacio Dogliani]]
+|-
+|SH ||'''9''' ||{{ill|Nicolás Viola|es|Nicolás Viola}} || || {{suboff|61}}
+|-
+|N8 ||'''8''' ||[[Thiago Sbrocco]]
+|-
+|OF ||'''7''' ||[[Agustín Sarelli]] || || {{suboff|57}}
+|-
+|BF ||'''6''' ||[[Nicolás D'Amorim]] ([[Captain (sports)|c]])
+|-
+|RL ||'''5''' ||[[Francisco Sluga]] || {{yel|47}} || {{suboff|61}}
+|-
+|LL ||'''4''' ||[[Rodrigo Fernández Criado]]
+|-
+|TP ||'''3''' ||[[Marcos Camerlinckx]] || || {{suboff|48}}
+|-
+|HK ||'''2''' ||[[Martín Vaca]] || || {{suboff|57}}
+|-
+|LP ||'''1''' ||[[Nicolás Revol Pitt]] || || {{suboff|48}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Juan Greising Revol]] || || {{subon|57}}
+|-
+|PR ||'''17'''||{{ill|Diego Correa (rugby union)|lt=Diego Correa|es|Diego Correa}} || || {{subon|48}}
+|-
+|PR ||'''18'''||[[Enzo Avaca]] || || {{subon|48}}
+|-
+|LK ||'''19'''||[[Joaquín Domínguez (rugby union, born 2001)|Joaquín Domínguez]] || || {{subon|61}}
+|-
+|BR ||'''20'''||[[Felipe Villagrán (rugby union)|Felipe Villagrán]] || || {{subon|57}}
+|-
+|SH ||'''21'''||[[Alejo Sugasti]] || || {{subon|61}}
+|-
+|FH ||'''22'''||[[Federico Serpa]] || || {{subon|74}}
+|-
+|CE ||'''23'''||[[Facundo Pueyrredón]] || || {{subon|37}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|ARG}} [[Álvaro Galindo]]
+|}
+|}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+-->
+'''Assistant referees:'''
+<br />Robin Kaluzniak ([[Rugby Canada|Canada]])
+<br />Pete Pender ([[Rugby Canada|Canada]])
+<br />'''Television match official:'''
+<br />Cam Russell ([[Rugby Canada|Canada]])
+|}
+|}
+----
+{{rugbybox
+|date = 22 August 2026
+|time = 17:10 [[South African Standard Time|SAST]] ([[UTC+2]])
+|team1 = {{ru-rt|RSA}}
+|score = 16–33
+|report = [https://www.rugbypass.com/news/springboks-all-blacks/ Report]
+|team2 = {{ru|NZL}}
+|try1 = [[André Esterhuizen|Esterhuizen]] 13' c
+|con1 = [[Cheslin Kolbe|Kolbe]] (1/1) 14'
+|pen1 = [[Cheslin Kolbe|Kolbe]] (3/3) 4', 26', 46'
+|try2 = [[Will Jordan (rugby union)|Jordan]] (2) 8' m, 74' c<br />[[Josh Moorby|Moorby]] 22' c<br />[[Fabian Holland (rugby union)|Holland]] 47' c<br />[[Luke Jacobson|Jacobson]] 58' c
+|con2 = [[Ruben Love|Love]] (4/5) 23', 48', 59', 75'
+|stadium = [[Ellis Park Stadium]], [[Johannesburg]]<ref name="Springboks v All Blacks">{{cite web|url=https://www.allblacks.com/news/rugbys-greatest-rivalry-announced-all-blacks-and-springboks-reignite-traditional-tours|title=Rugby's Greatest Rivalry Announced - All Blacks and Springboks reignite traditional tours|date=17 October 2025|access-date=10 December 2025}}</ref>
+|attendance = 60,592
+|referee = [[Matthew Carley]] ([[Rugby Football Union|England]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Damian Willemse]]
+|-
+|RW ||'''14'''||[[Cheslin Kolbe]] || || {{suboff|58}}
+|-
+|OC ||'''13'''||[[Jesse Kriel]]
+|-
+|IC ||'''12'''||[[Damian de Allende]]
+|-
+|LW ||'''11'''||[[Kurt-Lee Arendse]] || || {{suboff|9}}
+|-
+|FH ||'''10'''||[[Sacha Feinberg-Mngomezulu]]
+|-
+|SH ||'''9''' ||[[Grant Williams (rugby union)|Grant Williams]]
+|-
+|N8 ||'''8''' ||[[Jasper Wiese]]
+|-
+|OF ||'''7''' ||[[Pieter-Steph du Toit]] ([[Captain (sports)|c]])
+|-
+|BF ||'''6''' ||[[Paul de Villiers]] || || {{suboff|61}}
+|-
+|RL ||'''5''' ||[[Ruan Nortjé]]
+|-
+|LL ||'''4''' ||[[Eben Etzebeth]] || || {{suboff|73}}
+|-
+|TP ||'''3''' ||[[Wilco Louw]] || || {{suboff|60}}
+|-
+|HK ||'''2''' ||[[Malcolm Marx]]
+|-
+|LP ||'''1''' ||[[Ox Nché]] || || {{suboff|45}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Jan-Hendrik Wessels]] || || || {{subon|66}}
+|-
+|PR ||'''17'''||[[Gerhard Steenekamp]] || || {{subon|45}} || {{suboff|66}}
+|-
+|PR ||'''18'''||[[Zachary Porthen]] || || {{subon|60}}
+|-
+|BR ||'''19'''||[[Cobus Wiese]] || || {{subon|73}}
+|-
+|CE ||'''20'''||[[André Esterhuizen]] || || {{subon|9}} || {{suboff|62}}
+|-
+|BR ||'''21'''||[[Marco van Staden]] || {{yel|68}} || {{subon|61}}
+|-
+|SH ||'''22'''||[[Cobus Reinach]] || {{yel|70}} || {{subon|58}}
+|-
+|FH ||'''23'''||[[Manie Libbok]] || || || {{subon|62}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|RSA}} [[Rassie Erasmus]]
+|}
+|valign=top|
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0" style="margin:auto"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Damian McKenzie]]
+|-
+|RW ||'''14'''||[[Will Jordan (rugby union)|Will Jordan]]
+|-
+|OC ||'''13'''||[[Quinn Tupaea]] || || {{suboff|75}}
+|-
+|IC ||'''12'''||[[Jordie Barrett]]
+|-
+|LW ||'''11'''||[[Josh Moorby]] || || {{suboff|63}}
+|-
+|FH ||'''10'''||[[Ruben Love]]
+|-
+|SH ||'''9''' ||[[Cam Roigard]] || || {{suboff|75}}
+|-
+|N8 ||'''8''' ||[[Ardie Savea]] ([[Captain (sports)|c]])
+|-
+|OF ||'''7''' ||[[Luke Jacobson]] || || {{suboff|75}}
+|-
+|BF ||'''6''' ||[[Tupou Vaa'i]]
+|-
+|RL ||'''5''' ||[[Fabian Holland (rugby union)|Fabian Holland]]
+|-
+|LL ||'''4''' ||[[Josh Lord (rugby union)|Josh Lord]] || || {{suboff|37}}
+|-
+|TP ||'''3''' ||[[Tyrel Lomax]] || || {{suboff|50}}
+|-
+|HK ||'''2''' ||[[Codie Taylor]] || || {{suboff|54}}
+|-
+|LP ||'''1''' ||[[Ethan de Groot]] || || {{suboff|37}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Asafo Aumua]] || || {{subon|54}}
+|-
+|PR ||'''17'''||[[George Bower (rugby union)|George Bower]] || || {{subon|37}}
+|-
+|PR ||'''18'''||[[Fletcher Newell]] || || {{subon|50}}
+|-
+|BR ||'''19'''||[[Simon Parker]] || || {{subon|37}}
+|-
+|BR ||'''20'''||[[Peter Lakai]] || || {{subon|75}}
+|-
+|SH ||'''21'''||[[Kyle Preston]] || || {{subon|75}}
+|-
+|CE ||'''22'''||[[Anton Lienert-Brown]] || || {{subon|75}}
+|-
+|WG ||'''23'''||[[Leroy Carter (rugby union)|Leroy Carter]] || || {{subon|63}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|NZL}} [[Dave Rennie]]
+|}
+|}
+{| width=100%
+|
+'''Player of the Match:'''
+<br />[[Will Jordan (rugby union)|Will Jordan]] (New Zealand)
+
+'''Assistant referees:'''
+<br />[[Karl Dickson]] ([[Rugby Football Union|England]])
+<br />[[Nika Amashukeli]] ([[Georgian Rugby Union|Georgia]])
+<br />'''Television match official:'''
+<br />[[Mike Adamson (rugby union)|Mike Adamson]] ([[Scottish Rugby Union|Scotland]])
+<br />'''Foul play review officer:'''
+<br />Eric Gauzins ([[French Rugby Federation|France]])
+|}
+|}
+'''Notes:'''
+* [[Damian de Allende]] became the tenth Springbok player to earn 100 test caps.
+----
+{{Rugbybox
+|date = 29 August 2026
+|time = 17:10 [[South African Standard Time|SAST]] ([[UTC+2]])
+|home = {{Ru-rt|RSA}}
+|score = 33–26
+|report = [https://www.rugbypass.com/news/springboks-hold-firm-against-all-blacks-fightback-to-level-series/ Report]
+|away = {{Ru|NZL}}
+|try1 = [[Jesse Kriel|Kriel]] 2' c<br />[[Damian de Allende|de Allende]] 22' c<br />[[Siya Kolisi|Kolisi]] 38' c
+|con1 = [[Cheslin Kolbe|Kolbe]] (3/3) 3', 23', 39'
+|pen1 = [[Cheslin Kolbe|Kolbe]] (4/4) 19', 49', 51', 72'
+|try2 = [[Cam Roigard|Roigard]] 9' c<br />[[Damian McKenzie|McKenzie]] 30' c<br />[[Leroy Carter (rugby union)|Carter]] 66' m<br />[[Ardie Savea|Savea]] 77' c
+|con2 = [[Ruben Love|Love]] (3/4) 17', 31', 78'
+|stadium = [[Cape Town Stadium]], [[Cape Town]]
+|attendance = 56,589
+|referee = [[Angus Gardner]] ([[Rugby Australia|Australia]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Damian Willemse]] || || {{suboff|40}}
+|-
+|RW ||'''14'''||[[Cheslin Kolbe]]
+|-
+|OC ||'''13'''||[[Jesse Kriel]]
+|-
+|IC ||'''12'''||[[Damian de Allende]]
+|-
+|LW ||'''11'''||[[Ethan Hooker]]
+|-
+|FH ||'''10'''||[[Sacha Feinberg-Mngomezulu]]
+|-
+|SH ||'''9''' ||[[Cobus Reinach]] || || {{suboff|57}}
+|-
+|N8 ||'''8''' ||[[Jasper Wiese]] || || {{suboff|68}}
+|-
+|BF ||'''7''' ||[[Pieter-Steph du Toit]]
+|-
+|OF ||'''6''' ||[[Siya Kolisi]] ([[Captain (sports)|c]]) || || {{suboff|43}}
+|-
+|RL ||'''5''' ||[[Ruan Nortjé]] || || {{suboff|68}}
+|-
+|LL ||'''4''' ||[[Eben Etzebeth]]
+|-
+|TP ||'''3''' ||[[Thomas du Toit]] || || {{suboff|57}}
+|-
+|HK ||'''2''' ||[[Deon Fourie]] || || {{suboff|36}}
+|-
+|LP ||'''1''' ||[[Gerhard Steenekamp]] || || {{suboff|36}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Malcolm Marx]] || || {{subon|36}}
+|-
+|PR ||'''17'''||[[Ox Nché]] || || {{subon|36}}
+|-
+|PR ||'''18'''||[[Wilco Louw]] || || {{subon|57}}
+|-
+|BR ||'''19'''||[[Lood de Jager]] || {{yel|80}} || {{subon|68}}
+|-
+|CE ||'''20'''||[[André Esterhuizen]] || || {{subon|43}}
+|-
+|BR ||'''21'''||[[Cameron Hanekom]] || || {{subon|68}}
+|-
+|SH ||'''22'''||[[Morné van den Berg]] || || {{subon|57}}
+|-
+|FH ||'''23'''||[[Manie Libbok]] || || {{subon|40}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|RSA}} [[Rassie Erasmus]]
+|}
+|valign=top|
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0" style="margin:auto"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Damian McKenzie]]
+|-
+|RW ||'''14'''||[[Will Jordan (rugby union)| Will Jordan]]
+|-
+|OC ||'''13'''||[[Quinn Tupaea]] || || {{suboff|68}}
+|-
+|IC ||'''12'''||[[Jordie Barrett]]
+|-
+|LW ||'''11'''||[[Leroy Carter (rugby union)| Leroy Carter]]
+|-
+|FH ||'''10'''||[[Ruben Love]]
+|-
+|SH ||'''9''' ||[[Cam Roigard]] || || {{suboff|72}}
+|-
+|N8 ||'''8''' ||[[Ardie Savea]] ([[Captain (sports)|c]])
+|-
+|OF ||'''7''' ||[[Luke Jacobson]] || || {{suboff|63}}
+|-
+|BF ||'''6''' ||[[Simon Parker]] || || {{suboff|52}}
+|-
+|RL ||'''5''' ||[[Tupou Vaa'i]]
+|-
+|LL ||'''4''' ||[[Fabian Holland (rugby union)| Fabian Holland]]
+|-
+|TP ||'''3''' ||[[Tyrel Lomax]] || || {{suboff|49}}
+|-
+|HK ||'''2''' ||[[Codie Taylor]] || || {{suboff|49}}
+|-
+|LP ||'''1''' ||[[George Bower (rugby union)| George Bower]] || || {{suboff|54}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Asafo Aumua]] || || {{subon|49}}
+|-
+|PR ||'''17'''||[[Xavier Numia]] || || {{subon|54}}
+|-
+|PR ||'''18'''||[[Fletcher Newell]] || || {{subon|49}}
+|-
+|LK ||'''19'''||[[Patrick Tuipulotu]] || || {{subon|63}}
+|-
+|BR ||'''20'''||[[Peter Lakai]] || || {{subon|52}}
+|-
+|SH ||'''21'''||[[Kyle Preston]] || || {{subon|72}}
+|-
+|CE ||'''22'''||[[Anton Lienert-Brown]] || || {{subon|68}}
+|-
+|WG ||'''23'''||[[Josh Moorby]]
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|NZL}} [[Dave Rennie]]
+|}
+|}
+{| width=100%
+|
+'''Player of the Match:'''
+[[Cheslin Kolbe]] (South Africa)
+
+'''Assistant referees:'''
+<br />[[Karl Dickson]] ([[Rugby Football Union|England]])
+<br />[[Sam Grove-White]] ([[Scottish Rugby Union|Scotland]])
+<br />'''Television match official:'''
+<br />Brett Cronan ([[Rugby Australia|Australia]])
+<br />'''Foul play review officer:'''
+<br />Eric Gauzins ([[French Rugby Federation|France]])
+|}
+|}
+'''Notes:'''
+* [[Pieter-Steph du Toit]] become the [[List of South Africa national rugby union players|eleventh]] Springbok to earn 100 test caps.<ref>{{cite news |last=Niumata |first=Foster |date=29 August 2026 |title=How Pieter-Steph du Toit proved Rassie Erasmus wrong on the way to 100 Springbok tests |url=https://apnews.com/article/pietersteph-dutoit-100th-springboks-south-africa-556e1c85d83315cca5e8b41c6ad9f0cd |work=[[AP News]] |access-date=29 August 2026 }}</ref>
+* [[Ox Nché]] (South Africa) earned his 50th test cap.
+----
+{{rugbybox
+|date = 29 August 2026
+|time = 16:00 [[Time in Argentina|ART]] ([[UTC−03:00|UTC–03]])
+|team1 = {{ru-rt|ARG}}
+|score = 21–27
+|report = [https://www.rugbypass.com/news/wallabies-extend-winning-run-under-les-kiss-with-gritty-effort-in-argentina/ Report]
+|team2 = {{ru|AUS}}
+|try1 = [[Gerónimo Prisciantelli|Prisciantelli]] 13' c<br />[[Joaquín Moro|Moro]] 36' c<br />[[Boris Wenger|Wenger]] 51' c
+|con1 = [[Santiago Carreras|Carreras]] (3/3) 14', 37', 51'
+|try2 = [[Brandon Paenga-Amosa|Paenga-Amosa]] 6' m<br />[[Carter Gordon|Gordon]] 10' c<br />[[Fraser McReight|McReight]] 19' c<br />[[Tom Hooper (rugby union)|Hooper]] 54' m
+|con2 = [[Ryan Lonergan|Lonergan]] (2/3) 11', 20'<!--Ben Donaldson (0/1)-->
+|pen2 = [[Ryan Lonergan|Lonergan]] (1/1) 40+1'
+|stadium = [[Estadio 23 de Agosto]], [[San Salvador de Jujuy]]<ref name="Argentina"/><ref name="Wallabies"/>
+|attendance = 25,000
+|referee = [[Ben O'Keeffe]] ([[New Zealand Rugby|New Zealand]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Gerónimo Prisciantelli]] || || {{suboff|67}}
+|-
+|RW ||'''14'''||[[Rodrigo Isgró]]
+|-
+|OC ||'''13'''||[[Lucio Cinti]]
+|-
+|IC ||'''12'''||[[Faustino Sánchez Valarolo]] || || {{suboff|61}}
+|-
+|LW ||'''11'''||[[Ignacio Mendy]]
+|-
+|FH ||'''10'''||[[Santiago Carreras]]
+|-
+|SH ||'''9''' ||[[Simón Benítez Cruz]] || || {{suboff|61}}
+|-
+|N8 ||'''8''' ||[[Joaquín Moro]]
+|-
+|BF ||'''7''' ||[[Benjamín Grondona]] || || {{suboff|55}}
+|-
+|OF ||'''6''' ||[[Pablo Matera]] ([[Captain (sports)|c]])
+|-
+|RL ||'''5''' ||[[Tomás Lavanini]] || || {{suboff|40}}
+|-
+|LL ||'''4''' ||[[Guido Petti]]
+|-
+|TP ||'''3''' ||[[Francisco Moreno (rugby union)|Francisco Moreno]] || || {{suboff|47}}
+|-
+|HK ||'''2''' ||[[Ignacio Ruiz (rugby union)|Ignacio Ruiz]] || || {{suboff|67}}
+|-
+|LP ||'''1''' ||[[Boris Wenger]] || || {{suboff|55}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Leonel Oviedo]] || || {{subon|67}}
+|-
+|PR ||'''17'''||[[Rodrigo Martínez (rugby union)|Rodrigo Martínez]] || || {{subon|55}}
+|-
+|PR ||'''18'''||[[Tomas Rapetti]] || || {{subon|47}}
+|-
+|LK ||'''19'''||[[Efraín Elías]] || || {{subon|40}}
+|-
+|BR ||'''20'''||[[Juan Penoucos]] || || {{subon|55}}
+|-
+|SH ||'''21'''||[[Agustín Moyano]] || || {{subon|61}}
+|-
+|FH ||'''22'''||[[Nicolás Roger]] || || {{subon|67}}
+|-
+|CE ||'''23'''||[[Matías Moroni]] || || {{subon|61}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagicon|ARG}} [[Felipe Contepomi]]
+|}
+|valign=top|
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0" style="margin:auto"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Tom Wright (rugby, born 1997)|Tom Wright]]
+|-
+|RW ||'''14'''||[[Max Jorgensen]]
+|-
+|OC ||'''13'''||[[Isaac Henry (rugby union)|Isaac Henry]] || || {{suboff|65}}
+|-
+|IC ||'''12'''||[[Hunter Paisami]]
+|-
+|LW ||'''11'''||[[Harry Potter (rugby union)|Harry Potter]] || {{yel|24}}
+|-
+|FH ||'''10'''||[[Carter Gordon]] || || {{suboff|54}} || {{subon|64}}
+|-
+|SH ||'''9''' ||[[Ryan Lonergan]] || || {{suboff|44}}
+|-
+|N8 ||'''8''' ||[[Rob Valetini]] || || {{suboff|71}}
+|-
+|OF ||'''7''' ||[[Fraser McReight]]
+|-
+|BF ||'''6''' ||[[Tom Hooper (rugby union)|Tom Hooper]]
+|-
+|RL ||'''5''' ||[[Jeremy Williams (rugby union)|Jeremy Williams]]
+|-
+|LL ||'''4''' ||[[Josh Canham]] || || {{suboff|59}}
+|-
+|TP ||'''3''' ||[[Allan Alaalatoa]] ([[Captain (sports)|c]]) || || {{suboff|50}}
+|-
+|HK ||'''2''' ||[[Brandon Paenga-Amosa]] || || {{suboff|50}}
+|-
+|LP ||'''1''' ||[[Isaac Aedo Kailea]] || || {{suboff|40}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Billy Pollard]] || || {{subon|50}}
+|-
+|PR ||'''17'''||[[Angus Bell]] || || {{subon|40}}
+|-
+|PR ||'''18'''||[[Massimo de Lutiis]] || || {{subon|50}}
+|-
+|LK ||'''19'''||[[Lachlan Shaw (rugby union)|Lachlan Shaw]] || || {{subon|59}}
+|-
+|BR ||'''20'''||[[Charlie Cale (rugby union)|Charlie Cale]] || || {{subon|71}}
+|-
+|SH ||'''21'''||[[Tate McDermott]] || || {{subon|44}}
+|-
+|FH ||'''22'''||[[Ben Donaldson (rugby union)|Ben Donaldson]] || || {{subon|54}} || {{suboff|64}}
+|-
+|CE ||'''23'''||[[Joseph-Aukuso Sua'ali'i]] || || {{subon|65}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagicon|AUS}} [[Les Kiss]]
+|}
+|}
+{| width=100%
+|
+'''Player of the Match:'''
+<br />[[Fraser McReight]] (Australia)
+
+'''Assistant referees:'''
+<br />[[James Doleman]] ([[New Zealand Rugby|New Zealand]])
+<br />[[Gianluca Gnecchi]] ([[Italian Rugby Federation|Italy]])
+<br />'''Television match official:'''
+<br />Richard Kelly ([[New Zealand Rugby|New Zealand]])
+<br />'''Foul play review officer:'''
+<br />Glenn Newman ([[New Zealand Rugby|New Zealand]])
+|}
+|}
+----
+{{rugbybox
+|date = 29 August 2026
+|time = 17:00 [[Time in Brazil|BRT]] ([[UTC-3]])
+|team1 = {{ru-rt|BRA}}
+|score = 35–62
+|report =
+|team2 = {{flagdeco|NZL}} [[Classic All Blacks]]
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Pacaembu Stadium]], [[São Paulo]]<ref name="Brazil v Classic All Blacks">{{cite web|url=https://www.rugbypass.com/news/classic-new-zealand-to-head-to-football-hotbed-in-historical-moment/|title=Classic New Zealand to head to football hotbed in 'historical moment'|date=28 January 2026|access-date=28 January 2026}}</ref>
+|attendance =
+|referee =
+}}
+
+==September==
+{{rugbybox
+|date = 4 September 2026
+|time = 15:00 [[Time in Tonga|TST]] ([[UTC+13]])
+|team1 = {{ru-rt|TON|name=Tonga President's XV}}
+|score = 19-43
+|report = [https://nit.com.au/05-09-2026/26315/kick-the-gate-open-tongan-tour-a-timely-rugby-dose Report]
+|team2 = [[First Nations & Pasifika XV]]
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Teufaiva Sport Stadium]], [[Nuku'alofa]]<ref>{{cite web |title=Tonga to face First Nations and Pasifika XV in Nuku'alofa |url=https://www.rnz.co.nz/news/pacific/949846/tonga-to-face-first-nations-and-pasifika-xv-in-nuku-alofa/ |website=rugby-rnz.co.nz |publisher= RNZ |date=10 August 2026 }}</ref>
+|attendance =
+|referee =
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Maama-He-Lotu Tonga]]
+|-
+|RW ||'''14'''||[[William Helu]]
+|-
+|OC ||'''13'''||[[Netaleni Taufateau]]
+|-
+|IC ||'''12'''||[[Leonaitasi Feke]]
+|-
+|LW ||'''11'''||[[Filipe Tongamoa]]
+|-
+|FH ||'''10'''||[[Linley Savieti]]
+|-
+|SH ||'''9''' ||[[Feleti Inoke]]
+|-
+|N8 ||'''8''' ||[[Sione 'Ofa]]
+|-
+|OF ||'''7''' ||[[Peau Hingano]]
+|-
+|BF ||'''6''' ||[[Mafile'o Finau]]
+|-
+|RL ||'''5''' ||[[Apolosi Fine]]
+|-
+|LL ||'''4''' ||[[Vutulongo Puloka]] ([[Captain (sports)|c]])
+|-
+|TP ||'''3''' ||[[Unaloto Taulava]]
+|-
+|HK ||'''2''' ||[[Mosese Havea]]
+|-
+|LP ||'''1''' ||[[Isao Fononga]]
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Heneli Bloomfield]]
+|-
+|PR ||'''17'''||[[Tausinga Taefateau]]
+|-
+|PR ||'''18'''||[[Penisimani Pifeleti]]
+|-
+|LK ||'''19'''||[[Peni Tafea]]
+|-
+|BR ||'''20'''||[[Lamipeti Havea]]
+|-
+|SH ||'''21'''||[[Lemisio Moala]]
+|-
+|FH ||'''22'''||[[Samiuela Tauimeapi]]
+|-
+|CE ||'''23'''||[[Poasi Ika]]
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|TON}} [[Benhur Kivalu]]
+|}
+|style="vertical-align:top"|
+|style="vertical-align:top; width:50%"|
+{| cellspacing="0" cellpadding="0" align="center"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||{{flagdeco|Australian Aboriginal}} [[BJ Oates]]
+|-
+|RW ||'''14'''||{{flagdeco|FIJ}} [[Angus Tagicakibau]]
+|-
+|OC ||'''13'''||{{flagdeco|Australian Aboriginal}} [[Triston Reilly]] ([[Captain (sports)|c]])
+|-
+|IC ||'''12'''||{{flagdeco|Australian Aboriginal}} [[Jarrah McLeod]]
+|-
+|LW ||'''11'''||{{flagdeco|Australian Aboriginal}} [[Gage Phillips]]
+|-
+|FH ||'''10'''||{{flagdeco|Australian Aboriginal}} [[Chace Oates]]
+|-
+|SH ||'''9''' ||{{flagdeco|FIJ}} [[Moses Sorovi]]
+|-
+|N8 ||'''8''' ||{{flagdeco|FIJ}} [[Judah Saumaisue]]
+|-
+|OF ||'''7''' ||{{flagdeco|TON}} [[Davea Teoteo]]
+|-
+|BF ||'''6''' ||{{flagdeco|SAM}} [[Tau Tuisamoa]]
+|-
+|RL ||'''5''' ||{{flagdeco|TON}} [[Sau Vaihu]]
+|-
+|LL ||'''4''' ||{{flagdeco|SAM}} [[Tavita Loughland]]
+|-
+|TP ||'''3''' ||{{flagdeco|SAM}} [[Remsy Lemisio]]
+|-
+|HK ||'''2''' ||{{flagdeco|Australian Aboriginal}} [[John Grenfell]]
+|-
+|LP ||'''1''' ||{{flagdeco|FIJ}} [[Lington Ieli]]
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||{{flagdeco|TON}} [[Oniti Finau]]
+|-
+|PR ||'''17'''||{{flagdeco|SAM}} [[Berakah Tuifaasisina]]
+|-
+|PR ||'''18'''||{{flagdeco|TON}} [[Fred Kaihea]]
+|-
+|LK ||'''19'''||{{flagdeco|TON}} [[Malakai Taulani]]
+|-
+|BR ||'''20'''||{{flagdeco|TON}} [[Taufa Kinikini]]
+|-
+|SH ||'''21'''||{{flagdeco|Maori}} [[Teina Graham]]
+|-
+|FH ||'''22'''||{{flagdeco|Maori}} [[Tamarangi Tunui]]
+|-
+|CE ||'''23'''||{{flagdeco|Australian Aboriginal}} [[Garlen Peace]]
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|AUS}} [[Wycliff Palu]]
+|}
+|}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+
+'''Assistant referees:'''
+<br />
+<br />
+<br />'''Television match official:'''
+<br /> -->
+|}
+|}
+----
+{{rugbybox
+|date = 5 September 2026
+|time = 14:50 [[Time in Japan|JST]] ([[UTC+9]])
+|team1 = {{ru-rt|JPN}}
+|score = 57–12
+|report = [https://www.world.rugby/beta/en/match/5eb7b5bb-e9c9-459d-b710-614f46964427 Report]
+|team2 = {{ru|CAN}}
+|try1 = [[Takato Okabe|Okabe]] 5' m<br />[[Mamoru Harada|Harada]] (2) 15' c, 41' c<br />[[Ben Gunter|Gunter]] 22' m<br />[[Yūya Hirose (rugby  union)|Hirose]] 27' c<br />[[Kanji Shimokawa|Shimokawa]] 41' c<br />[[Harry Hockings|Hockings]] 59' m<br />[[Takumi Inaba|Inaba]] 77' c<br />[[Tiennan Costley|Costley]] 80' c
+|con1 = [[Takurō Matsunaga|Matsunaga]] (4/6) 16', 27', 42', 42'<br />[[Sam Greene (rugby union)|Greene]] (2/3) 78', 82'
+|try2 = [[Takoda McMullin|McMullin]] 19' c<br />[[Ben LeSage|LeSage]] 60' m
+|con2 = [[Takoda McMullin|McMullin]] (1/2) 20'
+|stadium = [[Denka Big Swan Stadium]], [[Niigata (city)|Niigata]]<ref>{{cite web |title=Brave Blossoms to Host Canada in Niigata |url=https://en.rugby-japan.jp/2026/03/20/brave-blossoms-to-host-canada-in-niigata/ |website=rugby-japan.jp |publisher=[[Japan Rugby Football Union]] |date=20 March 2026 }}</ref>
+|attendance = 18,045<ref>{{cite web |date=5 September 2026 |language=ja |title=リポビタンDチャレンジカップ2026: カナダ代表戦 |trans-title=Lipovitan D Challenge Cup 2026: Canada Match |url=https://www.rugby-japan.jp/match/29975/print |website=rugby-japan.jp |publisher=[[Japan Rugby Football Union]] |access-date=6 September 2026 }}</ref>
+|referee = Morgan White ([[Hong Kong China Rugby Union|Hong Kong China]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Takurō Matsunaga]] || || {{suboff|56}}
+|-
+|RW ||'''14'''||[[Inoke Burua]]
+|-
+|OC ||'''13'''||[[Dylan Riley (rugby union)|Dylan Riley]]
+|-
+|IC ||'''12'''||[[Yūya Hirose (rugby  union)|Yūya Hirose]]
+|-
+|LW ||'''11'''||[[Haruto Kida]]
+|-
+|FH ||'''10'''||[[Ryūnosuke Itō]]
+|-
+|SH ||'''9''' ||[[Naoto Saitō]] || || {{suboff|61}}
+|-
+|N8 ||'''8''' ||[[Faulua Makisi]] || || {{suboff|51}}
+|-
+|OF ||'''7''' ||[[Kanji Shimokawa]]
+|-
+|BF ||'''6''' ||[[Ben Gunter]] || || {{suboff|61}}
+|-
+|RL ||'''5''' ||[[Harry Hockings]] || || {{suboff|61}}
+|-
+|LL ||'''4''' ||[[Jack Cornelsen]]
+|-
+|TP ||'''3''' ||[[Shuhei Takeuchi]] || || {{suboff|48}}
+|-
+|HK ||'''2''' ||[[Mamoru Harada]] || || {{suboff|48}}
+|-
+|LP ||'''1''' ||[[Tokato Okabe]] || || {{suboff|48}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Kenji Sato (rugby union)|Kenji Sato]] || || {{subon|48}}
+|-
+|PR ||'''17'''||[[Sojiro Otsuka]] || || {{subon|48}}
+|-
+|PR ||'''18'''||[[Takumi Inaba]] || || {{subon|48}}
+|-
+|LK ||'''19'''||[[Michael Stolberg]] || || {{subon|61}}
+|-
+|BR ||'''20'''||[[Esei Haangana]] || || {{subon|61}}
+|-
+|SH ||'''21'''||[[Tiennan Costley]] || || {{subon|51}}
+|-
+|FH ||'''22'''||[[Kenta Fukuda]] || || {{subon|61}}
+|-
+|CE ||'''23'''||[[Sam Greene (rugby union)|Sam Greene]] || || {{subon|56}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|AUS}} [[Eddie Jones (rugby union)|Eddie Jones]]
+|}
+|style="vertical-align:top"|
+|style="vertical-align:top; width:50%"|
+{| cellspacing="0" cellpadding="0" align="center"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Takoda McMullin]]
+|-
+|RW ||'''14'''||[[Kyle Tremblay]] || || {{suboff|76}}
+|-
+|OC ||'''13'''||[[Isaac Olson]]
+|-
+|IC ||'''12'''||[[Ben LeSage]]
+|-
+|LW ||'''11'''||[[Liam James (rugby union)|Liam James]] || || {{suboff|51}}
+|-
+|FH ||'''10'''||[[Cooper Coats]]
+|-
+|SH ||'''9''' ||[[Jesse Kilgour]] || || {{suboff|58}}
+|-
+|N8 ||'''8''' ||[[Lucas Rumball]] ([[Captain (sports)|c]])
+|-
+|OF ||'''7''' ||[[Siôn Parry]]
+|-
+|BF ||'''6''' ||[[Mason Flesch]]
+|-
+|RL ||'''5''' ||[[Izzak Kelly]] || || {{suboff|64}}
+|-
+|LL ||'''4''' ||[[Daragh Doyle]] || || {{suboff|75}}
+|-
+|TP ||'''3''' ||[[Kyle Steeves]] || || {{suboff|64}}
+|-
+|HK ||'''2''' ||[[Foster DeWitt]] || || {{suboff|49}}
+|-
+|LP ||'''1''' ||[[Sam Miller (rugby union)|Sam Miller]] || || {{suboff|51}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Dewald Kotze]] || || {{subon|49}}
+|-
+|PR ||'''17'''||[[Emerson Prior]] || || {{subon|51}}
+|-
+|PR ||'''18'''||[[Bryce Worden]] || || {{subon|64}}
+|-
+|LK ||'''19'''||[[Barnaby Waddell]] || || {{subon|64}}
+|-
+|BR ||'''20'''||[[Cody Nhanala]] || || {{subon|75}}
+|-
+|SH ||'''21'''||[[Jason Higgins]] || || {{subon|58}}
+|-
+|FH ||'''22'''||[[Spencer Jones (rugby union)|Spencer Jones]] || || {{subon|76}}
+|-
+|CE ||'''23'''||[[Jamie Armstrong (rugby union)|Jamie Armstrong]] || || {{subon|51}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|AUS}} [[Steve Meehan]]
+|}
+|}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+
+-->'''Assistant referees:'''
+<br />[[Jordan Way]] ([[Rugby Australia|Australia]])
+<br />Francesco Cammisa ([[Hong Kong China Rugby Union|Hong Kong China]])
+<br />'''Television match official:'''
+<br />Matt Rodden ([[Hong Kong China Rugby Union|Hong Kong China]])
+|}
+|}
+'''Notes:'''
+* [[Takumi Inaba]], [[Inoke Burua]] (both Japan), [[Bryce Worden]], and [[Jamie Armstrong (rugby union)|Jamie Armstrong]] (both Canada) all made their international [[Test match (rugby union)|test]] debut.
+* This was Japan's centenary test, celebrating 100 years since the formation of the [[Japan Rugby Football Union]] (JRFU).<ref name=jpn-can>{{cite news |last=Newcombe |first=Jon |date=4 September 2026 |title=Dearns out, Japan change captain for Centenary Test vs Canada |url=https://www.rugbypass.com/news/japan-change-captain-for-centenary-test-vs-canada/ |work=[[RugbyPass]] |access-date=8 September 2026 }}</ref>
+* Japan's 57 points was the most they had scored against Canada, equaling their previous record achieved in [[2025 World Rugby Pacific Nations Cup#Pool B|2025]].<ref name=jpn-can/><ref name=jpn-can-stats>{{cite web |date= |title=Head to Head: Canada–Japan {{!}} Rugby Database |url=https://www.rugbydatabase.com.au/team/head-team-games.php?teamId=40&oppositionId=46 |website=rugbydatabase.com.au |publisher=Rugby Database |access-date=6 September 2026 }}</ref> It was also the largest victory (by margin) Japan had recorded against Canada.<ref name=jpn-can/><ref name=jpn-can-stats/>
+----
+{{Rugbybox
+|date = 5 September 2026
+|time = 17:10 [[South African Standard Time|SAST]] ([[UTC+2]])
+|home = {{Ru-rt|RSA}}
+|score = 29–24
+|report = [https://www.rugbypass.com/news/all-blacks-springboks/ Report]
+|away = {{Ru|NZL}}
+|try1 = [[Kurt-Lee Arendse|Arendse]] 20' m<br />[[Try (rugby)#Penalty try|Penalty try]] 36'<br />[[Jesse Kriel|Kriel]] 57' c<br />[[Malcolm Marx|Marx]] 65' c
+|con1 = [[Sacha Feinberg-Mngomezulu|Feinberg-Mngomezulu]] (2/3) 58', 66'
+|pen1 = [[Sacha Feinberg-Mngomezulu|Feinberg-Mngomezulu]] (1/1) 70'
+|try2 = [[Ardie Savea|Savea]] (2) 5' c, 25' m<br />[[Will Jordan (rugby union)|Jordan]] 55' m<br />[[Samisoni Taukei'aho|Taukei'aho]] 80+1' c
+|con2 = [[Ruben Love|Love]] (1/3) 11'<br />[[Damian McKenzie|McKenzie]] (1/1) 80+2'
+|stadium = [[FNB Stadium]], [[Johannesburg]]<ref name="Springboks v All Blacks"/>
+|attendance = 85,967
+|referee = [[Nika Amashukeli]] ([[Georgian Rugby Union|Georgia]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|-
+|FB ||'''15'''||[[Cheslin Kolbe]] || || {{suboff|10}}
+|-
+|RW ||'''14'''||[[Kurt-Lee Arendse]]
+|-
+|OC ||'''13'''||[[Jesse Kriel]]
+|-
+|IC ||'''12'''||[[Damian de Allende]]
+|-
+|LW ||'''11'''||[[Ethan Hooker]]
+|-
+|FH ||'''10'''||[[Sacha Feinberg-Mngomezulu]] || {{yel|10}}
+|-
+|SH ||'''9''' ||[[Cobus Reinach]] || || {{suboff|43}}
+|-
+|N8 ||'''8''' ||[[Jasper Wiese]] || || {{suboff|62}}
+|-
+|BF ||'''7''' ||[[Pieter-Steph du Toit]]
+|-
+|OF ||'''6''' ||[[Siya Kolisi]] ([[Captain (sports)|c]]) || || {{suboff|57}}
+|-
+|RL ||'''5''' ||[[Ruan Nortjé]]
+|-
+|LL ||'''4''' ||[[Eben Etzebeth]] || || {{suboff|57}}
+|-
+|TP ||'''3''' ||[[Wilco Louw]] || || {{suboff|51}}
+|-
+|HK ||'''2''' ||[[Malcolm Marx]] || || {{suboff|68}}
+|-
+|LP ||'''1''' ||[[Ox Nché]] || || {{suboff|57}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Deon Fourie]] || || {{subon|57}}
+|-
+|PR ||'''17'''||[[Gerhard Steenekamp]] || || {{subon|57}}
+|-
+|PR ||'''18'''||[[Thomas du Toit]] || || {{subon|51}}
+|-
+|BR ||'''19'''||[[Lood de Jager]] || || {{subon|57}}
+|-
+|CE ||'''20'''||[[André Esterhuizen]] || || {{subon|68}}
+|-
+|BR ||'''21'''||[[Cameron Hanekom]] || || {{subon|62}}
+|-
+|SH ||'''22'''||[[Morné van den Berg]] || || {{subon|43}}
+|-
+|FH ||'''23'''||[[Manie Libbok]] || || {{subon|10}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|RSA}} [[Rassie Erasmus]]
+|}
+|valign=top|
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0" style="margin:auto"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Damian McKenzie]]
+|-
+|RW ||'''14'''||[[Will Jordan (rugby union)| Will Jordan]]
+|-
+|OC ||'''13'''||[[Quinn Tupaea]] || || {{suboff|44}}
+|-
+|IC ||'''12'''||[[Jordie Barrett]]
+|-
+|LW ||'''11'''||[[Leroy Carter (rugby union)| Leroy Carter]] || || {{suboff|68}}
+|-
+|FH ||'''10'''||[[Ruben Love]] || {{yel|36}}
+|-
+|SH ||'''9''' ||[[Cam Roigard]] || || {{suboff|67}}
+|-
+|N8 ||'''8''' ||[[Ardie Savea]] ([[Captain (sports)|c]]) || || {{suboff|31}}
+|-
+|OF ||'''7''' ||[[Luke Jacobson]]
+|-
+|BF ||'''6''' ||[[Peter Lakai]]
+|-
+|RL ||'''5''' ||[[Sam Darry]] || || {{suboff|62}}
+|-
+|LL ||'''4''' ||[[Tupou Vaa'i]]
+|-
+|TP ||'''3''' ||[[Tyrel Lomax]] || || {{suboff|46}}
+|-
+|HK ||'''2''' ||[[Asafo Aumua]] || || {{suboff|62}}
+|-
+|LP ||'''1''' ||[[George Bower (rugby union)| George Bower]] || || {{suboff|46}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Samisoni Taukei'aho]] || || {{subon|62}}
+|-
+|PR ||'''17'''||[[Xavier Numia]] || || {{subon|46}}
+|-
+|PR ||'''18'''||[[Fletcher Newell]] || || {{subon|46}}
+|-
+|LK ||'''19'''||[[Fabian Holland (rugby union)| Fabian Holland]] || || {{subon|62}}
+|-
+|BR ||'''20'''||[[Wallace Sititi]] || || {{subon|31}}
+|-
+|SH ||'''21'''||[[Kyle Preston]] || || {{subon|67}}
+|-
+|CE ||'''22'''||[[Anton Lienert-Brown]] || || {{subon|44}}
+|-
+|WG ||'''23'''||[[Josh Moorby]] || || {{subon|68}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|NZL}} [[Dave Rennie]]
+|}
+|}
+{| style="width:100%"
+|
+'''Player of the Match:'''
+<br />[[Ethan Hooker]]  (South Africa)
+
+'''Assistant referees:'''
+<br />[[Angus Gardner]] ([[Rugby Australia|Australia]])
+<br />[[Christophe Ridley]] ([[Rugby Football Union|England]])
+<br />'''Television match official:'''
+<br />Eric Gauzins ([[French Rugby Federation|France]])
+<br />'''Foul play review officer:'''
+<br />Brett Cronan ([[Rugby Australia|Australia]])
+|}
+|}
+'''Notes:'''
+* [[Tupou Vaa'i]] (New Zealand) earned his 50th test cap.
+----
+{{rugbybox
+|date = 5 September 2026
+|time = 18:00 [[Time in Argentina|ART]] ([[UTC−03:00|UTC−03]])
+|team1 = {{ru-rt|ARG}}
+|score = 28–28
+|report = [https://www.rugbypass.com/news/wallabies-make-history-despite-dramatic-draw-with-los-pumas/ Report]
+|team2 = {{ru|AUS}}
+|try1 = [[Pablo Matera|Matera]] (2) 35' c, 63' c<br />[[Ignacio Mendy|Mendy]] 38' c<br />[[Ignacio Ruiz (rugby union)|Ruiz]] 54' c
+|con1 = [[Santiago Carreras|Carreras]] (4/4) 35', 39', 54', 64'
+|try2 = [[Harry Wilson (rugby union, born 1999)|Wilson]] 19' c<br />[[Max Jorgensen|Jorgensen]] 27' c<br />[[Fraser McReight|McReight]] 46' c<br />[[Penalty try]] 69'
+|con2 = [[Ryan Lonergan|Lonergan]] (3/3) 20', 28', 47'
+|stadium = [[Estadio Malvinas Argentinas]], [[Mendoza, Argentina|Mendoza]]<ref name="Argentina"/><ref name="Wallabies"/>
+|attendance =
+|referee = [[James Doleman]] ([[New Zealand Rugby|New Zealand]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Santiago Carreras]] || {{yel|69}}
+|-
+|RW ||'''14'''||[[Rodrigo Isgró]]
+|-
+|OC ||'''13'''||[[Lucio Cinti]] || {{yel|68}}
+|-
+|IC ||'''12'''||[[Faustino Sánchez Valarolo]]
+|-
+|LW ||'''11'''||[[Ignacio Mendy]] || || {{suboff|75}}
+|-
+|FH ||'''10'''||[[Nicolás Roger]]
+|-
+|SH ||'''9''' ||[[Simón Benítez Cruz]] || || {{suboff|70}}
+|-
+|N8 ||'''8''' ||[[Joaquín Moro]] || || {{suboff|52}}
+|-
+|BF ||'''7''' ||[[Guido Petti]] || || {{suboff|75}}
+|-
+|OF ||'''6''' ||[[Pablo Matera]] ([[Captain (sports)|c]])
+|-
+|RL ||'''5''' ||[[Franco Molina]] || {{yel|26}} || {{suboff|67}}
+|-
+|LL ||'''4''' ||[[Efraín Elías]]
+|-
+|TP ||'''3''' ||[[Pedro Delgado (rugby union)|Pedro Delgado]] || || {{suboff|52}}
+|-
+|HK ||'''2''' ||[[Ignacio Ruiz (rugby union)|Ignacio Ruiz]] || || {{suboff|70}}
+|-
+|LP ||'''1''' ||[[Boris Wenger]] || || {{suboff|52}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Leonel Oviedo]] || || {{subon|70}}
+|-
+|PR ||'''17'''||[[Mayco Vivas]] || || {{subon|52}}
+|-
+|PR ||'''18'''||[[Francisco Moreno (rugby union)|Francisco Moreno]] || || {{subon|52}}
+|-
+|LK ||'''19'''||[[Tomás Lavanini]] || || {{subon|67}}
+|-
+|BR ||'''20'''||[[Juan Martín Scelzo]] || || {{subon|52}}
+|-
+|BR ||'''21'''||[[Facundo Cardozo (rugby union)|Facundo Cardozo]] || || {{subon|75}}
+|-
+|SH ||'''22'''||[[Gonzalo Bertranou]] || || {{subon|70}}
+|-
+|WG ||'''23'''||[[Mateo Soler]] || || {{subon|75}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagicon|ARG}} [[Felipe Contepomi]]
+|}
+|valign=top|
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0" style="margin:auto"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Tom Wright (rugby, born 1997)|Tom Wright]]
+|-
+|RW ||'''14'''||[[Max Jorgensen]]
+|-
+|OC ||'''13'''||[[Joseph-Aukuso Sua'ali'i]]
+|-
+|IC ||'''12'''||[[Len Ikitau]]
+|-
+|LW ||'''11'''||[[Filipo Daugunu]] || || {{suboff|14}} || {{subon|29}} || {{suboff|74}}
+|-
+|FH ||'''10'''||[[Ben Donaldson (rugby union)|Ben Donaldson]] || || || || {{suboff|55}}
+|-
+|SH ||'''9''' ||[[Ryan Lonergan]]
+|-
+|N8 ||'''8''' ||[[Harry Wilson (rugby union, born 1999)|Harry Wilson]] ([[Captain (sports)|c]])
+|-
+|OF ||'''7''' ||[[Fraser McReight]]
+|-
+|BF ||'''6''' ||[[Rob Valetini]] || || {{suboff|65}}
+|-
+|RL ||'''5''' ||[[Jeremy Williams (rugby union)|Jeremy Williams]] || {{yel|33}} || {{suboff|60}}
+|-
+|LL ||'''4''' ||[[Josh Canham]]
+|-
+|TP ||'''3''' ||[[Taniela Tupou (rugby union)|Taniela Tupou]] || || {{suboff|51}}
+|-
+|HK ||'''2''' ||[[Billy Pollard]] || || {{suboff|51}}
+|-
+|LP ||'''1''' ||[[Angus Bell]] || || {{suboff|58}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Josh Nasser]] || || {{subon|51}}
+|-
+|PR ||'''17'''||[[Aidan Ross]] || || {{subon|58}}
+|-
+|PR ||'''18'''||[[Massimo de Lutiis]] || || {{subon|51}}
+|-
+|LK ||'''19'''||[[Lukhan Salakaia-Loto]] || || {{subon|60}}
+|-
+|BR ||'''20'''||[[Charlie Cale (rugby union)|Charlie Cale]] || || {{subon|65}}
+|-
+|SH ||'''21'''||[[Kalani Thomas]] || || || || || {{subon|69}}
+|-
+|FH ||'''22'''||[[Carter Gordon]] || || {{subon|14}} || {{suboff|29}} || {{subon|55}} || {{suboff|69}}
+|-
+|CE ||'''23'''||[[Isaac Henry (rugby union)|Isaac Henry]] || || || || {{subon|74}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagicon|AUS}} [[Les Kiss]]
+|}
+|}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+-->
+'''Assistant referees:'''<ref name=ref-appointments/>
+<br />[[Ben O'Keeffe]] ([[New Zealand Rugby|New Zealand]])
+<br />[[Gianluca Gnecchi]] ([[Italian Rugby Federation|Italy]])
+<br />'''Television match official:'''<ref name=ref-appointments/>
+<br />Glenn Newman ([[New Zealand Rugby|New Zealand]])
+<br />'''Foul play review officer:'''<ref name=ref-appointments/>
+<br />Richard Kelly ([[New Zealand Rugby|New Zealand]])
+|}
+|}
+'''Notes:'''
+* [[Facundo Cardozo (rugby union)|Facundo Cardozo]] and [[Mateo Soler]] (both Argentina) made their international [[Test match (rugby union)|test]] debuts.
+* [[Tom Wright (rugby, born 1997)|Tom Wright]] (Australia) earned his 50th test cap.<ref>{{cite web |date=4 September 2026 |title=Wright to bring up 50, Donaldson to start against Los Pumas in Mendoza |url=https://wallabies.rugby/news/wallabies-team-confirmed-to-play-argentina-in-mendoza-202693 |website=wallabies.rugby |publisher=[[Rugby Australia]] |access-date=4 September 2026 }}</ref>
+* With this draw, Australia won the series 1–0, securing their [[History of rugby union matches between Argentina and Australia#List of series|first series]] victory in Argentina.<ref>{{cite news |last=Pentony |first=Luke |date=6 September 2026 |title=Wallabies vs Pumas second Test in Mendoza — live blog, stats and scores |url=https://www.abc.net.au/news/2026-09-06/australia-wallabies-pumas-argentina-rugby-test-live-blog/107120012?utm_campaign=abc_news_web&utm_content=link&utm_medium=content_shared&utm_source=abc_news_web#live-blog-post-337952 |work=[[ABC News (Australia)|ABC News]] |access-date=6 September 2026 }}</ref>
+* Australia reclaimed the [[Puma Trophy]].<ref>{{cite news |last1=Drennan |first1=Jonathan |last2=Payten |first2=Iain |date=6 September 2026 |title=Injury worry for star playmaker after Wallabies botch chance against 13-man Pumas |url=https://www.smh.com.au/sport/rugby-union/wallabies-2026-live-updates-australia-takes-on-argentina-in-mendoza-20260905-p60uqq.html?post=p5b2kw&gb=1 |work=The Sydney Morning Herald |publisher=Nine Entertainment |access-date=6 September 2026 }}</ref>
+----
+{{Rugbybox
+|id =
+|date = 12 September 2026
+|time = 17:00 [[Eastern Daylight Time|EDT]] ([[UTC-04]])
+|home = {{Ru-rt|RSA}}
+|score = 43–28
+|report =
+|away = {{Ru|NZL}}
+|try1 = [[Damian de Allende|de Allende]] (2) 14' c, 48' m<br />[[Morné van den Berg|van den Berg]] 21' c<br />[[Pieter-Steph du Toit|P. du Toit]] 51' c<br />[[Kurt-Lee Arendse|Arendse]] 71' c<br />[[Cameron Hanekom|Hanekom]] 75' c
+|con1 = [[Sacha Feinberg-Mngomezulu|Feinberg-Mngomezulu]] (2/3) 15', 22'<br />[[Morné van den Berg|van den Berg]] (1/1) 52'<br />[[Manie Libbok|Libbok]] (2/3) 72'. 76'
+|pen1 = [[Sacha Feinberg-Mngomezulu|Feinberg-Mngomezulu]] (1/2) 3'
+|try2 = [[Codie Taylor|Taylor]] 7' c<br />[[Will Jordan (rugby union)|Jordan]] 36' c<br />[[Ethan Blackadder|Blackadder]] 62' c<br />[[Beauden Barrett|B. Barrett]] 79' c
+|con2 = [[Damian McKenzie|McKenzie]] (4/4) 8', 37', 63', 79'
+|stadium = [[M&T Bank Stadium]], [[Baltimore]] ([[United States]])<ref name="Springboks v All Blacks"/><ref name="Fourth Test">{{cite web|url=https://www.springboks.rugby/news-features/articles/2026/01/22/rugby-s-greatest-rivalry-heads-stateside/|title=Rugby's Greatest Rivalry heads Stateside|date=22 January 2026|access-date=22 January 2026}}</ref>
+|attendance = 68,173
+|referee = [[Karl Dickson]] ([[Rugby Football Union|England]])
+}}
+{| border="0" style="width:100%;" class="collapsible collapsed"
+|-
+!Team details
+|-
+|
+{| style="width:100%"
+|-
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Damian Willemse]] || || {{suboff|57}}
+|-
+|RW ||'''14'''||[[Kurt-Lee Arendse]]
+|-
+|OC ||'''13'''||[[Jesse Kriel]]
+|-
+|IC ||'''12'''||[[Damian de Allende]]
+|-
+|LW ||'''11'''||[[Ethan Hooker]]
+|-
+|FH ||'''10'''||[[Sacha Feinberg-Mngomezulu]] || || {{suboff|60}}
+|-
+|SH ||'''9''' ||[[Morné van den Berg]]
+|-
+|N8 ||'''8''' ||[[Jasper Wiese]]
+|-
+|BF ||'''7''' ||[[Pieter-Steph du Toit]] || || {{suboff|65}}
+|-
+|OF ||'''6''' ||[[Siya Kolisi]] ([[Captain (sports)|c]]) || || {{suboff|43}}
+|-
+|RL ||'''5''' ||[[Ruan Nortjé]] || || {{suboff|43}}
+|-
+|LL ||'''4''' ||[[Eben Etzebeth]]
+|-
+|TP ||'''3''' ||[[Wilco Louw]] || || {{suboff|43}}
+|-
+|HK ||'''2''' ||[[Malcolm Marx]] || || {{suboff|49}}
+|-
+|LP ||'''1''' ||[[Ox Nché]] || || {{suboff|43}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Deon Fourie]] || || {{subon|49}}
+|-
+|PR ||'''17'''||[[Gerhard Steenekamp]] || || {{subon|43}}
+|-
+|PR ||'''18'''||[[Thomas du Toit]] || || {{subon|43}}
+|-
+|BR ||'''19'''||[[Lood de Jager]] || || {{subon|43}}
+|-
+|CE ||'''20'''||[[André Esterhuizen]] || || {{subon|43}}
+|-
+|BR ||'''21'''||[[Cameron Hanekom]] || || {{subon|65}}
+|-
+|SH ||'''22'''||[[Cobus Reinach]] || || {{subon|60}}
+|-
+|FH ||'''23'''||[[Manie Libbok]] || || {{subon|57}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|RSA}} [[Rassie Erasmus]]
+|}
+|valign=top|
+|style="vertical-align:top;width:50%"|
+{| cellspacing="0" cellpadding="0" style="margin:auto"
+|-
+!width="25"| !!width="25"|
+|-
+|FB ||'''15'''||[[Damian McKenzie]]
+|-
+|RW ||'''14'''||[[Will Jordan (rugby union)|Will Jordan]]
+|-
+|OC ||'''13'''||[[Anton Lienert-Brown]] || || {{suboff|39}}
+|-
+|IC ||'''12'''||[[Jordie Barrett]]
+|-
+|LW ||'''11'''||[[Josh Moorby]] || || {{suboff|71}}
+|-
+|FH ||'''10'''||[[Richie Mo'unga]]
+|-
+|SH ||'''9''' ||[[Cam Roigard]] || || {{suboff|65}}
+|-
+|N8 ||'''8''' ||[[Peter Lakai]] || || {{suboff|6}} || {{subon|18}}
+|-
+|OF ||'''7''' ||[[Ethan Blackadder]]
+|-
+|BF ||'''6''' ||[[Tupou Vaa'i]]
+|-
+|RL ||'''5''' ||[[Sam Darry]] || || {{suboff|57}}
+|-
+|LL ||'''4''' ||[[Patrick Tuipulotu]] || || || || {{suboff|54}}
+|-
+|TP ||'''3''' ||[[Fletcher Newell]] || || {{suboff|48}}
+|-
+|HK ||'''2''' ||[[Codie Taylor]] ([[Captain (sports)|c]]) || || {{suboff|48}}
+|-
+|LP ||'''1''' ||[[Ethan de Groot]] || || {{suboff|48}}
+|-
+|colspan=3|'''Substitutions:'''
+|-
+|HK ||'''16'''||[[Asafo Aumua]] || || {{subon|48}}
+|-
+|PR ||'''17'''||[[Xavier Numia]] || || {{subon|48}}
+|-
+|PR ||'''18'''||[[Tyrel Lomax]] || || {{subon|48}}
+|-
+|LK ||'''19'''||[[Josh Lord (rugby union)|Josh Lord]] || || {{subon|57}}
+|-
+|BR ||'''20'''||[[Wallace Sititi]] || || {{subon|6}} || {{suboff|18}} || {{subon|54}}
+|-
+|SH ||'''21'''||[[Kyle Preston]] || || {{subon|65}}
+|-
+|CE ||'''22'''||[[Rieko Ioane]] || || {{subon|39}}
+|-
+|FH ||'''23'''||[[Beauden Barrett]] || || {{subon|71}}
+|-
+|colspan=3|'''Coach:'''
+|-
+|colspan="4"|{{flagdeco|NZL}} [[Dave Rennie]]
+|}
+|}
+{| style="width:100%"
+|
+'''Player of the Match:'''
+<br />
+[[Morné van den Berg]] (South Africa) <ref>{{Cite Instagram |user=rugbysgreatestrivalrytour |postid=DdNLeGUh2WG |title=Morne van den Berg is tonight’s Castle Double Malt Player of the Match  |date=12 September 2026}}</ref>
+
+'''Assistant referees:'''
+<br />[[Matthew Carley]] ([[Rugby Football Union|England]])
+<br />[[Christophe Ridley]] ([[Rugby Football Union|England]])
+<br />'''Television match official:'''
+<br />Andrew Jackson ([[Rugby Football Union|England]])
+<br />'''Foul play review officer:'''
+<br />Matteo Liperini ([[Italian Rugby Federation|Italy]])
+|}
+|}
+'''Notes'''
+* The 68,173 match attendance, was a record attendance for a rugby [[Test match (rugby union)|test match]] in the [[United States]].<ref>{{cite news |last=Howes |first=Michael |date=12 September 2026 |title=Springboks defeat All Blacks, 43-28, before record rugby crowd in Baltimore |url=https://www.baltimoresun.com/2026/09/12/south-africa-springboks-new-zealand-all-blacks-rugby-crowd-baltimore-result/ |work=[[Baltimore Sun]] |access-date=12 September 2026 }}</ref>
+* This was the first test match between [[South Africa national rugby union team|South Africa]] and [[New Zealand national rugby union team|New Zealand]] in the United States.<ref name=finale-fox/>
+----
+{{rugbybox
+|date = 19 September 2026
+|time = 20:00 [[Central European Summer Time|CEST]] ([[UTC+2]])
+|team1 = {{ru-rt|POL}}
+|score = 33–19
+|report = [https://www.rugbypass.com/live/czech-republic-vs-poland/ Report]
+|team2 = {{ru|CZE}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = Municipal Stadium, [[Nowy Sącz]]<ref>{{cite web|url=https://polskie.rugby/artykul/13532/knmxv-polska-czechy-bialoczerwoni-wracaja-do-gry?fbclid=IwY2xjawUN7shwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMXE0REVjdWFhazRXdkRueUFzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEe9H-YoEaqSc_YjJzz_KLcMFABY_XVWnucjkDYg1sFMXEwBql6nRwxtema8EM_aem_MTqdvVOroCi6_FuNpIAIJA|title=KNMXV: Poland – Czech Republic in Nowy Sącz|date=7 September 2026|access-date=9 September 2026}}</ref>
+|attendance =
+|referee =
+}}
+----
+{{rugbybox
+|date = 26 September 2026
+|time = 18:00 [[British Summer Time|BST]] ([[UTC+1]])
+|team1 = {{ru-rt|GIB}}
+|score =
+|report =
+|team2 = {{ru|MLT}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = Chiswick Rugby Club, [[London]]<ref>{{cite web|url=https://www.facebook.com/GibraltarRugby/posts/pfbid02TYiGX5iiUoWRML7SprfSHrN5dmx81Tx8zEvQ7WkmTLYzAeX2vZK11UMo3GUVtbf8l|title=GIBRALTAR V MALTA|website=[[Facebook]] |date=7 September 2026|access-date=9 September 2026}}</ref>
+|attendance =
+|referee =
+}}
+----
+{{rugbybox
+|date = 27 September 2026
+|time = 17:30 [[Australian Western Standard Time|AWST]] ([[UTC+8]])
+|team1 = {{ru-rt|AUS}}
+|score =
+|report =
+|team2 = {{ru|RSA}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Perth Stadium]], [[Perth]]<ref>{{cite web |title=Venues confirmed as tickets go on sale for 2026 Wallabies' home Tests |url=https://wallabies.rugby/news/venues-confirmed-as-tickets-go-on-sale-for-2026-wallabies-home-tests-2026215 |website=wallabies.rugby |publisher=[[Rugby Australia]] |date=16 February 2026}}</ref>
+|attendance =
+|referee = [[Andrea Piardi]] ([[Italian Rugby Federation|Italy]])
+}}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+-->
+'''Assistant referees:'''
+<br />[[Ben O'Keeffe]] ([[New Zealand Rugby|New Zealand]])
+<br />[[James Doleman]] ([[New Zealand Rugby|New Zealand]])
+<br />'''Television match official:'''
+<br />Matteo Liperini ([[Italian Rugby Federation|Italy]])
+<br />'''Foul play review officer:'''
+<br />Richard Kelly ([[New Zealand Rugby|New Zealand]])
+|}
+
+==October==
+{{rugbybox
+|date = 10 October 2026
+|time = 19:10 [[Time in New Zealand|NZDT]] ([[UTC+13]])
+|team1 = {{ru-rt|NZL}}
+|score =
+|report =
+|team2 = {{ru|AUS}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Eden Park]], [[Auckland]]<ref name="Wallabies"/><ref name="All Blacks">{{cite web|url=https://www.allblacks.com/news/all-blacks-2026-schedule-confirmed|title=All Blacks 2026 home Test venues announced|date=9 December 2025|access-date=9 December 2025}}</ref>
+|attendance =
+|referee = [[Andrew Brace]] ([[Irish Rugby Football Union|Ireland]])
+}}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+-->
+'''Assistant referees:'''
+<br />[[Luke Pearce]] ([[Rugby Football Union|England]])
+<br />[[Damián Schneider]] ([[Argentine Rugby Union|Argentina]])
+<br />'''Television match official:'''
+<br />[[Mike Adamson (rugby union)|Mike Adamson]] ([[Scottish Rugby Union|Scotland]])
+<br />'''Foul play review officer:'''
+<br />[[Marius van der Westhuizen]] ([[South African Rugby Union|South Africa]])
+|}
+----
+{{Rugbybox
+|date = 10 October 2026
+|time =  TBC [[Central Africa Time|CAT]] ([[UTC-02]])
+|home = {{ru-rt|ZIM}}
+|score =
+|report =
+|away = {{ru|GER}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[National Sports Stadium (Zimbabwe)|National Sports Stadium]], [[Harare]]
+|attendance =
+|referee =
+}}
+----
+{{rugbybox
+|date = 17 October 2026
+|time = 15:45 [[Australian Eastern Daylight Time|AEDT]] ([[UTC+11]])
+|team1 = {{ru-rt|AUS}}
+|score =
+|report =
+|team2 = {{ru|NZL}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Stadium Australia]], [[Sydney]]<ref name="Wallabies"/>
+|attendance =
+|referee = [[Luke Pearce]] ([[Rugby Football Union|England]])
+}}
+{| width=100%
+|
+<!--'''Player of the Match:'''
+<br />
+-->
+'''Assistant referees:'''
+<br />[[Andrew Brace]] ([[Irish Rugby Football Union|Ireland]])
+<br />[[Damián Schneider]] ([[Argentine Rugby Union|Argentina]])
+<br />'''Television match official:'''
+<br />[[Marius van der Westhuizen]] ([[South African Rugby Union|South Africa]])
+<br />'''Foul play review officer:'''
+<br />[[Mike Adamson (rugby union)|Mike Adamson]] ([[Scottish Rugby Union|Scotland]])
+|}
+----
+{{Rugbybox
+|date = 24 October 2026
+|time = 14:50 [[Japan Standard Time|JST]] ([[UTC+09]])
+|home = {{ru-rt|JAP}}
+|score =
+|report =
+|away = {{ru|FIJ}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Chichibunomiya Rugby Stadium]], [[Tokyo]]<ref name="Japan Fiji">{{cite web|url=https://www.rugby-japan.jp/news/54073|title=Notice of Lipovitan D Challenge Cup 2026 Japan Rugby Football Union 100th Anniversary Match Men's and Women's Japan National Team Matches to Be Held on the Same Day|date=16 July 2026|access-date=22 July 2026}}</ref>
+|attendance =
+|referee =
+}}
+----
+{{Rugbybox
+|date = 24 October 2026
+|time = 18:00 [[Central Daylight Time|CDT]] ([[UTC-05]])
+|home = {{ru-rt|USA}}
+|score =
+|report =
+|away = {{ruA|AUS}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Geodis Park]], [[Nashville]]<ref name=USA>{{cite web|url=https://eagles.rugby/news/wxv-heads-stateside-with-tests-in-texas-tennessee-and-new-jersey-2026623|title=USA Eagles tour stateside with Tests in Texas, Tennessee and New Jersey|date=24 June 2026|access-date=24 June 2026}}</ref>
+|attendance =
+|referee =
+}}
+----
+{{Rugbybox
+|date = 30 October 2026
+|time = 20:00 [[Eastern Daylight Time|EDT]] ([[UTC-04]])
+|home = {{ru-rt|USA}}
+|score =
+|report =
+|away = {{ruA|AUS}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Sports Illustrated Stadium]], [[Harrison, New Jersey|Harrison]]<ref name="USA" />
+|attendance =
+|referee =
+}}
+----
+{{Rugbybox
+|date = 31 October 2026
+|time =20:00 [[Central European Time|CET]] ([[UTC+01]])
+|home = {{ru-rt|BEL}}
+|score =
+|report =
+|away = {{ru|HKG}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Edmond Machtens Stadium]], [[Brussels]]<ref name="Belgium v Hong Kong">{{cite web|url=https://m.facebook.com/story.php?story_fbid=1658634952932855&id=100063590983237|title=Belgium - Hong Kong China|website=[[Facebook]] |date=3 August 2026|access-date=3 August 2026}}</ref>
+|attendance =
+|referee =
+}}
+
+==November==
+{{rugbybox
+|date = 6 November 2026
+|time = 19:45 [[Greenwich Mean Time|GMT]] ([[UTC+00:00|UTC+0]])
+|team1 = {{RuA-rt|ENG|name=England A}}
+|score =
+|report =
+|team2 = {{ruA|ARG}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Recreation Ground, Bath|Recreation Ground]], [[Bath, Somerset|Bath]]<ref>{{cite web |date=7 September 2026 |title=England Men's A side to face Argentina XV in November |url=https://www.englandrugby.com/follow/news-and-media/england-mens-side-face-argentina-xv-november |website=englandrugby.com |publisher=[[Rugby Football Union|England Rugby]] |access-date=9 September 2026 }}</ref><ref>{{cite web |date=7 September 2026 |title=England 'A' To Face Argentina XV At The Rec |url=https://www.bathrugby.com/content/england-a-to-face-argentina-xv-at-the-rec |website=bathrugby.com |publisher=[[Bath Rugby]] |access-date=9 September 2026 }}</ref>
+|attendance =
+|referee =
+}}
+
+{{rugbybox
+|date = 7 November 2026
+|time =
+|team1 = {{Ru-rt|PAR}}
+|score =
+|report =
+|team2 = {{ru|CHI|name=Chile XV}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium =
+|attendance =
+|referee =
+}}
+
+{{rugbybox
+|date = 11 November 2026
+|time =
+|team1 = {{Ru-rt|PAR}}
+|score =
+|report =
+|team2 = {{ru|CHI|name=Chile XV}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium =
+|attendance =
+|referee =
+}}
+
+{{rugbybox
+|date = 14 November 2026
+|time =
+|team1 = {{Ru-rt|PAR}}
+|score =
+|report =
+|team2 = {{Ru|BRA}}
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium =
+|attendance =
+|referee =
+}}
+
+{{rugbybox
+|date = 20 November 2026
+|time = TBC [[Central European Time|CET]] ([[UTC+1]])
+|team1 = {{RuA-rt|ITA|name=Italy XV}}
+|score =
+|report =
+|team2 = {{flagdeco|AUS}} [[Queensland Reds]]
+|try1 =
+|con1 =
+|pen1 =
+|drop1 =
+|try2 =
+|con2 =
+|pen2 =
+|drop2 =
+|stadium = [[Stadio Comunale di Monigo]], [[Treviso]]<ref name="Italy XV v Reds">{{cite web|url=https://reds.rugby/news/queensland-reds-lock-in-italy-dates-and-gullivers-supporters-tour-2026419|title=Queensland Reds Lock in Italy Dates and Gullivers Supporters' Tour|date=19 April 2026|access-date=30 April 2026}}</ref>
+|attendance =
+|referee =
+}}
+
+==See also==
+* [[2026 women's rugby union internationals]]
+* [[2026 Six Nations Championship]]
+* [[2026 Rugby Europe Championship]]
+* [[2026 Nations Championship]]
+* [[2026 World Rugby Nations Cup]]
+* [[2026 Asia Rugby Championship]]
+* [[2026 Americas Rugby Championship]]
+* [[2026 World Rugby Pacific Nations Cup]]
+* [[2026 New Zealand rugby union tour of South Africa|2026 Rugby's Greatest Rivalry tour]]
+==Notes==
+{{notelist}}
+==References==
+{{Reflist}}
+
+{{History of Tier 1 nations}}
+
+[[Category:2026 in rugby union]]
+[[Category:Mid-year rugby union internationals]]

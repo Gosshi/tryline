@@ -22,6 +22,7 @@ import {
   notifyEventIntegrityMismatch,
   notifyRecapGenerationSkipped,
   notifyNewsletterDelivery,
+  notifyMissingInternationals,
   notifyPrekickoffReadinessAudit,
   notifyStripeWebhookIssue,
 } from "@/lib/llm/notify";
@@ -515,6 +516,58 @@ describe("llm notify", () => {
     expect(body).toContain("✉️ 週次ニュースレター配信");
     expect(body).toContain("成功: 3件");
     expect(body).toContain("失敗: 1件");
+  });
+
+  it("posts missing international fixtures with Japanese team names", async () => {
+    getServerEnvMock.mockReturnValue({
+      DISCORD_WEBHOOK_OPS: "https://discord.com/api/webhooks/1/ops",
+    });
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+
+    await notifyMissingInternationals(
+      [
+        {
+          awayCode: "AUS",
+          date: "2026-10-10",
+          homeCode: "NZL",
+          isSeniorSide: true,
+          sourcePage: "2026 men's rugby union internationals",
+          venue: "Eden Park, Auckland",
+        },
+        {
+          awayCode: "NZL",
+          date: "2026-10-17",
+          homeCode: "AUS",
+          isSeniorSide: true,
+          sourcePage: "2026 men's rugby union internationals",
+          venue: "Stadium Australia, Sydney",
+        },
+      ],
+      new Map([
+        ["AUS", "オーストラリア"],
+        ["NZL", "ニュージーランド"],
+      ]),
+    );
+
+    const request = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String((request as RequestInit).body)).content;
+
+    expect(body).toContain("30日以内でDBに無い代表戦: 2試合");
+    expect(body).toContain(
+      "1. 2026-10-10 ニュージーランド 対 オーストラリア — Eden Park, Auckland",
+    );
+    expect(body).toContain(
+      "2. 2026-10-17 オーストラリア 対 ニュージーランド — Stadium Australia, Sydney",
+    );
+    expect(body).toContain(
+      "照合元: 2026 men's rugby union internationals（Wikipedia）",
+    );
+  });
+
+  it("skips the missing internationals notification when there are no missing fixtures", async () => {
+    await notifyMissingInternationals([], new Map());
+
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("posts pre-kickoff readiness issues with a summary before details", async () => {
