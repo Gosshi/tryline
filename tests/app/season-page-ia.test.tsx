@@ -1075,17 +1075,29 @@ describe("season page information architecture", () => {
       "/matches/japan-wales-2",
       "/matches/japan-ireland",
     ]);
-    expect(matchLinks[0]).toHaveTextContent("Wales 対 Japan");
-    expect(matchLinks[0]).toHaveTextContent("2026");
-    expect(matchLinks[0]).not.toHaveClass("contents");
-    expect(
-      screen.getAllByRole("link", { name: "過去の対戦成績 →" }),
-    ).toHaveLength(2);
-    const firstHeadToHeadLink = screen.getAllByRole("link", {
+    const firstMatchLink = matchLinks.at(0);
+    if (!firstMatchLink) {
+      throw new Error("Expected at least one Japan match link");
+    }
+    expect(firstMatchLink).toHaveTextContent("Wales 対 Japan");
+    expect(firstMatchLink).toHaveTextContent("2026");
+    expect(firstMatchLink).not.toHaveClass("contents");
+    expect(firstMatchLink.querySelector("span")).toHaveClass(
+      "whitespace-nowrap",
+    );
+
+    const headToHeadLinks = screen.getAllByRole("link", {
       name: "過去の対戦成績 →",
-    })[0];
-    expect(matchLinks[0].parentElement).toBe(firstHeadToHeadLink.parentElement);
-    expect(matchLinks[0].parentElement).toHaveClass("sm:gap-x-3");
+    });
+    expect(headToHeadLinks).toHaveLength(2);
+    const firstHeadToHeadLink = headToHeadLinks.at(0);
+    if (!firstHeadToHeadLink) {
+      throw new Error("Expected at least one head-to-head link");
+    }
+    expect(firstMatchLink.parentElement).toBe(
+      firstHeadToHeadLink.parentElement,
+    );
+    expect(firstMatchLink.parentElement).toHaveClass("sm:gap-x-3");
     expect(
       screen
         .getAllByRole("link", { name: "過去の対戦成績 →" })

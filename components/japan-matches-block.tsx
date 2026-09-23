@@ -50,12 +50,12 @@ export function JapanMatchesBlock({
                   <Link
                     className={
                       headToHeadHref
-                        ? "grid grid-cols-1 gap-1 sm:w-fit sm:grid-cols-[9.375rem_minmax(0,1fr)] sm:items-center sm:gap-x-3"
-                        : "grid grid-cols-1 gap-1 sm:w-full sm:grid-cols-[9.375rem_minmax(0,1fr)] sm:items-center sm:gap-x-3"
+                        ? "grid grid-cols-1 gap-1 sm:w-fit sm:grid-cols-[10.5rem_minmax(0,1fr)] sm:items-center sm:gap-x-3"
+                        : "grid grid-cols-1 gap-1 sm:w-full sm:grid-cols-[10.5rem_minmax(0,1fr)] sm:items-center sm:gap-x-3"
                     }
                     href={`/matches/${match.id}`}
                   >
-                    <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
+                    <span className="whitespace-nowrap text-sm tabular-nums text-[var(--color-ink-muted)]">
                       {formatMatchKickoffJst(match.kickoffAt)}
                     </span>
                     <span className="font-semibold text-[var(--color-ink)]">
