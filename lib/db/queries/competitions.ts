@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
 import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
+import { chunkArray, loadAllPages } from "@/lib/db/pagination";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { getRoundFromExternalIds } from "@/lib/db/queries/matches";
 import {
@@ -18,6 +19,7 @@ export type CompetitionRow = {
   family: string;
   matchCount: number;
   publishedContentCount: number;
+  publishedRecapCount: number;
   name: string;
   nameJa?: string | null;
   season: string;
@@ -52,6 +54,7 @@ export type HomepageCompetitionLink = {
   name: string;
   name_ja?: string | null;
   publishedContentCount?: number;
+  publishedRecapCount?: number;
   season: string;
 };
 
@@ -102,16 +105,23 @@ type CompetitionScheduleCoverageDbRow = {
 };
 
 type MatchContentCompetitionRow = {
+  content_type: string;
+  language: string;
   matches:
     | { competition_id: string }
     | Array<{ competition_id: string }>
     | null;
 };
 
+type PublishedContentCounts = {
+  publishedContentCount: number;
+  publishedRecapCount: number;
+};
+
 function countPublishedContentByCompetition(
   rows: MatchContentCompetitionRow[],
-): Map<string, number> {
-  const countByCompetitionId = new Map<string, number>();
+): Map<string, PublishedContentCounts> {
+  const countByCompetitionId = new Map<string, PublishedContentCounts>();
 
   for (const row of rows) {
     const relation = row.matches;
@@ -122,10 +132,17 @@ function countPublishedContentByCompetition(
         : [];
 
     for (const match of matches) {
-      countByCompetitionId.set(
-        match.competition_id,
-        (countByCompetitionId.get(match.competition_id) ?? 0) + 1,
-      );
+      const counts = countByCompetitionId.get(match.competition_id) ?? {
+        publishedContentCount: 0,
+        publishedRecapCount: 0,
+      };
+      counts.publishedContentCount += 1;
+
+      if (row.content_type === "recap" && row.language === "ja") {
+        counts.publishedRecapCount += 1;
+      }
+
+      countByCompetitionId.set(match.competition_id, counts);
     }
   }
 
@@ -134,13 +151,62 @@ function countPublishedContentByCompetition(
 
 function withPublishedContentCounts(
   rows: CompetitionDbRow[],
-  countByCompetitionId: Map<string, number>,
+  countByCompetitionId: Map<string, PublishedContentCounts>,
   replacementCompetitionsById: Map<string, ReplacementCompetitionDbRow>,
 ): CompetitionRow[] {
   return rows.map((row) => ({
     ...mapCompetitionRow(row, replacementCompetitionsById),
-    publishedContentCount: countByCompetitionId.get(row.id) ?? 0,
+    ...(countByCompetitionId.get(row.id) ?? {
+      publishedContentCount: 0,
+      publishedRecapCount: 0,
+    }),
   }));
+}
+
+async function loadPublishedContentCounts(
+  client: ReturnType<typeof getSupabasePublicServerClient>,
+  competitionIds: string[],
+): Promise<Map<string, PublishedContentCounts>> {
+  if (competitionIds.length === 0) {
+    return new Map();
+  }
+
+  const counts = new Map<string, PublishedContentCounts>();
+  const competitionIdChunks = chunkArray(competitionIds, 100);
+
+  for (const competitionIdChunk of competitionIdChunks) {
+    const rows = await loadAllPages<MatchContentCompetitionRow>({
+      loadPage: async (from, to) => {
+        const { data, error } = await client
+          .from("match_content")
+          .select("id, content_type, language, matches!inner(competition_id)")
+          .eq("status", "published")
+          .in("matches.competition_id", competitionIdChunk)
+          .order("id", { ascending: true })
+          .range(from, to);
+
+        return {
+          data: (data ?? null) as MatchContentCompetitionRow[] | null,
+          error,
+        };
+      },
+    });
+
+    for (const [
+      competitionId,
+      pageCounts,
+    ] of countPublishedContentByCompetition(rows)) {
+      const total = counts.get(competitionId) ?? {
+        publishedContentCount: 0,
+        publishedRecapCount: 0,
+      };
+      total.publishedContentCount += pageCounts.publishedContentCount;
+      total.publishedRecapCount += pageCounts.publishedRecapCount;
+      counts.set(competitionId, total);
+    }
+  }
+
+  return counts;
 }
 
 function mapCompetitionRow(
@@ -148,7 +214,7 @@ function mapCompetitionRow(
   replacementCompetitionsById = new Map<string, ReplacementCompetitionDbRow>(),
 ): CompetitionRow {
   const replacementCompetition = row.replacement_competition_id
-    ? replacementCompetitionsById.get(row.replacement_competition_id) ?? null
+    ? (replacementCompetitionsById.get(row.replacement_competition_id) ?? null)
     : null;
 
   return {
@@ -160,6 +226,7 @@ function mapCompetitionRow(
     name: row.name,
     nameJa: row.name_ja ?? null,
     publishedContentCount: 0,
+    publishedRecapCount: 0,
     season: row.season,
     seasonStatus: row.season_status,
     replacementCompetition: replacementCompetition
@@ -311,33 +378,25 @@ export async function listSeasonsByFamily(
   family: string,
 ): Promise<CompetitionRow[]> {
   const client = getSupabasePublicServerClient();
-  const [seasonsResult, contentCountsResult] = await Promise.all([
-    client
-      .from("competitions")
-      .select("*, matches(count)")
-      .eq("family", family)
-      .order("season", { ascending: false }),
-    client
-      .from("match_content")
-      .select("matches!inner(competition_id)")
-      .eq("status", "published"),
-  ]);
+  const { data, error } = await client
+    .from("competitions")
+    .select("*, matches(count)")
+    .eq("family", family)
+    .order("season", { ascending: false });
 
-  if (seasonsResult.error) {
-    throw seasonsResult.error;
+  if (error) {
+    throw error;
   }
 
-  if (contentCountsResult.error) {
-    throw contentCountsResult.error;
-  }
-
-  const countByCompetitionId = countPublishedContentByCompetition(
-    (contentCountsResult.data ?? []) as MatchContentCompetitionRow[],
-  );
-  const seasons = (seasonsResult.data ?? []) as CompetitionDbRow[];
-  const replacementCompetitionsById = await loadReplacementCompetitions(
-    client,
-    seasons,
+  const seasons = (data ?? []) as CompetitionDbRow[];
+  const [countByCompetitionId, replacementCompetitionsById] = await Promise.all(
+    [
+      loadPublishedContentCounts(
+        client,
+        seasons.map((season) => season.id),
+      ),
+      loadReplacementCompetitions(client, seasons),
+    ],
   );
 
   return withPublishedContentCounts(
@@ -374,28 +433,14 @@ export async function listSeasonsByFamilies(
   }
 
   const client = getSupabasePublicServerClient();
-  const [seasonsResults, contentCountsResult] = await Promise.all([
-    Promise.all(
-      families.map((family) =>
-        client
-          .from("competitions")
-          .select("*, matches(count)")
-          .eq("family", family)
-          .order("season", { ascending: false }),
-      ),
+  const seasonsResults = await Promise.all(
+    families.map((family) =>
+      client
+        .from("competitions")
+        .select("*, matches(count)")
+        .eq("family", family)
+        .order("season", { ascending: false }),
     ),
-    client
-      .from("match_content")
-      .select("matches!inner(competition_id)")
-      .eq("status", "published"),
-  ]);
-
-  if (contentCountsResult.error) {
-    throw contentCountsResult.error;
-  }
-
-  const countByCompetitionId = countPublishedContentByCompetition(
-    (contentCountsResult.data ?? []) as MatchContentCompetitionRow[],
   );
   const seasons = seasonsResults.flatMap((result) => {
     if (result.error) {
@@ -404,9 +449,14 @@ export async function listSeasonsByFamilies(
 
     return (result.data ?? []) as CompetitionDbRow[];
   });
-  const replacementCompetitionsById = await loadReplacementCompetitions(
-    client,
-    seasons,
+  const [countByCompetitionId, replacementCompetitionsById] = await Promise.all(
+    [
+      loadPublishedContentCounts(
+        client,
+        seasons.map((season) => season.id),
+      ),
+      loadReplacementCompetitions(client, seasons),
+    ],
   );
   const seasonsByFamily = new Map<string, CompetitionRow[]>();
 
@@ -449,9 +499,10 @@ export async function getCompetitionBySlug(
   }
 
   const competition = data as CompetitionDbRow;
-  const replacementCompetitionsById = await loadReplacementCompetitions(client, [
-    competition,
-  ]);
+  const replacementCompetitionsById = await loadReplacementCompetitions(
+    client,
+    [competition],
+  );
 
   return mapCompetitionRow(competition, replacementCompetitionsById);
 }
