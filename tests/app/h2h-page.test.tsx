@@ -19,6 +19,57 @@ const matchesMock = vi.hoisted(() => ({
   normalizeHeadToHeadSlug: vi.fn((teamSlugA: string, teamSlugB: string) =>
     [teamSlugA, teamSlugB].sort().join("-vs-"),
   ),
+  summarizeHeadToHeadRecord: vi.fn(
+    (
+      history: Array<{
+        playedOn: string;
+        teamSlug: string;
+        teamScore: number;
+        opponentScore: number;
+      }>,
+      matches: Array<{
+        status: string;
+        kickoffAt: string;
+        homeTeam: { slug: string };
+        homeScore: number | null;
+        awayScore: number | null;
+      }>,
+      teamA: { slug: string },
+    ) => {
+      const records = history.map((row) =>
+        row.teamSlug === teamA.slug
+          ? ([row.teamScore, row.opponentScore] as const)
+          : ([row.opponentScore, row.teamScore] as const),
+      );
+      for (const match of matches)
+        if (
+          match.status === "finished" &&
+          match.homeScore !== null &&
+          match.awayScore !== null
+        )
+          records.push([
+            match.homeTeam.slug === teamA.slug
+              ? match.homeScore
+              : match.awayScore,
+            match.homeTeam.slug === teamA.slug
+              ? match.awayScore
+              : match.homeScore,
+          ]);
+      const wins = records.filter(([a, b]) => a > b).length;
+      const losses = records.filter(([a, b]) => a < b).length;
+      return {
+        total: records.length,
+        wins,
+        losses,
+        draws: records.length - wins - losses,
+        firstPlayedOn:
+          [
+            ...history.map((row) => row.playedOn),
+            ...matches.map((row) => row.kickoffAt.slice(0, 10)),
+          ].sort()[0] ?? null,
+      };
+    },
+  ),
   parseHeadToHeadSlug: vi.fn((pair: string) => {
     const parts = pair.split("-vs-");
 
@@ -67,6 +118,8 @@ import type { ReactNode } from "react";
 
 const pageData = {
   canonicalSlug: "leinster-vs-toulouse",
+  history: [],
+  historyFetchedAt: null,
   matches: [
     {
       awayScore: 20,
@@ -142,9 +195,9 @@ describe("H2H page", () => {
     expect(container.querySelector('a[href="/matches/match-1"]')).toBeTruthy();
     expect(container.querySelector('a[href="/teams/leinster"]')).toBeTruthy();
     expect(container.querySelector('a[href="/teams/toulouse"]')).toBeTruthy();
-    expect(
-      container.textContent?.includes('"@type":"BreadcrumbList"'),
-    ).toBe(true);
+    expect(container.textContent?.includes('"@type":"BreadcrumbList"')).toBe(
+      true,
+    );
     expect(container.textContent).not.toContain("勝");
     expect(
       screen.getByRole("link", { name: "直近の対戦のレビューを読む →" }),
@@ -301,6 +354,72 @@ describe("H2H page", () => {
     ).toHaveAttribute("href", "/matches/finished-latest-match");
   });
 
+  it("renders all-time stats, prior meetings, the source, and collapses history after ten", async () => {
+    const history = Array.from({ length: 11 }, (_, index) => ({
+      playedOn: `199${Math.floor(index / 10)}-01-${String(index + 1).padStart(2, "0")}`,
+      teamSlug: "japan",
+      opponentSlug: "wales",
+      teamScore: 20 + index,
+      opponentScore: 10,
+      venue: "Tokyo",
+      competitionLabel: index === 0 ? "World Cup" : null,
+    }));
+    matchesMock.getHeadToHeadPageData.mockResolvedValue({
+      ...pageData,
+      matches: [],
+      history,
+      historyFetchedAt: "2026-09-23T12:00:00.000Z",
+      teamA: { name: "日本", shortCode: "JPN", slug: "japan" },
+      teamB: { name: "ウェールズ", shortCode: "WAL", slug: "wales" },
+    });
+    const element = await HeadToHeadPage({
+      params: Promise.resolve({ pair: "japan-vs-wales" }),
+    });
+    const { container } = render(element);
+
+    expect(screen.getByText("11試合")).toBeInTheDocument();
+    expect(screen.getByText("過去の対戦（11試合）")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "出典: Wikipedia『List of Japan national rugby union test matches』（2026年9月23日取得）",
+      ),
+    ).toBeInTheDocument();
+    expect(container.querySelector("details")).toBeInTheDocument();
+    expect(container.textContent).toContain("20 - 10");
+    expect(
+      screen.queryByText(
+        "このカードは収録対戦データが少ないため、傾向の断定は避けています。",
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  it("uses historical totals in the description while preserving the title", async () => {
+    matchesMock.getHeadToHeadPageData.mockResolvedValue({
+      ...pageData,
+      matches: [],
+      history: [
+        {
+          playedOn: "1973-09-24",
+          teamSlug: "japan",
+          opponentSlug: "wales",
+          teamScore: 10,
+          opponentScore: 7,
+          venue: null,
+          competitionLabel: null,
+        },
+      ],
+      teamA: { name: "日本", shortCode: "JPN", slug: "japan" },
+      teamB: { name: "ウェールズ", shortCode: "WAL", slug: "wales" },
+    });
+    await expect(
+      generateMetadata({ params: Promise.resolve({ pair: "japan-vs-wales" }) }),
+    ).resolves.toMatchObject({
+      title: { absolute: "ラグビー 日本 対 ウェールズ 対戦成績 | Tryline" },
+      description:
+        "ラグビー日本とウェールズの通算対戦成績（1試合 1勝0敗）。過去の全対戦のスコアと、直近の日本語レビューへのリンク。",
+    });
+  });
+
   it("redirects reverse pair slugs to the canonical URL", async () => {
     await expect(
       HeadToHeadPage({
@@ -339,8 +458,7 @@ describe("H2H page", () => {
         title: "ラグビー Leinster 対 Stade Toulousain 対戦成績 | Tryline",
       },
       title: {
-        absolute:
-          "ラグビー Leinster 対 Stade Toulousain 対戦成績 | Tryline",
+        absolute: "ラグビー Leinster 対 Stade Toulousain 対戦成績 | Tryline",
       },
     });
   });

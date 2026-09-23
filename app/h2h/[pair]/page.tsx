@@ -8,12 +8,14 @@ import {
   listHeadToHeadPairs,
   normalizeHeadToHeadSlug,
   parseHeadToHeadSlug,
+  summarizeHeadToHeadRecord,
 } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import { SITE_URL } from "@/lib/site";
 
 import type {
+  HeadToHeadHistoryRow,
   HeadToHeadMatch,
   HeadToHeadPageData,
   HeadToHeadTeam,
@@ -69,7 +71,13 @@ export async function generateMetadata({
 
   const matchupTitle = `${data.teamA.name} 対 ${data.teamB.name}`;
   const title = `ラグビー ${matchupTitle} 対戦成績`;
-  const description = `ラグビー${data.teamA.name}と${data.teamB.name}の対戦成績（Tryline 収録分）。直近の対戦結果とスコア、日本語レビューへのリンク。`;
+  const summary =
+    data.history.length > 0
+      ? summarizeHeadToHeadRecord(data.history, data.matches, data.teamA)
+      : null;
+  const description = summary
+    ? `ラグビー${data.teamA.name}と${data.teamB.name}の通算対戦成績（${summary.total}試合 ${summary.wins}勝${summary.losses}敗${summary.draws ? `${summary.draws}分` : ""}）。過去の全対戦のスコアと、直近の日本語レビューへのリンク。`
+    : `ラグビー${data.teamA.name}と${data.teamB.name}の対戦成績（Tryline 収録分）。直近の対戦結果とスコア、日本語レビューへのリンク。`;
   const canonical = `${SITE_URL}/h2h/${data.canonicalSlug}`;
 
   return {
@@ -103,6 +111,10 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
   const latestFinishedMatch = selectLatestFinishedMatch(data.matches);
   const nextHeadToHeadMatch = selectNextHeadToHeadMatch(data.matches, now);
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(data);
+  const recordSummary =
+    data.history.length > 0
+      ? summarizeHeadToHeadRecord(data.history, data.matches, data.teamA)
+      : null;
 
   return (
     <>
@@ -148,20 +160,50 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
                   {data.teamA.name} 対 {data.teamB.name} 対戦成績
                 </h1>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Tryline収録分の対戦を表示しています。全対戦
-                  の通算成績ではありません。
+                  {recordSummary ? (
+                    "日本代表のテストマッチ一覧を照合し、Tryline の試合記録とあわせて表示しています。"
+                  ) : (
+                    <>
+                      Tryline収録分の対戦を表示しています。全対戦の通算成績ではありません。
+                    </>
+                  )}
                 </p>
               </div>
               <TeamSummary align="left" team={data.teamB} />
             </div>
 
             <div className="grid gap-3 bg-[#f8fafc]/70 px-5 py-4 sm:grid-cols-2 sm:px-6">
-              <Metric label="収録対戦" value={`${data.matches.length}試合`} />
-              <Metric label="表示範囲" value="Tryline 収録分" />
+              {recordSummary ? (
+                <>
+                  <Metric label="通算" value={`${recordSummary.total}試合`} />
+                  <Metric
+                    label={data.teamA.name}
+                    value={`${recordSummary.wins}勝 ${recordSummary.losses}敗${recordSummary.draws ? ` ${recordSummary.draws}分` : ""}`}
+                  />
+                  <Metric
+                    label="初対戦"
+                    value={
+                      recordSummary.firstPlayedOn
+                        ? `${Number(recordSummary.firstPlayedOn.slice(0, 4))}年`
+                        : "—"
+                    }
+                  />
+                </>
+              ) : (
+                <>
+                  <Metric
+                    label="収録対戦"
+                    value={`${data.matches.length}試合`}
+                  />
+                  <Metric label="表示範囲" value="Tryline 収録分" />
+                </>
+              )}
             </div>
           </section>
 
-          {data.matches.length < 2 && (
+          {(recordSummary
+            ? recordSummary.total < 5
+            : data.matches.length < 2) && (
             <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
               このカードは収録対戦データが少ないため、傾向の断定は避けています。
             </p>
@@ -202,6 +244,45 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
               ))}
             </div>
           </section>
+
+          {recordSummary && (
+            <section className="space-y-3">
+              <h2 className="font-heading text-xl font-bold text-slate-950">
+                過去の対戦（{data.history.length}試合）
+              </h2>
+              <div className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                {data.history.slice(0, 10).map((row) => (
+                  <HistoryMatchRow
+                    key={row.playedOn}
+                    row={row}
+                    teamA={data.teamA}
+                    teamB={data.teamB}
+                  />
+                ))}
+                {data.history.length > 10 && (
+                  <details className="group">
+                    <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-[var(--color-accent)]">
+                      残り {data.history.length - 10} 試合を表示
+                    </summary>
+                    {data.history.slice(10).map((row) => (
+                      <HistoryMatchRow
+                        key={row.playedOn}
+                        row={row}
+                        teamA={data.teamA}
+                        teamB={data.teamB}
+                      />
+                    ))}
+                  </details>
+                )}
+              </div>
+              {data.historyFetchedAt && (
+                <p className="text-xs text-[var(--color-ink-muted)]">
+                  出典: Wikipedia『List of Japan national rugby union test
+                  matches』（{formatRetrievedDate(data.historyFetchedAt)}取得）
+                </p>
+              )}
+            </section>
+          )}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <TeamPageLink team={data.teamA} />
@@ -359,6 +440,60 @@ function NextMatchCta({
       </TrackedLink>
     </aside>
   );
+}
+
+function formatRetrievedDate(value: string) {
+  const date = new Date(value);
+  return `${date.getUTCFullYear()}年${date.getUTCMonth() + 1}月${date.getUTCDate()}日`;
+}
+
+function HistoryMatchRow({
+  row,
+  teamA,
+  teamB,
+}: {
+  row: HeadToHeadHistoryRow;
+  teamA: HeadToHeadTeam;
+  teamB: HeadToHeadTeam;
+}) {
+  const japanFirst = row.teamSlug === "japan";
+  const japan = teamA.slug === "japan" ? teamA : teamB;
+  const opponent = teamA.slug === "japan" ? teamB : teamA;
+  const score = japanFirst
+    ? `${japan.name} ${row.teamScore} - ${row.opponentScore} ${opponent.name}`
+    : `${japan.name} ${row.opponentScore} - ${row.teamScore} ${opponent.name}`;
+  return (
+    <div className="grid grid-cols-[7.25rem_minmax(0,1fr)] gap-3 px-4 py-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]">
+      <time
+        className="whitespace-nowrap text-[var(--color-ink-muted)]"
+        dateTime={row.playedOn}
+      >
+        {formatHistoryDate(row.playedOn)}
+      </time>
+      <div className="min-w-0">
+        <span className="font-bold text-[var(--color-ink)]">{score}</span>
+        {row.venue && (
+          <span className="ml-2 text-[var(--color-ink-muted)]">
+            {row.venue}
+          </span>
+        )}
+        {row.competitionLabel && (
+          <span className="ml-2 text-[var(--color-ink-muted)]">
+            {row.competitionLabel}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatHistoryDate(value: string) {
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(`${value}T00:00:00Z`));
 }
 
 function TeamSummary({
