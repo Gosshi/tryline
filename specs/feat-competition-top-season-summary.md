@@ -108,13 +108,20 @@ RWC 2027 は `total_rounds` が null なので、**試合の日付範囲から�
 公式に確定している開催期間だけを持つ定数と取得関数。
 
 ```ts
-export type CompetitionPeriod = { startDate: string; endDate: string }; // "YYYY-MM-DD"（日本時間の日付）
+export type CompetitionPeriod = { startDate: string; endDate: string }; // "YYYY-MM-DD"（主催者が発表した日付。日本時間への換算はしない）
 
 export function getKnownCompetitionPeriod(competitionSlug: string): CompetitionPeriod | null;
 ```
 
-- 初期値は `"rwc-2027": { startDate: "2027-10-01", endDate: "2027-11-13" }` の 1 件だけ（`app/c/rwc/2027/page.tsx:30` の `RWC2027_TOURNAMENT_DATES` と同じ値）
-- 他の大会を足すかは Owner 判断（未解決の質問 1）。Codex は勝手に足さない
+- 初期値は次の 2 件（2026-09-23 Owner 承認）:
+
+| slug | startDate | endDate | 根拠 |
+|---|---|---|---|
+| `rwc-2027` | 2027-10-01 | 2027-11-13 | `app/c/rwc/2027/page.tsx:30` の `RWC2027_TOURNAMENT_DATES` と同じ。[大会公式](https://www.rugbyworldcup.com/en/news/976797/about-mens-rugby-world-cup-2027) |
+| `nations-championship-2026` | 2026-07-04 | 2026-11-29 | 開幕は DB の第 1 節（2026-07-04、現地・日本時間とも同日）。ファイナルズ週末は 11/27〜29、Allianz Stadium Twickenham（[会場公式](https://allianzstadiumtwickenham.com/nations-championship-finals-weekend)、2026-09-23 確認）。DB の試合は 11/21 までしか無く、ファイナルズは未取り込み |
+
+- **日付は主催者の発表どおりで、日本時間に換算しない。** グランドファイナル（11/29 現地）のキックオフ時刻は 2026-09-23 時点で未確認で、夕方開始なら日本時間では 11/30 になる。表示上は「2026年7月4日〜2026年11月29日」とする
+- これ以外の大会は Owner の承認なしに足さない
 
 ### 移設: シーズンページの純粋関数 → `lib/format/season-summary.ts`（新規）
 
@@ -317,7 +324,7 @@ Owner 経由で GPT から「**日本代表の次の試合を調べる人を、�
 |---|---|
 | 入口はレビューより大会ページ。PNC の大会ページ 73 セッション | **正しいが、入口は大会トップではなくシーズンページ**。`docs/market-demand-research-2026-09-22-evidence.json` の organic 着地は `/c/pnc/2026` が Bing 67・Yahoo 2、大会トップ `/c/pnc` は計 13。南ア対 NZ の 57 も `/c/greatest-rivalry/2026`（シーズンページ） |
 | 11 月の大会ページを「これ一つで観戦準備できる」ページに | 対象は `/c/nations-championship/2026`（organic 着地 Bing 19・Yahoo 1、**Google の表示は 28 日で 0**）。日本の 11 月 3 試合（11/8 01:40・11/15 01:40・11/21 23:10 JST）は既に載っているが、第 4〜6 節の一覧に分散して埋もれている。冒頭の「日本代表の次戦」は 10/24 のリポビタン D チャレンジカップ（大会をまたぐ次戦） |
-| 相手はどのくらい強い？――対戦成績 | **今のデータでは薄い**。取り込み済みの終了試合は日本対イングランド 3、ウェールズ 1、スコットランド 1。試合ページの H2H リンクは 2 試合以上で出す（`app/matches/[id]/page.tsx:234`）ので、ウェールズ・スコットランド戦には出ない。一方 `/h2h/japan-vs-usa` は Google クリック 28（サイト全体 61 の 46%）で、日本戦前の H2H は実績のある入口 |
+| 相手はどのくらい強い？――対戦成績 | **今のデータでは薄い**。取り込み済みの終了試合は日本対イングランド 3、ウェールズ 1、スコットランド 1。試合ページの H2H リンクは `countHeadToHeadMatches`（`lib/db/queries/matches.ts:2179`、**予定試合も数える**）が 2 以上で出る（`app/matches/[id]/page.tsx:234`）ので 3 戦とも出るが、ウェールズ・スコットランドの H2H ページに載る過去の結果は 1 試合だけ（2026-09-23 訂正: 当初「出ない」と書いたのは誤り）。一方 `/h2h/japan-vs-usa` は Google クリック 28（サイト全体 61 の 46%）で、日本戦前の H2H は実績のある入口 |
 | どこで見られる？ | 放送情報は JRFU 公開待ち（期限 10/10、handoff §3-2）。確認できない部分は出さない方針は一致 |
 | タイトルに「日本代表」「11月」を | 中身が揃った後にやるのは GPT 自身も同意見。本 spec は効果の切り分けのため title を変えない |
 
@@ -328,7 +335,7 @@ Owner 経由で GPT から「**日本代表の次の試合を調べる人を、�
 
 ## 未解決の質問
 
-1. **`getKnownCompetitionPeriod` に RWC 2027 以外を足すか**（Owner 判断）。候補は Nations Championship 2026（DB の終わりが 11/21 で、11 月末のファイナルズが未取り込みの可能性）。足す場合は公式の日付を Owner が確認してから定数に入れる。本 spec の実装は RWC 2027 だけで完了とする
+1. ~~`getKnownCompetitionPeriod` に RWC 2027 以外を足すか~~ → **解決（2026-09-23）**: Nations Championship 2026 を追加（上の表）
 2. **判定時期**: デプロイ日 +4 週と +6 週に GSC を取り直す。見るのは大会トップ 7 ページの平均順位・CTR と、`/c/rwc` の「ラグビー ワールドカップ」系クエリの順位
-3. **別件（本 spec の対象外）**: `listSeasonsByFamily`（`lib/db/queries/competitions.ts:320-323`）と `listSeasonsByFamilies`（`:387-390`）は `match_content` の published 行を**件数上限なしの select で全件取りに行く**。2026-09-23 時点で published は **1,012 行**あり、PostgREST の 1000 行上限（#853 と同じ型）を既に超えている。欠けた 12 行のシーズンで `publishedContentCount` が減り、件数が 0 になると大会トップの「全シーズン」で**「準備中」表示・リンクなし**になる。公開記事は毎日増えるので悪化する一方。別 spec にするか Owner 判断
-4. **優先順位**（Owner 判断）: 本 spec の後に「シーズンページ冒頭に日本代表ブロック」（上の「GPT 提案との関係」）を続けるか。Claude Code は続けることを推奨する
+3. **別件（本 spec の対象外。2026-09-23 に別 spec 化: `specs/fix-published-content-count-row-cap.md`）**: `listSeasonsByFamily`（`lib/db/queries/competitions.ts:320-323`）と `listSeasonsByFamilies`（`:387-390`）は `match_content` の published 行を**件数上限なしの select で全件取りに行く**。2026-09-23 時点で published は **1,012 行**あり、PostgREST の 1000 行上限（#853 と同じ型）を既に超えている。欠けた 12 行のシーズンで `publishedContentCount` が減り、件数が 0 になると大会トップの「全シーズン」で**「準備中」表示・リンクなし**になる。公開記事は毎日増えるので悪化する一方。別 spec にするか Owner 判断
+4. ~~優先順位~~ → **解決（2026-09-23）**: 続ける。`specs/feat-season-page-japan-matches-block.md`

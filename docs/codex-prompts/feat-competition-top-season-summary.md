@@ -5,6 +5,8 @@
 
 `AGENTS.md` の規約に従う。仕様書と実コード・実データが食い違ったら、実装を進めずその場で止めて Owner に確認する。
 
+> **2026-09-23 追記（実装途中の変更）**: 期間の定数に `nations-championship-2026`（2026-07-04〜2026-11-29）を追加した。日付は主催者発表どおりで日本時間に換算しない。`tests/lib/format/competition-period.test.ts` にこの slug の既知ケースを足すこと。
+
 ## 直したいこと
 
 大会トップ（例 `/c/rwc`・`/c/pnc`）の title は「順位表・日程・日本での視聴方法」なのに、本文には大会の歴史紹介と「試合一覧を見る →」しかない。
@@ -14,7 +16,7 @@
 
 新規:
 - `lib/format/season-summary.ts` — シーズンページから移す純粋関数 + `getLeaderLabel` + `getSeasonPeriodLabel`
-- `lib/format/competition-period.ts` — `getKnownCompetitionPeriod`（RWC 2027 の 1 件だけ）
+- `lib/format/competition-period.ts` — `getKnownCompetitionPeriod`（RWC 2027 と Nations Championship 2026 の 2 件。値は仕様書の表）
 - `components/japan-matches-block.tsx` — ブロック C（日本代表の試合）。**後でシーズンページにも置くので、大会トップ固有の値を中に持たせず props だけで描画する**
 - `tests/lib/format/season-summary.test.ts`、`tests/lib/format/competition-period.test.ts`（既存の `tests/lib/format/` の置き方に合わせる。無ければ近い既存テストの場所に合わせる）
 
@@ -66,7 +68,7 @@
 ## やってはいけないこと
 
 - `export const dynamic = "force-static"` 等でキャッシュを強制すること。`HIT` にならなければ原因を調べて PR に書く
-- 期間の定数に RWC 2027 以外を足すこと（Owner 判断待ち）
+- 期間の定数に仕様書の表の 2 件以外を足すこと
 - 大会トップに FAQPage 構造化データを足すこと
 - シーズンページの表示・文言を変えること
 - 新しいクエリ関数を `lib/db/queries/` に足すこと
