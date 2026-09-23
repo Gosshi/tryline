@@ -15,6 +15,7 @@ import {
 import { fetchLeagueOne202526 } from "@/lib/ingestion/sources/league-one-live";
 import { fetchTop14LnrLiveMatches } from "@/lib/ingestion/sources/top14-lnr-live";
 import { fetchAutumnNations2026 } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
+import { fetchBledisloeCup2026 } from "@/lib/ingestion/sources/wikipedia-bledisloe-cup";
 import { fetchGreatestRivalry2026 } from "@/lib/ingestion/sources/wikipedia-greatest-rivalry";
 import { fetchLipovitanChallengeCup2026 } from "@/lib/ingestion/sources/wikipedia-lipovitan-challenge-cup";
 import { fetchLipovitanChallengeCup2026EventMatches } from "@/lib/ingestion/sources/wikipedia-lipovitan-challenge-cup-events";
@@ -88,6 +89,15 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
     competitionSlug: "puma-trophy-2026",
     family: "puma-trophy",
     fetch: fetchPumaTrophy2026,
+    season: "2026",
+    sourceLabel: "wikipedia",
+  },
+  {
+    competitionName: "Bledisloe Cup 2026",
+    competitionNameJa: "ブレディスローカップ オールブラックス対ワラビーズ",
+    competitionSlug: "bledisloe-cup-2026",
+    family: "bledisloe-cup",
+    fetch: fetchBledisloeCup2026,
     season: "2026",
     sourceLabel: "wikipedia",
   },

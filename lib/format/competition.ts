@@ -49,7 +49,9 @@ export function formatCompetitionName(name: string): string {
 }
 
 export const COMPETITION_FAMILY_COLORS: Record<string, string> = {
+  "australia-south-africa-test": "#FFB81C",
   "autumn-nations": "#2D2D2D",
+  "bledisloe-cup": "#000000",
   "greatest-rivalry": "#007A4D",
   "league-one": "#FF6B00",
   "lipovitan-challenge-cup": "#E60012",
@@ -65,6 +67,8 @@ export const COMPETITION_FAMILY_COLORS: Record<string, string> = {
 };
 
 const FAMILY_DISPLAY_NAMES: Record<string, string> = {
+  "australia-south-africa-test": "オーストラリア対南アフリカ",
+  "bledisloe-cup": "ブレディスローカップ",
   "autumn-nations": "Autumn Nations",
   "league-one": "ジャパンラグビー リーグワン",
   "lipovitan-challenge-cup": "リポビタンDチャレンジカップ",

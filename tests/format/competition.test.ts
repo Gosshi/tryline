@@ -44,6 +44,13 @@ describe("formatFamilyName", () => {
     );
   });
 
+  it("formats the Bledisloe and Australia-South Africa families in Japanese", () => {
+    expect(formatFamilyName("bledisloe-cup")).toBe("ブレディスローカップ");
+    expect(formatFamilyName("australia-south-africa-test")).toBe(
+      "オーストラリア対南アフリカ",
+    );
+  });
+
   it("formats the Puma Trophy family name in Japanese", () => {
     expect(formatFamilyName("puma-trophy")).toBe("プーマ・トロフィー");
   });
@@ -95,6 +102,10 @@ describe("formatFamilyName", () => {
       "#E60012",
     );
     expect(getCompetitionFamilyColor("puma-trophy")).toBe("#75AADB");
+    expect(getCompetitionFamilyColor("bledisloe-cup")).toBe("#000000");
+    expect(getCompetitionFamilyColor("australia-south-africa-test")).toBe(
+      "#FFB81C",
+    );
     expect(getCompetitionFamilyColor("unknown-family")).toBe("#1e293b");
   });
 });
