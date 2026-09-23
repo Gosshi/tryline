@@ -1,4 +1,4 @@
-# 日本代表の過去のテストマッチ結果を取り込み、H2H ページに通算成績を出す
+# 日本代表戦の H2H を「見つけてもらう」＋「通算成績を出す」
 
 ## 背景
 
@@ -20,7 +20,46 @@ GSC（2026-08-24〜09-20、`--dims page`）でも `/h2h/japan-vs-usa` は表示 
 
 1 週間後の日本 対 フィジー（9/19）の H2H `/h2h/fiji-vs-japan` は、**着地 0・GSC 表示 0**。Google で表示があった日本の H2H は `japan-vs-usa` と `france-vs-japan`（表示 18）の 2 ページだけ。
 
-DB 上の過去の対戦はどちらも終了 3 試合で、**データの厚さに差は無い**。なぜアメリカ戦だけ取れたのかは分かっていない（インデックス状況は「未解決の質問」1）。
+DB 上の過去の対戦はどちらも終了 3 試合で、**データの厚さに差は無い**。
+
+### 原因の大半は「Google に見つけてもらえていない」こと（2026-09-23 URL 検査で判明）
+
+`tools/gsc-pull.ts --inspect h2h --inspect-limit 250` でサイトマップ上の H2H 200 件を検査した（出力 `tmp/gsc/url-inspection-2026-09-23T08-53-41.006Z.json`）。
+
+| 状態 | 件数 |
+|---|---:|
+| 登録済み（PASS） | 111 |
+| **URL が Google に認識されていません** | **74** |
+| クロール済み - インデックス未登録 | 15 |
+
+日本の H2H のうち、検査対象（＝サイトマップに載っていた）のは 4 件だけ:
+
+| ページ | 状態 |
+|---|---|
+| `japan-vs-usa` | 登録済み（最終クロール 9/2） |
+| `france-vs-japan` | 登録済み |
+| **`fiji-vs-japan`** | **URL が Google に認識されていません** |
+| `australia-vs-japan` | URL が Google に認識されていません |
+
+**フィジー戦の H2H が表示 0 だったのは、中身が薄いからではなく Google が存在を知らなかったから。**
+
+さらに、**11 月の相手の H2H はサイトマップに載っていない。** `listHeadToHeadPairs`（`lib/db/queries/matches.ts:2044`）は次の 2 段で絞っている:
+
+1. `matches` を件数指定なしでキックオフの新しい順に取る → **PostgREST の 1,000 行上限で、2025-04-11 より前の試合が落ちる**（本番 1,407 試合、#853・#858 と同じ型）
+2. ペアごとの試合数の多い順（同数なら新しい順）に **200 ペア**だけ残す（`mapHeadToHeadRowsToPairs`、`:1999`）
+
+同じ組み合わせが毎季 2〜3 回あるクラブの対戦が上位を埋めるため、日本の代表戦は落ちる。本番 DB で再現した順位（全 439 ペア、200 位の試合数は 2）:
+
+| ペア | 試合数（直近 1,000 試合内） | 順位 | サイトマップ |
+|---|---:|---:|---|
+| japan-vs-usa | 3 | 87 | 載る |
+| fiji-vs-japan | 3 | 101 | 載る |
+| france-vs-japan | 2 | 140 | 載る |
+| **japan-vs-wales** | 2 | **222** | **載らない** |
+| **japan-vs-scotland** | 1 | **336** | **載らない** |
+| **england-vs-japan** | 1 | **339** | **載らない** |
+
+ページ自体は表示できる（`generateStaticParams` に無くても都度生成される）が、サイトマップにも IndexNow にも出てこない。IndexNow は記事公開時に試合・大会・節・カレンダーの URL を送っているが、**H2H は送っていない**（`lib/llm/pipeline.ts:860-887`）。
 
 ### H2H ページは「Tryline 収録分」しか出していない
 
@@ -37,11 +76,16 @@ DB 上の過去の対戦はどちらも終了 3 試合で、**データの厚さ
 
 ### 仮説（検証済みではない）
 
-**「H2H に通算成績と過去の全対戦を載せれば、日本戦の前の検索で表示・クリックが増える」は仮説。** アメリカ戦で取れてフィジー戦で取れなかった理由が分かっていないので、データを厚くしても表示されない可能性がある。判定は下の「判定」で行う。
+1. **見つけてもらう（本 spec の第 1 の柱）**: 試合が近い H2H をサイトマップと IndexNow に確実に載せ、Owner が GSC で登録をリクエストすれば、少なくとも検索結果に出る。フィジー戦の 0 はこれで説明がつく
+2. **中身を厚くする（第 2 の柱）**: 「対戦成績」を調べた人に 1 試合だけのページを見せても、クリック後に役に立たない。通算成績と過去の全対戦を出す
+
+どちらも「表示・クリックが増える」ことは**仮説**。判定は下の「判定」で行う。
 
 ## スコープ
 
 対象:
+- **`listHeadToHeadPairs` の 1,000 行上限の修正と、試合が近いペアの優先掲載（サイトマップ）**
+- **プレビュー公開時に H2H の URL も IndexNow に送る**
 - 日本代表の過去のテストマッチ結果を保存する新テーブル
 - Wikipedia から取り込む一度きりの取り込みスクリプト（再実行しても重複しない）
 - H2H ページに「通算成績」と「過去の全対戦」を出す
@@ -123,6 +167,20 @@ Wikipedia「List of Japan national rugby union test matches」（`?action=raw`�
 
 ## API サーフェス
 
+### `listHeadToHeadPairs` の修正（`lib/db/queries/matches.ts:2044`）
+
+- `matches` の取得を `loadAllPages`（`lib/db/pagination.ts`）で全件にする。`.order("kickoff_at", { ascending: false })` に加えて `.order("id")` を付け、ページ境界で重複・欠落しないようにする
+- 並べ方を変える: **今日から 60 日以内に `status = 'scheduled'` の試合があるペアを先頭**に置き（その中はキックオフの早い順）、残りを従来どおり「試合数の多い順・同数なら新しい順」で続ける。上限 200 は変えない
+- `mapHeadToHeadRowsToPairs` は純粋関数のまま、引数に「基準日時」を足してテストできるようにする
+
+これで 2026-09-23 時点なら、fiji-vs-japan（10/24）・japan-vs-wales（11/8）・england-vs-japan（11/15）・japan-vs-scotland（11/21）がサイトマップに入る。
+
+### IndexNow に H2H を足す（`lib/llm/pipeline.ts:860-887`）
+
+`contentType === "preview"` で公開したとき、`countHeadToHeadMatches(home, away) >= 2` なら `${SITE_URL}/h2h/${normalizeHeadToHeadSlug(home, away)}` も送る URL に加える（条件は試合ページのリンクと同じ）。H2H の需要は試合前に高まるので、プレビュー公開の時点で送る。recap では送らない。
+
+IndexNow は Bing などに届く。Google には届かないので、Google は下記の Owner 作業で補う。
+
 ### 新規クエリ（`lib/db/queries/matches.ts` の H2H 関連の近くに置く）
 
 ```ts
@@ -202,7 +260,8 @@ design.md の既存トークン（`--color-ink` / `--color-ink-muted` / `--radiu
 - 対象: `/h2h/fiji-vs-japan`（10/24）、`/h2h/japan-vs-wales`（11/8）、`/h2h/england-vs-japan`（11/15）、`/h2h/japan-vs-scotland`（11/21）
 - 各試合の前後 7 日の Google 表示・クリック（GSC `--dims page`）と、検索からの着地（GA4）を見る
 - 比較の基準は `/h2h/japan-vs-usa`（2026-08-26〜09-22 の検索着地 34、うち試合当日 9/12 に 14）
-- **4 ページとも表示が 0 のままなら、データの厚さは主因ではない。** インデックスの問題として別途調べ、H2H への追加投資はしない
+- まず 4 ページが GSC の URL 検査で「登録済み」になったかを見る（見つけてもらう柱の判定）
+- 登録済みなのに表示が 0 のままなら、この種の検索需要が小さいと判断し、H2H への追加投資はしない
 
 ## 受け入れ条件
 
@@ -248,9 +307,20 @@ fixture は実ページの wikitext をそのまま保存したもの（`tests/f
 
 ### 本番（順序が大事）
 
-21. Owner がマイグレーションを本番に適用 → Claude Code が RLS とポリシーを確認 → PR をマージ → Owner が `--dry-run` で件数を確認 → `--apply` で取り込み → Claude Code が `/h2h/japan-vs-wales` などで表示を確認
+21. Owner がマイグレーションを本番に適用 → Claude Code が RLS とポリシーを確認 → PR をマージ → Owner が `--dry-run` で件数を確認 → `--apply` で取り込み → Claude Code が `/h2h/japan-vs-wales` などで表示を確認 → Claude Code が本番の `/sitemap.xml` に 4 ページが入ったことを確認
+22. **Owner 作業（Google）**: GSC の URL 検査で 4 ページ（`/h2h/fiji-vs-japan`・`/h2h/japan-vs-wales`・`/h2h/england-vs-japan`・`/h2h/japan-vs-scotland`）の「インデックス登録をリクエスト」を押す（1 ページ 1 分程度。取り込み後に行う）
+
+### 見つけてもらう柱（追加の受け入れ条件）
+
+23. `mapHeadToHeadRowsToPairs`: 基準日時 `2026-09-23T00:00:00Z` で、「クラブのペア 250 組（各 2〜3 試合）」と「60 日以内に予定試合がある日本のペア 3 組（各 1〜2 試合）」を与えると、日本の 3 組が結果の先頭に入り、合計は 200 以下
+24. `listHeadToHeadPairs`: `matches` のモックが 1 ページ目 1,000 行・2 ページ目 407 行を返すとき、1,407 行すべてが集計に使われる（1,000 行以下のモックでは修正前も通るので必ず超える件数で書く）。`.order("id")` が付いている
+25. IndexNow: preview 公開で、H2H 件数 2 以上のとき H2H の URL が送られ、1 以下なら送られない。recap では送られない
+26. 壊して落ちる確認（条件 18 に追加）: 条件 23 が「予定試合の優先をしない」実装で、条件 24 が「1 回しか取らない」実装で落ちること
 
 ## 既存テストの巻き添え
+
+- `tests/app/sitemap-calendar.test.ts` など `listHeadToHeadPairs` を呼ぶ・モックするテスト: 並び順が変わるので、H2H の並びを assert していれば合わせる
+- `lib/llm/pipeline.ts` のテスト: IndexNow に送る URL の一覧を assert していれば、preview の場合に H2H が加わる。`countHeadToHeadMatches` のモックを足す
 
 - `countHeadToHeadMatches` を呼ぶテスト（`tests/app/season-page-ia.test.tsx`、試合ページのテスト）はモックしているので影響しないはず。モックせずに呼んでいるテストがあれば、履歴クエリのモックを足す
 - H2H ページのテストで `getHeadToHeadPageData` をモックしているものは、新しい戻り値の項目（履歴）が無くても動くこと（履歴なし＝既存表示）
@@ -262,6 +332,16 @@ fixture は実ページの wikitext をそのまま保存したもの（`tests/f
 
 ## 競合とマージ順
 
+**実装は 2 つの PR に分ける。**
+
+| 順 | PR | 中身 | マイグレーション |
+|---|---|---|---|
+| 1 | 見つけてもらう | `listHeadToHeadPairs` の修正、IndexNow への H2H 追加（受け入れ条件 23〜26） | なし |
+| 2 | 通算成績 | 新テーブル、取り込みスクリプト、H2H ページの表示、`countHeadToHeadMatches`（受け入れ条件 1〜21） | あり |
+
+PR 1 は小さく、マージしてすぐ効くので先に出す。Owner の GSC 作業（条件 22）は PR 1 がデプロイされた時点で始めてよい。
+
+
 - 触るファイル: `lib/db/queries/matches.ts`（H2H 関連の関数のみ）、`app/h2h/[pair]/page.tsx`、新規ファイル群、マイグレーション
 - 2026-09-23 時点で、これらを触る open PR は無い
 
@@ -272,4 +352,5 @@ fixture は実ページの wikitext をそのまま保存したもの（`tests/f
 
 ## 未解決の質問
 
-1. **H2H ページのインデックス状況**: `/h2h/fiji-vs-japan` が Google に表示されない理由（未登録か、登録済みで順位が低いか）を URL 検査で確認中（2026-09-23 着手）。未登録が原因なら、本 spec と別にインデックスの対策が要る
+1. ~~H2H ページのインデックス状況~~ → **解決（2026-09-23）**: 未登録（Google が URL を知らない）が原因と判明。本 spec の「見つけてもらう柱」で対応する
+2. H2H 全体で「Google に認識されていません」が 74 件ある。日本以外のペアは本 spec の対象外（需要が確認できていない）
