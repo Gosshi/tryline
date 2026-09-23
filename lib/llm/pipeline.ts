@@ -883,15 +883,26 @@ export async function generateMatchContent(
 
     const homeTeamSlug = assembled.match.home_team?.slug;
     const awayTeamSlug = assembled.match.away_team?.slug;
-    if (
-      contentType === "preview" &&
-      homeTeamSlug &&
-      awayTeamSlug &&
-      (await countHeadToHeadMatches(homeTeamSlug, awayTeamSlug)) >= 2
-    ) {
-      urls.push(
-        `${SITE_URL}/h2h/${normalizeHeadToHeadSlug(homeTeamSlug, awayTeamSlug)}`,
-      );
+    if (contentType === "preview" && homeTeamSlug && awayTeamSlug) {
+      try {
+        const h2hMatchCount = await countHeadToHeadMatches(
+          homeTeamSlug,
+          awayTeamSlug,
+        );
+
+        if (h2hMatchCount >= 2) {
+          urls.push(
+            `${SITE_URL}/h2h/${normalizeHeadToHeadSlug(homeTeamSlug, awayTeamSlug)}`,
+          );
+        }
+      } catch (error) {
+        console.error("[content-pipeline] H2H IndexNow lookup failed", {
+          awayTeamSlug,
+          error,
+          homeTeamSlug,
+          matchId,
+        });
+      }
     }
 
     if (

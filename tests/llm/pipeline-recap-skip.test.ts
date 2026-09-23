@@ -490,6 +490,78 @@ describe("generateMatchContent recap event guard", () => {
     },
   );
 
+  it("continues publishing and submits other IndexNow URLs when the H2H lookup fails", async () => {
+    const lookupError = new Error("database unavailable");
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    headToHeadQueriesMock.countHeadToHeadMatches.mockRejectedValue(lookupError);
+    assembleMock.assembleMatchContentInput.mockResolvedValue({
+      ...assembledWithoutEvents,
+      eventIntegrity: verifiedEventIntegrity,
+      match: {
+        ...assembledWithoutEvents.match,
+        home_team: {
+          country: "Japan",
+          english_name: "Japan",
+          id: "team-japan",
+          name: "日本",
+          short_code: "JPN",
+          slug: "japan",
+        },
+        away_team: {
+          country: "Wales",
+          english_name: "Wales",
+          id: "team-wales",
+          name: "ウェールズ",
+          short_code: "WAL",
+          slug: "wales",
+        },
+      },
+    });
+    extractFactsMock.extractTacticalPoints.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: { tactical_points: [] },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    generateNarrativeMock.generateNarrative.mockResolvedValue({
+      content: "# test content",
+      modelVersion: "gpt-4o",
+      promptVersion: "1.0.0",
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+    qaMock.evaluateNarrativeQuality.mockResolvedValue({
+      modelVersion: "gpt-4o-mini",
+      result: {
+        issues: [],
+        scores: {
+          factual_grounding: 4,
+          information_density: 4,
+          japanese_quality: 4,
+          tactical_depth: 4,
+        },
+        verdict: "publish",
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    const result = await generateMatchContent("match-h2h", "preview");
+
+    expect(result.status).toBe("published");
+    expect(indexNowMock.submitUrlsToIndexNow).toHaveBeenCalledWith([
+      "https://www.trylinerugby.com/matches/match-h2h",
+      "https://www.trylinerugby.com/calendar",
+    ]);
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[content-pipeline] H2H IndexNow lookup failed",
+      {
+        awayTeamSlug: "wales",
+        error: lookupError,
+        homeTeamSlug: "japan",
+        matchId: "match-h2h",
+      },
+    );
+    errorSpy.mockRestore();
+  });
+
   it("submits published league-one recap urls to IndexNow after persistence", async () => {
     dbMock.maybeSingle.mockResolvedValue({
       data: { external_ids: { wikipedia_round: "3" } },
