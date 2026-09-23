@@ -4,6 +4,7 @@ import {
   findNextScheduledMatch,
   formatMatchKickoffJst,
   getCompetitionHubState,
+  getJapanMatchesNote,
   getLeaderLabel,
   getMatchLabel,
   getSeasonBroadcastGuide,
@@ -125,6 +126,29 @@ describe("season summary helpers", () => {
         poolStandings: [],
         seasonNotStarted: true,
         standings: [standing("South Africa", 1)],
+      }),
+    ).toBeNull();
+  });
+
+  it("shows the Nations Championship finals note only until Japan's finals match is known", () => {
+    expect(
+      getJapanMatchesNote({
+        competitionSlug: "nations-championship-2026",
+        matches: [{ ...baseMatch, kickoffAt: "2026-11-21T14:10:00Z" }],
+      }),
+    ).toBe(
+      "11月27〜29日のファイナルズ週末（ロンドン・トゥイッケナム）で、日本は最終順位に応じた順位決定戦をもう1試合戦います。対戦相手と日時は第6節（11月21日）の後に決まります。",
+    );
+    expect(
+      getJapanMatchesNote({
+        competitionSlug: "nations-championship-2026",
+        matches: [{ ...baseMatch, kickoffAt: "2026-11-28T16:40:00Z" }],
+      }),
+    ).toBeNull();
+    expect(
+      getJapanMatchesNote({
+        competitionSlug: "pnc-2026",
+        matches: [{ ...baseMatch, kickoffAt: "2026-11-21T14:10:00Z" }],
       }),
     ).toBeNull();
   });

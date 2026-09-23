@@ -220,3 +220,20 @@ export function getSeasonPeriodLabel(args: {
 
   return start === end ? start : `${start}〜${end}`;
 }
+
+export function getJapanMatchesNote(args: {
+  competitionSlug: string;
+  matches: MatchListItem[];
+}): string | null {
+  if (args.competitionSlug !== "nations-championship-2026") {
+    return null;
+  }
+
+  const hasJapanFinalsMatch = args.matches.some(
+    (match) => isJapanMatch(match) && match.kickoffAt >= "2026-11-27T00:00:00Z",
+  );
+
+  return hasJapanFinalsMatch
+    ? null
+    : "11月27〜29日のファイナルズ週末（ロンドン・トゥイッケナム）で、日本は最終順位に応じた順位決定戦をもう1試合戦います。対戦相手と日時は第6節（11月21日）の後に決まります。";
+}
