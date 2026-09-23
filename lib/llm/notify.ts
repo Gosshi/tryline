@@ -1,5 +1,6 @@
 import { getServerEnv, hasConfiguredValue } from "@/lib/env";
 
+import type { InternationalFixture } from "@/lib/audit/missing-internationals";
 import type { BroadcastIngestResult } from "@/lib/broadcasts/ingest";
 import type { RecapSkipReport } from "@/lib/cron/orchestrate";
 import type {
@@ -237,6 +238,39 @@ export async function notifyContentRejected(
         ]
       : []),
     "対応: Supabase Studio の match_content テーブルで status を確認し、必要に応じて published に変更してください",
+  ].join("\n");
+
+  await postOpsAlert(message);
+}
+
+export async function notifyMissingInternationals(
+  missing: InternationalFixture[],
+  teamNameByCode: ReadonlyMap<string, string>,
+): Promise<void> {
+  if (missing.length === 0) {
+    return;
+  }
+
+  const details = missing.map((fixture, index) => {
+    const homeName = fixture.homeCode
+      ? teamNameByCode.get(fixture.homeCode) ?? fixture.homeCode
+      : "不明";
+    const awayName = fixture.awayCode
+      ? teamNameByCode.get(fixture.awayCode) ?? fixture.awayCode
+      : "不明";
+    const venue = fixture.venue ? ` — ${fixture.venue}` : "";
+
+    return `${index + 1}. ${fixture.date} ${homeName} 対 ${awayName}${venue}`;
+  });
+  const sourcePages = Array.from(
+    new Set(missing.map((fixture) => fixture.sourcePage)),
+  );
+  const message = [
+    "🧭 代表戦の取りこぼし点検",
+    `30日以内でDBに無い代表戦: ${missing.length}試合`,
+    ...details,
+    `照合元: ${sourcePages.join(" / ")}（Wikipedia）`,
+    "対応: シリーズなら LIVE_COMPETITION_SOURCES に追加、単発なら手入力を検討",
   ].join("\n");
 
   await postOpsAlert(message);

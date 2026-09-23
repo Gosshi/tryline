@@ -1,0 +1,19 @@
+name: Cron missing internationals audit
+
+on:
+  schedule:
+    # 09:05 JST every Monday.
+    - cron: "5 0 * * 1"
+  workflow_dispatch:
+
+jobs:
+  audit-missing-internationals:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Audit missing international fixtures
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://tryline-six.vercel.app/api/cron/audit-missing-internationals
