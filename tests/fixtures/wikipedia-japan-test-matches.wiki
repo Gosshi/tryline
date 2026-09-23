@@ -1,0 +1,3610 @@
+{{Short description|none}}
+This is a list of all matches of the [[Japan national rugby union team]].
+
+== Legend ==
+{| class="wikitable"
+|-
+|bgcolor=""|Win
+|bgcolor="#ADD8E6"|Draw
+|bgcolor="#F9E1DC"|Loss
+|}
+
+== Overall ==
+Japan's overall Test match record against all nations, updated to 20 November 2021, is as follows:<ref name = espn-stats>{{cite web 
+ |title= Statsguru Team analysis Japan - Test matches 
+ |publisher= ESPN Scrum
+ |url= http://www.espnscrum.com/statsguru/rugby/team/23.html?class=1;template=results;type=team}}
+</ref>
+
+{| class="wikitable"
+|-
+!width="70"| Games played
+!width="70"| Won
+!width="70"| Lost
+!width="70"| Drawn
+!width="70"| Percentage of wins
+|-
+|style="text-align:left;"|364||158||196||10||43.41%
+|}
+
+== 1930s ==
+{| class="wikitable sortable"
+|-
+!width="125"| Date
+!width="125"| Opponent
+! F
+! A
+! Venue
+! City
+! Winner
+|-bgcolor="#ADD8E6"
+|1930-09-24
+|[[BC Bears|British Columbia]]
+|3
+|3
+|[[Brockton Oval]]
+|[[Vancouver]]
+|Draw
+|-bgcolor=<!---win--->
+|1932-01-31
+|[[Canada national rugby union team|Canada]]
+|9
+|8
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|1932-02-11
+|[[Canada national rugby union team|Canada]]
+|38
+|5
+|[[Meiji Jingu Gaien Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|1934-02-11
+|Australian Universities
+|8
+|18
+|[[Meiji Jingu Gaien Stadium]]
+|[[Tokyo]]
+|{{flagicon|AUS}} Australian Universities
+|-bgcolor=<!---win--->
+|1934-02-18
+|Australian Universities
+|14
+|9
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1936-02-09
+| New Zealand Universities
+| 8
+| 16
+| [[Meiji Jingu Gaien Stadium]]
+| [[Tokyo]]
+| {{flagicon|NZL}} New Zealand Universities
+|-bgcolor="#ADD8E6"
+| 1936-02-16
+| New Zealand Universities
+| 9
+| 9
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| Draw
+|}
+
+== 1950s ==
+{| class="wikitable sortable"
+|-
+!width="125"| Date
+!width="125"| Opponent
+! F
+! A
+! Venue
+! City
+! Winner
+|-bgcolor="#F9E1DC"
+|1952-10-01
+|[[Oxford University RFC|Oxford University]]
+|0
+|35
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|ENG}} [[Oxford University RFC|Oxford University]]
+|-bgcolor="#F9E1DC"
+|1952-10-05
+|[[Oxford University RFC|Oxford University]]
+|0
+|52
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|ENG}} [[Oxford University RFC|Oxford University]]
+|-bgcolor="#F9E1DC"
+|1953-09-27
+|[[Cambridge University R.U.F.C.|Cambridge University]]
+|11
+|34
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|ENG}} [[Cambridge University R.U.F.C.|Cambridge University]]
+|-bgcolor="#F9E1DC"
+|1953-10-04
+|[[Cambridge University R.U.F.C.|Cambridge University]]
+|6
+|35
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|ENG}} [[Cambridge University R.U.F.C.|Cambridge University]]
+|-bgcolor="#F9E1DC"
+| 1956-03-04
+| Australian Universities
+| 14
+| 16
+| [[Heiwadai Athletic Stadium]]
+| [[Fukuoka]]
+| {{flagicon|AUS}} Australian Universities
+|-bgcolor="#F9E1DC"
+| 1956-03-21
+| Australian Universities
+| 8
+| 19
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|AUS}} Australian Universities
+|-bgcolor="#F9E1DC"
+| 1956-03-25
+| Australian Universities
+| 6
+| 19
+| [[Hanazono Rugby Stadium]]
+|[[Osaka]]
+| {{flagicon|AUS}} Australian Universities
+|-bgcolor="#F9E1DC"
+| 1958-03-02
+| [[Junior All Blacks]]
+| 3
+| 34
+| [[Heiwadai Athletic Stadium]]
+| [[Fukuoka]]
+| {{ruA|NZL}}
+|-bgcolor="#F9E1DC"
+| 1958-03-09
+| [[Junior All Blacks]]
+| 6
+| 32
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{ruA|NZL}}
+|-bgcolor="#F9E1DC"
+|1958-03-23
+|[[Junior All Blacks]]
+|3
+|56
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{ruA|NZL}} 
+|-bgcolor="#F9E1DC"
+| 1959-03-15
+| [[BC Bears|British Columbia]]
+| 17
+| 21
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|CAN}} [[BC Bears|British Columbia]]
+|-bgcolor="#ADD8E6"
+| 1959-03-22
+| [[BC Bears|British Columbia]]
+| 11
+| 11
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| Draw
+|-bgcolor="#F9E1DC"
+| 1959-09-27
+| [[Oxford University RFC|Oxford]] and [[Cambridge University R.U.F.C.|Cambridge]]
+| 6
+| 54
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|ENG}} [[Oxford University RFC|Oxford]] and [[Cambridge University R.U.F.C.|Cambridge]]
+|-bgcolor="#F9E1DC"
+| 1959-10-04
+| [[Oxford University RFC|Oxford]] and [[Cambridge University R.U.F.C.|Cambridge]]
+| 14
+| 44
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|ENG}} [[Oxford University RFC|Oxford]] and [[Cambridge University R.U.F.C.|Cambridge]]
+|}
+
+== 1960s ==
+{| class="wikitable sortable"
+|-
+!width="125"| Date
+!width="125"| Opponent
+! F
+! A
+! Venue
+! City
+! Winner
+|-bgcolor=<!---win--->
+| 1963-04-13
+| [[BC Bears|British Columbia]]
+| 33
+| 6
+| [[Brockton Oval]]
+| [[Vancouver]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1967-03-12
+| New Zealand Universities
+| 3
+| 19
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|NZL}} New Zealand Universities
+|-bgcolor="#F9E1DC"
+| 1967-03-21
+| New Zealand Universities
+| 8
+| 55
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|NZL}} New Zealand Universities
+|-bgcolor=<!---win--->
+| 1968-06-03
+| [[Junior All Blacks]]
+| 23
+| 19
+| [[Athletic Park, Wellington|Athletic Park]]
+| [[Wellington]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|1968-06-08
+|New Zealand Universities
+|16
+|25
+|[[Athletic Park, Wellington|Athletic Park]]
+|[[Wellington]]
+|{{flagicon|NZL}} New Zealand Universities
+|-bgcolor=<!---win--->
+|1969-03-09
+|[[Hong Kong national rugby union team|Hong Kong]]
+|24
+|22
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|}
+
+== 1970s ==
+{| class="wikitable sortable"
+|-
+!width="125"| Date
+!width="125"| Opponent
+! F
+! A
+! Venue
+! City
+! Winner
+|-bgcolor=<!---win--->
+| 1970-01-18
+| [[Thailand national rugby union team|Thailand]]
+| 42
+| 11
+| [[Chulalongkorn University Stadium]]
+| [[Bangkok]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1970-03-08
+| New Zealand Universities
+| 6
+| 16
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|NZL}} New Zealand Universities
+|-bgcolor="#F9E1DC"
+| 1970-03-15
+| New Zealand Universities
+| 14
+| 28
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|NZL}} New Zealand Universities
+|-bgcolor=<!---win--->
+| 1970-03-22
+| [[BC Bears|British Columbia]]
+| 32
+| 3
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1970-03-29
+| New Zealand Universities
+| 14
+| 46
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|NZL}} New Zealand Universities
+|-bgcolor="#F9E1DC"
+| 1971-09-24
+| [[England national rugby union team|England XV]]
+| 19
+| 27
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|ENG}} [[England national rugby union team|England XV]]
+|-bgcolor="#F9E1DC"
+| 1971-09-28
+| [[England national rugby union team|England XV]]
+| 3
+| 6
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|ENG}} [[England national rugby union team|England XV]]
+|-bgcolor=<!---win--->
+| 1972-04-02
+| Emerging Wallabies
+| 24
+| 22
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|JPN}}
+|-bgcolor="#ADD8E6"
+| 1972-04-08
+| Emerging Wallabies
+| 17
+| 17
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| Draw
+|-bgcolor=<!---win--->
+| 1972-11-11
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 16
+| 0
+| [[Hong Kong Stadium|Government Stadium]]
+| [[Hong Kong]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1973-10-06
+| [[Wales national rugby union team|Wales XV]]
+| 14
+| 62
+| [[Cardiff Arms Park#National Stadium|National Stadium]]
+| [[Cardiff]]
+| {{ru|WAL|name=Wales XV}}
+|-bgcolor="#F9E1DC"
+| 1973-10-13
+| England Under-23's
+| 10
+| 19
+| [[Twickenham Stadium]]
+| [[London]]
+| {{flagicon|ENG}} England Under-23's
+|-bgcolor="#F9E1DC"
+| 1973-10-27
+| [[France national rugby union team|France]]
+| 18
+| 30
+| [[Stade Chaban-Delmas]]
+| [[Bordeaux]]
+| {{flagicon|FRA}} [[France national rugby union team|France]]
+|-bgcolor="#F9E1DC"
+| 1974-05-12
+| New Zealand Universities
+| 31
+| 40
+| [[Carisbrook]]
+| [[Dunedin]]
+| {{flagicon|NZL}} New Zealand Universities
+|-bgcolor="#F9E1DC"
+| 1974-05-19
+| [[Junior All Blacks]]
+| 31
+| 55
+| [[Eden Park]]
+| [[Auckland]]
+| {{ruA|NZL}}
+|-bgcolor=<!---win--->
+| 1974-05-26
+| New Zealand Universities
+| 24
+| 21
+| [[Athletic Park, Wellington|Athletic Park]]
+| [[Wellington]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 1974-11-23
+| [[Sri Lanka national rugby union team|Sri Lanka]]
+| 44
+| 6
+| [[Longden Place]]
+| [[Colombo]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 1975-03-30
+| [[Cambridge University R.U.F.C.|Cambridge University]] 
+| 16
+| 13
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1975-08-02
+| [[Australia national rugby union team|Australia]]
+| 7
+| 37
+| [[Sydney Cricket Ground]]
+| [[Sydney]]
+| {{flagicon|AUS}} [[Australia national rugby union team|Australia]]
+|-bgcolor="#F9E1DC"
+| 1975-08-17
+| [[Australia national rugby union team|Australia ]]
+| 25
+| 50
+| [[Ballymore Stadium]]
+| [[Brisbane]]
+| {{flagicon|AUS}} [[Australia national rugby union team|Australia]]
+|-bgcolor="#F9E1DC"
+| 1975-09-21
+| [[Wales national rugby union team|Wales XV]]
+| 12
+| 56
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|WAL}} [[Wales national rugby union team|Wales XV]]
+|-bgcolor="#F9E1DC"
+| 1975-09-24
+| [[Wales national rugby union team|Wales XV]]
+| 6
+| 82
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|WAL}} [[Wales national rugby union team|Wales XV]]
+|-bgcolor="#F9E1DC"
+| 1976-03-28
+| New Zealand Universities
+| 6
+| 45
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|NZL}} New Zealand Universities
+|-bgcolor="#F9E1DC"
+| 1976-05-12
+| [[BC Bears|British Columbia]]
+| 7
+| 38
+| [[Swangard Stadium]]
+| [[Vancouver]]
+| {{flagicon|CAN}} [[BC Bears|British Columbia]]
+|-bgcolor="#F9E1DC"
+| 1976-09-25
+| [[Scotland national rugby union team|Scotland XV]]
+| 9
+| 34
+| [[Murrayfield Stadium]]
+| [[Edinburgh]]
+| {{ru|SCO|name=Scotland XV}}
+|-bgcolor="#F9E1DC"
+| 1976-10-09
+| Welsh Clubs
+| 9
+| 63
+| [[St. Helen's Rugby and Cricket Ground|St. Helen's]]
+| [[Swansea]]
+| {{flagicon|WAL}} Welsh Clubs
+|-bgcolor="#F9E1DC"
+| 1976-10-16
+| England Under-23's
+| 15
+| 58
+| [[Twickenham Stadium]]
+| [[London]]
+| {{flagicon|ENG}} England Under-23's
+|-bgcolor="#F9E1DC"
+| 1976-10-21
+| [[Italy national rugby union team|Italy]]
+| 3
+| 25
+| [[Stadio Silvio Appiani]]
+| [[Padua|Padova]]
+| {{flagicon|ITA}} [[Italy national rugby union team|Italy]]
+|-bgcolor=<!---win--->
+| 1976-11-20
+| [[South Korea national rugby union team|South Korea]]
+| 11
+| 3
+| [[Dongdaemun Stadium]]
+| [[Seoul]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1977-03-27
+| [[Oxford University RFC|Oxford University]] 
+| 16
+| 20
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|ENG}} [[Oxford University RFC|Oxford University]] 
+|-bgcolor="#F9E1DC"
+| 1977-09-18
+| [[Scotland national rugby union team|Scotland XV]]
+| 9
+| 74
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|SCO}} [[Scotland national rugby union team|Scotland XV]]
+|-bgcolor="#F9E1DC"
+| 1978-03-05
+| [[Queensland Reds]]
+| 6
+| 42
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|AUS}} [[Queensland Reds]]
+|-bgcolor="#F9E1DC"
+| 1978-09-23
+| [[France national rugby union team|France XV]]
+| 16
+| 55
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|FRA}} [[France national rugby union team|France XV]]
+|-bgcolor=<!---win--->
+| 1978-11-25
+| [[South Korea national rugby union team|South Korea]]
+| 16
+| 4
+| [[Stadium Merdeka]]
+| [[Kuala Lumpur]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1979-05-13
+| [[England national rugby union team|England XV]]
+| 19
+| 21
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|ENG}} [[England national rugby union team|England XV]]
+|-bgcolor="#F9E1DC"
+| 1979-05-20
+| [[England national rugby union team|England XV]]
+| 18
+| 38
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|ENG}} [[England national rugby union team|England XV]]
+|-bgcolor="#F9E1DC"
+| 1979-09-24
+| [[Cambridge University R.U.F.C.|Cambridge University]]
+| 19
+| 28
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|ENG}} [[Cambridge University R.U.F.C.|Cambridge University]]
+|}
+
+== 1980s ==
+{| class="wikitable sortable"
+|-
+!width="125"| Date
+!width="125"| Opponent
+! F
+! A
+! Venue
+! City
+! Winner
+|-bgcolor="#ADD8E6"
+| 1980-03-30
+| New Zealand Universities
+| 25
+| 25
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| Draw
+|-bgcolor="#F9E1DC"
+| 1980-10-04
+| [[Netherlands national rugby union team|Netherlands]]
+| 13
+| 15
+| Tribune Sportpark Hilversum
+| [[Hilversum]]
+| {{flagicon|NED}} [[Netherlands national rugby union team|Netherlands]]
+|-bgcolor="#F9E1DC"
+| 1980-10-19
+| [[France national rugby union team|France XV]]
+| 3
+| 23
+| [[Stadium de Toulouse]]
+| [[Toulouse]]
+| {{flagicon|FRA}} [[France national rugby union team|France XV]]
+|-bgcolor=<!---win--->
+| 1980-11-16
+| [[South Korea national rugby union team|South Korea]]
+| 21
+| 12
+| [[Taipei Municipal Stadium]]
+| [[Taipei]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|1981-03-21
+|Australian Universities
+|10
+|9
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|1982-01-30
+|[[Hong Kong national rugby union team|Hong Kong]]
+|18
+|12
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|1982-04-11
+|[[Canada national rugby union team|Canada]]
+|24
+|18
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|1982-04-18
+|[[Canada national rugby union team|Canada]]
+|16
+|6
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|1982-05-16
+|New Zealand Universities
+|20
+|35
+|[[Athletic Park, Wellington|Athletic Park]]
+|[[Wellington]]
+|{{flagicon|NZL}} New Zealand Universities
+|-bgcolor="#F9E1DC"
+| 1982-05-30
+| New Zealand Universities
+| 6
+| 22
+| [[Navigation Homes Stadium]]
+| [[Pukekohe]]
+| {{flagicon|NZL}} New Zealand Universities
+|-bgcolor="#F9E1DC"
+| 1982-09-19
+| England Students
+| 0
+| 43
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|ENG}} England Students
+|-bgcolor=<!---win--->
+| 1982-09-26
+| New Zealand Universities
+| 31
+| 15
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|1982-11-27
+|[[South Korea national rugby union team|South Korea]]
+|9
+|12
+|[[Lancaster Park]]
+|[[Singapore]]
+|{{flagicon|KOR}} [[South Korea national rugby union team|South Korea]]
+|-bgcolor="#F9E1DC"
+|1983-09-25
+|[[Oxford University RFC|Oxford]] and [[Cambridge University R.U.F.C.|Cambridge]]
+|10
+|15
+|[[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+|[[Tokyo]]
+|{{flagicon|ENG}} [[Oxford University RFC|Oxford]] and [[Cambridge University R.U.F.C.|Cambridge]]
+|-bgcolor="#F9E1DC"
+|1983-10-22
+|[[Wales national rugby union team|Wales XV]]
+|24
+|29
+|[[Cardiff Arms Park#National Stadium|National Stadium]]
+|[[Cardiff]]
+|{{flagicon|WAL}} [[Wales national rugby union team|Wales XV]]
+|-bgcolor="#F9E1DC"
+|1984-09-30
+|[[France national rugby union team|France XV]]
+|0
+|52
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|FRA}} [[France national rugby union team|France XV]]
+|-bgcolor="#F9E1DC"
+|1984-10-07
+|[[France national rugby union team|France XV]]
+|12
+|40
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|FRA}} [[France national rugby union team|France XV]]
+|-bgcolor=<!---win--->
+|1984-10-27
+|[[South Korea national rugby union team|South Korea]]
+|20
+|13
+|Kasuga Field
+|[[Fukuoka]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|1985-04-21
+|[[United States national rugby union team|United States]]
+|15
+|16
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor="#F9E1DC"
+| 1985-05-26
+| [[Ireland national rugby union team|Ireland XV]]
+| 13
+| 48
+| [[Yanmar Stadium Nagai]]
+| [[Osaka]]
+| {{ru|IRE|name=Ireland XV}}
+|-bgcolor="#F9E1DC"
+| 1985-06-02
+| [[Ireland national rugby union team|Ireland XV]]
+| 15
+| 33
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{ru|IRE|name=Ireland XV}}
+|-bgcolor="#F9E1DC"
+| 1985-10-19
+| [[France national rugby union team|France XV]]
+| 0
+| 50
+| [[Stade Maurice Boyau]]
+| [[Dax, Landes|Dax]]
+| {{flagicon|FRA}} [[France national rugby union team|France XV]]
+|-bgcolor="#F9E1DC"
+|1985-10-26
+|[[France national rugby union team|France XV]]
+|0
+|52
+|[[Stade Marcel Saupin]]
+|[[Nantes]]
+|{{flagicon|FRA}} [[France national rugby union team|France XV]]
+|-bgcolor="#ADD8E6"
+|1986-05-31
+|[[United States national rugby union team|United States]]
+|9
+|9
+|[[Murdock Stadium]]
+|[[Torrance, California|Torrance]]
+|Draw
+|-bgcolor=<!---win--->
+| 1986-06-07
+| [[Canada national rugby union team|Canada]]
+| 26
+| 21
+| [[Burnaby Lake Rugby Club|Burnaby Lake Sports Complex]]
+| [[Burnaby Lake]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1986-09-27
+| [[Scotland national rugby union team|Scotland XV]]
+| 18
+| 33
+| [[Murrayfield Stadium]]
+| [[Edinburgh]]
+| {{flagicon|SCO}} [[Scotland national rugby union team|Scotland XV]]
+|-bgcolor="#F9E1DC"
+| 1986-10-11
+| [[England national rugby union team|England XV]]
+| 12
+| 39
+| [[Twickenham Stadium]]
+| [[London]]
+| {{flagicon|ENG}} [[England national rugby union team|England XV]]
+|-bgcolor="#F9E1DC"
+|1986-11-29
+|[[South Korea national rugby union team|South Korea]]
+|22
+|24
+|[[Chulalongkorn University Stadium]]
+|[[Bangkok]]
+|{{flagicon|KOR}} [[South Korea national rugby union team|South Korea]]
+|-bgcolor="#F9E1DC"
+|1987-05-24
+|[[United States national rugby union team|United States]]
+|18
+|21
+|[[Ballymore Stadium]]
+|[[Brisbane]]
+|{{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor="#F9E1DC"
+|1987-05-30
+|[[England national rugby union team|England]]
+|7
+|60
+|[[Concord Oval]]
+|[[Sydney]]
+|{{flagicon|ENG}} [[England national rugby union team|England]]
+|-bgcolor="#F9E1DC"
+| 1987-06-03
+| [[Australia national rugby union team|Australia]]
+| 23
+| 42
+| [[Concord Oval]]
+| [[Sydney]]
+| {{flagicon|AUS}} [[Australia national rugby union team|Australia]]
+|-bgcolor="#F9E1DC"
+| 1987-10-03
+| Ireland Students
+| 12
+| 24
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|IRE|rugby union}} Ireland Students
+|-bgcolor="#F9E1DC"
+|1987-10-25
+|[[New Zealand national rugby union team|New Zealand XV]]
+|0
+|74
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|NZL}} [[New Zealand national rugby union team|New Zealand XV]]
+|-bgcolor="#F9E1DC"
+|1987-11-01
+|[[New Zealand national rugby union team|New Zealand XV]]
+|4
+|106
+|[[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+|[[Tokyo]]
+|{{flagicon|NZL}} [[New Zealand national rugby union team|New Zealand XV]]
+|-bgcolor="#F9E1DC"
+|1988-10-01
+|[[Oxford University RFC|Oxford University]]
+|12
+|23
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|ENG}} [[Oxford University RFC|Oxford University]]
+|-bgcolor="#F9E1DC"
+|1988-11-19
+|[[South Korea national rugby union team|South Korea]]
+|13
+|17
+|[[Hong Kong Stadium]]
+|[[Hong Kong]]
+|{{flagicon|KOR}} [[South Korea national rugby union team|South Korea]]
+|-bgcolor=<!---win--->
+| 1989-05-28
+| [[Scotland national rugby union team|Scotland XV]]
+| 28
+| 24
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|}
+
+== 1990s ==
+{| class="wikitable sortable"
+|-
+!width="125"| Date
+!width="125"| Opponent
+! F
+! A
+! Venue
+! City
+! Winner
+|-bgcolor="#F9E1DC"
+|1990-03-04
+|[[Fiji national rugby union team|Fiji]]
+|6
+|32
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor=<!---win--->
+|1990-04-08
+|[[Tonga national rugby union team|Tonga]]
+|28
+|16
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|1990-04-11
+|[[South Korea national rugby union team|South Korea]]
+|26
+|10
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|1990-04-15
+|[[Samoa national rugby union team|Samoa]]
+|11
+|37
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|SAM}} [[Samoa national rugby union team|Samoa]]
+|-bgcolor="#F9E1DC"
+|1990-09-23
+|[[United States national rugby union team|United States]]
+|15
+|25
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+| {{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor="#F9E1DC"
+| 1990-10-27
+| [[South Korea national rugby union team|South Korea]]
+| 9
+| 13
+| [[Sugathadasa Stadium]]
+| [[Colombo]]
+| {{flagicon|KOR}} [[South Korea national rugby union team|South Korea]]
+|-bgcolor="#F9E1DC"
+| 1991-04-27
+| [[United States national rugby union team|United States]]
+| 9
+| 20
+| [[National Sports Center]]
+| [[Blaine, Minnesota|Blaine]]
+| {{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor="#F9E1DC"
+| 1991-05-04
+| [[United States national rugby union team|United States]]
+| 15
+| 27
+| Rockne Stadium
+| [[Chicago]]
+| {{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor="#F9E1DC"
+| 1991-05-11
+| [[Canada national rugby union team|Canada]]
+| 26
+| 49
+| [[Thunderbird Stadium]]
+| [[Vancouver]]
+| {{flagicon|CAN}} [[Canada national rugby union team|Canada]]
+|-bgcolor=<!---win--->
+| 1991-09-07
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 42
+| 3
+| [[Edogawa Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}} 
+|-bgcolor="#F9E1DC"
+| 1991-10-05
+|[[Scotland national rugby union team|Scotland]]
+|9
+|47
+| [[Murrayfield Stadium]]
+| [[Edinburgh]]
+|{{flagicon|SCO}} [[Scotland national rugby union team|Scotland]]
+|-bgcolor="#F9E1DC"
+| 1991-10-09
+| [[Ireland national rugby union team|Ireland]]
+| 16
+| 32
+| [[Lansdowne Road]]
+| [[Dublin]]
+| {{flagcountry|IRE|variant=rugby union}}
+|-bgcolor=<!---win--->
+| 1991-10-14
+| [[Zimbabwe national rugby union team|Zimbabwe]]
+| 52
+| 8
+| [[Ravenhill Stadium]]
+| [[Belfast]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 1992-09-26
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 37
+| 9
+| [[Dongdaemun Stadium]]
+| [[Seoul]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1993-05-15
+| [[Argentina national rugby union team|Argentina]]
+| 27
+| 30
+| [[Estadio Monumental José Fierro]]
+| [[Tucuman]]
+| {{flagicon|ARG}} [[Argentina national rugby union team|Argentina]]
+|-bgcolor="#F9E1DC"
+| 1993-05-22
+| [[Argentina national rugby union team|Argentina]]
+| 20
+| 45
+| [[Ferro Carril Oeste]]
+| [[Buenos Aires]]
+| {{flagicon|ARG}} [[Argentina national rugby union team|Argentina]]
+|-bgcolor="#F9E1DC"
+| 1993-10-16
+| [[Wales national rugby union team|Wales]]
+| 5
+| 55
+| [[Cardiff Arms Park#National Stadium|National Stadium]]
+| [[Cardiff]]
+| {{flagicon|WAL}} [[Wales national rugby union team|Wales]]
+|-bgcolor=<!---win--->
+|1994-05-08
+|[[Fiji national rugby union team|Fiji]]
+|24
+|18
+|[[Ningineer Stadium]]
+|[[Ehime]]
+|{{flagicon|JPN}} 
+|-bgcolor=<!---win--->
+|1994-05-15
+|[[Fiji national rugby union team|Fiji]]
+|20
+|8
+|[[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|1994-06-18
+|[[Hong Kong national rugby union team|Hong Kong]]
+|22
+|10
+|[[Tsukisamu Dome]]
+|[[Sapporo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|1994-10-29
+|[[South Korea national rugby union team|South Korea]]
+|26
+|11
+|[[Stadium Merdeka]]
+|[[Kuala Lumpur]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|1995-02-11
+|[[Tonga national rugby union team|Tonga]]
+|16
+|47
+|[[Paloma Mizuho Stadium|Mizuho Stadium]]
+|[[Nagoya]]
+|{{flagicon|TON}} [[Tonga national rugby union team|Tonga]]
+|-bgcolor="#F9E1DC"
+| 1995-02-19
+| [[Tonga national rugby union team|Tonga]]
+| 16
+| 24
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|TON}} [[Tonga national rugby union team|Tonga]]
+|-bgcolor=<!---win--->
+| 1995-05-03
+| [[Romania national rugby union team|Romania]]
+| 34
+| 21
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1995-05-27
+| [[Wales national rugby union team|Wales]]
+| 10
+| 57
+| [[Free State Stadium]]
+| [[Bloemfontein]]
+| {{flagicon|WAL}} [[Wales national rugby union team|Wales]]
+|-bgcolor="#F9E1DC"
+| 1995-05-31
+| [[Ireland national rugby union team|Ireland]]
+| 28
+| 50
+| [[Free State Stadium]]
+| [[Bloemfontein]]
+| {{flagcountry|IRE|variant=rugby union}}
+|-bgcolor="#F9E1DC"
+|1995-06-04
+|[[New Zealand national rugby union team|New Zealand]]
+|17
+|145
+|[[Free State Stadium]]
+|[[Bloemfontein]]
+|{{flagicon|NZL}} [[New Zealand national rugby union team|New Zealand]]
+|-bgcolor=<!---win--->
+|1996-05-11
+|[[Hong Kong national rugby union team|Hong Kong]]
+|34
+|27
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|1996-05-18
+|[[Hong Kong national rugby union team|Hong Kong]]
+|9
+|33
+|[[Aberdeen Sports Ground|Aberdeen Stadium]]
+|[[Hong Kong]]
+|{{flagicon|HKG}} [[Hong Kong national rugby union team|Hong Kong]]
+|-bgcolor="#F9E1DC"
+|1996-06-09
+|[[Canada national rugby union team|Canada]]
+|18
+|45
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|CAN}} [[Canada national rugby union team|Canada]]
+|-bgcolor=<!---win--->
+|1996-06-16
+|[[United States national rugby union team|United States]]
+|24
+|18
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}} 
+|-bgcolor="#F9E1DC"
+| 1996-07-06
+| [[United States national rugby union team|United States]]
+| 5
+| 74
+| [[Boxer Stadium]]
+| [[San Francisco]]
+| {{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor="#F9E1DC"
+| 1996-07-13
+| [[Canada national rugby union team|Canada]]
+| 30
+| 51
+| [[Thunderbird Stadium]]
+| [[Vancouver]]
+| {{flagicon|CAN}} [[Canada national rugby union team|Canada]]
+|-bgcolor=<!---win--->
+|1996-11-09
+|[[South Korea national rugby union team|South Korea]]
+|41
+|25
+|[[Taipei Municipal Stadium]]
+|[[Taipei]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|1997-05-03
+|[[Hong Kong national rugby union team|Hong Kong]]
+|20
+|42
+|[[Aberdeen Sports Ground|Aberdeen Stadium]]
+|[[Hong Kong]]
+|{{flagicon|HKG}} [[Hong Kong national rugby union team|Hong Kong]]
+|-bgcolor=<!---win--->
+|1997-05-18
+|[[Canada national rugby union team|Canada]]
+|32
+|31
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|1997-05-25
+|[[United States national rugby union team|United States]]
+|12
+|20
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor="#F9E1DC"
+|1997-06-07
+|[[United States national rugby union team|United States]]
+|29
+|51
+|[[Boxer Stadium]]
+|[[San Francisco]]
+|{{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor="#F9E1DC"
+| 1997-06-14
+| [[Canada national rugby union team|Canada]]
+| 18
+| 42
+| [[Thunderbird Stadium]]
+| [[Vancouver]]
+| {{flagicon|CAN}} [[Canada national rugby union team|Canada]]
+|-bgcolor="#F9E1DC"
+|1997-06-29
+|[[Hong Kong national rugby union team|Hong Kong]]
+|23
+|41
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|HKG}} [[Hong Kong national rugby union team|Hong Kong]]
+|-bgcolor="#F9E1DC"
+| 1998-05-03
+| [[Canada national rugby union team|Canada]]
+| 22
+| 30
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|CAN}} [[Canada national rugby union team|Canada]]
+|-bgcolor="#F9E1DC"
+| 1998-05-10
+| [[United States national rugby union team|United States]]
+| 27
+| 38
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor=<!---win--->
+| 1998-05-23
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 38
+| 31
+| [[Aberdeen Sports Ground|Aberdeen Stadium]]
+| [[Hong Kong]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1998-06-07
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 16
+| 17
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|HKG}} [[Hong Kong national rugby union team|Hong Kong]]
+|-bgcolor=<!---win--->
+| 1998-06-13
+| [[United States national rugby union team|United States]]
+| 25
+| 21
+| [[Boxer Stadium]]
+| [[San Francisco]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1998-06-20
+| [[Canada national rugby union team|Canada]]
+| 25
+| 34
+| [[Thunderbird Stadium]]
+| [[Vancouver]]
+| {{flagicon|CAN}} [[Canada national rugby union team|Canada]]
+|-bgcolor=<!---win--->
+|1998-09-15
+|[[Argentina national rugby union team|Argentina]]
+|44
+|29
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 1998-10-24
+| [[South Korea national rugby union team|South Korea]]
+| 40
+| 12
+| [[Jalan Besar Stadium]]
+| [[Singapore]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 1998-10-27
+| [[Chinese Taipei national rugby union team|Chinese Taipei]]
+| 134
+| 6
+| [[Jalan Besar Stadium]]
+| [[Singapore]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 1998-10-31
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 47
+| 7
+| [[Jalan Besar Stadium]]
+| [[Singapore]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1998-12-18
+| [[South Korea national rugby union team|South Korea]]
+| 17
+| 21
+| [[Jalan Besar Stadium]]
+| [[Singapore]]
+| {{flagicon|KOR}} [[South Korea national rugby union team|South Korea]]
+|-bgcolor=<!---win--->
+|1999-05-01
+|[[Canada national rugby union team|Canada]]
+|23
+|21
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|1999-05-08
+|[[Tonga national rugby union team|Tonga]]
+|44
+|17
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|1999-05-22
+|[[Samoa national rugby union team|Samoa]]
+|37
+|34
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|1999-06-05
+|[[Fiji national rugby union team|Fiji]]
+|9
+|16
+|[[Churchill Park (Lautoka)|Churchill Park]]
+|[[Lautoka]]
+|{{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor=<!---win--->
+|1999-06-12
+|[[United States national rugby union team|United States]]
+|47
+|31
+|Kaipiolani Park
+|[[Honolulu]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 1999-08-20
+| [[Spain national rugby union team|Spain]]
+| 30
+| 7
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 1999-10-03
+| [[Samoa national rugby union team|Samoa]]
+| 9
+| 43
+| [[Racecourse Ground]]
+| [[Wrexham]]
+| {{flagicon|SAM}} [[Samoa national rugby union team|Samoa]]
+|-bgcolor="#F9E1DC"
+| 1999-10-09
+| [[Wales national rugby union team|Wales]]
+| 15
+| 64
+| [[Millennium Stadium]]
+| [[Cardiff]]
+| {{flagicon|WAL}} [[Wales national rugby union team|Wales]]
+|-bgcolor="#F9E1DC"
+| 1999-10-16
+| [[Argentina national rugby union team|Argentina]]
+| 12
+| 33
+| [[Millennium Stadium]]
+| [[Cardiff]]
+| {{flagicon|ARG}} [[Argentina national rugby union team|Argentina]]
+|}
+
+== 2000s ==
+{| class="wikitable sortable"
+|-
+!width="125"| Date
+!width="125"| Opponent
+! F
+! A
+! Venue
+! City
+! Winner
+|-bgcolor="#F9E1DC"
+|2000-05-20
+|[[Fiji national rugby union team|Fiji]]
+|22
+|47
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor="#F9E1DC"
+|2000-05-27
+|[[United States national rugby union team|United States]]
+|21
+|36
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor="#F9E1DC"
+|2000-06-03
+|[[Tonga national rugby union team|Tonga]]
+|25
+|26
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|TON}} [[Tonga national rugby union team|Tonga]]
+|-bgcolor="#F9E1DC"
+|2000-06-10
+|[[Samoa national rugby union team|Samoa]]
+|9
+|68
+|[[Apia Park]]
+|[[Apia]]
+|{{flagicon|SAM}} [[Samoa national rugby union team|Samoa]]
+|-bgcolor=<!---win--->
+|2000-07-02
+|[[South Korea national rugby union team|South Korea]]
+|34
+|29
+|Aomori Stadium
+|[[Aomori, Aomori|Aomori]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|2000-07-15
+|[[Canada national rugby union team|Canada]]
+|18
+|62
+|[[Fletcher's Fields]]
+|[[Markham, Ontario|Markham]]
+|{{flagicon|CAN}} [[Canada national rugby union team|Canada]]
+|-bgcolor="#F9E1DC"
+|2000-11-11
+|[[Ireland national rugby union team|Ireland]]
+|9
+|78
+|[[Lansdowne Road]]
+|[[Dublin]]
+|{{flagcountry|IRE|variant=rugby union}}
+|-bgcolor=<!---win--->
+|2001-05-13
+|[[South Korea national rugby union team|South Korea]]
+|27
+|19
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2001-05-27
+|[[Chinese Taipei national rugby union team|Chinese Taipei]]
+|65
+|15
+|[[Tainan County Stadium|Tainan Rugby Stadium]]
+|[[Tainan]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|2001-06-10
+|[[Wales national rugby union team|Wales]]
+|10
+|64
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|WAL}} [[Wales national rugby union team|Wales]]
+|-bgcolor="#F9E1DC"
+|2001-06-17
+|[[Wales national rugby union team|Wales]]
+|30
+|53
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|WAL}} [[Wales national rugby union team|Wales]]
+|-bgcolor="#F9E1DC"
+|2001-07-04
+|[[Samoa national rugby union team|Samoa]]
+|8
+|47
+|[[Ajinomoto Stadium]]
+|[[Tokyo]]
+|{{flagicon|SAM}} [[Samoa national rugby union team|Samoa]]
+|-bgcolor=<!---win--->
+|2001-07-08
+|[[Canada national rugby union team|Canada]]
+|39
+|7
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2002-05-19
+|[[Russia national rugby union team|Russia]]
+|59
+|19
+|[[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|2002-05-26
+|[[Tonga national rugby union team|Tonga]]
+|29
+|41
+|[[Kumagaya Rugby Ground]]
+|[[Kumagaya]]
+|{{flagicon|TON}} [[Tonga national rugby union team|Tonga]]
+|-bgcolor=<!---win--->
+|2002-06-16
+|[[South Korea national rugby union team|South Korea]]
+|90
+|24
+|[[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2002-07-06
+|[[Chinese Taipei national rugby union team|Chinese Taipei]]
+|155
+|3
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2002-07-14
+|[[South Korea national rugby union team|South Korea]]
+|55
+|17
+|[[Dongdaemun Stadium]]
+|[[Seoul]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2002-07-21
+|[[Chinese Taipei national rugby union team|Chinese Taipei]]
+|120
+|3
+|[[Tainan County Stadium|Tainan Rugby Stadium]]
+|[[Tainan]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|2002-10-13
+|[[South Korea national rugby union team|South Korea]]
+|34
+|45
+|[[Ulsan Public Stadium]]
+|[[Ulsan]]
+|{{flagicon|KOR}} [[South Korea national rugby union team|South Korea]]
+|-bgcolor="#F9E1DC"
+|2003-05-17
+|[[United States national rugby union team|United States]]
+|27
+|69
+|[[Boxer Stadium]]
+|[[San Francisco]]
+|{{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor="#F9E1DC"
+|2003-05-25
+|[[Russia national rugby union team|Russia]]
+|34
+|43
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|RUS}} [[Russia national rugby union team|Russia]]
+|-bgcolor="#F9E1DC"
+|2003-06-05
+|[[Australia A national rugby union team|Australia A]]
+|5
+|63
+|[[Yanmar Stadium Nagai]]
+|[[Osaka]]
+|{{flagicon|AUS}} [[Australia A national rugby union team|Australia A]]
+|-bgcolor="#F9E1DC"
+|2003-06-08
+|[[Australia A national rugby union team|Australia A]]
+|15
+|66
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|AUS}} [[Australia A national rugby union team|Australia A]]
+|-bgcolor=<!---win--->
+| 2003-06-15
+| [[South Korea national rugby union team|South Korea]]
+| 86
+| 3
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|2003-07-03
+|England A
+|10
+|37
+|[[Ajinomoto Stadium]]
+|[[Tokyo]]
+|{{flagicon|ENG}} England A
+|-bgcolor="#F9E1DC"
+|2003-07-06
+|England A
+|20
+|55
+|[[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+|[[Tokyo]]
+|{{flagicon|ENG}} England A
+|-bgcolor="#F9E1DC"
+|2003-10-12
+|[[Scotland national rugby union team|Scotland]]
+|11
+|32
+|[[Willows Sports Complex|Dairy Farmers Stadium]]
+|[[Townsville]]
+|{{flagicon|SCO}} [[Scotland national rugby union team|Scotland]]
+|-bgcolor="#F9E1DC"
+|2003-10-18
+|[[France national rugby union team|France]]
+|29
+|51
+|[[Willows Sports Complex|Dairy Farmers Stadium]]
+|[[Townsville]]
+|{{flagicon|FRA}} [[France national rugby union team|France]]
+|-bgcolor="#F9E1DC"
+|2003-10-23
+|[[Fiji national rugby union team|Fiji]]
+|13
+|41
+|[[Willows Sports Complex|Dairy Farmers Stadium]]
+|[[Townsville]]
+| {{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor="#F9E1DC"
+|2003-10-27
+|[[United States national rugby union team|United States]]
+|26
+|39
+|[[Central Coast Stadium]]
+|[[Gosford]]
+|{{flagicon|USA}} [[United States national rugby union team|United States]]
+|-bgcolor="#ADD8E6"
+|2004-05-16
+|[[South Korea national rugby union team|South Korea]]
+|19
+|19
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|Draw
+|-bgcolor=<!---win--->
+|2004-05-27
+|[[Russia national rugby union team|Russia]]
+|29
+|12
+|[[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2004-05-30
+|[[Canada national rugby union team|Canada]]
+|34
+|21
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|2004-07-04
+|[[Italy national rugby union team|Italy]]
+|19
+|32
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|ITA}} [[Italy national rugby union team|Italy]]
+|-bgcolor="#F9E1DC"
+|2004-11-13
+|[[Scotland national rugby union team|Scotland]]
+|8
+|100
+|[[McDiarmid Park]]
+|[[Perth]]
+|{{flagicon|SCO}} [[Scotland national rugby union team|Scotland]]
+|-bgcolor="#F9E1DC"
+|2004-11-20
+|[[Romania national rugby union team|Romania]]
+|10
+|25
+|[[Stadionul Dinamo|Dinamo Stadium]]
+|[[Bucharest]]
+|{{flagicon|ROM}} [[Romania national rugby union team|Romania]]
+|-bgcolor="#F9E1DC"
+|2004-11-26
+|[[Wales national rugby union team|Wales]]
+|0
+|98
+|[[Millennium Stadium]]
+|[[Cardiff]]
+|{{flagicon|WAL}} [[Wales national rugby union team|Wales]]
+|-bgcolor="#F9E1DC"
+|2005-04-16
+|[[Uruguay national rugby union team|Uruguay]]
+|18
+|24
+|[[Estadio Luis Franzini]]
+|[[Montevideo]]
+|{{flagicon|URU}} [[Uruguay national rugby union team|Uruguay]]
+|-bgcolor="#F9E1DC"
+|2005-04-23
+|[[Argentina national rugby union team|Argentina]]
+|36
+|68
+|[[Buenos Aires Cricket & Rugby Club]]
+|[[Buenos Aires]]
+|{{flagicon|ARG}} [[Argentina national rugby union team|Argentina]]
+|-bgcolor=<!---win--->
+|2005-05-08
+|[[Hong Kong national rugby union team|Hong Kong]]
+|91
+|3
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2005-05-15
+|[[South Korea national rugby union team|South Korea]]
+|50
+|31
+|Yeongwol Ground
+|[[Gangwon Province (South Korea)|Kangwon]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2005-05-25
+|[[Romania national rugby union team|Romania]]
+|23
+|16
+|[[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|2005-05-29
+|[[Canada national rugby union team|Canada]]
+|10
+|15
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|CAN}} [[Canada national rugby union team|Canada]]
+|-bgcolor="#F9E1DC"
+|2005-06-12
+|[[Ireland national rugby union team|Ireland]]
+|12
+|44
+|[[Yanmar Stadium Nagai]]
+|[[Osaka]]
+|{{flagcountry|IRE|variant=rugby union}}
+|-bgcolor="#F9E1DC"
+|2005-06-19
+|[[Ireland national rugby union team|Ireland]]
+|18
+|47
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagcountry|IRE|variant=rugby union}}
+|-bgcolor=<!---win--->
+|2005-11-05
+|[[Spain national rugby union team|Spain]]
+|44
+|29
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2006-04-16
+|[[Arabian Gulf rugby union team|Arabian Gulf]]
+|82
+|9
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2006-04-23
+|[[South Korea national rugby union team|South Korea]]
+|50
+|14
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2006-05-14
+|[[Georgia national rugby union team|Georgia]]
+|32
+|7
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|2006-06-04
+|[[Tonga national rugby union team|Tonga]]
+|16
+|57
+|[[Honjo Athletic Stadium|Honjo Stadium]]
+|[[Fukuoka]]
+|{{flagicon|TON}} [[Tonga national rugby union team|Tonga]]
+|-bgcolor="#F9E1DC"
+| 2006-06-11
+| [[Italy national rugby union team|Italy]]
+| 6
+| 52
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|ITA}} [[Italy national rugby union team|Italy]]
+|-bgcolor="#F9E1DC"
+| 2006-06-17
+| [[Samoa national rugby union team|Samoa]]
+| 9
+| 53
+| [[Yarrow Stadium]]
+| [[New Plymouth]]
+| {{flagicon|SAM}} [[Samoa national rugby union team|Samoa]]
+|-bgcolor="#F9E1DC"
+| 2006-06-24
+| [[Junior All Blacks]]
+| 8
+| 38
+| [[Carisbrook]]
+| [[Dunedin]]
+| {{flagicon|NZL}} [[Junior All Blacks]]
+|-bgcolor="#F9E1DC"
+| 2006-07-01
+| [[Fiji national rugby union team|Fiji]]
+| 15
+| 29
+| [[Yanmar Stadium Nagai]]
+| [[Osaka]]
+| {{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor=<!---win--->
+| 2006-11-18
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 52
+| 3
+| [[Hong Kong Football Club Stadium]]
+| [[Hong Kong]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2006-11-25
+|[[South Korea national rugby union team|South Korea]]
+|54
+|0
+| [[Hong Kong Football Club Stadium]]
+|[[Hong Kong]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2007-04-22
+|[[South Korea national rugby union team|South Korea]]
+|82
+|0
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2007-04-29
+|[[Hong Kong national rugby union team|Hong Kong]]
+|73
+|3
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|2007-05-26
+|[[Fiji national rugby union team|Fiji]]
+|15
+|30
+|[[Churchill Park (Lautoka)|Churchill Park]]
+|[[Lautoka]]
+|{{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor=<!---win--->
+| 2007-06-02
+| [[Tonga national rugby union team|Tonga]]
+| 20
+| 17
+| [[Coffs Harbour International Stadium]]
+| [[Coffs Harbour]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2007-06-09
+| [[Australia A national rugby union team|Australia A]]
+| 10
+| 71
+| [[Willows Sports Complex|Dairy Farmers Stadium]]
+| [[Townsville]]
+| {{flagicon|AUS}} [[Australia A national rugby union team|Australia A]]
+|-bgcolor="#F9E1DC"
+|2007-06-16
+|[[Samoa national rugby union team|Samoa]]
+|3
+|13
+|[[Yurtec Stadium Sendai|Sendai Stadium]]
+|[[Miyagi Prefecture|Miyagi]]
+|{{flagicon|SAM}} [[Samoa national rugby union team|Samoa]]
+|-bgcolor="#F9E1DC"
+|2007-06-24
+|[[Junior All Blacks]]
+|3
+|51
+|[[Chichibunomiya Rugby Stadium]]
+|[[Tokyo]]
+|{{flagicon|NZL}} [[Junior All Blacks]]
+|-bgcolor="#F9E1DC"
+| 2007-08-18
+| [[Italy national rugby union team|Italy]]
+| 12
+| 36
+| Stadio Sportivo Comunale
+| [[Saint-Vincent, Aosta Valley|Saint Vincent]]
+| {{flagicon|ITA}} [[Italy national rugby union team|Italy]]
+|-bgcolor="#F9E1DC"
+| 2007-09-08
+| [[Australia national rugby union team|Australia]]
+| 3
+| 91
+| [[Stade de Gerland]]
+| [[Lyon]]
+| {{flagicon|AUS}} [[Australia national rugby union team|Australia]]
+|-bgcolor="#F9E1DC"
+| 2007-09-12
+| [[Fiji national rugby union team|Fiji]]
+| 31
+| 35
+| [[Stadium de Toulouse]]
+| [[Toulouse]]
+| {{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor="#F9E1DC"
+| 2007-09-20
+| [[Wales national rugby union team|Wales]]
+| 18
+| 72
+| [[Millennium Stadium]]
+| [[Cardiff]]
+| {{flagicon|WAL}} [[Wales national rugby union team|Wales]]
+|-bgcolor="#ADD8E6"
+|2007-09-25
+|[[Canada national rugby union team|Canada]]
+|12
+|12
+|[[Stade Chaban-Delmas]]
+|[[Bordeaux]]
+|Draw
+|-bgcolor=<!---win--->
+|2008-04-26
+|[[South Korea national rugby union team|South Korea]]
+|39
+|17
+|[[Incheon Munhak Stadium|Munhak Stadium]]
+|[[Incheon]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2008-05-03
+|[[Arabian Gulf rugby union team|Arabian Gulf]]
+| 114
+| 6
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2008-05-10
+|[[Kazakhstan national rugby union team|Kazakhstan]]
+|82
+|6
+|[[Almaty Central Stadium]]
+|[[Almaty]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2008-05-18
+|[[Hong Kong national rugby union team|Hong Kong]]
+|75
+|29
+|[[Denka Big Swan Stadium]]
+|[[Niigata, Niigata|Niigata]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2008-06-08
+| [[Australia A national rugby union team|Australia A]]
+| 21
+| 42
+| [[Level5 Stadium]]
+| [[Fukuoka]]
+| {{flagicon|AUS}} [[Australia A national rugby union team|Australia A]]
+|-bgcolor=<!---win--->
+|2008-06-15
+|[[Tonga national rugby union team|Tonga]]
+|35
+|13
+|[[Yurtec Stadium Sendai|Sendai Stadium]]
+|[[Miyagi Prefecture|Miyagi]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2008-06-22
+| [[Fiji national rugby union team|Fiji]]
+| 12
+| 24
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor="#F9E1DC"
+| 2008-06-28
+| [[Maori All Blacks]]
+| 22
+| 65
+| [[McLean Park]]
+| [[Napier, New Zealand|Napier]]
+| {{flagicon|NZL}} [[Maori All Blacks]]
+|-bgcolor="#F9E1DC"
+| 2008-07-05
+| [[Samoa national rugby union team|Samoa]]
+| 31
+| 37
+| [[Apia Park]]
+| [[Apia]]
+| {{flagicon|SAM}} [[Samoa national rugby union team|Samoa]]
+|-bgcolor=<!---win--->
+| 2008-11-16
+| [[United States national rugby union team|United States]]
+| 29
+| 19
+| [[Paloma Mizuho Stadium|Mizuho Stadium]]
+| [[Nagoya]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2008-11-22
+| [[United States national rugby union team|United States]]
+| 32
+| 17
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2009-04-25
+| [[Kazakhstan national rugby union team|Kazakhstan]]
+| 87
+| 10
+| [[Hanazono Rugby Stadium]]
+| [[Osaka]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2009-05-02
+|[[Hong Kong rugby union team|Hong Kong]]
+|59
+|6
+|[[Hong Kong Stadium]]
+|[[Hong Kong]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2009-05-16
+|[[south Korea national rugby union team|South Korea]]
+|80
+|9
+|[[Hanazono Rugby Stadium]]
+|[[Osaka]]
+|{{flagicon|JPN}}
+|-bgcolor=<!---win--->
+|2009-05-23
+|[[Singapore national rugby union team|Singapore]]
+|45
+|15
+|[[Yio Chu Kang Stadium]]
+|[[Singapore]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2009-06-18
+| [[Samoa national rugby union team|Samoa]]
+| 15
+| 34
+| [[Lawaqa Park]]
+| [[Sigatoka]]
+| {{flagicon|SAM}} [[Samoa national rugby union team|Samoa]]
+|-bgcolor="#F9E1DC"
+| 2009-06-23
+| [[Junior All Blacks]]
+| 21
+| 52
+| [[Churchill Park (Lautoka)|Churchill Park]]
+| [[Lautoka]]
+| {{flagicon|NZL}} [[Junior All Blacks]]
+|-bgcolor=<!---win--->
+|2009-06-27
+|[[Tonga national rugby union team|Tonga]]
+|21
+|19
+|[[Churchill Park (Lautoka)|Churchill Park]]
+|[[Lautoka]]
+|{{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+|2009-07-03
+|[[Fiji national rugby union team|Fiji]]
+|39
+|40
+|[[ANZ National Stadium|National Stadium]]
+|[[Suva]]
+|{{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor=<!---win--->
+| 2009-11-15
+| [[Canada national rugby union team|Canada]]
+| 46
+| 8
+| [[Yurtec Stadium Sendai|Sendai Stadium]]
+| [[Miyagi Prefecture|Miyagi]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2009-11-21
+| [[Canada national rugby union team|Canada]]
+| 27
+| 6
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|}
+
+== 2010-2014 ==
+{| class="wikitable sortable"
+|-
+!width="125"| Date
+!width="125"| Opponent
+! F
+! A
+! Venue
+! City
+! Winner
+|-bgcolor=<!---win--->
+| 2010-05-01
+| [[South Korea national rugby union team|South Korea]]
+| 71
+| 13
+| [[Daegu Stadium]]
+| [[Daegu]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2010-05-08
+| [[Arabian Gulf rugby union team|Arabian Gulf]]
+| 60
+| 5
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2010-05-15
+| [[Kazakhstan national rugby union team|Kazakhstan]]
+| 101
+| 7
+| [[Chulalongkorn University Stadium]]
+| [[Bangkok]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2010-05-22
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 94
+| 5
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2010-06-12
+| [[Fiji national rugby union team|Fiji]]
+| 8
+| 22
+| [[Churchill Park (Lautoka)|Churchill Park]]
+| [[Lautoka]]
+| {{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor=<!---win--->
+| 2010-06-19
+| [[Samoa national rugby union team|Samoa]]
+| 31
+| 23
+| [[Apia Park]]
+| [[Apia]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2010-06-26
+| [[Tonga national rugby union team|Tonga]]
+| 26
+| 23
+| [[Apia Park]]
+| [[Apia]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2010-10-30
+| [[Samoa national rugby union team|Samoa]]
+| 10
+| 13
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|SAM}} [[Samoa national rugby union team|Samoa]]
+|-bgcolor=<!---win--->
+| 2010-11-06
+| [[Russia national rugby union team|Russia]]
+| 75
+| 3
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2011-04-30
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 45
+| 22
+| [[Hong Kong Football Club Stadium]]
+| [[Hong Kong]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2011-05-07
+| [[Kazakhstan national rugby union team|Kazakhstan]]
+| 61
+| 0
+| [[Chulalongkorn University Stadium]]
+| [[Bangkok]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2011-05-13
+| [[United Arab Emirates national rugby union team|United Arab Emirates]]
+| 111
+| 0
+| Dubai Exiles Rugby Ground
+| [[Dubai]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2011-05-21
+| [[Sri Lanka national rugby union team|Sri Lanka]]
+| 90
+| 13
+| [[Ceylonese Rugby & Football Club]]
+| [[Colombo]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2011-07-02
+| [[Samoa national rugby union team|Samoa]]
+| 15
+| 34
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|SAM}} [[Samoa national rugby union team|Samoa]]
+|-bgcolor=<!---win--->
+| 2011-07-09
+| [[Tonga national rugby union team|Tonga]]
+| 28
+| 27
+| [[ANZ National Stadium]]
+| [[Suva]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2011-07-13
+| [[Fiji national rugby union team|Fiji]]
+| 24
+| 13
+| [[Churchill Park (Lautoka)|Churchill Park]]
+| [[Lautoka]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2011-08-13
+| [[Italy national rugby union team|Italy]]
+| 24
+| 31
+| [[Stadio Dino Manuzzi]]
+| [[Cesena]]
+| {{flagicon|ITA}} [[Italy national rugby union team|Italy]]
+|-bgcolor=<!---win--->
+| 2011-08-21
+| [[United States national rugby union team|United States]]
+| 20
+| 14
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2011-09-10
+| [[France national rugby union team|France]]
+| 21
+| 47
+| [[North Harbour Stadium]]
+| [[North Shore, New Zealand|North Shore]]
+| {{flagicon|FRA}} [[France national rugby union team|France]]
+|-bgcolor="#F9E1DC"
+| 2011-09-16
+| [[New Zealand national rugby union team|New Zealand]]
+| 7
+| 83
+| [[Waikato Stadium]]
+| [[Hamilton, New Zealand|Hamilton]]
+| {{flagicon|NZL}} [[New Zealand national rugby union team|New Zealand]]
+|-bgcolor="#F9E1DC"
+| 2011-09-21
+| [[Tonga national rugby union team|Tonga]]
+| 18
+| 31
+| [[Okara Park]]
+| [[Whangārei]]
+| {{flagicon|TON}} [[Tonga national rugby union team|Tonga]]
+|-bgcolor="#ADD8E6"
+| 2011-09-27
+| [[Canada national rugby union team|Canada]]
+| 23
+| 23
+| [[McLean Park]]
+| [[Napier, New Zealand|Napier]]
+| Draw
+|-bgcolor=<!---win--->
+| 2012-04-28
+| [[Kazakhstan national rugby union team|Kazakhstan]]
+| 87
+| 0
+| [[Almaty Central Stadium]]
+| [[Almaty]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2012-05-05
+| [[United Arab Emirates national rugby union team|United Arab Emirates]]
+| 106
+| 3
+| [[Level5 Stadium]]
+| [[Fukuoka]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2012-05-12
+| [[South Korea national rugby union team|South Korea]]
+| 52 
+| 8
+| [[Seongnam Sports Complex]]
+| [[Seoul]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2012-05-19
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 67
+| 0
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2012-06-05
+| [[Fiji national rugby union team|Fiji]]
+| 19
+| 25
+| [[Paloma Mizuho Stadium|Mizuho Stadium]]
+| [[Nagoya]]
+| {{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor="#F9E1DC"
+| 2012-06-10
+| [[Tonga national rugby union team|Tonga]]
+| 20
+| 24
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|TON}} [[Tonga national rugby union team|Tonga]]
+|-bgcolor="#F9E1DC"
+| 2012-06-17
+| [[Samoa national rugby union team|Samoa]]
+| 26
+| 27
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|SAM}} [[Samoa national rugby union team|Samoa]]
+|-bgcolor=<!---win--->
+| 2012-11-10
+| [[Romania national rugby union team|Romania]]
+| 34
+| 23
+| [[Stadionul Arcul de Triumf (1913)|Arcul de Triumf]]
+| [[Bucharest]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2012-11-17
+| [[Georgia national rugby union team|Georgia]]
+| 25
+| 22
+| [[Boris Paichadze Dinamo Arena|National Stadium]]
+| [[Tbilisi]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2013-04-20
+| [[Philippines national rugby union team|Philippines]]
+| 121
+| 0
+| [[Level5 Stadium]]
+| [[Fukuoka]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2013-04-27
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 38
+| 0
+| [[Hong Kong Football Club Stadium]]
+| [[Hong Kong]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2013-05-04
+| [[South Korea national rugby union team|South Korea]]
+| 64
+| 5
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2013-05-10
+| [[United Arab Emirates national rugby union team|United Arab Emirates]]
+| 93
+| 3
+| Dubai Exiles Rugby Ground
+| [[Dubai]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2013-05-25
+| [[Tonga national rugby union team|Tonga]]
+| 17
+| 27
+| [[NHK Spring Mitsuzawa Football Stadium]]
+| [[Yokohama]]
+| {{flagicon|TON}} [[Tonga national rugby union team|Tonga]]
+|-bgcolor="#F9E1DC"
+| 2013-06-01
+| [[Fiji national rugby union team|Fiji]]
+| 8
+| 22
+| [[Churchill Park (Lautoka)|Churchill Park]]
+| [[Lautoka]]
+| {{flagicon|FIJ}} [[Fiji national rugby union team|Fiji]]
+|-bgcolor="#F9E1DC"
+| 2013-06-08
+| [[Wales national rugby union team|Wales]]
+| 18
+| 22
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|WAL}} [[Wales national rugby union team|Wales]]
+|-bgcolor=<!---win--->
+| 2013-06-15
+| [[Wales national rugby union team|Wales]]
+| 23
+| 8
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}} 
+|-bgcolor=<!---win--->
+| 2013-06-19
+| [[Canada national rugby union team|Canada]]
+| 16
+| 13
+| [[Paloma Mizuho Stadium|Mizuho Stadium]]
+| [[Nagoya]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2013-06-23
+| [[United States national rugby union team|United States]]
+| 38
+| 20
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2013-11-02
+| [[New Zealand national rugby union team|New Zealand]]
+| 6
+| 54
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|NZL}} [[New Zealand national rugby union team|New Zealand]]
+|-bgcolor="#F9E1DC"
+| 2013-11-09
+| [[Scotland national rugby union team|Scotland]]
+| 17
+| 42
+| [[Murrayfield Stadium]]
+| [[Edinburgh]]
+| {{flagicon|SCO}} [[Scotland national rugby union team|Scotland]]
+|-bgcolor=<!---win--->
+| 2013-11-15
+| [[Russia national rugby union team|Russia]]
+| 40
+| 13
+| [[Eirias Stadium]]
+| [[Colwyn Bay]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2013-11-23
+| [[Spain national rugby union team|Spain]]
+| 40
+| 7
+| Campo Universitaria
+| [[Madrid]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2014-05-03
+| [[Philippines national rugby union team|Philippines]]
+| 99
+| 10
+| Eagles Nest Stadium
+| [[Bagong Silangan]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2014-05-10
+| [[Sri Lanka national rugby union team|Sri Lanka]]
+| 132
+| 10
+| [[Paloma Mizuho Stadium|Mizuho Stadium]]
+| [[Nagoya]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2014-05-17
+| [[South Korea national rugby union team|South Korea]]
+| 62
+| 5
+| [[Incheon Munhak Stadium|Munhak Stadium]]
+| [[Incheon]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2014-05-25
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 49
+| 8
+| [[National Stadium (Tokyo, 1958)|Olympic Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2014-05-30
+| [[Samoa national rugby union team|Samoa]]
+| 33
+| 14
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2014-06-07
+| [[Canada national rugby union team|Canada]]
+| 34
+| 25
+| [[Swangard Stadium]]
+| [[Vancouver]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2014-06-14
+| [[United States national rugby union team|United States]]
+| 37
+| 29
+| [[Dignity Health Sports Park]]
+| [[Carson, California|Carson]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2014-06-21
+| [[Italy national rugby union team|Italy]]
+| 26
+| 23
+| [[Chichibunomiya Rugby Stadium]]
+| [[Tokyo]]
+| {{flagicon|JPN}}
+|-bgcolor=<!---win--->
+| 2014-11-15
+| [[Romania national rugby union team|Romania]]
+| 18
+| 13
+| [[Stadionul Arcul de Triumf (1913)|Arcul de Triumf]]
+| [[Bucharest]]
+| {{flagicon|JPN}}
+|-bgcolor="#F9E1DC"
+| 2014-11-23
+| [[Georgia national rugby union team|Georgia]]
+| 24
+| 35
+| [[Mikheil Meskhi Stadium]]
+| [[Tbilisi]]
+| {{flagicon|GEO}} [[Georgia national rugby union team|Georgia]]
+|}
+
+==2015-2019==
+{| class="wikitable sortable"
+|-
+! Date
+! Tournament
+! Opponent
+! F
+! A
+! Venue
+! Winner
+! width=110px|Report
+|-bgcolor=<!---win--->
+| 2015-04-18
+| [[2015 Asia Rugby Championship|2015 Asia Championship]]
+| [[South Korea national rugby union team|South Korea]]
+| 56
+| 30
+| [[Incheon Namdong Asiad Rugby Field|Namdong Field]], South Korea
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor=<!---win--->
+| 2015-05-02
+| [[2015 Asia Rugby Championship|2015 Asia Championship]]
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 41
+| 0
+| [[Chichibunomiya Rugby Stadium|Chichibunomiya Stadium]], Japan
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor=<!---win--->
+| 2015-05-09
+| [[2015 Asia Rugby Championship|2015 Asia Championship]]
+| [[South Korea national rugby union team|South Korea]]
+| 66
+| 10
+| [[Level5 Stadium]], Japan
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-
+| 2015-05-23
+| [[2015 Asia Rugby Championship|2015 Asia Championship]]
+| [[Hong Kong national rugby union team|Hong Kong]]
+| /
+| /
+| [[Aberdeen Sports Ground|Aberdeen Stadium]], Hong Kong
+| –
+| Abandoned <ref>{{cite web 
+ |title= Japan handed Asia Rugby Championship with rain-abandoned draw 
+ |date= 23 May 2015
+ |publisher= The National
+ |url= https://www.thenationalnews.com/sport/japan-handed-asia-rugby-championship-with-rain-abandoned-draw-1.113063}}
+</ref>
+|-bgcolor=<!---win--->
+| 2015-07-18
+| [[2015 World Rugby Pacific Nations Cup|2015 Pacific Cup]]
+| [[Canada national rugby union team|Canada]]
+| 20
+| 6
+| [[Avaya Stadium]], USA
+| {{flagicon|JPN}}
+| <ref>{{cite web|url=http://www.worldrugby.org/pnc/news/81172|title=Eagles beaten but not bowed ahead of RWC 2015 re-match|work=World Rugby|access-date=14 September 2017|archive-date=20 July 2015|archive-url=https://web.archive.org/web/20150720093210/http://www.worldrugby.org/pnc/news/81172|url-status=dead}}</ref>
+|-bgcolor="#F9E1DC"
+| 2015-07-24
+| [[2015 World Rugby Pacific Nations Cup|2015 Pacific Cup]]
+| [[United States national rugby union team|United States]]
+| 18
+| 23
+| [[Papa Murphy's Park]], USA
+| {{ru|USA}}
+| <ref>{{cite web|url=http://www.worldrugby.org/pnc/news/81473|title=USA upset RWC 2015 opponents Japan|last=worldrugby.org|website=worldrugby.org|access-date=14 September 2017|archive-date=30 July 2015|archive-url=https://web.archive.org/web/20150730060607/http://www.worldrugby.org/pnc/news/81473|url-status=dead}}</ref>
+|-bgcolor="#F9E1DC"
+| 2015-07-29
+| [[2015 World Rugby Pacific Nations Cup|2015 Pacific Cup]]
+| [[Fiji national rugby union team|Fiji]]
+| 22
+| 27
+| [[BMO Field]], Canada
+| {{ru|CAN}}
+| <!--- news---->
+|-bgcolor="#F9E1DC"
+| 2015-08-03
+| [[2015 World Rugby Pacific Nations Cup|2015 Pacific Cup]]
+| [[Tonga national rugby union team|Tonga]]
+| 20
+| 31
+| [[Swangard Stadium]], Canada
+| {{ru|TGA}}
+| <ref>{{cite web|url=http://www.worldrugby.org/pnc/news/82126|title=Fiji claim Pacific Nations Cup 2015 crown|last=worldrugby.org|website=worldrugby.org|access-date=14 September 2017|archive-date=8 August 2015|archive-url=https://web.archive.org/web/20150808073802/http://www.worldrugby.org/pnc/news/82126|url-status=dead}}</ref>
+
+|-bgcolor="#F9E1DC"
+| 2015-08-03
+| [[2015 Rugby World Cup warm-up matches|2015 World Cup warm-up]]
+| [[World XV]]
+| 20
+| 45
+| [[Chichibunomiya Rugby Stadium|Chichibunomiya Stadium]], Japan
+| [[World XV]]
+| <ref>{{cite web|url=http://www.espn.co.uk/rugby/story/_/id/13443408/glasgow-warriors-bound-taqele-naiyaravoro-scores-three-tries-world-xv-maul-japan|title=Naiyaravoro on fire as World XV beat Japan|website=espn.co.uk|date=15 August 2015 |access-date=14 September 2017}}</ref>
+|-bgcolor=<!---win--->
+| 2015-08-22
+| [[2015 Rugby World Cup warm-up matches|2015 World Cup warm-up]]
+| [[Uruguay national rugby union team|Uruguay]]
+| 30
+| 8
+| [[Level5 Stadium]], Japan
+| {{flagicon|JPN}}
+| <ref>{{cite web|url=http://www.espn.co.uk/rugby/story/_/id/13488536/hendrik-tui-brace-helps-japan-beat-uruguay-end-four-game-losing-run|title=Japan beat Uruguay to end four-game losing run|website=espn.co.uk|date=22 August 2015 |access-date=14 September 2017}}</ref>
+|-bgcolor=<!---win--->
+| 2015-08-29
+| [[2015 Rugby World Cup warm-up matches|2015 World Cup warm-up]]
+| [[Uruguay national rugby union team|Uruguay]]
+| 40
+| 0
+| [[Chichibunomiya Rugby Stadium|Chichibunomiya Stadium]], Japan
+| {{flagicon|JPN}}
+| <ref>{{Cite web |url=http://jrfu.org/jrfu/index.php/latest/item/344-brave-blossoms-beat-los-teros-40-0-in-final-game-in-japan-before-rwc |title=Brave Blossoms beat los Teros 40-0 in final game in Japan before RWC |access-date=30 August 2015 |archive-url=https://web.archive.org/web/20150923005941/http://jrfu.org/jrfu/index.php/latest/item/344-brave-blossoms-beat-los-teros-40-0-in-final-game-in-japan-before-rwc |archive-date=23 September 2015 |url-status=dead }}</ref>
+|-bgcolor=<!---win--->
+| 2015-09-05
+| [[2015 Rugby World Cup warm-up matches|2015 World Cup warm-up]]
+| [[Georgia national rugby union team|Georgia]]
+| 13
+| 10
+| [[Kingsholm Stadium]], England
+| {{flagicon|JPN}}
+| <ref>{{cite web|url=http://en.espn.co.uk/2015-rugby-world-cup/rugby/story/273887.html|title=Japan edge Georgia with last-gasp try|first=ESPN|last=Staff|website=espn.co.uk|access-date=14 September 2017}}</ref>
+|-bgcolor=<!---win--->
+| 2015-09-19
+| [[2015 Rugby World Cup Pool B|2015 World Cup]]
+| [[South Africa national rugby union team|South Africa]]
+| 34
+| 32
+| [[Falmer Stadium]], England
+| {{flagicon|JPN}}
+| <!--- news---->
+|-bgcolor="#F9E1DC"
+| 2015-09-23
+| [[2015 Rugby World Cup Pool B|2015 World Cup]]
+| [[Scotland national rugby union team|Scotland]]
+| 10
+| 45
+| [[Kingsholm Stadium]], England
+| {{ru|SCO}}
+| <!--- news---->
+|-bgcolor=<!---win--->
+| 2015-10-03
+| [[2015 Rugby World Cup Pool B|2015 World Cup]]
+| [[Samoa national rugby union team|Samoa]]
+| 26
+| 5
+| [[Stadium MK]], England
+| {{flagicon|JPN}}
+| <!--- news---->
+|-bgcolor=<!---win--->
+| 2015-10-11
+| [[2015 Rugby World Cup Pool B|2015 World Cup]]
+| [[United States national rugby union team|United States]]
+| 28
+| 18
+| [[Kingsholm Stadium]], England
+| {{flagicon|JPN}}
+| <!--- news---->
+|-bgcolor=<!---win--->
+| 2016-04-30
+| [[2016 Asia Rugby Championship|2016 Asia Championship]]
+| [[South Korea national rugby union team|South Korea]]
+| 85
+| 0
+| [[NHK Spring Mitsuzawa Football Stadium|Mitsuzawa Stadium]], Japan
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor=<!---win--->
+| 2016-05-07
+| [[2016 Asia Rugby Championship|2016 Asia Championship]]
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 38
+| 3
+| [[Hong Kong Football Club Stadium]]
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor=<!---win--->
+| 2016-05-21
+| [[2016 Asia Rugby Championship|2016 Asia Championship]]
+| [[South Korea national rugby union team|South Korea]]
+| 60
+| 3
+| [[Incheon Namdong Asiad Rugby Field|Namdong Field]], South Korea
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor=<!---win--->
+| 2016-05-28
+| [[2016 Asia Rugby Championship|2016 Asia Championship]]
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 59
+| 17
+| [[Chichibunomiya Rugby Stadium|Chichibunomiya Stadium]], Japan
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor=<!---win--->
+| 2016-06-11
+| [[2016 June rugby union tests|2016 June tests]]
+| [[Canada national rugby union team|Canada]]
+| 26
+| 22
+| [[BC Place]], Canada
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor="#F9E1DC"
+| 2016-06-18
+| [[2016 Scotland rugby union tour of Japan|2016 Scotland tour]]
+| [[Scotland national rugby union team|Scotland]]
+| 13
+| 26
+| [[Toyota Stadium (Japan)|Toyota Stadium]], Japan
+| {{ru|SCO}}
+| <!--- news report--->
+|-bgcolor="#F9E1DC"
+| 2016-06-25
+| [[2016 Scotland rugby union tour of Japan|2016 Scotland tour]]
+|[[Scotland national rugby union team|Scotland]]
+| 16
+| 21
+| [[Ajinomoto Stadium]], Japan
+| {{ru|SCO}}
+| <!--- news report--->
+|-bgcolor="#F9E1DC"
+| 2016-11-05
+| [[2016 end-of-year rugby union internationals|2016 November tests]]
+| [[Argentina national rugby union team|Argentina]]
+| 20
+| 54
+| [[Chichibunomiya Rugby Stadium|Chichibunomiya Stadium]], Japan
+| {{ru|ARG}}
+| <ref>{{cite web|url=http://www.espn.co.uk/rugby/story/_/id/17974636/nicolas-sanchez-stars-argentina-rout-japan-tokyo-friendly|title=Sanchez stars as Pumas rout Japan|website=espn.co.uk|date=5 November 2016 |access-date=14 September 2017}}</ref>
+|-bgcolor=<!---win--->
+| 2016-11-12
+| [[2016 end-of-year rugby union internationals|2016 November tests]]
+| [[Georgia national rugby union team|Georgia]]
+| 28
+| 22
+| [[Mikheil Meskhi Stadium]], Georgia
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor="#F9E1DC"
+| 2016-11-19
+| [[2016 end-of-year rugby union internationals|2016 November tests]]
+| [[Wales national rugby union team|Wales]]
+| 30
+| 33
+| [[Millennium Stadium]], Wales
+| {{ru|WAL}}
+| <ref>{{cite web|url=http://www.espn.co.uk/rugby/report?gameId=282895&league=282881|title=Wales vs Japan - Report - tour 2016 2016 - 19 Nov, 2016 - ESPN|website=ESPN.com|access-date=14 September 2017}}</ref>
+|-bgcolor="#F9E1DC"
+| 2016-11-26
+| [[2016 end-of-year rugby union internationals|2016 November tests]]
+| [[Fiji national rugby union team|Fiji]]
+| 25
+| 38
+| [[Stade de la Rabine]], France
+| {{ru|FIJ}}
+| <!--- news report--->
+|-bgcolor=<!---win--->
+| 2017-04-22
+| [[2017 Asia Rugby Championship|2017 Asia Championship]]
+| [[South Korea national rugby union team|South Korea]]
+| 47
+| 29
+| [[Incheon Namdong Asiad Rugby Field|Namdong Field]], South Korea
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor=<!---win--->
+| 2017-04-29
+| [[2017 Asia Rugby Championship|2017 Asia Championship]]
+| [[South Korea national rugby union team|South Korea]]
+| 80
+| 10
+| [[Chichibunomiya Rugby Stadium|Chichibunomiya Stadium]], Japan
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor=<!---win--->
+| 2017-05-06
+| [[2017 Asia Rugby Championship|2017 Asia Championship]]
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 29
+| 17
+| [[Chichibunomiya Rugby Stadium|Chichibunomiya Stadium]], Japan
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor=<!---win--->
+| 2017-05-13
+| [[2017 Asia Rugby Championship|2017 Asia Championship]]
+| [[Hong Kong national rugby union team|Hong Kong]]
+| 16
+| 0
+| [[Hong Kong Football Club Stadium]]
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor=<!---win--->
+| 2017-06-10
+| [[2017 June rugby union tests|2017 June tests]]
+| [[Romania national rugby union team|Romania]]
+| 33
+| 21
+| [[Egao Kenko Stadium]], Japan
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor="#F9E1DC"
+| 2017-06-17
+| [[2017 Ireland rugby union tour of Japan|2017 Ireland tour]]
+| [[Ireland national rugby union team|Ireland]]
+| 22
+| 50
+| [[Shizuoka Stadium]], Japan
+| {{ru|IRE}}
+| <!--- news report--->
+|-bgcolor="#F9E1DC"
+| 2017-06-24
+| [[2017 Ireland rugby union tour of Japan|2017 Ireland tour]]
+| [[Ireland national rugby union team|Ireland]]
+| 13
+| 35
+| [[Ajinomoto Stadium]], Japan
+| {{ru|IRE}}
+| <!--- news report--->
+|-bgcolor="#F9E1DC"
+| 2017-11-04
+| [[2017 end-of-year rugby union internationals|2017 November tests]]
+| [[Australia national rugby union team|Australia]]
+| 30
+| 63
+| [[Nissan Stadium (Yokohama)|Yokohama Nissan]], Japan
+| {{ru|AUS}}
+| <ref>{{cite web|url=http://www.rugby.com.au/news/2017/11/04/japan-wallabies-match|title=Wallabies cruise to victory in Japan|website=Rugby.com.au|date=4 November 2017|first=Beth|last=Newman}}</ref>
+|-bgcolor=<!---win--->
+| 2017-11-18
+| [[2017 end-of-year rugby union internationals|2017 November tests]]
+| [[Tonga national rugby union team|Tonga]]
+| 39
+| 6
+| [[Stade Ernest-Wallon]], France
+| {{flagicon|JPN}}
+| <!--- news report--->
+|-bgcolor="#ADD8E6"
+| 2017-11-25
+| [[2017 end-of-year rugby union internationals|2017 November tests]]
+| [[France national rugby union team|France]]
+| 23
+| 23
+| [[Paris La Défense Arena]], France
+| Draw
+| <ref>{{cite web|url=http://www.smh.com.au/rugby-union/union-news/agony-as-missed-kick-leads-to-japan-draw-in-france-20171126-gzsyve.html/|title=Japan almost beats France, draw 23-23 in Paris|website=Sydney Morning Herald|date=26 November 2017 |access-date=26 November 2017}}</ref>
+|-bgcolor=<!---win--->
+| 2018-06-09
+| [[2018 June rugby union tests|2018 June tests]]
+| [[Italy national rugby union team|Italy]]
+| 34
+| 17
+| [[Showa Denko Dome Oita|Oita Dome]], Japan
+| {{flagicon|JPN}}
+| <!--- news---->
+|-bgcolor="#F9E1DC"
+| 2018-06-16
+| [[2018 June rugby union tests|2018 June tests]]
+| [[Italy national rugby union team|Italy]]
+| 22
+| 25
+| [[Noevir Stadium Kobe]], Japan
+| {{ru|ITA}}
+| <!--- news---->
+|-bgcolor=<!---win--->
+| 2018-06-23
+| [[2018 June rugby union tests|2018 June tests]]
+| [[Georgia national rugby union team|Georgia]]
+| 28
+| 0
+| [[Toyota Stadium (Japan)|Toyota Stadium]], Japan
+| {{flagicon|JPN}}
+| <!--- news---->
+|-bgcolor="#F9E1DC"
+| 2018-11-03
+| [[2018 end-of-year rugby union internationals|2018 November tests]]
+| [[New Zealand national rugby union team|New Zealand]]
+| 31
+| 69
+| [[Ajinomoto Stadium]], Japan
+| {{ru|NZL}}
+| <!--- news---->
+|-bgcolor="#F9E1DC"
+| 2018-11-17
+| [[2018 end-of-year rugby union internationals|2018 November tests]]
+| [[England national rugby union team|England]]
+| 15
+| 35
+| [[Twickenham Stadium]], England
+| {{ru|ENG}}
+| <!--- news---->
+|-bgcolor=<!---win--->
+| 2018-11-24
+| [[2018 end-of-year rugby union internationals|2018 November tests]]
+| [[Russia national rugby union team|Russia]]
+| 32
+| 27
+| [[Kingsholm Stadium]], England
+| {{flagicon|JPN}}
+| <!--- news---->
+|-bgcolor=<!---win--->
+|2019-07-27
+| [[2019 World Rugby Pacific Nations Cup|2019 Pacific Cup]]
+|[[Fiji national rugby union team|Fiji]]
+|34
+|21
+| [[Kamaishi Recovery Memorial Stadium|Kamaishi Stadium]], Japan
+| {{flagicon|JPN}}
+| <ref>[https://www.world.rugby/pnc/news/437774?lang=en Report]</ref>
+|-bgcolor=<!---win--->
+| 2019-08-03
+| [[2019 World Rugby Pacific Nations Cup|2019 Pacific Cup]]
+| [[Tonga national rugby union team|Tonga]]
+| 41
+| 7
+| [[Hanazono Rugby Stadium|Hanazono Stadium]], Japan
+| {{flagicon|JPN}}
+| <ref>[https://www.world.rugby/pnc/news/438918?lang=en Report]</ref>
+|-bgcolor=<!---win--->
+| 2019-08-10
+| [[2019 World Rugby Pacific Nations Cup|2019 Pacific Cup]]
+| [[United States national rugby union team|United States]]
+| 34
+| 20
+| [[ANZ National Stadium]], Fiji
+| {{flagicon|JPN}}
+| <ref>{{Cite web |url=https://www.world.rugby/pnc/news/439423 |title=Report |access-date=2021-07-16 |archive-date=2019-08-10 |archive-url=https://web.archive.org/web/20190810133558/https://www.world.rugby/pnc/news/439423 |url-status=dead }}</ref>
+|-bgcolor="#F9E1DC"
+|2019-09-06
+|[[2019 Rugby World Cup warm-up matches|2019 World Cup warm-up]]
+|[[South Africa national rugby union team|South Africa]]
+|7
+|41
+|[[Kumagaya Rugby Ground|Kumagaya Ground]], Japan
+| {{ru|RSA}}
+|<ref>[https://springboks.rugby/en/articles/2019/09/06/Report-Japan-v-Springboks Report]</ref>
+|-bgcolor=<!---win--->
+|2019-09-20
+|[[2019 Rugby World Cup Pool A|2019 World Cup]]
+|[[Russia national rugby union team|Russia]]
+|30
+|10
+|[[Ajinomoto Stadium|Tokyo Stadium]], Japan
+| {{flagicon|JPN}}
+|
+|-bgcolor=<!---win--->
+|2019-09-28
+|[[2019 Rugby World Cup Pool A|2019 World Cup]]
+|[[Ireland national rugby union team|Ireland]]
+|19
+|12
+|[[Shizuoka Stadium]], Japan
+| {{flagicon|JPN}}
+|<ref>{{Cite news|title=Ireland suffer surprise defeat by Japan|language=en-GB|work=BBC Sport|url=https://www.bbc.co.uk/sport/rugby-union/49849736|access-date=2021-10-11}}</ref>
+|-bgcolor=<!---win--->
+|2019-10-05
+|[[2019 Rugby World Cup Pool A|2019 World Cup]]
+|[[Samoa national rugby union team|Samoa]]
+|38
+|19
+|[[Toyota Stadium (Japan)|Toyota Stadium]], Japan
+| {{flagicon|JPN}}
+|
+|-bgcolor=<!---win--->
+| 2019-10-13
+| [[2019 Rugby World Cup Pool A|2019 World Cup]]
+| [[Scotland national rugby union team|Scotland]]
+|28
+|21
+| [[Nissan Stadium (Yokohama)|Yokohama Nissan]], Japan
+| {{flagicon|JPN}}
+| 
+|-bgcolor="#F9E1DC"
+| 2019-10-20
+| [[2019 Rugby World Cup knockout stage|2019 World Cup]]
+| [[South Africa national rugby union team|South Africa]]
+|3
+|26
+| [[Ajinomoto Stadium|Tokyo Stadium]], Japan
+| {{ru|RSA}}
+| 
+|}
+
+== 2020s ==
+{| class="wikitable sortable"
+|-
+! Date
+! Tournament
+! Opponent
+! F
+! A
+! Venue
+! Winner
+! Report
+|-bgcolor="#F9E1DC"
+| 2021-06-26
+| [[2021 British & Irish Lions tour to South Africa|2021 British & Irish Lions tour]]
+| [[2021 British & Irish Lions tour to South Africa|British & Irish Lions]]
+|10
+|28
+| [[Murrayfield Stadium]], Scotland
+| {{flagicon|British & Irish Lions}} [[British & Irish Lions]]
+| <ref>{{cite news|title=Debutants steal the show as Lions beat Japan|work=2021 British & Irish Lions Official website|url=https://www.lionsrugby.com/report/debutants-steal-the-show-as-lions-beat-japan/#report|archive-url=https://web.archive.org/web/20210630115920/https://www.lionsrugby.com/report/debutants-steal-the-show-as-lions-beat-japan/|archive-date=2021-06-30}}</ref><ref>{{cite news |first=Tom |last=English |title=British & Irish Lions 28-10 Japan: Alun Wyn Jones injury mars routine warm-up win |url=https://www.bbc.co.uk/sport/rugby-union/57623538 |website=BBC Sport |date=26 June 2021}}</ref>
+|-bgcolor="#F9E1DC"
+| 2021-07-03
+| [[2021 July rugby union tests|2021 July tests]]
+| [[Ireland national rugby union team|Ireland]]
+|31
+|39
+| [[Aviva Stadium]], Ireland
+| {{ru|IRE}}
+| <ref>{{cite news|title=Ireland 39-31 Japan: Irish outlast Japan in high-scoring Test|newspaper=BBC Sport|date=2021-07-03|last=Morrow|first=Michael|url=https://www.bbc.com/sport/rugby-union/57682146}}</ref>
+|-bgcolor="#F9E1DC"
+| 2021-10-23
+| [[2021 end-of-year rugby union internationals|2021 November tests]]
+| [[Australia national rugby union team|Australia]]
+|23
+|32
+| [[Oita Stadium]], Japan
+| {{ru|AUS}}
+| <ref>{{cite web |url=http://en.rugby-japan.jp/schedule/detail/22201/ |title=LipovitanD Challenge Cup 2021 LipovitanD Challenge Cup 2021 (Autumn) |last= |first= |date=23 October 2021 |website=en.rugby-japan.jp |publisher=[[Japan Rugby Football Union|Japan Rugby Football Union (JRFU)]] |access-date=23 October 2021}}</ref>
+|-bgcolor="#F9E1DC"
+| 2021-11-06
+| [[2021 end-of-year rugby union internationals|2021 November tests]]
+| [[Ireland national rugby union team|Ireland]]
+|5
+|60
+| [[Aviva Stadium]], Ireland
+| {{ru|IRE}}
+|<ref>{{cite news|title= Ireland 60-5 Japan: Johnny Sexton scores 16 points on 100th cap as hosts blow Japan away|work=BBC Sport|date=2021-11-06 |last=Morrow|first=Michael|url=https://www.bbc.com/sport/rugby-union/59144019}}</ref><ref>{{cite news|title=ラグビー日本代表、世界５位アイルランドに挑む／ライブ速報します|newspaper=Nikkan Sports|date=2021-11-07|last=|url=https://www.nikkansports.com/sports/news/202111050001163.html|archiveurl=https://web.archive.org/web/20211106152401/https://www.nikkansports.com/sports/news/202111050001163.html|archivedate=2021-11-06}}</ref>
+|-bgcolor=<!---win--->
+| 2021-11-13
+| [[2021 end-of-year rugby union internationals|2021 November tests]]
+| [[Portugal national rugby union team|Portugal]]
+|38
+|25
+| [[Estádio Cidade de Coimbra]], Portugal
+| {{ru|JPN}}
+|<!---news---->
+|-bgcolor="#F9E1DC"
+| 2021-11-20
+| [[2021 end-of-year rugby union internationals|2021 November tests]]
+| [[Scotland national rugby union team|Scotland]]
+|20
+|29
+| [[Murrayfield Stadium]], Scotland
+| {{ru|SCO}}
+| <ref>{{cite news|title= Autumn Nations Series: Scotland 29-20 Japan - Stuart Hogg breaks try record in narrow win|work=BBC Sport|date=2021-11-21|last=English|first=Tom|url=https://www.bbc.com/sport/rugby-union/59360188}}</ref>
+|-bgcolor=<!---win--->
+| 2022-06-18
+| [[2022 July rugby union tests|2022 July tests]]
+| [[Uruguay national rugby union team|Uruguay]]
+|34
+|15
+| [[Chichibunomiya Rugby Stadium|Chichibunomiya Stadium]], Japan
+| {{ru|JPN}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2022-06-25
+| [[2022 July rugby union tests|2022 July tests]]
+| [[Uruguay national rugby union team|Uruguay]]
+|43
+|7
+| [[Mikuni World Stadium Kitakyushu|Kitakyushu Stadium]], Japan
+| {{ru|JPN}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2022-07-02
+| [[2022 France rugby union tour of Japan |2022 July tests]]
+| [[2022 France rugby union tour of Japan |France]]
+|23
+|42
+| [[Toyota Stadium (Japan)|Toyota Stadium]], Japan
+| {{ru|FRA}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2022-07-09
+| [[2022 France rugby union tour of Japan |2022 July tests]]
+| [[2022 France rugby union tour of Japan |France]]
+|15
+|20
+| [[Japan National Stadium (2019)|National Stadium]], Japan
+| {{ru|FRA}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2022-10-29
+| [[2022 end-of-year rugby union internationals|2022 autumn internationals]]
+|  [[New Zealand national rugby union team|New Zealand]]
+|31
+|38
+|[[Japan National Stadium |National Stadium]], Japan
+| {{ru|NZL}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2022-11-12
+| [[2022 end-of-year rugby union internationals|2022 autumn internationals]]
+| [[England national rugby union team|England]]
+|13
+|52
+| [[Twickenham Stadium]], England
+| {{ru|ENG}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2022-11-19
+| [[2022 end-of-year rugby union internationals|2022 autumn internationals]]
+| [[France national rugby union team|France]]
+|17
+|35
+| [[Stadium de Toulouse]], France
+| {{ru|FRA}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2023-07-22
+|[[2023 World Rugby Pacific Nations Cup]]
+| [[Samoa national rugby union team|Samoa]]
+|22
+|24
+| [[Sapporo Dome]], Japan
+| {{ru|SAM}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2023-07-29
+|[[2023 World Rugby Pacific Nations Cup]]
+| [[Tonga national rugby union team|Tonga]]
+|21
+|16
+| [[Hanazono Rugby Stadium]], Japan
+|{{ru|JPN}}
+| <!---news---->
+|-bgcolor=#F9E1DC
+| 2023-08-05
+|[[2023 World Rugby Pacific Nations Cup]]
+| [[Fiji national rugby union team|Fiji]]
+|12
+|35
+| [[Chichibunomiya Rugby Stadium]], Japan
+|{{ru|FJI}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2023-08-27
+|[[Summer Nations Series]]
+|[[Italy national rugby union team|Italy]]
+|21
+|42
+| [[Stadio Comunale di Monigo]], Italy
+|{{ru|ITA}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2023-09-10
+|[[2023 Rugby World Cup]]
+|[[Chile national rugby union team|Chile]]
+|42
+|12
+| [[Stadium de Toulouse]], France
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2023-09-18
+|[[2023 Rugby World Cup]]
+|[[England national rugby union team|England]]
+|12
+|34
+| [[Allianz Riviera]], France
+|{{ru|ENG}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2023-09-29
+|[[2023 Rugby World Cup]]
+|[[Samoa national rugby union team|Samoa]]
+|28
+|22
+| [[Stadium de Toulouse]], France
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2023-10-08
+|[[2023 Rugby World Cup]]
+|[[Argentina national rugby union team|Argentina]]
+|27
+|39
+| [[Stade de la Beaujoire]], France
+|{{ru|ARG}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2024-06-22
+|[[2024 mid-year rugby union tests|2024 mid-year tests]]
+|[[England national rugby union team|England]]
+|17
+|52
+| [[Japan National Stadium|National Stadium]], Japan
+|{{ru|ENG}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2024-07-13
+|[[2024 mid-year rugby union tests|2024 mid-year tests]]
+|[[Georgia national rugby union team|Georgia]]
+|23
+|25
+| [[Yurtec Stadium Sendai|Yurtec Stadium]], Japan
+|{{ru|GEO}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2024-07-21
+|[[2024 mid-year rugby union tests|2024 mid-year tests]]
+|[[Italy national rugby union team|Italy]]
+|14
+|42
+| [[Sapporo Dome]], Japan
+|{{ru|ENG}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2024-08-25
+|[[2024 World Rugby Pacific Nations Cup|2024 Pacific Nations Cup]]
+|[[Canada national rugby union team|Canada]]
+|55
+|28
+| [[BC Place]], Canada
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2024-09-07
+|[[2024 World Rugby Pacific Nations Cup|2024 Pacific Nations Cup]]
+|[[United States national rugby union team|United States]]
+|41
+|24
+| [[Kumagaya Rugby Ground]], Japan
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2024-09-15
+|[[2024 World Rugby Pacific Nations Cup|2024 Pacific Nations Cup]]
+|[[Samoa national rugby union team|Samoa]]
+|49
+|27
+| [[Chichibunomiya Rugby Stadium]], Japan
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2024-09-21
+|[[2024 World Rugby Pacific Nations Cup|2024 Pacific Nations Cup]]
+|[[Fiji national rugby union team|Fiji]]
+|17
+|41
+| [[Hanazono Rugby Stadium]], Japan
+|{{ru|FIJ}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2024-10-26
+|[[2024 end-of-year rugby union internationals|2024 end-of-year internationals]]
+|[[New Zealand national rugby union team|New Zealand]]
+|19
+|64
+| [[Nissan Stadium (Yokohama)|Nissan Stadium]], Japan
+|{{ru|NZL}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2024-11-09
+|[[2024 end-of-year rugby union internationals|2024 end-of-year internationals]]
+|[[France national rugby union team|France]]
+|12
+|52
+| [[Stade de France]], France
+|{{ru|FRA}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2024-11-16
+|[[2024 end-of-year rugby union internationals|2024 end-of-year internationals]]
+|[[Uruguay national rugby union team|Uruguay]]
+|36
+|20
+| [[Chambéry Savoie Stadium]], France
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2024-11-24
+|[[2024 end-of-year rugby union internationals|2024 end-of-year internationals]]
+|[[England national rugby union team|England]]
+|14
+|59
+| [[Twickenham Stadium|Allianz Stadium]], England
+|{{ru|ENG}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2025-07-05
+|[[2025 mid-year rugby union tests|2025 mid-year tests]]
+|[[Wales national rugby union team|Wales]]
+|24
+|19
+| [[Mikuni World Stadium Kitakyushu|Mikuni World Stadium]], [[Kitakyushu]], [[Japan]]
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2025-07-12
+|[[2025 mid-year rugby union tests|2025 mid-year tests]]
+|[[Wales national rugby union team|Wales]]
+|22
+|31
+| [[Noevir Stadium Kobe|Noevir Stadium]], [[Kobe]], [[Japan]]
+|{{ru|WAL}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2025-08-30
+|[[2025 World Rugby Pacific Nations Cup|2025 Pacific Nations Cup]]
+|[[Canada national rugby union team|Canada]]
+|57
+|15
+| [[Yurtec Stadium Sendai|Yurtec Stadium]], [[Sendai]], [[Japan]]
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2025-09-06
+|[[2025 World Rugby Pacific Nations Cup|2025 Pacific Nations Cup]]
+|[[United States national rugby union team|United States]]
+|47
+|21
+| [[Heart Health Park]], [[Sacramento]], [[United States]]
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2025-09-14
+|[[2025 World Rugby Pacific Nations Cup|2025 Pacific Nations Cup]]
+|[[Tonga national rugby union team|Tonga]]
+|62
+|24
+| [[Dick's Sporting Goods Park]], [[Commerce City, Colorado|Commerce City]], [[United States]]
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2025-09-20
+|[[2025 World Rugby Pacific Nations Cup|2025 Pacific Nations Cup]]
+|[[Fiji national rugby union team|Fiji]]
+|27
+|33
+| [[America First Field]], [[Salt Lake City]], [[United States]]
+|{{ru|FIJ}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2025-10-25
+|[[2025 end-of-year rugby union internationals|2025 end-of-year internationals]]
+|[[Australia national rugby union team|Australia]]
+|15
+|19
+| [[Japan National Stadium]], [[Tokyo]], Japan
+|{{ru|AUS}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2025-11-01
+|[[2025 end-of-year rugby union internationals|2025 end-of-year internationals]]
+|[[South Africa national rugby union team|South Africa]]
+|7
+|61
+| [[Wembley Stadium]], [[London]], [[England]]
+|{{ru|RSA}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2025-11-08
+|[[2025 end-of-year rugby union internationals|2025 end-of-year internationals]]
+|[[Ireland national rugby union team|Ireland]]
+|10
+|41
+| [[Aviva Stadium]], [[Dublin]], [[Ireland]]
+|{{ru|IRE}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2025-11-15
+|[[2025 end-of-year rugby union internationals|2025 end-of-year internationals]]
+|[[Wales national rugby union team|Wales]]
+|23
+|24
+| [[Millennium Stadium]], [[Cardiff]], [[Wales]]
+|{{ru|WAL}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2025-11-22
+|[[2025 end-of-year rugby union internationals|2025 end-of-year internationals]]
+|[[Georgia national rugby union team|Georgia]]
+|25
+|23
+|[[Mikheil Meskhi Stadium]], [[Tbilisi]], [[Georgia (country)|Georgia]]
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2026-07-04
+|[[2026 Nations Championship]]
+|[[Italy national rugby union team|Italy]]
+|27
+|10
+|[[Chichibunomiya Rugby Stadium]], [[Tokyo]]
+|{{ru|JPN}}
+|<ref name="2026 schedule">{{cite web|url=https://en.rugby-japan.jp/2026/02/02/japan-mens-2026-domestic-match-schedule-announced/|title=Japan Men’s 2026 Domestic Match Schedule Announced|date=2 February 2026|access-date=2 February 2026}}</ref>
+|-bgcolor=#F9E1DC
+| 2026-07-11
+|[[2026 Nations Championship]]
+|[[Ireland national rugby union team|Ireland]]
+|20
+|36
+|[[Newcastle International Sports Centre|Newcastle Stadium]], [[Newcastle, New South Wales|Newcastle]], [[Australia]]
+|{{ru|IRE}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2026-07-18
+|[[2026 Nations Championship]]
+|[[France national rugby union team|France]]
+|15
+|42
+|[[Japan National Stadium]], [[Tokyo]], Japan
+|{{ru|FRA}}
+|<ref name="2026 schedule"></ref>
+|-bgcolor=#F9E1DC
+| 2026-08-08
+|[[2026 Australia–Japan rugby union test series]]
+|[[Australia national rugby union team|Australia]]
+|32
+|35
+|[[Hanazono Rugby Stadium]], [[Higashiōsaka]]
+|{{ru|AUS}}
+|<!---news---->
+|-bgcolor=#F9E1DC
+| 2026-08-15
+|[[2026 Australia–Japan rugby union test series]]
+|[[Australia national rugby union team|Australia]]
+|17
+|52
+|[[North Queensland Stadium]], [[Townsville]], [[Australia]]
+|{{ru|AUS}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2026-09-05
+|[[2026 men's rugby union internationals|Test match]]
+|[[Canada national rugby union team|Canada]]
+|57
+|12
+|[[Denka Big Swan Stadium]], [[Niigata (city)|Niigata]]
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=<!---win--->
+| 2026-09-12
+|[[2026 World Rugby Pacific Nations Cup|2026 Pacific Nations Cup]]
+|[[United States men's national rugby union team|United States]]
+|63
+|14
+|[[Hanazono Rugby Stadium]], [[Higashiōsaka]]
+|{{ru|JPN}}
+|<!---news---->
+|-bgcolor=
+| 2026-09-19
+|[[2026 World Rugby Pacific Nations Cup|2026 Pacific Nations Cup]]
+|[[Fiji national rugby union team|Fiji]]
+|20
+|15
+|[[Chichibunomiya Rugby Stadium]], [[Tokyo]]
+|{{ru|JPN}}
+|<ref>{{cite web|url=https://www.world.rugby/pacific-nations-cup/en/news/1046877/japan-crowned-asahi-super-dry-pacific-nations-cup-2026-champions-after-tight-win-over-fiji|title=Japan crowned Asahi Super Dry Pacific Nations Cup 2026 champions after tight win over Fiji|website=World Rugby|date=19 September 2026|access-date=23 September 2026}}</ref>
+|-bgcolor=
+| 2026-10-24
+|[[2026 men's rugby union internationals|Test match]]
+|[[Fiji national rugby union team|Fiji]]
+|
+|
+|[[Chichibunomiya Rugby Stadium]], [[Tokyo]]
+|
+|<!---news---->
+|-bgcolor=
+| 2026-11-07
+|[[2026 Nations Championship]]
+|[[Wales national rugby union team|Wales]]
+|
+|
+| [[Millennium Stadium]], [[Cardiff]], [[Wales]]
+|
+|<!---news---->
+|-bgcolor=
+| 2026-11-14
+|[[2026 Nations Championship]]
+|[[England national rugby union team|England]]
+|
+|
+|[[Twickenham Stadium]], [[London]], [[England]]
+|
+|<!---news---->
+|-bgcolor=
+| 2026-11-21
+|[[2026 Nations Championship]]
+|[[Scotland national rugby union team|Scotland]]
+|
+|
+| [[Murrayfield Stadium]], [[Edinburgh]], [[Scotland]]
+|
+|<!---news---->
+|-bgcolor=
+| 2026-11-28
+|[[2026 Nations Championship]] Finals
+|''TBC''
+|
+|
+|[[Twickenham Stadium]], [[London]], [[England]]
+|
+|<!---news---->
+|-bgcolor=
+| 2027-10-03
+|[[2027 Men's Rugby World Cup]]
+|[[Samoa national rugby union team|Samoa]]
+|
+|
+|[[Newcastle International Sports Centre|Newcastle Stadium]], [[Newcastle, New South Wales|Newcastle]], [[Australia]]
+|
+|<!---news---->
+|-bgcolor=
+| 2027-10-09
+|[[2027 Men's Rugby World Cup]]
+|[[France national rugby union team|France]]
+|
+|
+|[[Lang Park|Brisbane Stadium]], [[Brisbane]], [[Australia]]
+|
+|<!---news---->
+|-bgcolor=
+| 2027-10-15
+|[[2027 Men's Rugby World Cup]]
+|[[United States national rugby union team|United States]]
+|
+|
+|[[Adelaide Oval]], [[Adelaide]], [[Australia]]
+|
+|<!---news---->
+|}
+
+==References==
+{{Reflist}}
+
+[[Category:Japan national rugby union team matches|  ]]
+[[Category:Lists of national rugby union team results|Japan]]
+[[Category:Lists of sports matches|Japan national rugby union test matches]]

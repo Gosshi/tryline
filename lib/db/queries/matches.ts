@@ -159,8 +159,20 @@ export type HeadToHeadMatch = MatchListItem & {
   };
 };
 
+export type HeadToHeadHistoryRow = {
+  playedOn: string;
+  teamSlug: string;
+  opponentSlug: string;
+  teamScore: number;
+  opponentScore: number;
+  venue: string | null;
+  competitionLabel: string | null;
+};
+
 export type HeadToHeadPageData = {
   canonicalSlug: string;
+  history: HeadToHeadHistoryRow[];
+  historyFetchedAt: string | null;
   matches: HeadToHeadMatch[];
   teamA: HeadToHeadTeam;
   teamB: HeadToHeadTeam;
@@ -2183,6 +2195,157 @@ export async function getHeadToHeadMatches(
     });
 }
 
+type HeadToHeadHistoryQueryRow = HeadToHeadHistoryRow & { created_at: string };
+
+async function queryHeadToHeadHistory(
+  teamA: HeadToHeadTeamRow,
+  teamB: HeadToHeadTeamRow,
+) {
+  const client = getSupabasePublicServerClient();
+  const { data, error } = await client
+    .from("national_test_history")
+    .select(
+      `
+      played_on, team_score, opponent_score, venue, competition_label, created_at,
+      team:teams!national_test_history_team_id_fkey (slug),
+      opponent:teams!national_test_history_opponent_team_id_fkey (slug)
+    `,
+    )
+    .or(
+      `and(team_id.eq.${teamA.id},opponent_team_id.eq.${teamB.id}),and(team_id.eq.${teamB.id},opponent_team_id.eq.${teamA.id})`,
+    )
+    .order("played_on", { ascending: false });
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as Array<{
+    played_on: string;
+    team_score: number;
+    opponent_score: number;
+    venue: string | null;
+    competition_label: string | null;
+    created_at: string;
+    team: { slug: string } | null;
+    opponent: { slug: string } | null;
+  }>;
+  return rows
+    .filter((row) => row.team && row.opponent)
+    .map(
+      (row) =>
+        ({
+          playedOn: row.played_on,
+          teamSlug: row.team!.slug,
+          opponentSlug: row.opponent!.slug,
+          teamScore: row.team_score,
+          opponentScore: row.opponent_score,
+          venue: row.venue,
+          competitionLabel: row.competition_label,
+          created_at: row.created_at,
+        }) satisfies HeadToHeadHistoryQueryRow,
+    );
+}
+
+export async function getHeadToHeadHistory(
+  teamSlugA: string,
+  teamSlugB: string,
+): Promise<HeadToHeadHistoryRow[]> {
+  if (teamSlugA === teamSlugB) return [];
+  const [teamA, teamB] = await Promise.all([
+    getHeadToHeadTeamBySlug(teamSlugA),
+    getHeadToHeadTeamBySlug(teamSlugB),
+  ]);
+  if (!teamA || !teamB) return [];
+  return (await queryHeadToHeadHistory(teamA, teamB)).map(
+    ({ created_at: _createdAt, ...row }) => row,
+  );
+}
+
+function utcDay(value: string) {
+  return value.slice(0, 10);
+}
+
+function datesWithinOneDay(left: string, right: string) {
+  const leftTime = Date.parse(`${utcDay(left)}T00:00:00Z`);
+  const rightTime = Date.parse(`${utcDay(right)}T00:00:00Z`);
+  return Math.abs(leftTime - rightTime) <= 24 * 60 * 60 * 1000;
+}
+
+export function mergeHeadToHeadRecords(
+  history: HeadToHeadHistoryRow[],
+  matches: HeadToHeadMatch[],
+): HeadToHeadHistoryRow[] {
+  return history.filter(
+    (record) =>
+      !matches.some((match) => {
+        const sameTeams =
+          (match.homeTeam.slug === record.teamSlug &&
+            match.awayTeam.slug === record.opponentSlug) ||
+          (match.homeTeam.slug === record.opponentSlug &&
+            match.awayTeam.slug === record.teamSlug);
+        return sameTeams && datesWithinOneDay(match.kickoffAt, record.playedOn);
+      }),
+  );
+}
+
+export function countHeadToHeadRecords(
+  history: HeadToHeadHistoryRow[],
+  matches: HeadToHeadMatch[],
+) {
+  return matches.length + mergeHeadToHeadRecords(history, matches).length;
+}
+
+export function summarizeHeadToHeadRecord(
+  history: HeadToHeadHistoryRow[],
+  matches: HeadToHeadMatch[],
+  teamA: HeadToHeadTeam,
+) {
+  const records: Array<{
+    playedOn: string;
+    teamAScore: number;
+    teamBScore: number;
+  }> = [];
+  for (const row of mergeHeadToHeadRecords(history, matches)) {
+    records.push(
+      row.teamSlug === teamA.slug
+        ? {
+            playedOn: row.playedOn,
+            teamAScore: row.teamScore,
+            teamBScore: row.opponentScore,
+          }
+        : {
+            playedOn: row.playedOn,
+            teamAScore: row.opponentScore,
+            teamBScore: row.teamScore,
+          },
+    );
+  }
+  for (const match of matches) {
+    if (
+      match.status !== "finished" ||
+      match.homeScore === null ||
+      match.awayScore === null
+    )
+      continue;
+    records.push({
+      playedOn: utcDay(match.kickoffAt),
+      teamAScore:
+        match.homeTeam.slug === teamA.slug ? match.homeScore : match.awayScore,
+      teamBScore:
+        match.homeTeam.slug === teamA.slug ? match.awayScore : match.homeScore,
+    });
+  }
+  const wins = records.filter((row) => row.teamAScore > row.teamBScore).length;
+  const losses = records.filter(
+    (row) => row.teamAScore < row.teamBScore,
+  ).length;
+  const draws = records.length - wins - losses;
+  return {
+    total: records.length,
+    wins,
+    losses,
+    draws,
+    firstPlayedOn: records.map((row) => row.playedOn).sort()[0] ?? null,
+  };
+}
+
 export async function getHeadToHeadPageData(
   teamSlugA: string,
   teamSlugB: string,
@@ -2197,10 +2360,18 @@ export async function getHeadToHeadPageData(
     getHeadToHeadMatches(teamSlugA, teamSlugB),
   ]);
 
-  if (!teamA || !teamB || matches.length === 0) {
-    return null;
-  }
-
+  if (!teamA || !teamB) return null;
+  const historyRows = await queryHeadToHeadHistory(teamA, teamB);
+  const historyFetchedAt =
+    historyRows
+      .map((row) => row.created_at)
+      .sort()
+      .at(-1) ?? null;
+  const history = mergeHeadToHeadRecords(
+    historyRows.map(({ created_at: _createdAt, ...row }) => row),
+    matches,
+  );
+  if (matches.length === 0 && history.length === 0) return null;
   const [canonicalTeamA, canonicalTeamB] = sortHeadToHeadTeamRows(teamA, teamB);
 
   return {
@@ -2208,6 +2379,8 @@ export async function getHeadToHeadPageData(
       canonicalTeamA.slug,
       canonicalTeamB.slug,
     ),
+    history,
+    historyFetchedAt,
     matches,
     teamA: mapHeadToHeadTeam(canonicalTeamA),
     teamB: mapHeadToHeadTeam(canonicalTeamB),
@@ -2218,32 +2391,18 @@ export async function countHeadToHeadMatches(
   teamSlugA: string,
   teamSlugB: string,
 ): Promise<number> {
-  if (teamSlugA === teamSlugB) {
-    return 0;
-  }
-
-  const [teamA, teamB] = await Promise.all([
+  if (teamSlugA === teamSlugB) return 0;
+  const [teamA, teamB, matches] = await Promise.all([
     getHeadToHeadTeamBySlug(teamSlugA),
     getHeadToHeadTeamBySlug(teamSlugB),
+    getHeadToHeadMatches(teamSlugA, teamSlugB),
   ]);
-
-  if (!teamA || !teamB) {
-    return 0;
-  }
-
-  const client = getSupabasePublicServerClient();
-  const { count, error } = await client
-    .from("matches")
-    .select("id", { count: "exact", head: true })
-    .or(
-      `and(home_team_id.eq.${teamA.id},away_team_id.eq.${teamB.id}),and(home_team_id.eq.${teamB.id},away_team_id.eq.${teamA.id})`,
-    );
-
-  if (error) {
-    throw error;
-  }
-
-  return count ?? 0;
+  if (!teamA || !teamB) return 0;
+  const history = await queryHeadToHeadHistory(teamA, teamB);
+  return countHeadToHeadRecords(
+    history.map(({ created_at: _createdAt, ...row }) => row),
+    matches,
+  );
 }
 
 export async function getMatchContentEn(

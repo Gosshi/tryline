@@ -874,6 +874,63 @@ export type Database = {
           },
         ];
       };
+      national_test_history: {
+        Row: {
+          competition_label: string | null;
+          created_at: string;
+          id: string;
+          opponent_score: number;
+          opponent_team_id: string;
+          played_on: string;
+          source_url: string;
+          team_id: string;
+          team_score: number;
+          updated_at: string;
+          venue: string | null;
+        };
+        Insert: {
+          competition_label?: string | null;
+          created_at?: string;
+          id?: string;
+          opponent_score: number;
+          opponent_team_id: string;
+          played_on: string;
+          source_url: string;
+          team_id: string;
+          team_score: number;
+          updated_at?: string;
+          venue?: string | null;
+        };
+        Update: {
+          competition_label?: string | null;
+          created_at?: string;
+          id?: string;
+          opponent_score?: number;
+          opponent_team_id?: string;
+          played_on?: string;
+          source_url?: string;
+          team_id?: string;
+          team_score?: number;
+          updated_at?: string;
+          venue?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "national_test_history_opponent_team_id_fkey";
+            columns: ["opponent_team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "national_test_history_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       matches: {
         Row: {
           away_score: number | null;

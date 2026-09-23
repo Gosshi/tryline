@@ -1,0 +1,3 @@
+
+# Preserve the upstream Wikipedia fixture byte-for-byte, including source trailing spaces.
+tests/fixtures/wikipedia-japan-test-matches.wiki whitespace=-blank-at-eol
