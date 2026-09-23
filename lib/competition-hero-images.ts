@@ -1,5 +1,6 @@
 const COMPETITION_HERO_IMAGES: Record<string, string> = {
   "autumn-nations": "/visuals/autumn-nations.jpg",
+  "bledisloe-cup": "/visuals/rugby-championship.jpg",
   "greatest-rivalry": "/visuals/greatest-rivalry.jpg",
   "league-one": "/visuals/league-one.jpg",
   "lipovitan-challenge-cup": "/visuals/lipovitan-challenge-cup.jpg",

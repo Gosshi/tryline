@@ -12,6 +12,7 @@ import { LIVE_COMPETITION_SOURCES } from "@/lib/ingestion/live-competitions";
 import { parseLeagueOneLiveHtml } from "@/lib/ingestion/sources/league-one-live";
 import { fetchTop14LnrLiveMatches } from "@/lib/ingestion/sources/top14-lnr-live";
 import { parseAutumnNationsLiveHtml } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
+import { fetchBledisloeCup2026 } from "@/lib/ingestion/sources/wikipedia-bledisloe-cup";
 import {
   fetchGreatestRivalry2026,
   parseGreatestRivalryLiveHtml,
@@ -645,6 +646,22 @@ describe("live competition source adapters", () => {
         "プーマ・トロフィー オーストラリア代表 アルゼンチン遠征",
       family: "puma-trophy",
       fetch: fetchPumaTrophy2026,
+      season: "2026",
+      sourceLabel: "wikipedia",
+    });
+  });
+
+  it("registers Bledisloe Cup 2026 with its unique competition slug", () => {
+    const bledisloeSources = LIVE_COMPETITION_SOURCES.filter(
+      (source) => source.competitionSlug === "bledisloe-cup-2026",
+    );
+
+    expect(bledisloeSources).toHaveLength(1);
+    expect(bledisloeSources[0]).toMatchObject({
+      competitionName: "Bledisloe Cup 2026",
+      competitionNameJa: "ブレディスローカップ オールブラックス対ワラビーズ",
+      family: "bledisloe-cup",
+      fetch: fetchBledisloeCup2026,
       season: "2026",
       sourceLabel: "wikipedia",
     });

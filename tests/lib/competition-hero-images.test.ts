@@ -25,6 +25,9 @@ describe("competition hero images", () => {
     expect(getCompetitionHeroImage("puma-trophy")).toBe(
       "/visuals/rugby-championship.jpg",
     );
+    expect(getCompetitionHeroImage("bledisloe-cup")).toBe(
+      "/visuals/rugby-championship.jpg",
+    );
   });
 
   it("falls back to the default local visual for an unmapped family", () => {

@@ -80,7 +80,7 @@ describe("live competition ingestion JRFU result fallback", () => {
     const results = await ingestAllLiveCompetitions();
 
     expect(results.rejections).toEqual([]);
-    expect(results.results).toHaveLength(14);
+    expect(results.results).toHaveLength(15);
     expect(fallbackMocks.applyJrfuResultFallback).toHaveBeenCalledTimes(1);
     expect(fallbackMocks.applyJrfuMatchEventFallback).toHaveBeenCalledTimes(1);
   });
@@ -91,7 +91,7 @@ describe("live competition ingestion JRFU result fallback", () => {
 
     const results = await ingestAllLiveCompetitions();
 
-    expect(results.results).toHaveLength(13);
+    expect(results.results).toHaveLength(14);
     expect(error).toHaveBeenCalledWith(
       "Failed to apply JRFU fallback:",
       expect.any(Error),
