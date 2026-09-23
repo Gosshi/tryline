@@ -3,26 +3,58 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
+import { JapanMatchesBlock } from "@/components/japan-matches-block";
 import { MatchCard } from "@/components/match-card";
+import { StandingsTable } from "@/components/standings-table";
 import { getCompetitionHeroImage } from "@/lib/competition-hero-images";
 import {
   getCompetitionGuide,
+  listFamilies,
   listSeasonsByFamily,
+  selectLatestSeasonWithMatches,
 } from "@/lib/db/queries/competitions";
-import { getRecentlyReviewedMatchesForFamily } from "@/lib/db/queries/matches";
+import { getMatchBroadcastsForMatches } from "@/lib/db/queries/match-broadcasts";
+import {
+  getRecentlyReviewedMatchesForFamily,
+  listMatchesForCompetition,
+} from "@/lib/db/queries/matches";
+import {
+  getPoolStandingsForCompetition,
+  getStandingsForCompetition,
+} from "@/lib/db/queries/standings";
 import {
   formatCompetitionTitle,
   formatFamilyName,
   getCompetitionFamilyColor,
 } from "@/lib/format/competition";
+import {
+  formatMatchKickoffJst,
+  getCompetitionHubState,
+  getLeaderLabel,
+  getMatchLabel,
+  getSeasonBroadcastGuide,
+  getSeasonPeriodLabel,
+  isJapanMatch,
+  selectStandingsExcerpt,
+} from "@/lib/format/season-summary";
+import { isSeasonNotStarted } from "@/lib/season-standings";
 import { createCompetitionOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
+import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { Metadata } from "next";
 
 type Props = {
   params: Promise<{ competition: string }>;
 };
+
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const families = await listFamilies();
+
+  return families.map((competition) => ({ competition }));
+}
 
 const COMPETITION_DESCRIPTIONS: Record<string, string> = {
   "six-nations":
@@ -90,15 +122,63 @@ export default async function CompetitionHubPage({ params }: Props) {
     notFound();
   }
 
-  const latestSeason =
-    seasons.find((season) => season.matchCount > 0) ?? seasons[0];
+  const latestSeason = selectLatestSeasonWithMatches(seasons);
 
   if (!latestSeason) {
     notFound();
   }
 
+  const [matches, standings, poolStandings] = await Promise.all([
+    listMatchesForCompetition(latestSeason.slug),
+    getStandingsForCompetition(latestSeason.slug),
+    getPoolStandingsForCompetition(latestSeason.slug),
+  ]);
+  const broadcastsByMatch = await getMatchBroadcastsForMatches(
+    matches.map((match) => match.id),
+  );
+  const state = getCompetitionHubState(matches);
+  const seasonNotStarted = isSeasonNotStarted(
+    matches,
+    standings,
+    poolStandings,
+  );
+  const hasJapan = matches.some(
+    (match) => match.status !== "cancelled" && isJapanMatch(match),
+  );
+  const nextMatches =
+    state === "pre" || state === "active"
+      ? matches
+          .filter(
+            (match) =>
+              match.status === "scheduled" &&
+              new Date(match.kickoffAt).getTime() >= Date.now(),
+          )
+          .sort((left, right) => left.kickoffAt.localeCompare(right.kickoffAt))
+      : [];
+  const previewMatches = nextMatches.slice(0, 3);
+  const competitionTitle = formatCompetitionTitle(
+    latestSeason,
+    latestSeason.season,
+  );
+  const periodLabel = getSeasonPeriodLabel({
+    competitionSlug: latestSeason.slug,
+    matches,
+    state,
+  });
+  const leaderLabel = getLeaderLabel({
+    poolStandings,
+    seasonNotStarted,
+    standings,
+  });
+  const seasonBroadcastGuide = getSeasonBroadcastGuide(broadcastsByMatch);
+  const hasStandings = standings.length > 0 || poolStandings.length > 0;
+  const showStandings =
+    !seasonNotStarted &&
+    (hasStandings || (state === "post" && latestSeason.champion !== null));
+  const excerptStandings = selectStandingsExcerpt(standings, hasJapan);
+
   return (
-    <main className="min-h-screen bg-paper">
+    <main className="bg-paper min-h-screen">
       <div className="relative h-48 w-full overflow-hidden sm:h-56">
         <Image
           alt={formatFamilyName(competition)}
@@ -124,28 +204,164 @@ export default async function CompetitionHubPage({ params }: Props) {
         </div>
       </div>
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 sm:px-6 md:px-8">
-        <Link
-          className="group block rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-slate-300 active:scale-[0.98]"
-          href={`/c/${competition}/${latestSeason.season}`}
-        >
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-            最新シーズン
-          </p>
-          <p className="mt-2 font-serif text-3xl font-bold text-[var(--color-ink)]">
-            {formatCompetitionTitle(latestSeason, latestSeason.season)}
-          </p>
-          <p className="mt-4 text-sm text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink)]">
-            試合一覧を見る →
-          </p>
-        </Link>
+        <section aria-labelledby="current-season-summary" className="space-y-4">
+          <h2
+            className="font-heading text-xl font-bold text-[var(--color-ink)] sm:text-2xl"
+            id="current-season-summary"
+          >
+            {competitionTitle}の日程・結果
+          </h2>
+          <div className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] ring-1 ring-slate-200 sm:p-6">
+            <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
+                {state !== "information" && (
+                  <span className="rounded-full bg-[var(--color-accent-subtle)] px-3 py-1 text-sm font-bold text-[var(--color-accent)]">
+                    {state === "pre"
+                      ? "開幕前"
+                      : state === "active"
+                        ? "開催中"
+                        : "終了"}
+                  </span>
+                )}
+                {periodLabel && (
+                  <p className="text-sm font-semibold text-[var(--color-ink)]">
+                    {periodLabel}
+                  </p>
+                )}
+              </div>
+              <Link
+                className="text-sm font-bold text-[var(--color-accent)] hover:text-[var(--color-ink)]"
+                href={`/c/${competition}/${latestSeason.season}`}
+              >
+                {competitionTitle} の全日程・結果を見る →
+              </Link>
+            </div>
 
-        <div className="max-w-3xl">
-          <CompetitionViewingGuide
-            markdown={guide?.guideJa ?? null}
-            sourceUrl={guide?.sourceUrl ?? null}
-            verifiedAt={guide?.verifiedAt ?? null}
-          />
-        </div>
+            {(previewMatches.length > 0 ||
+              hasJapan ||
+              showStandings ||
+              state !== "information") && (
+              <div className="mt-4 grid gap-5 lg:grid-cols-2">
+                <div className="space-y-5">
+                  {previewMatches.length > 0 && (
+                    <section
+                      aria-labelledby="next-matches-heading"
+                      className="space-y-3"
+                    >
+                      <h3
+                        className="font-heading text-base font-bold text-[var(--color-ink)]"
+                        id="next-matches-heading"
+                      >
+                        次の試合（日本時間）
+                      </h3>
+                      <ul className="space-y-2">
+                        {previewMatches.map((match) => (
+                          <li key={match.id}>
+                            <Link
+                              className="grid grid-cols-1 gap-1 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-white sm:grid-cols-[12.5rem_minmax(0,1fr)] sm:items-center sm:gap-x-3"
+                              href={`/matches/${match.id}`}
+                            >
+                              <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
+                                {formatMatchKickoffJst(match.kickoffAt)}
+                              </span>
+                              <span className="font-semibold text-[var(--color-ink)]">
+                                {getMatchLabel(match)}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                      {nextMatches.length > 3 && (
+                        <Link
+                          className="inline-flex text-sm font-bold text-[var(--color-accent)]"
+                          href={`/c/${competition}/${latestSeason.season}#schedule`}
+                        >
+                          残り {nextMatches.length - 3} 試合の日程を見る →
+                        </Link>
+                      )}
+                    </section>
+                  )}
+                  <JapanMatchesBlock
+                    matches={matches}
+                    seasonHref={`/c/${competition}/${latestSeason.season}`}
+                  />
+                </div>
+
+                <div className="space-y-5">
+                  {showStandings && (
+                    <section
+                      aria-labelledby="standings-heading"
+                      className="space-y-3"
+                    >
+                      <h3
+                        className="font-heading text-base font-bold text-[var(--color-ink)]"
+                        id="standings-heading"
+                      >
+                        {state === "post" ? "最終順位" : "順位"}
+                      </h3>
+                      {state === "post" && latestSeason.champion && (
+                        <p className="font-bold text-[var(--color-ink)]">
+                          優勝: {latestSeason.champion}
+                        </p>
+                      )}
+                      {leaderLabel && poolStandings.length > 0 && (
+                        <p className="text-sm font-semibold text-[var(--color-ink)]">
+                          {leaderLabel}
+                        </p>
+                      )}
+                      {excerptStandings.length > 0 && (
+                        <StandingsTable
+                          accentColor={getCompetitionFamilyColor(competition)}
+                          standings={excerptStandings}
+                        />
+                      )}
+                      {hasStandings && (
+                        <Link
+                          className="inline-flex text-sm font-bold text-[var(--color-accent)]"
+                          href={`/c/${competition}/${latestSeason.season}/standings`}
+                        >
+                          順位表をすべて見る →
+                        </Link>
+                      )}
+                    </section>
+                  )}
+                  {state !== "information" && (
+                    <section
+                      aria-labelledby="broadcast-heading"
+                      className="space-y-3"
+                    >
+                      <h3
+                        className="font-heading text-base font-bold text-[var(--color-ink)]"
+                        id="broadcast-heading"
+                      >
+                        日本での視聴方法
+                      </h3>
+                      <p className="text-sm leading-relaxed text-[var(--color-ink-muted)]">
+                        {seasonBroadcastGuide.answer}
+                      </p>
+                      {seasonBroadcastGuide.services.length > 0 && (
+                        <ul className="flex flex-wrap gap-2">
+                          {seasonBroadcastGuide.services.map((service) => (
+                            <li key={service.serviceName}>
+                              <a
+                                className="inline-flex rounded-full border border-slate-200 px-3 py-1.5 text-sm font-semibold text-[var(--color-accent)] hover:bg-slate-50"
+                                href={service.url}
+                                rel="noopener noreferrer"
+                                target="_blank"
+                              >
+                                {service.serviceName}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </section>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
 
         {recentReviews.length > 0 && (
           <section className="space-y-3">
@@ -159,6 +375,14 @@ export default async function CompetitionHubPage({ params }: Props) {
             </div>
           </section>
         )}
+
+        <div className="max-w-3xl">
+          <CompetitionViewingGuide
+            markdown={guide?.guideJa ?? null}
+            sourceUrl={guide?.sourceUrl ?? null}
+            verifiedAt={guide?.verifiedAt ?? null}
+          />
+        </div>
 
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">

@@ -39,23 +39,26 @@ import {
   formatPoolName,
 } from "@/lib/format/competition";
 import { getCompetitionMetadataTeams } from "@/lib/format/competition-metadata";
-import {
-  formatKickoffJstDate,
-  formatKickoffJstTime,
-} from "@/lib/format/kickoff";
 import { groupMatchesByRound } from "@/lib/format/match-groups";
 import {
   hasIncompleteSchedule,
   hasMissingScheduleData,
 } from "@/lib/format/schedule-coverage";
+import {
+  type CompetitionHubState,
+  findNextScheduledMatch,
+  formatMatchKickoffJst,
+  getCompetitionHubState,
+  getLeaderLabel,
+  getMatchLabel,
+  getSeasonBroadcastGuide,
+  isJapanMatch,
+  selectStandingsExcerpt,
+} from "@/lib/format/season-summary";
 import { isSeasonNotStarted } from "@/lib/season-standings";
 import { createCompetitionOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
 
-import type {
-  MatchBroadcast,
-  MatchBroadcastService,
-} from "@/lib/db/queries/match-broadcasts";
 import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { StandingRow } from "@/lib/db/queries/standings";
 import type { Metadata } from "next";
@@ -151,81 +154,6 @@ function formatDateRange(
     .join(" 〜 ");
 }
 
-function formatMatchKickoffJst(kickoffAt: string): string {
-  return `${formatKickoffJstDate(kickoffAt)} ${formatKickoffJstTime(kickoffAt)}`;
-}
-
-function findNextScheduledMatch(
-  matches: MatchListItem[],
-  now = new Date(),
-): MatchListItem | null {
-  const nowTime = now.getTime();
-
-  return (
-    matches
-      .filter(
-        (match) =>
-          match.status === "scheduled" &&
-          new Date(match.kickoffAt).getTime() >= nowTime,
-      )
-      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt))[0] ?? null
-  );
-}
-
-type SeasonBroadcastGuide = {
-  answer: string;
-  services: MatchBroadcastService[];
-};
-
-function getSeasonBroadcastGuide(
-  broadcastsByMatch: Map<string, MatchBroadcast[]>,
-): SeasonBroadcastGuide {
-  const servicesByName = new Map<string, MatchBroadcast>();
-
-  for (const broadcasts of broadcastsByMatch.values()) {
-    for (const broadcast of broadcasts) {
-      const existing = servicesByName.get(broadcast.serviceName);
-
-      if (
-        !existing ||
-        new Date(broadcast.verifiedAt).getTime() >
-          new Date(existing.verifiedAt).getTime()
-      ) {
-        servicesByName.set(broadcast.serviceName, broadcast);
-      }
-    }
-  }
-
-  const broadcasts = [...servicesByName.values()].sort(
-    (left, right) =>
-      left.displayOrder - right.displayOrder ||
-      left.serviceName.localeCompare(right.serviceName, "ja"),
-  );
-
-  if (broadcasts.length === 0) {
-    return {
-      answer:
-        "このシーズンの放送・配信情報は確認中です。最新情報は大会公式サイトをご確認ください。",
-      services: [],
-    };
-  }
-
-  return {
-    answer: `掲載中の一部試合に視聴情報があります。対象試合の案内をご確認ください。確認済みのサービス: ${broadcasts
-      .map(
-        (broadcast) =>
-          `${broadcast.serviceName}（${broadcast.verifiedAt.slice(0, 10)}確認）`,
-      )
-      .join("、")}。`,
-    services: broadcasts.map(({ displayOrder, kind, serviceName, url }) => ({
-      displayOrder,
-      kind,
-      serviceName,
-      url,
-    })),
-  };
-}
-
 type SeasonProgress = {
   completedRounds: number;
   nextMatch: MatchListItem | null;
@@ -275,37 +203,9 @@ function getSeasonProgress(
   };
 }
 
-function isJapanMatch(match: MatchListItem): boolean {
-  return match.homeTeam.slug === "japan" || match.awayTeam.slug === "japan";
-}
-
-function getMatchLabel(match: MatchListItem): string {
-  return `${match.homeTeam.name} 対 ${match.awayTeam.name}`;
-}
-
-type CompetitionHubState = "active" | "information" | "post" | "pre";
-
 const MAX_TEAMS_IN_METADATA_TITLE = 4;
 const MAX_METADATA_TITLE_LENGTH = 72;
 const TRYLINE_TITLE_SUFFIX = " | Tryline";
-
-function getCompetitionHubState(matches: MatchListItem[]): CompetitionHubState {
-  const activeMatches = matches.filter((match) => match.status !== "cancelled");
-
-  if (activeMatches.length === 0) {
-    return "information";
-  }
-
-  if (activeMatches.every((match) => match.status === "scheduled")) {
-    return "pre";
-  }
-
-  if (activeMatches.every((match) => match.status === "finished")) {
-    return "post";
-  }
-
-  return "active";
-}
 
 function getCompetitionHubMetadataCopy({
   hasRecap,
@@ -441,35 +341,6 @@ function formatCompetitionHubDescription({
   }
 
   return `${competitionTitle}は${participants}が参加する全${activeMatches.length}試合。${dateRange}の${metadataCopy.title}${suffix}を掲載。`;
-}
-
-function selectStandingsExcerpt<
-  T extends { teamName: string; teamShortCode: string },
->(standings: T[], includeJapan: boolean): T[] {
-  const excerpt = new Map<string, T>();
-
-  for (const row of standings.slice(0, 3)) {
-    excerpt.set(row.teamName, row);
-  }
-
-  if (includeJapan) {
-    for (const row of standings) {
-      if (
-        row.teamShortCode.toLowerCase() === "jpn" ||
-        row.teamName.toLowerCase() === "japan" ||
-        row.teamName === "日本"
-      ) {
-        excerpt.set(row.teamName, row);
-      }
-    }
-  }
-
-  return [...excerpt.values()].sort((left, right) => {
-    const leftIndex = standings.indexOf(left);
-    const rightIndex = standings.indexOf(right);
-
-    return leftIndex - rightIndex;
-  });
 }
 
 function SeasonSummaryBand({
@@ -763,20 +634,11 @@ export default async function SeasonPage({ params }: Props) {
           nextJapanMatchAcrossCompetitions.competition.season,
         )
       : null;
-  const leaderLabel =
-    !seasonNotStarted && poolStandings.length > 0
-      ? poolStandings
-          .map((pool) =>
-            pool.standings[0]
-              ? `${formatPoolName(pool.poolName)}: ${pool.standings[0].teamName}`
-              : null,
-          )
-          .filter((label): label is string => label !== null)
-          .slice(0, 2)
-          .join(" / ") || null
-      : !seasonNotStarted
-        ? (standings[0]?.teamName ?? null)
-        : null;
+  const leaderLabel = getLeaderLabel({
+    poolStandings,
+    seasonNotStarted,
+    standings,
+  });
   const seasonProgress = getSeasonProgress(matches, comp.totalRounds);
   const ingestedRoundCount = new Set(
     matches
