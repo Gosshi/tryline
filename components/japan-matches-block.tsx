@@ -45,28 +45,37 @@ export function JapanMatchesBlock({
 
           return (
             <li key={match.id}>
-              <div className="grid grid-cols-1 gap-1 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-white sm:grid-cols-[12.5rem_minmax(0,1fr)_auto] sm:items-center sm:gap-x-3">
-                <Link className="contents" href={`/matches/${match.id}`}>
-                  <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
-                    {formatMatchKickoffJst(match.kickoffAt)}
-                  </span>
-                  <span className="font-semibold text-[var(--color-ink)]">
-                    {getMatchLabel(match)}
-                    {match.status === "finished" &&
-                    match.homeScore !== null &&
-                    match.awayScore !== null
-                      ? `　${match.homeScore}–${match.awayScore}`
-                      : ""}
-                  </span>
-                </Link>
-                {headToHeadHref && (
+              <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-white">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-x-3">
                   <Link
-                    className="text-sm font-bold text-[var(--color-accent)] hover:underline"
-                    href={headToHeadHref}
+                    className={
+                      headToHeadHref
+                        ? "grid grid-cols-1 gap-1 sm:w-fit sm:grid-cols-[9.375rem_minmax(0,1fr)] sm:items-center sm:gap-x-3"
+                        : "grid grid-cols-1 gap-1 sm:w-full sm:grid-cols-[9.375rem_minmax(0,1fr)] sm:items-center sm:gap-x-3"
+                    }
+                    href={`/matches/${match.id}`}
                   >
-                    過去の対戦成績 →
+                    <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
+                      {formatMatchKickoffJst(match.kickoffAt)}
+                    </span>
+                    <span className="font-semibold text-[var(--color-ink)]">
+                      {getMatchLabel(match)}
+                      {match.status === "finished" &&
+                      match.homeScore !== null &&
+                      match.awayScore !== null
+                        ? `　${match.homeScore}–${match.awayScore}`
+                        : ""}
+                    </span>
                   </Link>
-                )}
+                  {headToHeadHref && (
+                    <Link
+                      className="w-fit text-sm font-bold text-[var(--color-accent)] hover:underline"
+                      href={headToHeadHref}
+                    >
+                      過去の対戦成績 →
+                    </Link>
+                  )}
+                </div>
               </div>
             </li>
           );

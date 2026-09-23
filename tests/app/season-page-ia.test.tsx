@@ -1075,9 +1075,17 @@ describe("season page information architecture", () => {
       "/matches/japan-wales-2",
       "/matches/japan-ireland",
     ]);
+    expect(matchLinks[0]).toHaveTextContent("Wales 対 Japan");
+    expect(matchLinks[0]).toHaveTextContent("2026");
+    expect(matchLinks[0]).not.toHaveClass("contents");
     expect(
       screen.getAllByRole("link", { name: "過去の対戦成績 →" }),
     ).toHaveLength(2);
+    const firstHeadToHeadLink = screen.getAllByRole("link", {
+      name: "過去の対戦成績 →",
+    })[0];
+    expect(matchLinks[0].parentElement).toBe(firstHeadToHeadLink.parentElement);
+    expect(matchLinks[0].parentElement).toHaveClass("sm:gap-x-3");
     expect(
       screen
         .getAllByRole("link", { name: "過去の対戦成績 →" })
