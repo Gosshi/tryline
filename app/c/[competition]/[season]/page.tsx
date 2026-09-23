@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { CompetitionCalendarLinks } from "@/components/competition-calendar-links";
 import { CompetitionViewingGuide } from "@/components/competition-viewing-guide";
 import { IosAppCta } from "@/components/ios-app-cta";
+import { JapanMatchesBlock } from "@/components/japan-matches-block";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { PoolTeamGrid } from "@/components/pool-team-grid";
 import { PremiumUpsellBanner } from "@/components/premium-upsell-banner";
@@ -25,8 +26,10 @@ import {
 import { getMatchBroadcastsForMatches } from "@/lib/db/queries/match-broadcasts";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import {
+  countHeadToHeadMatches,
   getNextMatchForTeamSlug,
   listMatchesForCompetition,
+  normalizeHeadToHeadSlug,
 } from "@/lib/db/queries/matches";
 import {
   getPoolStandingsForCompetition,
@@ -49,6 +52,7 @@ import {
   findNextScheduledMatch,
   formatMatchKickoffJst,
   getCompetitionHubState,
+  getJapanMatchesNote,
   getLeaderLabel,
   getMatchLabel,
   getSeasonBroadcastGuide,
@@ -577,10 +581,54 @@ export default async function SeasonPage({ params }: Props) {
     ],
   );
   const matchIds = matches.map((match) => match.id);
-  const [contentStatusMap, broadcastsByMatch] = await Promise.all([
-    getContentStatusForMatches(matchIds),
-    getMatchBroadcastsForMatches(matchIds),
-  ]);
+  const japanMatches = matches
+    .filter((match) => match.status !== "cancelled" && isJapanMatch(match))
+    .sort((left, right) => left.kickoffAt.localeCompare(right.kickoffAt))
+    .slice(0, 6);
+  const opponentsBySlug = new Map(
+    japanMatches.map((match) => [
+      match.homeTeam.slug === "japan"
+        ? match.awayTeam.slug
+        : match.homeTeam.slug,
+      match,
+    ]),
+  );
+  const [contentStatusMap, broadcastsByMatch, headToHeadCounts] =
+    await Promise.all([
+      getContentStatusForMatches(matchIds),
+      getMatchBroadcastsForMatches(matchIds),
+      Promise.all(
+        [...opponentsBySlug.keys()].map(async (opponentSlug) => {
+          try {
+            return [
+              opponentSlug,
+              await countHeadToHeadMatches("japan", opponentSlug),
+            ] as const;
+          } catch (error) {
+            console.error("Failed to count Japan head-to-head matches", {
+              competitionSlug: comp.slug,
+              error,
+              opponentSlug,
+            });
+
+            return [opponentSlug, null] as const;
+          }
+        }),
+      ),
+    ]);
+  const headToHeadCountByOpponent = new Map(headToHeadCounts);
+  const headToHeadHrefByMatchId = Object.fromEntries(
+    japanMatches.flatMap((match) => {
+      const opponentSlug =
+        match.homeTeam.slug === "japan"
+          ? match.awayTeam.slug
+          : match.homeTeam.slug;
+
+      return (headToHeadCountByOpponent.get(opponentSlug) ?? 0) >= 2
+        ? [[match.id, `/h2h/${normalizeHeadToHeadSlug("japan", opponentSlug)}`]]
+        : [];
+    }),
+  );
   const seasonBroadcastGuide = getSeasonBroadcastGuide(broadcastsByMatch);
   const hasAnyContent = Object.values(contentStatusMap).some(
     (status) => status.hasPreview || status.hasRecap,
@@ -900,6 +948,16 @@ export default async function SeasonPage({ params }: Props) {
           nextJapanMatch={hasJapanInSeason ? nextJapanMatch : null}
           nextMatch={nextMatch}
           season={season}
+        />
+
+        <JapanMatchesBlock
+          headToHeadHrefByMatchId={headToHeadHrefByMatchId}
+          matches={matches}
+          note={getJapanMatchesNote({
+            competitionSlug: comp.slug,
+            matches,
+          })}
+          seasonHref={`/c/${competition}/${season}`}
         />
 
         <IosAppCta surface="hub" />

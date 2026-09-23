@@ -36,6 +36,7 @@ const broadcastMocks = vi.hoisted(() => ({
 }));
 
 const matchesMocks = vi.hoisted(() => ({
+  countHeadToHeadMatches: vi.fn(),
   getNextMatchForTeamSlug: vi.fn(),
   listMatchesForCompetition: vi.fn(),
 }));
@@ -100,7 +101,18 @@ vi.mock("@/components/season-switcher", () => ({
 vi.mock("@/lib/db/queries/competitions", () => competitionMocks);
 vi.mock("@/lib/db/queries/match-broadcasts", () => broadcastMocks);
 vi.mock("@/lib/db/queries/match-content", () => contentMocks);
-vi.mock("@/lib/db/queries/matches", () => matchesMocks);
+vi.mock("@/lib/db/queries/matches", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/db/queries/matches")
+  >("@/lib/db/queries/matches");
+
+  return {
+    ...actual,
+    countHeadToHeadMatches: matchesMocks.countHeadToHeadMatches,
+    getNextMatchForTeamSlug: matchesMocks.getNextMatchForTeamSlug,
+    listMatchesForCompetition: matchesMocks.listMatchesForCompetition,
+  };
+});
 vi.mock("@/lib/db/queries/standings", () => standingsMocks);
 
 const competition = {
@@ -376,6 +388,7 @@ describe("season page information architecture", () => {
     });
     competitionMocks.listSeasonsByFamily.mockResolvedValue([competition]);
     matchesMocks.listMatchesForCompetition.mockResolvedValue([match]);
+    matchesMocks.countHeadToHeadMatches.mockResolvedValue(0);
     matchesMocks.getNextMatchForTeamSlug.mockResolvedValue(null);
     broadcastMocks.getMatchBroadcastPresenceForMatches.mockResolvedValue(
       new Set(),
@@ -970,6 +983,210 @@ describe("season page information architecture", () => {
       "2026-02-01T00:00:00.000Z",
     );
     expect(screen.getByLabelText("シーズン要約")).toHaveClass("lg:grid-cols-4");
+  });
+
+  it("places the Japan matches block between the summary, iOS CTA, and page navigation", async () => {
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      match,
+      japanMatch,
+    ]);
+
+    const { container } = render(
+      await SeasonPage({
+        params: Promise.resolve({ competition: "pnc", season: "2026" }),
+      }),
+    );
+
+    const summary = screen.getByLabelText("シーズン要約");
+    const japanBlock = screen
+      .getByRole("heading", { name: "日本代表の試合" })
+      .closest("section");
+    const iosCta = screen.getByRole("link", {
+      name: "iOSアプリで通知を受け取る",
+    });
+    const pageNavigation = screen.getByRole("navigation", {
+      name: "シーズンページ内ナビ",
+    });
+
+    expect(japanBlock).not.toBeNull();
+    expect(follows(summary, japanBlock!)).toBe(true);
+    expect(follows(japanBlock!, iosCta)).toBe(true);
+    expect(follows(iosCta, pageNavigation)).toBe(true);
+    expect(container.querySelectorAll("#japan-matches-heading")).toHaveLength(
+      1,
+    );
+  });
+
+  it("shows only Japan fixtures and links opponents with at least two H2H matches", async () => {
+    const walesOne = {
+      ...japanMatch,
+      awayTeam: { name: "Japan", shortCode: "JPN", slug: "japan" },
+      homeTeam: { name: "Wales", shortCode: "WAL", slug: "wales" },
+      id: "japan-wales-1",
+      kickoffAt: "2026-11-07T16:40:00.000Z",
+    };
+    const walesTwo = {
+      ...walesOne,
+      id: "japan-wales-2",
+      kickoffAt: "2026-11-14T16:40:00.000Z",
+    };
+    const ireland = {
+      ...japanMatch,
+      awayTeam: { name: "Japan", shortCode: "JPN", slug: "japan" },
+      homeTeam: { name: "Ireland", shortCode: "IRE", slug: "ireland" },
+      id: "japan-ireland",
+      kickoffAt: "2026-11-21T16:40:00.000Z",
+    };
+    const cancelled = {
+      ...walesOne,
+      id: "cancelled-japan",
+      status: "cancelled" as const,
+    };
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      ireland,
+      { ...match, id: "non-japan" },
+      cancelled,
+      walesTwo,
+      walesOne,
+    ]);
+    matchesMocks.countHeadToHeadMatches.mockImplementation(
+      async (_japanSlug: string, opponentSlug: string) =>
+        opponentSlug === "wales" ? 2 : 1,
+    );
+
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "nations-championship",
+          season: "2026",
+        }),
+      }),
+    );
+
+    const block = screen
+      .getByRole("heading", { name: "日本代表の試合" })
+      .closest("section")!;
+    const matchLinks = Array.from(
+      block.querySelectorAll<HTMLAnchorElement>('a[href^="/matches/"]'),
+    );
+
+    expect(matchLinks.map((link) => link.getAttribute("href"))).toEqual([
+      "/matches/japan-wales-1",
+      "/matches/japan-wales-2",
+      "/matches/japan-ireland",
+    ]);
+    expect(
+      screen.getAllByRole("link", { name: "過去の対戦成績 →" }),
+    ).toHaveLength(2);
+    expect(
+      screen
+        .getAllByRole("link", { name: "過去の対戦成績 →" })
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/h2h/japan-vs-wales", "/h2h/japan-vs-wales"]);
+    expect(matchesMocks.countHeadToHeadMatches).toHaveBeenCalledTimes(2);
+    expect(matchesMocks.countHeadToHeadMatches).toHaveBeenCalledWith(
+      "japan",
+      "wales",
+    );
+    expect(matchesMocks.countHeadToHeadMatches).toHaveBeenCalledWith(
+      "japan",
+      "ireland",
+    );
+  });
+
+  it("shows and then removes the Nations Championship finals note when a Japan finals match is added", async () => {
+    const nationsCompetition = {
+      ...competition,
+      family: "nations-championship",
+      season: "2026",
+      slug: "nations-championship-2026",
+    };
+    const novemberJapanMatch = {
+      ...japanMatch,
+      kickoffAt: "2026-11-21T14:10:00.000Z",
+      id: "japan-scotland",
+    };
+    competitionMocks.getCompetitionBySlug.mockResolvedValue(nationsCompetition);
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      novemberJapanMatch,
+    ]);
+
+    const note =
+      "11月27〜29日のファイナルズ週末（ロンドン・トゥイッケナム）で、日本は最終順位に応じた順位決定戦をもう1試合戦います。対戦相手と日時は第6節（11月21日）の後に決まります。";
+    const firstRender = render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "nations-championship",
+          season: "2026",
+        }),
+      }),
+    );
+    expect(screen.getByText(note)).toBeInTheDocument();
+    firstRender.unmount();
+
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      novemberJapanMatch,
+      {
+        ...novemberJapanMatch,
+        id: "japan-finals",
+        kickoffAt: "2026-11-28T16:40:00.000Z",
+      },
+    ]);
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "nations-championship",
+          season: "2026",
+        }),
+      }),
+    );
+    expect(screen.queryByText(note)).not.toBeInTheDocument();
+  });
+
+  it("does not show the finals note for another competition and handles H2H lookup errors", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([japanMatch]);
+    matchesMocks.countHeadToHeadMatches.mockRejectedValue(
+      new Error("lookup failed"),
+    );
+
+    render(
+      await SeasonPage({
+        params: Promise.resolve({ competition: "pnc", season: "2026" }),
+      }),
+    );
+
+    expect(screen.queryByText(/ファイナルズ週末/)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "日本代表の試合" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "過去の対戦成績 →" }),
+    ).not.toBeInTheDocument();
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to count Japan head-to-head matches",
+      expect.objectContaining({ opponentSlug: "fiji" }),
+    );
+    consoleError.mockRestore();
+  });
+
+  it("does not show the Japan matches block when the only Japan fixture is cancelled", async () => {
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      { ...japanMatch, id: "cancelled-japan", status: "cancelled" },
+    ]);
+
+    render(
+      await SeasonPage({
+        params: Promise.resolve({ competition: "six-nations", season: "2026" }),
+      }),
+    );
+
+    expect(
+      screen.queryByRole("heading", { name: "日本代表の試合" }),
+    ).not.toBeInTheDocument();
+    expect(matchesMocks.countHeadToHeadMatches).not.toHaveBeenCalled();
   });
 
   it("does not render the Japan match block when no scheduled Japan match exists", async () => {
