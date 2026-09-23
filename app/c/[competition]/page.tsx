@@ -33,10 +33,10 @@ import {
   getLeaderLabel,
   getMatchLabel,
   getSeasonBroadcastGuide,
+  getSeasonPeriodLabel,
   isJapanMatch,
   selectStandingsExcerpt,
 } from "@/lib/format/season-summary";
-import { getSeasonPeriodLabel } from "@/lib/format/season-summary";
 import { isSeasonNotStarted } from "@/lib/season-standings";
 import { createCompetitionOgImage } from "@/lib/seo/og-image";
 import { SITE_URL } from "@/lib/site";
@@ -142,9 +142,9 @@ export default async function CompetitionHubPage({ params }: Props) {
     standings,
     poolStandings,
   );
-  const japanMatches = matches
-    .filter((match) => match.status !== "cancelled" && isJapanMatch(match))
-    .sort((left, right) => left.kickoffAt.localeCompare(right.kickoffAt));
+  const hasJapan = matches.some(
+    (match) => match.status !== "cancelled" && isJapanMatch(match),
+  );
   const nextMatches =
     state === "pre" || state === "active"
       ? matches
@@ -175,10 +175,7 @@ export default async function CompetitionHubPage({ params }: Props) {
   const showStandings =
     !seasonNotStarted &&
     (hasStandings || (state === "post" && latestSeason.champion !== null));
-  const excerptStandings = selectStandingsExcerpt(
-    standings,
-    japanMatches.length > 0,
-  );
+  const excerptStandings = selectStandingsExcerpt(standings, hasJapan);
 
   return (
     <main className="bg-paper min-h-screen">
@@ -241,7 +238,7 @@ export default async function CompetitionHubPage({ params }: Props) {
             </div>
 
             {(previewMatches.length > 0 ||
-              japanMatches.length > 0 ||
+              hasJapan ||
               showStandings ||
               state !== "information") && (
               <div className="mt-4 grid gap-5 lg:grid-cols-2">
@@ -261,14 +258,14 @@ export default async function CompetitionHubPage({ params }: Props) {
                         {previewMatches.map((match) => (
                           <li key={match.id}>
                             <Link
-                              className="flex flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-white sm:flex-row sm:items-center sm:justify-between"
+                              className="grid grid-cols-1 gap-1 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-white sm:grid-cols-[12.5rem_minmax(0,1fr)] sm:items-center sm:gap-x-3"
                               href={`/matches/${match.id}`}
                             >
-                              <span className="font-semibold text-[var(--color-ink)]">
-                                {getMatchLabel(match)}
-                              </span>
                               <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
                                 {formatMatchKickoffJst(match.kickoffAt)}
+                              </span>
+                              <span className="font-semibold text-[var(--color-ink)]">
+                                {getMatchLabel(match)}
                               </span>
                             </Link>
                           </li>
@@ -285,7 +282,7 @@ export default async function CompetitionHubPage({ params }: Props) {
                     </section>
                   )}
                   <JapanMatchesBlock
-                    matches={japanMatches}
+                    matches={matches}
                     seasonHref={`/c/${competition}/${latestSeason.season}`}
                   />
                 </div>

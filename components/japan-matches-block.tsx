@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   formatMatchKickoffJst,
   getMatchLabel,
+  isJapanMatch,
 } from "@/lib/format/season-summary";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
@@ -18,7 +19,11 @@ export function JapanMatchesBlock({
   seasonHref,
   maxItems = 6,
 }: JapanMatchesBlockProps) {
-  if (matches.length === 0) {
+  const japanMatches = matches
+    .filter((match) => match.status !== "cancelled" && isJapanMatch(match))
+    .sort((left, right) => left.kickoffAt.localeCompare(right.kickoffAt));
+
+  if (japanMatches.length === 0) {
     return null;
   }
 
@@ -31,12 +36,15 @@ export function JapanMatchesBlock({
         日本代表の試合
       </h3>
       <ul className="space-y-2">
-        {matches.slice(0, maxItems).map((match) => (
+        {japanMatches.slice(0, maxItems).map((match) => (
           <li key={match.id}>
             <Link
-              className="flex flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-white sm:flex-row sm:items-center sm:justify-between"
+              className="grid grid-cols-1 gap-1 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-white sm:grid-cols-[12.5rem_minmax(0,1fr)] sm:items-center sm:gap-x-3"
               href={`/matches/${match.id}`}
             >
+              <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
+                {formatMatchKickoffJst(match.kickoffAt)}
+              </span>
               <span className="font-semibold text-[var(--color-ink)]">
                 {getMatchLabel(match)}
                 {match.status === "finished" &&
@@ -45,14 +53,11 @@ export function JapanMatchesBlock({
                   ? `　${match.homeScore}–${match.awayScore}`
                   : ""}
               </span>
-              <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
-                {formatMatchKickoffJst(match.kickoffAt)}
-              </span>
             </Link>
           </li>
         ))}
       </ul>
-      {matches.length > maxItems && (
+      {japanMatches.length > maxItems && (
         <Link
           className="inline-flex text-sm font-bold text-[var(--color-accent)]"
           href={seasonHref}

@@ -344,10 +344,14 @@ describe("competition hub indexing", () => {
       },
     ]);
     matchMocks.listMatchesForCompetition.mockResolvedValue([
-      match("rwc-1", "2027-10-01T18:45:00Z", { homeSlug: "japan" }),
-      match("rwc-2", "2027-10-02T09:00:00Z"),
-      match("rwc-3", "2027-10-03T09:00:00Z", { awaySlug: "japan" }),
       match("rwc-4", "2027-10-04T09:00:00Z", { homeSlug: "japan" }),
+      match("rwc-2", "2027-10-02T09:00:00Z"),
+      match("rwc-cancelled", "2027-10-03T08:00:00Z", {
+        awaySlug: "japan",
+        status: "cancelled",
+      }),
+      match("rwc-3", "2027-10-03T09:00:00Z", { awaySlug: "japan" }),
+      match("rwc-1", "2027-10-01T18:45:00Z", { homeSlug: "japan" }),
     ]);
 
     render(
@@ -374,11 +378,18 @@ describe("competition hub indexing", () => {
       .getByRole("heading", { name: "日本代表の試合" })
       .closest("section");
     expect(japanSection).not.toBeNull();
-    expect(
-      within(japanSection as HTMLElement).getAllByRole("link", {
+    const japanLinks = within(japanSection as HTMLElement).getAllByRole(
+      "link",
+      {
         name: /Japan/,
-      }),
-    ).toHaveLength(3);
+      },
+    );
+    expect(japanLinks).toHaveLength(3);
+    expect(japanLinks.map((link) => link.getAttribute("href"))).toEqual([
+      "/matches/rwc-1",
+      "/matches/rwc-3",
+      "/matches/rwc-4",
+    ]);
     expect(
       screen.queryByRole("heading", { name: "最終順位" }),
     ).not.toBeInTheDocument();
