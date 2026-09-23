@@ -18,6 +18,7 @@ function buildSeason(
     matchCount,
     name: `Autumn Nations Series ${season}`,
     publishedContentCount,
+    publishedRecapCount: 0,
     season,
     slug: `autumn-nations-${season}`,
     startDate: null,

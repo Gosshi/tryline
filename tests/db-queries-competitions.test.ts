@@ -16,6 +16,40 @@ vi.mock("@/lib/db/public-server", () => ({
   getSupabasePublicServerClient: dbMocks.getSupabasePublicServerClient,
 }));
 
+function createContentQuery(
+  pages: Map<number, { data: unknown[] | null; error: unknown }> = new Map(),
+) {
+  const query = {
+    eq: vi.fn(),
+    in: vi.fn(),
+    order: vi.fn(),
+    range: vi.fn(),
+    select: vi.fn(),
+  };
+
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  query.in.mockReturnValue(query);
+  query.order.mockReturnValue(query);
+  query.range.mockImplementation(
+    async (from: number) => pages.get(from) ?? { data: [], error: null },
+  );
+
+  return query;
+}
+
+function publishedContentRow(
+  competitionId: string,
+  contentType = "recap",
+  language = "ja",
+) {
+  return {
+    content_type: contentType,
+    language,
+    matches: { competition_id: competitionId },
+  };
+}
+
 describe("listSeasonsByFamilies", () => {
   it("does not query published content when no families are requested", async () => {
     const result = await listSeasonsByFamilies([]);
@@ -24,16 +58,30 @@ describe("listSeasonsByFamilies", () => {
     expect(dbMocks.getSupabasePublicServerClient).not.toHaveBeenCalled();
   });
 
-  it("counts published content for every requested family with one shared query", async () => {
+  it("counts published content for every requested family with one shared paged query", async () => {
     const competitionQuery = {
       eq: vi.fn(),
       order: vi.fn(),
       select: vi.fn(),
     };
-    const contentQuery = {
-      eq: vi.fn(),
-      select: vi.fn(),
-    };
+    const contentQuery = createContentQuery(
+      new Map([
+        [
+          0,
+          {
+            data: [
+              publishedContentRow("six-nations-2026"),
+              {
+                ...publishedContentRow("six-nations-2026"),
+                matches: [{ competition_id: "six-nations-2026" }],
+              },
+              publishedContentRow("urc-2025-26"),
+            ],
+            error: null,
+          },
+        ],
+      ]),
+    );
     const competitionResults = [
       {
         data: [
@@ -74,15 +122,6 @@ describe("listSeasonsByFamilies", () => {
     competitionQuery.order.mockImplementation(() =>
       Promise.resolve(competitionResults.shift()),
     );
-    contentQuery.select.mockReturnValue(contentQuery);
-    contentQuery.eq.mockResolvedValue({
-      data: [
-        { matches: { competition_id: "six-nations-2026" } },
-        { matches: [{ competition_id: "six-nations-2026" }] },
-        { matches: { competition_id: "urc-2025-26" } },
-      ],
-      error: null,
-    });
     dbMocks.from.mockImplementation((table: string) =>
       table === "competitions" ? competitionQuery : contentQuery,
     );
@@ -97,8 +136,212 @@ describe("listSeasonsByFamilies", () => {
       dbMocks.from.mock.calls.filter(([table]) => table === "match_content"),
     ).toHaveLength(1);
     expect(competitionQuery.select).toHaveBeenCalledWith("*, matches(count)");
+    expect(contentQuery.select).toHaveBeenCalledWith(
+      "id, content_type, language, matches!inner(competition_id)",
+    );
+    expect(contentQuery.in).toHaveBeenCalledWith("matches.competition_id", [
+      "six-nations-2026",
+      "urc-2025-26",
+    ]);
+    expect(contentQuery.order).toHaveBeenCalledWith("id", { ascending: true });
+    expect(contentQuery.range).toHaveBeenCalledWith(0, 999);
     expect(result.get("six-nations")?.[0]?.publishedContentCount).toBe(2);
+    expect(result.get("six-nations")?.[0]?.publishedRecapCount).toBe(2);
     expect(result.get("urc")?.[0]?.publishedContentCount).toBe(1);
+  });
+
+  it("counts content beyond the 1000-row PostgREST page limit", async () => {
+    const seasonQuery = { eq: vi.fn(), order: vi.fn(), select: vi.fn() };
+    const season = {
+      champion: null,
+      end_date: "2026-03-14",
+      family: "six-nations",
+      id: "six-nations-2026",
+      matches: [{ count: 15 }],
+      name: "Six Nations",
+      season: "2026",
+      slug: "six-nations-2026",
+      start_date: "2026-02-05",
+    };
+    const contentQuery = createContentQuery(
+      new Map([
+        [
+          0,
+          {
+            data: Array.from({ length: 1000 }, () =>
+              publishedContentRow("six-nations-2026"),
+            ),
+            error: null,
+          },
+        ],
+        [
+          1000,
+          {
+            data: Array.from({ length: 12 }, () =>
+              publishedContentRow("six-nations-2026"),
+            ),
+            error: null,
+          },
+        ],
+      ]),
+    );
+    seasonQuery.select.mockReturnValue(seasonQuery);
+    seasonQuery.eq.mockReturnValue(seasonQuery);
+    seasonQuery.order.mockResolvedValue({ data: [season], error: null });
+    dbMocks.from.mockImplementation((table: string) =>
+      table === "competitions" ? seasonQuery : contentQuery,
+    );
+    dbMocks.getSupabasePublicServerClient.mockReturnValue({
+      from: dbMocks.from,
+    });
+
+    const result = await listSeasonsByFamily("six-nations");
+
+    expect(result[0]?.publishedContentCount).toBe(1012);
+    expect(contentQuery.range.mock.calls).toEqual([
+      [0, 999],
+      [1000, 1999],
+    ]);
+    expect(contentQuery.order).toHaveBeenCalledWith("id", { ascending: true });
+  });
+
+  it("counts only Japanese recaps for the review-specific total", async () => {
+    const seasonQuery = { eq: vi.fn(), order: vi.fn(), select: vi.fn() };
+    const season = {
+      champion: null,
+      end_date: "2026-03-14",
+      family: "six-nations",
+      id: "six-nations-2026",
+      matches: [{ count: 15 }],
+      name: "Six Nations",
+      season: "2026",
+      slug: "six-nations-2026",
+      start_date: "2026-02-05",
+    };
+    const contentQuery = createContentQuery(
+      new Map([
+        [
+          0,
+          {
+            data: [
+              publishedContentRow("six-nations-2026", "recap", "ja"),
+              publishedContentRow("six-nations-2026", "recap", "ja"),
+              publishedContentRow("six-nations-2026", "preview", "ja"),
+              publishedContentRow("six-nations-2026", "preview", "ja"),
+              publishedContentRow("six-nations-2026", "preview", "ja"),
+              publishedContentRow("six-nations-2026", "recap", "en"),
+            ],
+            error: null,
+          },
+        ],
+      ]),
+    );
+    seasonQuery.select.mockReturnValue(seasonQuery);
+    seasonQuery.eq.mockReturnValue(seasonQuery);
+    seasonQuery.order.mockResolvedValue({ data: [season], error: null });
+    dbMocks.from.mockImplementation((table: string) =>
+      table === "competitions" ? seasonQuery : contentQuery,
+    );
+    dbMocks.getSupabasePublicServerClient.mockReturnValue({
+      from: dbMocks.from,
+    });
+
+    const result = await listSeasonsByFamily("six-nations");
+
+    expect(result[0]).toMatchObject({
+      publishedContentCount: 6,
+      publishedRecapCount: 2,
+    });
+  });
+
+  it("does not query content when the requested families have no seasons", async () => {
+    const seasonQuery = { eq: vi.fn(), order: vi.fn(), select: vi.fn() };
+    seasonQuery.select.mockReturnValue(seasonQuery);
+    seasonQuery.eq.mockReturnValue(seasonQuery);
+    seasonQuery.order.mockResolvedValue({ data: [], error: null });
+    dbMocks.from.mockReturnValue(seasonQuery);
+    dbMocks.getSupabasePublicServerClient.mockReturnValue({
+      from: dbMocks.from,
+    });
+    dbMocks.from.mockClear();
+
+    await expect(listSeasonsByFamilies(["six-nations"])).resolves.toEqual(
+      new Map([["six-nations", []]]),
+    );
+    expect(dbMocks.from).not.toHaveBeenCalledWith("match_content");
+  });
+
+  it("chunks competition ID filters into groups of one hundred", async () => {
+    const seasonQuery = { eq: vi.fn(), order: vi.fn(), select: vi.fn() };
+    const seasons = Array.from({ length: 101 }, (_, index) => ({
+      champion: null,
+      end_date: "2026-03-14",
+      family: "six-nations",
+      id: `season-${index}`,
+      matches: [{ count: 15 }],
+      name: "Six Nations",
+      season: String(2026 - index),
+      slug: `six-nations-${index}`,
+      start_date: "2026-02-05",
+    }));
+    const contentQuery = createContentQuery();
+    seasonQuery.select.mockReturnValue(seasonQuery);
+    seasonQuery.eq.mockReturnValue(seasonQuery);
+    seasonQuery.order.mockResolvedValue({ data: seasons, error: null });
+    dbMocks.from.mockImplementation((table: string) =>
+      table === "competitions" ? seasonQuery : contentQuery,
+    );
+    dbMocks.getSupabasePublicServerClient.mockReturnValue({
+      from: dbMocks.from,
+    });
+
+    await listSeasonsByFamily("six-nations");
+
+    expect(contentQuery.in).toHaveBeenCalledTimes(2);
+    expect(contentQuery.in.mock.calls[0]?.[1]).toHaveLength(100);
+    expect(contentQuery.in.mock.calls[1]?.[1]).toEqual(["season-100"]);
+  });
+
+  it("throws an error from any content page", async () => {
+    const seasonQuery = { eq: vi.fn(), order: vi.fn(), select: vi.fn() };
+    const season = {
+      champion: null,
+      end_date: "2026-03-14",
+      family: "six-nations",
+      id: "six-nations-2026",
+      matches: [{ count: 15 }],
+      name: "Six Nations",
+      season: "2026",
+      slug: "six-nations-2026",
+      start_date: "2026-02-05",
+    };
+    const queryError = new Error("second page unavailable");
+    const contentQuery = createContentQuery(
+      new Map([
+        [
+          0,
+          {
+            data: Array.from({ length: 1000 }, () =>
+              publishedContentRow("six-nations-2026"),
+            ),
+            error: null,
+          },
+        ],
+        [1000, { data: null, error: queryError }],
+      ]),
+    );
+    seasonQuery.select.mockReturnValue(seasonQuery);
+    seasonQuery.eq.mockReturnValue(seasonQuery);
+    seasonQuery.order.mockResolvedValue({ data: [season], error: null });
+    dbMocks.from.mockImplementation((table: string) =>
+      table === "competitions" ? seasonQuery : contentQuery,
+    );
+    dbMocks.getSupabasePublicServerClient.mockReturnValue({
+      from: dbMocks.from,
+    });
+
+    await expect(listSeasonsByFamily("six-nations")).rejects.toBe(queryError);
+    expect(contentQuery.range).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -130,14 +373,13 @@ describe("replacement competitions", () => {
 
   it("loads a family replacement with a separate query", async () => {
     const seasonsQuery = { eq: vi.fn(), order: vi.fn(), select: vi.fn() };
-    const contentQuery = { eq: vi.fn(), select: vi.fn() };
+    const contentQuery = createContentQuery();
     const replacementsQuery = { in: vi.fn(), select: vi.fn() };
 
     seasonsQuery.select.mockReturnValue(seasonsQuery);
     seasonsQuery.eq.mockReturnValue(seasonsQuery);
     seasonsQuery.order.mockResolvedValue({ data: [competitionRow], error: null });
-    contentQuery.select.mockReturnValue(contentQuery);
-    contentQuery.eq.mockResolvedValue({ data: [], error: null });
+    contentQuery.range.mockResolvedValue({ data: [], error: null });
     replacementsQuery.select.mockReturnValue(replacementsQuery);
     replacementsQuery.in.mockResolvedValue({
       data: [replacementCompetition],

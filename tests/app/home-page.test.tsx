@@ -406,6 +406,7 @@ describe("HomePage", () => {
         matchCount: 36,
         name: "Nations Championship 2026",
         publishedContentCount: 12,
+        publishedRecapCount: 2,
         season: "2026",
       },
     ]);
@@ -497,7 +498,7 @@ describe("HomePage", () => {
     expect(
       within(featuredCompetition).getByText("Japan 対 Ireland"),
     ).toBeInTheDocument();
-    expect(within(featuredCompetition).getByText("12本")).toBeInTheDocument();
+    expect(within(featuredCompetition).getByText("2本")).toBeInTheDocument();
     expect(within(featuredCompetition).getByText("1試合")).toBeInTheDocument();
     expect(
       screen.queryByText(/GSC|クリック|平均順位|表示回数/),

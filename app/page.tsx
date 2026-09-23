@@ -173,6 +173,7 @@ export default async function HomePage() {
             family,
             name: latestSeason.name,
             publishedContentCount: latestSeason.publishedContentCount,
+            publishedRecapCount: latestSeason.publishedRecapCount,
             season: latestSeason.season,
           };
         }),
@@ -198,8 +199,8 @@ export default async function HomePage() {
     homepageWeekMatches,
     homepageStandingPositions,
   );
-  const featuredCompetitionMatches = homepageWeekMatches.filter(
-    (match) => isFeaturedCompetitionMatch(match, featuredCompetition),
+  const featuredCompetitionMatches = homepageWeekMatches.filter((match) =>
+    isFeaturedCompetitionMatch(match, featuredCompetition),
   );
   const featuredCompetitionLink = homepageCompetitionLinks.find(
     (competition) =>
@@ -213,7 +214,7 @@ export default async function HomePage() {
     nextMatchSubLabel: featuredCompetitionNextMatch
       ? `${featuredCompetitionNextMatch.homeTeam.name} 対 ${featuredCompetitionNextMatch.awayTeam.name}`
       : "今季の予定は確認でき次第反映します",
-    publishedReviewCount: featuredCompetitionLink?.publishedContentCount ?? 0,
+    publishedReviewCount: featuredCompetitionLink?.publishedRecapCount ?? 0,
     weekMatchCount: featuredCompetitionMatches.length,
   };
   const hasHomeMatchBoard =
