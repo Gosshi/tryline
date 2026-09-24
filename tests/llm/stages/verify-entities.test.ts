@@ -79,6 +79,25 @@ const passingScores = {
 };
 
 describe("verifyNarrativeEntities", () => {
+  it("uses an explicit model override", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      model: "gpt-6-luna-2026-09-22",
+      text: JSON.stringify({ mentions: [] }),
+      usage: { inputTokens: 3000, outputTokens: 150 },
+    });
+
+    await verifyNarrativeEntities({
+      allowedEntities: [],
+      model: "gpt-6-luna",
+      narrative: "# recap",
+      sourcedFacts: [],
+    });
+
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "gpt-6-luna" }),
+    );
+  });
+
   it.each([
     ["fixture A", fixtureA, ["ハルミチ・タテカワ", "アレッサンドロ・ガルビジ"]],
     ["fixture B", fixtureB, ["アレッサンドロ・ガルビジ"]],

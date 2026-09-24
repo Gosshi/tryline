@@ -683,6 +683,7 @@ export async function evaluateNarrativeQuality(options: {
   matchEvents?: AssembledContentInput["match_events"];
   narrative: string;
   retryCount: number;
+  model?: string;
 }): Promise<QaStageResponse> {
   const hasEvents = options.hasEvents ?? false;
   const hasConfirmedSourcedFactLineup =
@@ -706,7 +707,7 @@ export async function evaluateNarrativeQuality(options: {
     attempts += 1;
 
     const response = await createTextResponse({
-      model: MODELS.FAST,
+      model: options.model ?? MODELS.FAST,
       input: prompt,
       jsonMode: true,
     });
