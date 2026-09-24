@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { buildUsableContentInput } from "@/lib/llm/lineups";
 import { generateMatchContent, type PipelineResult, type PipelineTrialDetails } from "@/lib/llm/pipeline";
 import { calculateCostUsd } from "@/lib/llm/pricing";
 import { PROMPT_VERSION as EXTRACT_PROMPT_VERSION } from "@/lib/llm/prompts/extract-tactical-points";
@@ -132,7 +133,8 @@ export async function freezePromptFixtures(
       if (args.contentType === "recap" && (assembled.match_events.length === 0 || assembled.eventIntegrity.status === "mismatch")) {
         throw new Error("recap freeze requires match events and matching score integrity");
       }
-      const tactical = await dependencies.extract(assembled);
+      const usable = buildUsableContentInput(assembled);
+      const tactical = await dependencies.extract(usable);
       const input = { assembled, tacticalPoints: tactical.result.tactical_points };
       const fixture: FrozenFixture = {
         ...input,

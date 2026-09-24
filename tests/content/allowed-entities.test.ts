@@ -31,7 +31,7 @@ const baseAssembled: AssembledContentInput = {
     },
     match: {
       late_scoring: false,
-      penalty_count: { away: 0, home: 0 },
+      penalty_goal_count: { away: 0, home: 0 },
       try_count: { away: 0, home: 0 },
     },
   },
@@ -92,6 +92,29 @@ describe("buildAllowedPersonEntities", () => {
       { name: "Warner Dearns", source: "lineup" },
       { name: "Away Nine", source: "lineup" },
       { name: "Event Scorer", source: "event" },
+    ]);
+  });
+
+  it("adds glossary player aliases only for allowed players and normalizes source names", () => {
+    const result = buildAllowedPersonEntities({
+      ...baseAssembled,
+      projected_lineups: {
+        away: [
+          { is_starter: true, jersey_number: 10, name: "  TEST   PLAYER ", position: "Fly-half" },
+        ],
+        confirmed: { away: true, home: false },
+        home: [],
+      },
+      japanese_name_glossary: [
+        { kind: "player", source: "test player", japanese: "テスト選手" },
+        { kind: "player", source: "Test Player", japanese: "テスト選手" },
+        { kind: "player", source: "Unconfirmed Player", japanese: "未確定選手" },
+      ],
+    });
+
+    expect(result).toEqual([
+      { name: "TEST PLAYER", source: "lineup" },
+      { name: "テスト選手", source: "lineup" },
     ]);
   });
 
@@ -160,6 +183,7 @@ describe("buildKnownNonPersonNames", () => {
           kind: "competition",
           source: "URC",
         },
+        { kind: "player", source: "Test Player", japanese: "テスト選手" },
       ],
       match: {
         ...baseAssembled.match,

@@ -21,8 +21,8 @@ import {
   measureContentLength,
 } from "@/lib/llm/content-length";
 import {
+  buildUsableContentInput,
   hasConfirmedProjectedLineups,
-  sanitizeUnconfirmedProjectedLineups,
 } from "@/lib/llm/lineups";
 import { MODELS } from "@/lib/llm/models";
 import {
@@ -32,7 +32,6 @@ import {
   notifyEventIntegrityMismatch,
 } from "@/lib/llm/notify";
 import { calculateCostUsd } from "@/lib/llm/pricing";
-import { hasCurrentStandings } from "@/lib/llm/prompts/shared-prompt-blocks";
 import { assembleMatchContentInput } from "@/lib/llm/stages/assemble";
 import { extractTacticalPoints } from "@/lib/llm/stages/extract-facts";
 import {
@@ -334,14 +333,14 @@ export async function generateMatchContent(
     };
   }
 
-  const hasEvents = assembled.match_events.length > 0;
-  const hasLineups = hasConfirmedProjectedLineups(assembled.projected_lineups);
+  const usable = buildUsableContentInput(assembled);
+  const hasEvents = usable.match_events.length > 0;
+  const hasLineups = hasConfirmedProjectedLineups(usable.projected_lineups);
   const hasSourcedFactLineup = hasConfirmedSourcedFactLineup(
-    assembled.sourced_facts,
+    usable.sourced_facts,
   );
-  const qaAssembled = sanitizeUnconfirmedProjectedLineups(assembled);
-  const allowedEntities = buildAllowedPersonEntities(assembled);
-  const knownNonPersonNames = buildKnownNonPersonNames(assembled);
+  const allowedEntities = buildAllowedPersonEntities(usable);
+  const knownNonPersonNames = buildKnownNonPersonNames(usable);
   let totalCostUsd = 0;
 
   const stage2StartedAt = Date.now();
@@ -355,13 +354,13 @@ export async function generateMatchContent(
       attempts: 0,
     };
   } else try {
-    tactical = await extractTacticalPoints(assembled, options.models?.fast);
+    tactical = await extractTacticalPoints(usable, options.models?.fast);
   } catch (error) {
     await recordPipelineRun({
       matchId,
       contentType,
       stage: 2,
-      inputHash: hashInput(assembled),
+      inputHash: hashInput(usable),
       durationMs: Date.now() - stage2StartedAt,
       status: "failed",
       errorMessage: error instanceof Error ? error.message : "extract failed",
@@ -389,7 +388,7 @@ export async function generateMatchContent(
     matchId,
     contentType,
     stage: 2,
-    inputHash: hashInput(assembled),
+    inputHash: hashInput(usable),
     output: tactical.result,
     costUsd: stage2CostUsd,
     durationMs: Date.now() - stage2StartedAt,
@@ -422,59 +421,58 @@ export async function generateMatchContent(
             knownNonPersonNames,
             model: options.models?.fast,
             narrative: gateOptions.narrative,
-            sourcedFacts: assembled.sourced_facts,
+            sourcedFacts: usable.sourced_facts,
           }),
       evaluateNarrativeQuality({
         contentType,
         language,
         matchContext: {
-          awayScore: assembled.match.away_score,
-          awayTeam: assembled.match.away_team?.name ?? "Away",
-          competitionName: assembled.match.competition?.name ?? null,
-          ...(hasCurrentStandings(assembled.standings_freshness) &&
-          assembled.competition_standings.length > 0
-            ? { competitionStandings: assembled.competition_standings }
+          awayScore: usable.match.away_score,
+          awayTeam: usable.match.away_team?.name ?? "Away",
+          competitionName: usable.match.competition?.name ?? null,
+          ...(usable.competition_standings.length > 0
+            ? { competitionStandings: usable.competition_standings }
             : {}),
-          derivedStats: assembled.derived_stats,
+          derivedStats: usable.derived_stats,
           formStats: {
             away: {
               avg_points_against_last_5:
-                assembled.key_stats.away.avg_points_against_last_5,
+                usable.key_stats.away.avg_points_against_last_5,
               avg_points_for_last_5:
-                assembled.key_stats.away.avg_points_for_last_5,
+                usable.key_stats.away.avg_points_for_last_5,
               record_last_5: buildRecentFormRecord(
-                assembled.recent_form.away,
-                assembled.match.away_team?.name ?? "Away",
+                usable.recent_form.away,
+                usable.match.away_team?.name ?? "Away",
               ),
-              win_rate_last_5: assembled.key_stats.away.win_rate_last_5,
+              win_rate_last_5: usable.key_stats.away.win_rate_last_5,
             },
             home: {
               avg_points_against_last_5:
-                assembled.key_stats.home.avg_points_against_last_5,
+                usable.key_stats.home.avg_points_against_last_5,
               avg_points_for_last_5:
-                assembled.key_stats.home.avg_points_for_last_5,
+                usable.key_stats.home.avg_points_for_last_5,
               record_last_5: buildRecentFormRecord(
-                assembled.recent_form.home,
-                assembled.match.home_team?.name ?? "Home",
+                usable.recent_form.home,
+                usable.match.home_team?.name ?? "Home",
               ),
-              win_rate_last_5: assembled.key_stats.home.win_rate_last_5,
+              win_rate_last_5: usable.key_stats.home.win_rate_last_5,
             },
           },
-          homeScore: assembled.match.home_score,
-          homeTeam: assembled.match.home_team?.name ?? "Home",
-          japanese_name_glossary: qaAssembled.japanese_name_glossary,
-          match_events: qaAssembled.match_events,
-          projected_lineups: qaAssembled.projected_lineups,
-          recent_form: assembled.recent_form,
-          score_timeline: qaAssembled.score_timeline,
-          sourcedFacts: assembled.sourced_facts,
-          teamStats: assembled.team_stats,
-          venue: assembled.match.venue,
+          homeScore: usable.match.home_score,
+          homeTeam: usable.match.home_team?.name ?? "Home",
+          japanese_name_glossary: usable.japanese_name_glossary,
+          match_events: usable.match_events,
+          projected_lineups: usable.projected_lineups,
+          recent_form: usable.recent_form,
+          score_timeline: usable.score_timeline,
+          sourcedFacts: usable.sourced_facts,
+          teamStats: usable.team_stats,
+          venue: usable.match.venue,
         },
         hasConfirmedSourcedFactLineup: hasSourcedFactLineup,
         hasEvents,
         hasLineups,
-        matchEvents: assembled.match_events,
+        matchEvents: usable.match_events,
         model: gateOptions.qaModel ?? options.models?.fast,
         narrative: gateOptions.narrative,
         retryCount: gateOptions.retryCount,
@@ -503,7 +501,7 @@ export async function generateMatchContent(
     narrativeAttempts += 1;
     const stage3StartedAt = Date.now();
     const narrative = await generateNarrative({
-      assembled,
+      assembled: usable,
       tacticalPoints: tactical.result.tactical_points,
       contentType,
       // TODO(D009): Reddit/SNS シグナルが実装されたらここに渡す。現在は常に空配列。
@@ -541,7 +539,7 @@ export async function generateMatchContent(
       contentType,
       stage: 3,
       inputHash: hashInput({
-        assembled,
+        assembled: usable,
         tactical: tactical.result,
         // TODO(D009): Reddit/SNS シグナルが実装されたらここに渡す。現在は常に空配列。
         additionalSignals: [],
@@ -678,7 +676,7 @@ export async function generateMatchContent(
       const revisionStartedAt = Date.now();
       const revised = await reviseNarrativeLength({
         additionalSignals: [],
-        assembled,
+        assembled: usable,
         contentType,
         currentContent: finalNarrative,
         entityViolationSurfaces: entityViolationFeedback,
@@ -714,7 +712,7 @@ export async function generateMatchContent(
         contentType,
         stage: 3,
         inputHash: hashInput({
-          assembled,
+          assembled: usable,
           contentType,
           currentContent: narrative.content,
           reason: "content_length_under_minimum",
@@ -1042,8 +1040,8 @@ export async function generateMatchContent(
     finalNarrative,
     contentLengthRequirement,
   );
-  const matchLabel = `${assembled.match.home_team?.name ?? "ホーム不明"} 対 ${assembled.match.away_team?.name ?? "アウェイ不明"}`;
-  const kickoffAtJst = formatKickoffJst(assembled.match.kickoff_at);
+  const matchLabel = `${usable.match.home_team?.name ?? "ホーム不明"} 対 ${usable.match.away_team?.name ?? "アウェイ不明"}`;
+  const kickoffAtJst = formatKickoffJst(usable.match.kickoff_at);
 
   if (
     persist &&
@@ -1070,7 +1068,7 @@ export async function generateMatchContent(
 
   if (persist && persistedStatus === "published") {
     const urls = [`${SITE_URL}/matches/${matchId}`];
-    const competition = assembled.match.competition;
+    const competition = usable.match.competition;
 
     if (competition?.family && competition.season) {
       const competitionUrl = `${SITE_URL}/c/${competition.family}/${competition.season}`;
@@ -1090,8 +1088,8 @@ export async function generateMatchContent(
 
     urls.push(`${SITE_URL}/calendar`);
 
-    const homeTeamSlug = assembled.match.home_team?.slug;
-    const awayTeamSlug = assembled.match.away_team?.slug;
+    const homeTeamSlug = usable.match.home_team?.slug;
+    const awayTeamSlug = usable.match.away_team?.slug;
     if (contentType === "preview" && homeTeamSlug && awayTeamSlug) {
       try {
         const h2hMatchCount = await countHeadToHeadMatches(
@@ -1116,7 +1114,7 @@ export async function generateMatchContent(
 
     if (
       contentType === "recap" &&
-      assembled.match.competition?.family === "league-one"
+      usable.match.competition?.family === "league-one"
     ) {
       urls.push(`${SITE_URL}/matches/${matchId}/en`);
     }
@@ -1147,11 +1145,11 @@ export async function generateMatchContent(
         deterministicGuardIssues: getDeterministicQaGuardIssues(finalQa),
         kickoffAtJst,
         lineupCount: hasLineups
-          ? assembled.projected_lineups.home.length +
-            assembled.projected_lineups.away.length
+          ? usable.projected_lineups.home.length +
+            usable.projected_lineups.away.length
           : 0,
         matchLabel,
-        sourcedFactsCount: assembled.sourced_facts.length,
+        sourcedFactsCount: usable.sourced_facts.length,
       },
       ...(preservedPublished ? { preservedPublished: true } : {}),
     });
@@ -1181,7 +1179,7 @@ export async function generateMatchContent(
             promptSha256: hashText(narrativePrompt),
             prompt: narrativePrompt,
             inputSha256: hashInput({
-              assembled,
+              usable,
               tacticalPoints: tactical.result.tactical_points,
             }),
             stageMetrics: trialStageMetrics,

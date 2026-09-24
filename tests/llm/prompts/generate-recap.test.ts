@@ -46,7 +46,7 @@ const assembled: AssembledContentInput = {
     },
     match: {
       late_scoring: false,
-      penalty_count: { away: 0, home: 0 },
+      penalty_goal_count: { away: 0, home: 0 },
       try_count: { away: 0, home: 0 },
     },
   },
@@ -57,8 +57,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.20.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.20.0");
+  it("uses recap prompt version 4.21.0", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.21.0");
   });
 
   it("does not disclose missing system data while allowing factual limits", () => {
@@ -275,7 +275,6 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).not.toContain("competition_standings の順位変動");
     expect(prompt).toContain("h2h_last_5 の直近対戦スコア");
     expect(prompt).toContain("key_stats の直近平均得点・失点");
-    expect(prompt).toContain("key_stats.match.penalty_count");
     expect(prompt).toContain("key_stats.match.try_count");
     expect(prompt).toContain("key_stats.match.late_scoring");
     expect(prompt).toContain(
@@ -284,6 +283,7 @@ describe("buildGenerateRecapPrompt", () => {
     expect(prompt).not.toContain("ペナルティ累積");
     expect(prompt).not.toContain("接戦の終盤");
     expect(prompt).not.toContain("逃げ表現");
+    expect(prompt).not.toContain("テリトリー・プレッシャー型");
     expect(prompt).toContain(
       "各セクションが指定字数の**下限**を下回ってはならない",
     );

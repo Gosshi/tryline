@@ -1,8 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
+import {
+  buildAllowedPersonEntities,
+  buildKnownNonPersonNames,
+} from "@/lib/content/allowed-entities";
 import { UNGROUNDED_ENTITY_ISSUE } from "@/lib/content/fabrication-guard";
 import { applyEntityGroundingQaGuard } from "@/lib/llm/stages/qa";
 import { verifyNarrativeEntities } from "@/lib/llm/stages/verify-entities";
+import { makeAssembled } from "@/tests/fixtures/content-prompt-ab";
 
 const openAIMock = vi.hoisted(() => ({
   createTextResponse: vi.fn(),
@@ -237,6 +242,52 @@ describe("verifyNarrativeEntities", () => {
       { surface: "アイルランド", matched_entity: null },
       { surface: "URC", matched_entity: "URC" },
     ]);
+    expect(response.result.ungroundedSurfaces).toEqual([]);
+  });
+
+  it("does not exempt player glossary entries from entity grounding", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      model: "gpt-4o-mini-2024-07-18",
+      text: JSON.stringify({ mentions: [{ surface: "テスト選手", matched_entity: null }] }),
+      usage: { inputTokens: 900, outputTokens: 90 },
+    });
+
+    const response = await verifyNarrativeEntities({
+      allowedEntities: [],
+      knownNonPersonNames: buildKnownNonPersonNames(makeAssembled({
+        japanese_name_glossary: [
+          { kind: "player", source: "Test Player", japanese: "テスト選手" },
+        ],
+      })),
+      narrative: "テスト選手に注目する。",
+      sourcedFacts: [],
+    });
+
+    expect(response.result.ungroundedSurfaces).toEqual(["テスト選手"]);
+  });
+
+  it("allows a glossary alias when the matching player is an allowed entity", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      model: "gpt-4o-mini-2024-07-18",
+      text: JSON.stringify({ mentions: [{ surface: "テスト選手", matched_entity: "テスト選手" }] }),
+      usage: { inputTokens: 900, outputTokens: 90 },
+    });
+
+    const response = await verifyNarrativeEntities({
+      allowedEntities: buildAllowedPersonEntities(makeAssembled({
+        projected_lineups: {
+          home: [{ name: "Test Player", position: "Centre", jersey_number: 12, is_starter: true }],
+          away: [],
+          confirmed: { home: true, away: false },
+        },
+        japanese_name_glossary: [
+          { kind: "player", source: "  test   player ", japanese: "テスト選手" },
+        ],
+      })),
+      narrative: "テスト選手に注目する。",
+      sourcedFacts: [],
+    });
+
     expect(response.result.ungroundedSurfaces).toEqual([]);
   });
 

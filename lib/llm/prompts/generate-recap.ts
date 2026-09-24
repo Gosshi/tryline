@@ -21,7 +21,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.20.0";
+export const PROMPT_VERSION = "recap@4.21.0";
 
 const MISSING_DATA_DISCLOSURE_BLOCK = [
   "【本文でシステム内部のデータ不在を開示しない】読者に向けて「入力データ」「提供されたデータ」等のシステム内部を指す語を出してはならない。",
@@ -245,7 +245,6 @@ export function buildGenerateRecapPrompt(
         "- recent_form の直近5試合から連勝/連敗ストリーク・平均得失点の傾向（攻撃型 or 守備型か）・直近の勝ち方の特徴を読み取り本文に反映すること。冒頭は「得点力」で始めず、直近の試合展開・プレースタイルの特徴・今節の文脈から書き始めること",
         "- h2h_last_5 の直近対戦スコアを引用し、今回の結果との比較を行うこと",
         "- key_stats の直近平均得点・失点と今回のスコアを対比して試合の特徴を示すこと",
-        "- key_stats.match.penalty_count の合計が 8 以上の場合、テリトリー・プレッシャー型の試合と評価すること",
         "- key_stats.match.try_count からオープンなラグビー（ハイトライ）かキック主体（ロートライ）かを評価すること",
         "- key_stats.match.late_scoring が true の場合、終盤まで試合が動いた展開であることを明記すること",
       ].join("\n")

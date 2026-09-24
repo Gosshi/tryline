@@ -60,7 +60,7 @@ export function makeAssembled(overrides: Partial<AssembledContentInput> = {}): A
     key_stats: {
       home: { avg_points_for_last_5: 25, avg_points_against_last_5: 18, avg_score_diff_last_5: 7, result_streak: "winning", win_rate_last_5: 0.8 },
       away: { avg_points_for_last_5: 21, avg_points_against_last_5: 24, avg_score_diff_last_5: -3, result_streak: "mixed", win_rate_last_5: 0.4 },
-      match: { penalty_count: { home: 4, away: 6 }, try_count: { home: 3, away: 2 }, late_scoring: true },
+      match: { penalty_goal_count: { home: 4, away: 6 }, try_count: { home: 3, away: 2 }, late_scoring: true },
     },
     score_timeline: null,
     derived_stats: null,
