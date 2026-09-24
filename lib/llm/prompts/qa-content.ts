@@ -10,7 +10,7 @@ import type {
   SourcedFactInput,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "qa@2.11.0";
+export const PROMPT_VERSION = "qa@2.12.0";
 
 export type TeamFormStats = {
   avg_points_against_last_5?: number | null;
@@ -31,6 +31,8 @@ export type QaMatchContext = {
   };
   homeScore: number | null;
   homeTeam: string;
+  h2h_last_5?: AssembledContentInput["h2h_last_5"];
+  kickoff_at_jst?: string | null;
   japanese_name_glossary?: AssembledContentInput["japanese_name_glossary"];
   match_events?: AssembledContentInput["match_events"];
   projected_lineups?: AssembledContentInput["projected_lineups"];
@@ -60,7 +62,7 @@ export function getRecapSourcedFactCoverage(
 const QA_GENERATION_FIELD_DISPOSITIONS = {
   competition_standings: "grounded",
   derived_stats: "grounded",
-  h2h_last_5: "out_of_scope",
+  h2h_last_5: "grounded",
   injuries: "not_used_for_factual_grounding",
   japanese_name_glossary: "grounded",
   key_stats: "grounded",
@@ -97,8 +99,10 @@ export const QA_GROUNDING_CONTEXT_FIELDS = {
     "competitionName",
     "homeScore",
     "homeTeam",
+    "kickoff_at_jst",
     "venue",
   ],
+  h2h_last_5: ["h2h_last_5"],
   match_events: ["match_events"],
   projected_lineups: ["projected_lineups"],
   recent_form: ["recent_form"],
@@ -367,13 +371,16 @@ export function buildQaContentPrompt(
       ? { competition_name: matchContext.competitionName }
       : {}),
     ...(matchContext.venue ? { venue: matchContext.venue } : {}),
+    ...(matchContext.kickoff_at_jst
+      ? { kickoff_at_jst: matchContext.kickoff_at_jst }
+      : {}),
   };
   const matchMetadataBlock =
     Object.keys(matchMetadata).length === 0
       ? ""
       : [
           "## match_metadata grounding",
-          "以下は試合に紐づく実データです。本文がこれらの大会名・会場に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+          "以下は試合に紐づく実データです。本文がこれらの大会名・会場・日本時間のキックオフ日時に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
           JSON.stringify(matchMetadata),
         ].join("\n");
   const formStats = Object.fromEntries(
@@ -409,6 +416,14 @@ export function buildQaContentPrompt(
           "## recent_form grounding",
           "以下は直近5試合の個別結果です。本文がこれらの対戦相手・スコア・ホーム/アウェーに言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
           JSON.stringify(matchContext.recent_form),
+        ].join("\n");
+  const h2hBlock =
+    !matchContext.h2h_last_5 || matchContext.h2h_last_5.length === 0
+      ? ""
+      : [
+          "## h2h_last_5 grounding",
+          "以下は両チームの直近の直接対戦の結果です。本文がこれらの日付・スコア・会場に言及している場合、入力データに基づく正当な記述として扱い factual_grounding を下げないこと。",
+          JSON.stringify(matchContext.h2h_last_5),
         ].join("\n");
   const localizedLineups = localizeLineupsForQa(
     matchContext.projected_lineups,
@@ -486,6 +501,7 @@ export function buildQaContentPrompt(
     matchMetadataBlock,
     formStatsBlock,
     recentFormBlock,
+    h2hBlock,
     lineupsBlock,
     eventsBlock,
     'JSONのみで返答。スキーマ: {"scores":{"information_density":1-5,"japanese_quality":1-5,"factual_grounding":1-5,"tactical_depth":1-5},"issues":string[],"statedWinner":"home"|"away"|"unclear","statedPlayerStats":[{"playerName":string,"tries"?:number,"conversions"?:number,"penaltyGoals"?:number,"totalPoints"?:number}]}',

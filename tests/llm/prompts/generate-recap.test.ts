@@ -34,14 +34,14 @@ const assembled: AssembledContentInput = {
       avg_points_for_last_5: null,
       avg_points_against_last_5: null,
       avg_score_diff_last_5: null,
-      result_streak: null,
+      result_streak: null, games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null,
       win_rate_last_5: null,
     },
     away: {
       avg_points_for_last_5: null,
       avg_points_against_last_5: null,
       avg_score_diff_last_5: null,
-      result_streak: null,
+      result_streak: null, games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null,
       win_rate_last_5: null,
     },
     match: {
@@ -57,8 +57,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.21.0", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.21.0");
+  it("uses recap prompt version 4.21.1", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.21.1");
   });
 
   it("does not disclose missing system data while allowing factual limits", () => {

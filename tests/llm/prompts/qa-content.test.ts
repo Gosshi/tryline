@@ -53,8 +53,35 @@ describe("buildQaContentPrompt", () => {
     expect(stale).not.toContain("## competition_standings grounding");
   });
 
-  it("uses qa prompt version 2.11.0", () => {
-    expect(PROMPT_VERSION).toBe("qa@2.11.0");
+  it("uses qa prompt version 2.12.0", () => {
+    expect(PROMPT_VERSION).toBe("qa@2.12.0");
+  });
+
+  it("grounds direct head-to-head results and JST kickoff metadata only when present", () => {
+    const prompt = buildQaContentPrompt("preview", "本文", "ja", {
+      ...matchContext,
+      h2h_last_5: [
+        {
+          match_id: "previous",
+          kickoff_at: "2026-01-01T00:00:00Z",
+          home_team_name: "Ireland",
+          away_team_name: "France",
+          home_score: 15,
+          away_score: 48,
+          status: "finished",
+        },
+      ],
+      kickoff_at_jst: "2026-09-26 (土) 20:00 JST",
+    });
+
+    expect(getQaGroundingCoverageGaps()).toEqual([]);
+    expect(prompt).toContain("## h2h_last_5 grounding");
+    expect(prompt).toContain('"home_score":15');
+    expect(prompt).toContain("kickoff_at_jst");
+    expect(prompt).toContain("2026-09-26 (土) 20:00 JST");
+    expect(
+      buildQaContentPrompt("preview", "本文", "ja", matchContext),
+    ).not.toContain("## h2h_last_5 grounding");
   });
 
   it("asks QA to lower information density when supplied statistics and cards are unused", () => {

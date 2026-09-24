@@ -203,7 +203,7 @@ describe("verifyNarrativeEntities", () => {
     });
 
     expect(response.result.ungroundedSurfaces).toEqual(["未確認選手"]);
-    expect(response.promptVersion).toBe("entity-verification@1.1.0");
+    expect(response.promptVersion).toBe("entity-verification@1.2.0");
   });
 
   it("excludes known team and competition names from ungrounded surfaces while keeping mentions", async () => {
@@ -361,6 +361,49 @@ describe("verifyNarrativeEntities", () => {
     });
 
     expect(response.result.ungroundedSurfaces).toEqual(["Aki"]);
+  });
+
+  it("rechecks an ungrounded surface and accepts only an allowed entity", async () => {
+    const callCountBefore = openAIMock.createTextResponse.mock.calls.length;
+    openAIMock.createTextResponse
+      .mockResolvedValueOnce({ model: "first", text: JSON.stringify({ mentions: [{ surface: "イザイア・アームストロングラヴラ", matched_entity: null }] }), usage: { inputTokens: 100, outputTokens: 20 } })
+      .mockResolvedValueOnce({ model: "retry", text: JSON.stringify({ mentions: [{ surface: "イザイア・アームストロングラヴラ", matched_entity: "Isaiah Armstrong-Ravula" }] }), usage: { inputTokens: 50, outputTokens: 10 } });
+    const response = await verifyNarrativeEntities({
+      allowedEntities: [{ name: "Isaiah Armstrong-Ravula", source: "lineup" }],
+      narrative: "イザイア・アームストロングラヴラが出場する。",
+      sourcedFacts: [],
+    });
+    expect(response.result.ungroundedSurfaces).toEqual([]);
+    expect(openAIMock.createTextResponse).toHaveBeenCalledTimes(callCountBefore + 2);
+    expect(openAIMock.createTextResponse.mock.calls[callCountBefore + 1]?.[0].input).toContain("イザイア・アームストロングラヴラ");
+  });
+
+  it("keeps a retry match outside the allowlist ungrounded", async () => {
+    openAIMock.createTextResponse
+      .mockResolvedValueOnce({ model: "first", text: JSON.stringify({ mentions: [{ surface: "未確認選手", matched_entity: null }] }), usage: { inputTokens: 100, outputTokens: 20 } })
+      .mockResolvedValueOnce({ model: "retry", text: JSON.stringify({ mentions: [{ surface: "未確認選手", matched_entity: "Unknown Player" }] }), usage: { inputTokens: 50, outputTokens: 10 } });
+    const response = await verifyNarrativeEntities({ allowedEntities: [], narrative: "未確認選手", sourcedFacts: [] });
+    expect(response.result.ungroundedSurfaces).toEqual(["未確認選手"]);
+  });
+
+  it("keeps the first result when the retry throws", async () => {
+    openAIMock.createTextResponse
+      .mockResolvedValueOnce({ model: "first", text: JSON.stringify({ mentions: [{ surface: "未確認選手", matched_entity: null }] }), usage: { inputTokens: 100, outputTokens: 20 } })
+      .mockRejectedValueOnce(new Error("network failure"));
+    const response = await verifyNarrativeEntities({ allowedEntities: [], narrative: "未確認選手", sourcedFacts: [] });
+    expect(response.result.ungroundedSurfaces).toEqual(["未確認選手"]);
+  });
+
+  it("does not retry when the first result has no ungrounded surfaces", async () => {
+    const callCountBefore = openAIMock.createTextResponse.mock.calls.length;
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      model: "first", text: JSON.stringify({ mentions: [{ surface: "Known Player", matched_entity: "Known Player" }] }), usage: { inputTokens: 100, outputTokens: 20 },
+    });
+    await verifyNarrativeEntities({
+      allowedEntities: [{ name: "Known Player", source: "lineup" }],
+      narrative: "Known Player", sourcedFacts: [],
+    });
+    expect(openAIMock.createTextResponse).toHaveBeenCalledTimes(callCountBefore + 1);
   });
 
   it("fails closed when the verifier cannot return valid JSON", async () => {

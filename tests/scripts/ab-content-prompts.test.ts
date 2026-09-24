@@ -41,8 +41,8 @@ function assembled(overrides: Partial<AssembledContentInputWithEventIntegrity> =
     projected_lineups: { home: [], away: [] },
     injuries: { home: [], away: [] },
     key_stats: {
-      home: { avg_points_for_last_5: null, avg_points_against_last_5: null, win_rate_last_5: null, avg_score_diff_last_5: null, result_streak: null },
-      away: { avg_points_for_last_5: null, avg_points_against_last_5: null, win_rate_last_5: null, avg_score_diff_last_5: null, result_streak: null },
+      home: { avg_points_for_last_5: null, avg_points_against_last_5: null, win_rate_last_5: null, avg_score_diff_last_5: null, result_streak: null, games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null },
+      away: { avg_points_for_last_5: null, avg_points_against_last_5: null, win_rate_last_5: null, avg_score_diff_last_5: null, result_streak: null, games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null },
       match: { penalty_goal_count: { home: 0, away: 0 }, try_count: { home: 1, away: 0 }, late_scoring: false },
     },
     score_timeline: null,
@@ -154,7 +154,7 @@ describe("ab-content-prompts", () => {
     });
     const extract = vi.fn(async (_input: AssembledContentInput) => ({
       result: { tactical_points: points },
-      promptVersion: "extract@2.4.0",
+      promptVersion: "extract@2.5.0",
       modelVersion: "gpt-5.6-luna",
       usage: { inputTokens: 1, outputTokens: 1 },
       attempts: 1,

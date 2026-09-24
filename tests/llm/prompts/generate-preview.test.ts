@@ -34,14 +34,14 @@ const assembled: AssembledContentInput = {
       avg_points_for_last_5: null,
       avg_points_against_last_5: null,
       avg_score_diff_last_5: null,
-      result_streak: null,
+      result_streak: null, games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null,
       win_rate_last_5: null,
     },
     away: {
       avg_points_for_last_5: null,
       avg_points_against_last_5: null,
       avg_score_diff_last_5: null,
-      result_streak: null,
+      result_streak: null, games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null,
       win_rate_last_5: null,
     },
     match: {
@@ -57,8 +57,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.15.1", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.15.1");
+  it("uses preview prompt version 3.15.2", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.15.2");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -91,7 +91,7 @@ describe("buildGeneratePreviewPrompt", () => {
           ...assembled.key_stats,
           home: {
             ...assembled.key_stats.home,
-            result_streak: "winning",
+            result_streak: "winning", games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null,
           },
         },
       },
@@ -113,11 +113,11 @@ describe("buildGeneratePreviewPrompt", () => {
           ...assembled.key_stats,
           away: {
             ...assembled.key_stats.away,
-            result_streak: "winning",
+            result_streak: "winning", games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null,
           },
           home: {
             ...assembled.key_stats.home,
-            result_streak: "winning",
+            result_streak: "winning", games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null,
           },
         },
         sourced_facts: [

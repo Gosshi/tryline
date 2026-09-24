@@ -16,14 +16,14 @@ const assembled: AssembledContentInput = {
       avg_points_against_last_5: null,
       avg_points_for_last_5: null,
       avg_score_diff_last_5: null,
-      result_streak: null,
+      result_streak: null, games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null,
       win_rate_last_5: null,
     },
     home: {
       avg_points_against_last_5: null,
       avg_points_for_last_5: null,
       avg_score_diff_last_5: null,
-      result_streak: null,
+      result_streak: null, games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null,
       win_rate_last_5: null,
     },
     match: {
@@ -55,8 +55,17 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildExtractTacticalPointsPrompt", () => {
-  it("uses extract prompt version 2.4.0", () => {
-    expect(PROMPT_VERSION).toBe("extract@2.4.0");
+  it("uses extract prompt version 2.5.0", () => {
+    expect(PROMPT_VERSION).toBe("extract@2.5.0");
+  });
+
+  it("instructs extraction to use supplied result counts without recalculating", () => {
+    const prompt = buildExtractTacticalPointsPrompt(assembled);
+
+    expect(prompt).toContain("【数値の扱い】");
+    expect(prompt).toContain("recent_form から数え直さない");
+    expect(prompt).toContain("5 未満なら「直近◯試合」と実際の数を書く");
+    expect(prompt).toContain("自分で計算して書かない");
   });
 
   it("documents variable tactical point counts", () => {

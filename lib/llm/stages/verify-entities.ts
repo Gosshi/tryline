@@ -1,6 +1,7 @@
 import { MODELS } from "@/lib/llm/models";
 import { createTextResponse } from "@/lib/llm/openai";
 import {
+  buildRetryVerifyEntitiesPrompt,
   buildVerifyEntitiesPrompt,
   PROMPT_VERSION,
 } from "@/lib/llm/prompts/verify-entities";
@@ -159,17 +160,87 @@ export async function verifyNarrativeEntities(options: {
     });
 
     try {
-      return {
-        result: parseEntityVerificationResponse(
-          response.text,
+      const result = parseEntityVerificationResponse(
+        response.text,
+        options.allowedEntities,
+        options.sourcedFacts,
+        options.knownNonPersonNames,
+      );
+      if (result.ungroundedSurfaces.length === 0) {
+        return {
+          result,
+          modelVersion: response.model,
+          promptVersion: PROMPT_VERSION,
+          usage: response.usage,
+          attempts,
+        };
+      }
+
+      const retrySurfaces = result.ungroundedSurfaces;
+      let retryResult: EntityVerificationResult | null = null;
+      let retryResponse: Awaited<ReturnType<typeof createTextResponse>> | null = null;
+      try {
+        retryResponse = await createTextResponse({
+          model: options.model ?? MODELS.FAST,
+          input: buildRetryVerifyEntitiesPrompt({
+            surfaces: retrySurfaces,
+            allowedEntities: options.allowedEntities,
+            sourcedFacts: options.sourcedFacts,
+          }),
+          jsonMode: true,
+        });
+        retryResult = parseEntityVerificationResponse(
+          retryResponse.text,
           options.allowedEntities,
           options.sourcedFacts,
           options.knownNonPersonNames,
+        );
+      } catch {
+        // A failed or invalid retry must preserve the first verification result.
+      }
+
+      if (!retryResult || !retryResponse) {
+        return {
+          result,
+          modelVersion: response.model,
+          promptVersion: PROMPT_VERSION,
+          usage: response.usage,
+          attempts,
+        };
+      }
+
+      const retriedSurfaceSet = new Set(retrySurfaces);
+      const retryMentionSurfaces = new Set(
+        retryResult.mentions.map((mention) => mention.surface),
+      );
+      const retryUngrounded = new Set(retryResult.ungroundedSurfaces);
+      const cleared = new Set(
+        retrySurfaces.filter(
+          (surface) =>
+            retryMentionSurfaces.has(surface) && !retryUngrounded.has(surface),
         ),
-        modelVersion: response.model,
+      );
+      return {
+        result: {
+          mentions: [
+            ...result.mentions.filter(
+              (mention) => !retriedSurfaceSet.has(mention.surface),
+            ),
+            ...retryResult.mentions.filter((mention) =>
+              retriedSurfaceSet.has(mention.surface),
+            ),
+          ],
+          ungroundedSurfaces: result.ungroundedSurfaces.filter(
+            (surface) => !cleared.has(surface),
+          ),
+        },
+        modelVersion: retryResponse.model,
         promptVersion: PROMPT_VERSION,
-        usage: response.usage,
-        attempts,
+        usage: {
+          inputTokens: response.usage.inputTokens + retryResponse.usage.inputTokens,
+          outputTokens: response.usage.outputTokens + retryResponse.usage.outputTokens,
+        },
+        attempts: attempts + 1,
       };
     } catch (error) {
       if (attempts >= 2) {
