@@ -42,7 +42,7 @@ function assembled(overrides: Partial<AssembledContentInputWithEventIntegrity> =
     key_stats: {
       home: { avg_points_for_last_5: null, avg_points_against_last_5: null, win_rate_last_5: null, avg_score_diff_last_5: null, result_streak: null },
       away: { avg_points_for_last_5: null, avg_points_against_last_5: null, win_rate_last_5: null, avg_score_diff_last_5: null, result_streak: null },
-      match: { penalty_count: { home: 0, away: 0 }, try_count: { home: 1, away: 0 }, late_scoring: false },
+      match: { penalty_goal_count: { home: 0, away: 0 }, try_count: { home: 1, away: 0 }, late_scoring: false },
     },
     score_timeline: null,
     derived_stats: null,

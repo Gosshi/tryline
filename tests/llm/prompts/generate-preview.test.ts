@@ -46,7 +46,7 @@ const assembled: AssembledContentInput = {
     },
     match: {
       late_scoring: false,
-      penalty_count: { away: 0, home: 0 },
+      penalty_goal_count: { away: 0, home: 0 },
       try_count: { away: 0, home: 0 },
     },
   },
@@ -57,8 +57,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.15.0", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.15.0");
+  it("uses preview prompt version 3.15.1", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.15.1");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {

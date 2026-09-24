@@ -1,6 +1,6 @@
 import type { AssembledContentInput } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "extract@2.3.0";
+export const PROMPT_VERSION = "extract@2.4.0";
 
 export function buildExtractTacticalPointsPrompt(
   input: AssembledContentInput,
@@ -52,7 +52,7 @@ export function buildExtractTacticalPointsPrompt(
       "【戦術次元の例 — これ以外でも構わない】",
       "- 得点力の対比（key_stats.avg_points_for_last_5 / avg_score_diff_last_5）",
       "- 直近フォーム（recent_form の連勝・連敗、key_stats.win_rate_last_5）",
-      "- 規律と反則傾向（key_stats.match.penalty_count）",
+      "- 得点手段の偏り（key_stats.match.try_count と penalty_goal_count。penalty_goal_count は成功したペナルティゴールの本数で、反則数ではない）",
       "- 試合運び（score_timeline.lead_changes / key_stats.match.late_scoring）",
       "- 対戦相性（h2h_last_5 の直近対戦スコア）",
       "- 順位・大会文脈（competition_standings の順位・勝ち点差）",

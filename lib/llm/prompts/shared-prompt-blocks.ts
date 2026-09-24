@@ -1,4 +1,8 @@
+import { hasCurrentStandings } from "@/lib/llm/lineups";
+
 import type { AdditionalSignal } from "@/lib/llm/types";
+
+export { hasCurrentStandings } from "@/lib/llm/lineups";
 
 export const RUGBY_JOURNALIST_PERSONA_BASE = [
   "あなたは国際ラグビーを20年取材してきたジャーナリストです。",
@@ -60,27 +64,10 @@ export function buildSignalsBlock(signals: AdditionalSignal[]): string {
     : `外部シグナル(距離を取った帰属表現で利用): ${JSON.stringify(signals)}`;
 }
 
-export type StandingsFreshness = {
-  home: { expected_played: number; played: number | null };
-  away: { expected_played: number; played: number | null };
-};
-
-export function hasCurrentStandings(
-  freshness: StandingsFreshness | undefined,
-): boolean {
-  return (
-    !freshness ||
-    (freshness.home.played !== null &&
-      freshness.away.played !== null &&
-      freshness.home.played >= freshness.home.expected_played &&
-      freshness.away.played >= freshness.away.expected_played)
-  );
-}
-
 export function buildStandingsBlock(
   standings: unknown[],
   contentType: "preview" | "recap",
-  freshness?: StandingsFreshness,
+  freshness?: import("@/lib/llm/lineups").StandingsFreshness,
 ): string {
   return standings.length === 0 || !hasCurrentStandings(freshness)
     ? ""

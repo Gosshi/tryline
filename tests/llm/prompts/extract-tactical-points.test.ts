@@ -28,7 +28,7 @@ const assembled: AssembledContentInput = {
     },
     match: {
       late_scoring: false,
-      penalty_count: { away: 0, home: 0 },
+      penalty_goal_count: { away: 0, home: 0 },
       try_count: { away: 0, home: 0 },
     },
   },
@@ -55,8 +55,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildExtractTacticalPointsPrompt", () => {
-  it("uses extract prompt version 2.3.0", () => {
-    expect(PROMPT_VERSION).toBe("extract@2.3.0");
+  it("uses extract prompt version 2.4.0", () => {
+    expect(PROMPT_VERSION).toBe("extract@2.4.0");
   });
 
   it("documents variable tactical point counts", () => {
@@ -67,6 +67,15 @@ describe("buildExtractTacticalPointsPrompt", () => {
     expect(prompt).toContain("3件");
     expect(prompt).toContain("2件");
     expect(prompt).toContain("でたらめに埋めないこと");
+  });
+
+  it("describes successful penalty goals without implying penalty counts", () => {
+    const prompt = buildExtractTacticalPointsPrompt(assembled);
+
+    expect(prompt).toContain(
+      "得点手段の偏り（key_stats.match.try_count と penalty_goal_count。penalty_goal_count は成功したペナルティゴールの本数で、反則数ではない）",
+    );
+    expect(prompt).not.toContain("規律と反則傾向");
   });
 
   it("documents match_impact criteria", () => {

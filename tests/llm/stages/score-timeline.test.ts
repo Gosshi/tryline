@@ -418,7 +418,7 @@ describe("computeScoreTimeline", () => {
       "Away",
     );
 
-    expect(result.penalty_count).toEqual({ away: 1, home: 1 });
+    expect(result.penalty_goal_count).toEqual({ away: 1, home: 1 });
   });
 });
 

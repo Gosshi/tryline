@@ -89,6 +89,24 @@ export function buildAllowedPersonEntities(
     });
   }
 
+  const allowedEnglishEntities = [...entities];
+  for (const entry of assembled.japanese_name_glossary ?? []) {
+    if (entry.kind !== "player") {
+      continue;
+    }
+
+    const sourceKey = normalizeEntityName(entry.source).toLocaleLowerCase();
+    const allowedEntity = allowedEnglishEntities.find(
+      (entity) => normalizeEntityName(entity.name).toLocaleLowerCase() === sourceKey,
+    );
+    if (allowedEntity) {
+      appendEntity(entities, seen, {
+        name: entry.japanese,
+        source: allowedEntity.source,
+      });
+    }
+  }
+
   return entities;
 }
 
@@ -126,8 +144,10 @@ export function buildKnownNonPersonNames(
   }
 
   for (const entry of assembled.japanese_name_glossary ?? []) {
-    appendName(names, seen, entry.source);
-    appendName(names, seen, entry.japanese);
+    if (entry.kind === "team" || entry.kind === "competition") {
+      appendName(names, seen, entry.source);
+      appendName(names, seen, entry.japanese);
+    }
   }
 
   return names;

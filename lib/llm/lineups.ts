@@ -1,5 +1,22 @@
 import type { AssembledContentInput } from "@/lib/llm/types";
 
+export type StandingsFreshness = {
+  home: { expected_played: number; played: number | null };
+  away: { expected_played: number; played: number | null };
+};
+
+export function hasCurrentStandings(
+  freshness: StandingsFreshness | undefined,
+): boolean {
+  return (
+    !freshness ||
+    (freshness.home.played !== null &&
+      freshness.away.played !== null &&
+      freshness.home.played >= freshness.home.expected_played &&
+      freshness.away.played >= freshness.away.expected_played)
+  );
+}
+
 type ProjectedLineups = AssembledContentInput["projected_lineups"];
 
 export function hasConfirmedEntry(entries: ProjectedLineups["home"]) {
@@ -35,4 +52,13 @@ export function sanitizeUnconfirmedProjectedLineups(
       home: homeConfirmed ? lineups.home : [],
     },
   };
+}
+
+export function buildUsableContentInput(
+  assembled: AssembledContentInput,
+): AssembledContentInput {
+  const sanitized = sanitizeUnconfirmedProjectedLineups(assembled);
+  return hasCurrentStandings(assembled.standings_freshness)
+    ? sanitized
+    : { ...sanitized, competition_standings: [] };
 }

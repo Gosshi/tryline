@@ -20,7 +20,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview@3.15.0";
+export const PROMPT_VERSION = "preview@3.15.1";
 
 type CorePatternType = "context" | "form" | "numeric";
 

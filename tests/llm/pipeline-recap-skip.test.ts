@@ -108,7 +108,7 @@ const assembledWithoutEvents: AssembledContentInputWithEventIntegrity = {
     },
     match: {
       late_scoring: false,
-      penalty_count: { away: 0, home: 0 },
+      penalty_goal_count: { away: 0, home: 0 },
       try_count: { away: 0, home: 0 },
     },
   },
@@ -196,6 +196,101 @@ describe("generateMatchContent recap event guard", () => {
       usage: { inputTokens: 1, outputTokens: 1 },
     });
   });
+
+  it.each(["ja", "en"] as const)(
+    "passes the same usable input to extraction, narrative, QA, and Japanese revision (%s)",
+    async (language) => {
+      const staleInput = {
+        ...assembledWithoutEvents,
+        competition_standings: [{ team_name: "古い順位表のチーム" }],
+        projected_lineups: {
+          away: [
+            { is_starter: true, jersey_number: 10, name: "未確定選手", position: "Fly-half" },
+          ],
+          confirmed: { away: false, home: true },
+          home: [
+            { is_starter: true, jersey_number: 9, name: "確定選手", position: "Scrum-half" },
+          ],
+        },
+        standings_freshness: {
+          away: { expected_played: 2, played: 1 },
+          home: { expected_played: 2, played: 1 },
+        },
+      } as typeof assembledWithoutEvents;
+      assembleMock.assembleMatchContentInput.mockResolvedValue(staleInput);
+      extractFactsMock.extractTacticalPoints.mockResolvedValue({
+        modelVersion: "gpt-4o-mini",
+        result: { tactical_points: [] },
+        usage: { inputTokens: 1, outputTokens: 1 },
+      });
+      generateNarrativeMock.generateNarrative.mockResolvedValue({
+        content: `# preview\n${"あ".repeat(1500)}`,
+        modelVersion: "gpt-4o",
+        promptVersion: "preview@3.15.1",
+        prompt: "preview prompt",
+        usage: { inputTokens: 1, outputTokens: 1 },
+      });
+      qaMock.evaluateNarrativeQuality
+        .mockResolvedValueOnce({
+          modelVersion: "gpt-4o-mini",
+          result: {
+            issues: ["content_length"],
+            scores: { factual_grounding: 4, information_density: 2, japanese_quality: 4, tactical_depth: 4 },
+            verdict: language === "ja" ? "retry" : "publish",
+          },
+          usage: { inputTokens: 1, outputTokens: 1 },
+        })
+        .mockResolvedValue({
+          modelVersion: "gpt-4o-mini",
+          result: {
+            issues: [],
+            scores: { factual_grounding: 4, information_density: 4, japanese_quality: 4, tactical_depth: 4 },
+            verdict: "publish",
+          },
+          usage: { inputTokens: 1, outputTokens: 1 },
+        });
+      qaMock.isContentLengthIssue.mockReturnValue(language === "ja");
+      generateNarrativeMock.reviseNarrativeLength.mockResolvedValue({
+        content: `# revised\n${"い".repeat(1500)}`,
+        modelVersion: "gpt-4o",
+        promptVersion: "preview@3.15.1",
+        prompt: "revision prompt",
+        usage: { inputTokens: 1, outputTokens: 1 },
+      });
+
+      await generateMatchContent("match-1", "preview", language, { persist: false });
+
+      const expectedInput = {
+        ...staleInput,
+        competition_standings: [],
+        projected_lineups: {
+          ...staleInput.projected_lineups,
+          away: [],
+        },
+      };
+      expect(extractFactsMock.extractTacticalPoints).toHaveBeenCalledWith(expectedInput, undefined);
+      expect(generateNarrativeMock.generateNarrative).toHaveBeenCalledWith(
+        expect.objectContaining({ assembled: expectedInput, language }),
+      );
+      expect(qaMock.evaluateNarrativeQuality).toHaveBeenCalledWith(
+        expect.objectContaining({
+          matchContext: expect.objectContaining({
+            projected_lineups: expectedInput.projected_lineups,
+          }),
+        }),
+      );
+      expect(qaMock.evaluateNarrativeQuality.mock.calls[0]?.[0].matchContext).not.toHaveProperty(
+        "competitionStandings",
+      );
+      if (language === "ja") {
+        expect(generateNarrativeMock.reviseNarrativeLength).toHaveBeenCalledWith(
+          expect.objectContaining({ assembled: expectedInput, language }),
+        );
+      } else {
+        expect(generateNarrativeMock.reviseNarrativeLength).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   it("returns skipped before any LLM stages when recap events are missing", async () => {
     const result = await generateMatchContent("match-1", "recap");

@@ -45,7 +45,7 @@ const assembled = {
     },
     match: {
       late_scoring: false,
-      penalty_count: { away: 0, home: 0 },
+      penalty_goal_count: { away: 0, home: 0 },
       try_count: { away: 0, home: 0 },
     },
   },

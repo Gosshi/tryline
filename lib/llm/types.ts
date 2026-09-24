@@ -273,7 +273,7 @@ export type AssembledContentInput = {
       result_streak: "winning" | "losing" | "mixed" | null;
     };
     match: {
-      penalty_count: { home: number; away: number };
+      penalty_goal_count: { home: number; away: number };
       try_count: { home: number; away: number };
       late_scoring: boolean;
     };

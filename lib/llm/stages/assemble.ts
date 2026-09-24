@@ -146,7 +146,7 @@ export function computeMatchStats(
 
   return {
     late_scoring: lateScoring,
-    penalty_count: { away: awayPenalties, home: homePenalties },
+    penalty_goal_count: { away: awayPenalties, home: homePenalties },
     try_count: { away: awayTries, home: homeTries },
   };
 }
