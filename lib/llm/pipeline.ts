@@ -460,6 +460,8 @@ export async function generateMatchContent(
           },
           homeScore: usable.match.home_score,
           homeTeam: usable.match.home_team?.name ?? "Home",
+          h2h_last_5: usable.h2h_last_5,
+          kickoff_at_jst: usable.match.kickoff_at_jst,
           japanese_name_glossary: usable.japanese_name_glossary,
           match_events: usable.match_events,
           projected_lineups: usable.projected_lineups,

@@ -264,6 +264,11 @@ export type AssembledContentInput = {
       win_rate_last_5: number | null;
       avg_score_diff_last_5: number | null;
       result_streak: "winning" | "losing" | "mixed" | null;
+      games_counted: number;
+      wins: number;
+      losses: number;
+      draws: number;
+      current_streak: { result: "win" | "loss" | "draw"; count: number } | null;
     };
     away: {
       avg_points_for_last_5: number | null;
@@ -271,6 +276,11 @@ export type AssembledContentInput = {
       win_rate_last_5: number | null;
       avg_score_diff_last_5: number | null;
       result_streak: "winning" | "losing" | "mixed" | null;
+      games_counted: number;
+      wins: number;
+      losses: number;
+      draws: number;
+      current_streak: { result: "win" | "loss" | "draw"; count: number } | null;
     };
     match: {
       penalty_goal_count: { home: number; away: number };

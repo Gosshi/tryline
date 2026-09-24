@@ -29,6 +29,7 @@ import {
 import {
   buildPlayerStatsFromEvents,
   findActualPlayerStats,
+  playerNamesLikelyMatch,
   type ActualPlayerStats,
 } from "@/lib/stats/player-stats";
 
@@ -441,7 +442,31 @@ function applyDeterministicQaGuards(
     const hasMismatch = statedPlayerStats.some((claim) => {
       const actual = findActualPlayerStats(claim.playerName, statsByPlayer);
 
-      return !actual || !playerStatClaimMatchesActual(claim, actual);
+      if (!actual) return true;
+
+      const playerEvent = (options.matchEvents ?? []).find(
+        (event) =>
+          event.player_name &&
+          playerNamesLikelyMatch(claim.playerName, event.player_name),
+      );
+      if (!playerEvent) return true;
+
+      const kickingTypes = new Set([
+        "conversion",
+        "penalty_goal",
+        "penalty",
+        "drop_goal",
+      ]);
+      const kickerUnknown = (options.matchEvents ?? []).some(
+        (event) =>
+          event.team_name === playerEvent.team_name &&
+          kickingTypes.has(event.type) &&
+          !event.player_name?.trim(),
+      );
+
+      return kickerUnknown
+        ? claim.tries !== undefined && claim.tries !== actual.tries
+        : !playerStatClaimMatchesActual(claim, actual);
     });
 
     if (hasMismatch) {

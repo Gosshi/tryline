@@ -1,6 +1,6 @@
 import type { AssembledContentInput } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "extract@2.4.0";
+export const PROMPT_VERSION = "extract@2.5.0";
 
 export function buildExtractTacticalPointsPrompt(
   input: AssembledContentInput,
@@ -47,6 +47,12 @@ export function buildExtractTacticalPointsPrompt(
       "- 強調記号（**、*）は使用禁止",
       "- 選手名・チーム名は英語表記のまま（カタカナ変換しない）",
       "- 直接引用は15語以内",
+    ].join("\n"),
+    [
+      "【数値の扱い】",
+      "- 勝敗数・連勝連敗・試合数は key_stats の wins / losses / draws / current_streak / games_counted の値をそのまま使う。recent_form から数え直さない。",
+      "- 「直近5試合」と書けるのは games_counted が 5 のときだけ。5 未満なら「直近◯試合」と実際の数を書く。",
+      "- 2 つの値の差・合計・比率を自分で計算して書かない。key_stats にある値だけを並べる。",
     ].join("\n"),
     [
       "【戦術次元の例 — これ以外でも構わない】",

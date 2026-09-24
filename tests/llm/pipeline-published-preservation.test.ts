@@ -82,14 +82,14 @@ const assembled: AssembledContentInput = {
       avg_points_against_last_5: null,
       avg_points_for_last_5: null,
       avg_score_diff_last_5: null,
-      result_streak: null,
+      result_streak: null, games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null,
       win_rate_last_5: null,
     },
     home: {
       avg_points_against_last_5: null,
       avg_points_for_last_5: null,
       avg_score_diff_last_5: null,
-      result_streak: null,
+      result_streak: null, games_counted: 0, wins: 0, losses: 0, draws: 0, current_streak: null,
       win_rate_last_5: null,
     },
     match: {

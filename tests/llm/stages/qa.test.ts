@@ -687,6 +687,53 @@ describe("evaluateNarrativeQuality", () => {
     );
   });
 
+  it("ignores kick counts for a team with unnamed kickers but still checks tries", async () => {
+    const unnamedKickerEvents = [
+      { is_penalty_try: false, minute: 10, player_name: "Test Kicker", team_name: "Home", type: "try" },
+      { is_penalty_try: false, minute: 11, player_name: "", team_name: "Home", type: "conversion" },
+    ];
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({ scores: passingScores, issues: [], statedPlayerStats: [{ playerName: "Test Kicker", tries: 1, conversions: 1, totalPoints: 7 }] }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+    const matching = await evaluateNarrativeQuality({
+      contentType: "recap", hasEvents: true,
+      matchContext: { awayScore: 0, awayTeam: "Away", homeScore: 7, homeTeam: "Home" },
+      matchEvents: unnamedKickerEvents, narrative: recapWithTurningPoint, retryCount: 0,
+    });
+    expect(matching.result.issues).not.toContain(PLAYER_STAT_MISMATCH_ISSUE);
+
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({ scores: passingScores, issues: [], statedPlayerStats: [{ playerName: "Test Kicker", tries: 2 }] }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+    const wrongTry = await evaluateNarrativeQuality({
+      contentType: "recap", hasEvents: true,
+      matchContext: { awayScore: 0, awayTeam: "Away", homeScore: 7, homeTeam: "Home" },
+      matchEvents: unnamedKickerEvents, narrative: recapWithTurningPoint, retryCount: 0,
+    });
+    expect(wrongTry.result.issues).toContain(PLAYER_STAT_MISMATCH_ISSUE);
+  });
+
+  it("still checks kick claims when all team kickers are named", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({ scores: passingScores, issues: [], statedPlayerStats: [{ playerName: "Test Kicker", conversions: 1 }] }),
+      model: "gpt-4o-mini-2024-07-18",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+    const result = await evaluateNarrativeQuality({
+      contentType: "recap", hasEvents: true,
+      matchContext: { awayScore: 0, awayTeam: "Away", homeScore: 7, homeTeam: "Home" },
+      matchEvents: [
+        { is_penalty_try: false, minute: 10, player_name: "Test Kicker", team_name: "Home", type: "try" },
+        { is_penalty_try: false, minute: 11, player_name: "Other Kicker", team_name: "Home", type: "conversion" },
+      ], narrative: recapWithTurningPoint, retryCount: 0,
+    });
+    expect(result.result.issues).toContain(PLAYER_STAT_MISMATCH_ISSUE);
+  });
+
   it("flags 42bebc1f Burton player stat claims when the player has no events", async () => {
     const callCountBefore = openAIMock.createTextResponse.mock.calls.length;
     openAIMock.createTextResponse.mockResolvedValueOnce({

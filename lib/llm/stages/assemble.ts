@@ -33,7 +33,7 @@ function average(values: number[]) {
   );
 }
 
-function computeTeamFormStats(
+export function computeTeamFormStats(
   recent: Array<{
     home_team_name: string;
     away_team_name: string;
@@ -45,12 +45,22 @@ function computeTeamFormStats(
   win_rate_last_5: number | null;
   avg_score_diff_last_5: number | null;
   result_streak: "winning" | "losing" | "mixed" | null;
+  games_counted: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  current_streak: { result: "win" | "loss" | "draw"; count: number } | null;
 } {
   if (recent.length === 0) {
     return {
       avg_score_diff_last_5: null,
       result_streak: null,
       win_rate_last_5: null,
+      games_counted: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+      current_streak: null,
     };
   }
 
@@ -87,6 +97,11 @@ function computeTeamFormStats(
       avg_score_diff_last_5: null,
       result_streak: null,
       win_rate_last_5: null,
+      games_counted: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+      current_streak: null,
     };
   }
 
@@ -101,10 +116,28 @@ function computeTeamFormStats(
       ? "losing"
       : "mixed";
 
+  const losses = results.filter((result) => result === "loss").length;
+  const draws = results.filter((result) => result === "draw").length;
+  const currentResult = results[0];
+  const currentStreak = currentResult
+    ? {
+        result: currentResult,
+        count:
+          results.findIndex((result) => result !== currentResult) < 0
+            ? results.length
+            : results.findIndex((result) => result !== currentResult),
+      }
+    : null;
+
   return {
     avg_score_diff_last_5: avgScoreDiffLast5,
     result_streak: resultStreak,
     win_rate_last_5: winRateLast5,
+    games_counted: results.length,
+    wins,
+    losses,
+    draws,
+    current_streak: currentStreak,
   };
 }
 
@@ -592,8 +625,7 @@ export function calculateStandingsFreshness(params: {
   const { awayTeamId, finishedMatches, homeTeamId, standings } = params;
   const expectedPlayed = (teamId: string) =>
     finishedMatches.filter(
-      (match) =>
-        match.home_team_id === teamId || match.away_team_id === teamId,
+      (match) => match.home_team_id === teamId || match.away_team_id === teamId,
     ).length;
   const standingPlayed = (teamId: string) =>
     standings.find((standing) => standing.team_id === teamId)?.played ?? null;
@@ -617,7 +649,8 @@ async function loadStandingsFreshness(params: {
   homeTeamId: string;
   kickoffAt: string;
 }): Promise<StandingsFreshness | undefined> {
-  const { awayTeamId, competitionId, contentType, homeTeamId, kickoffAt } = params;
+  const { awayTeamId, competitionId, contentType, homeTeamId, kickoffAt } =
+    params;
   if (!competitionId) {
     return undefined;
   }
@@ -629,7 +662,8 @@ async function loadStandingsFreshness(params: {
       .from("matches")
       .select("home_team_id, away_team_id")
       .eq("competition_id", competitionId)
-      .eq("status", "finished")[cutoffOperator]("kickoff_at", kickoffAt),
+      .eq("status", "finished")
+      [cutoffOperator]("kickoff_at", kickoffAt),
     db
       .from("competition_standings")
       .select("team_id, played")
