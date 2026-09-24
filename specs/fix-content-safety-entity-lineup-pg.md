@@ -146,4 +146,8 @@ GPT-6 のプロンプト監査（`docs/content-prompt-audit-2026-09-24.md` の P
 ## 未解決の質問
 
 1. バックフィルを再開するのは、この修正のマージ後にする（推奨）。
-2. A/B 比較（`specs/feat-content-prompt-ab-experiment.md`）は、この修正のマージ後の main から着手する。A/B の受け入れ条件 1 は「現行 A が変わらないこと」を保存したプロンプトとの比較で確かめるので、先にこの修正を入れておかないと、比較の基準がずれる。A/B の spec にある本番の版番号（`preview@3.15.0`、`recap@4.20.0`）は、この修正後の版（`preview@3.15.1`、`recap@4.21.0`）に読み替える。
+2. **A/B 比較との順番。** A/B 比較（`specs/feat-content-prompt-ab-experiment.md`）の実装は、2026-09-24 に既に始まっている。どちらが先にマージされても、後からマージする PR が次のことを行う。
+   - **A/B が先の場合**（この修正が後）: A/B の受け入れ条件 1 が保存した A のプロンプト（`tests/llm/__snapshots__/` など）を、この修正の PR で更新する。差分が「`penalty_count` → `penalty_goal_count` の置き換え」と「`generate-recap.ts:248` の行の削除」だけであることを、PR 本文に示す。この修正の受け入れ条件 6 は、その保存済みのプロンプトを変更前の値として使ってよい。
+   - **この修正が先の場合**: A/B の PR は、この修正の後の main で A のプロンプトを保存し直す。
+   - A/B の spec にある本番の版番号（`preview@3.15.0`、`recap@4.20.0`）は、この修正の後の版（`preview@3.15.1`、`recap@4.21.0`）に読み替える。
+   - B 版のビルダーは、この修正の後の `penalty_goal_count` と `buildUsableContentInput` を前提にする。
