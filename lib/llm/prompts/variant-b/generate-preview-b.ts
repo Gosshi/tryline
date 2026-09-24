@@ -1,8 +1,12 @@
 import { buildMatchPhaseFacts, buildVariantBDataBlocks } from "./shared";
 
-import type { AdditionalSignal, AssembledContentInput, TacticalPoint } from "@/lib/llm/types";
+import type {
+  AdditionalSignal,
+  AssembledContentInput,
+  TacticalPoint,
+} from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "preview-b@0.1.0";
+export const PROMPT_VERSION = "preview-b@0.2.0";
 
 export function buildGeneratePreviewBPrompt(
   assembled: AssembledContentInput,
@@ -11,7 +15,12 @@ export function buildGeneratePreviewBPrompt(
 ): string {
   const phase = buildMatchPhaseFacts(assembled);
   return [
-    ...buildVariantBDataBlocks({ assembled, tacticalPoints, additionalSignals, contentType: "preview" }),
+    ...buildVariantBDataBlocks({
+      assembled,
+      tacticalPoints,
+      additionalSignals,
+      contentType: "preview",
+    }),
     phase,
     `試合前のプレビューを書いてください。読者は海外ラグビーを日本語で追うファンで、この記事は試合ページに載ります。同じページに先発一覧の表があるため、背番号と名前を本文で並べ直しません。
 
@@ -31,8 +40,10 @@ export function buildGeneratePreviewBPrompt(
 問いに答えるために必要な比較を選び、数値の対象と期間を明確にします。数字を並べた後、その比較から言えることを説明します。平均得点は今回の予想得点ではありません。両軍の確定メンバーと個別の根拠がある場合だけ実名の対比を行い、片側だけ確認できるときは、相手側の人物や役割を補いません。
 
 # ［観戦中に確かめたいことを示す見出し］
-ここまでの問いに対応する観察点を、予言ではなく観戦の手がかりとして示します。過去の記録だけでは判断できない点を、今回どう確かめられるかを説明します。新しい統計や戦術設定を持ち込まず、前節の数字を全部繰り返しません。
+核心の問いに対応する観察点を2～3個に絞り、それぞれ「試合のどの時点で、何を見れば、問いへの答えに近づくか」を示します。予言ではなく観戦の手がかりとして書きます。新しい統計や戦術設定を持ち込まず、前節の数字を繰り返しません。
 
-全体は1,500～1,800字を目安とします。各節の最低字数は設けません。根拠のある背景・比較・観察点で満たし、同じ説明の反復や一般的なラグビー解説で埋めません。出力は日本語のマークダウン本文だけです。`,
-  ].filter(Boolean).join("\n\n");
+全体は1,500～1,800字を目安とします。各節の最低字数は設けません。根拠のある背景・比較・観察点で満たし、同じ説明や同じ断り書きの反復、一般的なラグビー解説で埋めません。出力は日本語のマークダウン本文だけです。`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
