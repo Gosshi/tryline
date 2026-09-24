@@ -10,6 +10,11 @@ import type { PipelineResult, PipelineTrialDetails } from "@/lib/llm/pipeline";
 
 const trialDetails: PipelineTrialDetails = {
   content: "# article\ncontent",
+  promptVariant: "A",
+  promptVersion: "recap@4.20.0",
+  promptSha256: "prompt-hash",
+  prompt: "joined prompt",
+  inputSha256: "input-hash",
   stageMetrics: [
     {
       name: "generate-narrative",

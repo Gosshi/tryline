@@ -12,6 +12,14 @@ import {
   buildGenerateRecapPrompt,
   PROMPT_VERSION as RECAP_PROMPT_VERSION,
 } from "@/lib/llm/prompts/generate-recap";
+import {
+  buildGeneratePreviewBPrompt,
+  PROMPT_VERSION as PREVIEW_B_PROMPT_VERSION,
+} from "@/lib/llm/prompts/variant-b/generate-preview-b";
+import {
+  buildGenerateRecapBPrompt,
+  PROMPT_VERSION as RECAP_B_PROMPT_VERSION,
+} from "@/lib/llm/prompts/variant-b/generate-recap-b";
 
 import type {
   AdditionalSignal,
@@ -30,6 +38,7 @@ export type NarrativeResponse = {
   content: string;
   modelVersion: string;
   promptVersion: string;
+  prompt: string;
   usage: {
     inputTokens: number;
     outputTokens: number;
@@ -56,16 +65,18 @@ export async function generateNarrative(options: {
   entityViolationSurfaces?: string[];
   language?: ContentLanguage;
   model?: string;
+  promptVariant?: "A" | "B";
 }): Promise<NarrativeResponse> {
   const isPreview = options.contentType === "preview";
-  const basePromptVersion = isPreview
-    ? PREVIEW_PROMPT_VERSION
-    : RECAP_PROMPT_VERSION;
+  const promptVariant = options.promptVariant ?? "A";
+  const basePromptVersion = promptVariant === "B"
+    ? isPreview ? PREVIEW_B_PROMPT_VERSION : RECAP_B_PROMPT_VERSION
+    : isPreview ? PREVIEW_PROMPT_VERSION : RECAP_PROMPT_VERSION;
   const language = options.language ?? "ja";
   const prompt =
     language === "en"
       ? buildEnglishNarrativePrompt(options)
-      : buildJapaneseNarrativePrompt(options);
+      : buildJapaneseNarrativePrompt(options, promptVariant);
 
   const response = await createTextResponse({
     model: options.model ?? MODELS.NARRATIVE,
@@ -81,6 +92,7 @@ export async function generateNarrative(options: {
           ? ENGLISH_PREVIEW_PROMPT_VERSION
           : ENGLISH_RECAP_PROMPT_VERSION
         : basePromptVersion,
+    prompt,
     usage: response.usage,
   };
 }
@@ -127,17 +139,34 @@ export async function reviseNarrativeLength(options: {
     content: stripWrappingCodeFence(response.text),
     modelVersion: response.model,
     promptVersion: `${options.promptVersion}+${LENGTH_REVISION_PROMPT_VERSION}`,
+    prompt,
     usage: response.usage,
   };
 }
 
-function buildJapaneseNarrativePrompt(options: {
+export function buildJapaneseNarrativePrompt(
+  options: {
   assembled: AssembledContentInput;
   tacticalPoints: TacticalPoint[];
   contentType: ContentType;
   additionalSignals: AdditionalSignal[];
   entityViolationSurfaces?: string[];
-}) {
+  },
+  promptVariant: "A" | "B" = "A",
+) {
+  if (promptVariant === "B") {
+    return options.contentType === "preview"
+      ? buildGeneratePreviewBPrompt(
+          options.assembled,
+          options.tacticalPoints,
+          options.additionalSignals,
+        )
+      : buildGenerateRecapBPrompt(
+          options.assembled,
+          options.tacticalPoints,
+          options.additionalSignals,
+        );
+  }
   const basePrompt =
     options.contentType === "preview"
       ? buildGeneratePreviewPrompt(
