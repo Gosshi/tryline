@@ -40,8 +40,9 @@
 
 1. preview が 3 本以上あると recap が始まらない回がありうる。preview 優先は仕様どおり。`remaining.recaps` に正しく数える
 2. 1 回目の呼び出しが 504 などで失敗したら、ループを止めてステップを失敗にする（成功扱いにしない）
-3. 応答の JSON は `{ data, error, success }` の形（`lib/api/v1/response.ts` の `apiSuccess`）。`remaining` は `data.remaining` にある
-4. 時間切れでも、スキップ通知（`notifyRecapSkipped`）は飛ぶ（前 spec の保証を維持）
+3. 応答は `OrchestrateResult` を JSON の直下に返す形（`route.ts` の `NextResponse.json(result)`）。`remaining` は `.remaining` から読む。**応答の形は変えない**（2026-09-24 訂正）
+4. 応答に `remaining` が無ければ（route が例外時に返す 200 の 0 件応答）、ループを止めてステップを失敗にする。route の例外時の応答は変えない
+5. 時間切れでも、スキップ通知（`notifyRecapSkipped`）は飛ぶ（前 spec の保証を維持）
 
 ## 検証
 
