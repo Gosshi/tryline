@@ -8,6 +8,7 @@ import {
 
 import type { PipelineResult } from "@/lib/llm/pipeline";
 import type { AssembledContentInputWithEventIntegrity } from "@/lib/llm/stages/assemble";
+import type { AssembledContentInput } from "@/lib/llm/types";
 
 const integrity = {
   actual: { away: 17, home: 24 },
@@ -116,6 +117,75 @@ describe("ab-content-prompts", () => {
     expect(result[0]?.path).toContain("match-1-recap.json");
     expect(writes).toHaveLength(1);
     expect(write.mock.calls[0]?.[1]).toContain('"promptVersion": "extract@2.3.0"');
+  });
+
+  it("extracts from usable input but freezes the original assembled input", async () => {
+    const unconfirmedLineup = {
+      name: "Unconfirmed away player",
+      position: "Fly-half",
+      jersey_number: 10,
+      is_starter: true,
+    };
+    const staleStanding = {
+      bonus_points_losing: 0,
+      bonus_points_try: 0,
+      drawn: 0,
+      lost: 0,
+      played: 4,
+      points_against: 80,
+      points_for: 90,
+      position: 3,
+      team_name: "Old standing team",
+      total_points: 18,
+      tries_for: 10,
+      won: 4,
+    };
+    const original = assembled({
+      projected_lineups: {
+        home: [{ name: "Confirmed home player", position: "Scrum-half", jersey_number: 9, is_starter: true }],
+        away: [unconfirmedLineup],
+        confirmed: { home: true, away: false },
+      },
+      competition_standings: [staleStanding],
+      standings_freshness: {
+        home: { expected_played: 5, played: 4 },
+        away: { expected_played: 5, played: 4 },
+      },
+    });
+    const extract = vi.fn(async (_input: AssembledContentInput) => ({
+      result: { tactical_points: points },
+      promptVersion: "extract@2.4.0",
+      modelVersion: "gpt-5.6-luna",
+      usage: { inputTokens: 1, outputTokens: 1 },
+      attempts: 1,
+    }));
+    const write = vi.fn(async (_path: string, _contents: string) => undefined);
+
+    const result = await freezePromptFixtures(
+      { matches: ["match-1"], contentType: "recap", force: false, out: "/tmp/prompt-ab-freeze-test" },
+      {
+        assemble: async () => original,
+        extract,
+        write: write as never,
+        now: () => new Date("2026-01-01T00:00:00Z"),
+        gitSha: () => "sha",
+      },
+    );
+
+    expect(result[0]?.error).toBeUndefined();
+    expect(extract).toHaveBeenCalledTimes(1);
+    const extractedInput = extract.mock.calls[0]?.[0];
+    expect(extractedInput?.projected_lineups.away).toEqual([]);
+    expect(JSON.stringify(extractedInput?.projected_lineups)).not.toContain(
+      "Unconfirmed away player",
+    );
+    expect(extractedInput?.competition_standings).toEqual([]);
+
+    const frozenFixture = JSON.parse(String(write.mock.calls[0]?.[1])) as {
+      assembled: AssembledContentInputWithEventIntegrity;
+    };
+    expect(frozenFixture.assembled.projected_lineups.away).toEqual([unconfirmedLineup]);
+    expect(frozenFixture.assembled.competition_standings).toEqual([staleStanding]);
   });
 
   it("runs paired variants, writes blind artifacts and matching keys", async () => {
