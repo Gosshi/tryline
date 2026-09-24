@@ -3,6 +3,7 @@ import { chunkArray } from "@/lib/db/pagination";
 import {
   previewCandidateUpperBound,
   recapCandidateUpperBound,
+  RECAP_MAX_AGE_DAYS,
 } from "./content-windows";
 
 import type { Database } from "@/lib/db/types";
@@ -10,7 +11,13 @@ import type { ContentLanguage, ContentType } from "@/lib/llm/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const EXISTING_CONTENT_STATUSES = ["draft", "published"] as const;
-const ORCHESTRATE_TIME_BUDGET_MS = 210_000;
+const ORCHESTRATE_MAX_DURATION_MS = 300_000;
+const GENERATION_WORST_CASE_MS = 220_000;
+const ORCHESTRATE_FINISH_MARGIN_MS = 15_000;
+const ORCHESTRATE_START_DEADLINE_MS =
+  ORCHESTRATE_MAX_DURATION_MS -
+  GENERATION_WORST_CASE_MS -
+  ORCHESTRATE_FINISH_MARGIN_MS;
 const PREVIEW_CONCURRENCY = 3;
 const RECAP_BATCH_SIZE = 10;
 const RECAP_EVENT_LOOKUP_CANDIDATES = 60;
@@ -62,6 +69,10 @@ export type OrchestrateResult = {
   recaps: {
     triggered: number;
     skipped: number;
+  };
+  remaining: {
+    previews: number;
+    recaps: number;
   };
 };
 
@@ -255,41 +266,49 @@ async function notifyRecapReady(
   }
 }
 
-async function processWithPreviewConcurrency<T>(params: {
+type ContentQueueEntry = {
+  contentType: ContentType;
+  match: MatchCandidate;
+};
+
+async function processWithConcurrency(params: {
   canStart: () => boolean;
-  matches: T[];
-  processMatch: (match: T) => Promise<void>;
-}): Promise<number> {
-  let nextMatchIndex = 0;
-  let timeBudgetSkipped = 0;
+  entries: ContentQueueEntry[];
+  processEntry: (entry: ContentQueueEntry) => Promise<void>;
+}): Promise<{ previews: number; recaps: number }> {
+  let nextEntryIndex = 0;
+  const remaining = { previews: 0, recaps: 0 };
   let stopped = false;
 
   const worker = async () => {
-    while (!stopped && nextMatchIndex < params.matches.length) {
+    while (!stopped && nextEntryIndex < params.entries.length) {
       if (!params.canStart()) {
-        timeBudgetSkipped += params.matches.length - nextMatchIndex;
-        nextMatchIndex = params.matches.length;
+        for (const entry of params.entries.slice(nextEntryIndex)) {
+          remaining[entry.contentType === "preview" ? "previews" : "recaps"] +=
+            1;
+        }
+        nextEntryIndex = params.entries.length;
         stopped = true;
         return;
       }
 
-      const match = params.matches[nextMatchIndex];
-      if (match === undefined) {
+      const entry = params.entries[nextEntryIndex];
+      if (entry === undefined) {
         return;
       }
-      nextMatchIndex += 1;
-      await params.processMatch(match);
+      nextEntryIndex += 1;
+      await params.processEntry(entry);
     }
   };
 
   await Promise.all(
     Array.from(
-      { length: Math.min(PREVIEW_CONCURRENCY, params.matches.length) },
+      { length: Math.min(PREVIEW_CONCURRENCY, params.entries.length) },
       worker,
     ),
   );
 
-  return timeBudgetSkipped;
+  return remaining;
 }
 
 export async function runOrchestrate(
@@ -298,7 +317,7 @@ export async function runOrchestrate(
   const getCurrentTime = deps.getCurrentTime ?? Date.now;
   const startedAt = getCurrentTime();
   const canStartGeneration = () =>
-    getCurrentTime() - startedAt < ORCHESTRATE_TIME_BUDGET_MS;
+    getCurrentTime() - startedAt <= ORCHESTRATE_START_DEADLINE_MS;
   const now = deps.now ?? new Date();
 
   const previewCandidates = await getMatchIdsMissingContent({
@@ -307,12 +326,16 @@ export async function runOrchestrate(
     contentType: "preview",
     kickoffGte: now.toISOString(),
     kickoffLt: previewCandidateUpperBound(now),
+    orderByKickoff: "asc",
   });
 
   const recapCandidates = await getMatchIdsMissingContent({
     db: deps.db,
     status: "finished",
     contentType: "recap",
+    kickoffGte: new Date(
+      now.getTime() - RECAP_MAX_AGE_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString(),
     kickoffLte: recapCandidateUpperBound(now),
     orderByKickoff: "desc",
   });
@@ -362,12 +385,20 @@ export async function runOrchestrate(
       triggered: 0,
       skipped: recapCandidates.skippedCount,
     },
+    remaining: { previews: 0, recaps: 0 },
   };
 
-  const previewTimeBudgetSkipped = await processWithPreviewConcurrency({
+  const recapSkips: RecapSkipEntry[] = [];
+  const timeBudgetSkipped = await processWithConcurrency({
     canStart: canStartGeneration,
-    matches: previewCandidates.eligibleMatches,
-    processMatch: async (match) => {
+    entries: [
+      ...previewCandidates.eligibleMatches.map((match) => ({
+        contentType: "preview" as const,
+        match,
+      })),
+      ...recapBatch.map((match) => ({ contentType: "recap" as const, match })),
+    ],
+    processEntry: async ({ contentType, match }) => {
       const matchId = match.id;
       const competitionFamily =
         firstRelation(match.competition)?.family ?? null;
@@ -378,10 +409,18 @@ export async function runOrchestrate(
         );
         if (lineupOutcome === "no_url") {
           result.lineups.no_url += 1;
-          result.lineups.preview_no_url += 1;
+          if (contentType === "preview") {
+            result.lineups.preview_no_url += 1;
+          } else {
+            result.lineups.recap_no_url += 1;
+          }
         } else {
           result.lineups.triggered += 1;
-          result.lineups.preview_triggered += 1;
+          if (contentType === "preview") {
+            result.lineups.preview_triggered += 1;
+          } else {
+            result.lineups.recap_triggered += 1;
+          }
         }
       } catch (error) {
         console.error("[orchestrate] lineup ingestion failed", {
@@ -390,84 +429,57 @@ export async function runOrchestrate(
         });
       }
 
+      if (contentType === "preview") {
+        try {
+          await deps.fetchSourcedFacts?.(matchId, contentType);
+          await deps.generateContent(matchId, contentType);
+          await generateLeagueOneEnglishContent(deps, match, contentType);
+          result.previews.triggered += 1;
+        } catch (error) {
+          console.error("[orchestrate] preview generation failed", {
+            matchId,
+            error,
+          });
+        }
+        return;
+      }
+
       try {
-        await deps.fetchSourcedFacts?.(matchId, "preview");
-        await deps.generateContent(matchId, "preview");
-        await generateLeagueOneEnglishContent(deps, match, "preview");
-        result.previews.triggered += 1;
+        await deps.fetchSourcedFacts?.(matchId, contentType);
+        const generated = await deps.generateContent(matchId, contentType);
+        if (generated?.status === "skipped") {
+          result.recaps.skipped += 1;
+          console.info("[orchestrate] recap generation skipped", {
+            matchId,
+          });
+          if (generated.skipReason === "events_unavailable") {
+            recapSkips.push({
+              competitionFamily,
+              matchId,
+              reason: generated.skipReason,
+            });
+          }
+          return;
+        }
+
+        await generateLeagueOneEnglishContent(deps, match, contentType);
+        await notifyRecapReady(deps, matchId);
+        result.recaps.triggered += 1;
       } catch (error) {
-        console.error("[orchestrate] preview generation failed", {
+        console.error("[orchestrate] recap generation failed", {
           matchId,
           error,
         });
       }
     },
   });
-
-  const recapSkips: RecapSkipEntry[] = [];
-  let recapTimeBudgetSkipped = 0;
-
-  for (const [index, match] of recapBatch.entries()) {
-    if (!canStartGeneration()) {
-      recapTimeBudgetSkipped = recapBatch.length - index;
-      break;
-    }
-
-    const matchId = match.id;
-    const competitionFamily = firstRelation(match.competition)?.family ?? null;
-    try {
-      const lineupOutcome = await deps.ingestLineups(
-        matchId,
-        competitionFamily,
-      );
-      if (lineupOutcome === "no_url") {
-        result.lineups.no_url += 1;
-        result.lineups.recap_no_url += 1;
-      } else {
-        result.lineups.triggered += 1;
-        result.lineups.recap_triggered += 1;
-      }
-    } catch (error) {
-      console.error("[orchestrate] lineup ingestion failed", {
-        matchId,
-        error,
-      });
-    }
-
-    try {
-      await deps.fetchSourcedFacts?.(matchId, "recap");
-      const generated = await deps.generateContent(matchId, "recap");
-      if (generated?.status === "skipped") {
-        result.recaps.skipped += 1;
-        console.info("[orchestrate] recap generation skipped", {
-          matchId,
-        });
-        if (generated.skipReason === "events_unavailable") {
-          recapSkips.push({
-            competitionFamily,
-            matchId,
-            reason: generated.skipReason,
-          });
-        }
-        continue;
-      }
-
-      await generateLeagueOneEnglishContent(deps, match, "recap");
-      await notifyRecapReady(deps, matchId);
-      result.recaps.triggered += 1;
-    } catch (error) {
-      console.error("[orchestrate] recap generation failed", {
-        matchId,
-        error,
-      });
-    }
-  }
+  result.remaining = timeBudgetSkipped;
 
   if (
     (recapSkips.length > 0 ||
       recapExcludedMatches.length > 0 ||
-      previewTimeBudgetSkipped > 0 ||
-      recapTimeBudgetSkipped > 0) &&
+      timeBudgetSkipped.previews > 0 ||
+      timeBudgetSkipped.recaps > 0) &&
     deps.notifyRecapSkipped
   ) {
     try {
@@ -477,8 +489,8 @@ export async function runOrchestrate(
         matches: recapSkips,
         skippedCount: recapSkips.length,
         timeBudgetSkipped: {
-          preview: previewTimeBudgetSkipped,
-          recap: recapTimeBudgetSkipped,
+          preview: timeBudgetSkipped.previews,
+          recap: timeBudgetSkipped.recaps,
         },
       });
     } catch (error) {

@@ -2,6 +2,7 @@ import { previewDueUpperBound } from "./preview-window";
 
 export const PREVIEW_MAX_LEAD_HOURS = 24;
 export const RECAP_MIN_AGE_HOURS = 12;
+export const RECAP_MAX_AGE_DAYS = 14;
 export const RECAP_RESEARCH_DEADLINE_HOUR_JST = 20;
 export const RECAP_RESEARCH_DEADLINE_MINUTE_JST = 30;
 export const ASSUMED_MATCH_DURATION_HOURS = 2;
