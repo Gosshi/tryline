@@ -1,7 +1,9 @@
 import {
   findContaminatedEventGroups,
+  findStructuralContamination,
   type CleanupMatchRow,
   type ContaminatedEventGroup,
+  type StructuralEventMatchRow,
 } from "@/lib/data-integrity/contaminated-events";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import {
@@ -60,6 +62,17 @@ export type DuplicateEventsSummary = {
     matchCount: number;
     matchIds: string[];
     publishedRecapCount: number;
+    signature: string;
+  }>;
+  matchCount: number;
+};
+
+export type StructuralContaminationSummary = {
+  groupCount: number;
+  groups: Array<{
+    contaminated: Array<{ hasPublishedRecap: boolean; matchId: string }>;
+    eventCount: number;
+    owners: string[];
     signature: string;
   }>;
   matchCount: number;
@@ -140,6 +153,7 @@ export type DataIntegrityAuditReport = {
   emptyFinishedEvents: EmptyFinishedEventsSummary;
   generatedAt: string;
   scoreMismatches: ScoreMismatchSummary;
+  structuralContamination: StructuralContaminationSummary;
   staleScheduledMatches: StaleScheduledMatchesSummary;
   staleStandings: StaleStandingsSummary;
 };
@@ -190,6 +204,37 @@ export function summarizeDuplicateEvents(
   matches: CleanupMatchRow[],
 ): DuplicateEventsSummary {
   return summarizeContaminatedGroups(findContaminatedEventGroups(matches));
+}
+
+export function summarizeStructuralContamination(
+  matches: AuditFinishedMatchRow[],
+): StructuralContaminationSummary {
+  const byId = new Map(matches.map((match) => [match.id, match]));
+  const structuralMatches = matches.map((match) => ({
+    ...match,
+    match_events: match.match_events.map((event) => ({
+      ...event,
+      is_penalty_try: getBooleanMetadataFlag(event.metadata ?? null, "is_penalty_try"),
+    })),
+  })) as StructuralEventMatchRow[];
+  const groups = findStructuralContamination(structuralMatches).map((group) => ({
+    contaminated: group.contaminated.map((matchId) => ({
+      hasPublishedRecap: byId.get(matchId)?.match_content.some(
+        (content) =>
+          content.content_type === "recap" && content.status === "published",
+      ) ?? false,
+      matchId,
+    })),
+    eventCount: group.eventCount,
+    owners: group.owners,
+    signature: group.signature,
+  }));
+
+  return {
+    groupCount: groups.length,
+    groups,
+    matchCount: new Set(groups.flatMap((group) => group.contaminated.map((match) => match.matchId))).size,
+  };
 }
 
 export function summarizeScoreMismatches(
@@ -525,6 +570,7 @@ export async function runDataIntegrityAudit(
   ]);
 
   const duplicateEvents = summarizeDuplicateEvents(finishedMatches);
+  const structuralContamination = summarizeStructuralContamination(finishedMatches);
   const scoreMismatches = summarizeScoreMismatches(finishedMatches);
 
   return {
@@ -538,6 +584,7 @@ export async function runDataIntegrityAudit(
     emptyFinishedEvents: summarizeEmptyFinishedEvents(finishedMatches),
     generatedAt: now.toISOString(),
     scoreMismatches,
+    structuralContamination,
     staleScheduledMatches: summarizeStaleScheduledMatches(
       staleScheduledMatches,
       now,

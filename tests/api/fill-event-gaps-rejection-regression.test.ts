@@ -14,7 +14,7 @@ vi.mock("@/lib/ingestion/events", async (importOriginal) => ({
 vi.mock("@/lib/scrapers", () => ({
   fetchWithPolicy: vi
     .fn()
-    .mockResolvedValue({ text: async () => "<div></div>" }),
+    .mockResolvedValue({ text: async () => '<div id="match-event"></div>' }),
 }));
 vi.mock("@/lib/scrapers/wikipedia-match-events", () => ({
   parseMatchEventsFromVeventHtml: () => [
@@ -29,7 +29,10 @@ it("reports a score_mismatch rejection without counting it as filled", async () 
     data: [
       {
         away_team_id: "away",
-        external_ids: { wikipedia_url: "https://example.invalid/mock-only" },
+        external_ids: {
+          wikipedia_event_id: "match-event",
+          wikipedia_url: "https://example.invalid/mock-only",
+        },
         home_team_id: "home",
         id: "match",
       },

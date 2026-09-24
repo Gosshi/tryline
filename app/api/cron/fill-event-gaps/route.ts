@@ -1,10 +1,10 @@
-import { load } from "cheerio";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { upsertMatchEvents } from "@/lib/ingestion/events";
+import { extractEventHtml, findEventBlockByTeams } from "@/lib/ingestion/wikipedia-event-block";
 import { fetchWithPolicy } from "@/lib/scrapers";
 import { parseMatchEventsFromVeventHtml } from "@/lib/scrapers/wikipedia-match-events";
 
@@ -18,9 +18,12 @@ const CRON_CANDIDATE_LIMIT = 200;
 
 type MatchGapRow = {
   away_team_id: string;
+  away_team: { english_name: string | null; name: string } | null;
   external_ids: Json;
   home_team_id: string;
+  home_team: { english_name: string | null; name: string } | null;
   id: string;
+  kickoff_at: string | null;
 };
 
 const bodySchema = z.object({
@@ -69,19 +72,6 @@ function getWikipediaSource(externalIds: Json) {
   };
 }
 
-function extractEventHtml(html: string, eventId: string | null): string {
-  if (!eventId) {
-    return html;
-  }
-
-  const $ = load(html);
-  const eventBlock = $("[id]")
-    .filter((_, element) => $(element).attr("id") === eventId)
-    .first();
-
-  return eventBlock.length ? $.html(eventBlock) : html;
-}
-
 async function parseOptionalBody(request: Request) {
   const text = await request.text();
 
@@ -122,7 +112,7 @@ export async function POST(request: Request) {
 
   let query = client
     .from("matches")
-    .select("id, home_team_id, away_team_id, external_ids")
+    .select("id, home_team_id, away_team_id, external_ids, kickoff_at, home_team:teams!matches_home_team_id_fkey(name, english_name), away_team:teams!matches_away_team_id_fkey(name, english_name)")
     .eq("status", "finished")
     .order("kickoff_at", { ascending: false });
 
@@ -168,6 +158,7 @@ export async function POST(request: Request) {
     );
   let filled = 0;
   const errors: string[] = [];
+  const skipped: Array<{ matchId: string; reason: string }> = [];
   const rejections: Array<{
     detail: string;
     matchId: string;
@@ -184,9 +175,28 @@ export async function POST(request: Request) {
     try {
       const response = await fetchWithPolicy(source.url);
       const html = await response.text();
-      const events = parseMatchEventsFromVeventHtml(
-        extractEventHtml(html, source.eventId),
-      );
+      let eventHtml = extractEventHtml(html, source.eventId);
+      if (eventHtml === null) {
+        const homeTeamName = match.home_team?.english_name ?? match.home_team?.name;
+        const awayTeamName = match.away_team?.english_name ?? match.away_team?.name;
+        const kickoffDate = match.kickoff_at?.slice(0, 10);
+        if (homeTeamName && awayTeamName && kickoffDate) {
+          eventHtml = findEventBlockByTeams(
+            html,
+            homeTeamName,
+            awayTeamName,
+            kickoffDate,
+          );
+        }
+      }
+
+      if (eventHtml === null) {
+        skipped.push({ matchId: match.id, reason: "no_unique_event_block" });
+        await sleep(1_500);
+        continue;
+      }
+
+      const events = parseMatchEventsFromVeventHtml(eventHtml);
 
       if (events.length > 0) {
         const result = await upsertMatchEvents({
@@ -217,6 +227,7 @@ export async function POST(request: Request) {
     errors,
     filled,
     gaps: gaps.length,
+    ...(skipped.length > 0 ? { skipped } : {}),
     ...(rejections.length > 0 ? { rejections } : {}),
   };
 

@@ -249,6 +249,7 @@ describe("llm notify", () => {
       emptyFinishedEvents: { count: 3, matchIds: [] },
       generatedAt: "2026-07-08T00:00:00.000Z",
       scoreMismatches: { count: 4, matches: [] },
+      structuralContamination: { groupCount: 0, groups: [], matchCount: 0 },
       staleScheduledMatches: {
         count: 1,
         matches: [
@@ -311,6 +312,7 @@ describe("llm notify", () => {
       emptyFinishedEvents: { count: 0, matchIds: [] },
       generatedAt: "2026-07-08T00:00:00.000Z",
       scoreMismatches: { count: 1, matches: [] },
+      structuralContamination: { groupCount: 0, groups: [], matchCount: 0 },
       staleScheduledMatches: { count: 0, matches: [] },
       staleStandings: { competitions: [], count: 0 },
     });
@@ -348,6 +350,7 @@ describe("llm notify", () => {
       emptyFinishedEvents: { count: 0, matchIds: [] },
       generatedAt: "2026-07-08T00:00:00.000Z",
       scoreMismatches: { count: 50, matches: [] },
+      structuralContamination: { groupCount: 0, groups: [], matchCount: 0 },
       staleScheduledMatches: { count: 0, matches: [] },
       staleStandings: { competitions: [], count: 0 },
     });
