@@ -562,6 +562,83 @@ describe("generateMatchContent recap event guard", () => {
     errorSpy.mockRestore();
   });
 
+  it("forwards trial model overrides and avoids all pipeline side effects", async () => {
+    const trialAssembled = {
+      ...assembledWithoutEvents,
+      eventIntegrity: verifiedEventIntegrity,
+      match_events: [],
+    };
+    assembleMock.assembleMatchContentInput.mockResolvedValue(trialAssembled);
+    extractFactsMock.extractTacticalPoints.mockResolvedValue({
+      attempts: 1,
+      modelVersion: "gpt-6-luna-2026-09-22",
+      promptVersion: "extract@1",
+      result: { tactical_points: [] },
+      usage: { inputTokens: 100, outputTokens: 20 },
+    });
+    generateNarrativeMock.generateNarrative.mockResolvedValue({
+      content: `# preview\n${"あ".repeat(1600)}`,
+      modelVersion: "gpt-6-sol-2026-09-22",
+      promptVersion: "preview@1",
+      usage: { inputTokens: 200, outputTokens: 300 },
+    });
+    qaMock.evaluateNarrativeQuality.mockResolvedValue({
+      modelVersion: "gpt-6-luna-2026-09-22",
+      promptVersion: "qa@1",
+      result: {
+        issues: [],
+        scores: {
+          factual_grounding: 4,
+          information_density: 4,
+          japanese_quality: 4,
+          tactical_depth: 4,
+        },
+        verdict: "publish",
+      },
+      usage: { inputTokens: 150, outputTokens: 30 },
+    });
+
+    const result = await generateMatchContent("trial-match", "preview", "ja", {
+      models: { fast: "gpt-6-luna", narrative: "gpt-6-sol" },
+      persist: false,
+      comparisonQaModel: "gpt-5.6-luna",
+    });
+
+    expect(dbMock.insert).not.toHaveBeenCalled();
+    expect(dbMock.upsert).not.toHaveBeenCalled();
+    expect(indexNowMock.submitUrlsToIndexNow).not.toHaveBeenCalled();
+    const notifyModule = await import("@/lib/llm/notify");
+    expect(notifyModule.notifyContentRejected).not.toHaveBeenCalled();
+    expect(notifyModule.notifyCostAlert).not.toHaveBeenCalled();
+
+    expect(extractFactsMock.extractTacticalPoints).toHaveBeenCalledWith(
+      trialAssembled,
+      "gpt-6-luna",
+    );
+    expect(generateNarrativeMock.generateNarrative).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "gpt-6-sol" }),
+    );
+    expect(verifyEntitiesMock.verifyNarrativeEntities).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "gpt-6-luna" }),
+    );
+    expect(qaMock.evaluateNarrativeQuality).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ model: "gpt-6-luna" }),
+    );
+    expect(qaMock.evaluateNarrativeQuality).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ model: "gpt-5.6-luna" }),
+    );
+    expect(result.trial?.comparisonQa?.verdict).toBe("publish");
+    expect(result.trial?.stageMetrics.map((stage) => stage.name)).toEqual([
+      "extract-facts",
+      "generate-narrative",
+      "qa",
+      "verify-entities",
+      "comparison-qa",
+    ]);
+  });
+
   it("submits published league-one recap urls to IndexNow after persistence", async () => {
     dbMock.maybeSingle.mockResolvedValue({
       data: { external_ids: { wikipedia_round: "3" } },

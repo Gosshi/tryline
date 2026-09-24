@@ -1,7 +1,19 @@
 export const OPENAI_PRICING_USD_PER_1M_TOKENS = {
   "gpt-5.6-sol": {
-    input: 5,
-    output: 30,
+    input: 4,
+    output: 20,
+  },
+  "gpt-6-astra": {
+    input: 10,
+    output: 50,
+  },
+  "gpt-6-sol": {
+    input: 2,
+    output: 10,
+  },
+  "gpt-6-luna": {
+    input: 0.1,
+    output: 0.5,
   },
   "gpt-5.6-terra": {
     input: 2,
@@ -23,6 +35,9 @@ export const OPENAI_PRICING_USD_PER_1M_TOKENS = {
 
 const PRICEABLE_MODELS = [
   "gpt-5.6-sol",
+  "gpt-6-astra",
+  "gpt-6-sol",
+  "gpt-6-luna",
   "gpt-5.6-terra",
   "gpt-5.6-luna",
   "gpt-4o-mini",

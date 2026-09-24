@@ -144,6 +144,7 @@ export async function verifyNarrativeEntities(options: {
   allowedEntities: AllowedPersonEntity[];
   knownNonPersonNames?: string[];
   sourcedFacts: SourcedFactInput[];
+  model?: string;
 }): Promise<EntityVerificationStageResponse> {
   const prompt = buildVerifyEntitiesPrompt(options);
   let attempts = 0;
@@ -152,7 +153,7 @@ export async function verifyNarrativeEntities(options: {
     attempts += 1;
 
     const response = await createTextResponse({
-      model: MODELS.FAST,
+      model: options.model ?? MODELS.FAST,
       input: prompt,
       jsonMode: true,
     });

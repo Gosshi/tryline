@@ -24,6 +24,7 @@ import {
   hasConfirmedProjectedLineups,
   sanitizeUnconfirmedProjectedLineups,
 } from "@/lib/llm/lineups";
+import { MODELS } from "@/lib/llm/models";
 import {
   notifyContentQualityRegression,
   notifyContentRejected,
@@ -53,6 +54,7 @@ import { submitUrlsToIndexNow } from "@/lib/seo/indexnow";
 import { SITE_URL } from "@/lib/site";
 
 import type { Json } from "@/lib/db/types";
+import type { ContentModelOverrides } from "@/lib/llm/models";
 import type {
   AssembledContentInput,
   ContentLanguage,
@@ -109,6 +111,29 @@ function buildRecentFormRecord(
   ].join("");
 }
 
+export type PipelineTrialStageMetric = {
+  name: "extract-facts" | "generate-narrative" | "qa" | "verify-entities" | "comparison-qa";
+  stage: 2 | 3 | 4;
+  modelVersion: string;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+  durationMs: number;
+};
+
+export type PipelineTrialDetails = {
+  content: string;
+  stageMetrics: PipelineTrialStageMetric[];
+  lengthRevisionAttempts: number;
+  retries: number;
+  comparisonQa: QaResult | null;
+  comparisonQaCostUsd: number;
+  qa: QaResult;
+  entityGate: { passed: boolean; ungroundedSurfaces: string[] };
+  costUsd: number;
+  durationMs: number;
+};
+
 export type PipelineResult = {
   matchId: string;
   contentType: ContentType;
@@ -116,6 +141,7 @@ export type PipelineResult = {
   qa: QaResult | null;
   cacheRevalidationSkipped?: boolean;
   skipReason?: "events_unavailable" | "score_mismatch";
+  trial?: PipelineTrialDetails;
 };
 
 function hashInput(input: unknown) {
@@ -185,8 +211,18 @@ export async function generateMatchContent(
   matchId: string,
   contentType: ContentType,
   language: ContentLanguage = "ja",
+  options: {
+    models?: ContentModelOverrides;
+    persist?: boolean;
+    comparisonQaModel?: string;
+  } = {},
 ): Promise<PipelineResult> {
+  const trialStartedAt = Date.now();
+  const persist = options.persist !== false;
   const db = getSupabaseServerClient();
+  const trialStageMetrics: PipelineTrialStageMetric[] = [];
+  const recordPipelineRun = (entry: Parameters<typeof logPipelineRun>[0]) =>
+    persist ? logPipelineRun(entry) : Promise.resolve();
 
   const stage1StartedAt = Date.now();
   const assembled = await assembleMatchContentInput(
@@ -194,7 +230,7 @@ export async function generateMatchContent(
     language,
     contentType,
   );
-  await logPipelineRun({
+  await recordPipelineRun({
     matchId,
     contentType,
     stage: 1,
@@ -217,7 +253,7 @@ export async function generateMatchContent(
       matchId,
     });
 
-    await logPipelineRun({
+    await recordPipelineRun({
       matchId,
       contentType,
       stage: 0,
@@ -231,17 +267,19 @@ export async function generateMatchContent(
       durationMs: 0,
       status: "failed",
     });
-    await notifyEventIntegrityMismatch({
-      actualAway: actual.away,
-      actualHome: actual.home,
-      competitionLabel: assembled.match.competition
-        ? `${assembled.match.competition.name} ${assembled.match.competition.season}`
-        : undefined,
-      expectedAway: expected.away,
-      expectedHome: expected.home,
-      matchId,
-      matchLabel: `${assembled.match.home_team?.name ?? "Home"} 対 ${assembled.match.away_team?.name ?? "Away"}`,
-    });
+    if (persist) {
+      await notifyEventIntegrityMismatch({
+        actualAway: actual.away,
+        actualHome: actual.home,
+        competitionLabel: assembled.match.competition
+          ? `${assembled.match.competition.name} ${assembled.match.competition.season}`
+          : undefined,
+        expectedAway: expected.away,
+        expectedHome: expected.home,
+        matchId,
+        matchLabel: `${assembled.match.home_team?.name ?? "Home"} 対 ${assembled.match.away_team?.name ?? "Away"}`,
+      });
+    }
 
     return {
       matchId,
@@ -278,9 +316,9 @@ export async function generateMatchContent(
   const stage2StartedAt = Date.now();
   let tactical;
   try {
-    tactical = await extractTacticalPoints(assembled);
+    tactical = await extractTacticalPoints(assembled, options.models?.fast);
   } catch (error) {
-    await logPipelineRun({
+    await recordPipelineRun({
       matchId,
       contentType,
       stage: 2,
@@ -298,8 +336,17 @@ export async function generateMatchContent(
     outputTokens: tactical.usage.outputTokens,
   });
   totalCostUsd += stage2CostUsd;
+  trialStageMetrics.push({
+    name: "extract-facts",
+    stage: 2,
+    modelVersion: tactical.modelVersion,
+    inputTokens: tactical.usage.inputTokens,
+    outputTokens: tactical.usage.outputTokens,
+    costUsd: stage2CostUsd,
+    durationMs: Date.now() - stage2StartedAt,
+  });
 
-  await logPipelineRun({
+  await recordPipelineRun({
     matchId,
     contentType,
     stage: 2,
@@ -315,19 +362,28 @@ export async function generateMatchContent(
   let modelVersion = "";
   let promptVersion = "";
   let lengthRevisionAttempts = 0;
+  let narrativeAttempts = 0;
   let entityViolationFeedback: string[] = [];
+  let entityGatePassed = true;
+  let comparisonQa: QaResult | null = null;
+  let comparisonQaCostUsd = 0;
 
-  async function runQualityGate(options: {
+  async function runQualityGate(gateOptions: {
     narrative: string;
     retryCount: number;
+    qaModel?: string;
+    verifyEntities?: boolean;
   }) {
     const [entityVerification, qaResponse] = await Promise.all([
-      verifyNarrativeEntities({
-        allowedEntities,
-        knownNonPersonNames,
-        narrative: options.narrative,
-        sourcedFacts: assembled.sourced_facts,
-      }),
+      gateOptions.verifyEntities === false
+        ? Promise.resolve(null)
+        : verifyNarrativeEntities({
+            allowedEntities,
+            knownNonPersonNames,
+            model: options.models?.fast,
+            narrative: gateOptions.narrative,
+            sourcedFacts: assembled.sourced_facts,
+          }),
       evaluateNarrativeQuality({
         contentType,
         language,
@@ -379,11 +435,13 @@ export async function generateMatchContent(
         hasEvents,
         hasLineups,
         matchEvents: assembled.match_events,
-        narrative: options.narrative,
-        retryCount: options.retryCount,
+        model: gateOptions.qaModel ?? options.models?.fast,
+        narrative: gateOptions.narrative,
+        retryCount: gateOptions.retryCount,
       }),
     ]);
-    const entityViolations = entityVerification.result.ungroundedSurfaces;
+    const entityViolations =
+      entityVerification?.result.ungroundedSurfaces ?? entityViolationFeedback;
 
     return {
       entityVerification,
@@ -392,13 +450,14 @@ export async function generateMatchContent(
         result: applyEntityGroundingQaGuard(qaResponse.result, {
           contentType,
           entityViolations,
-          retryCount: options.retryCount,
+          retryCount: gateOptions.retryCount,
         }),
       },
     };
   }
 
   for (let attempt = 0; attempt < NARRATIVE_GENERATION_ATTEMPTS; attempt += 1) {
+    narrativeAttempts += 1;
     const stage3StartedAt = Date.now();
     const narrative = await generateNarrative({
       assembled,
@@ -409,6 +468,7 @@ export async function generateMatchContent(
       attempt,
       entityViolationSurfaces: entityViolationFeedback,
       language,
+      model: options.models?.narrative,
     });
 
     finalNarrative = narrative.content;
@@ -421,8 +481,17 @@ export async function generateMatchContent(
       outputTokens: narrative.usage.outputTokens,
     });
     totalCostUsd += stage3CostUsd;
+    trialStageMetrics.push({
+      name: "generate-narrative",
+      stage: 3,
+      modelVersion: narrative.modelVersion,
+      inputTokens: narrative.usage.inputTokens,
+      outputTokens: narrative.usage.outputTokens,
+      costUsd: stage3CostUsd,
+      durationMs: Date.now() - stage3StartedAt,
+    });
 
-    await logPipelineRun({
+    await recordPipelineRun({
       matchId,
       contentType,
       stage: 3,
@@ -452,7 +521,7 @@ export async function generateMatchContent(
       qaResponse = result.qaResponse;
       entityVerification = result.entityVerification;
     } catch (error) {
-      await logPipelineRun({
+      await recordPipelineRun({
         matchId,
         contentType,
         stage: 4,
@@ -465,6 +534,12 @@ export async function generateMatchContent(
         errorMessage: error instanceof Error ? error.message : "qa failed",
       });
 
+      if (
+        error instanceof Error &&
+        error.message.startsWith("entity verification failed")
+      ) {
+        entityGatePassed = false;
+      }
       finalQa = {
         scores: {
           information_density: 1,
@@ -501,8 +576,28 @@ export async function generateMatchContent(
         })
       : 0;
     totalCostUsd += stage4CostUsd + entityVerificationCostUsd;
+    trialStageMetrics.push({
+      name: "qa",
+      stage: 4,
+      modelVersion: qaResponse.modelVersion,
+      inputTokens: qaResponse.usage.inputTokens,
+      outputTokens: qaResponse.usage.outputTokens,
+      costUsd: stage4CostUsd,
+      durationMs: Date.now() - stage4StartedAt,
+    });
+    if (entityVerification) {
+      trialStageMetrics.push({
+        name: "verify-entities",
+        stage: 4,
+        modelVersion: entityVerification.modelVersion,
+        inputTokens: entityVerification.usage.inputTokens,
+        outputTokens: entityVerification.usage.outputTokens,
+        costUsd: entityVerificationCostUsd,
+        durationMs: Date.now() - stage4StartedAt,
+      });
+    }
 
-    await logPipelineRun({
+    await recordPipelineRun({
       matchId,
       contentType,
       stage: 4,
@@ -531,6 +626,7 @@ export async function generateMatchContent(
       const baselineModelVersion = modelVersion;
       const baselinePromptVersion = promptVersion;
       const baselineQa = qaResponse.result;
+      const baselineEntityViolationFeedback = entityViolationFeedback;
       lengthRevisionAttempts += 1;
       const revisionStartedAt = Date.now();
       const revised = await reviseNarrativeLength({
@@ -542,6 +638,7 @@ export async function generateMatchContent(
         language,
         promptVersion,
         tacticalPoints: tactical.result.tactical_points,
+        model: options.models?.narrative,
       });
 
       finalNarrative = revised.content;
@@ -554,8 +651,17 @@ export async function generateMatchContent(
         outputTokens: revised.usage.outputTokens,
       });
       totalCostUsd += revisionCostUsd;
+      trialStageMetrics.push({
+        name: "generate-narrative",
+        stage: 3,
+        modelVersion: revised.modelVersion,
+        inputTokens: revised.usage.inputTokens,
+        outputTokens: revised.usage.outputTokens,
+        costUsd: revisionCostUsd,
+        durationMs: Date.now() - revisionStartedAt,
+      });
 
-      await logPipelineRun({
+      await recordPipelineRun({
         matchId,
         contentType,
         stage: 3,
@@ -587,7 +693,7 @@ export async function generateMatchContent(
         revisionEntityVerification = result.entityVerification;
         revisionQaResponse = result.qaResponse;
       } catch (error) {
-        await logPipelineRun({
+        await recordPipelineRun({
           matchId,
           contentType,
           stage: 4,
@@ -601,6 +707,12 @@ export async function generateMatchContent(
             error instanceof Error ? error.message : "revision qa failed",
         });
 
+        if (
+          error instanceof Error &&
+          error.message.startsWith("entity verification failed")
+        ) {
+          entityGatePassed = false;
+        }
         finalQa = {
           scores: {
             information_density: 1,
@@ -620,7 +732,7 @@ export async function generateMatchContent(
       }
       finalQa = revisionQaResponse.result;
       entityViolationFeedback =
-        revisionEntityVerification.result.ungroundedSurfaces;
+        revisionEntityVerification?.result.ungroundedSurfaces ?? [];
 
       const revisionQaCostUsd = calculateCostUsd({
         modelVersion: revisionQaResponse.modelVersion,
@@ -628,20 +740,40 @@ export async function generateMatchContent(
         outputTokens: revisionQaResponse.usage.outputTokens,
       });
       const revisionEntityVerificationCostUsd = calculateCostUsd({
-        modelVersion: revisionEntityVerification.modelVersion,
-        inputTokens: revisionEntityVerification.usage.inputTokens,
-        outputTokens: revisionEntityVerification.usage.outputTokens,
+        modelVersion: revisionEntityVerification!.modelVersion,
+        inputTokens: revisionEntityVerification!.usage.inputTokens,
+        outputTokens: revisionEntityVerification!.usage.outputTokens,
       });
       totalCostUsd += revisionQaCostUsd + revisionEntityVerificationCostUsd;
+      trialStageMetrics.push({
+        name: "qa",
+        stage: 4,
+        modelVersion: revisionQaResponse.modelVersion,
+        inputTokens: revisionQaResponse.usage.inputTokens,
+        outputTokens: revisionQaResponse.usage.outputTokens,
+        costUsd: revisionQaCostUsd,
+        durationMs: Date.now() - revisionQaStartedAt,
+      });
+      if (revisionEntityVerification) {
+        trialStageMetrics.push({
+          name: "verify-entities",
+          stage: 4,
+          modelVersion: revisionEntityVerification.modelVersion,
+          inputTokens: revisionEntityVerification.usage.inputTokens,
+          outputTokens: revisionEntityVerification.usage.outputTokens,
+          costUsd: revisionEntityVerificationCostUsd,
+          durationMs: Date.now() - revisionQaStartedAt,
+        });
+      }
 
-      await logPipelineRun({
+      await recordPipelineRun({
         matchId,
         contentType,
         stage: 4,
         inputHash: hashInput({ narrative: revised.content }),
         output: {
           qa: revisionQaResponse.result,
-          entityVerification: revisionEntityVerification.result,
+          entityVerification: revisionEntityVerification!.result,
         },
         costUsd: revisionQaCostUsd + revisionEntityVerificationCostUsd,
         durationMs: Date.now() - revisionQaStartedAt,
@@ -664,6 +796,7 @@ export async function generateMatchContent(
           ],
           verdict: "publish",
         };
+        entityViolationFeedback = baselineEntityViolationFeedback;
         console.warn(
           "[content-pipeline] discarded length revision with weaker factual grounding",
           {
@@ -739,9 +872,35 @@ export async function generateMatchContent(
     throw new Error("pipeline failed to produce qa result");
   }
 
+  if (options.comparisonQaModel) {
+    const comparisonStartedAt = Date.now();
+    const comparison = await runQualityGate({
+      narrative: finalNarrative,
+      retryCount: 0,
+      qaModel: options.comparisonQaModel,
+      verifyEntities: false,
+    });
+    comparisonQa = comparison.qaResponse.result;
+    comparisonQaCostUsd = calculateCostUsd({
+      modelVersion: comparison.qaResponse.modelVersion,
+      inputTokens: comparison.qaResponse.usage.inputTokens,
+      outputTokens: comparison.qaResponse.usage.outputTokens,
+    });
+    trialStageMetrics.push({
+      name: "comparison-qa",
+      stage: 4,
+      modelVersion: comparison.qaResponse.modelVersion,
+      inputTokens: comparison.qaResponse.usage.inputTokens,
+      outputTokens: comparison.qaResponse.usage.outputTokens,
+      costUsd: comparisonQaCostUsd,
+      durationMs: Date.now() - comparisonStartedAt,
+    });
+  }
+
   let persistedQaScores: Json = finalQa;
 
   if (
+    persist &&
     language === "ja" &&
     (contentType === "preview" || contentType === "recap")
   ) {
@@ -797,7 +956,7 @@ export async function generateMatchContent(
     preservedPublished = existingContent?.status === "published";
   }
 
-  if (!preservedPublished) {
+  if (persist && !preservedPublished) {
     const { error: upsertError } = await db.from("match_content").upsert(
       {
         match_id: matchId,
@@ -838,6 +997,7 @@ export async function generateMatchContent(
   const kickoffAtJst = formatKickoffJst(assembled.match.kickoff_at);
 
   if (
+    persist &&
     persistedStatus === "published" &&
     existingContent?.status === "published"
   ) {
@@ -859,7 +1019,7 @@ export async function generateMatchContent(
     }
   }
 
-  if (persistedStatus === "published") {
+  if (persist && persistedStatus === "published") {
     const urls = [`${SITE_URL}/matches/${matchId}`];
     const competition = assembled.match.competition;
 
@@ -915,7 +1075,7 @@ export async function generateMatchContent(
     await submitUrlsToIndexNow(urls);
   }
 
-  if (persistedStatus === "draft") {
+  if (persist && persistedStatus === "draft") {
     if (preservedPublished) {
       console.warn(
         "[content-pipeline] preserved existing published content after rejection",
@@ -948,7 +1108,7 @@ export async function generateMatchContent(
     });
   }
 
-  if (totalCostUsd > COST_ALERT_THRESHOLD_USD) {
+  if (persist && totalCostUsd > COST_ALERT_THRESHOLD_USD) {
     await notifyCostAlert(
       matchId,
       contentType,
@@ -963,5 +1123,27 @@ export async function generateMatchContent(
     status: persistedStatus,
     qa: finalQa,
     ...(cacheRevalidationSkipped ? { cacheRevalidationSkipped: true } : {}),
+    ...(!persist
+      ? {
+          trial: {
+            content: finalNarrative,
+            stageMetrics: trialStageMetrics,
+            lengthRevisionAttempts,
+            retries: Math.max(0, narrativeAttempts - 1) + lengthRevisionAttempts,
+            comparisonQa,
+            comparisonQaCostUsd,
+            qa: finalQa,
+            entityGate: {
+              passed:
+                entityGatePassed && entityViolationFeedback.length === 0,
+              ungroundedSurfaces: entityViolationFeedback,
+            },
+            costUsd: trialStageMetrics
+              .filter((stage) => stage.name !== "comparison-qa")
+              .reduce((sum, stage) => sum + stage.costUsd, 0),
+            durationMs: Date.now() - trialStartedAt,
+          },
+        }
+      : {}),
   };
 }

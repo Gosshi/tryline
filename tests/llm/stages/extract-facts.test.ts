@@ -105,6 +105,20 @@ describe("extractTacticalPoints", () => {
     );
   });
 
+  it("uses an explicit model override", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({ tactical_points: tacticalPoints }),
+      model: "gpt-6-luna-2026-09-22",
+      usage: { inputTokens: 3000, outputTokens: 500 },
+    });
+
+    await extractTacticalPoints(assembled, "gpt-6-luna");
+
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "gpt-6-luna" }),
+    );
+  });
+
   it("accepts variable tactical point counts from valid JSON", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       text: JSON.stringify({

@@ -367,6 +367,35 @@ describe("evaluateNarrativeQuality", () => {
     );
   });
 
+  it("uses an explicit QA model override", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: JSON.stringify({
+        scores: {
+          factual_grounding: 3,
+          information_density: 3,
+          japanese_quality: 3,
+          tactical_depth: 3,
+        },
+        issues: [],
+        verdict: "publish",
+      }),
+      model: "gpt-6-luna-2026-09-22",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    await evaluateNarrativeQuality({
+      contentType: "preview",
+      matchContext,
+      narrative: longJaPreview,
+      retryCount: 0,
+      model: "gpt-6-luna",
+    });
+
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "gpt-6-luna" }),
+    );
+  });
+
   it("returns retry when any score <= 2 and retry count < 2", async () => {
     openAIMock.createTextResponse.mockResolvedValueOnce({
       text: JSON.stringify({

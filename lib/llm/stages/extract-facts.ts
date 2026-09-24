@@ -63,6 +63,7 @@ function warnIfPromptInputIsLarge(input: AssembledContentInput): void {
 
 export async function extractTacticalPoints(
   input: AssembledContentInput,
+  model: string = MODELS.FAST,
 ): Promise<FactExtractionResponse> {
   const trimmedInput = trimAssembledInput(input);
   warnIfPromptInputIsLarge(trimmedInput);
@@ -74,7 +75,7 @@ export async function extractTacticalPoints(
     attempts += 1;
 
     const response = await createTextResponse({
-      model: MODELS.FAST,
+      model,
       input: prompt,
       jsonMode: true,
     });

@@ -9,8 +9,8 @@ import {
 describe("OpenAI pricing", () => {
   it("defines the GPT-5.6 model prices", () => {
     expect(OPENAI_PRICING_USD_PER_1M_TOKENS["gpt-5.6-sol"]).toEqual({
-      input: 5,
-      output: 30,
+      input: 4,
+      output: 20,
     });
     expect(OPENAI_PRICING_USD_PER_1M_TOKENS["gpt-5.6-terra"]).toEqual({
       input: 2,
@@ -20,6 +20,30 @@ describe("OpenAI pricing", () => {
       input: 0.2,
       output: 1.2,
     });
+  });
+
+  it("prices GPT-6 models and their snapshot versions", () => {
+    expect(
+      calculateCostUsd({
+        inputTokens: 1_000_000,
+        modelVersion: "gpt-6-astra-2026-09-03",
+        outputTokens: 1_000_000,
+      }),
+    ).toBe(60);
+    expect(
+      calculateCostUsd({
+        inputTokens: 1_000_000,
+        modelVersion: "gpt-6-sol-2026-09-22",
+        outputTokens: 1_000_000,
+      }),
+    ).toBe(12);
+    expect(
+      calculateCostUsd({
+        inputTokens: 1_000_000,
+        modelVersion: "gpt-6-luna-2026-09-22",
+        outputTokens: 1_000_000,
+      }),
+    ).toBe(0.6);
   });
 
   it("calculates the price for a GPT-5.6 Terra response", () => {

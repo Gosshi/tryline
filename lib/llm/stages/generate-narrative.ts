@@ -55,6 +55,7 @@ export async function generateNarrative(options: {
   attempt: number;
   entityViolationSurfaces?: string[];
   language?: ContentLanguage;
+  model?: string;
 }): Promise<NarrativeResponse> {
   const isPreview = options.contentType === "preview";
   const basePromptVersion = isPreview
@@ -67,7 +68,7 @@ export async function generateNarrative(options: {
       : buildJapaneseNarrativePrompt(options);
 
   const response = await createTextResponse({
-    model: MODELS.NARRATIVE,
+    model: options.model ?? MODELS.NARRATIVE,
     input: prompt,
   });
 
@@ -93,6 +94,7 @@ export async function reviseNarrativeLength(options: {
   language?: ContentLanguage;
   promptVersion: string;
   tacticalPoints: TacticalPoint[];
+  model?: string;
 }): Promise<NarrativeResponse> {
   const language = options.language ?? "ja";
   const requirement = getContentLengthRequirement(
@@ -117,7 +119,7 @@ export async function reviseNarrativeLength(options: {
         );
 
   const response = await createTextResponse({
-    model: MODELS.NARRATIVE,
+    model: options.model ?? MODELS.NARRATIVE,
     input: prompt,
   });
 

@@ -154,6 +154,27 @@ describe("generateNarrative", () => {
     );
   });
 
+  it("uses an explicit narrative model override", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: "# preview",
+      model: "gpt-6-sol-2026-09-22",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    await generateNarrative({
+      assembled,
+      tacticalPoints: [],
+      contentType: "preview",
+      additionalSignals: [],
+      attempt: 0,
+      model: "gpt-6-sol",
+    });
+
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "gpt-6-sol" }),
+    );
+  });
+
   it("adds the Japanese free first-section instruction", async () => {
     openAIMock.createTextResponse.mockResolvedValue({
       text: "# preview",
@@ -320,6 +341,29 @@ describe("generateNarrative", () => {
       expect.objectContaining({
         input: expect.stringContaining("最終出力は1500字以上"),
       }),
+    );
+  });
+
+  it("uses an explicit narrative model override for length revision", async () => {
+    openAIMock.createTextResponse.mockResolvedValueOnce({
+      text: "# revised",
+      model: "gpt-6-sol-2026-09-22",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    await reviseNarrativeLength({
+      additionalSignals: [],
+      assembled,
+      contentType: "preview",
+      currentContent: "# short",
+      language: "ja",
+      promptVersion: "preview@1",
+      tacticalPoints: [],
+      model: "gpt-6-sol",
+    });
+
+    expect(openAIMock.createTextResponse).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "gpt-6-sol" }),
     );
   });
 
