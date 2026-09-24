@@ -21,7 +21,7 @@
 - `lib/llm/prompts/extract-tactical-points.ts`（`:55` の変更、`PROMPT_VERSION` の更新）
 - `lib/llm/prompts/generate-recap.ts`（`:248` の削除、`PROMPT_VERSION` の更新）
 - `lib/llm/prompts/generate-preview.ts`（`PROMPT_VERSION` の更新だけ）
-- 関係するテスト（`grep -rln penalty_count tests` で 10 ファイル）
+- 関係するテスト（`grep -rln penalty_count tests` で 13 ファイル、2026-09-24 時点）
 
 ## 進める順番
 
