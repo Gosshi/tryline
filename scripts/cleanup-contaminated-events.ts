@@ -18,6 +18,7 @@ import {
   type StructuralContaminationGroup,
   type StructuralEventMatchRow,
 } from "@/lib/data-integrity/contaminated-events";
+import { loadAllPages } from "@/lib/db/pagination";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import {
   computeEventPointTotals,
@@ -37,6 +38,7 @@ export {
 } from "@/lib/data-integrity/contaminated-events";
 
 type CliOptions = {
+  keepPublished: boolean;
   ownerApproved: boolean;
 };
 
@@ -48,45 +50,54 @@ export type CleanupPlanGroup = ContaminatedEventGroup & {
 
 export function parseOptions(argv: string[]): CliOptions {
   let ownerApproved = false;
+  let keepPublished = false;
 
   for (const arg of argv) {
     if (arg === "--confirm-owner-approved") {
       ownerApproved = true;
       continue;
     }
+    if (arg === "--keep-published") {
+      keepPublished = true;
+      continue;
+    }
     if (arg === "--dry-run") continue;
 
     throw new Error(
-      "Usage: pnpm tsx scripts/cleanup-contaminated-events.ts [--confirm-owner-approved]",
+      "Usage: pnpm tsx scripts/cleanup-contaminated-events.ts [--confirm-owner-approved] [--keep-published]",
     );
   }
 
-  return { ownerApproved };
+  return { keepPublished, ownerApproved };
 }
 
-async function loadFinishedMatchesWithEvents(): Promise<StructuralEventMatchRow[]> {
-  const client = getSupabaseServerClient();
-  const { data, error } = await client
-    .from("matches")
-    .select(
-      `
-        id,
-        kickoff_at,
-        home_score,
-        away_score,
-        home_team_id,
-        away_team_id,
-        home_team:teams!matches_home_team_id_fkey(name),
-        away_team:teams!matches_away_team_id_fkey(name),
-        match_events(id, type, minute, player_id, team_id, metadata),
-        match_content(content_type, status)
-      `,
-    )
-    .eq("status", "finished");
+export async function loadFinishedMatchesWithEvents(
+  client = getSupabaseServerClient(),
+): Promise<StructuralEventMatchRow[]> {
+  const data = await loadAllPages({
+    loadPage: (from, to) =>
+      client
+        .from("matches")
+        .select(
+          `
+            id,
+            kickoff_at,
+            home_score,
+            away_score,
+            home_team_id,
+            away_team_id,
+            home_team:teams!matches_home_team_id_fkey(name),
+            away_team:teams!matches_away_team_id_fkey(name),
+            match_events(id, type, minute, player_id, team_id, metadata),
+            match_content(content_type, status)
+          `,
+        )
+        .eq("status", "finished")
+        .order("id", { ascending: true })
+        .range(from, to),
+  });
 
-  if (error) throw error;
-
-  return ((data ?? []) as StructuralEventMatchRow[]).filter(
+  return (data as StructuralEventMatchRow[]).filter(
     (match) => match.match_events.length > 0,
   );
 }
@@ -256,6 +267,7 @@ export async function applyCleanup(
   options: {
     backup?: CleanupBackupWriter;
     now?: () => Date;
+    keepPublished?: boolean;
   } = {},
 ) {
   const owners = new Set(groups.flatMap((group) => group.ownerIds));
@@ -271,7 +283,7 @@ export async function applyCleanup(
   const matchIds = targets.map((match) => match.id);
 
   if (matchIds.length === 0) {
-    return { demotedRecaps: 0, deletedEvents: 0, matchCount: 0 };
+    return { demotedRecaps: 0, deletedEvents: 0, keptPublishedRecaps: 0, matchCount: 0 };
   }
 
   const timestamp = (options.now?.() ?? new Date()).toISOString();
@@ -284,18 +296,33 @@ export async function applyCleanup(
     .select("id");
   if (deleteResult.error) throw deleteResult.error;
 
-  const demoteResult = await client
-    .from("match_content")
-    .update({ status: "draft" })
-    .in("match_id", matchIds)
-    .eq("content_type", "recap")
-    .eq("status", "published")
-    .select("id");
-  if (demoteResult.error) throw demoteResult.error;
+  let demotedRecaps = 0;
+  if (!options.keepPublished) {
+    const demoteResult = await client
+      .from("match_content")
+      .update({ status: "draft" })
+      .in("match_id", matchIds)
+      .eq("content_type", "recap")
+      .eq("status", "published")
+      .select("id");
+    if (demoteResult.error) throw demoteResult.error;
+    demotedRecaps = demoteResult.data?.length ?? 0;
+  }
+  const keptPublishedRecaps = options.keepPublished
+    ? targets.reduce(
+        (count, match) =>
+          count +
+          match.match_content.filter(
+            (content) => content.content_type === "recap" && content.status === "published",
+          ).length,
+        0,
+      )
+    : 0;
 
   return {
-    demotedRecaps: demoteResult.data?.length ?? 0,
+    demotedRecaps,
     deletedEvents: deleteResult.data?.length ?? 0,
+    keptPublishedRecaps,
     matchCount: matchIds.length,
   };
 }
@@ -304,10 +331,10 @@ export async function runCleanup(
   groups: CleanupPlanGroup[],
   ownerApproved: boolean,
   client = getSupabaseServerClient(),
-  options: { backup?: CleanupBackupWriter; now?: () => Date } = {},
+  options: { backup?: CleanupBackupWriter; keepPublished?: boolean; now?: () => Date } = {},
 ) {
   if (!ownerApproved) {
-    return { demotedRecaps: 0, deletedEvents: 0, matchCount: 0 };
+    return { demotedRecaps: 0, deletedEvents: 0, keptPublishedRecaps: 0, matchCount: 0 };
   }
   return applyCleanup(groups, client, options);
 }
@@ -318,14 +345,21 @@ async function main() {
   const groups = findCleanupGroups(matches);
   printGroups(groups);
 
-  const summary = await runCleanup(groups, options.ownerApproved);
+  const summary = await runCleanup(groups, options.ownerApproved, getSupabaseServerClient(), {
+    keepPublished: options.keepPublished,
+  });
   if (!options.ownerApproved) {
     console.log("[dry-run] No DELETE or UPDATE was executed.");
+    console.log("--keep-published を付けた場合: イベントのみ削除し、公開中レビューを維持");
+    console.log("--keep-published を付けない場合: 対象の公開中レビューを下書きに変更");
     return;
   }
   console.log(
     `Deleted ${summary.deletedEvents} events across ${summary.matchCount} matches, demoted ${summary.demotedRecaps} recaps to draft`,
   );
+  if (options.keepPublished) {
+    console.log(`レビューの状態は変更していない（公開中 ${summary.keptPublishedRecaps} 本を維持）`);
+  }
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

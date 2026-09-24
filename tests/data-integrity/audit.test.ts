@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   summarizeDraftBacklog,
@@ -9,6 +9,7 @@ import {
   summarizeStructuralContamination,
   summarizeStaleScheduledMatches,
   runDataIntegrityAudit,
+  loadFinishedMatches,
   summarizeStaleStandings,
   type AuditFinishedMatchRow,
 } from "@/lib/data-integrity/audit";
@@ -97,6 +98,35 @@ function auditMatch(
 }
 
 describe("data integrity audit summaries", () => {
+
+  it("loads all finished matches through two ordered pages", async () => {
+    const rows = Array.from({ length: 1500 }, (_, index) => ({
+      id: `match-${String(index).padStart(4, "0")}`,
+      match_events: [],
+    }));
+    const ranges: Array<[number, number]> = [];
+    let query: Record<string, (...args: never[]) => unknown>;
+    const client = {
+      from: () => {
+        query = {
+          select: vi.fn(() => query),
+          eq: vi.fn(() => query),
+          order: vi.fn(() => query),
+          range: vi.fn((from: number, to: number) => {
+            ranges.push([from, to]);
+            return Promise.resolve({ data: rows.slice(from, to + 1), error: null });
+          }),
+        } as never;
+        return query;
+      },
+    };
+
+    const loaded = await loadFinishedMatches(client as never);
+
+    expect(loaded).toHaveLength(1500);
+    expect(ranges).toEqual([[0, 999], [1000, 1999]]);
+  });
+
   it("summarizes duplicate event groups and ignores short signatures", () => {
     const summary = summarizeDuplicateEvents([
       cleanupMatch("match-1", duplicatedEvents),
@@ -187,6 +217,7 @@ describe("data integrity audit summaries", () => {
       eq: () => createQuery(data),
       lt: () => createQuery(data),
       order: () => createQuery(data),
+      range: (from: number, to: number) => Promise.resolve({ data: data.slice(from, to + 1), error: null }),
       select: () => createQuery(data),
       then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
         Promise.resolve(resolve({ data, error: null })),
