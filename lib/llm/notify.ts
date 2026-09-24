@@ -384,6 +384,17 @@ export async function notifyDataIntegrityReport(
       : []),
     "継続状況: 初回検出時刻は不明です（履歴を保持していないため）",
     `1. 重複イベント: groups=${report.duplicateEvents.groupCount} matches=${report.duplicateEvents.matchCount}`,
+    `1b. 構造の重複: groups=${report.structuralContamination.groupCount} matches=${report.structuralContamination.matchCount}`,
+    ...((report.structuralContamination.groups).flatMap((group) => [
+      `構造重複: events=${group.eventCount} owners=${group.owners.length ? group.owners.join(", ") : "持ち主なし"}`,
+      ...group.contaminated.map(
+        (match) =>
+          `汚染候補: ${match.matchId} published_recap=${match.hasPublishedRecap}`,
+      ),
+    ]).slice(0, 20)),
+    ...((report.structuralContamination.matchCount) > 10
+      ? [`構造重複の詳細は監査レポートを参照（残り${(report.structuralContamination.matchCount) - 10}試合）`]
+      : []),
     `2. スコア不一致: matches=${report.scoreMismatches.count}`,
     `3. finished イベント0件: matches=${report.emptyFinishedEvents.count}`,
     `4. draft滞留: total=${report.draftBacklog.total} recent7d=${report.draftBacklog.recent7Days}`,

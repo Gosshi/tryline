@@ -5,7 +5,10 @@ import {
   buildEventSignature,
   findContaminatedEventGroups,
   parseOptions,
+  printGroups,
+  runCleanup,
   type CleanupMatchRow,
+  type CleanupPlanGroup,
 } from "@/scripts/cleanup-contaminated-events";
 
 function match(
@@ -68,6 +71,7 @@ describe("cleanup-contaminated-events", () => {
   });
 
   it("deletes contaminated events and demotes published recaps when approved", async () => {
+    const order: string[] = [];
     const matchEventsSelect = vi.fn().mockResolvedValue({
       data: [{ id: "event-1" }, { id: "event-2" }],
       error: null,
@@ -84,7 +88,10 @@ describe("cleanup-contaminated-events", () => {
       from: vi.fn((table: string) => {
         if (table === "match_events") {
           return {
-            delete: () => ({ in: matchEventsIn }),
+            delete: () => {
+              order.push("delete");
+              return { in: matchEventsIn };
+            },
           };
         }
 
@@ -99,30 +106,74 @@ describe("cleanup-contaminated-events", () => {
         {
           eventCount: 4,
           matches: [
-            match("match-1", contaminatedEvents, true),
-            match("match-2", contaminatedEvents, false),
+            match("owner", contaminatedEvents, false),
+            match("contaminated", contaminatedEvents, true),
           ],
+          ownerIds: ["owner"],
           publishedRecapCount: 1,
           signature: "signature",
+          source: "structural",
         },
       ],
       client as never,
+      {
+        backup: async (matches) => {
+          order.push("backup");
+          expect(matches.map((item) => item.id)).toEqual(["contaminated"]);
+        },
+        now: () => new Date("2026-01-01T00:00:00Z"),
+      },
     );
 
-    expect(matchEventsIn).toHaveBeenCalledWith("match_id", [
-      "match-1",
-      "match-2",
-    ]);
-    expect(matchContentIn).toHaveBeenCalledWith("match_id", [
-      "match-1",
-      "match-2",
-    ]);
+    expect(order).toEqual(["backup", "delete"]);
+    expect(matchEventsIn).toHaveBeenCalledWith("match_id", ["contaminated"]);
+    expect(matchContentIn).toHaveBeenCalledWith("match_id", ["contaminated"]);
     expect(matchContentEqType).toHaveBeenCalledWith("content_type", "recap");
     expect(matchContentEqStatus).toHaveBeenCalledWith("status", "published");
     expect(summary).toEqual({
       deletedEvents: 2,
       demotedRecaps: 1,
-      matchCount: 2,
+      matchCount: 1,
     });
   });
+  it("does not delete or update anything in dry-run mode", async () => {
+    const from = vi.fn();
+    const backup = vi.fn(async () => undefined);
+    const result = await runCleanup(
+      [{
+        eventCount: 4,
+        matches: [match("contaminated", contaminatedEvents)],
+        ownerIds: [],
+        publishedRecapCount: 0,
+        signature: "signature",
+        source: "structural",
+      }],
+      false,
+      { from } as never,
+      { backup },
+    );
+
+    expect(from).not.toHaveBeenCalled();
+    expect(backup).not.toHaveBeenCalled();
+    expect(result).toEqual({ demotedRecaps: 0, deletedEvents: 0, matchCount: 0 });
+  });
+
+  it("labels a structural group without a score-matching owner", () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    printGroups([{
+      eventCount: 8,
+      matches: [match("orphan", contaminatedEvents)],
+      ownerIds: [],
+      ownerMatches: [],
+      publishedRecapCount: 0,
+      signature: "signature",
+      source: "structural",
+    }]);
+
+    expect(log.mock.calls.map(([line]) => line).join("\n")).toContain(
+      "owners: 持ち主なし",
+    );
+    log.mockRestore();
+  });
+
 });

@@ -6,7 +6,9 @@ import {
   summarizeDuplicateEvents,
   summarizeEmptyFinishedEvents,
   summarizeScoreMismatches,
+  summarizeStructuralContamination,
   summarizeStaleScheduledMatches,
+  runDataIntegrityAudit,
   summarizeStaleStandings,
   type AuditFinishedMatchRow,
 } from "@/lib/data-integrity/audit";
@@ -109,6 +111,108 @@ describe("data integrity audit summaries", () => {
       eventCount: 4,
       matchCount: 2,
       matchIds: ["match-1", "match-2"],
+    });
+  });
+
+  it("reports structural contamination with owner ids and published-recap status", () => {
+    const types = ["try", "conversion", "try", "conversion", "try", "conversion", "try", "conversion"];
+    const ownerEvents = types.map((type, index) => ({
+      id: `owner-${index}`,
+      metadata: {},
+      minute: index + 1,
+      player_id: `player-${index}`,
+      team_id: "home-id",
+      type,
+    }));
+    const copyEvents = ownerEvents.map((event) => ({
+      ...event,
+      id: `copy-${event.minute}`,
+      player_id: null,
+      team_id: "away-id",
+    }));
+    const summary = summarizeStructuralContamination([
+      auditMatch({
+        away_score: 0,
+        home_score: 28,
+        id: "owner",
+        match_events: ownerEvents,
+      }),
+      auditMatch({
+        away_score: 0,
+        home_score: 28,
+        id: "copy",
+        match_content: [{ content_type: "recap", status: "published" }],
+        match_events: copyEvents,
+      }),
+    ]);
+
+    expect(summary).toMatchObject({
+      groupCount: 1,
+      matchCount: 1,
+      groups: [{
+        owners: ["owner"],
+        contaminated: [{ matchId: "copy", hasPublishedRecap: true }],
+      }],
+    });
+  });
+
+  it("includes structural contamination in the weekly audit database report", async () => {
+    const types = ["try", "conversion", "try", "conversion", "try", "conversion", "try", "conversion"];
+    const ownerEvents = types.map((type, index) => ({
+      id: `owner-${index}`,
+      metadata: {},
+      minute: index + 1,
+      player_id: `player-${index}`,
+      team_id: "home-id",
+      type,
+    }));
+    const copyEvents = ownerEvents.map((event) => ({
+      ...event,
+      id: `copy-${event.minute}`,
+      player_id: null,
+      team_id: "away-id",
+    }));
+    const finishedMatches = [
+      auditMatch({ away_score: 0, home_score: 28, id: "owner", match_events: ownerEvents }),
+      auditMatch({
+        away_score: 0,
+        home_score: 28,
+        id: "copy",
+        match_content: [{ content_type: "recap", status: "published" }],
+        match_events: copyEvents,
+      }),
+    ];
+    let matchQueryCount = 0;
+    const createQuery = (data: unknown[]) => ({
+      eq: () => createQuery(data),
+      lt: () => createQuery(data),
+      order: () => createQuery(data),
+      select: () => createQuery(data),
+      then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
+        Promise.resolve(resolve({ data, error: null })),
+    });
+    const client = {
+      from: (table: string) => {
+        if (table === "matches") {
+          matchQueryCount += 1;
+          return createQuery(matchQueryCount === 1 ? finishedMatches : []);
+        }
+        return createQuery([]);
+      },
+    };
+
+    const report = await runDataIntegrityAudit(
+      client as never,
+      new Date("2026-01-01T00:00:00Z"),
+    );
+
+    expect(report.structuralContamination).toMatchObject({
+      groupCount: 1,
+      matchCount: 1,
+      groups: [{
+        owners: ["owner"],
+        contaminated: [{ matchId: "copy", hasPublishedRecap: true }],
+      }],
     });
   });
 
