@@ -119,7 +119,7 @@ remaining: { previews: number; recaps: number };  // 時間切れで開始しな
 
 ### 5. recap の候補の下限（`lib/cron/content-windows.ts` と `getMatchIdsMissingContent` の呼び出し）
 
-recap の候補を「キックオフから `RECAP_MAX_AGE_DAYS` 日以内の試合」に限る（新規定数。値は未解決の質問 1）。preview には影響しない。
+recap の候補を「キックオフから `RECAP_MAX_AGE_DAYS` 日以内の試合」に限る（新規定数。**値は 14**、2026-09-24 Owner 決定）。preview には影響しない。
 
 ## UI サーフェス
 
@@ -168,7 +168,7 @@ recap の候補を「キックオフから `RECAP_MAX_AGE_DAYS` 日以内の試�
 
 ## 未解決の質問
 
-1. **recap の候補の下限（`RECAP_MAX_AGE_DAYS`）をいくつにするか**（Owner 判断）
+1. ~~recap の候補の下限（`RECAP_MAX_AGE_DAYS`）をいくつにするか~~ → **解決（2026-09-24 Owner 決定）: 14 日**
    - 推奨: **14 日**。試合から 2 週間を過ぎたレビューは、検索でも回遊でもほとんど読まれない見込み（実測は無い）
    - 下限を入れると、URC 2025-26 の 44 本は自動では作られなくなる。必要なら後で一括の手動実行（別 spec）にする
    - 入れない場合、URC 開幕後もしばらくは新しい試合と古い 44 本が枠を取り合う（新しい試合が先に並ぶので、影響は処理量の余り次第）
