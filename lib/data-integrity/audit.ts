@@ -5,6 +5,7 @@ import {
   type ContaminatedEventGroup,
   type StructuralEventMatchRow,
 } from "@/lib/data-integrity/contaminated-events";
+import { loadAllPages } from "@/lib/db/pagination";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import {
   eventTotalsMatchFinalScore,
@@ -471,31 +472,32 @@ export function summarizeStaleScheduledMatches(
   };
 }
 
-async function loadFinishedMatches(client: AuditClient) {
-  const { data, error } = await client
-    .from("matches")
-    .select(
-      `
-        id,
-        kickoff_at,
-        home_score,
-        away_score,
-        home_team_id,
-        away_team_id,
-        home_team:teams!matches_home_team_id_fkey(name),
-        away_team:teams!matches_away_team_id_fkey(name),
-        competition:competitions!matches_competition_id_fkey(name, season),
-        match_events(id, type, minute, player_id, team_id, metadata),
-        match_content(content_type, status)
-      `,
-    )
-    .eq("status", "finished");
+export async function loadFinishedMatches(client: AuditClient) {
+  const data = await loadAllPages({
+    loadPage: (from, to) =>
+      client
+        .from("matches")
+        .select(
+          `
+            id,
+            kickoff_at,
+            home_score,
+            away_score,
+            home_team_id,
+            away_team_id,
+            home_team:teams!matches_home_team_id_fkey(name),
+            away_team:teams!matches_away_team_id_fkey(name),
+            competition:competitions!matches_competition_id_fkey(name, season),
+            match_events(id, type, minute, player_id, team_id, metadata),
+            match_content(content_type, status)
+          `,
+        )
+        .eq("status", "finished")
+        .order("id", { ascending: true })
+        .range(from, to),
+  });
 
-  if (error) {
-    throw error;
-  }
-
-  return (data ?? []) as AuditFinishedMatchRow[];
+  return data as AuditFinishedMatchRow[];
 }
 
 async function loadDraftContent(client: AuditClient) {

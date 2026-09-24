@@ -4,6 +4,7 @@ import {
   applyCleanup,
   buildEventSignature,
   findContaminatedEventGroups,
+  loadFinishedMatchesWithEvents,
   parseOptions,
   printGroups,
   runCleanup,
@@ -37,9 +38,14 @@ const contaminatedEvents = [
 
 describe("cleanup-contaminated-events", () => {
   it("parses dry-run and owner approval options", () => {
-    expect(parseOptions([])).toEqual({ ownerApproved: false });
-    expect(parseOptions(["--dry-run"])).toEqual({ ownerApproved: false });
+    expect(parseOptions([])).toEqual({ keepPublished: false, ownerApproved: false });
+    expect(parseOptions(["--dry-run"])).toEqual({ keepPublished: false, ownerApproved: false });
+    expect(parseOptions(["--keep-published"])).toEqual({
+      keepPublished: true,
+      ownerApproved: false,
+    });
     expect(parseOptions(["--confirm-owner-approved"])).toEqual({
+      keepPublished: false,
       ownerApproved: true,
     });
   });
@@ -133,6 +139,7 @@ describe("cleanup-contaminated-events", () => {
     expect(summary).toEqual({
       deletedEvents: 2,
       demotedRecaps: 1,
+      keptPublishedRecaps: 0,
       matchCount: 1,
     });
   });
@@ -155,7 +162,69 @@ describe("cleanup-contaminated-events", () => {
 
     expect(from).not.toHaveBeenCalled();
     expect(backup).not.toHaveBeenCalled();
-    expect(result).toEqual({ demotedRecaps: 0, deletedEvents: 0, matchCount: 0 });
+    expect(result).toEqual({ demotedRecaps: 0, deletedEvents: 0, keptPublishedRecaps: 0, matchCount: 0 });
+  });
+
+
+  it("loads all finished matches from deterministic pages", async () => {
+    const rows = Array.from({ length: 1500 }, (_, index) => ({
+      id: `match-${String(index).padStart(4, "0")}`,
+      match_events: [{ id: `event-${index}` }],
+    }));
+    const ranges: Array<[number, number]> = [];
+    let query: Record<string, (...args: never[]) => unknown>;
+    const client = {
+      from: vi.fn(() => {
+        query = {
+          select: vi.fn(() => query),
+          eq: vi.fn(() => query),
+          order: vi.fn(() => query),
+          range: vi.fn((from: number, to: number) => {
+            ranges.push([from, to]);
+            return Promise.resolve({ data: rows.slice(from, to + 1), error: null });
+          }),
+        } as never;
+        return query;
+      }),
+    };
+
+    const loaded = await loadFinishedMatchesWithEvents(client as never);
+
+    expect(loaded).toHaveLength(1500);
+    expect(ranges).toEqual([[0, 999], [1000, 1999]]);
+  });
+
+  it("deletes events and preserves published recaps when requested", async () => {
+    const matchEventsIn = vi.fn().mockReturnValue({
+      select: vi.fn().mockResolvedValue({ data: [{ id: "event-1" }], error: null }),
+    });
+    const matchContentUpdate = vi.fn();
+    const client = {
+      from: vi.fn((table: string) => table === "match_events"
+        ? { delete: () => ({ in: matchEventsIn }) }
+        : { update: matchContentUpdate }),
+    };
+    const summary = await applyCleanup(
+      [{
+        eventCount: 4,
+        matches: [match("published", contaminatedEvents, true)],
+        ownerIds: [],
+        publishedRecapCount: 1,
+        signature: "signature",
+        source: "structural",
+      }],
+      client as never,
+      { backup: async () => undefined, keepPublished: true },
+    );
+
+    expect(matchEventsIn).toHaveBeenCalledWith("match_id", ["published"]);
+    expect(matchContentUpdate).not.toHaveBeenCalled();
+    expect(summary).toEqual({
+      deletedEvents: 1,
+      demotedRecaps: 0,
+      keptPublishedRecaps: 1,
+      matchCount: 1,
+    });
   });
 
   it("labels a structural group without a score-matching owner", () => {
