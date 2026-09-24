@@ -103,7 +103,7 @@ generateMatchContent(matchId, contentType, language = "ja", options?: { models?:
 node --env-file=.env.production.local tools/run-ts.cjs scripts/trial-content-models.ts \
   --matches <id>,<id>,... --content-type recap \
   --config current --config gpt6 \
-  [--max-usd 5] [--dry-run]
+  [--max-usd 2] [--dry-run]
 ```
 
 - `--config current` は今のモデル、`--config gpt6` は `narrative=gpt-6-sol, fast=gpt-6-luna`。**同じ試合・同じ入力で両方を続けて走らせる**（日をまたいだ比較にしない）
@@ -111,15 +111,15 @@ node --env-file=.env.production.local tools/run-ts.cjs scripts/trial-content-mod
 - 結果は `tmp/model-trial/<日時>/` に出す:
   - `summary.md`: 試合ごと・設定ごとの表（段階別の時間・トークン・費用、QA の各スコア、QA 判定、作り直しの回数、捏造ゲートの結果、本文の文字数）と、設定ごとの平均
   - `<matchId>-<config>.md`: 最終本文（Owner が読み比べる用）
-- **費用の上限**: 走らせる前に「試合数 × 設定数 × 1 本あたりの直近平均 × 2（作り直しの余裕）」で見積もりを出し、`--max-usd`（既定 5）を超えるなら止める。`--dry-run` は見積もりだけ出して LLM を呼ばない
+- **費用の上限**: 走らせる前に「試合数 × 設定数 × 1 本あたりの直近平均 × 2（作り直しの余裕）」で見積もりを出し、`--max-usd`（既定 2）を超えるなら止める。`--dry-run` は見積もりだけ出して LLM を呼ばない
 - **QA の判定の比較**: `--config gpt6` で作った本文を、今の QA（gpt-5.6-luna）でも採点して、両方の QA の点と判定を並べる（Luna を替えると合否の基準がずれないかを見るため）
 
-### 4. 試す対象（Owner が実行時に決める。推奨）
+### 4. 試す対象（2026-09-24 Owner 決定: 3 試合）
 
-- recap 4 本: 直近に公開済みの Top 14 第 3 節から 2 本、URC 2025-26 の未処理（公開されていない）から 2 本
-- preview 4 本: 9/25〜28 の試合（URC 開幕・プレミアシップ）から、日本語の事実がそろっているもの
+- recap 2 本: 直近に公開済みの Top 14 第 3 節から 1 本、URC 2025-26 の未処理（公開されていない）から 1 本
+- preview 1 本: 9/25〜28 の試合（URC 開幕・プレミアシップ）から、日本語の事実がそろっているもの
 
-推奨の組み合わせでの見積もり: 8 本 × 2 設定 × $0.14 × 2 ≒ **$4.5 以内**（実際は半分程度の見込み）。
+見積もり: 3 本 × 2 設定 × $0.14 × 2（作り直しの余裕）≒ **$1.7 以内**。`--max-usd` の既定は **2** にする。
 
 ## UI サーフェス
 
@@ -167,4 +167,4 @@ node --env-file=.env.production.local tools/run-ts.cjs scripts/trial-content-mod
 
 ## 未解決の質問
 
-1. 試す試合（上の推奨でよいか）と費用の上限（既定 $5）
+1. ~~試す試合と費用の上限~~ → **解決（2026-09-24）: 3 試合、上限 $2**
