@@ -57,8 +57,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGeneratePreviewPrompt", () => {
-  it("uses preview prompt version 3.15.2", () => {
-    expect(PROMPT_VERSION).toBe("preview@3.15.2");
+  it("uses preview prompt version 3.15.3", () => {
+    expect(PROMPT_VERSION).toBe("preview@3.15.3");
   });
 
   it("includes the strengthened persona, core question, and prohibitions", () => {
@@ -549,12 +549,12 @@ describe("buildGeneratePreviewPrompt", () => {
     expect(withStandings).toContain("Grand Slam");
   });
 
-  it("omits stale standings while retaining standings ahead of expected games", () => {
+  it("omits stale or advanced standings while retaining current standings", () => {
     const current = buildGeneratePreviewPrompt(
       {
         ...assembled,
         competition_standings: standingsFixture,
-        standings_freshness: { away: { expected_played: 4, played: 5 }, home: { expected_played: 4, played: 5 } },
+        standings_freshness: { away: { expected_played: 5, played: 5 }, home: { expected_played: 5, played: 5 } },
       },
       [],
       [],
@@ -568,9 +568,19 @@ describe("buildGeneratePreviewPrompt", () => {
       [],
       [],
     );
+    const advanced = buildGeneratePreviewPrompt(
+      {
+        ...assembled,
+        competition_standings: standingsFixture,
+        standings_freshness: { away: { expected_played: 5, played: 6 }, home: { expected_played: 5, played: 5 } },
+      },
+      [],
+      [],
+    );
 
     expect(current).toContain("最新の大会順位表");
     expect(stale).not.toContain("大会順位表");
+    expect(advanced).not.toContain("最新の大会順位表");
   });
 
   it("includes playoff final preview context", () => {
