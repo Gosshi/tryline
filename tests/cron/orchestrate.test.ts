@@ -136,16 +136,15 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
           const kickoffAt = fixture.finishedKickoffAt?.[id];
           if (!kickoffAt) return true;
           return !(
-            matchesBuilder.state.kickoffLte &&
-            kickoffAt > matchesBuilder.state.kickoffLte
+            (matchesBuilder.state.kickoffGte &&
+              kickoffAt < matchesBuilder.state.kickoffGte) ||
+            (matchesBuilder.state.kickoffLte &&
+              kickoffAt > matchesBuilder.state.kickoffLte)
           );
         });
       }
 
-      if (
-        matchesBuilder.state.status === "finished" &&
-        matchesBuilder.state.orderByKickoff
-      ) {
+      if (matchesBuilder.state.orderByKickoff) {
         ids = [...ids].sort((left, right) => {
           const leftKickoff = fixture.finishedKickoffAt?.[left] ?? "";
           const rightKickoff = fixture.finishedKickoffAt?.[right] ?? "";
@@ -706,37 +705,108 @@ describe("runOrchestrate", () => {
     expect(generateContent).toHaveBeenNthCalledWith(2, "old-finished", "recap");
   });
 
-  it("stops starting recaps after the time budget and reports the unprocessed match", async () => {
-    let currentTime = 0;
-    const db = createMockDb({
-      scheduledIds: [],
-      finishedIds: ["finished-1", "finished-2", "finished-3"],
-    });
-    const generateContent = vi.fn().mockImplementation(async () => {
-      currentTime += 120_000;
-    });
-    const notifyRecapSkipped = vi.fn().mockResolvedValue(undefined);
+  const computedStartDeadlineMs = 300_000 - 220_000 - 15_000;
 
-    const result = await runOrchestrate({
-      db,
+  it.each([
+    [computedStartDeadlineMs, 4],
+    [computedStartDeadlineMs + 1_000, 3],
+  ])("starts queued work only through the computed deadline (%i ms)", async (resumeAt, expectedCalls) => {
+    let currentTime = 0;
+    const resolvers: Array<() => void> = [];
+    const generateContent = vi.fn().mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolvers.push(resolve);
+        }),
+    );
+    const run = runOrchestrate({
+      db: createMockDb({
+        scheduledIds: ["scheduled-1", "scheduled-2", "scheduled-3", "scheduled-4"],
+        finishedIds: [],
+      }),
       generateContent,
       getCurrentTime: () => currentTime,
       ingestLineups: vi.fn().mockResolvedValue("triggered"),
-      notifyRecapSkipped,
       now,
     });
 
-    expect(generateContent).toHaveBeenNthCalledWith(1, "finished-1", "recap");
-    expect(generateContent).toHaveBeenNthCalledWith(2, "finished-2", "recap");
-    expect(generateContent).toHaveBeenCalledTimes(2);
-    expect(result.recaps).toEqual({ triggered: 2, skipped: 0 });
-    expect(notifyRecapSkipped).toHaveBeenCalledWith({
-      batchSize: 10,
-      excludedMatches: [],
-      matches: [],
-      skippedCount: 0,
-      timeBudgetSkipped: { preview: 0, recap: 1 },
+    await vi.waitFor(() => expect(resolvers).toHaveLength(3));
+    currentTime = resumeAt;
+    resolvers.splice(0).forEach((resolve) => resolve());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    if (resolvers.length > 0) {
+      currentTime += 150_000;
+      resolvers.splice(0).forEach((resolve) => resolve());
+    }
+
+    const result = await run;
+    expect(generateContent).toHaveBeenCalledTimes(expectedCalls);
+    expect(result.remaining.previews).toBe(4 - expectedCalls);
+  });
+
+  it("runs previews before recaps in a shared queue capped at three", async () => {
+    let active = 0;
+    let maxActive = 0;
+    const generateContent = vi.fn().mockImplementation(async () => {
+      active += 1;
+      maxActive = Math.max(maxActive, active);
+      await Promise.resolve();
+      active -= 1;
     });
+
+    await runOrchestrate({
+      db: createMockDb({
+        scheduledIds: ["preview-1", "preview-2"],
+        finishedIds: ["recap-1", "recap-2", "recap-3", "recap-4", "recap-5"],
+      }),
+      generateContent,
+      ingestLineups: vi.fn().mockResolvedValue("triggered"),
+      now,
+    });
+
+    expect(generateContent.mock.calls.slice(0, 3)).toEqual([
+      ["preview-1", "preview"],
+      ["preview-2", "preview"],
+      ["recap-1", "recap"],
+    ]);
+    expect(maxActive).toBe(3);
+  });
+
+  it("runs three recaps at once and reports two that missed the deadline", async () => {
+    let currentTime = 0;
+    let active = 0;
+    let maxActive = 0;
+    const resolvers: Array<() => void> = [];
+    const generateContent = vi.fn().mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          active += 1;
+          maxActive = Math.max(maxActive, active);
+          resolvers.push(() => {
+            active -= 1;
+            resolve();
+          });
+        }),
+    );
+    const run = runOrchestrate({
+      db: createMockDb({
+        scheduledIds: [],
+        finishedIds: ["recap-1", "recap-2", "recap-3", "recap-4", "recap-5"],
+      }),
+      generateContent,
+      getCurrentTime: () => currentTime,
+      ingestLineups: vi.fn().mockResolvedValue("triggered"),
+      now,
+    });
+
+    await vi.waitFor(() => expect(resolvers).toHaveLength(3));
+    expect(maxActive).toBe(3);
+    currentTime = 150_000;
+    resolvers.splice(0).forEach((resolve) => resolve());
+
+    const result = await run;
+    expect(generateContent).toHaveBeenCalledTimes(3);
+    expect(result.remaining).toEqual({ previews: 0, recaps: 2 });
   });
 
   it("stops preview generation after the time budget", async () => {
@@ -798,58 +868,27 @@ describe("runOrchestrate", () => {
     expect(maxActive).toBe(3);
   });
 
-  it("limits concurrent previews and stops scheduling them after the time budget", async () => {
-    let active = 0;
-    let currentTime = 0;
-    let maxActive = 0;
-    const resolvers: Array<() => void> = [];
-    const generateContent = vi.fn().mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          active += 1;
-          maxActive = Math.max(maxActive, active);
-          resolvers.push(() => {
-            active -= 1;
-            resolve();
-          });
-        }),
-    );
-    const notifyRecapSkipped = vi.fn().mockResolvedValue(undefined);
-    const run = runOrchestrate({
+  it("limits recap candidates to 14 days without changing preview candidates", async () => {
+    const generateContent = vi.fn().mockResolvedValue(undefined);
+    await runOrchestrate({
       db: createMockDb({
-        scheduledIds: Array.from(
-          { length: 10 },
-          (_, index) => `scheduled-${index + 1}`,
-        ),
-        finishedIds: [],
+        scheduledIds: ["preview-current"],
+        scheduledKickoffAt: { "preview-current": "2026-09-24T12:00:00.000Z" },
+        finishedIds: ["recap-current", "recap-old"],
+        finishedKickoffAt: {
+          "recap-current": "2026-09-20T12:00:00.000Z",
+          "recap-old": "2026-09-01T12:00:00.000Z",
+        },
+        matchEventIds: ["recap-current", "recap-old"],
       }),
       generateContent,
-      getCurrentTime: () => currentTime,
       ingestLineups: vi.fn().mockResolvedValue("triggered"),
-      notifyRecapSkipped,
-      now,
+      now: new Date("2026-09-24T12:00:00.000Z"),
     });
 
-    await vi.waitFor(() => expect(resolvers).toHaveLength(3));
-    currentTime = 120_000;
-    resolvers.splice(0).forEach((resolve) => resolve());
-
-    await vi.waitFor(() => expect(resolvers).toHaveLength(3));
-    currentTime = 240_000;
-    resolvers.splice(0).forEach((resolve) => resolve());
-
-    const result = await run;
-
-    expect(maxActive).toBe(3);
-    expect(generateContent).toHaveBeenCalledTimes(6);
-    expect(result.previews).toEqual({ triggered: 6, skipped: 0 });
-    expect(notifyRecapSkipped).toHaveBeenCalledWith({
-      batchSize: 10,
-      excludedMatches: [],
-      matches: [],
-      skippedCount: 0,
-      timeBudgetSkipped: { preview: 4, recap: 0 },
-    });
+    expect(generateContent).toHaveBeenCalledWith("preview-current", "preview");
+    expect(generateContent).toHaveBeenCalledWith("recap-current", "recap");
+    expect(generateContent).not.toHaveBeenCalledWith("recap-old", "recap");
   });
 
   it("fills the recap batch with event-bearing matches and reports eventless candidates", async () => {
