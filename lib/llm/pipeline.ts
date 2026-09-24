@@ -123,6 +123,11 @@ export type PipelineTrialStageMetric = {
 
 export type PipelineTrialDetails = {
   content: string;
+  promptVariant: "A" | "B";
+  promptVersion: string;
+  promptSha256: string;
+  prompt: string;
+  inputSha256: string;
   stageMetrics: PipelineTrialStageMetric[];
   lengthRevisionAttempts: number;
   retries: number;
@@ -146,6 +151,10 @@ export type PipelineResult = {
 
 function hashInput(input: unknown) {
   return createHash("sha256").update(JSON.stringify(input)).digest("hex");
+}
+
+function hashText(input: string) {
+  return createHash("sha256").update(input).digest("hex");
 }
 
 function getQaScores(value: Json | null): QaResult["scores"] | null {
@@ -215,8 +224,28 @@ export async function generateMatchContent(
     models?: ContentModelOverrides;
     persist?: boolean;
     comparisonQaModel?: string;
+    promptVariant?: "A" | "B";
+    frozenInput?: {
+      assembled: AssembledContentInput & {
+        eventIntegrity?: import("@/lib/llm/stages/assemble").AssembledEventIntegrity;
+      };
+      tacticalPoints: import("@/lib/llm/types").TacticalPoint[];
+    };
+    trialFirstAttemptOnly?: boolean;
   } = {},
 ): Promise<PipelineResult> {
+  const trialOptionSpecified = [
+    "promptVariant",
+    "frozenInput",
+    "trialFirstAttemptOnly",
+  ].some((key) => Object.hasOwn(options, key));
+  if (trialOptionSpecified && options.persist !== false) {
+    throw new Error("Prompt experiment options require persist: false");
+  }
+  const promptVariant = options.promptVariant ?? "A";
+  if (promptVariant === "B" && language !== "ja") {
+    throw new Error("Prompt variant B is available for Japanese content only");
+  }
   const trialStartedAt = Date.now();
   const persist = options.persist !== false;
   const db = getSupabaseServerClient();
@@ -225,21 +254,23 @@ export async function generateMatchContent(
     persist ? logPipelineRun(entry) : Promise.resolve();
 
   const stage1StartedAt = Date.now();
-  const assembled = await assembleMatchContentInput(
+  const assembled = options.frozenInput?.assembled ?? await assembleMatchContentInput(
     matchId,
     language,
     contentType,
   );
-  await recordPipelineRun({
-    matchId,
-    contentType,
-    stage: 1,
-    inputHash: hashInput({ matchId }),
-    output: assembled,
-    costUsd: 0,
-    durationMs: Date.now() - stage1StartedAt,
-    status: "success",
-  });
+  if (!options.frozenInput) {
+    await recordPipelineRun({
+      matchId,
+      contentType,
+      stage: 1,
+      inputHash: hashInput({ matchId }),
+      output: assembled,
+      costUsd: 0,
+      durationMs: Date.now() - stage1StartedAt,
+      status: "success",
+    });
+  }
 
   if (
     contentType === "recap" &&
@@ -314,8 +345,16 @@ export async function generateMatchContent(
   let totalCostUsd = 0;
 
   const stage2StartedAt = Date.now();
-  let tactical;
-  try {
+  let tactical: Awaited<ReturnType<typeof extractTacticalPoints>>;
+  if (options.frozenInput) {
+    tactical = {
+      result: { tactical_points: options.frozenInput.tacticalPoints },
+      modelVersion: "frozen-input",
+      promptVersion: "frozen-input",
+      usage: { inputTokens: 0, outputTokens: 0 },
+      attempts: 0,
+    };
+  } else try {
     tactical = await extractTacticalPoints(assembled, options.models?.fast);
   } catch (error) {
     await recordPipelineRun({
@@ -330,13 +369,13 @@ export async function generateMatchContent(
     throw error;
   }
 
-  const stage2CostUsd = calculateCostUsd({
+  const stage2CostUsd = options.frozenInput ? 0 : calculateCostUsd({
     modelVersion: tactical.modelVersion,
     inputTokens: tactical.usage.inputTokens,
     outputTokens: tactical.usage.outputTokens,
   });
   totalCostUsd += stage2CostUsd;
-  trialStageMetrics.push({
+  if (!options.frozenInput) trialStageMetrics.push({
     name: "extract-facts",
     stage: 2,
     modelVersion: tactical.modelVersion,
@@ -346,7 +385,7 @@ export async function generateMatchContent(
     durationMs: Date.now() - stage2StartedAt,
   });
 
-  await recordPipelineRun({
+  if (!options.frozenInput) await recordPipelineRun({
     matchId,
     contentType,
     stage: 2,
@@ -361,6 +400,7 @@ export async function generateMatchContent(
   let finalNarrative = "";
   let modelVersion = "";
   let promptVersion = "";
+  let narrativePrompt = "";
   let lengthRevisionAttempts = 0;
   let narrativeAttempts = 0;
   let entityViolationFeedback: string[] = [];
@@ -456,7 +496,10 @@ export async function generateMatchContent(
     };
   }
 
-  for (let attempt = 0; attempt < NARRATIVE_GENERATION_ATTEMPTS; attempt += 1) {
+  const narrativeAttemptLimit = options.trialFirstAttemptOnly
+    ? 1
+    : NARRATIVE_GENERATION_ATTEMPTS;
+  for (let attempt = 0; attempt < narrativeAttemptLimit; attempt += 1) {
     narrativeAttempts += 1;
     const stage3StartedAt = Date.now();
     const narrative = await generateNarrative({
@@ -469,11 +512,13 @@ export async function generateMatchContent(
       entityViolationSurfaces: entityViolationFeedback,
       language,
       model: options.models?.narrative,
+      promptVariant,
     });
 
     finalNarrative = narrative.content;
     modelVersion = narrative.modelVersion;
     promptVersion = narrative.promptVersion;
+    narrativePrompt = narrative.prompt;
 
     const stage3CostUsd = calculateCostUsd({
       modelVersion: narrative.modelVersion,
@@ -620,11 +665,13 @@ export async function generateMatchContent(
       qaResponse.result.verdict === "retry" &&
       isContentLengthIssue(qaResponse.result) &&
       !isFactualGroundingHardBlock(qaResponse.result) &&
+      !options.trialFirstAttemptOnly &&
       lengthRevisionAttempts < MAX_LENGTH_REVISION_ATTEMPTS
     ) {
       const baselineNarrative = finalNarrative;
       const baselineModelVersion = modelVersion;
       const baselinePromptVersion = promptVersion;
+      const baselineNarrativePrompt = narrativePrompt;
       const baselineQa = qaResponse.result;
       const baselineEntityViolationFeedback = entityViolationFeedback;
       lengthRevisionAttempts += 1;
@@ -644,6 +691,7 @@ export async function generateMatchContent(
       finalNarrative = revised.content;
       modelVersion = revised.modelVersion;
       promptVersion = revised.promptVersion;
+      narrativePrompt = revised.prompt;
 
       const revisionCostUsd = calculateCostUsd({
         modelVersion: revised.modelVersion,
@@ -789,6 +837,7 @@ export async function generateMatchContent(
         finalNarrative = baselineNarrative;
         modelVersion = baselineModelVersion;
         promptVersion = baselinePromptVersion;
+        narrativePrompt = baselineNarrativePrompt;
         finalQa = {
           ...baselineQa,
           issues: [
@@ -1127,6 +1176,14 @@ export async function generateMatchContent(
       ? {
           trial: {
             content: finalNarrative,
+            promptVariant,
+            promptVersion,
+            promptSha256: hashText(narrativePrompt),
+            prompt: narrativePrompt,
+            inputSha256: hashInput({
+              assembled,
+              tacticalPoints: tactical.result.tactical_points,
+            }),
             stageMetrics: trialStageMetrics,
             lengthRevisionAttempts,
             retries: Math.max(0, narrativeAttempts - 1) + lengthRevisionAttempts,

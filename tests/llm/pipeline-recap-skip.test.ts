@@ -580,6 +580,7 @@ describe("generateMatchContent recap event guard", () => {
       content: `# preview\n${"あ".repeat(1600)}`,
       modelVersion: "gpt-6-sol-2026-09-22",
       promptVersion: "preview@1",
+      prompt: "joined prompt",
       usage: { inputTokens: 200, outputTokens: 300 },
     });
     qaMock.evaluateNarrativeQuality.mockResolvedValue({
@@ -752,5 +753,68 @@ describe("generateMatchContent recap event guard", () => {
       expect.any(Object),
     );
     expect(indexNowMock.submitUrlsToIndexNow).not.toHaveBeenCalled();
+  });
+
+  it("requires persist false whenever an experiment option is specified", async () => {
+    await expect(generateMatchContent("m", "preview", "ja", { promptVariant: "A" })).rejects.toThrow(/persist: false/);
+    await expect(generateMatchContent("m", "preview", "ja", { frozenInput: { assembled: assembledWithoutEvents, tacticalPoints: [] } })).rejects.toThrow(/persist: false/);
+    await expect(generateMatchContent("m", "preview", "ja", { trialFirstAttemptOnly: true })).rejects.toThrow(/persist: false/);
+    expect(assembleMock.assembleMatchContentInput).not.toHaveBeenCalled();
+  });
+
+  it("uses frozen input without assembly or extraction and returns prompt hashes", async () => {
+    const frozenAssembled = { ...assembledWithoutEvents, eventIntegrity: verifiedEventIntegrity };
+    generateNarrativeMock.generateNarrative.mockResolvedValue({
+      content: `# preview\n${"あ".repeat(1600)}`,
+      modelVersion: "gpt-5.6-terra-2026-09-22",
+      promptVersion: "preview-b@0.1.0",
+      prompt: "frozen joined prompt",
+      usage: { inputTokens: 200, outputTokens: 300 },
+    });
+    qaMock.evaluateNarrativeQuality.mockResolvedValue({
+      modelVersion: "gpt-5.6-luna-2026-09-22",
+      result: { issues: [], scores: { factual_grounding: 4, information_density: 4, japanese_quality: 4, tactical_depth: 4 }, verdict: "publish" },
+      usage: { inputTokens: 10, outputTokens: 2 },
+    });
+    const result = await generateMatchContent("trial-match", "preview", "ja", {
+      persist: false,
+      promptVariant: "B",
+      frozenInput: { assembled: frozenAssembled, tacticalPoints: [] },
+      trialFirstAttemptOnly: true,
+    });
+
+    expect(assembleMock.assembleMatchContentInput).not.toHaveBeenCalled();
+    expect(extractFactsMock.extractTacticalPoints).not.toHaveBeenCalled();
+    expect(generateNarrativeMock.generateNarrative).toHaveBeenCalledTimes(1);
+    expect(generateNarrativeMock.generateNarrative).toHaveBeenCalledWith(expect.objectContaining({ promptVariant: "B" }));
+    expect(result.trial).toMatchObject({
+      promptVariant: "B",
+      promptVersion: "preview-b@0.1.0",
+      prompt: "frozen joined prompt",
+      promptSha256: expect.any(String),
+      inputSha256: expect.any(String),
+    });
+  });
+
+  it("keeps only the first narrative when trialFirstAttemptOnly meets retry QA", async () => {
+    generateNarrativeMock.generateNarrative.mockResolvedValue({
+      content: "# short",
+      modelVersion: "gpt-5.6-terra-2026-09-22",
+      promptVersion: "preview@3.15.0",
+      prompt: "prompt",
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+    qaMock.evaluateNarrativeQuality.mockResolvedValue({
+      modelVersion: "gpt-5.6-luna-2026-09-22",
+      result: { issues: ["content_length"], scores: { factual_grounding: 4, information_density: 2, japanese_quality: 4, tactical_depth: 4 }, verdict: "retry" },
+      usage: { inputTokens: 10, outputTokens: 2 },
+    });
+    qaMock.isContentLengthIssue.mockReturnValue(true);
+    await generateMatchContent("trial-match", "preview", "ja", {
+      persist: false,
+      trialFirstAttemptOnly: true,
+    });
+    expect(generateNarrativeMock.generateNarrative).toHaveBeenCalledTimes(1);
+    expect(generateNarrativeMock.reviseNarrativeLength).not.toHaveBeenCalled();
   });
 });
