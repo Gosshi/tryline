@@ -57,8 +57,8 @@ const assembled: AssembledContentInput = {
 };
 
 describe("buildGenerateRecapPrompt", () => {
-  it("uses recap prompt version 4.21.1", () => {
-    expect(PROMPT_VERSION).toBe("recap@4.21.1");
+  it("uses recap prompt version 4.21.2", () => {
+    expect(PROMPT_VERSION).toBe("recap@4.21.2");
   });
 
   it("does not disclose missing system data while allowing factual limits", () => {
@@ -837,6 +837,15 @@ describe("buildGenerateRecapPrompt", () => {
       [],
       [],
     );
+    const advanced = buildGenerateRecapPrompt(
+      {
+        ...assembled,
+        competition_standings: standingsFixture,
+        standings_freshness: { away: { expected_played: 5, played: 6 }, home: { expected_played: 5, played: 5 } },
+      },
+      [],
+      [],
+    );
     const missing = buildGenerateRecapPrompt(
       {
         ...assembled,
@@ -849,6 +858,7 @@ describe("buildGenerateRecapPrompt", () => {
 
     expect(current).toContain("最新の大会順位表");
     expect(stale).not.toContain("大会順位表");
+    expect(advanced).not.toContain("最新の大会順位表");
     expect(missing).not.toContain("大会順位表");
     expect(stale).not.toContain('"team_name":"ホーム"');
   });

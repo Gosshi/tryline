@@ -21,7 +21,7 @@ import type {
   TacticalPoint,
 } from "@/lib/llm/types";
 
-export const PROMPT_VERSION = "recap@4.21.1";
+export const PROMPT_VERSION = "recap@4.21.2";
 
 const MISSING_DATA_DISCLOSURE_BLOCK = [
   "【本文でシステム内部のデータ不在を開示しない】読者に向けて「入力データ」「提供されたデータ」等のシステム内部を指す語を出してはならない。",

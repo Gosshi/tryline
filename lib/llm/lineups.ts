@@ -12,8 +12,8 @@ export function hasCurrentStandings(
     !freshness ||
     (freshness.home.played !== null &&
       freshness.away.played !== null &&
-      freshness.home.played >= freshness.home.expected_played &&
-      freshness.away.played >= freshness.away.expected_played)
+      freshness.home.played === freshness.home.expected_played &&
+      freshness.away.played === freshness.away.expected_played)
   );
 }
 
