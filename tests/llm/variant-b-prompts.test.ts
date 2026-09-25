@@ -31,7 +31,7 @@ const forbidden = [
 describe("variant B prompt builders", () => {
   it("uses B2 versions and the revised evidence, people and editorial guidance", () => {
     expect(PREVIEW_B_VERSION).toBe("preview-b@0.2.0");
-    expect(RECAP_B_VERSION).toBe("recap-b@0.2.0");
+    expect(RECAP_B_VERSION).toBe("recap@5.0.0");
     expect(COMMON_B_PROMPT).toContain(
       "戦術ポイントは論点の候補で、誤りを含むことがあります。",
     );

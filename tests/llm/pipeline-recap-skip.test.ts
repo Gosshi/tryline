@@ -862,6 +862,7 @@ describe("generateMatchContent recap event guard", () => {
     generateNarrativeMock.generateNarrative.mockResolvedValue({
       content: `# preview\n${"あ".repeat(1600)}`,
       modelVersion: "gpt-5.6-terra-2026-09-22",
+      promptVariant: "B",
       promptVersion: "preview-b@0.1.0",
       prompt: "frozen joined prompt",
       usage: { inputTokens: 200, outputTokens: 300 },
