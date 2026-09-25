@@ -12,6 +12,10 @@ import {
   type LiveCompetitionSource,
   type LiveIngestResult,
 } from "@/lib/ingestion/live-ingest";
+import {
+  applyManualInternationalResults,
+  type ManualInternationalResultsResult,
+} from "@/lib/ingestion/manual-international-results";
 import { fetchLeagueOne202526 } from "@/lib/ingestion/sources/league-one-live";
 import { fetchTop14LnrLiveMatches } from "@/lib/ingestion/sources/top14-lnr-live";
 import { fetchAutumnNations2026 } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
@@ -155,7 +159,10 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
 export type LiveCompetitionsIngestResult = {
   rejections: EventInsertionRejection[];
   results: Array<
-    JrfuMatchEventFallbackResult | JrfuResultFallbackResult | LiveIngestResult
+    | JrfuMatchEventFallbackResult
+    | JrfuResultFallbackResult
+    | LiveIngestResult
+    | ManualInternationalResultsResult
   >;
 };
 
@@ -181,18 +188,29 @@ export async function ingestAllLiveCompetitions(): Promise<LiveCompetitionsInges
     .map((result) => result.value);
   const rejections = ingested.flatMap((result) => result.rejections ?? []);
 
+  let allResults: LiveCompetitionsIngestResult = {
+    rejections,
+    results: ingested,
+  };
   try {
     const jrfuResults = await fetchJrfuScheduleResults();
     const resultFallback = await applyJrfuResultFallback(jrfuResults);
     const eventFallback = await applyJrfuMatchEventFallback(jrfuResults);
 
-    return {
+    allResults = {
       rejections: [...rejections, ...(eventFallback.rejections ?? [])],
       results: [...ingested, resultFallback, eventFallback],
     };
   } catch (error) {
     console.error("Failed to apply JRFU fallback:", error);
-
-    return { rejections, results: ingested };
   }
+
+  try {
+    const manualResults = await applyManualInternationalResults();
+    allResults.results.push(manualResults);
+  } catch (error) {
+    console.error("Failed to apply manual international results:", error);
+  }
+
+  return allResults;
 }
