@@ -22,6 +22,8 @@
   1. 手動で登録した試合のうち、キックオフから 2 時間以上たち、スコアが入っていないものを DB から探す。
   2. 年ごとの「〈年〉 men's rugby union internationals」の結果の枠から、同じチームの組み合わせで日付が合うものを **1 つだけ**見つけたときに、スコアと試合の状態を入れる。
   3. スコアを入れた試合について、ページの HTML から `findEventBlockByTeams` で試合のブロックを 1 つだけ選べたら、得点イベントを入れる（合計がスコアと一致しなければ、既存の照合で弾かれる）。
+  4. **この仕組みで以前にスコアを入れたが、得点イベントがまだ 0 件の試合**は、スコアを変えずに、3 と同じ方法で得点イベントだけを取り直す（2026-09-25 追記）。
+     - 理由: Wikipedia では、スコアが先に入り、得点者の欄が数時間後に埋まることが多い。1〜3 だけだと、スコアを入れた回に得点者が空だった試合は、次の回から候補にならない。週 1 回の「Fill Event Gaps」（日曜 06:00 UTC）が最終的に拾うが、9/27 09:30 UTC の試合では 10/4 まで得点イベントが入らず、得点イベントの無いレビューは生成されない（`events_unavailable`）ので、レビューも 1 週間遅れる。
 
 **対象外**
 - 手動で登録していない試合（大会ごとの取り込みの対象）。
@@ -46,10 +48,14 @@ export async function applyManualInternationalResults(options?: {
 ```
 
 **1. 対象の試合**
-- `matches` のうち、次のすべてを満たすもの。
-  - `external_ids->>source = 'manual'`
-  - `home_score` と `away_score` が null
-  - `kickoff_at` が「今から 7 日前」〜「今から 2 時間前」の間
+
+次の 2 つの組を DB から探す。どちらも `external_ids->>source = 'manual'` で、`kickoff_at` が「今から 7 日前」〜「今から 2 時間前」の間の試合。
+
+- **スコア待ち:** `home_score` と `away_score` が null。→ 2〜4 のすべてを行う。
+- **得点イベント待ち（2026-09-25 追記）:** 次のすべてを満たす。→ 4 だけを行う（2 と 3 は行わない。スコアは変えない）。
+  - `external_ids->>result_source = 'wikipedia-internationals'`
+  - `home_score` と `away_score` が null でない
+  - `match_events` が 0 件
 - 取得するもの: `id`、`kickoff_at`、`home_team_id`、`away_team_id`、両チームの `short_code` と `english_name`（無ければ `name`）、`external_ids`。
 
 **2. 結果の枠の照合**
@@ -68,7 +74,9 @@ export async function applyManualInternationalResults(options?: {
 - `external_ids` に `result_source: "wikipedia-internationals"` と `wikipedia_url`（そのページの URL）を足す。`source: "manual"` は残す。
 
 **4. 得点イベント**
-- スコアを書き込んだ試合で、`match_events` が 0 件のときだけ行う。
+- 次のどちらかの試合で、`match_events` が 0 件のときだけ行う。
+  - この回でスコアを書き込んだ試合
+  - 「得点イベント待ち」の組の試合。スコアは DB の値をそのまま使い、`matches` は更新しない。wikitext の再取得は不要（HTML だけを取る）。
 - ページの HTML（`https://en.wikipedia.org/wiki/<年>_men%27s_rugby_union_internationals`）を `fetchWithPolicy` で取り、`findEventBlockByTeams(html, homeEnglishName, awayEnglishName, kickoffDate)` でブロックを 1 つ選ぶ。`null` なら何もしない（理由 `no_unique_event_block`）。
 - `parseMatchEventsFromVeventHtml` で得点イベントを取り、`upsertMatchEvents` で書く。合計がスコアと合わなければ、既存の照合で弾かれる。その場合は理由（`event_total_mismatch`）を結果に載せる。
 - **ページ全体を解析に渡す経路を作らない。**
@@ -76,7 +84,8 @@ export async function applyManualInternationalResults(options?: {
 **5. 結果**
 ```ts
 type ManualInternationalResultsResult = {
-  candidates: number;
+  candidates: number; // スコア待ちの試合の数（今までどおり）
+  eventRetryCandidates: number; // 得点イベント待ちの試合の数（2026-09-25 追記）
   scoresUpdated: number;
   eventsInserted: number;
   skipped: Array<{ matchId: string; reason: string }>;
@@ -114,13 +123,19 @@ type ManualInternationalResultsResult = {
    - ブロックを選べなければ、`upsertMatchEvents` は呼ばれない。
    - `match_events` がすでにある試合では呼ばれない。
    - 確認方法: ブロックを選べないときにページ全体を渡す実装にすると、このテストが落ちること。
-4. **Live Pipeline への組み込み:** `applyManualInternationalResults` が例外を投げても、`ingestAllLiveCompetitions` はほかの大会の結果を返す。
-5. `pnpm lint`、`pnpm typecheck`、`pnpm test` が通る。**3 つとも実行して、結果を完了報告に含める。**
+4. **得点イベントの取り直し（2026-09-25 追記）:**
+   - `result_source = "wikipedia-internationals"`、スコアあり、`match_events` が 0 件、キックオフから 2 時間〜7 日の手動登録の試合で、HTML のブロックを 1 つ選べて合計がスコアと一致すれば、`upsertMatchEvents` が呼ばれる。このとき `matches` の更新は呼ばれない。
+   - 同じ試合でブロックを選べなければ、`upsertMatchEvents` は呼ばれず、理由 `no_unique_event_block` が結果に載る。
+   - `result_source` が無い（手でスコアを入れた）試合、`match_events` がすでにある試合、キックオフから 7 日より前の試合は、取り直しの対象にならない。
+   - `eventRetryCandidates` に、取り直しの対象になった試合の数が入る。
+   - 確認方法: 「得点イベント待ち」の組を探す処理を外すと、1 つ目のテストが落ちること。
+5. **Live Pipeline への組み込み:** `applyManualInternationalResults` が例外を投げても、`ingestAllLiveCompetitions` はほかの大会の結果を返す。
+6. `pnpm lint`、`pnpm typecheck`、`pnpm test` が通る。**3 つとも実行して、結果を完了報告に含める。**
 
 ## マージ後の確認（Claude Code が行う）
 
-6. 9/27 の試合のあと、Wikipedia の結果の枠が埋まってから最初の Live Pipeline の実行で、`3577d392` のスコアと状態が入ったこと、得点イベントが入ったか（入らなかった場合は理由）を確かめる。
-7. 9/28 までに入らなかった場合は、理由を確かめて Owner に報告する。スコアだけは、承認を得て手で入れる。
+7. 9/27 の試合のあと、Wikipedia の結果の枠が埋まってから最初の Live Pipeline の実行で、`3577d392` のスコアと状態が入ったこと、得点イベントが入ったか（入らなかった場合は理由）を確かめる。
+8. 9/28 までに入らなかった場合は、理由を確かめて Owner に報告する。スコアだけは、承認を得て手で入れる。
 
 ## 未解決の質問
 
