@@ -8,6 +8,9 @@ const fallbackMocks = vi.hoisted(() => ({
   applyJrfuResultFallback: vi.fn(),
   fetchJrfuScheduleResults: vi.fn(),
 }));
+const manualResultsMock = vi.hoisted(() => ({
+  applyManualInternationalResults: vi.fn(),
+}));
 
 vi.mock("@/lib/ingestion/live-ingest", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/ingestion/live-ingest")>()),
@@ -16,6 +19,10 @@ vi.mock("@/lib/ingestion/live-ingest", async (importOriginal) => ({
 vi.mock("@/lib/ingestion/jrfu-result-fallback", () => fallbackMocks);
 vi.mock("@/lib/ingestion/jrfu-match-event-fallback", () => fallbackMocks);
 vi.mock("@/lib/scrapers/jrfu-schedule-results", () => fallbackMocks);
+vi.mock(
+  "@/lib/ingestion/manual-international-results",
+  () => manualResultsMock,
+);
 
 import { ingestAllLiveCompetitions } from "@/lib/ingestion/live-competitions";
 
@@ -52,6 +59,12 @@ describe("live competition ingestion JRFU result fallback", () => {
       source: "jrfu-match-events",
     });
     fallbackMocks.fetchJrfuScheduleResults.mockResolvedValue([]);
+    manualResultsMock.applyManualInternationalResults.mockResolvedValue({
+      candidates: 0,
+      eventsInserted: 0,
+      scoresUpdated: 0,
+      skipped: [],
+    });
   });
 
   it("runs after the existing live sources and returns the fallback counts", async () => {
@@ -61,7 +74,7 @@ describe("live competition ingestion JRFU result fallback", () => {
     expect(fallbackMocks.fetchJrfuScheduleResults).toHaveBeenCalledTimes(1);
     expect(fallbackMocks.applyJrfuResultFallback).toHaveBeenCalledWith([]);
     expect(fallbackMocks.applyJrfuMatchEventFallback).toHaveBeenCalledWith([]);
-    expect(results.results.at(-1)).toEqual({
+    expect(results.results.at(-2)).toEqual({
       counts: {
         existing_events_skipped: 0,
         match_limit_skipped: 0,
@@ -72,26 +85,38 @@ describe("live competition ingestion JRFU result fallback", () => {
       },
       source: "jrfu-match-events",
     });
+    expect(results.results.at(-1)).toEqual({
+      candidates: 0,
+      eventsInserted: 0,
+      scoresUpdated: 0,
+      skipped: [],
+    });
   });
 
   it("runs the fallback when an existing source fails", async () => {
-    ingestionMocks.ingestLiveCompetition.mockRejectedValueOnce(new Error("source failed"));
+    ingestionMocks.ingestLiveCompetition.mockRejectedValueOnce(
+      new Error("source failed"),
+    );
 
     const results = await ingestAllLiveCompetitions();
 
     expect(results.rejections).toEqual([]);
-    expect(results.results).toHaveLength(15);
+    expect(results.results).toHaveLength(16);
     expect(fallbackMocks.applyJrfuResultFallback).toHaveBeenCalledTimes(1);
     expect(fallbackMocks.applyJrfuMatchEventFallback).toHaveBeenCalledTimes(1);
   });
 
   it("keeps existing source results when the fallback fails", async () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    fallbackMocks.applyJrfuResultFallback.mockRejectedValue(new Error("fallback failed"));
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    fallbackMocks.applyJrfuResultFallback.mockRejectedValue(
+      new Error("fallback failed"),
+    );
 
     const results = await ingestAllLiveCompetitions();
 
-    expect(results.results).toHaveLength(14);
+    expect(results.results).toHaveLength(15);
     expect(error).toHaveBeenCalledWith(
       "Failed to apply JRFU fallback:",
       expect.any(Error),
@@ -127,5 +152,23 @@ describe("live competition ingestion JRFU result fallback", () => {
         reason: "score_mismatch",
       },
     ]);
+  });
+
+  it("returns existing results when manual result ingestion throws", async () => {
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    manualResultsMock.applyManualInternationalResults.mockRejectedValue(
+      new Error("manual ingestion failed"),
+    );
+
+    const results = await ingestAllLiveCompetitions();
+
+    expect(results.results).toHaveLength(16);
+    expect(error).toHaveBeenCalledWith(
+      "Failed to apply manual international results:",
+      expect.any(Error),
+    );
+    error.mockRestore();
   });
 });

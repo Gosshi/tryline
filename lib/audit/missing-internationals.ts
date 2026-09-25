@@ -15,6 +15,10 @@ export type InternationalFixture = {
   sourcePage: string;
 };
 
+export type InternationalFixtureResult = InternationalFixture & {
+  score: string;
+};
+
 export type MissingInternationalsResult = {
   missing: InternationalFixture[];
   present: InternationalFixture[];
@@ -81,10 +85,10 @@ function parseFixtureDate(value: string | undefined): string {
   }
 }
 
-export function parseInternationalFixtures(
+function parseInternationalFixtureResults(
   wikitext: string,
   sourcePage: string,
-): InternationalFixture[] {
+): InternationalFixtureResult[] {
   return parseWikitextTemplates(wikitext, "rugbybox").map(({ params }) => {
     const usesTeamPairs = Boolean(params.team1 && params.team2);
     const home = parseTeam(usesTeamPairs ? params.team1 : params.home);
@@ -94,11 +98,35 @@ export function parseInternationalFixtures(
       awayCode: away.code,
       date: parseFixtureDate(params.date),
       homeCode: home.code,
+      score: stripWikitextMarkup(params.score ?? ""),
       isSeniorSide: home.isSeniorSide && away.isSeniorSide,
       sourcePage,
       venue: stripWikitextMarkup(params.stadium ?? "") || null,
     };
   });
+}
+
+export function parseInternationalFixtures(
+  wikitext: string,
+  sourcePage: string,
+): InternationalFixture[] {
+  return parseInternationalFixtureResults(wikitext, sourcePage).map(
+    (fixture) => ({
+      awayCode: fixture.awayCode,
+      date: fixture.date,
+      homeCode: fixture.homeCode,
+      isSeniorSide: fixture.isSeniorSide,
+      sourcePage: fixture.sourcePage,
+      venue: fixture.venue,
+    }),
+  );
+}
+
+export function parseInternationalFixturesWithScores(
+  wikitext: string,
+  sourcePage: string,
+): InternationalFixtureResult[] {
+  return parseInternationalFixtureResults(wikitext, sourcePage);
 }
 
 function utcDayNumber(date: string): number {
