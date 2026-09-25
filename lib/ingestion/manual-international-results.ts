@@ -38,6 +38,7 @@ type SkippedMatch = { matchId: string; reason: string };
 
 export type ManualInternationalResultsResult = {
   candidates: number;
+  eventRetryCandidates: number;
   eventsInserted: number;
   scoresUpdated: number;
   skipped: SkippedMatch[];
@@ -129,27 +130,47 @@ export async function applyManualInternationalResults(
       "id, kickoff_at, home_team_id, away_team_id, home_score, away_score, external_ids, home_team:teams!matches_home_team_id_fkey(short_code, english_name, name), away_team:teams!matches_away_team_id_fkey(short_code, english_name, name)",
     )
     .eq("external_ids->>source", "manual")
-    .is("home_score", null)
-    .is("away_score", null)
     .gte("kickoff_at", earliestKickoff)
     .lte("kickoff_at", latestKickoff);
 
   if (error) throw error;
 
-  const candidates = (data ?? []) as unknown as ManualMatch[];
+  const recentManualMatches = (data ?? []) as unknown as ManualMatch[];
+  const scoreCandidates = recentManualMatches.filter(
+    (match) => match.home_score === null && match.away_score === null,
+  );
+  const possibleEventRetryMatches = recentManualMatches.filter(
+    (match) =>
+      match.home_score !== null &&
+      match.away_score !== null &&
+      match.external_ids !== null &&
+      typeof match.external_ids === "object" &&
+      !Array.isArray(match.external_ids) &&
+      match.external_ids.result_source === "wikipedia-internationals",
+  );
+  const eventRetryCandidates: ManualMatch[] = [];
+  for (const match of possibleEventRetryMatches) {
+    if (!(await hasEvents(client, match.id))) {
+      eventRetryCandidates.push(match);
+    }
+  }
+
   const result: ManualInternationalResultsResult = {
-    candidates: candidates.length,
+    candidates: scoreCandidates.length,
+    eventRetryCandidates: eventRetryCandidates.length,
     eventsInserted: 0,
     scoresUpdated: 0,
     skipped: [],
   };
-  if (candidates.length === 0) return result;
+  if (scoreCandidates.length === 0 && eventRetryCandidates.length === 0) {
+    return result;
+  }
 
   const fixturesByYear = new Map<number, InternationalFixtureResult[]>();
   const pageUrlByYear = new Map<number, string>();
   const years = [
     ...new Set(
-      candidates.map((match) => new Date(match.kickoff_at).getUTCFullYear()),
+      scoreCandidates.map((match) => new Date(match.kickoff_at).getUTCFullYear()),
     ),
   ];
 
@@ -186,7 +207,7 @@ export async function applyManualInternationalResults(
     pageUrl: string;
   }> = [];
 
-  for (const match of candidates) {
+  for (const match of scoreCandidates) {
     const year = new Date(match.kickoff_at).getUTCFullYear();
     const fixtures = fixturesByYear.get(year) ?? [];
     const { ordered, reversed } = fixturesForMatch(match, fixtures);
@@ -219,21 +240,9 @@ export async function applyManualInternationalResults(
   }
 
   const htmlByYear = new Map<number, string>();
-  for (const { awayScore, homeScore, match, pageUrl } of matchesWithScores) {
-    const { error: updateError } = await client
-      .from("matches")
-      .update({
-        away_score: awayScore,
-        external_ids: toExternalIds(match.external_ids, pageUrl),
-        home_score: homeScore,
-        status: "finished",
-      })
-      .eq("id", match.id);
-
-    if (updateError) throw updateError;
-    result.scoresUpdated += 1;
-
-    if (await hasEvents(client, match.id)) continue;
+  const insertEvents = async (match: ManualMatch, pageUrl: string) => {
+    // Recheck before inserting to avoid replacing events added after candidate selection.
+    if (await hasEvents(client, match.id)) return;
 
     const year = new Date(match.kickoff_at).getUTCFullYear();
     let html = htmlByYear.get(year);
@@ -253,7 +262,7 @@ export async function applyManualInternationalResults(
         matchId: match.id,
         reason: "no_unique_event_block",
       });
-      continue;
+      return;
     }
 
     const events = parseMatchEventsFromVeventHtml(eventBlock);
@@ -273,7 +282,7 @@ export async function applyManualInternationalResults(
         matchId: match.id,
         reason: "event_total_mismatch",
       });
-      continue;
+      return;
     }
     if (eventResult.rejected.length > 0) {
       result.skipped.push({
@@ -282,9 +291,32 @@ export async function applyManualInternationalResults(
           .map((rejection) => rejection.reason)
           .join(","),
       });
-      continue;
+      return;
     }
     result.eventsInserted += eventResult.inserted;
+  };
+
+  for (const { awayScore, homeScore, match, pageUrl } of matchesWithScores) {
+    const { error: updateError } = await client
+      .from("matches")
+      .update({
+        away_score: awayScore,
+        external_ids: toExternalIds(match.external_ids, pageUrl),
+        home_score: homeScore,
+        status: "finished",
+      })
+      .eq("id", match.id);
+
+    if (updateError) throw updateError;
+    result.scoresUpdated += 1;
+    await insertEvents(match, pageUrl);
+  }
+
+  for (const match of eventRetryCandidates) {
+    const year = new Date(match.kickoff_at).getUTCFullYear();
+    const pageUrl =
+      `https://en.wikipedia.org/wiki/${year}_men%27s_rugby_union_internationals`;
+    await insertEvents(match, pageUrl);
   }
 
   return result;

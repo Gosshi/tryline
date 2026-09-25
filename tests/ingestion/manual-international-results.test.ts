@@ -157,6 +157,7 @@ describe("applyManualInternationalResults", () => {
       }),
     ).resolves.toEqual({
       candidates: 1,
+      eventRetryCandidates: 0,
       eventsInserted: 18,
       scoresUpdated: 1,
       skipped: [],
@@ -247,6 +248,115 @@ describe("applyManualInternationalResults", () => {
       expect(eventMocks.upsertMatchEvents).not.toHaveBeenCalled();
     },
   );
+
+  it("retries events for a recent Wikipedia-scored match without changing its score", async () => {
+    const row = match({
+      away_score: 12,
+      external_ids: {
+        result_source: "wikipedia-internationals",
+        source: "manual",
+        wikipedia_url: PAGE_URL,
+      },
+      home_score: 57,
+    });
+    const { update } = setClient([row]);
+    const fetchHtml = vi.fn(async () => HTML);
+
+    await expect(
+      applyManualInternationalResults({
+        fetchHtml,
+        now: new Date("2026-09-06T00:00:00.000Z"),
+      }),
+    ).resolves.toEqual({
+      candidates: 0,
+      eventRetryCandidates: 1,
+      eventsInserted: 18,
+      scoresUpdated: 0,
+      skipped: [],
+    });
+
+    expect(update).not.toHaveBeenCalled();
+    expect(wikiMocks.fetchWikipediaWikitext).not.toHaveBeenCalled();
+    expect(fetchHtml).toHaveBeenCalledWith(PAGE_URL);
+    expect(eventMocks.upsertMatchEvents).toHaveBeenCalledWith(
+      expect.objectContaining({ matchId: row.id }),
+    );
+  });
+
+  it("reports an event retry candidate when its page has no unique event block", async () => {
+    const row = match({
+      away_score: 12,
+      away_team: {
+        english_name: "Unmatched visitor",
+        name: "Canada",
+        short_code: "CAN",
+      },
+      external_ids: {
+        result_source: "wikipedia-internationals",
+        source: "manual",
+      },
+      home_score: 57,
+      home_team: {
+        english_name: "Unmatched host",
+        name: "Japan",
+        short_code: "JPN",
+      },
+    });
+    const { update } = setClient([row]);
+
+    const result = await applyManualInternationalResults({
+      fetchHtml: async () => HTML,
+      now: new Date("2026-09-06T00:00:00.000Z"),
+    });
+
+    expect(result.eventRetryCandidates).toBe(1);
+    expect(result.skipped).toContainEqual({
+      matchId: row.id,
+      reason: "no_unique_event_block",
+    });
+    expect(update).not.toHaveBeenCalled();
+    expect(eventMocks.upsertMatchEvents).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { id: "manual-score", external_ids: { source: "manual" }, ageDays: 1, hasEvents: false },
+    {
+      id: "existing-events",
+      external_ids: {
+        result_source: "wikipedia-internationals",
+        source: "manual",
+      },
+      ageDays: 1,
+      hasEvents: true,
+    },
+    {
+      id: "too-old-event-retry",
+      external_ids: {
+        result_source: "wikipedia-internationals",
+        source: "manual",
+      },
+      ageDays: 8,
+      hasEvents: false,
+    },
+  ])("does not retry events for ineligible scored matches ($id)", async (testCase) => {
+    const row = match({
+      away_score: 12,
+      external_ids: testCase.external_ids,
+      home_score: 57,
+      id: testCase.id,
+      kickoff_at: new Date(
+        Date.UTC(2026, 8, 6 - testCase.ageDays, 15, 30),
+      ).toISOString(),
+    });
+    setClient([row], testCase.hasEvents ? new Set([row.id]) : new Set());
+
+    const result = await applyManualInternationalResults({
+      now: new Date("2026-09-06T00:00:00.000Z"),
+    });
+
+    expect(result.eventRetryCandidates).toBe(0);
+    expect(wikiMocks.fetchWikipediaWikitext).not.toHaveBeenCalled();
+  });
 
   it("does not send the whole page to event insertion when no unique block is found", async () => {
     const row = match({
