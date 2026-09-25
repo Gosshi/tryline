@@ -232,6 +232,9 @@ describe("generateMatchContent published preservation", () => {
 
     const result = await generateMatchContent("match-1", contentType, language);
 
+    expect(generateNarrativeMock.generateNarrative).toHaveBeenCalledWith(
+      expect.objectContaining({ promptVariant: undefined }),
+    );
     expect(result.status).toBe("draft");
     expect(dbMock.existingContent).toEqual(before);
     expect(dbMock.upsert).not.toHaveBeenCalled();

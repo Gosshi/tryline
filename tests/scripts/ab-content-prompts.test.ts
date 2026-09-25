@@ -80,7 +80,7 @@ function pipelineResult(
     trial: {
       content,
       promptVariant: variant,
-      promptVersion: variant === "A" ? "recap@4.20.0" : "recap-b@0.2.0",
+      promptVersion: variant === "A" ? "recap@4.20.0" : "recap@5.0.0",
       promptSha256: `${variant}-hash`,
       prompt: `${variant} joined prompt`,
       inputSha256: "input-hash",

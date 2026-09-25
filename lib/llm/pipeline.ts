@@ -241,8 +241,7 @@ export async function generateMatchContent(
   if (trialOptionSpecified && options.persist !== false) {
     throw new Error("Prompt experiment options require persist: false");
   }
-  const promptVariant = options.promptVariant ?? "A";
-  if (promptVariant === "B" && language !== "ja") {
+  if (options.promptVariant === "B" && language !== "ja") {
     throw new Error("Prompt variant B is available for Japanese content only");
   }
   const trialStartedAt = Date.now();
@@ -399,6 +398,7 @@ export async function generateMatchContent(
   let finalNarrative = "";
   let modelVersion = "";
   let promptVersion = "";
+  let usedPromptVariant: "A" | "B" = options.promptVariant ?? "A";
   let narrativePrompt = "";
   let lengthRevisionAttempts = 0;
   let narrativeAttempts = 0;
@@ -512,12 +512,13 @@ export async function generateMatchContent(
       entityViolationSurfaces: entityViolationFeedback,
       language,
       model: options.models?.narrative,
-      promptVariant,
+      promptVariant: options.promptVariant,
     });
 
     finalNarrative = narrative.content;
     modelVersion = narrative.modelVersion;
     promptVersion = narrative.promptVersion;
+    usedPromptVariant = narrative.promptVariant;
     narrativePrompt = narrative.prompt;
 
     const stage3CostUsd = calculateCostUsd({
@@ -1176,7 +1177,7 @@ export async function generateMatchContent(
       ? {
           trial: {
             content: finalNarrative,
-            promptVariant,
+            promptVariant: usedPromptVariant,
             promptVersion,
             promptSha256: hashText(narrativePrompt),
             prompt: narrativePrompt,

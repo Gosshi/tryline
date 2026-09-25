@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   generateNarrative,
   reviseNarrativeLength,
+  selectProductionPromptVariant,
   stripWrappingCodeFence,
 } from "@/lib/llm/stages/generate-narrative";
 
@@ -88,6 +89,23 @@ describe("stripWrappingCodeFence", () => {
   });
 });
 
+describe("selectProductionPromptVariant", () => {
+  it("selects B only for Japanese recaps with scoring events", () => {
+    expect(
+      selectProductionPromptVariant({ contentType: "recap", language: "ja", hasEvents: true }),
+    ).toBe("B");
+    expect(
+      selectProductionPromptVariant({ contentType: "recap", language: "ja", hasEvents: false }),
+    ).toBe("A");
+    expect(
+      selectProductionPromptVariant({ contentType: "preview", language: "ja", hasEvents: true }),
+    ).toBe("A");
+    expect(
+      selectProductionPromptVariant({ contentType: "recap", language: "en", hasEvents: true }),
+    ).toBe("A");
+  });
+});
+
 describe("generateNarrative", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -109,6 +127,79 @@ describe("generateNarrative", () => {
     });
 
     expect(result.content).toContain("preview");
+  });
+
+  it("defaults to B2 for Japanese recaps with events and returns the used variant", async () => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: "# recap",
+      model: "gpt-4o-2024-11-20",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    const result = await generateNarrative({
+      assembled: {
+        ...assembled,
+        match_events: [{ minute: 12, player_name: "Player One", team_name: "Home", type: "try" }],
+      },
+      tacticalPoints: [],
+      contentType: "recap",
+      additionalSignals: [],
+      attempt: 0,
+    });
+
+    expect(result.promptVariant).toBe("B");
+    expect(result.promptVersion).toBe("recap@5.0.0");
+    expect(result.prompt).toContain("本文全体の半分以上をこの節に充てます。");
+  });
+
+  it.each([
+    ["recap", "ja", "recap@4.21.2"],
+    ["preview", "ja", "preview@3.15.3"],
+    ["recap", "en", "recap@2.2.0-en"],
+  ] as const)("keeps %s/%s on A when production B criteria are absent", async (contentType, language, version) => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: "# draft",
+      model: "gpt-4o-2024-11-20",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    const result = await generateNarrative({
+      assembled: contentType === "recap" && language === "en"
+        ? { ...assembled, match_events: [{ minute: 12, player_name: "Player One", team_name: "Home", type: "try" }] }
+        : assembled,
+      tacticalPoints: [],
+      contentType,
+      additionalSignals: [],
+      attempt: 0,
+      language,
+    });
+
+    expect(result.promptVariant).toBe("A");
+    expect(result.promptVersion).toBe(version);
+    expect(result.prompt).not.toContain("本文全体の半分以上をこの節に充てます。");
+  });
+
+  it("honors an explicit A variant for a Japanese recap with events", async () => {
+    openAIMock.createTextResponse.mockResolvedValue({
+      text: "# recap",
+      model: "gpt-4o-2024-11-20",
+      usage: { inputTokens: 10, outputTokens: 20 },
+    });
+
+    const result = await generateNarrative({
+      assembled: {
+        ...assembled,
+        match_events: [{ minute: 12, player_name: "Player One", team_name: "Home", type: "try" }],
+      },
+      tacticalPoints: [],
+      contentType: "recap",
+      additionalSignals: [],
+      attempt: 0,
+      promptVariant: "A",
+    });
+
+    expect(result.promptVariant).toBe("A");
+    expect(result.promptVersion).toBe("recap@4.21.2");
   });
 
   it("uses GPT-5.6 Terra for each retry", async () => {

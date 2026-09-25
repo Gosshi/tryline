@@ -45,6 +45,22 @@ export type NarrativeResponse = {
   };
 };
 
+export type GeneratedNarrativeResponse = NarrativeResponse & {
+  promptVariant: "A" | "B";
+};
+
+export function selectProductionPromptVariant(options: {
+  contentType: ContentType;
+  language: ContentLanguage;
+  hasEvents: boolean;
+}): "A" | "B" {
+  return options.contentType === "recap" &&
+    options.language === "ja" &&
+    options.hasEvents
+    ? "B"
+    : "A";
+}
+
 export function stripWrappingCodeFence(text: string): string {
   const trimmed = text.trim();
   const match = trimmed.match(/^```[^\r\n]*\r?\n([\s\S]*)\r?\n```$/);
@@ -66,13 +82,17 @@ export async function generateNarrative(options: {
   language?: ContentLanguage;
   model?: string;
   promptVariant?: "A" | "B";
-}): Promise<NarrativeResponse> {
+}): Promise<GeneratedNarrativeResponse> {
   const isPreview = options.contentType === "preview";
-  const promptVariant = options.promptVariant ?? "A";
+  const language = options.language ?? "ja";
+  const promptVariant = options.promptVariant ?? selectProductionPromptVariant({
+    contentType: options.contentType,
+    language,
+    hasEvents: options.assembled.match_events.length > 0,
+  });
   const basePromptVersion = promptVariant === "B"
     ? isPreview ? PREVIEW_B_PROMPT_VERSION : RECAP_B_PROMPT_VERSION
     : isPreview ? PREVIEW_PROMPT_VERSION : RECAP_PROMPT_VERSION;
-  const language = options.language ?? "ja";
   const prompt =
     language === "en"
       ? buildEnglishNarrativePrompt(options)
@@ -93,6 +113,7 @@ export async function generateNarrative(options: {
           : ENGLISH_RECAP_PROMPT_VERSION
         : basePromptVersion,
     prompt,
+    promptVariant,
     usage: response.usage,
   };
 }
