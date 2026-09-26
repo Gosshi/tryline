@@ -2,6 +2,7 @@ import { after } from "next/server";
 import { createPublicKey, verify } from "node:crypto";
 
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { parseResearchPaste } from "@/lib/discord/research-paste";
 import {
   OWNER_VERIFIABLE_SOURCE_URL_STATUSES,
   validateSourceUrl,
@@ -12,7 +13,6 @@ import {
   selectSourcedFactsForGeneration,
 } from "@/lib/llm/sourced-facts/fetch";
 
-import type { SourcedFactConfidence } from "@/lib/llm/sourced-facts/types";
 import type { ContentType } from "@/lib/llm/types";
 
 export const runtime = "nodejs";
@@ -24,14 +24,11 @@ const DISCORD_PUBLIC_KEY_PREFIX = Buffer.from(
 const EPHEMERAL = 1 << 6;
 const RESEARCH_FACT_ENTRY_COMMAND_NAME = "調査事実を追加";
 const RESEARCH_FACT_ENTRY_MODAL_PREFIX = "research-fact-entry";
-const RESEARCH_FACT_MAX_LENGTH = 300;
 const MATCH_CANDIDATE_WINDOW_MS = 14 * 24 * 60 * 60 * 1_000;
 const MAX_MATCH_OPTIONS = 25;
 const RESEARCH_MODAL_ID_PATTERN = new RegExp(
   `^${RESEARCH_FACT_ENTRY_MODAL_PREFIX}$`,
 );
-const CONFIDENCES = new Set<SourcedFactConfidence>(["high", "medium", "low"]);
-const SOURCE_CHECKS = new Set(["auto", "owner_verified"]);
 
 type DiscordInteraction = {
   application_id?: unknown;
@@ -171,53 +168,8 @@ function buildResearchFactEntryModal(matches: ResearchMatchCandidate[]) {
             type: 4,
           },
           description:
-            "1行に1件・300字以内。主語と数字を明示し、意見や推測は書かない。",
-          label: "事実",
-          type: 18,
-        },
-        {
-          component: {
-            custom_id: "source_url",
-            required: true,
-            style: 1,
-            type: 4,
-          },
-          label: "出典 URL",
-          type: 18,
-        },
-        {
-          component: {
-            custom_id: "confidence",
-            options: [
-              { label: "high", value: "high" },
-              { default: true, label: "medium", value: "medium" },
-              { label: "low", value: "low" },
-            ],
-            placeholder: "確度を選択",
-            required: false,
-            type: 3,
-          },
-          description: "未選択なら medium",
-          label: "確度",
-          type: 18,
-        },
-        // Discord modals allow at most five components; future fields must be merged.
-        {
-          component: {
-            custom_id: "source_check",
-            options: [
-              { default: true, label: "自動で確認する", value: "auto" },
-              {
-                label: "目視で確認済み（401/403/429 のサイト用）",
-                value: "owner_verified",
-              },
-            ],
-            placeholder: "出典の確認方法",
-            required: false,
-            type: 3,
-          },
-          description: "ボット拒否で弾かれたときだけ「目視で確認済み」を選ぶ",
-          label: "出典確認",
+            "### 出典: から始まるブロックを、この試合の分だけ貼ってください。",
+          label: "ChatGPT の出力（この試合の部分）",
           type: 18,
         },
       ],
@@ -262,24 +214,6 @@ function findComponentValue(
   }
 
   return null;
-}
-
-function parseResearchFactLines(value: string) {
-  const facts: Array<{ fact: string; lineNumber: number }> = [];
-
-  for (const [index, rawLine] of value.split(/\r?\n/u).entries()) {
-    const trimmedLine = rawLine.trim();
-    if (trimmedLine.startsWith("#")) {
-      continue;
-    }
-
-    const fact = trimmedLine.replace(/^[-*・]\s*/u, "").trim();
-    if (fact) {
-      facts.push({ fact, lineNumber: index + 1 });
-    }
-  }
-
-  return facts;
 }
 
 function truncateDiscordFact(value: string) {
@@ -333,35 +267,33 @@ function parseResearchModalSubmission(interaction: DiscordInteraction) {
 
   const matchId = findComponentValue(interaction.data.components, "match_id");
   const factsValue = findComponentValue(interaction.data.components, "facts");
-  const sourceUrl = findComponentValue(
-    interaction.data.components,
-    "source_url",
-  )?.trim();
-  const confidenceValue = findComponentValue(
-    interaction.data.components,
-    "confidence",
-  );
-  const confidence = confidenceValue ?? "medium";
-  const sourceCheck =
-    findComponentValue(interaction.data.components, "source_check") ?? "auto";
 
-  if (
-    !matchId ||
-    !factsValue ||
-    !sourceUrl ||
-    !CONFIDENCES.has(confidence as SourcedFactConfidence) ||
-    !SOURCE_CHECKS.has(sourceCheck)
-  ) {
+  if (!matchId || !factsValue) {
     return null;
   }
 
   return {
-    confidence: confidence as SourcedFactConfidence,
-    facts: parseResearchFactLines(factsValue),
+    paste: parseResearchPaste(factsValue),
     matchId,
-    sourceCheck,
-    sourceUrl,
   };
+}
+
+function formatSkippedResearchLines(
+  skippedLines: ReturnType<typeof parseResearchPaste>["skippedLines"],
+) {
+  if (skippedLines.length === 0) {
+    return "";
+  }
+  const lines = skippedLines.map(({ lineNumber, reason }) => {
+    const label =
+      reason === "note"
+        ? "注記"
+        : reason === "too_long"
+          ? "300字超"
+          : "出典ブロック外";
+    return `${lineNumber}行目（${label}）`;
+  });
+  return `\n読み飛ばした行: ${lines.join("、")}`;
 }
 
 async function openResearchFactEntryModal(interaction: DiscordInteraction) {
@@ -414,33 +346,127 @@ async function processResearchFactEntry(interaction: DiscordInteraction) {
   if (!submission) {
     return "入力内容を確認してください。";
   }
-  if (submission.facts.length === 0) {
-    return "有効な事実が1件もありません。1行に1件ずつ入力してください。";
-  }
-
-  const overlongFact = submission.facts.find(
-    ({ fact }) => [...fact].length > RESEARCH_FACT_MAX_LENGTH,
+  const skippedSummary = formatSkippedResearchLines(
+    submission.paste.skippedLines,
   );
-  if (overlongFact) {
-    return `${overlongFact.lineNumber}行目が${RESEARCH_FACT_MAX_LENGTH}文字を超えています。`;
+  if (submission.paste.sources.length === 0) {
+    return `保存できる事実がありませんでした。出典のブロックが見つかりません。${skippedSummary}`;
   }
 
-  const urlValidation = await validateSourceUrl(submission.sourceUrl);
-  const ownerVerifiedStatus =
-    !urlValidation.ok &&
-    submission.sourceCheck === "owner_verified" &&
-    urlValidation.status !== null &&
-    OWNER_VERIFIABLE_SOURCE_URL_STATUSES.has(urlValidation.status)
-      ? urlValidation.status
-      : null;
-  if (!urlValidation.ok && ownerVerifiedStatus === null) {
-    if (
-      urlValidation.status !== null &&
-      OWNER_VERIFIABLE_SOURCE_URL_STATUSES.has(urlValidation.status)
-    ) {
-      return `${urlValidation.reason}\nボット拒否の可能性があります。リンクを開いて内容を確認済みなら、「出典確認」で「目視で確認済み」を選んで送り直してください。`;
+  const sourceBlocks = submission.paste.sources.filter(
+    (source) => source.facts.length > 0,
+  );
+  if (sourceBlocks.length === 0) {
+    return `保存できる事実がありませんでした。読み取れる事実がありません。${skippedSummary}`;
+  }
+
+  const validatedSources = new Map<
+    string,
+    Awaited<ReturnType<typeof validateSourceUrl>>
+  >();
+  for (const source of sourceBlocks) {
+    if (!validatedSources.has(source.sourceUrl)) {
+      validatedSources.set(
+        source.sourceUrl,
+        await validateSourceUrl(source.sourceUrl),
+      );
     }
-    return urlValidation.reason;
+  }
+
+  const rejectedSources: Array<{ sourceUrl: string; reason: string }> = [];
+  const ownerVerifiedSources: Array<{
+    sourceDomain: string;
+    sourceUrl: string;
+    status: number;
+  }> = [];
+  const rows: Array<{
+    confidence: "high";
+    fact: string;
+    fact_ja: string;
+    match_id: string;
+    metadata: {
+      entry_method: "manual";
+      entry_path: "discord_research_paste";
+      source_url_check?: "owner_verified";
+      source_url_http_status?: number;
+    };
+    model_version: "manual";
+    source_domain: string;
+    source_url: string;
+  }> = [];
+  const acceptedSourceUrls = new Set<string>();
+  for (const source of sourceBlocks) {
+    const validation = validatedSources.get(source.sourceUrl);
+    if (!validation) continue;
+    const ownerVerifiedStatus =
+      !validation.ok &&
+      validation.status !== null &&
+      OWNER_VERIFIABLE_SOURCE_URL_STATUSES.has(validation.status)
+        ? validation.status
+        : null;
+    if (!validation.ok && ownerVerifiedStatus === null) {
+      if (
+        !rejectedSources.some(
+          (rejected) => rejected.sourceUrl === source.sourceUrl,
+        )
+      ) {
+        rejectedSources.push({
+          sourceUrl: source.sourceUrl,
+          reason: validation.reason,
+        });
+      }
+      continue;
+    }
+
+    acceptedSourceUrls.add(source.sourceUrl);
+    const sourceDomain = validation.ok
+      ? validation.sourceDomain
+      : new URL(source.sourceUrl).hostname;
+    if (
+      ownerVerifiedStatus !== null &&
+      !ownerVerifiedSources.some(
+        (verified) => verified.sourceUrl === source.sourceUrl,
+      )
+    ) {
+      ownerVerifiedSources.push({
+        sourceDomain,
+        sourceUrl: source.sourceUrl,
+        status: ownerVerifiedStatus,
+      });
+    }
+    for (const { fact } of source.facts) {
+      rows.push({
+        confidence: "high",
+        fact,
+        fact_ja: fact,
+        match_id: submission.matchId,
+        metadata: {
+          entry_method: "manual",
+          entry_path: "discord_research_paste",
+          ...(ownerVerifiedStatus === null
+            ? {}
+            : {
+                source_url_check: "owner_verified",
+                source_url_http_status: ownerVerifiedStatus,
+              }),
+        },
+        model_version: "manual",
+        source_domain: sourceDomain,
+        source_url: source.sourceUrl,
+      });
+    }
+  }
+
+  if (rows.length === 0) {
+    return (
+      [
+        "保存できる事実がありませんでした。",
+        ...rejectedSources.map(
+          ({ sourceUrl, reason }) =>
+            `保存しなかった出典: ${sourceUrl}（${reason}）`,
+        ),
+      ].join("\n") + skippedSummary
+    );
   }
 
   const db = getSupabaseServerClient();
@@ -458,45 +484,41 @@ async function processResearchFactEntry(interaction: DiscordInteraction) {
 
   const contentType: ContentType =
     new Date(match.kickoff_at).getTime() > Date.now() ? "preview" : "recap";
-  const rows = submission.facts.map(({ fact }) => ({
-    confidence: submission.confidence,
-    content_type: contentType,
-    fact,
-    fact_ja: fact,
-    match_id: submission.matchId,
-    metadata: {
-      entry_method: "manual",
-      entry_path: "discord_research_command",
-      ...(ownerVerifiedStatus === null
-        ? {}
-        : {
-            source_url_check: "owner_verified",
-            source_url_http_status: ownerVerifiedStatus,
-          }),
-    },
-    model_version: "manual",
-    source_domain: urlValidation.ok
-      ? urlValidation.sourceDomain
-      : new URL(submission.sourceUrl).hostname,
-    source_url: submission.sourceUrl,
-  }));
-  const { data: savedRows, error: upsertError } = await db
-    .from("match_sourced_facts")
-    .upsert(rows, {
-      ignoreDuplicates: true,
-      onConflict: "match_id,content_type,fact",
-    })
-    .select("fact");
-  if (upsertError) {
-    throw upsertError;
+  const finalRows = rows.map((row) => ({ ...row, content_type: contentType }));
+  let savedRows: Array<{ fact: string }> = [];
+  if (finalRows.length > 0) {
+    const { data, error: upsertError } = await db
+      .from("match_sourced_facts")
+      .upsert(finalRows, {
+        ignoreDuplicates: true,
+        onConflict: "match_id,content_type,fact",
+      })
+      .select("fact");
+    if (upsertError) {
+      throw upsertError;
+    }
+    savedRows = data ?? [];
   }
 
-  const savedCount = savedRows?.length ?? 0;
-  const successMessage = `保存: ${savedCount}件、重複スキップ: ${rows.length - savedCount}件。${
-    ownerVerifiedStatus === null
-      ? ""
-      : `\n出典 URL は自動確認できなかったため（HTTP ${ownerVerifiedStatus}）、目視確認済みとして保存しました。`
-  }`;
+  const savedCount = savedRows.length;
+  const prefixLines = [
+    `保存: ${savedCount}件（出典 ${acceptedSourceUrls.size} 本）、重複スキップ: ${finalRows.length - savedCount}件`,
+    ...ownerVerifiedSources.map(
+      ({ sourceDomain, status }) =>
+        `目視確認済みとして保存: ${sourceDomain}（HTTP ${status}）`,
+    ),
+    ...rejectedSources.map(
+      ({ sourceUrl, reason }) =>
+        `保存しなかった出典: ${sourceUrl}（${reason}）`,
+    ),
+  ];
+  if (savedCount === 0 && finalRows.length === 0) {
+    prefixLines.unshift("保存できる事実がありませんでした。");
+  }
+  const prefix = `${prefixLines.join("\n")}${skippedSummary}`;
+  if (finalRows.length === 0) {
+    return prefix;
+  }
   try {
     const allowedRows = await loadAllowedSourcedFactRows(
       submission.matchId,
@@ -511,10 +533,10 @@ async function processResearchFactEntry(interaction: DiscordInteraction) {
     return formatManualFactsGenerationNotice({
       droppedManual: selection.droppedManual,
       manualTotal: selection.manualTotal,
-      prefix: successMessage,
+      prefix,
     });
   } catch {
-    return `${successMessage}\n（件数の確認に失敗しました）`;
+    return `${prefix}\n（件数の確認に失敗しました）`;
   }
 }
 
