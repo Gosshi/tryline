@@ -106,8 +106,8 @@ function manualSourcedFactRows(count: number) {
     confidence: "high",
     content_type: "preview",
     fact: `手動事実 ${index + 1}`,
-    fetched_at: `2026-08-27T${String(23 - (index % 20)).padStart(2, "0")}:00:00.000Z`,
-    metadata: { entry_method: "manual" },
+    fetched_at: "2026-08-27T23:00:00.000Z",
+    metadata: { entry_method: "manual", paste_index: index },
     model_version: "manual",
     source_domain: "example.com",
     source_url: "https://example.com/story",
@@ -316,6 +316,7 @@ describe("POST /api/discord/interactions", () => {
           metadata: {
             entry_method: "manual",
             entry_path: "discord_research_paste",
+            paste_index: 0,
           },
           source_domain: "www.rnz.co.nz",
           source_url: "https://www.rnz.co.nz/story?edition=1",
@@ -593,6 +594,7 @@ describe("POST /api/discord/interactions", () => {
             metadata: {
               entry_method: "manual",
               entry_path: "discord_research_paste",
+              paste_index: 0,
               source_url_check: "owner_verified",
               source_url_http_status: status,
             },
@@ -638,6 +640,7 @@ describe("POST /api/discord/interactions", () => {
           metadata: {
             entry_method: "manual",
             entry_path: "discord_research_paste",
+            paste_index: 0,
           },
         }),
         expect.objectContaining({
@@ -646,6 +649,7 @@ describe("POST /api/discord/interactions", () => {
           metadata: {
             entry_method: "manual",
             entry_path: "discord_research_paste",
+            paste_index: 1,
             source_url_check: "owner_verified",
             source_url_http_status: 403,
           },
@@ -697,9 +701,44 @@ describe("POST /api/discord/interactions", () => {
     );
   });
 
+  it("numbers saved facts across accepted source blocks and skips a rejected block", async () => {
+    stubFetchWithStatuses({ "missing.example": 404 });
+    const paste = [
+      "### 出典: https://first.example/story",
+      "- first fact one",
+      "- first fact two",
+      "### 出典: https://missing.example/story",
+      "- rejected fact one",
+      "- rejected fact two",
+      "### 出典: https://last.example/story",
+      "- last fact one",
+      "- last fact two",
+      "- last fact three",
+    ].join("\n");
+
+    await POST(createRequest(researchSubmission(paste)));
+    await runAfterCallbacks();
+
+    const insertedRows = supabaseMocks.sourcedFactsUpsert.mock.calls[0]?.[0];
+    expect(insertedRows).toHaveLength(5);
+    expect(
+      insertedRows.map(
+        (row: { metadata: { paste_index: number } }) =>
+          row.metadata.paste_index,
+      ),
+    ).toEqual([0, 1, 2, 3, 4]);
+    expect(insertedRows.map((row: { fact: string }) => row.fact)).toEqual([
+      "first fact one",
+      "first fact two",
+      "last fact one",
+      "last fact two",
+      "last fact three",
+    ]);
+  });
+
   it("preserves the notice for manual facts dropped by the generation cap", async () => {
     const fetchMock = stubFetchWithStatuses();
-    supabaseMocks.sourcedFactsQueryRows = manualSourcedFactRows(17);
+    supabaseMocks.sourcedFactsQueryRows = manualSourcedFactRows(31);
     const paste = "### 出典: https://example.com/story\n- 新しい事実";
 
     await POST(createRequest(researchSubmission(paste)));
@@ -710,7 +749,9 @@ describe("POST /api/discord/interactions", () => {
     );
     const content = JSON.parse(String(patchCall?.[1]?.body)).content as string;
     expect(content).toContain("次の1件は使われません:");
-    expect(content).toContain("- 手動事実 17");
+    expect(content).toContain("- 手動事実 31");
+    expect(content).toContain("同じ時刻なら貼った順");
+    expect(content).toContain("に30件です。");
   });
 
   it("does not append a generation-cap notice for five manual facts", async () => {
