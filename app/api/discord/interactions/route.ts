@@ -11,6 +11,7 @@ import { getServerEnv } from "@/lib/env";
 import { generateMatchContent } from "@/lib/llm/pipeline";
 import {
   loadAllowedSourcedFactRows,
+  MAX_MANUAL_FACTS_FOR_GENERATION,
   selectSourcedFactsForGeneration,
 } from "@/lib/llm/sourced-facts/fetch";
 
@@ -237,7 +238,7 @@ function formatManualFactsGenerationNotice(params: {
     return `${params.prefix}\nこの試合の手動事実は${params.manualTotal}件です。全件が生成に使われ、自動取得の事実は使われません。`;
   }
 
-  const notice = `この試合の手動事実は${params.manualTotal}件で、生成に使われるのは新しい順に16件です。次の${params.droppedManual.length}件は使われません:`;
+  const notice = `この試合の手動事実は${params.manualTotal}件で、生成に使われるのは新しい順（同じ時刻なら貼った順）に${MAX_MANUAL_FACTS_FOR_GENERATION}件です。次の${params.droppedManual.length}件は使われません:`;
   const lines: string[] = [];
   let listed = 0;
   for (const fact of params.droppedManual) {
@@ -392,6 +393,7 @@ async function processResearchFactEntry(
     metadata: {
       entry_method: "manual";
       entry_path: "discord_research_paste";
+      paste_index: number;
       source_url_check?: "owner_verified";
       source_url_http_status?: number;
     };
@@ -448,6 +450,7 @@ async function processResearchFactEntry(
         metadata: {
           entry_method: "manual",
           entry_path: "discord_research_paste",
+          paste_index: rows.length,
           ...(ownerVerifiedStatus === null
             ? {}
             : {

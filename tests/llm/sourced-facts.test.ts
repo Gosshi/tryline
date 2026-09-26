@@ -17,6 +17,7 @@ import {
   loadAllowedSourcedFactRows,
   isSourcedFactsEnabledForMatch,
   loadSourcedFactsForMatch,
+  MAX_MANUAL_FACTS_FOR_GENERATION,
   parseSourcedFactsResponse,
   replaceSourcedFactsForSourceDomains,
   selectSourcedFactsForGeneration,
@@ -1349,7 +1350,7 @@ describe("fetchSourcedFactsForMatch", () => {
     const manualFacts = Array.from({ length: 3 }, (_, index) =>
       cachedFact({
         fact: `manual fact ${index + 1}`,
-        metadata: { entry_method: "manual" },
+        metadata: { entry_method: "manual", paste_index: index },
       }),
     );
     const automaticFacts = Array.from({ length: 10 }, (_, index) =>
@@ -1371,7 +1372,7 @@ describe("fetchSourcedFactsForMatch", () => {
     const manualFacts = Array.from({ length: 8 }, (_, index) =>
       cachedFact({
         fact: `manual fact ${index + 1}`,
-        metadata: { entry_method: "manual" },
+        metadata: { entry_method: "manual", paste_index: index },
       }),
     );
     const automaticFacts = [cachedFact({ fact: "automatic fact" })];
@@ -1391,7 +1392,7 @@ describe("fetchSourcedFactsForMatch", () => {
     const manualFacts = Array.from({ length: 12 }, (_, index) =>
       cachedFact({
         fact: `manual fact ${index + 1}`,
-        metadata: { entry_method: "manual" },
+        metadata: { entry_method: "manual", paste_index: index },
       }),
     );
     const automaticFacts = Array.from({ length: 5 }, (_, index) =>
@@ -1409,22 +1410,121 @@ describe("fetchSourcedFactsForMatch", () => {
     });
   });
 
-  it("keeps up to sixteen manual facts and drops older manual facts", () => {
-    const manualFacts = Array.from({ length: 17 }, (_, index) =>
+  it("keeps thirty manual facts and drops the thirty-first", () => {
+    expect(MAX_MANUAL_FACTS_FOR_GENERATION).toBe(30);
+    const manualFacts = Array.from({ length: 31 }, (_, index) =>
       cachedFact({
-        fact: `manual fact ${index + 1}`,
-        metadata: { entry_method: "manual" },
+        fact: `manual fact ${String(index).padStart(2, "0")}`,
+        fetched_at: "2026-06-09T12:00:00.000Z",
+        metadata: { entry_method: "manual", paste_index: index },
       }),
     );
-    const selection = selectSourcedFactsForGeneration(manualFacts);
+    const withinLimit = selectSourcedFactsForGeneration(manualFacts.slice(0, 30));
+    expect(withinLimit).toMatchObject({
+      droppedManual: [],
+      manualTotal: 30,
+      selected: manualFacts.slice(0, 30),
+    });
 
+    const selection = selectSourcedFactsForGeneration(manualFacts);
     expect(selection).toMatchObject({
       automaticSelected: 0,
       automaticTotal: 0,
-      droppedManual: [manualFacts[16]],
-      manualTotal: 17,
-      selected: manualFacts.slice(0, 16),
+      droppedManual: [manualFacts[30]],
+      manualTotal: 31,
+      selected: manualFacts.slice(0, 30),
     });
+  });
+
+  it("uses paste order instead of fact order when fetched times are equal", () => {
+    const manualFacts = Array.from({ length: 31 }, (_, index) =>
+      cachedFact({
+        fact:
+          index === 30 ? "a fact is alphabetically first" : `z fact ${index}`,
+        fetched_at: "2026-06-09T12:00:00.000Z",
+        metadata: { entry_method: "manual", paste_index: index },
+      }),
+    );
+    const originalOrder = manualFacts.map(({ fact }) => fact);
+    const selection = selectSourcedFactsForGeneration(
+      [...manualFacts].reverse(),
+    );
+
+    expect(
+      selection.selected.map(({ metadata }) => metadata?.paste_index),
+    ).toEqual(Array.from({ length: 30 }, (_, index) => index));
+    expect(selection.droppedManual).toEqual([manualFacts[30]]);
+    expect(manualFacts.map(({ fact }) => fact)).toEqual(originalOrder);
+  });
+
+  it("orders numeric paste indexes before missing and nonnumeric indexes", () => {
+    const manualFacts = [
+      cachedFact({
+        fact: "b string index",
+        metadata: { entry_method: "manual", paste_index: "0" },
+      }),
+      cachedFact({ fact: "z missing index", metadata: null }),
+      cachedFact({
+        fact: "indexed three",
+        metadata: { entry_method: "manual", paste_index: 3 },
+      }),
+      cachedFact({
+        fact: "a missing metadata",
+        metadata: { entry_method: "manual" },
+      }),
+      cachedFact({
+        fact: "indexed zero",
+        metadata: { entry_method: "manual", paste_index: 0 },
+      }),
+    ];
+
+    expect(
+      selectSourcedFactsForGeneration(manualFacts).selected.map(
+        ({ fact }) => fact,
+      ),
+    ).toEqual([
+      "indexed zero",
+      "indexed three",
+      "a missing metadata",
+      "b string index",
+      "z missing index",
+    ]);
+  });
+
+  it("compares fetched timestamps as dates before paste order", () => {
+    const manualFacts = [
+      cachedFact({
+        fact: "same instant in Z",
+        fetched_at: "2026-06-09T12:00:00Z",
+        metadata: { entry_method: "manual", paste_index: 5 },
+      }),
+      cachedFact({
+        fact: "older timestamp",
+        fetched_at: "2026-06-09T11:00:00Z",
+        metadata: { entry_method: "manual", paste_index: 0 },
+      }),
+      cachedFact({
+        fact: "newer timestamp",
+        fetched_at: "2026-06-09T13:00:00+00:00",
+        metadata: { entry_method: "manual", paste_index: 10 },
+      }),
+      cachedFact({
+        fact: "same instant in offset form",
+        fetched_at: "2026-06-09T12:00:00+00:00",
+        metadata: { entry_method: "manual", paste_index: 0 },
+      }),
+    ];
+
+    expect(
+      selectSourcedFactsForGeneration(manualFacts).selected.map(
+        ({ fact }) => fact,
+      ),
+    ).toEqual([
+      "newer timestamp",
+      "same instant in offset form",
+      "same instant in Z",
+      "older timestamp",
+    ]);
   });
 
   it("selects the newest eight automatic facts when there are no manual facts", () => {

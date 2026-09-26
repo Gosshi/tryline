@@ -24,7 +24,7 @@ export const SEARCH_PROMPT_VERSION = "sourced-facts@1.4.0";
 const PREVIEW_REFRESH_WINDOW_HOURS = 72;
 const PREVIEW_FRESHNESS_HOURS = 24;
 const MAX_STORED_FACTS = 8;
-export const MAX_MANUAL_FACTS_FOR_GENERATION = 16;
+export const MAX_MANUAL_FACTS_FOR_GENERATION = 30;
 const JRFU_LINEUP_MODEL_VERSION = "jrfu-lineups@1.0.0";
 const SOURCED_FACTS_SEARCH_STAGE = 5;
 
@@ -466,19 +466,58 @@ export async function loadAllowedSourcedFactRows(
   return allowedRows;
 }
 
+function compareManualSourcedFacts(
+  first: StoredSourcedFact,
+  second: StoredSourcedFact,
+) {
+  const firstFetchedAt = Date.parse(first.fetched_at);
+  const secondFetchedAt = Date.parse(second.fetched_at);
+  const firstTimestampInvalid = Number.isNaN(firstFetchedAt);
+  const secondTimestampInvalid = Number.isNaN(secondFetchedAt);
+  if (firstTimestampInvalid && !secondTimestampInvalid) return 1;
+  if (!firstTimestampInvalid && secondTimestampInvalid) return -1;
+  if (!firstTimestampInvalid && firstFetchedAt !== secondFetchedAt) {
+    return secondFetchedAt - firstFetchedAt;
+  }
+
+  const firstPasteIndex =
+    typeof first.metadata?.paste_index === "number"
+      ? first.metadata.paste_index
+      : null;
+  const secondPasteIndex =
+    typeof second.metadata?.paste_index === "number"
+      ? second.metadata.paste_index
+      : null;
+  if (firstPasteIndex !== null && secondPasteIndex === null) return -1;
+  if (firstPasteIndex === null && secondPasteIndex !== null) return 1;
+  if (
+    firstPasteIndex !== null &&
+    secondPasteIndex !== null &&
+    firstPasteIndex !== secondPasteIndex
+  ) {
+    return firstPasteIndex - secondPasteIndex;
+  }
+
+  return first.fact < second.fact ? -1 : first.fact > second.fact ? 1 : 0;
+}
+
 export function selectSourcedFactsForGeneration(
   rows: StoredSourcedFact[],
 ): SourcedFactSelection {
   const manual = rows.filter(isManualSourcedFact);
   const automatic = rows.filter((row) => !isManualSourcedFact(row));
-  const selectedManual = manual.slice(0, MAX_MANUAL_FACTS_FOR_GENERATION);
+  const orderedManual = [...manual].sort(compareManualSourcedFacts);
+  const selectedManual = orderedManual.slice(
+    0,
+    MAX_MANUAL_FACTS_FOR_GENERATION,
+  );
   const automaticSlots = Math.max(0, MAX_STORED_FACTS - selectedManual.length);
   const selectedAutomatic = automatic.slice(0, automaticSlots);
 
   return {
     automaticSelected: selectedAutomatic.length,
     automaticTotal: automatic.length,
-    droppedManual: manual.slice(MAX_MANUAL_FACTS_FOR_GENERATION),
+    droppedManual: orderedManual.slice(MAX_MANUAL_FACTS_FOR_GENERATION),
     manualTotal: manual.length,
     selected: [...selectedManual, ...selectedAutomatic],
   };
