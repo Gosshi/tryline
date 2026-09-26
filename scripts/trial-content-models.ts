@@ -151,7 +151,9 @@ export async function getRecentAverageArticleCost(
   const totalsByRun = new Map<string, { contentType: string; costUsd: number }>();
   let runSequence = 0;
   for (const record of records) {
-    if (!record.match_id) {
+    // Stage 5 sourced-facts searches run before the article pipeline starts and
+    // must not be counted against the previous article run for this match.
+    if (record.stage === 5 || !record.match_id) {
       continue;
     }
     const matchKey = `${record.match_id}:${record.content_type}`;

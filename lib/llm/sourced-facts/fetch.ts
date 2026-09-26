@@ -3,15 +3,16 @@ import { createHash } from "node:crypto";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { MODELS } from "@/lib/llm/models";
 import { createWebSearchJsonResponse } from "@/lib/llm/openai";
+import { calculateCostUsd } from "@/lib/llm/pricing";
 import {
   filterAllowedSourcedFacts,
   isAllowedSourcedFactDomain,
   SOURCED_FACT_ALLOWED_DOMAINS,
 } from "@/lib/llm/sourced-facts/allowlist";
-import { containsStatisticalFact } from "@/lib/llm/sourced-facts/statistical-fact";
 import { fetchJrfuMatchLineup } from "@/lib/scrapers/jrfu-lineups";
 
 import type { Database, Json } from "@/lib/db/types";
+import type { OpenAITextResponse } from "@/lib/llm/openai";
 import type {
   SourcedFact,
   SourcedFactRejection,
@@ -25,6 +26,7 @@ const PREVIEW_FRESHNESS_HOURS = 24;
 const MAX_STORED_FACTS = 8;
 export const MAX_MANUAL_FACTS_FOR_GENERATION = 16;
 const JRFU_LINEUP_MODEL_VERSION = "jrfu-lineups@1.0.0";
+const SOURCED_FACTS_SEARCH_STAGE = 5;
 
 type MatchForSourcedFacts = {
   id: string;
@@ -68,6 +70,58 @@ export type FetchSourcedFactsResult = {
 
 type SourcedFactInsert =
   Database["public"]["Tables"]["match_sourced_facts"]["Insert"];
+
+function sourcedFactsSearchInputHash(matchId: string, contentType: ContentType) {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        matchId,
+        contentType,
+        promptVersion: SEARCH_PROMPT_VERSION,
+      }),
+    )
+    .digest("hex");
+}
+
+async function logSourcedFactsSearchRun(options: {
+  contentType: ContentType;
+  costUsd: number;
+  durationMs: number;
+  errorMessage?: string;
+  factsFound: number;
+  matchId: string;
+  skippedReason: string | null;
+  status: "failed" | "success";
+}) {
+  try {
+    const { error } = await getSupabaseServerClient()
+      .from("pipeline_runs")
+      .insert({
+        content_type: options.contentType,
+        cost_usd: options.costUsd,
+        duration_ms: options.durationMs,
+        error_message: options.errorMessage ?? null,
+        input_hash: sourcedFactsSearchInputHash(
+          options.matchId,
+          options.contentType,
+        ),
+        match_id: options.matchId,
+        output: {
+          facts_found: options.factsFound,
+          prompt_version: SEARCH_PROMPT_VERSION,
+          skipped_reason: options.skippedReason,
+        },
+        stage: SOURCED_FACTS_SEARCH_STAGE,
+        status: options.status,
+      });
+
+    if (error) {
+      console.error("[sourced-facts] failed to log search pipeline run", error);
+    }
+  } catch (error) {
+    console.error("[sourced-facts] failed to log search pipeline run", error);
+  }
+}
 
 export function isManualSourcedFact(row: Pick<StoredSourcedFact, "metadata">) {
   return row.metadata?.entry_method === "manual";
@@ -510,21 +564,72 @@ export async function fetchSourcedFactsForMatch(options: {
     await replaceSourcedFactsForSourceDomains(db, jrfuRows);
   }
 
+  if (
+    options.contentType === "preview" &&
+    cachedRows.some((fact) => fact.model_version === "manual")
+  ) {
+    await logSourcedFactsSearchRun({
+      contentType: options.contentType,
+      costUsd: 0,
+      durationMs: 0,
+      factsFound: 0,
+      matchId: options.matchId,
+      skippedReason: "manual_facts_present",
+      status: "success",
+    });
+    return {
+      cached: true,
+      facts: [...jrfuRows, ...cachedSelection.selected] as StoredSourcedFact[],
+      fetched: false,
+      skippedReason: null,
+    };
+  }
+
+  const { data: latestSearchRun, error: latestSearchRunError } = await db
+    .from("pipeline_runs")
+    .select("created_at, output, status")
+    .eq("match_id", options.matchId)
+    .eq("content_type", options.contentType)
+    .eq("stage", SOURCED_FACTS_SEARCH_STAGE)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (latestSearchRunError) {
+    throw latestSearchRunError;
+  }
+  const latestSearchOutput = latestSearchRun?.output as
+    | { prompt_version?: unknown }
+    | null;
+  const hasCurrentSuccessfulSearchRun =
+    latestSearchRun?.status === "success" &&
+    latestSearchOutput?.prompt_version === SEARCH_PROMPT_VERSION;
+
   const cachedSearchFacts = cachedRows.filter(
     (fact) => typeof fact.metadata?.prompt_version === "string",
   );
-  const newestFetchedAt = cachedSearchFacts[0]?.fetched_at ?? null;
+  const newestFetchedAt = hasCurrentSuccessfulSearchRun
+    ? latestSearchRun.created_at
+    : cachedSearchFacts[0]?.fetched_at ?? null;
   const cachedPromptVersion = getCachedPromptVersion(cachedSearchFacts);
+  const canUseSearchRunCache = hasCurrentSuccessfulSearchRun;
   if (
     !options.force &&
-    cachedSearchFacts.length > 0 &&
-    cachedPromptVersion === SEARCH_PROMPT_VERSION &&
-    shouldUseCachedFacts({
-      contentType: options.contentType,
-      fetchedAt: newestFetchedAt,
-      kickoffAt: typedMatch.kickoff_at,
-      now,
-    })
+    ((canUseSearchRunCache &&
+      shouldUseCachedFacts({
+        contentType: options.contentType,
+        fetchedAt: newestFetchedAt,
+        kickoffAt: typedMatch.kickoff_at,
+        now,
+      })) ||
+      (!canUseSearchRunCache &&
+        cachedSearchFacts.length > 0 &&
+        cachedPromptVersion === SEARCH_PROMPT_VERSION &&
+        shouldUseCachedFacts({
+          contentType: options.contentType,
+          fetchedAt: newestFetchedAt,
+          kickoffAt: typedMatch.kickoff_at,
+          now,
+        })))
   ) {
     return {
       cached: true,
@@ -545,37 +650,44 @@ export async function fetchSourcedFactsForMatch(options: {
         : [],
     ),
   };
-  async function searchSourcedFacts() {
-    const response = await createWebSearchJsonResponse({
+  const searchStartedAt = Date.now();
+  let response: OpenAITextResponse | undefined;
+  let facts: SourcedFact[];
+  let rejectedFacts: SourcedFactRejection[];
+  try {
+    response = await createWebSearchJsonResponse({
       model: MODELS.WEB_SEARCH,
       input: prompt,
     });
-    const rejectedFacts: SourcedFactRejection[] = [];
-    const facts = parseSourcedFactsResponse(response.text, {
+    rejectedFacts = [];
+    facts = parseSourcedFactsResponse(response.text, {
       rejected: rejectedFacts,
       relevance,
     });
-
-    return { facts, rejectedFacts, response };
+  } catch (error) {
+    await logSourcedFactsSearchRun({
+      contentType: options.contentType,
+      costUsd: response
+        ? calculateCostUsd({
+            modelVersion: response.model,
+            inputTokens: response.usage.inputTokens,
+            outputTokens: response.usage.outputTokens,
+          })
+        : 0,
+      durationMs: Date.now() - searchStartedAt,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      factsFound: 0,
+      matchId: options.matchId,
+      skippedReason: null,
+      status: "failed",
+    });
+    throw error;
   }
 
-  let searchResult = await searchSourcedFacts();
-  if (
-    options.contentType === "recap" &&
-    (searchResult.facts.length === 0 ||
-      !searchResult.facts.some((fact) => containsStatisticalFact(fact.fact)))
-  ) {
-    const retryResult = await searchSourcedFacts();
-    searchResult = {
-      ...retryResult,
-      rejectedFacts: [
-        ...searchResult.rejectedFacts,
-        ...retryResult.rejectedFacts,
-      ],
-    };
+  if (!response) {
+    throw new Error("sourced facts search returned no response");
   }
-
-  const { facts, rejectedFacts, response } = searchResult;
+  const successfulResponse = response;
   const rejectedDomainCounts = rejectedFacts.reduce<Record<string, number>>(
     (counts, rejection) => {
       if (
@@ -608,14 +720,46 @@ export async function fetchSourcedFactsForMatch(options: {
       promptVersion: SEARCH_PROMPT_VERSION,
       rawConfidence: fact.confidence,
     }),
-    model_version: response.model,
+    model_version: successfulResponse.model,
     source_domain: fact.source_domain,
     source_url: fact.source_url,
   }));
 
-  if (rows.length > 0) {
-    await replaceSourcedFactsForSourceDomains(db, rows);
+  try {
+    if (rows.length > 0) {
+      await replaceSourcedFactsForSourceDomains(db, rows);
+    }
+  } catch (error) {
+    await logSourcedFactsSearchRun({
+      contentType: options.contentType,
+      costUsd: calculateCostUsd({
+        modelVersion: successfulResponse.model,
+        inputTokens: successfulResponse.usage.inputTokens,
+        outputTokens: successfulResponse.usage.outputTokens,
+      }),
+      durationMs: Date.now() - searchStartedAt,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      factsFound: 0,
+      matchId: options.matchId,
+      skippedReason: null,
+      status: "failed",
+    });
+    throw error;
   }
+
+  await logSourcedFactsSearchRun({
+    contentType: options.contentType,
+    costUsd: calculateCostUsd({
+      modelVersion: successfulResponse.model,
+      inputTokens: successfulResponse.usage.inputTokens,
+      outputTokens: successfulResponse.usage.outputTokens,
+    }),
+    durationMs: Date.now() - searchStartedAt,
+    factsFound: rows.length,
+    matchId: options.matchId,
+    skippedReason: null,
+    status: "success",
+  });
 
   return {
     cached: false,
