@@ -8,6 +8,7 @@ import {
   validateSourceUrl,
 } from "@/lib/discord/source-url";
 import { getServerEnv } from "@/lib/env";
+import { generateMatchContent } from "@/lib/llm/pipeline";
 import {
   loadAllowedSourcedFactRows,
   selectSourcedFactsForGeneration,
@@ -16,6 +17,7 @@ import {
 import type { ContentType } from "@/lib/llm/types";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 const DISCORD_PUBLIC_KEY_PREFIX = Buffer.from(
   "302a300506032b6570032100",
@@ -341,7 +343,10 @@ async function openResearchFactEntryModal(interaction: DiscordInteraction) {
   return buildResearchFactEntryModal(candidates);
 }
 
-async function processResearchFactEntry(interaction: DiscordInteraction) {
+async function processResearchFactEntry(
+  interaction: DiscordInteraction,
+  onRegenerationStart?: (contentType: ContentType) => Promise<void>,
+) {
   const submission = parseResearchModalSubmission(interaction);
   if (!submission) {
     return "入力内容を確認してください。";
@@ -516,8 +521,68 @@ async function processResearchFactEntry(interaction: DiscordInteraction) {
     prefixLines.unshift("保存できる事実がありませんでした。");
   }
   const prefix = `${prefixLines.join("\n")}${skippedSummary}`;
+  let regenerationNotice: string | null = null;
+  if (
+    savedCount > 0 &&
+    (contentType === "preview" || contentType === "recap")
+  ) {
+    const contentLabel = contentType === "preview" ? "プレビュー" : "レビュー";
+    try {
+      const { data: existingContent, error: contentError } = await db
+        .from("match_content")
+        .select("status")
+        .eq("match_id", submission.matchId)
+        .eq("content_type", contentType)
+        .eq("language", "ja")
+        .in("status", ["published", "draft"])
+        .maybeSingle();
+      if (contentError) {
+        throw contentError;
+      }
+      if (existingContent) {
+        try {
+          await onRegenerationStart?.(contentType);
+        } catch (error) {
+          console.error(
+            "[discord] Failed to announce manual-fact content regeneration.",
+            error instanceof Error ? error.message : "Unknown error",
+          );
+        }
+        try {
+          const result = await generateMatchContent(
+            submission.matchId,
+            contentType,
+            "ja",
+          );
+          if (result.status === "published") {
+            regenerationNotice = `${contentLabel}を作り直しました（公開）`;
+          } else if (result.status === "draft") {
+            regenerationNotice = `${contentLabel}を作り直しましたが、QA で不合格のため公開中の版を残しました`;
+          } else {
+            const reason =
+              result.skipReason === "events_unavailable"
+                ? "試合イベントがありません"
+                : result.skipReason === "score_mismatch"
+                  ? "得点イベントとスコアが一致しません"
+                  : "生成処理でスキップされました";
+            regenerationNotice = `作り直しを見送りました: ${reason}`;
+          }
+        } catch (error) {
+          const reason =
+            error instanceof Error ? error.message : "不明なエラー";
+          regenerationNotice = `${contentLabel}の作り直しに失敗しました: ${reason}`;
+        }
+      }
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "不明なエラー";
+      regenerationNotice = `${contentLabel}の有無を確認できず、作り直しを見送りました: ${reason}`;
+    }
+  }
+  const finalPrefix = regenerationNotice
+    ? `${prefix}\n${regenerationNotice}`
+    : prefix;
   if (finalRows.length === 0) {
-    return prefix;
+    return finalPrefix;
   }
   try {
     const allowedRows = await loadAllowedSourcedFactRows(
@@ -533,10 +598,10 @@ async function processResearchFactEntry(interaction: DiscordInteraction) {
     return formatManualFactsGenerationNotice({
       droppedManual: selection.droppedManual,
       manualTotal: selection.manualTotal,
-      prefix,
+      prefix: finalPrefix,
     });
   } catch {
-    return `${prefix}\n（件数の確認に失敗しました）`;
+    return `${finalPrefix}\n（件数の確認に失敗しました）`;
   }
 }
 
@@ -577,7 +642,18 @@ function deferResearchFactEntry(interaction: DiscordInteraction) {
   after(async () => {
     let content: string;
     try {
-      content = await processResearchFactEntry(interaction);
+      content = await processResearchFactEntry(
+        interaction,
+        async (contentType) => {
+          const contentLabel =
+            contentType === "preview" ? "プレビュー" : "レビュー";
+          await editDeferredInteractionResponse({
+            applicationId,
+            content: `保存しました。${contentLabel}を作り直しています…`,
+            token,
+          });
+        },
+      );
     } catch (error) {
       console.error(
         "[discord] Failed to save a researched fact entry.",
