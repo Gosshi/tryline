@@ -25,15 +25,22 @@ const supabaseMocks = vi.hoisted(() => ({
   sourcedFactsQueryError: null as Error | null,
   sourcedFactsQueryRows: [] as unknown[],
   sourcedFactsUpsert: vi.fn(),
+  matchContentEq: vi.fn(),
+  matchContentIn: vi.fn(),
+  matchContentMaybeSingle: vi.fn(),
+  matchContentRow: null as { status: string } | null,
+  matchContentError: null as Error | null,
 }));
+const pipelineMocks = vi.hoisted(() => ({ generateMatchContent: vi.fn() }));
 
 vi.mock("@/lib/env", () => envMocks);
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: vi.fn(() => ({ from: supabaseMocks.from })),
 }));
 vi.mock("next/server", () => ({ after: afterMocks.after }));
+vi.mock("@/lib/llm/pipeline", () => pipelineMocks);
 
-import { POST } from "@/app/api/discord/interactions/route";
+import { maxDuration, POST } from "@/app/api/discord/interactions/route";
 
 const ownerUserId = "123456789012345678";
 const matchId = "0fd7d8e6-37f9-4b58-82dd-9c2d5592fd64";
@@ -151,6 +158,14 @@ const sourcedFactsQueryBuilder = {
     ),
 };
 const sourcedFactsBuilder = { select: supabaseMocks.sourcedFactsSelect };
+const matchContentBuilder = {
+  eq: supabaseMocks.matchContentEq,
+  in: supabaseMocks.matchContentIn,
+  maybeSingle: supabaseMocks.matchContentMaybeSingle,
+};
+const matchContentTableBuilder = {
+  select: vi.fn(() => matchContentBuilder),
+};
 const sourcedFactsTableBuilder = {
   select: vi.fn(() => sourcedFactsQueryBuilder),
   upsert: supabaseMocks.sourcedFactsUpsert,
@@ -183,6 +198,20 @@ describe("POST /api/discord/interactions", () => {
     });
     supabaseMocks.sourcedFactsQueryRows = [];
     supabaseMocks.sourcedFactsQueryError = null;
+    supabaseMocks.matchContentRow = null;
+    supabaseMocks.matchContentError = null;
+    supabaseMocks.matchContentEq.mockReturnValue(matchContentBuilder);
+    supabaseMocks.matchContentIn.mockReturnValue(matchContentBuilder);
+    supabaseMocks.matchContentMaybeSingle.mockImplementation(async () => ({
+      data: supabaseMocks.matchContentRow,
+      error: supabaseMocks.matchContentError,
+    }));
+    pipelineMocks.generateMatchContent.mockResolvedValue({
+      contentType: "preview",
+      matchId,
+      qa: null,
+      status: "published",
+    });
     supabaseMocks.sourcedFactsQueryEq.mockReturnValue(sourcedFactsQueryBuilder);
     supabaseMocks.sourcedFactsQueryIn.mockReturnValue(sourcedFactsQueryBuilder);
     supabaseMocks.sourcedFactsQueryOrder.mockReturnValue(
@@ -191,6 +220,7 @@ describe("POST /api/discord/interactions", () => {
     supabaseMocks.from.mockImplementation((table: string) => {
       if (table === "matches") return matchBuilder;
       if (table === "match_sourced_facts") return sourcedFactsTableBuilder;
+      if (table === "match_content") return matchContentTableBuilder;
       throw new Error(`Unexpected table: ${table}`);
     });
   });
@@ -198,6 +228,10 @@ describe("POST /api/discord/interactions", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it("sets a 300-second route duration for content regeneration", () => {
+    expect(maxDuration).toBe(300);
   });
 
   it("rejects an invalid signature before accessing the database", async () => {
@@ -304,6 +338,220 @@ describe("POST /api/discord/interactions", () => {
     );
     expect(JSON.parse(String(patchCall?.[1]?.body)).content).toBe(
       "保存: 2件（出典 2 本）、重複スキップ: 1件",
+    );
+  });
+
+  it("regenerates an existing Japanese preview after saving a new fact", async () => {
+    const fetchMock = stubFetchWithStatuses();
+    supabaseMocks.sourcedFactsSelect.mockResolvedValue({
+      data: [{ fact: "新事実" }],
+      error: null,
+    });
+    supabaseMocks.matchContentRow = { status: "published" };
+
+    await POST(
+      createRequest(
+        researchSubmission("### 出典: https://example.com/story\n- 新事実"),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(pipelineMocks.generateMatchContent).toHaveBeenCalledTimes(1);
+    expect(pipelineMocks.generateMatchContent).toHaveBeenCalledWith(
+      matchId,
+      "preview",
+      "ja",
+    );
+    const patchContents = fetchMock.mock.calls
+      .filter(([, init]) => init?.method === "PATCH")
+      .map(([, init]) => JSON.parse(String(init?.body)).content as string);
+    expect(patchContents).toHaveLength(2);
+    expect(patchContents[0]).toBe(
+      "保存しました。プレビューを作り直しています…",
+    );
+    expect(patchContents[1]).toContain("プレビューを作り直しました（公開）");
+  });
+
+  it("does not regenerate when the Japanese preview does not exist", async () => {
+    stubFetchWithStatuses();
+    supabaseMocks.sourcedFactsSelect.mockResolvedValue({
+      data: [{ fact: "新事実" }],
+      error: null,
+    });
+
+    await POST(
+      createRequest(
+        researchSubmission("### 出典: https://example.com/story\n- 新事実"),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(pipelineMocks.generateMatchContent).not.toHaveBeenCalled();
+    expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledOnce();
+    expect(matchContentTableBuilder.select).toHaveBeenCalledWith("status");
+  });
+
+  it("does not regenerate when every submitted fact is a duplicate", async () => {
+    stubFetchWithStatuses();
+    supabaseMocks.sourcedFactsSelect.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    supabaseMocks.matchContentRow = { status: "published" };
+
+    await POST(
+      createRequest(
+        researchSubmission("### 出典: https://example.com/story\n- 重複事実"),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(pipelineMocks.generateMatchContent).not.toHaveBeenCalled();
+    expect(matchContentTableBuilder.select).not.toHaveBeenCalled();
+  });
+
+  it("regenerates an existing Japanese recap after kickoff", async () => {
+    stubFetchWithStatuses();
+    supabaseMocks.matchMaybeSingle.mockResolvedValue({
+      data: { kickoff_at: "2026-08-26T09:00:00.000Z" },
+      error: null,
+    });
+    supabaseMocks.sourcedFactsSelect.mockResolvedValue({
+      data: [{ fact: "レビュー事実" }],
+      error: null,
+    });
+    supabaseMocks.matchContentRow = { status: "draft" };
+
+    await POST(
+      createRequest(
+        researchSubmission(
+          "### 出典: https://example.com/story\n- レビュー事実",
+        ),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(pipelineMocks.generateMatchContent).toHaveBeenCalledOnce();
+    expect(pipelineMocks.generateMatchContent).toHaveBeenCalledWith(
+      matchId,
+      "recap",
+      "ja",
+    );
+  });
+
+  it("does not regenerate a recap when no Japanese recap exists", async () => {
+    stubFetchWithStatuses();
+    supabaseMocks.matchMaybeSingle.mockResolvedValue({
+      data: { kickoff_at: "2026-08-26T09:00:00.000Z" },
+      error: null,
+    });
+    supabaseMocks.sourcedFactsSelect.mockResolvedValue({
+      data: [{ fact: "レビュー事実" }],
+      error: null,
+    });
+
+    await POST(
+      createRequest(
+        researchSubmission(
+          "### 出典: https://example.com/story\n- レビュー事実",
+        ),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(pipelineMocks.generateMatchContent).not.toHaveBeenCalled();
+  });
+
+  it("reports a draft regeneration while keeping the published version", async () => {
+    const fetchMock = stubFetchWithStatuses();
+    supabaseMocks.sourcedFactsSelect.mockResolvedValue({
+      data: [{ fact: "新事実" }],
+      error: null,
+    });
+    supabaseMocks.matchContentRow = { status: "published" };
+    pipelineMocks.generateMatchContent.mockResolvedValue({
+      contentType: "preview",
+      matchId,
+      qa: null,
+      status: "draft",
+    });
+
+    await POST(
+      createRequest(
+        researchSubmission("### 出典: https://example.com/story\n- 新事実"),
+      ),
+    );
+    await runAfterCallbacks();
+
+    const finalPatch = fetchMock.mock.calls
+      .filter(([, init]) => init?.method === "PATCH")
+      .at(-1);
+    expect(JSON.parse(String(finalPatch?.[1]?.body)).content).toContain(
+      "プレビューを作り直しましたが、QA で不合格のため公開中の版を残しました",
+    );
+  });
+
+  it("reports recap integrity skips with a reason", async () => {
+    const fetchMock = stubFetchWithStatuses();
+    supabaseMocks.matchMaybeSingle.mockResolvedValue({
+      data: { kickoff_at: "2026-08-26T09:00:00.000Z" },
+      error: null,
+    });
+    supabaseMocks.sourcedFactsSelect.mockResolvedValue({
+      data: [{ fact: "レビュー事実" }],
+      error: null,
+    });
+    supabaseMocks.matchContentRow = { status: "published" };
+    pipelineMocks.generateMatchContent.mockResolvedValue({
+      contentType: "recap",
+      matchId,
+      qa: null,
+      skipReason: "score_mismatch",
+      status: "skipped",
+    });
+
+    await POST(
+      createRequest(
+        researchSubmission(
+          "### 出典: https://example.com/story\n- レビュー事実",
+        ),
+      ),
+    );
+    await runAfterCallbacks();
+
+    const finalPatch = fetchMock.mock.calls
+      .filter(([, init]) => init?.method === "PATCH")
+      .at(-1);
+    expect(JSON.parse(String(finalPatch?.[1]?.body)).content).toContain(
+      "作り直しを見送りました: 得点イベントとスコアが一致しません",
+    );
+  });
+
+  it("keeps a saved fact when preview regeneration fails", async () => {
+    const fetchMock = stubFetchWithStatuses();
+    supabaseMocks.sourcedFactsSelect.mockResolvedValue({
+      data: [{ fact: "新事実" }],
+      error: null,
+    });
+    supabaseMocks.matchContentRow = { status: "published" };
+    pipelineMocks.generateMatchContent.mockRejectedValue(
+      new Error("生成エラー"),
+    );
+
+    await POST(
+      createRequest(
+        researchSubmission("### 出典: https://example.com/story\n- 新事実"),
+      ),
+    );
+    await runAfterCallbacks();
+
+    expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledOnce();
+    expect(pipelineMocks.generateMatchContent).toHaveBeenCalledOnce();
+    const finalPatch = fetchMock.mock.calls
+      .filter(([, init]) => init?.method === "PATCH")
+      .at(-1);
+    expect(JSON.parse(String(finalPatch?.[1]?.body)).content).toContain(
+      "プレビューの作り直しに失敗しました: 生成エラー",
     );
   });
 
