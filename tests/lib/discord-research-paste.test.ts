@@ -82,6 +82,57 @@ describe("parseResearchPaste", () => {
     ]);
   });
 
+  it("reads displayed copy without Markdown headings and skips 注記 bullets", () => {
+    const result = parseResearchPaste(
+      [
+        "出典: https://www.lequipe.fr/Rugby/story?utm_source=chatgpt.com",
+        "- ポーは試合前時点で4位、ラ・ロシェルは8位。",
+        "- ポーはトマ・アティソグベを先発起用する。",
+        "**出典:** https://www.section-paloise.com/actualites/story",
+        "- ポーはイベントを19時30分に設定している。",
+        "- 注記: 試合前コメント本文は確認できず。",
+      ].join("\n"),
+    );
+
+    expect(result.sources).toEqual([
+      {
+        sourceUrl: "https://www.lequipe.fr/Rugby/story",
+        facts: [
+          { fact: "ポーは試合前時点で4位、ラ・ロシェルは8位。", lineNumber: 2 },
+          { fact: "ポーはトマ・アティソグベを先発起用する。", lineNumber: 3 },
+        ],
+      },
+      {
+        sourceUrl: "https://www.section-paloise.com/actualites/story",
+        facts: [
+          { fact: "ポーはイベントを19時30分に設定している。", lineNumber: 5 },
+        ],
+      },
+    ]);
+    expect(result.skippedLines).toEqual([{ lineNumber: 6, reason: "note" }]);
+  });
+
+  it("ends a source at a plain-text heading or other non-bullet line", () => {
+    const result = parseResearchPaste(
+      [
+        "出典： https://example.com/story",
+        "- 出典に紐づく事実",
+        "補足",
+        "- 出典に紐づかない補足",
+        "出典: https://another.example/story",
+        "- 次の出典の事実",
+      ].join("\n"),
+    );
+
+    expect(
+      result.sources.map((source) => source.facts.map(({ fact }) => fact)),
+    ).toEqual([["出典に紐づく事実"], ["次の出典の事実"]]);
+    expect(result.skippedLines).toContainEqual({
+      lineNumber: 4,
+      reason: "outside_source",
+    });
+  });
+
   it("ends the current source at a second-level heading", () => {
     const result = parseResearchPaste(
       [
