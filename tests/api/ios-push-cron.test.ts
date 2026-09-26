@@ -8,8 +8,13 @@ const matchQueryMock = vi.hoisted(() => ({
   getMatchesInRange: vi.fn(),
 }));
 
+const dbMock = vi.hoisted(() => ({
+  getSupabaseServerClient: vi.fn(),
+}));
+
 vi.mock("@/lib/push/expo", () => expoMock);
 vi.mock("@/lib/db/queries/matches", () => matchQueryMock);
+vi.mock("@/lib/db/server", () => dbMock);
 
 type FakeMatch = {
   awayTeam: {
@@ -193,6 +198,9 @@ beforeEach(() => {
   process.env.VAPID_PUBLIC_KEY = "public";
   process.env.VAPID_SUBJECT = "mailto:test@example.com";
   process.env.WIKIPEDIA_SQUAD_URL = "https://example.com/squads";
+  dbMock.getSupabaseServerClient.mockImplementation(
+    () => createFakeClient().client,
+  );
   expoMock.sendExpoPushNotifications.mockImplementation((messages) =>
     Promise.resolve({
       deviceNotRegisteredTokens: [],
@@ -273,6 +281,42 @@ describe("sendPrematchPushNotifications", () => {
     ]);
   });
 
+  it("limits prematch notifications to three per token and logs remaining matches as zero", async () => {
+    const matches = Array.from({ length: 5 }, (_, index) =>
+      createMatch({
+        id: `prematch-${index + 1}`,
+        kickoffAt: new Date(Date.UTC(2026, 6, 18, 12, index)).toISOString(),
+      }),
+    );
+    const client = createFakeClient({
+      tokenRows: [
+        { team_slugs: ["japan"], token: "ExponentPushToken[one-device]" },
+      ],
+    });
+    const { sendPrematchPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    const summary = await sendPrematchPushNotifications(
+      matches as never,
+      client.client as never,
+    );
+
+    expect(summary.sentNotifications).toBe(3);
+    expect(expoMock.sendExpoPushNotifications).toHaveBeenCalledTimes(5);
+    expect(
+      expoMock.sendExpoPushNotifications.mock.calls
+        .slice(0, 3)
+        .map(([messages]) => messages[0]?.data.matchId),
+    ).toEqual(["prematch-1", "prematch-2", "prematch-3"]);
+    expect(client.insertedLogs).toEqual([
+      { kind: "prematch", match_id: "prematch-1", sent_count: 1 },
+      { kind: "prematch", match_id: "prematch-2", sent_count: 1 },
+      { kind: "prematch", match_id: "prematch-3", sent_count: 1 },
+      { kind: "prematch", match_id: "prematch-4", sent_count: 0 },
+      { kind: "prematch", match_id: "prematch-5", sent_count: 0 },
+    ]);
+  });
+
   it("excludes empty team slug tokens from prematch notifications", async () => {
     const client = createFakeClient({
       tokenRows: [
@@ -324,25 +368,121 @@ describe("sendContentPushNotifications", () => {
 
     expect(summary).toMatchObject({ sentMatches: 2, sentNotifications: 2 });
     expect(client.insertedLogs).toEqual([
-      { kind: "preview", match_id: "match-1", sent_count: 1 },
       { kind: "recap", match_id: "match-1", sent_count: 1 },
+      { kind: "preview", match_id: "match-1", sent_count: 1 },
     ]);
     const sentMessages = expoMock.sendExpoPushNotifications.mock.calls.flatMap(
       ([messages]) => messages,
     );
     expect(sentMessages).toEqual([
       expect.objectContaining({
-        title: "プレビュー公開",
-        body: "プレビュー公開: 日本 v フランス",
-      }),
-      expect.objectContaining({
         title: "試合レビュー公開",
         body: "試合レビュー公開: 日本 v フランス（スコアは開いてから）",
+      }),
+      expect.objectContaining({
+        title: "プレビュー公開",
+        body: "プレビュー公開: 日本 v フランス",
       }),
     ]);
     for (const message of sentMessages) {
       expect(message.body).not.toMatch(/\d+\s*[-–]\s*\d+/);
     }
+  });
+
+  it("sends the three newest articles per token and logs the rest as zero", async () => {
+    const contentRows = Array.from({ length: 5 }, (_, index) =>
+      createContentRow(
+        `content-${index + 1}`,
+        new Date(Date.UTC(2026, 6, 18, 0, index)).toISOString(),
+      ),
+    );
+    const client = createFakeClient({
+      contentRows,
+      tokenRows: [{ token: "ExponentPushToken[one-device]", team_slugs: [] }],
+    });
+    const { sendContentPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    const summary = await sendContentPushNotifications(
+      new Date("2026-07-18T01:00:00.000Z"),
+      client.client as never,
+    );
+
+    expect(summary.sentNotifications).toBe(3);
+    expect(expoMock.sendExpoPushNotifications).toHaveBeenCalledTimes(5);
+    expect(
+      expoMock.sendExpoPushNotifications.mock.calls
+        .slice(0, 3)
+        .map(([messages]) => messages[0]?.data.matchId),
+    ).toEqual(["content-5", "content-4", "content-3"]);
+    expect(client.insertedLogs).toEqual([
+      { kind: "preview", match_id: "content-5", sent_count: 1 },
+      { kind: "preview", match_id: "content-4", sent_count: 1 },
+      { kind: "preview", match_id: "content-3", sent_count: 1 },
+      { kind: "preview", match_id: "content-2", sent_count: 0 },
+      { kind: "preview", match_id: "content-1", sent_count: 0 },
+    ]);
+
+    expoMock.sendExpoPushNotifications.mockClear();
+    const rerunClient = createFakeClient({
+      contentRows,
+      loggedRows: client.insertedLogs as Array<{ kind: string; match_id: string }>,
+      tokenRows: [{ token: "ExponentPushToken[one-device]", team_slugs: [] }],
+    });
+    await sendContentPushNotifications(
+      new Date("2026-07-18T01:30:00.000Z"),
+      rerunClient.client as never,
+    );
+
+    expect(expoMock.sendExpoPushNotifications).not.toHaveBeenCalled();
+    expect(rerunClient.insertedLogs).toEqual([]);
+  });
+
+  it("applies each token's limit only to articles matching its selected teams", async () => {
+    const contentRows = Array.from({ length: 8 }, (_, index) =>
+      createContentRow(
+        `team-content-${index + 1}`,
+        new Date(Date.UTC(2026, 6, 18, 0, index)).toISOString(),
+        index % 2 === 0 ? "japan" : "wales",
+      ),
+    );
+    const client = createFakeClient({
+      contentRows,
+      tokenRows: [
+        { token: "ExponentPushToken[japan]", team_slugs: ["japan"] },
+        { token: "ExponentPushToken[wales]", team_slugs: ["wales"] },
+      ],
+    });
+    const { sendContentPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    const summary = await sendContentPushNotifications(
+      new Date("2026-07-18T01:00:00.000Z"),
+      client.client as never,
+    );
+
+    expect(summary.sentNotifications).toBe(6);
+    const sentMessages = expoMock.sendExpoPushNotifications.mock.calls.flatMap(
+      ([messages]) => messages,
+    );
+    expect(sentMessages.map((message) => message.to)).toEqual([
+      "ExponentPushToken[wales]",
+      "ExponentPushToken[japan]",
+      "ExponentPushToken[wales]",
+      "ExponentPushToken[japan]",
+      "ExponentPushToken[wales]",
+      "ExponentPushToken[japan]",
+    ]);
+    expect(client.insertedLogs).toContainEqual({
+      kind: "preview",
+      match_id: "team-content-1",
+      sent_count: 0,
+    });
+    expect(client.insertedLogs).toContainEqual({
+      kind: "preview",
+      match_id: "team-content-2",
+      sent_count: 0,
+    });
   });
 
   it("sends content notifications to empty and null team slug tokens", async () => {
@@ -468,17 +608,107 @@ describe("push notification cron routes", () => {
     expect(response.status).toBe(200);
     expect(matchQueryMock.getMatchesInRange).toHaveBeenCalledTimes(1);
   });
+
+  it("returns 200 with the summary when content notifications succeed", async () => {
+    dbMock.getSupabaseServerClient.mockReturnValue(createFakeClient().client);
+    const { GET } =
+      await import("@/app/api/cron/send-content-notifications/route");
+
+    const response = await GET(
+      new Request("http://localhost/api/cron/send-content-notifications", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      data: { failedMatches: 0 },
+      success: true,
+    });
+  });
+
+  it("returns 500 with the content notification summary when Expo sending fails", async () => {
+    const serverClient = createFakeClient({
+      contentRows: [createContentRow("content-1", "2026-07-18T00:00:00.000Z")],
+      tokenRows: [{ token: "ExponentPushToken[one-device]", team_slugs: [] }],
+    });
+    dbMock.getSupabaseServerClient.mockReturnValue(serverClient.client);
+    expoMock.sendExpoPushNotifications.mockRejectedValue(
+      new Error("expo unavailable"),
+    );
+    const { GET } =
+      await import("@/app/api/cron/send-content-notifications/route");
+
+    const response = await GET(
+      new Request("http://localhost/api/cron/send-content-notifications", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toMatchObject({
+      data: { failedMatches: 1 },
+      error: "notification_send_failed",
+      success: false,
+    });
+  });
+
+  it("returns 500 with the prematch notification summary when Expo sending fails", async () => {
+    const serverClient = createFakeClient({
+      tokenRows: [
+        { team_slugs: ["japan"], token: "ExponentPushToken[one-device]" },
+      ],
+    });
+    dbMock.getSupabaseServerClient.mockReturnValue(serverClient.client);
+    matchQueryMock.getMatchesInRange.mockResolvedValue([createMatch()]);
+    expoMock.sendExpoPushNotifications.mockRejectedValue(
+      new Error("expo unavailable"),
+    );
+    const { GET } =
+      await import("@/app/api/cron/send-prematch-notifications/route");
+
+    const response = await GET(
+      new Request("http://localhost/api/cron/send-prematch-notifications", {
+        headers: { Authorization: "Bearer test-cron-secret" },
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toMatchObject({
+      data: { failedMatches: 1 },
+      error: "notification_send_failed",
+      success: false,
+    });
+  });
+
 });
 
-function contentMatchRow() {
+function contentMatchRow(matchId = "match-1", homeTeamSlug = "japan") {
   return {
-    id: "match-1",
+    id: matchId,
     kickoff_at: "2026-07-18T12:40:00.000Z",
-    home_team: { slug: "japan", name: "Japan", name_ja: "日本" },
+    home_team: {
+      slug: homeTeamSlug,
+      name: homeTeamSlug === "wales" ? "Wales" : "Japan",
+      name_ja: homeTeamSlug === "wales" ? "ウェールズ" : "日本",
+    },
     away_team: { slug: "france", name: "France", name_ja: "フランス" },
     competition: {
       name: "Nations Championship",
       name_ja: "ネーションズチャンピオンシップ",
     },
+  };
+}
+
+function createContentRow(
+  matchId: string,
+  generatedAt: string,
+  homeTeamSlug = "japan",
+) {
+  return {
+    match_id: matchId,
+    content_type: "preview",
+    generated_at: generatedAt,
+    match: contentMatchRow(matchId, homeTeamSlug),
   };
 }

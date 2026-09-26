@@ -1,3 +1,5 @@
+import { NextResponse } from "next/server";
+
 import {
   apiError,
   apiSuccess,
@@ -18,6 +20,16 @@ export async function GET(request: Request) {
   }
 
   const summary = await sendContentPushNotifications();
+
+  if (summary.failedMatches > 0) {
+    return NextResponse.json(
+      { data: summary, error: "notification_send_failed", success: false },
+      {
+        headers: { "Cache-Control": PRIVATE_CACHE_CONTROL },
+        status: 500,
+      },
+    );
+  }
 
   return apiSuccess(summary, PRIVATE_CACHE_CONTROL);
 }

@@ -5,6 +5,7 @@ import type { NextConfig } from "next";
 getServerEnv(process.env);
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["expo-server-sdk"],
   eslint: {
     ignoreDuringBuilds: true,
   },
