@@ -33,6 +33,16 @@ function extractSourceUrl(line: string) {
   }
 }
 
+function isSourceLine(line: string) {
+  const withoutPrefix = line
+    .trimStart()
+    .replace(/^#+/u, "")
+    .replace(/^\*+/u, "")
+    .trimStart();
+
+  return /^(?:出典:|出典：)/u.test(withoutPrefix);
+}
+
 export function parseResearchPaste(text: string): ParsedResearchPaste {
   const sources: ParsedResearchSource[] = [];
   const skippedLines: ParsedResearchPaste["skippedLines"] = [];
@@ -41,7 +51,7 @@ export function parseResearchPaste(text: string): ParsedResearchPaste {
   for (const [index, rawLine] of text.split(/\r?\n/u).entries()) {
     const lineNumber = index + 1;
     const trimmedLine = rawLine.trim();
-    if (trimmedLine.startsWith("### 出典:")) {
+    if (isSourceLine(rawLine)) {
       const sourceUrl = extractSourceUrl(trimmedLine);
       activeSource = sourceUrl ? { sourceUrl, facts: [] } : null;
       if (activeSource) {
@@ -49,18 +59,20 @@ export function parseResearchPaste(text: string): ParsedResearchPaste {
       }
       continue;
     }
-    if (trimmedLine.startsWith("## ")) {
-      activeSource = null;
+    if (!trimmedLine) {
       continue;
     }
     if (!trimmedLine.startsWith("- ")) {
+      activeSource = null;
       continue;
     }
     if (!activeSource) {
       skippedLines.push({ lineNumber, reason: "outside_source" });
       continue;
     }
-    if (trimmedLine.startsWith("- **")) {
+    const factText = trimmedLine.slice(2);
+    const noteText = factText.replace(/\*\*/gu, "").trimStart();
+    if (trimmedLine.startsWith("- **") || /^(?:注記:|注記：)/u.test(noteText)) {
       skippedLines.push({ lineNumber, reason: "note" });
       continue;
     }
