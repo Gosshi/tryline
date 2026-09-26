@@ -15,7 +15,7 @@ const MAX_FACT_LENGTH = 300;
 const TRACKING_PARAMETERS = ["utm_source", "utm_medium", "utm_campaign"];
 
 function extractSourceUrl(line: string) {
-  const markdownLink = line.match(/\]\((https?:\/\/[^)\s]+)\)/u);
+  const markdownLink = line.match(/\]\(([^)\s]+)\)/u);
   const rawUrl =
     markdownLink?.[1] ?? line.match(/https?:\/\/\S+/u)?.[0] ?? null;
   if (!rawUrl) {

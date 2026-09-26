@@ -541,11 +541,13 @@ describe("POST /api/discord/interactions", () => {
     expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledOnce();
   });
 
-  it("does not save when a source URL is malformed", async () => {
+  it("rejects a research URL with an invalid scheme without saving", async () => {
     const fetchMock = stubFetchWithStatuses();
     await POST(
       createRequest(
-        researchSubmission("### 出典: https://[::bad\n- 不正URLの事実"),
+        researchSubmission(
+          "### 出典: [不正URL](javascript:alert)\n- 不正URLの事実",
+        ),
       ),
     );
     await runAfterCallbacks();
@@ -553,6 +555,12 @@ describe("POST /api/discord/interactions", () => {
     expect(
       fetchMock.mock.calls.filter(([, init]) => init?.method !== "PATCH"),
     ).toHaveLength(0);
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "出典 URL は http または https で指定してください",
+    );
   });
 
   it("does not save when checking a source URL fails to connect", async () => {
