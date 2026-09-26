@@ -10,6 +10,26 @@ export type PushNotificationKind = "prematch" | "preview" | "recap";
 
 export const MAX_NOTIFICATIONS_PER_TOKEN_PER_RUN = 3;
 
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export function previewNotificationSlot(kickoffAt: Date): Date {
+  const jst = new Date(kickoffAt.getTime() + JST_OFFSET_MS);
+  let slot = Date.UTC(
+    jst.getUTCFullYear(),
+    jst.getUTCMonth(),
+    jst.getUTCDate(),
+    13,
+    30,
+  );
+
+  if (slot >= kickoffAt.getTime()) {
+    slot -= DAY_MS;
+  }
+
+  return new Date(slot);
+}
+
 type PushTokenRow = {
   team_slugs: string[] | null;
   token: string;
@@ -52,17 +72,21 @@ type ContentNotificationRow = {
 
 export type PushCronSummary = {
   deletedInvalidTokens: number;
+  deferredPreviews: number;
   failedMatches: number;
   sentMatches: number;
   sentNotifications: number;
+  skippedAfterKickoff: number;
   skippedAlreadyLogged: number;
 };
 
 const EMPTY_SUMMARY: PushCronSummary = {
   deletedInvalidTokens: 0,
+  deferredPreviews: 0,
   failedMatches: 0,
   sentMatches: 0,
   sentNotifications: 0,
+  skippedAfterKickoff: 0,
   skippedAlreadyLogged: 0,
 };
 
@@ -256,9 +280,11 @@ function addSummary(a: PushCronSummary, b: Partial<PushCronSummary>) {
   return {
     deletedInvalidTokens:
       a.deletedInvalidTokens + (b.deletedInvalidTokens ?? 0),
+    deferredPreviews: a.deferredPreviews + (b.deferredPreviews ?? 0),
     failedMatches: a.failedMatches + (b.failedMatches ?? 0),
     sentMatches: a.sentMatches + (b.sentMatches ?? 0),
     sentNotifications: a.sentNotifications + (b.sentNotifications ?? 0),
+    skippedAfterKickoff: a.skippedAfterKickoff + (b.skippedAfterKickoff ?? 0),
     skippedAlreadyLogged:
       a.skippedAlreadyLogged + (b.skippedAlreadyLogged ?? 0),
   };
@@ -392,13 +418,30 @@ export async function sendContentPushNotifications(
   );
   let summary = { ...EMPTY_SUMMARY };
   const notificationsByToken = new Map<string, number>();
-  const newestFirstRows = [...rows].sort(
-    (a, b) =>
-      new Date(b.generated_at).getTime() -
-      new Date(a.generated_at).getTime(),
-  );
+  const orderedRows = [...rows].sort((a, b) => {
+    if (a.content_type !== b.content_type) {
+      return a.content_type === "recap" ? -1 : 1;
+    }
 
-  for (const row of newestFirstRows) {
+    if (a.content_type === "preview" && b.content_type === "preview") {
+      const aKickoff = Date.parse(a.match?.kickoff_at ?? "");
+      const bKickoff = Date.parse(b.match?.kickoff_at ?? "");
+      const aOrder = Number.isNaN(aKickoff)
+        ? Number.POSITIVE_INFINITY
+        : aKickoff;
+      const bOrder = Number.isNaN(bKickoff)
+        ? Number.POSITIVE_INFINITY
+        : bKickoff;
+
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder;
+      }
+    }
+
+    return Date.parse(b.generated_at) - Date.parse(a.generated_at);
+  });
+
+  for (const row of orderedRows) {
     const kind = row.content_type;
 
     if (kind !== "preview" && kind !== "recap") {
@@ -415,6 +458,27 @@ export async function sendContentPushNotifications(
     if (!match) {
       summary = addSummary(summary, { failedMatches: 1 });
       continue;
+    }
+
+    const kickoffTime = Date.parse(match.kickoffAt);
+
+    if (Number.isNaN(kickoffTime)) {
+      summary = addSummary(summary, { failedMatches: 1 });
+      continue;
+    }
+
+    if (kind === "preview") {
+      if (
+        now.getTime() < previewNotificationSlot(new Date(kickoffTime)).getTime()
+      ) {
+        summary = addSummary(summary, { deferredPreviews: 1 });
+        continue;
+      }
+
+      if (now.getTime() >= kickoffTime) {
+        summary = addSummary(summary, { skippedAfterKickoff: 1 });
+        continue;
+      }
     }
 
     const tokens = reserveTokensWithinRunLimit(
