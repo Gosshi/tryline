@@ -1048,3 +1048,20 @@ Lint と型チェックの50秒は CI と完全に重複しているが、**CI �
 また、**main の検証は CI だけが担保になる**。CI が赤いまま放置すれば、それは main が壊れていることそのものを意味する。
 
 **影響**: `specs/fix-build-time-prerender-scope.md` / `docs/codex-prompts/fix-build-time-prerender-scope.md` / `lib/db/queries/matches.ts` / `app/matches/[id]/page.tsx` / `app/matches/[id]/en/page.tsx` / `app/c/[competition]/[season]/round/[round]/page.tsx` / `next.config.ts` / `.github/workflows/ci.yml`
+
+## D035 — Discord の調査事実の貼り付けでは、401/403/429 の出典を確認操作なしで保存する（2026-09-26、Owner 承認済み。D032 の決定1、D033 の決定1 を改める）
+
+**背景**:
+
+ChatGPT で調べた事実の入力（`/調査事実を追加`）は、1 回の送信で「試合 1 つ・出典 URL 1 つ」しか扱えず、週末 18 試合で 40 回前後の送信と、毎回の URL のコピー・確度と出典確認の選択が必要だった。Owner の要望（2026-09-26）で、**試合の選択と ChatGPT の出力の貼り付けだけで完結させる**（`specs/feat-discord-research-fact-paste.md`）。Owner は「確度は high 固定、目視確認済みが既定でよい」と決めた。
+
+**決定**:
+
+1. **401・403・429 を返す出典は、モーダルでの確認操作なしに「目視確認済み」として保存する。** 「出典確認」の選択欄は削除する（D032 の決定1、D033 の決定1 を改める）
+2. **404・401/403/429 以外の 4xx/5xx・タイムアウト・接続失敗の出典は、引き続き保存しない**（D032 の決定2、D033 の決定2 はそのまま）。貼り付けの中のほかの出典の保存は続ける
+3. 保存した事実の `metadata` に HTTP ステータスを残すこと（D032 の決定3）は変えない。`metadata.entry_path` を `discord_research_paste` にして、確認操作を経ずに保存したことが後から分かるようにする
+4. 確度は `high` に固定する
+
+**この決定が潰さないもの**: **D032・D033 の唯一の担保だった「Owner がリンクを開いて確認したこと」がなくなる。** 401/403/429 を返すサイト（L'Équipe など）では、ChatGPT が存在しない URL を出典にしても、機械的にも人の目でも検出されずに保存される。以前、存在しない URL（404）の事実が入った事故があり、404 は引き続き拒否するが、ボット拒否のサイトではこの防御が効かない。後から問題が見つかった場合は、`metadata.entry_path = "discord_research_paste"` かつ `metadata.source_url_check = "owner_verified"` の行を一覧にして見直す。
+
+**影響**: `specs/feat-discord-research-fact-paste.md` / `docs/codex-prompts/feat-discord-research-fact-paste.md` / `app/api/discord/interactions/route.ts` / `lib/discord/research-paste.ts`
