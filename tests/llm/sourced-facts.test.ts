@@ -34,6 +34,8 @@ const dbMock = vi.hoisted(() => ({
   deleteOr: vi.fn(),
   from: vi.fn(),
   matchSingle: vi.fn(),
+  pipelineRunInsert: vi.fn(),
+  pipelineRun: null as unknown,
   sourcedFactsThen: vi.fn(),
   upsert: vi.fn(),
 }));
@@ -73,6 +75,17 @@ function createMatchBuilder() {
     eq: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     single: dbMock.matchSingle,
+  };
+}
+
+function createPipelineRunsBuilder(run: unknown = null) {
+  return {
+    eq: vi.fn().mockReturnThis(),
+    insert: dbMock.pipelineRunInsert,
+    limit: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue({ data: run, error: null }),
+    order: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
   };
 }
 
@@ -698,8 +711,232 @@ describe("fetchSourcedFactsForMatch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     dbMock.matchSingle.mockResolvedValue({ data: leagueOneMatch, error: null });
+    dbMock.pipelineRunInsert.mockResolvedValue({ error: null });
+    dbMock.pipelineRun = null;
     dbMock.upsert.mockResolvedValue({ error: null });
     jrfuMock.fetchJrfuMatchLineup.mockResolvedValue(null);
+  });
+
+  it("skips preview search for manual facts even when forced and records the skip", async () => {
+    const manualFact = cachedFact({
+      metadata: { entry_method: "manual" },
+      model_version: "manual",
+    });
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([manualFact]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: "match-1",
+    });
+
+    expect(result).toMatchObject({ cached: true, fetched: false });
+    expect(result.facts).toContainEqual(manualFact);
+    expect(openAIMock.createWebSearchJsonResponse).not.toHaveBeenCalled();
+    expect(dbMock.pipelineRunInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cost_usd: 0,
+        output: expect.objectContaining({
+          prompt_version: SEARCH_PROMPT_VERSION,
+          skipped_reason: "manual_facts_present",
+        }),
+        stage: 5,
+        status: "success",
+      }),
+    );
+  });
+
+  it("reuses a current successful search record when recap search returned no facts", async () => {
+    dbMock.pipelineRun = {
+      created_at: "2026-06-11T17:00:00.000Z",
+      output: { facts_found: 0, prompt_version: SEARCH_PROMPT_VERSION },
+      status: "success",
+    };
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "recap",
+      matchId: "match-1",
+      now: new Date("2026-06-11T18:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ cached: true, fetched: false, facts: [] });
+    expect(openAIMock.createWebSearchJsonResponse).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["stale prompt version", "sourced-facts@1.2.0", "success"],
+    ["failed search", SEARCH_PROMPT_VERSION, "failed"],
+  ])("searches again after a %s stage 5 record", async (_label, promptVersion, status) => {
+    dbMock.pipelineRun = {
+      created_at: "2026-06-11T17:00:00.000Z",
+      output: { facts_found: 0, prompt_version: promptVersion },
+      status,
+    };
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "recap",
+      matchId: "match-1",
+      now: new Date("2026-06-11T18:00:00.000Z"),
+    });
+
+    expect(result.fetched).toBe(true);
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
+  });
+
+  it("refreshes a preview after its successful zero-fact search is over 24 hours old", async () => {
+    dbMock.pipelineRun = {
+      created_at: "2026-06-08T17:00:00.000Z",
+      output: { facts_found: 0, prompt_version: SEARCH_PROMPT_VERSION },
+      status: "success",
+    };
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      matchId: "match-1",
+      now: new Date("2026-06-09T18:00:00.000Z"),
+    });
+
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
+  });
+
+  it("continues fact persistence when recording the pipeline run fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    dbMock.pipelineRunInsert.mockResolvedValueOnce({
+      error: new Error("pipeline run insert failed"),
+    });
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({
+        facts: [
+          {
+            confidence: "medium",
+            fact: "Kobe Steelers confirmed the matchday squad.",
+            source_url: "https://www.therugbypaper.co.uk/news/squad",
+          },
+        ],
+      }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    const result = await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: "match-1",
+    });
+
+    expect(result.facts).toHaveLength(1);
+    expect(dbMock.upsert).toHaveBeenCalledOnce();
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it("records search usage cost and records failures before rethrowing", async () => {
+    dbMock.from.mockImplementation((table: string) => {
+      if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
+      if (table === "match_sourced_facts") {
+        return createSourcedFactsBuilder([]);
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    openAIMock.createWebSearchJsonResponse.mockResolvedValue({
+      model: "gpt-4o-2024-11-20",
+      text: JSON.stringify({ facts: [] }),
+      usage: { inputTokens: 10, outputTokens: 10 },
+    });
+
+    await fetchSourcedFactsForMatch({
+      contentType: "preview",
+      force: true,
+      matchId: "match-1",
+    });
+
+    expect(dbMock.pipelineRunInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cost_usd: 0.000125,
+        output: expect.objectContaining({
+          facts_found: 0,
+          prompt_version: SEARCH_PROMPT_VERSION,
+          skipped_reason: null,
+        }),
+        stage: 5,
+        status: "success",
+      }),
+    );
+
+    const searchError = new Error("web search failed");
+    openAIMock.createWebSearchJsonResponse.mockRejectedValueOnce(searchError);
+    await expect(
+      fetchSourcedFactsForMatch({
+        contentType: "recap",
+        force: true,
+        matchId: "match-2",
+      }),
+    ).rejects.toBe(searchError);
+    expect(dbMock.pipelineRunInsert).toHaveBeenLastCalledWith(
+      expect.objectContaining({ stage: 5, status: "failed" }),
+    );
   });
 
   it("replaces only refreshed source domains, so revised wording converges without deleting other sources", async () => {
@@ -745,6 +982,9 @@ describe("fetchSourcedFactsForMatch", () => {
   it("does not persist a non-allowlisted fact from the automatic search path", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -808,6 +1048,9 @@ describe("fetchSourcedFactsForMatch", () => {
     const cachedRows = [cachedFact()];
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder(cachedRows);
       }
@@ -829,6 +1072,9 @@ describe("fetchSourcedFactsForMatch", () => {
     dbMock.matchSingle.mockResolvedValue({ data: japanMatch, error: null });
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -893,6 +1139,9 @@ describe("fetchSourcedFactsForMatch", () => {
     dbMock.matchSingle.mockResolvedValue({ data: japanMatch, error: null });
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -939,6 +1188,9 @@ describe("fetchSourcedFactsForMatch", () => {
     dbMock.matchSingle.mockResolvedValue({ data: japanMatch, error: null });
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -983,6 +1235,9 @@ describe("fetchSourcedFactsForMatch", () => {
   it("does not request a JRFU lineup for non-Japan matches", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -1297,6 +1552,9 @@ describe("fetchSourcedFactsForMatch", () => {
     ];
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder(cachedRows);
       }
@@ -1327,6 +1585,9 @@ describe("fetchSourcedFactsForMatch", () => {
     const cachedRows = [...manualFacts, ...automaticFacts];
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder(cachedRows);
       }
@@ -1367,6 +1628,9 @@ describe("fetchSourcedFactsForMatch", () => {
     ];
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder(cachedRows);
       }
@@ -1407,9 +1671,12 @@ describe("fetchSourcedFactsForMatch", () => {
     );
   });
 
-  it("retries a recap search once when the first response has no allowed facts", async () => {
+  it("searches recap once when the response has no allowed facts", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -1420,19 +1687,6 @@ describe("fetchSourcedFactsForMatch", () => {
         model: "gpt-4o-2024-11-20",
         text: JSON.stringify({ facts: [] }),
         usage: { inputTokens: 10, outputTokens: 10 },
-      })
-      .mockResolvedValueOnce({
-        model: "gpt-4o-2024-11-20",
-        text: JSON.stringify({
-          facts: [
-            {
-              confidence: "medium",
-              fact: "Kobe Steelers made fewer handling errors after halftime.",
-              source_url: "https://www.therugbypaper.co.uk/news/japan-recap",
-            },
-          ],
-        }),
-        usage: { inputTokens: 10, outputTokens: 10 },
       });
 
     const result = await fetchSourcedFactsForMatch({
@@ -1442,20 +1696,16 @@ describe("fetchSourcedFactsForMatch", () => {
       now: new Date("2026-06-09T18:00:00.000Z"),
     });
 
-    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledTimes(2);
-    expect(openAIMock.createWebSearchJsonResponse.mock.calls[1]?.[0]).toEqual(
-      openAIMock.createWebSearchJsonResponse.mock.calls[0]?.[0],
-    );
-    expect(result.facts).toEqual([
-      expect.objectContaining({
-        fact: "Kobe Steelers made fewer handling errors after halftime.",
-      }),
-    ]);
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
+    expect(result.facts).toEqual([]);
   });
 
-  it("retries a recap search once when non-empty facts have no statistical fact", async () => {
+  it("keeps the first recap response when it has no statistical fact", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -1474,19 +1724,6 @@ describe("fetchSourcedFactsForMatch", () => {
           ],
         }),
         usage: { inputTokens: 10, outputTokens: 10 },
-      })
-      .mockResolvedValueOnce({
-        model: "gpt-4o-2024-11-20",
-        text: JSON.stringify({
-          facts: [
-            {
-              confidence: "medium",
-              fact: "Kobe Steelers made 82% of their tackles while Kubota Spears made 90%.",
-              source_url: "https://www.therugbypaper.co.uk/news/japan-stats",
-            },
-          ],
-        }),
-        usage: { inputTokens: 10, outputTokens: 10 },
       });
 
     const result = await fetchSourcedFactsForMatch({
@@ -1496,10 +1733,10 @@ describe("fetchSourcedFactsForMatch", () => {
       now: new Date("2026-06-09T18:00:00.000Z"),
     });
 
-    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledTimes(2);
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
     expect(result.facts).toEqual([
       expect.objectContaining({
-        fact: "Kobe Steelers made 82% of their tackles while Kubota Spears made 90%.",
+        fact: "The head coach praised Kobe Steelers' response after halftime.",
       }),
     ]);
   });
@@ -1507,6 +1744,9 @@ describe("fetchSourcedFactsForMatch", () => {
   it("does not retry a recap search when one fact contains statistics", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -1541,9 +1781,12 @@ describe("fetchSourcedFactsForMatch", () => {
     expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
   });
 
-  it("returns an empty result after the recap retry also has no allowed facts", async () => {
+  it("returns an empty result after one recap search has no allowed facts", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -1562,7 +1805,7 @@ describe("fetchSourcedFactsForMatch", () => {
       now: new Date("2026-06-09T18:00:00.000Z"),
     });
 
-    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledTimes(2);
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
     expect(result.facts).toEqual([]);
     expect(dbMock.upsert).not.toHaveBeenCalled();
   });
@@ -1570,6 +1813,9 @@ describe("fetchSourcedFactsForMatch", () => {
   it("does not retry a preview search when non-empty facts have no statistics", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -1608,6 +1854,9 @@ describe("fetchSourcedFactsForMatch", () => {
     ];
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder(cachedRows);
       }
@@ -1627,7 +1876,7 @@ describe("fetchSourcedFactsForMatch", () => {
 
     expect(result.cached).toBe(false);
     expect(result.fetched).toBe(true);
-    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledTimes(2);
+    expect(openAIMock.createWebSearchJsonResponse).toHaveBeenCalledOnce();
   });
 
   it("keeps preview freshness expiry even when cached prompt version is current", async () => {
@@ -1639,6 +1888,9 @@ describe("fetchSourcedFactsForMatch", () => {
     ];
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder(cachedRows);
       }
@@ -1670,6 +1922,9 @@ describe("fetchSourcedFactsForMatch", () => {
     ];
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder(cachedRows);
       }
@@ -1698,6 +1953,9 @@ describe("fetchSourcedFactsForMatch", () => {
       .mockImplementation(() => undefined);
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -1750,6 +2008,9 @@ describe("fetchSourcedFactsForMatch", () => {
   it("stores recap fact_ja and normalizes missing or blank values to null", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }
@@ -1803,6 +2064,9 @@ describe("fetchSourcedFactsForMatch", () => {
   it("scopes web search away from DB-authoritative records and results", async () => {
     dbMock.from.mockImplementation((table: string) => {
       if (table === "matches") return createMatchBuilder();
+      if (table === "pipeline_runs") {
+        return createPipelineRunsBuilder(dbMock.pipelineRun);
+      }
       if (table === "match_sourced_facts") {
         return createSourcedFactsBuilder([]);
       }

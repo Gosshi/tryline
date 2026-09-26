@@ -168,6 +168,7 @@ describe("trial-content-models", () => {
 
   it("averages recent costs by pipeline run for the selected content type", async () => {
     const records = [
+      { content_type: "recap", match_id: "a", stage: 5, created_at: "2026-08-31T23:59:59Z", cost_usd: 8 },
       { content_type: "recap", match_id: "a", stage: 1, created_at: "2026-09-01T00:00:00Z", cost_usd: 0 },
       { content_type: "recap", match_id: "a", stage: 2, created_at: "2026-09-01T00:00:01Z", cost_usd: 0.1 },
       { content_type: "recap", match_id: "a", stage: 3, created_at: "2026-09-01T00:00:02Z", cost_usd: 0.1 },
