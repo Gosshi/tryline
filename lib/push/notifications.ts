@@ -8,6 +8,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type PushNotificationKind = "prematch" | "preview" | "recap";
 
+export const MAX_NOTIFICATIONS_PER_TOKEN_PER_RUN = 3;
+
 type PushTokenRow = {
   team_slugs: string[] | null;
   token: string;
@@ -189,6 +191,30 @@ async function deleteInvalidTokens(
   return tokens.length;
 }
 
+function reserveTokensWithinRunLimit(
+  tokens: PushTokenRow[],
+  countsByToken: Map<string, number>,
+) {
+  const seen = new Set<string>();
+  const selected: PushTokenRow[] = [];
+
+  for (const row of tokens) {
+    if (
+      seen.has(row.token) ||
+      (countsByToken.get(row.token) ?? 0) >=
+        MAX_NOTIFICATIONS_PER_TOKEN_PER_RUN
+    ) {
+      continue;
+    }
+
+    seen.add(row.token);
+    selected.push(row);
+    countsByToken.set(row.token, (countsByToken.get(row.token) ?? 0) + 1);
+  }
+
+  return selected;
+}
+
 async function sendForMatch(
   client: SupabaseClient<Database>,
   match: PushMatch,
@@ -248,6 +274,7 @@ export async function sendPrematchPushNotifications(
     ["prematch"],
   );
   let summary = { ...EMPTY_SUMMARY };
+  const notificationsByToken = new Map<string, number>();
 
   for (const match of matches) {
     if (loggedKeys.has(`${match.id}:prematch`)) {
@@ -255,7 +282,10 @@ export async function sendPrematchPushNotifications(
       continue;
     }
 
-    const tokens = await getTokensForMatch(client, match, "notify_prematch");
+    const tokens = reserveTokensWithinRunLimit(
+      await getTokensForMatch(client, match, "notify_prematch"),
+      notificationsByToken,
+    );
 
     try {
       const result = await sendForMatch(client, match, "prematch", tokens);
@@ -341,7 +371,7 @@ export async function getRecentPublishedContentRows(
     .eq("status", "published")
     .gte("generated_at", since)
     .in("content_type", ["preview", "recap"])
-    .order("generated_at", { ascending: true });
+    .order("generated_at", { ascending: false });
 
   if (error) {
     throw error;
@@ -361,8 +391,14 @@ export async function sendContentPushNotifications(
     ["preview", "recap"],
   );
   let summary = { ...EMPTY_SUMMARY };
+  const notificationsByToken = new Map<string, number>();
+  const newestFirstRows = [...rows].sort(
+    (a, b) =>
+      new Date(b.generated_at).getTime() -
+      new Date(a.generated_at).getTime(),
+  );
 
-  for (const row of rows) {
+  for (const row of newestFirstRows) {
     const kind = row.content_type;
 
     if (kind !== "preview" && kind !== "recap") {
@@ -381,7 +417,10 @@ export async function sendContentPushNotifications(
       continue;
     }
 
-    const tokens = await getTokensForMatch(client, match, "notify_content");
+    const tokens = reserveTokensWithinRunLimit(
+      await getTokensForMatch(client, match, "notify_content"),
+      notificationsByToken,
+    );
 
     try {
       const result = await sendForMatch(client, match, kind, tokens);
