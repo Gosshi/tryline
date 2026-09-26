@@ -339,7 +339,188 @@ describe("sendPrematchPushNotifications", () => {
   });
 });
 
+describe("previewNotificationSlot", () => {
+  it.each([
+    ["2026-09-27T09:30:00.000Z", "2026-09-26T13:30:00.000Z"],
+    ["2026-09-26T16:30:00.000Z", "2026-09-26T13:30:00.000Z"],
+    ["2026-09-26T14:00:00.000Z", "2026-09-26T13:30:00.000Z"],
+    ["2026-09-26T13:30:00.000Z", "2026-09-25T13:30:00.000Z"],
+  ])("returns the last 22:30 JST slot before %s", async (kickoff, expected) => {
+    const { previewNotificationSlot } =
+      await import("@/lib/push/notifications");
+
+    expect(previewNotificationSlot(new Date(kickoff)).toISOString()).toBe(
+      expected,
+    );
+  });
+});
+
 describe("sendContentPushNotifications", () => {
+  it("sends a recap even when now is after kickoff", async () => {
+    const recapRow = {
+      ...createContentRow("recap-past", "2026-09-26T10:00:00.000Z"),
+      content_type: "recap",
+    };
+    recapRow.match.kickoff_at = "2026-09-26T09:30:00.000Z";
+    const client = createFakeClient({
+      contentRows: [recapRow],
+      tokenRows: [{ token: "ExponentPushToken[one-device]", team_slugs: [] }],
+    });
+    const { sendContentPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    const summary = await sendContentPushNotifications(
+      new Date("2026-09-27T09:30:00.000Z"),
+      client.client as never,
+    );
+
+    expect(summary).toMatchObject({ sentMatches: 1, sentNotifications: 1 });
+    expect(client.insertedLogs).toEqual([
+      { kind: "recap", match_id: "recap-past", sent_count: 1 },
+    ]);
+  });
+
+  it("defers a preview until its notification slot and sends it at the slot", async () => {
+    const contentRows = [
+      createContentRow("match-1", "2026-09-26T10:00:00.000Z"),
+    ];
+    contentRows[0]!.match.kickoff_at = "2026-09-27T09:30:00.000Z";
+    const client = createFakeClient({
+      contentRows,
+      tokenRows: [{ token: "ExponentPushToken[one-device]", team_slugs: [] }],
+    });
+    const { sendContentPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    const deferred = await sendContentPushNotifications(
+      new Date("2026-09-26T11:30:00.000Z"),
+      client.client as never,
+    );
+
+    expect(deferred).toMatchObject({ deferredPreviews: 1, sentMatches: 0 });
+    expect(expoMock.sendExpoPushNotifications).not.toHaveBeenCalled();
+    expect(client.insertedLogs).toEqual([]);
+
+    const sendClient = createFakeClient({
+      contentRows,
+      tokenRows: [{ token: "ExponentPushToken[one-device]", team_slugs: [] }],
+    });
+    const sent = await sendContentPushNotifications(
+      new Date("2026-09-26T13:30:00.000Z"),
+      sendClient.client as never,
+    );
+
+    expect(sent).toMatchObject({ sentMatches: 1, sentNotifications: 1 });
+    expect(sendClient.insertedLogs).toEqual([
+      { kind: "preview", match_id: "match-1", sent_count: 1 },
+    ]);
+  });
+
+  it("skips a preview after kickoff without sending or logging", async () => {
+    const contentRows = [
+      createContentRow("match-1", "2026-09-26T10:00:00.000Z"),
+    ];
+    contentRows[0]!.match.kickoff_at = "2026-09-27T09:30:00.000Z";
+    const client = createFakeClient({
+      contentRows,
+      tokenRows: [{ token: "ExponentPushToken[one-device]", team_slugs: [] }],
+    });
+    const { sendContentPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    const summary = await sendContentPushNotifications(
+      new Date("2026-09-27T09:30:00.000Z"),
+      client.client as never,
+    );
+
+    expect(summary).toMatchObject({ skippedAfterKickoff: 1, sentMatches: 0 });
+    expect(expoMock.sendExpoPushNotifications).not.toHaveBeenCalled();
+    expect(client.insertedLogs).toEqual([]);
+  });
+
+  it("counts an unparseable kickoff as failed without sending or logging", async () => {
+    const contentRows = [
+      createContentRow("match-1", "2026-09-26T10:00:00.000Z"),
+    ];
+    contentRows[0]!.match.kickoff_at = "not-a-date";
+    const client = createFakeClient({
+      contentRows,
+      tokenRows: [{ token: "ExponentPushToken[one-device]", team_slugs: [] }],
+    });
+    const { sendContentPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    const summary = await sendContentPushNotifications(
+      new Date("2026-09-26T13:30:00.000Z"),
+      client.client as never,
+    );
+
+    expect(summary).toMatchObject({ failedMatches: 1, sentMatches: 0 });
+    expect(expoMock.sendExpoPushNotifications).not.toHaveBeenCalled();
+    expect(client.insertedLogs).toEqual([]);
+  });
+
+  it("sends recaps first and eligible previews in earliest kickoff order", async () => {
+    const contentRows = [
+      {
+        ...createContentRow("preview-late", "2026-09-26T10:00:00.000Z"),
+        match: {
+          ...contentMatchRow("preview-late"),
+          kickoff_at: "2026-09-26T20:00:00.000Z",
+        },
+      },
+      {
+        ...createContentRow("recap-old", "2026-09-26T09:00:00.000Z"),
+        content_type: "recap",
+      },
+      {
+        ...createContentRow("preview-early", "2026-09-26T08:00:00.000Z"),
+        match: {
+          ...contentMatchRow("preview-early"),
+          kickoff_at: "2026-09-26T14:00:00.000Z",
+        },
+      },
+      {
+        ...createContentRow("recap-new", "2026-09-26T11:00:00.000Z"),
+        content_type: "recap",
+      },
+      {
+        ...createContentRow("preview-mid", "2026-09-26T12:00:00.000Z"),
+        match: {
+          ...contentMatchRow("preview-mid"),
+          kickoff_at: "2026-09-26T16:00:00.000Z",
+        },
+      },
+      {
+        ...createContentRow("preview-later", "2026-09-26T07:00:00.000Z"),
+        match: {
+          ...contentMatchRow("preview-later"),
+          kickoff_at: "2026-09-26T18:00:00.000Z",
+        },
+      },
+    ];
+    const client = createFakeClient({
+      contentRows,
+      tokenRows: [{ token: "ExponentPushToken[one-device]", team_slugs: [] }],
+    });
+    const { sendContentPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    const summary = await sendContentPushNotifications(
+      new Date("2026-09-26T13:30:00.000Z"),
+      client.client as never,
+    );
+
+    expect(summary.sentNotifications).toBe(3);
+    expect(client.insertedLogs).toEqual([
+      { kind: "recap", match_id: "recap-new", sent_count: 1 },
+      { kind: "recap", match_id: "recap-old", sent_count: 1 },
+      { kind: "preview", match_id: "preview-early", sent_count: 1 },
+      { kind: "preview", match_id: "preview-mid", sent_count: 0 },
+      { kind: "preview", match_id: "preview-later", sent_count: 0 },
+      { kind: "preview", match_id: "preview-late", sent_count: 0 },
+    ]);
+  });
   it("sends preview and recap as separate log kinds without score text", async () => {
     const contentRows = [
       {
@@ -629,7 +810,12 @@ describe("push notification cron routes", () => {
 
   it("returns 500 with the content notification summary when Expo sending fails", async () => {
     const serverClient = createFakeClient({
-      contentRows: [createContentRow("content-1", "2026-07-18T00:00:00.000Z")],
+      contentRows: [
+        {
+          ...createContentRow("content-1", "2026-07-18T00:00:00.000Z"),
+          content_type: "recap",
+        },
+      ],
       tokenRows: [{ token: "ExponentPushToken[one-device]", team_slugs: [] }],
     });
     dbMock.getSupabaseServerClient.mockReturnValue(serverClient.client);
