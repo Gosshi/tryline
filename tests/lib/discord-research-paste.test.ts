@@ -81,4 +81,25 @@ describe("parseResearchPaste", () => {
       { lineNumber: 2, reason: "outside_source" },
     ]);
   });
+
+  it("ends the current source at a second-level heading", () => {
+    const result = parseResearchPaste(
+      [
+        "### 出典: https://example.com/story",
+        "- 出典に紐づく事実",
+        "## 補足",
+        "- 出典に紐づかない補足",
+        "### 出典: https://another.example/story",
+        "- 次の出典の事実",
+      ].join("\n"),
+    );
+
+    expect(
+      result.sources.map((source) => source.facts.map(({ fact }) => fact)),
+    ).toEqual([["出典に紐づく事実"], ["次の出典の事実"]]);
+    expect(result.skippedLines).toContainEqual({
+      lineNumber: 4,
+      reason: "outside_source",
+    });
+  });
 });

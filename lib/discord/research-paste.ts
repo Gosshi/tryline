@@ -49,7 +49,10 @@ export function parseResearchPaste(text: string): ParsedResearchPaste {
       }
       continue;
     }
-
+    if (trimmedLine.startsWith("## ")) {
+      activeSource = null;
+      continue;
+    }
     if (!trimmedLine.startsWith("- ")) {
       continue;
     }

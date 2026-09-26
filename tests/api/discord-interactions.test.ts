@@ -206,6 +206,23 @@ describe("POST /api/discord/interactions", () => {
     expect(supabaseMocks.from).not.toHaveBeenCalled();
   });
 
+  it("returns PONG for a signed Discord PING", async () => {
+    const response = await POST(createRequest({ type: 1 }));
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ type: 1 });
+  });
+
+  it("rejects an interaction invoked by anyone other than the owner", async () => {
+    const response = await POST(
+      createRequest({
+        ...researchCommand(),
+        user: { id: "987654321098765432" },
+      }),
+    );
+    expect(response.status).toBe(403);
+    expect(supabaseMocks.from).not.toHaveBeenCalled();
+  });
+
   it("opens a modal with only a match selector and 4,000-character paste field", async () => {
     supabaseMocks.candidateLte.mockResolvedValue({
       data: [
@@ -289,6 +306,60 @@ describe("POST /api/discord/interactions", () => {
       "保存: 2件（出典 2 本）、重複スキップ: 1件",
     );
   });
+
+  it("uses recap for research facts after kickoff", async () => {
+    stubFetchWithStatuses();
+    supabaseMocks.matchMaybeSingle.mockResolvedValue({
+      data: { kickoff_at: "2026-08-26T09:00:00.000Z" },
+      error: null,
+    });
+    await POST(
+      createRequest(
+        researchSubmission("### 出典: https://example.com\n- 試合後の事実。"),
+      ),
+    );
+    await runAfterCallbacks();
+    expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledWith(
+      [expect.objectContaining({ confidence: "high", content_type: "recap" })],
+      expect.any(Object),
+    );
+  });
+
+  it.each([401, 403, 429])(
+    "stores a %i source URL as owner verified automatically",
+    async (status) => {
+      const fetchMock = stubFetchWithStatuses({ "blocked.example": status });
+      await POST(
+        createRequest(
+          researchSubmission(
+            "### 出典: https://blocked.example/story\n- 目視確認扱いの事実。",
+          ),
+        ),
+      );
+      await runAfterCallbacks();
+
+      expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledWith(
+        [
+          expect.objectContaining({
+            confidence: "high",
+            metadata: {
+              entry_method: "manual",
+              entry_path: "discord_research_paste",
+              source_url_check: "owner_verified",
+              source_url_http_status: status,
+            },
+          }),
+        ],
+        expect.any(Object),
+      );
+      const patchCall = fetchMock.mock.calls.find(
+        ([, init]) => init?.method === "PATCH",
+      );
+      expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+        `目視確認済みとして保存: blocked.example（HTTP ${status}）`,
+      );
+    },
+  );
 
   it("stores 403 facts as owner verified and rejects a 404 source independently", async () => {
     const fetchMock = stubFetchWithStatuses({
@@ -394,6 +465,156 @@ describe("POST /api/discord/interactions", () => {
     expect(content).toContain("- 手動事実 17");
   });
 
+  it("does not append a generation-cap notice for five manual facts", async () => {
+    const fetchMock = stubFetchWithStatuses();
+    supabaseMocks.sourcedFactsQueryRows = manualSourcedFactRows(5);
+    await POST(
+      createRequest(
+        researchSubmission("### 出典: https://example.com/story\n- 新しい事実"),
+      ),
+    );
+    await runAfterCallbacks();
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).not.toContain(
+      "生成に使われる",
+    );
+  });
+
+  it("notifies the owner when all twelve manual facts will be used", async () => {
+    const fetchMock = stubFetchWithStatuses();
+    supabaseMocks.sourcedFactsQueryRows = manualSourcedFactRows(12);
+    await POST(
+      createRequest(
+        researchSubmission("### 出典: https://example.com/story\n- 新しい事実"),
+      ),
+    );
+    await runAfterCallbacks();
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "全件が生成に使われ、自動取得の事実は使われません",
+    );
+  });
+
+  it("keeps a hundred-manual-fact notice within Discord's content limit", async () => {
+    const fetchMock = stubFetchWithStatuses();
+    supabaseMocks.sourcedFactsQueryRows = Array.from(
+      { length: 100 },
+      (_, index) => ({
+        ...manualSourcedFactRows(1)[0],
+        fact: `手動事実 ${index + 1} ${"長".repeat(100)}`,
+      }),
+    );
+    await POST(
+      createRequest(
+        researchSubmission("### 出典: https://example.com/story\n- 新しい事実"),
+      ),
+    );
+    await runAfterCallbacks();
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    const content = JSON.parse(String(patchCall?.[1]?.body)).content as string;
+    expect(content.length).toBeLessThanOrEqual(2_000);
+    expect(content).toContain("この試合の手動事実は100件");
+    expect(content).toMatch(/…ほか\d+件$/u);
+  });
+
+  it("keeps a saved fact successful when generation-counting fails", async () => {
+    const fetchMock = stubFetchWithStatuses();
+    supabaseMocks.sourcedFactsQueryError = new Error("count failed");
+    await POST(
+      createRequest(
+        researchSubmission("### 出典: https://example.com/story\n- 新しい事実"),
+      ),
+    );
+    await runAfterCallbacks();
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "（件数の確認に失敗しました）",
+    );
+    expect(supabaseMocks.sourcedFactsUpsert).toHaveBeenCalledOnce();
+  });
+
+  it("does not save when a source URL is malformed", async () => {
+    const fetchMock = stubFetchWithStatuses();
+    await POST(
+      createRequest(
+        researchSubmission("### 出典: https://[::bad\n- 不正URLの事実"),
+      ),
+    );
+    await runAfterCallbacks();
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    expect(
+      fetchMock.mock.calls.filter(([, init]) => init?.method !== "PATCH"),
+    ).toHaveLength(0);
+  });
+
+  it("does not save when checking a source URL fails to connect", async () => {
+    const fetchMock = vi.fn(
+      async (_input: string | URL | Request, init?: RequestInit) => {
+        if (init?.method === "PATCH") {
+          return new Response(null, { status: 204 });
+        }
+        throw new TypeError("fetch failed");
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await POST(
+      createRequest(
+        researchSubmission(
+          "### 出典: https://example.com/story\n- 接続失敗の事実",
+        ),
+      ),
+    );
+    await runAfterCallbacks();
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "接続できませんでした",
+    );
+  });
+
+  it("does not save when source validation times out", async () => {
+    const fetchMock = vi.fn(
+      async (_input: string | URL | Request, init?: RequestInit) => {
+        if (init?.method === "PATCH") {
+          return new Response(null, { status: 204 });
+        }
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("Aborted", "AbortError"));
+          });
+        });
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await POST(
+      createRequest(
+        researchSubmission(
+          "### 出典: https://example.com/story\n- timeoutの事実",
+        ),
+      ),
+    );
+    const afterPromise = runAfterCallbacks();
+    await vi.advanceTimersByTimeAsync(5_000);
+    await afterPromise;
+    expect(supabaseMocks.sourcedFactsUpsert).not.toHaveBeenCalled();
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "5 秒でタイムアウト",
+    );
+  });
+
   it("reports missing source blocks and skipped lines without saving", async () => {
     const fetchMock = stubFetchWithStatuses();
     const paste = [
@@ -419,6 +640,30 @@ describe("POST /api/discord/interactions", () => {
     const content = JSON.parse(String(patchCall?.[1]?.body)).content as string;
     expect(content).toContain(
       "読み飛ばした行: 1行目（出典ブロック外）、3行目（出典ブロック外）、6行目（300字超）、7行目（注記）",
+    );
+  });
+
+  it("does not save facts under a supplement heading", async () => {
+    const fetchMock = stubFetchWithStatuses();
+    const paste = [
+      "### 出典: https://example.com/story",
+      "- 出典に紐づく事実",
+      "## 補足",
+      "- 出典に紐づかない補足",
+    ].join("\n");
+
+    await POST(createRequest(researchSubmission(paste)));
+    await runAfterCallbacks();
+
+    const rows = supabaseMocks.sourcedFactsUpsert.mock.calls[0]?.[0];
+    expect(rows).toEqual([
+      expect.objectContaining({ fact: "出典に紐づく事実" }),
+    ]);
+    const patchCall = fetchMock.mock.calls.find(
+      ([, init]) => init?.method === "PATCH",
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body)).content).toContain(
+      "読み飛ばした行: 4行目（出典ブロック外）",
     );
   });
 
