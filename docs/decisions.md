@@ -1065,3 +1065,21 @@ ChatGPT で調べた事実の入力（`/調査事実を追加`）は、1 回の�
 **この決定が潰さないもの**: **D032・D033 の唯一の担保だった「Owner がリンクを開いて確認したこと」がなくなる。** 401/403/429 を返すサイト（L'Équipe など）では、ChatGPT が存在しない URL を出典にしても、機械的にも人の目でも検出されずに保存される。以前、存在しない URL（404）の事実が入った事故があり、404 は引き続き拒否するが、ボット拒否のサイトではこの防御が効かない。後から問題が見つかった場合は、`metadata.entry_path = "discord_research_paste"` かつ `metadata.source_url_check = "owner_verified"` の行を一覧にして見直す。
 
 **影響**: `specs/feat-discord-research-fact-paste.md` / `docs/codex-prompts/feat-discord-research-fact-paste.md` / `app/api/discord/interactions/route.ts` / `lib/discord/research-paste.ts`
+
+## D036 — 手動入力の事実は最大30件まで生成に渡し、同時刻の事実は貼った順に並べる（2026-09-27、Owner 承認済み。D031 の決定1を改める）
+
+**背景**:
+
+2026-09-27 0:01（JST）、オーストラリア 対 南アフリカ（同日 18:30 キックオフ）に Discord から21件を貼った。**上限16件にかかって5件が落ちた。** 落ちたのは南アフリカ側の先発13人変更・新しいハーフ団・主力の休養など、プレビューの軸になる事実だった。
+
+さらに、**「新しい順」の説明が実態と違っていた。** 1回の貼り付けで入る事実は `fetched_at` がすべて同じ時刻になり、並びは `fact` の文字列順（`lib/llm/sourced-facts/fetch.ts` の `loadAllowedSourcedFactRows`）で決まる。落ちる5件は「新しくないもの」ではなく「あいうえお順で最後の5件」だった。
+
+**決定**:
+
+1. **手動事実は最大30件まで生成に渡す**（`MAX_MANUAL_FACTS_FOR_GENERATION = 30`）
+2. **同じ `fetched_at` の手動事実は、貼り付けた順に並べる。** 保存時に貼り付けの中の順番を `metadata.paste_index` に持たせる。ChatGPT に「重要な順」に書かせれば、上限にかかっても重要なものが残る
+3. D031 の決定2〜4（自動の事実の埋め方、上限超過の Discord 通知、キャッシュ判定）は変えない
+
+**費用**: D031 の実測（手動を8件増やすと1本あたり最大約 $0.011）から、16件→30件で1本あたり最大約 $0.02 増える。16件を超える試合は週に数試合なので、週 $0.1 未満。
+
+**影響**: `specs/fix-manual-facts-cap-30-paste-order.md` / 同名 codex-prompt / `lib/llm/sourced-facts/fetch.ts` / `app/api/discord/interactions/route.ts`
