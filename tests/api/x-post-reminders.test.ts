@@ -225,9 +225,9 @@ beforeEach(() => {
 describe("GET /api/cron/x-post-reminders", () => {
   it("creates only representative tasks and upserts idempotently", async () => {
     reminderMock.matches = [
-      makeMatch("international-match", "australia-south-africa-test", "2026-09-27T12:00:00.000Z"),
-      makeMatch("club-match", "urc", "2026-09-27T12:00:00.000Z"),
-      makeMatch("cancelled-match", "nations-championship", "2026-09-27T12:00:00.000Z", "cancelled"),
+      makeMatch("international-match", "australia-south-africa-test", "2026-09-27T09:30:00.000Z"),
+      makeMatch("club-match", "urc", "2026-09-27T09:30:00.000Z"),
+      makeMatch("cancelled-match", "nations-championship", "2026-09-27T09:30:00.000Z", "cancelled"),
     ];
     setCredentials({ DISCORD_BOT_TOKEN: undefined });
 
@@ -246,6 +246,9 @@ describe("GET /api/cron/x-post-reminders", () => {
       ["international-match", "prematch"],
       ["international-match", "postmatch"],
     ]);
+    expect(reminderMock.tasks.find((task) => task.kind === "postmatch")?.due_at).toBe(
+      "2026-09-27T23:30:00.000Z",
+    );
   });
 
   it("sends a due prematch reminder with an owner-only mention and two buttons", async () => {
@@ -278,6 +281,43 @@ describe("GET /api/cron/x-post-reminders", () => {
       discord_message_id: "345678901234567890",
       reminded_at: "2026-09-26T12:00:00.000Z",
     });
+  });
+
+  it("defers an initial postmatch reminder during JST quiet hours but sends at 8:00", async () => {
+    vi.setSystemTime(new Date("2026-09-27T18:00:00.000Z"));
+    reminderMock.tasks = [
+      makeTask("postmatch", {
+        due_at: "2026-09-27T17:00:00.000Z",
+        match: makeMatch("match-1", "australia-south-africa-test", "2026-09-27T09:30:00.000Z", "finished"),
+      }),
+    ];
+
+    await runCron();
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(reminderMock.tasks[0]?.reminded_at).toBeNull();
+
+    vi.clearAllMocks();
+    vi.setSystemTime(new Date("2026-09-27T23:00:00.000Z"));
+    await runCron();
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(reminderMock.tasks[0]?.reminded_at).toBe("2026-09-27T23:00:00.000Z");
+  });
+
+  it("sends a due prematch reminder during JST quiet hours", async () => {
+    vi.setSystemTime(new Date("2026-09-27T15:40:00.000Z"));
+    reminderMock.tasks = [
+      makeTask("prematch", {
+        due_at: "2026-09-27T13:30:00.000Z",
+        match: makeMatch("match-1", "australia-south-africa-test", "2026-09-27T16:30:00.000Z"),
+      }),
+    ];
+
+    await runCron();
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(reminderMock.tasks[0]?.reminded_at).toBe("2026-09-27T15:40:00.000Z");
   });
 
   it("does not send a prematch reminder before due_at", async () => {
@@ -356,7 +396,8 @@ describe("GET /api/cron/x-post-reminders", () => {
   });
 
   it("sends a postmatch reminder without an article after the fallback due time", async () => {
-    reminderMock.tasks = [makeTask("postmatch", { due_at: "2026-09-26T11:00:00.000Z" })];
+    vi.setSystemTime(new Date("2026-09-27T02:30:00.000Z"));
+    reminderMock.tasks = [makeTask("postmatch", { due_at: "2026-09-27T02:00:00.000Z" })];
     await runCron();
     const [, init] = vi.mocked(fetch).mock.calls[0] ?? [];
     expect(JSON.parse(String(init?.body)).content).toContain("記事はまだありません");
