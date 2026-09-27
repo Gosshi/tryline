@@ -8,13 +8,8 @@ import {
   getCompetitionDisplayName,
 } from "@/lib/format/competition";
 import { getTeamDisplayName } from "@/lib/format/team";
-import { generateImpressionTweet } from "@/lib/x/impression-tweet";
 import { buildMatchShareUrl } from "@/lib/x/match-url";
 import { buildLinklessReplyText, buildTweetText } from "@/lib/x/post";
-import {
-  generatePreviewThread,
-  type PreviewThread,
-} from "@/lib/x/preview-thread";
 import { buildOfficialReplyText, type TryScorer } from "@/lib/x/reply-text";
 
 export const maxDuration = 60;
@@ -151,38 +146,6 @@ function truncateDiscordCodeBlockValue(text: string): string {
   return `\`\`\`\n${trimmedText}\n\`\`\``;
 }
 
-function pushPreviewThreadFields(
-  embed: DiscordEmbed,
-  thread: PreviewThread,
-): void {
-  const tweet1 = `🐦 ツイート1\n\`\`\`\n${thread.tweet1}\n\`\`\``;
-  const tweet2 = `🐦 ツイート2\n\`\`\`\n${thread.tweet2}\n\`\`\``;
-  const tweet3 = `🐦 ツイート3（リプライ）\n\`\`\`\n${thread.tweet3}\n\`\`\``;
-  const value = [tweet1, tweet2, tweet3].join("\n\n");
-
-  if (value.length <= DISCORD_FIELD_VALUE_LIMIT) {
-    embed.fields.push({
-      inline: false,
-      name: "⑤ プレビュースレッド案（手動投稿用）",
-      value,
-    });
-    return;
-  }
-
-  embed.fields.push(
-    {
-      inline: false,
-      name: "⑤-1 プレビュースレッド案（手動投稿用）",
-      value: [tweet1, tweet2].join("\n\n").slice(0, DISCORD_FIELD_VALUE_LIMIT),
-    },
-    {
-      inline: false,
-      name: "⑤-2 プレビュースレッド案（手動投稿用）",
-      value: tweet3.slice(0, DISCORD_FIELD_VALUE_LIMIT),
-    },
-  );
-}
-
 function appendOfficialReplyFields(
   embed: DiscordEmbed,
   params: {
@@ -226,30 +189,6 @@ function appendOfficialReplyFields(
       value: truncateDiscordCodeBlockValue(enReply),
     },
   );
-}
-
-async function appendReadingHookTweetField(
-  embed: DiscordEmbed,
-  params: {
-    awayScore: number;
-    awayTeamName: string;
-    competitionLabel: string;
-    homeScore: number;
-    homeTeamName: string;
-    recapExcerpt: string;
-    tryScorers: TryScorer[];
-  },
-): Promise<void> {
-  const readingHookTweet = await generateImpressionTweet(params);
-  if (!readingHookTweet) {
-    return;
-  }
-
-  embed.fields.push({
-    inline: false,
-    name: "⑥ 読みどころ投稿案（URLなし）",
-    value: truncateDiscordCodeBlockValue(readingHookTweet),
-  });
 }
 
 async function postToDiscord(
@@ -479,36 +418,8 @@ export async function POST(request: Request) {
           homeTeamNameJa: formatJapaneseTeamName(homeTeam, "Home"),
           tryScorers,
         });
-        await appendReadingHookTweetField(embed, {
-          awayScore: match.away_score ?? 0,
-          awayTeamName: awayDisplayName,
-          competitionLabel,
-          homeScore: match.home_score ?? 0,
-          homeTeamName: homeDisplayName,
-          recapExcerpt: createRecapExcerpt(content.content_md).slice(0, 200),
-          tryScorers,
-        });
       }
 
-      if (content.content_type === "preview" && content.language === "ja") {
-        const embed = payload.embeds[0];
-        if (!embed) {
-          throw new Error("Discord payload embed is missing.");
-        }
-
-        const thread = await generatePreviewThread({
-          awayTeamName: awayDisplayName,
-          competitionFamily: competition?.family ?? null,
-          competitionLabel,
-          homeTeamName: homeDisplayName,
-          matchId: content.match_id,
-          previewMarkdown: content.content_md,
-        });
-
-        if (thread) {
-          pushPreviewThreadFields(embed, thread);
-        }
-      }
       const webhookUrl =
         content.language === "en"
           ? requireDiscordWebhook(DISCORD_WEBHOOK_EN, "DISCORD_WEBHOOK_EN")

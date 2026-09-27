@@ -66,6 +66,86 @@ function interactionResponse(content: string) {
   });
 }
 
+
+const X_POST_BUTTON_PATTERN = /^x_post:([0-9a-f-]{36}):(posted|skipped)$/;
+
+type XPostResult = "posted" | "skipped";
+
+function updateMessageResponse(content: string) {
+  return Response.json({
+    data: { components: [], content },
+    type: 7,
+  });
+}
+
+function formatXPostResolvedAt(date: Date): string {
+  return new Intl.DateTimeFormat("ja-JP", {
+    hour: "2-digit",
+    hourCycle: "h23",
+    minute: "2-digit",
+    timeZone: "Asia/Tokyo",
+  }).format(date);
+}
+
+function xPostResultLabel(status: string, date: Date): string {
+  const time = formatXPostResolvedAt(date);
+  if (status === "posted") {
+    return `✅ 投稿済み（${time}）`;
+  }
+  if (status === "skipped") {
+    return `⏭ 見送り（${time}）`;
+  }
+  return "この投稿タスクはすでに終了しています。";
+}
+
+async function handleXPostButton(interaction: DiscordInteraction) {
+  const customId = interaction.data?.custom_id;
+  if (typeof customId !== "string") {
+    return interactionResponse("未対応のDiscord操作です。");
+  }
+
+  const match = X_POST_BUTTON_PATTERN.exec(customId);
+  if (!match?.[1] || !match[2]) {
+    return interactionResponse("未対応のDiscord操作です。");
+  }
+
+  const taskId = match[1];
+  const result = match[2] as XPostResult;
+  const now = new Date();
+  const db = getSupabaseServerClient();
+  const { data, error } = await db
+    .from("x_post_tasks")
+    .update({ resolved_at: now.toISOString(), status: result })
+    .eq("id", taskId)
+    .eq("status", "pending")
+    .select("status")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (data?.status) {
+    return updateMessageResponse(xPostResultLabel(data.status, now));
+  }
+
+  const { data: existing, error: existingError } = await db
+    .from("x_post_tasks")
+    .select("status")
+    .eq("id", taskId)
+    .maybeSingle();
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  return updateMessageResponse(
+    existing?.status
+      ? xPostResultLabel(existing.status, now)
+      : "この投稿タスクは見つかりません。",
+  );
+}
+
 function deferredInteractionResponse() {
   return Response.json({
     data: { flags: EPHEMERAL },
@@ -708,6 +788,10 @@ export async function POST(request: Request) {
   }
   if (getInteractionUserId(interaction) !== DISCORD_OWNER_USER_ID) {
     return new Response("Forbidden", { status: 403 });
+  }
+
+  if (interaction.type === 3) {
+    return handleXPostButton(interaction);
   }
 
   if (interaction.type === 2) {

@@ -506,6 +506,53 @@ export type Database = {
           },
         ];
       };
+      x_post_tasks: {
+        Row: {
+          created_at: string;
+          discord_message_id: string | null;
+          due_at: string;
+          id: string;
+          kind: string;
+          match_id: string;
+          re_reminded_at: string | null;
+          reminded_at: string | null;
+          resolved_at: string | null;
+          status: string;
+        };
+        Insert: {
+          created_at?: string;
+          discord_message_id?: string | null;
+          due_at: string;
+          id?: string;
+          kind: string;
+          match_id: string;
+          re_reminded_at?: string | null;
+          reminded_at?: string | null;
+          resolved_at?: string | null;
+          status?: string;
+        };
+        Update: {
+          created_at?: string;
+          discord_message_id?: string | null;
+          due_at?: string;
+          id?: string;
+          kind?: string;
+          match_id?: string;
+          re_reminded_at?: string | null;
+          reminded_at?: string | null;
+          resolved_at?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "x_post_tasks_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       match_content: {
         Row: {
           content_md: string;
