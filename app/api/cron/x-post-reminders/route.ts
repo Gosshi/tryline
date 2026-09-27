@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
+import { RECAP_MIN_AGE_HOURS } from "@/lib/cron/content-windows";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv } from "@/lib/env";
 import { formatCompetitionTitle, getCompetitionDisplayName } from "@/lib/format/competition";
@@ -73,7 +74,7 @@ type DiscordButton = {
 const REMINDER_LIMIT = 10;
 const MATCH_WINDOW_PAST_MS = 6 * 60 * 60 * 1000;
 const MATCH_WINDOW_FUTURE_MS = 48 * 60 * 60 * 1000;
-const POSTMATCH_FALLBACK_DELAY_MS = 6 * 60 * 60 * 1000;
+const POSTMATCH_FALLBACK_DELAY_MS = (RECAP_MIN_AGE_HOURS + 2) * 60 * 60 * 1000;
 const POSTMATCH_TASK_EXPIRY_MS = 72 * 60 * 60 * 1000;
 const REREMINDER_DELAY_MS = 2 * 60 * 60 * 1000;
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
@@ -510,7 +511,11 @@ async function sendReminders(
     return task.reminded_at === null && new Date(task.due_at).getTime() <= now.getTime();
   });
 
-  const initial = candidates.filter((task) => task.reminded_at === null);
+  const initial = candidates.filter(
+    (task) =>
+      task.reminded_at === null &&
+      (task.kind !== "postmatch" || !isQuietHours(now)),
+  );
   const rereminders = isQuietHours(now)
     ? []
     : tasks.filter((task) => {
