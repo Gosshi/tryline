@@ -362,6 +362,72 @@ describe("GET /api/cron/x-post-reminders", () => {
     expect(JSON.parse(String(init?.body)).content).toContain("記事はまだありません");
   });
 
+  it("omits the missing-article note on a postmatch rereminder after the recap is published", async () => {
+    reminderMock.tasks = [
+      makeTask("postmatch", {
+        due_at: "2026-09-26T11:00:00.000Z",
+        match: makeMatch("match-1", "australia-south-africa-test", "2026-09-26T03:00:00.000Z", "finished"),
+        re_reminded_at: null,
+        reminded_at: "2026-09-26T09:59:00.000Z",
+      }),
+    ];
+    reminderMock.recaps = [{ match_id: "match-1", generated_at: "2026-09-26T11:30:00.000Z" }];
+
+    await runCron();
+
+    const [, init] = vi.mocked(fetch).mock.calls[0] ?? [];
+    const content = JSON.parse(String(init?.body)).content as string;
+    expect(content).toContain("【再】X投稿（試合後）");
+    expect(content).not.toContain("記事はまだありません");
+  });
+
+  it("marks an unresolved postmatch task missed after 72 hours and removes its buttons", async () => {
+    vi.setSystemTime(new Date("2026-09-29T12:01:00.000Z"));
+    reminderMock.tasks = [
+      makeTask("postmatch", {
+        discord_message_id: "345678901234567890",
+        due_at: "2026-09-26T18:00:00.000Z",
+        match: makeMatch("match-1", "australia-south-africa-test", "2026-09-26T12:00:00.000Z", "finished"),
+        re_reminded_at: "2026-09-26T20:00:00.000Z",
+        reminded_at: "2026-09-26T18:00:00.000Z",
+      }),
+    ];
+
+    await runCron();
+
+    expect(reminderMock.tasks[0]).toMatchObject({
+      resolved_at: "2026-09-29T12:01:00.000Z",
+      status: "missed",
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith(
+      `https://discord.com/api/v10/channels/${CHANNEL_ID}/messages/345678901234567890`,
+      expect.objectContaining({ method: "PATCH" }),
+    );
+    expect(reminderMock.updates).toContainEqual({
+      id: "00000000-0000-4000-8000-000000000001",
+      payload: { resolved_at: "2026-09-29T12:01:00.000Z", status: "missed" },
+    });
+  });
+
+  it("leaves an unresolved postmatch task pending at 71 hours", async () => {
+    vi.setSystemTime(new Date("2026-09-29T11:00:00.000Z"));
+    reminderMock.tasks = [
+      makeTask("postmatch", {
+        due_at: "2026-09-26T18:00:00.000Z",
+        match: makeMatch("match-1", "australia-south-africa-test", "2026-09-26T12:00:00.000Z", "finished"),
+        re_reminded_at: "2026-09-26T20:00:00.000Z",
+        reminded_at: "2026-09-26T18:00:00.000Z",
+      }),
+    ];
+
+    await runCron();
+
+    expect(reminderMock.tasks[0]?.status).toBe("pending");
+    expect(reminderMock.updates).toHaveLength(0);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("returns 500 and leaves reminded_at empty when Discord create fails", async () => {
     reminderMock.discordPostStatus = 500;
     reminderMock.tasks = [makeTask("prematch")];

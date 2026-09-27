@@ -74,6 +74,7 @@ const REMINDER_LIMIT = 10;
 const MATCH_WINDOW_PAST_MS = 6 * 60 * 60 * 1000;
 const MATCH_WINDOW_FUTURE_MS = 48 * 60 * 60 * 1000;
 const POSTMATCH_FALLBACK_DELAY_MS = 6 * 60 * 60 * 1000;
+const POSTMATCH_TASK_EXPIRY_MS = 72 * 60 * 60 * 1000;
 const REREMINDER_DELAY_MS = 2 * 60 * 60 * 1000;
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
@@ -339,8 +340,7 @@ async function advancePostmatchDueTimes(
     .from("x_post_tasks")
     .select("id, match_id, reminded_at")
     .eq("kind", "postmatch")
-    .eq("status", "pending")
-    .is("reminded_at", null);
+    .eq("status", "pending");
 
   if (taskError) {
     throw taskError;
@@ -435,7 +435,7 @@ async function loadPendingTasks(
   return (data ?? []) as unknown as ReminderTask[];
 }
 
-async function markMissedPrematchTasks(
+async function markExpiredTasks(
   db: SupabaseClient<Database>,
   tasks: ReminderTask[],
   credentials: ReminderCredentials,
@@ -445,12 +445,20 @@ async function markMissedPrematchTasks(
   let failed = 0;
 
   for (const task of tasks) {
-    if (task.kind !== "prematch" || task.status !== "pending") {
+    if (task.status !== "pending") {
       continue;
     }
 
     const match = firstRelation(task.match);
-    if (!match || new Date(match.kickoff_at).getTime() > now.getTime()) {
+    if (!match) {
+      continue;
+    }
+
+    const kickoffAt = new Date(match.kickoff_at).getTime();
+    const expired = task.kind === "prematch"
+      ? now.getTime() >= kickoffAt
+      : now.getTime() >= kickoffAt + POSTMATCH_TASK_EXPIRY_MS;
+    if (!expired) {
       continue;
     }
 
@@ -467,9 +475,11 @@ async function markMissedPrematchTasks(
       if (error) {
         throw error;
       }
+      task.status = "missed";
+      task.resolved_at = now.toISOString();
       missed += 1;
     } catch (error) {
-      console.error("[x-post-reminders] Failed to mark a prematch task missed.", error);
+      console.error("[x-post-reminders] Failed to mark an expired task missed.", error);
       failed += 1;
     }
   }
@@ -589,7 +599,7 @@ export async function GET(request: Request) {
 
     const recapExistsByMatch = await advancePostmatchDueTimes(db);
     const pendingTasks = await loadPendingTasks(db);
-    const missed = await markMissedPrematchTasks(db, pendingTasks, credentials, now);
+    const missed = await markExpiredTasks(db, pendingTasks, credentials, now);
     const reminders = await sendReminders(
       db,
       pendingTasks,
