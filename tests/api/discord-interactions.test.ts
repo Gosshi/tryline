@@ -32,6 +32,15 @@ const supabaseMocks = vi.hoisted(() => ({
   matchContentError: null as Error | null,
 }));
 const pipelineMocks = vi.hoisted(() => ({ generateMatchContent: vi.fn() }));
+const xPostTaskMock = vi.hoisted(() => ({
+  currentStatus: null as string | null,
+  eq: vi.fn(),
+  maybeSingle: vi.fn(),
+  select: vi.fn(),
+  update: vi.fn(),
+  updatePayload: null as Record<string, unknown> | null,
+  updates: [] as Array<Record<string, unknown>>,
+}));
 
 vi.mock("@/lib/env", () => envMocks);
 vi.mock("@/lib/db/server", () => ({
@@ -81,6 +90,14 @@ function ownerInteraction(data: Record<string, unknown>) {
 
 function researchCommand() {
   return ownerInteraction({ name: "調査事実を追加", type: 1 });
+}
+
+function xPostButton(customId: string, userId = ownerUserId) {
+  return {
+    data: { component_type: 2, custom_id: customId },
+    type: 3,
+    user: { id: userId },
+  };
 }
 
 function researchSubmission(paste: string, selectedMatchId = matchId) {
@@ -217,7 +234,40 @@ describe("POST /api/discord/interactions", () => {
     supabaseMocks.sourcedFactsQueryOrder.mockReturnValue(
       sourcedFactsQueryBuilder,
     );
+    xPostTaskMock.currentStatus = "pending";
+    xPostTaskMock.updatePayload = null;
+    xPostTaskMock.updates = [];
+    xPostTaskMock.eq.mockReturnValue(xPostTaskMock);
+    xPostTaskMock.select.mockReturnValue(xPostTaskMock);
+    xPostTaskMock.update.mockImplementation((payload: Record<string, unknown>) => {
+      xPostTaskMock.updatePayload = payload;
+      return xPostTaskMock;
+    });
+    xPostTaskMock.maybeSingle.mockImplementation(async () => {
+      if (xPostTaskMock.updatePayload) {
+        const payload = xPostTaskMock.updatePayload;
+        xPostTaskMock.updatePayload = null;
+        if (xPostTaskMock.currentStatus === "pending") {
+          xPostTaskMock.currentStatus = String(payload.status);
+          xPostTaskMock.updates.push(payload);
+          return { data: { status: xPostTaskMock.currentStatus }, error: null };
+        }
+        return { data: null, error: null };
+      }
+      return {
+        data: xPostTaskMock.currentStatus
+          ? { status: xPostTaskMock.currentStatus }
+          : null,
+        error: null,
+      };
+    });
     supabaseMocks.from.mockImplementation((table: string) => {
+      if (table === "x_post_tasks") {
+        return {
+          select: vi.fn(() => xPostTaskMock),
+          update: xPostTaskMock.update,
+        };
+      }
       if (table === "matches") return matchBuilder;
       if (table === "match_sourced_facts") return sourcedFactsTableBuilder;
       if (table === "match_content") return matchContentTableBuilder;
@@ -254,6 +304,55 @@ describe("POST /api/discord/interactions", () => {
       }),
     );
     expect(response.status).toBe(403);
+    expect(supabaseMocks.from).not.toHaveBeenCalled();
+  });
+
+  it("records the posted button and updates the Discord message", async () => {
+    const response = await POST(
+      createRequest(xPostButton(`x_post:${matchId}:posted`)),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      data: { components: [], content: "✅ 投稿済み（09:00）" },
+      type: 7,
+    });
+    expect(xPostTaskMock.updates).toEqual([
+      { resolved_at: "2026-08-27T00:00:00.000Z", status: "posted" },
+    ]);
+  });
+
+  it("preserves the first button result when a later button is clicked", async () => {
+    xPostTaskMock.currentStatus = "skipped";
+    const response = await POST(
+      createRequest(xPostButton(`x_post:${matchId}:posted`)),
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      data: { components: [], content: "⏭ 見送り（09:00）" },
+      type: 7,
+    });
+    expect(xPostTaskMock.updates).toEqual([]);
+  });
+
+  it("rejects a non-owner button click before touching the database", async () => {
+    const response = await POST(
+      createRequest(xPostButton(`x_post:${matchId}:posted`, "987654321098765432")),
+    );
+
+    expect(response.status).toBe(403);
+    expect(supabaseMocks.from).not.toHaveBeenCalled();
+  });
+
+  it("treats an unrecognized component custom id as unsupported", async () => {
+    const response = await POST(
+      createRequest(xPostButton("not-an-x-post-task")),
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      data: { content: "未対応のDiscord操作です。", flags: 64 },
+      type: 4,
+    });
     expect(supabaseMocks.from).not.toHaveBeenCalled();
   });
 

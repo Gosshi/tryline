@@ -62,13 +62,6 @@ const xMock = vi.hoisted(() => ({
   postMatchRecapToX: vi.fn(),
 }));
 
-const impressionMock = vi.hoisted(() => ({
-  generateImpressionTweet: vi.fn(),
-}));
-
-const previewThreadMock = vi.hoisted(() => ({
-  generatePreviewThread: vi.fn(),
-}));
 
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: () => ({
@@ -170,9 +163,7 @@ vi.mock("@/lib/db/server", () => ({
   }),
 }));
 
-vi.mock("@/lib/x/impression-tweet", () => impressionMock);
 vi.mock("@/lib/x/post", () => xMock);
-vi.mock("@/lib/x/preview-thread", () => previewThreadMock);
 
 function buildContent(
   overrides: Partial<ContentFixture> & {
@@ -251,15 +242,6 @@ describe("/api/cron/notify-discord", () => {
     );
     xMock.buildTweetText.mockReturnValue("draft tweet");
     xMock.postMatchRecapToX.mockResolvedValue("tweet-1");
-    impressionMock.generateImpressionTweet.mockResolvedValue(
-      "最後まで目が離せない好ゲームだった。山田の2トライが効いたなあ #ラグビー",
-    );
-    previewThreadMock.generatePreviewThread.mockResolvedValue({
-      tweet1: "ホームの接点支配はアウェイの速攻を止められるか？",
-      tweet2: "- 接点の優位\n- キック裏の攻防\n- 終盤の規律 #ラグビー",
-      tweet3:
-        "プレビューはTrylineで公開しています。\n記事URLまたはプロフィールのリンクからどうぞ。",
-    });
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.resolve({ ok: true, status: 204 })),
@@ -354,8 +336,10 @@ describe("/api/cron/notify-discord", () => {
       "① X に貼る（URLなし）",
       "② リプライ案（URLなし）",
       "③ 記事URL（必要なら本投稿に追加）",
-      "⑤ プレビュースレッド案（手動投稿用）",
     ]);
+    expect(firstPayload.embeds[0]?.fields.map((field) => field.name)).not.toContain(
+      "⑥ 読みどころ投稿案（URLなし）",
+    );
     expect(firstPayload.embeds[0]?.fields[0]?.value).toContain(
       "```\ndraft tweet\n```",
     );
@@ -364,13 +348,6 @@ describe("/api/cron/notify-discord", () => {
     );
     expect(firstPayload.embeds[0]?.fields[2]?.value).toBe(
       "https://www.trylinerugby.com/matches/match-2?utm_source=x&utm_medium=social&utm_campaign=preview&utm_content=match-2",
-    );
-    expect(firstPayload.embeds[0]?.fields[3]?.value).toContain("🐦 ツイート1");
-    expect(firstPayload.embeds[0]?.fields[3]?.value).toContain(
-      "ホームの接点支配",
-    );
-    expect(firstPayload.embeds[0]?.fields[3]?.value).toContain(
-      "プレビューはTrylineで公開しています。",
     );
     expect(xMock.buildLinklessReplyText).toHaveBeenNthCalledWith(
       1,
@@ -400,18 +377,6 @@ describe("/api/cron/notify-discord", () => {
         awayTeamName: "Away",
         homeTeamName: "Home",
         language: "en",
-      }),
-    );
-    expect(impressionMock.generateImpressionTweet).toHaveBeenCalledTimes(1);
-    expect(previewThreadMock.generatePreviewThread).toHaveBeenCalledTimes(1);
-    expect(previewThreadMock.generatePreviewThread).toHaveBeenCalledWith(
-      expect.objectContaining({
-        awayTeamName: "アウェイ",
-        competitionFamily: "six-nations",
-        competitionLabel: "テストリーグ 2026",
-        homeTeamName: "ホーム",
-        matchId: "match-2",
-        previewMarkdown: "## 見出し\n投稿本文の抜粋です。",
       }),
     );
     expect(dbMock.updates.map((update) => update.id)).toEqual([
@@ -465,27 +430,12 @@ describe("/api/cron/notify-discord", () => {
         value: expect.stringContaining("Home 24-17 Away."),
       }),
     );
-    expect(payload.embeds[0]?.fields[5]).toEqual(
-      expect.objectContaining({
-        inline: false,
-        name: "⑥ 読みどころ投稿案（URLなし）",
-        value: expect.stringContaining("最後まで目が離せない好ゲーム"),
-      }),
+    expect(payload.embeds[0]?.fields.map((field) => field.name)).not.toContain(
+      "⑥ 読みどころ投稿案（URLなし）",
     );
-    expect(impressionMock.generateImpressionTweet).toHaveBeenCalledWith(
-      expect.objectContaining({
-        awayScore: 17,
-        competitionLabel: "テストリーグ 2026",
-        awayTeamName: "アウェイ",
-        homeScore: 24,
-        homeTeamName: "ホーム",
-        tryScorers: [
-          { count: 2, playerName: "山田太郎" },
-          { count: 1, playerName: "佐藤次郎" },
-        ],
-      }),
+    expect(payload.embeds[0]?.fields.map((field) => field.name)).not.toContain(
+      "⑤ プレビュースレッド案（手動投稿用）",
     );
-    expect(previewThreadMock.generatePreviewThread).not.toHaveBeenCalled();
     expect(xMock.postMatchRecapToX).not.toHaveBeenCalled();
     expect(dbMock.updates[0]?.payload).toEqual({
       discord_notified_at: "2026-05-21T12:00:00.000Z",
@@ -536,13 +486,6 @@ describe("/api/cron/notify-discord", () => {
         language: "ja",
       }),
     );
-    expect(previewThreadMock.generatePreviewThread).toHaveBeenCalledWith(
-      expect.objectContaining({
-        awayTeamName: "Away Fallback",
-        competitionLabel: "Fallback League 2026",
-        homeTeamName: "Home Fallback",
-      }),
-    );
   });
 
   it("uses formatters for season labels and dictionary fallback when name_ja is missing", async () => {
@@ -589,70 +532,8 @@ describe("/api/cron/notify-discord", () => {
         language: "ja",
       }),
     );
-    expect(previewThreadMock.generatePreviewThread).toHaveBeenCalledWith(
-      expect.objectContaining({
-        awayTeamName: "アイルランド",
-        competitionLabel: "ネーションズチャンピオンシップ 2026",
-        homeTeamName: "オーストラリア",
-      }),
-    );
   });
 
-  it("omits the impression tweet field when generation fails", async () => {
-    impressionMock.generateImpressionTweet.mockResolvedValueOnce(null);
-    dbMock.rowsByLanguage.ja = [
-      buildContent({
-        content_type: "recap",
-        id: "finished-recap-no-impression",
-        kickoff_at: "2026-05-21T11:00:00.000Z",
-        match_id: "match-no-impression",
-      }),
-    ];
-
-    const { POST } = await import("@/app/api/cron/notify-discord/route");
-    const response = await POST(
-      new Request("http://localhost/api/cron/notify-discord", {
-        headers: { Authorization: "Bearer test-cron-secret" },
-        method: "POST",
-      }),
-    );
-
-    expect(response.status).toBe(200);
-    const payload = JSON.parse(
-      (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
-    ) as { embeds: Array<{ fields: Array<{ name: string }> }> };
-    expect(payload.embeds[0]?.fields.map((field) => field.name)).not.toContain(
-      "⑥ 読みどころ投稿案（URLなし）",
-    );
-  });
-
-  it("omits the preview thread field when generation fails", async () => {
-    previewThreadMock.generatePreviewThread.mockResolvedValueOnce(null);
-    dbMock.rowsByLanguage.ja = [
-      buildContent({
-        content_type: "preview",
-        id: "future-preview-no-thread",
-        kickoff_at: "2026-05-21T12:01:00.000Z",
-        match_id: "match-no-thread",
-      }),
-    ];
-
-    const { POST } = await import("@/app/api/cron/notify-discord/route");
-    const response = await POST(
-      new Request("http://localhost/api/cron/notify-discord", {
-        headers: { Authorization: "Bearer test-cron-secret" },
-        method: "POST",
-      }),
-    );
-
-    expect(response.status).toBe(200);
-    const payload = JSON.parse(
-      (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
-    ) as { embeds: Array<{ fields: Array<{ name: string }> }> };
-    expect(payload.embeds[0]?.fields.map((field) => field.name)).not.toContain(
-      "⑤ プレビュースレッド案（手動投稿用）",
-    );
-  });
 
   it("keeps official reply draft fields within the Discord value limit", async () => {
     const longName = "長い選手名".repeat(220);

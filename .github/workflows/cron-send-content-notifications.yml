@@ -16,3 +16,12 @@ jobs:
           curl -fsS -X GET \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             https://tryline-six.vercel.app/api/cron/send-content-notifications
+
+      - name: Send X post reminders
+        if: always()
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -X GET \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://tryline-six.vercel.app/api/cron/x-post-reminders
