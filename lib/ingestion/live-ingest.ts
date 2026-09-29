@@ -401,23 +401,9 @@ export async function ingestLiveCompetition(
   const finishedRecordIds = result.records
     .filter((record) => record.status === "finished")
     .map((record) => record.id);
-  const eventedMatchIds = new Set<string>();
   const kickoffAtById = new Map<string, string>();
 
   if (finishedRecordIds.length > 0) {
-    const { data, error } = await client
-      .from("match_events")
-      .select("match_id")
-      .in("match_id", finishedRecordIds);
-
-    if (error) {
-      throw error;
-    }
-
-    for (const event of data) {
-      eventedMatchIds.add(event.match_id);
-    }
-
     const { data: matches, error: matchesError } = await client
       .from("matches")
       .select("id, kickoff_at")
@@ -433,20 +419,43 @@ export async function ingestLiveCompetition(
   }
 
   const retryWindowStart = now.getTime() - EVENT_RETRY_WINDOW_MS;
-  const eventMatches = result.records.filter((record) => {
+  const eventCandidates = result.records.filter((record) => {
+    if (record.status !== "finished") {
+      return false;
+    }
+
     const kickoffAt = kickoffAtById.get(record.id);
     const kickoffTime = kickoffAt ? new Date(kickoffAt).getTime() : NaN;
     const withinRetryWindow =
       kickoffTime >= retryWindowStart && kickoffTime <= now.getTime();
 
     return (
-      record.status === "finished" &&
-      !eventedMatchIds.has(record.id) &&
-      (record.statusChangedToFinished ||
-        source.fetchEventMatches !== undefined ||
-        withinRetryWindow)
+      record.statusChangedToFinished ||
+      source.fetchEventMatches !== undefined ||
+      withinRetryWindow
     );
   });
+  const eventCandidateIds = eventCandidates.map((record) => record.id);
+  const eventedMatchIds = new Set<string>();
+
+  if (eventCandidateIds.length > 0) {
+    const { data, error } = await client
+      .from("match_events")
+      .select("match_id")
+      .in("match_id", eventCandidateIds);
+
+    if (error) {
+      throw error;
+    }
+
+    for (const event of data) {
+      eventedMatchIds.add(event.match_id);
+    }
+  }
+
+  const eventMatches = eventCandidates.filter(
+    (record) => !eventedMatchIds.has(record.id),
+  );
 
   for (const record of eventMatches) {
     const match = resolvedMatches[record.candidateIndex];

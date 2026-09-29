@@ -4,6 +4,7 @@ const dbMocks = vi.hoisted(() => ({
   competitionUpsert: vi.fn(),
   getSupabaseServerClient: vi.fn(),
   eventedMatchIds: [] as string[],
+  matchEventsQueryIds: [] as string[][],
   kickoffRows: [] as Array<{ id: string; kickoff_at: string }>,
   teamRows: [
     { id: "team-ireland", name: "Ireland", slug: "ireland" },
@@ -54,12 +55,15 @@ function createTeamsQuery() {
 
 function createMatchEventsQuery() {
   return {
-    in: vi.fn(() =>
-      Promise.resolve({
-        data: dbMocks.eventedMatchIds.map((match_id) => ({ match_id })),
+    in: vi.fn((_column: string, ids: string[]) => {
+      dbMocks.matchEventsQueryIds.push(ids);
+      return Promise.resolve({
+        data: dbMocks.eventedMatchIds
+          .filter((id) => ids.includes(id))
+          .map((match_id) => ({ match_id })),
         error: null,
-      }),
-    ),
+      });
+    }),
     select: vi.fn().mockReturnThis(),
   };
 }
@@ -143,6 +147,7 @@ describe("Six Nations 2027 live ingestion", () => {
     vi.clearAllMocks();
     vi.resetModules();
     dbMocks.eventedMatchIds = [];
+    dbMocks.matchEventsQueryIds = [];
     dbMocks.kickoffRows = [];
 
     dbMocks.getSupabaseServerClient.mockImplementation(() => ({
@@ -227,6 +232,88 @@ describe("Six Nations 2027 live ingestion", () => {
     );
 
     expect(ingestionMocks.upsertMatchEvents).not.toHaveBeenCalled();
+  });
+
+  it("queries events only for eligible matches among 100 finished matches", async () => {
+    const finishedRecords = Array.from({ length: 100 }, (_, index) => ({
+      awayTeamId: "team-england",
+      candidateIndex: 0,
+      externalIds: {},
+      homeTeamId: "team-ireland",
+      id: `match-${index + 1}`,
+      previousStatus: "finished",
+      status: "finished",
+      statusChangedToFinished: false,
+    }));
+    ingestionMocks.upsertMatches.mockResolvedValueOnce({
+      matchesInserted: 0,
+      matchesUpdated: 100,
+      records: finishedRecords,
+    });
+    dbMocks.kickoffRows = finishedRecords.map((record, index) => ({
+      id: record.id,
+      kickoff_at:
+        index === 0
+          ? "2026-09-27T12:00:00.000Z"
+          : "2026-09-01T12:00:00.000Z",
+    }));
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+
+    await ingestLiveCompetition(
+      {
+        competitionName: "Premiership 2026-27",
+        competitionSlug: "premiership-2026-27",
+        family: "premiership",
+        fetch: vi.fn().mockResolvedValue([makeEventRetryMatch()]),
+        season: "2026-27",
+        sourceLabel: "wikipedia",
+      },
+      new Date("2026-09-29T12:00:00.000Z"),
+    );
+
+    expect(dbMocks.matchEventsQueryIds).toEqual([["match-1"]]);
+  });
+
+  it("queries events for every finished match when an event source exists", async () => {
+    const finishedRecords = Array.from({ length: 3 }, (_, index) => ({
+      awayTeamId: "team-england",
+      candidateIndex: index,
+      externalIds: {},
+      homeTeamId: "team-ireland",
+      id: `match-${index + 1}`,
+      previousStatus: "finished",
+      status: "finished",
+      statusChangedToFinished: false,
+    }));
+    ingestionMocks.upsertMatches.mockResolvedValueOnce({
+      matchesInserted: 0,
+      matchesUpdated: 3,
+      records: finishedRecords,
+    });
+    dbMocks.kickoffRows = finishedRecords.map((record) => ({
+      id: record.id,
+      kickoff_at: "2026-09-01T12:00:00.000Z",
+    }));
+    const { ingestLiveCompetition } =
+      await import("@/lib/ingestion/live-ingest");
+
+    await ingestLiveCompetition(
+      {
+        competitionName: "Premiership 2026-27",
+        competitionSlug: "premiership-2026-27",
+        family: "premiership",
+        fetch: vi.fn().mockResolvedValue([makeEventRetryMatch()]),
+        fetchEventMatches: vi.fn().mockResolvedValue([]),
+        season: "2026-27",
+        sourceLabel: "wikipedia",
+      },
+      new Date("2026-09-29T12:00:00.000Z"),
+    );
+
+    expect(dbMocks.matchEventsQueryIds).toEqual([
+      ["match-1", "match-2", "match-3"],
+    ]);
   });
 
   it("uses the database kickoff when the parsed match preserves the existing kickoff", async () => {
