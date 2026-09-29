@@ -4,17 +4,10 @@
 
 ## Owner が添付するもの
 
-依頼文と一緒に、次の画像を添付する（パスは `tryline-mobile/docs/`）。
+画像は tryline-mobile の `docs/notes/gpt-audit-2026-09-29/` にまとめてある（一覧と注意書きは同じフォルダの `README.md`）。次を添付する。
 
-- `app-store-screenshots/01-home-calendar-busy-week.png`
-- `app-store-screenshots/01-home-this-week-raw.png`
-- `app-store-screenshots/02-match-stories.png`
-- `app-store-screenshots/03-competitions.png`
-- `app-store-screenshots/04-competition-hub.png`
-- `app-store-screenshots/05-match-detail.png`
-- `app-store-screenshots/iap-review-paywall.png`（アプリ内の購入画面）
-- App Store Connect の「アナリティクス → 概要」と「獲得 → ソース」の画面（2026-09-29 に Owner が撮ったもの）
-- 手元の iPhone で撮った、オンボーディング（初回起動）と設定画面の画像（あれば）
+- `docs/notes/gpt-audit-2026-09-29/` の画像すべて（App Store の公開ページ、App Store Connect の概要とソース、iOS シミュレーターで撮ったオンボーディング・ホーム・試合画面・設定・大会一覧）
+- `docs/app-store-screenshots/` の画像（App Store に載せているスクショの元画像と、本番の購入画面 `iap-review-paywall.png`）
 
 **添付しないもの:** App Store Connect の「App Review に関する情報」の画面（審査用のログイン情報と連絡先が写っている）。
 
@@ -69,6 +62,8 @@ Web 版（GA4、直近 28 日）:
 ### 見てほしいこと
 
 次の各領域について、**添付画像・公開ページで実際に確認できたこと**を根拠にしてください。
+
+アプリの画面の一部は、iOS シミュレーターの開発ビルドで撮りました。開発ビルドにはログインと課金の設定が入っていないため、購入の案内（`app-07-match-paywall-devbuild.png`）と設定の上部（`app-09-settings-top-devbuild.png`）は本番と見た目が違います。本番の購入画面は `iap-review-paywall.png` で判断してください。
 
 1. **App Store の掲載（ASO）**: アプリ名、サブタイトル（「見逃した試合も、ネタバレなしで追いつく」）、アイコン、スクリーンショットの順番と見出し、説明文、キーワードの考え方。検索結果で表示された人のうち製品ページを開くのが約 10% しかない理由。
 2. **デザインと UI**: 各画面の情報の優先順位、読みやすさ、タップのしやすさ、日本語の文言、一貫性。iOS らしさ（Human Interface Guidelines）との差。
