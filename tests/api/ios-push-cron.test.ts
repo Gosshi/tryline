@@ -558,11 +558,11 @@ describe("sendContentPushNotifications", () => {
     expect(sentMessages).toEqual([
       expect.objectContaining({
         title: "試合レビュー公開",
-        body: "試合レビュー公開: 日本 v フランス（スコアは開いてから）",
+        body: "日本 v フランス（ネーションズチャンピオンシップ）",
       }),
       expect.objectContaining({
         title: "プレビュー公開",
-        body: "プレビュー公開: 日本 v フランス",
+        body: "日本 v フランス（ネーションズチャンピオンシップ）",
       }),
     ]);
     for (const message of sentMessages) {

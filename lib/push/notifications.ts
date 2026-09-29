@@ -135,11 +135,11 @@ function buildBody(match: PushMatch, kind: PushNotificationKind) {
     return `${home} v ${away}（${displayCompetitionName(match.competition)}）${formatKickoffJst(match.kickoffAt)}`;
   }
 
-  if (kind === "preview") {
-    return `プレビュー公開: ${home} v ${away}`;
+  if (kind === "preview" || kind === "recap") {
+    return `${home} v ${away}（${displayCompetitionName(match.competition)}）`;
   }
 
-  return `試合レビュー公開: ${home} v ${away}（スコアは開いてから）`;
+  return `${home} v ${away}（${displayCompetitionName(match.competition)}）`;
 }
 
 async function getLoggedKeys(
