@@ -24,6 +24,7 @@ type FakeMatch = {
     slug: string;
   };
   competition: {
+    family?: string | null;
     name: string;
     nameJa?: string | null;
     slug: string;
@@ -101,6 +102,7 @@ function createFakeClient(state: FakeClientState = {}) {
       error: null,
     }),
   };
+  const contentSelect = vi.fn(() => contentQuery);
   let logInCalls = 0;
   const logQuery = {
     in: vi.fn(() => {
@@ -170,7 +172,7 @@ function createFakeClient(state: FakeClientState = {}) {
 
     if (table === "match_content") {
       return {
-        select: vi.fn(() => contentQuery),
+        select: contentSelect,
       };
     }
 
@@ -179,6 +181,7 @@ function createFakeClient(state: FakeClientState = {}) {
 
   return {
     client: { from },
+    contentSelect,
     deletedTokens,
     from,
     insertedLogs,
@@ -210,6 +213,30 @@ beforeEach(() => {
 });
 
 describe("sendPrematchPushNotifications", () => {
+  it("uses the slug fallback for prematch competition names", async () => {
+    const match = createMatch({
+      competition: {
+        name: "Nations Championship 2026",
+        nameJa: null,
+        slug: "nations-championship-2026",
+        season: "2026",
+      },
+    });
+    const client = createFakeClient({
+      tokenRows: [{ team_slugs: ["japan"], token: "ExponentPushToken[prematch]" }],
+    });
+    const { sendPrematchPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    await sendPrematchPushNotifications([match as never], client.client as never);
+
+    expect(expoMock.sendExpoPushNotifications).toHaveBeenCalledWith([
+      expect.objectContaining({
+        body: "日本 v フランス（ネーションズチャンピオンシップ）7/18 21:40",
+      }),
+    ]);
+  });
+
   it("sends matching tokens, logs once, and skips an already logged rerun", async () => {
     const match = createMatch();
     const firstState: FakeClientState = {
@@ -570,6 +597,114 @@ describe("sendContentPushNotifications", () => {
     }
   });
 
+  it("uses the Japanese family name for previews when name_ja is missing", async () => {
+    const row = {
+      ...createContentRow(
+        "nations-preview",
+        "2026-07-18T00:00:00.000Z",
+        "wales",
+      ),
+      match: {
+        ...contentMatchRow("nations-preview", "wales"),
+        away_team: {
+          slug: "japan",
+          name: "Japan",
+          name_ja: "日本",
+        },
+        competition: {
+          name: "Nations Championship 2026",
+          name_ja: null,
+          family: "nations-championship",
+          slug: "nations-championship-2026",
+        },
+      },
+    };
+    const client = createFakeClient({
+      contentRows: [row],
+      tokenRows: [{ token: "ExponentPushToken[nations]", team_slugs: [] }],
+    });
+    const { sendContentPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    await sendContentPushNotifications(
+      new Date("2026-07-18T01:00:00.000Z"),
+      client.client as never,
+    );
+
+    expect(expoMock.sendExpoPushNotifications).toHaveBeenCalledWith([
+      expect.objectContaining({
+        body: "ウェールズ v 日本（ネーションズチャンピオンシップ）",
+      }),
+    ]);
+    expect(client.contentSelect).toHaveBeenCalledWith(
+      expect.stringContaining("family,\n            slug"),
+    );
+  });
+
+  it("infers the Japanese competition name from the slug for recaps", async () => {
+    const row = {
+      ...createContentRow("premiership-recap", "2026-07-18T00:00:00.000Z"),
+      content_type: "recap",
+      match: {
+        ...contentMatchRow("premiership-recap"),
+        competition: {
+          name: "Premiership 2026-27",
+          name_ja: null,
+          family: null,
+          slug: "premiership-2026-27",
+        },
+      },
+    };
+    const client = createFakeClient({
+      contentRows: [row],
+      tokenRows: [{ token: "ExponentPushToken[premiership]", team_slugs: [] }],
+    });
+    const { sendContentPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    await sendContentPushNotifications(
+      new Date("2026-07-18T01:00:00.000Z"),
+      client.client as never,
+    );
+
+    const [messages] = expoMock.sendExpoPushNotifications.mock.calls[0] as [
+      Array<{ body: string }>,
+    ];
+    expect(messages[0]?.body).toContain("プレミアシップ");
+    expect(messages[0]?.body).not.toContain("Premiership");
+  });
+
+  it("keeps name_ja ahead of the family fallback", async () => {
+    const row = {
+      ...createContentRow("custom-name", "2026-07-18T00:00:00.000Z"),
+      match: {
+        ...contentMatchRow("custom-name"),
+        competition: {
+          name: "Nations Championship 2026",
+          name_ja: "大会名の日本語表記",
+          family: "nations-championship",
+          slug: "nations-championship-2026",
+        },
+      },
+    };
+    const client = createFakeClient({
+      contentRows: [row],
+      tokenRows: [{ token: "ExponentPushToken[custom]", team_slugs: [] }],
+    });
+    const { sendContentPushNotifications } =
+      await import("@/lib/push/notifications");
+
+    await sendContentPushNotifications(
+      new Date("2026-07-18T01:00:00.000Z"),
+      client.client as never,
+    );
+
+    const [messages] = expoMock.sendExpoPushNotifications.mock.calls[0] as [
+      Array<{ body: string }>,
+    ];
+    expect(messages[0]?.body).toBe("日本 v フランス（大会名の日本語表記）");
+  });
+
   it("sends the three newest articles per token and logs the rest as zero", async () => {
     const contentRows = Array.from({ length: 5 }, (_, index) =>
       createContentRow(
@@ -880,6 +1015,8 @@ function contentMatchRow(matchId = "match-1", homeTeamSlug = "japan") {
     },
     away_team: { slug: "france", name: "France", name_ja: "フランス" },
     competition: {
+      family: "nations-championship",
+      slug: "nations-championship-2026",
       name: "Nations Championship",
       name_ja: "ネーションズチャンピオンシップ",
     },

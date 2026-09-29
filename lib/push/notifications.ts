@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { getCompetitionDisplayName } from "@/lib/format/competition";
 import { sendExpoPushNotifications } from "@/lib/push/expo";
 
 import type { CalendarMatch, MatchListItem } from "@/lib/db/queries/matches";
@@ -38,8 +39,10 @@ type PushTokenRow = {
 type PushMatch = {
   awayTeam: MatchListItem["awayTeam"];
   competition: {
+    family?: string | null;
     name: string;
     nameJa?: string | null;
+    slug?: string | null;
   };
   homeTeam: MatchListItem["homeTeam"];
   id: string;
@@ -56,8 +59,10 @@ type ContentNotificationRow = {
       slug: string;
     } | null;
     competition: {
+      family?: string | null;
       name: string;
       name_ja?: string | null;
+      slug?: string | null;
     } | null;
     home_team: {
       name: string;
@@ -94,13 +99,6 @@ function displayTeamName(team: { name: string; nameJa?: string | null }) {
   return team.nameJa ?? team.name;
 }
 
-function displayCompetitionName(competition: {
-  name: string;
-  nameJa?: string | null;
-}) {
-  return competition.nameJa ?? competition.name;
-}
-
 function formatKickoffJst(iso: string) {
   const parts = new Intl.DateTimeFormat("ja-JP", {
     day: "numeric",
@@ -132,14 +130,14 @@ function buildBody(match: PushMatch, kind: PushNotificationKind) {
   const away = displayTeamName(match.awayTeam);
 
   if (kind === "prematch") {
-    return `${home} v ${away}（${displayCompetitionName(match.competition)}）${formatKickoffJst(match.kickoffAt)}`;
+    return `${home} v ${away}（${getCompetitionDisplayName(match.competition, "ja")}）${formatKickoffJst(match.kickoffAt)}`;
   }
 
   if (kind === "preview" || kind === "recap") {
-    return `${home} v ${away}（${displayCompetitionName(match.competition)}）`;
+    return `${home} v ${away}（${getCompetitionDisplayName(match.competition, "ja")}）`;
   }
 
-  return `${home} v ${away}（${displayCompetitionName(match.competition)}）`;
+  return `${home} v ${away}（${getCompetitionDisplayName(match.competition, "ja")}）`;
 }
 
 async function getLoggedKeys(
@@ -355,8 +353,10 @@ function mapContentRow(row: ContentNotificationRow): PushMatch | null {
       shortCode: "",
     },
     competition: {
+      family: row.match.competition.family,
       name: row.match.competition.name,
       nameJa: row.match.competition.name_ja,
+      slug: row.match.competition.slug,
     },
   };
 }
@@ -387,6 +387,8 @@ export async function getRecentPublishedContentRows(
             name_ja
           ),
           competition:competitions!matches_competition_id_fkey (
+            family,
+            slug,
             name,
             name_ja
           )
