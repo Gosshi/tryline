@@ -86,3 +86,24 @@
 ## 未解決の質問
 
 なし。
+
+## 追記（2026-09-29）: PR #902 のレビューで見つかった上限の問題
+
+**問題:** すでに得点イベントがある試合の判定（`eventedMatchIds`）は、`match_events` をシーズンの `finished` の試合すべて（`finishedRecordIds`）について引いている（`live-ingest.ts:405-407`、`.select("match_id").in("match_id", finishedRecordIds)`）。1 試合 20 行前後のイベント行をそのまま返すので、`finished` の試合が 50 試合ほどを超えると、Supabase の 1 回 1000 行の上限で結果が切れる。切れた分の試合は「得点イベント 0 件」に見える。
+
+- これまでは「その回に `finished` に変わった試合」だけを試していたので、表に出なかった。
+- この spec の変更で、「0 件に見える」7 日以内の試合を毎回の取り込み（1 日 25 回前後）で試すようになり、`upsertMatchEvents`（既存のイベントを消して入れ直す）が毎回走る。
+- URC・プレミアシップ 2026-27 は 11 月ごろに 50 試合を超える。
+
+**直し方（PR #902 のブランチに追加のコミットで）:**
+
+1. 先に `matches` から `id, kickoff_at` を `finishedRecordIds` について引く（今の PR の処理。1 大会 数百行で上限にかからない）。
+2. 取り直しの候補を決める: `record.status === "finished"` かつ（`statusChangedToFinished` または `fetchEventMatches` がある大会 または 7 日以内）。
+3. **`match_events` は、この候補の `id` についてだけ引く**（`eventedMatchIds` の判定は候補の中だけで行う）。
+4. その後の処理（`eventedMatchIds` にない候補を取り直す）は今の PR のまま。
+
+**受け入れ条件に追加:**
+
+7. `finished` の試合が 100 件あり、そのうち 7 日以内が 1 件・`statusChangedToFinished` が 0 件・`fetchEventMatches` の無い大会 → `match_events` の問い合わせの `.in("match_id", …)` に渡る `id` は 1 件だけ。
+8. `fetchEventMatches` がある大会では、今までどおり `finished` の試合すべてが候補になる（NC・リポビタン D の動きは変えない）。
+9. **壊して落ちる確認（コミットしない）:** `match_events` の問い合わせを `finishedRecordIds` 全件に戻すと、受け入れ条件 7 のテストが落ちること。
