@@ -4,6 +4,7 @@ const dbMocks = vi.hoisted(() => ({
   competitionUpsert: vi.fn(),
   getSupabaseServerClient: vi.fn(),
   eventedMatchIds: [] as string[],
+  kickoffRows: [] as Array<{ id: string; kickoff_at: string }>,
   teamRows: [
     { id: "team-ireland", name: "Ireland", slug: "ireland" },
     { id: "team-england", name: "England", slug: "england" },
@@ -63,11 +64,86 @@ function createMatchEventsQuery() {
   };
 }
 
+function createKickoffQuery() {
+  return {
+    in: vi.fn((_column: string, ids: string[]) =>
+      Promise.resolve({
+        data: dbMocks.kickoffRows.filter((row) => ids.includes(row.id)),
+        error: null,
+      }),
+    ),
+    select: vi.fn().mockReturnThis(),
+  };
+}
+
+function makeEventRetryMatch(overrides: Record<string, unknown> = {}) {
+  return {
+    awayScore: 0,
+    awayTeamName: "England",
+    homeScore: 5,
+    homeTeamName: "Ireland",
+    kickoffAt: "2026-09-27T12:00:00.000Z",
+    lineupTableHtml: null,
+    preserveExistingKickoffAt: false,
+    rawHtml: `
+      <div class="vevent summary">
+        <table><tr style="font-size:85%"><td><b>Try:</b> <a>Irish Scorer</a> 12'</td><td></td><td></td></tr></table>
+      </div>
+    `,
+    round: 1,
+    roundName: null,
+    status: "finished" as const,
+    venue: "Aviva Stadium",
+    wikipediaUrl: null,
+    ...overrides,
+  };
+}
+
+function setFinishedRecord(statusChangedToFinished = false) {
+  ingestionMocks.upsertMatches.mockResolvedValueOnce({
+    matchesInserted: 0,
+    matchesUpdated: 1,
+    records: [
+      {
+        awayTeamId: "team-england",
+        candidateIndex: 0,
+        externalIds: {},
+        homeTeamId: "team-ireland",
+        id: "match-1",
+        previousStatus: "finished",
+        status: "finished",
+        statusChangedToFinished,
+      },
+    ],
+  });
+}
+
+async function ingestEventRetryMatch(
+  parsedMatch: ReturnType<typeof makeEventRetryMatch>,
+  kickoffAt: string,
+  now = new Date("2026-09-29T12:00:00.000Z"),
+) {
+  dbMocks.kickoffRows = [{ id: "match-1", kickoff_at: kickoffAt }];
+  const { ingestLiveCompetition } = await import("@/lib/ingestion/live-ingest");
+  return ingestLiveCompetition(
+    {
+      competitionName: "Premiership 2026-27",
+      competitionSlug: "premiership-2026-27",
+      family: "premiership",
+      fetch: vi.fn().mockResolvedValue([parsedMatch]),
+      season: "2026-27",
+      sourceLabel: "wikipedia",
+    },
+    now,
+  );
+}
+
 describe("Six Nations 2027 live ingestion", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
     dbMocks.eventedMatchIds = [];
+    dbMocks.kickoffRows = [];
 
     dbMocks.getSupabaseServerClient.mockImplementation(() => ({
       from: vi.fn((table: string) => {
@@ -81,6 +157,10 @@ describe("Six Nations 2027 live ingestion", () => {
 
         if (table === "match_events") {
           return createMatchEventsQuery();
+        }
+
+        if (table === "matches") {
+          return createKickoffQuery();
         }
 
         throw new Error(`Unexpected table: ${table}`);
@@ -110,6 +190,60 @@ describe("Six Nations 2027 live ingestion", () => {
         },
       ],
     });
+  });
+
+  it("retries event parsing for a finished match with no event source within seven days", async () => {
+    setFinishedRecord();
+
+    await ingestEventRetryMatch(
+      makeEventRetryMatch(),
+      "2026-09-27T12:00:00.000Z",
+    );
+
+    expect(ingestionMocks.upsertMatchEvents).toHaveBeenCalledTimes(1);
+    expect(ingestionMocks.upsertMatchEvents).toHaveBeenCalledWith(
+      expect.objectContaining({ matchId: "match-1" }),
+    );
+  });
+
+  it("still parses events when a record newly changes to finished outside the retry window", async () => {
+    setFinishedRecord(true);
+
+    await ingestEventRetryMatch(
+      makeEventRetryMatch(),
+      "2026-09-01T12:00:00.000Z",
+      new Date("2026-09-29T12:00:00.000Z"),
+    );
+
+    expect(ingestionMocks.upsertMatchEvents).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry event parsing more than seven days after kickoff", async () => {
+    setFinishedRecord();
+
+    await ingestEventRetryMatch(
+      makeEventRetryMatch(),
+      "2026-09-22T10:59:00.000Z",
+    );
+
+    expect(ingestionMocks.upsertMatchEvents).not.toHaveBeenCalled();
+  });
+
+  it("uses the database kickoff when the parsed match preserves the existing kickoff", async () => {
+    setFinishedRecord();
+
+    await ingestEventRetryMatch(
+      makeEventRetryMatch({
+        kickoffAt: "2026-09-20T12:00:00.000Z",
+        preserveExistingKickoffAt: true,
+      }),
+      "2026-09-27T12:00:00.000Z",
+    );
+
+    expect(ingestionMocks.upsertMatchEvents).toHaveBeenCalledTimes(1);
+    expect(ingestionMocks.upsertMatchEvents).toHaveBeenCalledWith(
+      expect.objectContaining({ matchId: "match-1" }),
+    );
   });
 
   it("resolves teams by name and extracts events for a newly finished match", async () => {

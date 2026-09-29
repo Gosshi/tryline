@@ -55,6 +55,8 @@ export type EventInsertionRejection = {
   reason: "fixture_conflict" | "score_mismatch" | "third_team";
 };
 
+const EVENT_RETRY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
 type TeamLookup = {
   byName: Record<string, string>;
   bySlug: Record<string, string>;
@@ -287,6 +289,7 @@ function eventScoresMatchFinalScore(
 
 export async function ingestLiveCompetition(
   source: LiveCompetitionSource,
+  now: Date = new Date(),
 ): Promise<LiveIngestResult> {
   const client = getSupabaseServerClient();
   const fetched = await source.fetch();
@@ -399,6 +402,7 @@ export async function ingestLiveCompetition(
     .filter((record) => record.status === "finished")
     .map((record) => record.id);
   const eventedMatchIds = new Set<string>();
+  const kickoffAtById = new Map<string, string>();
 
   if (finishedRecordIds.length > 0) {
     const { data, error } = await client
@@ -413,15 +417,36 @@ export async function ingestLiveCompetition(
     for (const event of data) {
       eventedMatchIds.add(event.match_id);
     }
+
+    const { data: matches, error: matchesError } = await client
+      .from("matches")
+      .select("id, kickoff_at")
+      .in("id", finishedRecordIds);
+
+    if (matchesError) {
+      throw matchesError;
+    }
+
+    for (const match of matches) {
+      kickoffAtById.set(match.id, match.kickoff_at);
+    }
   }
 
-  const eventMatches = result.records.filter(
-    (record) =>
+  const retryWindowStart = now.getTime() - EVENT_RETRY_WINDOW_MS;
+  const eventMatches = result.records.filter((record) => {
+    const kickoffAt = kickoffAtById.get(record.id);
+    const kickoffTime = kickoffAt ? new Date(kickoffAt).getTime() : NaN;
+    const withinRetryWindow =
+      kickoffTime >= retryWindowStart && kickoffTime <= now.getTime();
+
+    return (
       record.status === "finished" &&
       !eventedMatchIds.has(record.id) &&
       (record.statusChangedToFinished ||
-        source.fetchEventMatches !== undefined),
-  );
+        source.fetchEventMatches !== undefined ||
+        withinRetryWindow)
+    );
+  });
 
   for (const record of eventMatches) {
     const match = resolvedMatches[record.candidateIndex];
