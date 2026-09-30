@@ -356,6 +356,9 @@ describe("season page information architecture", () => {
     const faq = getFaqJsonLd(container);
 
     expect(screen.queryByText("首位")).not.toBeInTheDocument();
+    const heroBand = screen.getByText("進行").closest(".grid");
+    expect(heroBand).not.toBeNull();
+    expect(heroBand).not.toHaveClass("sm:grid-cols-2", "sm:grid-cols-3");
     expect(standingsSection).toHaveTextContent("参加チーム");
     expect(standingsSection).not.toHaveTextContent("順位表");
     expect(standingsSection).not.toHaveTextContent("勝点");
@@ -430,8 +433,20 @@ describe("season page information architecture", () => {
     const matchGroups = screen.getByTestId("season-match-groups");
     const guide = screen.getByTestId("competition-guide");
     const guideFrame = guide.parentElement;
+    const newsletterForm = screen
+      .getByLabelText("メールアドレス")
+      .closest("form");
+    const summary = screen.getByLabelText("シーズン要約");
 
-    expect(screen.getByLabelText("シーズン要約")).toHaveTextContent("次戦");
+    expect(summary).toHaveTextContent("次戦");
+    expect(screen.getAllByText("首位")).toHaveLength(1);
+    expect(summary).not.toHaveTextContent("首位");
+    expect(newsletterForm).not.toBeNull();
+    expect(standings).not.toBeNull();
+    expect(guide).not.toBeNull();
+    expect(follows(standings!, newsletterForm!)).toBe(true);
+    expect(follows(newsletterForm!, guide!)).toBe(true);
+    expect(newsletterForm!.closest("header")).toBeNull();
     expect(screen.getByText("試合開始前に通知します")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "iOSアプリで通知を受け取る" }),
@@ -556,7 +571,7 @@ describe("season page information architecture", () => {
 
   it("omits progress when every match has a null round", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([
-      { ...match, round: null },
+      { ...match, round: null, status: "finished" },
     ]);
 
     render(
@@ -569,6 +584,67 @@ describe("season page information architecture", () => {
     );
 
     expect(screen.queryByText("進行")).not.toBeInTheDocument();
+    expect(screen.getAllByText("首位")).toHaveLength(1);
+    const heroBand = screen.getByText("首位").closest(".grid");
+    expect(heroBand).not.toBeNull();
+    expect(heroBand).not.toHaveClass("sm:grid-cols-2", "sm:grid-cols-3");
+  });
+
+  it("omits the hero band when both leader and progress are unavailable", async () => {
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      { ...match, round: null },
+    ]);
+    standingsMocks.getStandingsForCompetition.mockResolvedValue([]);
+    standingsMocks.getPoolStandingsForCompetition.mockResolvedValue([]);
+
+    const { container } = render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    );
+
+    expect(screen.queryByText("首位")).not.toBeInTheDocument();
+    expect(screen.queryByText("進行")).not.toBeInTheDocument();
+    expect(container.querySelector("header > .grid.divide-y")).toBeNull();
+  });
+
+  it("links the sole next-match item to the next scheduled fixture", async () => {
+    const overdueScheduledMatch = {
+      ...match,
+      id: "match-a",
+      kickoffAt: "2026-01-31T12:00:00.000Z",
+      round: 1,
+      status: "scheduled" as const,
+    };
+    const upcomingScheduledMatch = {
+      ...match,
+      id: "match-b",
+      kickoffAt: "2026-02-02T12:00:00.000Z",
+      round: 2,
+      status: "scheduled" as const,
+    };
+    matchesMocks.listMatchesForCompetition.mockResolvedValue([
+      overdueScheduledMatch,
+      upcomingScheduledMatch,
+    ]);
+
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    );
+
+    expect(screen.queryByText(/次節/)).toBeNull();
+    expect(screen.getByText("次戦").closest("a")).toHaveAttribute(
+      "href",
+      "/matches/match-b",
+    );
   });
 
   it("links to the competition-specific iCal subscription", async () => {
@@ -683,6 +759,7 @@ describe("season page information architecture", () => {
     expect(follows(schedule!, standings!)).toBe(true);
     expect(follows(emptyState, standings!)).toBe(true);
     expect(screen.queryByTestId("season-match-groups")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("シーズン要約")).not.toBeInTheDocument();
   });
 
   it("explains a not-held season and links to its configured replacement", async () => {
@@ -754,7 +831,7 @@ describe("season page information architecture", () => {
     expect(screen.getByRole("heading", { name: "南半球" })).toBeInTheDocument();
     expect(
       screen.getAllByText("北半球: Bath / 南半球: New Zealand"),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
   });
 
   it("renders the four Lipovitan Challenge Cup fixtures without standings", async () => {
@@ -795,7 +872,19 @@ describe("season page information architecture", () => {
 
     expect(screen.getByText("リポビタンDチャレンジカップ")).toBeInTheDocument();
     expect(screen.getByTestId("season-match-groups")).toBeInTheDocument();
+    const schedule = container.querySelector("#schedule");
+    const guide = container.querySelector("#guide");
+    const newsletterForm = screen
+      .getByLabelText("メールアドレス")
+      .closest("form");
+
     expect(container.querySelector("#standings")).toBeNull();
+    expect(schedule).not.toBeNull();
+    expect(guide).not.toBeNull();
+    expect(newsletterForm).not.toBeNull();
+    expect(follows(schedule!, newsletterForm!)).toBe(true);
+    expect(follows(newsletterForm!, guide!)).toBe(true);
+    expect(newsletterForm!.closest("header")).toBeNull();
     expect(
       screen.queryByRole("link", { name: "順位" }),
     ).not.toBeInTheDocument();
@@ -982,7 +1071,8 @@ describe("season page information architecture", () => {
       "japan",
       "2026-02-01T00:00:00.000Z",
     );
-    expect(screen.getByLabelText("シーズン要約")).toHaveClass("lg:grid-cols-4");
+    expect(screen.getByLabelText("シーズン要約")).toHaveClass("lg:grid-cols-3");
+    expect(screen.getByLabelText("シーズン要約")).not.toHaveClass("lg:grid-cols-4");
   });
 
   it("places the Japan matches block between the summary, iOS CTA, and page navigation", async () => {
