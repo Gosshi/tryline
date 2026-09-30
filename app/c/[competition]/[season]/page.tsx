@@ -348,7 +348,6 @@ function formatCompetitionHubDescription({
 }
 
 function SeasonSummaryBand({
-  leaderLabel,
   latestReviewMatch,
   competition,
   nextJapanCompetitionLabel,
@@ -357,7 +356,6 @@ function SeasonSummaryBand({
   season,
 }: {
   competition: string;
-  leaderLabel: string | null;
   latestReviewMatch: MatchListItem | null;
   nextJapanCompetitionLabel: string | null;
   nextJapanMatch: MatchListItem | null;
@@ -380,14 +378,6 @@ function SeasonSummaryBand({
           label: "次戦",
           primary: getMatchLabel(nextMatch),
           secondary: formatMatchKickoffJst(nextMatch.kickoffAt),
-        }
-      : null,
-    leaderLabel
-      ? {
-          href: null,
-          label: "首位",
-          primary: leaderLabel,
-          secondary: "最新順位表より",
         }
       : null,
     latestReviewMatch
@@ -438,7 +428,7 @@ function SeasonSummaryBand({
   return (
     <section
       aria-label="シーズン要約"
-      className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4"
+      className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-3"
     >
       {items.map((item) => {
         const content = (
@@ -859,9 +849,9 @@ export default async function SeasonPage({ params }: Props) {
               )}
             </div>
           </div>
-          {(leaderLabel || seasonProgress?.nextMatch || seasonProgress) && (
+          {(leaderLabel || seasonProgress) && (
             <div
-              className={`grid divide-y divide-white/15 bg-black/55 text-white sm:divide-x sm:divide-y-0 ${leaderLabel ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+              className={`grid divide-y divide-white/15 bg-black/55 text-white sm:divide-x sm:divide-y-0 ${leaderLabel && seasonProgress ? "sm:grid-cols-2" : ""}`}
             >
               {leaderLabel && (
                 <div className="px-5 py-4 sm:px-6">
@@ -892,19 +882,6 @@ export default async function SeasonPage({ params }: Props) {
                   </div>
                 </div>
               )}
-              {seasonProgress?.nextMatch && (
-                <Link
-                  className="px-5 py-4 transition-colors hover:bg-white/10 sm:px-6"
-                  href={`/matches/${seasonProgress.nextMatch.id}`}
-                >
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
-                    次節 第{seasonProgress.nextRound}節
-                  </p>
-                  <p className="mt-1 text-sm font-bold text-white">
-                    {formatMatchKickoffJst(seasonProgress.nextMatch.kickoffAt)}
-                  </p>
-                </Link>
-              )}
             </div>
           )}
           <div className="bg-white px-5 py-5 sm:px-8">
@@ -928,9 +905,6 @@ export default async function SeasonPage({ params }: Props) {
                 今週の全試合を見る →
               </TrackedLink>
             </div>
-            <div className="mt-5">
-              <NewsletterSignup source="competition" />
-            </div>
           </div>
         </header>
 
@@ -942,7 +916,6 @@ export default async function SeasonPage({ params }: Props) {
 
         <SeasonSummaryBand
           competition={competition}
-          leaderLabel={leaderLabel}
           latestReviewMatch={latestReviewMatch}
           nextJapanCompetitionLabel={nextJapanCompetitionLabel}
           nextJapanMatch={hasJapanInSeason ? nextJapanMatch : null}
@@ -1116,6 +1089,8 @@ export default async function SeasonPage({ params }: Props) {
             )}
           </section>
         )}
+
+        <NewsletterSignup source="competition" />
 
         <div
           className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6"
