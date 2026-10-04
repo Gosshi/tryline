@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { HomepageSpoilerScore } from "@/components/home-user-state";
 import {
   formatMatchKickoffJst,
   getMatchLabel,
@@ -61,10 +62,17 @@ export function JapanMatchesBlock({
                     <span className="font-semibold text-[var(--color-ink)]">
                       {getMatchLabel(match)}
                       {match.status === "finished" &&
-                      match.homeScore !== null &&
-                      match.awayScore !== null
-                        ? `　${match.homeScore}–${match.awayScore}`
-                        : ""}
+                        match.homeScore !== null &&
+                        match.awayScore !== null && (
+                          <>
+                            {" "}
+                            <HomepageSpoilerScore className="inline-flex min-h-11 items-center text-xs">
+                              <span className="tabular-nums">
+                                {match.homeScore}–{match.awayScore}
+                              </span>
+                            </HomepageSpoilerScore>
+                          </>
+                        )}
                     </span>
                   </Link>
                   {headToHeadHref && (

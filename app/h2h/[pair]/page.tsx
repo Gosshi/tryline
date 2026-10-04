@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
+import { HomepageSpoilerScore } from "@/components/home-user-state";
 import { TrackedLink } from "@/components/tracked-link";
+import { UserStateProvider } from "@/components/user-state-provider";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import {
   getHeadToHeadPageData,
@@ -12,6 +14,7 @@ import {
 } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJst } from "@/lib/format/kickoff";
+import { getTeamColor } from "@/lib/format/team-identity";
 import { SITE_URL } from "@/lib/site";
 
 import type {
@@ -21,6 +24,7 @@ import type {
   HeadToHeadTeam,
 } from "@/lib/db/queries/matches";
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 
 type HeadToHeadPageProps = {
   params: Promise<{
@@ -124,172 +128,185 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
         }}
         type="application/ld+json"
       />
-      <main className="bg-paper min-h-screen">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
-          <nav aria-label="パンくずリスト">
-            <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
-              <li>
-                <Link
-                  className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                  href="/"
-                >
-                  Tryline
-                </Link>
-              </li>
-              <li aria-hidden className="select-none">
-                /
-              </li>
-              <li className="text-[var(--color-ink-muted)]">対戦成績</li>
-              <li aria-hidden className="select-none">
-                /
-              </li>
-              <li className="text-[var(--color-ink)]">
-                {data.teamA.name} 対 {data.teamB.name}
-              </li>
-            </ol>
-          </nav>
+      <UserStateProvider>
+        <main className="tl-scope tl-h2h bg-paper min-h-screen">
+          <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
+            <nav aria-label="パンくずリスト">
+              <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
+                <li>
+                  <Link
+                    className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                    href="/"
+                  >
+                    Tryline
+                  </Link>
+                </li>
+                <li aria-hidden className="select-none">
+                  /
+                </li>
+                <li className="text-[var(--color-ink-muted)]">対戦成績</li>
+                <li aria-hidden className="select-none">
+                  /
+                </li>
+                <li className="text-[var(--color-ink)]">
+                  {data.teamA.name} 対 {data.teamB.name}
+                </li>
+              </ol>
+            </nav>
 
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
-            <div className="grid gap-6 border-b border-slate-100 px-5 py-6 sm:px-6 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
-              <TeamSummary align="right" team={data.teamA} />
-              <div className="text-center">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Head to Head
-                </p>
-                <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
-                  {data.teamA.name} 対 {data.teamB.name} 対戦成績
-                </h1>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  {recordSummary ? (
-                    "日本代表のテストマッチ一覧を照合し、Tryline の試合記録とあわせて表示しています。"
-                  ) : (
-                    <>
-                      Tryline収録分の対戦を表示しています。全対戦の通算成績ではありません。
-                    </>
-                  )}
-                </p>
+            <section
+              className="tl-h2h-cover"
+              style={
+                {
+                  "--team-home": getTeamColor(data.teamA.slug),
+                  "--team-away": getTeamColor(data.teamB.slug),
+                } as CSSProperties
+              }
+            >
+              <span className="tl-h2h-art" aria-hidden="true" />
+              <div className="tl-h2h-heading">
+                <TeamSummary align="right" team={data.teamA} />
+                <div className="text-center">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Head to Head
+                  </p>
+                  <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+                    {data.teamA.name} 対 {data.teamB.name}{" "}
+                    <span className="inline-block">対戦成績</span>
+                  </h1>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                    {recordSummary ? (
+                      "日本代表のテストマッチ一覧を照合し、Tryline の試合記録とあわせて表示しています。"
+                    ) : (
+                      <>
+                        Tryline収録分の対戦を表示しています。全対戦の通算成績ではありません。
+                      </>
+                    )}
+                  </p>
+                </div>
+                <TeamSummary align="left" team={data.teamB} />
               </div>
-              <TeamSummary align="left" team={data.teamB} />
-            </div>
 
-            <div className="grid gap-3 bg-[#f8fafc]/70 px-5 py-4 sm:grid-cols-2 sm:px-6">
-              {recordSummary ? (
-                <>
-                  <Metric label="通算" value={`${recordSummary.total}試合`} />
-                  <Metric
-                    label={data.teamA.name}
-                    value={`${recordSummary.wins}勝 ${recordSummary.losses}敗${recordSummary.draws ? ` ${recordSummary.draws}分` : ""}`}
-                  />
-                  <Metric
-                    label="初対戦"
-                    value={
-                      recordSummary.firstPlayedOn
-                        ? `${Number(recordSummary.firstPlayedOn.slice(0, 4))}年`
-                        : "—"
-                    }
-                  />
-                </>
-              ) : (
-                <>
-                  <Metric
-                    label="収録対戦"
-                    value={`${data.matches.length}試合`}
-                  />
-                  <Metric label="表示範囲" value="Tryline 収録分" />
-                </>
-              )}
-            </div>
-          </section>
-
-          {(recordSummary
-            ? recordSummary.total < 5
-            : data.matches.length < 2) && (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-              このカードは収録対戦データが少ないため、傾向の断定は避けています。
-            </p>
-          )}
-
-          {(latestFinishedMatch || nextHeadToHeadMatch) && (
-            <section className="grid gap-3 sm:grid-cols-2">
-              {latestFinishedMatch && (
-                <LatestReviewCta
-                  contentStatus={contentStatusMap[latestFinishedMatch.id]}
-                  match={latestFinishedMatch}
-                  teamA={data.teamA}
-                  teamB={data.teamB}
-                />
-              )}
-              {nextHeadToHeadMatch && (
-                <NextMatchCta
-                  match={nextHeadToHeadMatch}
-                  teamA={data.teamA}
-                  teamB={data.teamB}
-                />
-              )}
+              <div className="tl-h2h-metrics">
+                {recordSummary ? (
+                  <>
+                    <Metric label="通算" value={`${recordSummary.total}試合`} />
+                    <Metric
+                      label={data.teamA.name}
+                      value={`${recordSummary.wins}勝 ${recordSummary.losses}敗${recordSummary.draws ? ` ${recordSummary.draws}分` : ""}`}
+                    />
+                    <Metric
+                      label="初対戦"
+                      value={
+                        recordSummary.firstPlayedOn
+                          ? `${Number(recordSummary.firstPlayedOn.slice(0, 4))}年`
+                          : "—"
+                      }
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Metric
+                      label="収録対戦"
+                      value={`${data.matches.length}試合`}
+                    />
+                    <Metric label="表示範囲" value="Tryline 収録分" />
+                  </>
+                )}
+              </div>
             </section>
-          )}
 
-          <section className="space-y-3">
-            <h2 className="font-heading text-xl font-extrabold text-slate-950">
-              収録対戦リスト
-            </h2>
-            <div className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
-              {data.matches.map((match) => (
-                <HeadToHeadMatchRow
-                  key={match.id}
-                  match={match}
-                  teamA={data.teamA}
-                  teamB={data.teamB}
-                />
-              ))}
-            </div>
-          </section>
+            {(recordSummary
+              ? recordSummary.total < 5
+              : data.matches.length < 2) && (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                このカードは収録対戦データが少ないため、傾向の断定は避けています。
+              </p>
+            )}
 
-          {recordSummary && (
-            <section className="space-y-3">
+            {(latestFinishedMatch || nextHeadToHeadMatch) && (
+              <section className="grid gap-3 sm:grid-cols-2">
+                {latestFinishedMatch && (
+                  <LatestReviewCta
+                    contentStatus={contentStatusMap[latestFinishedMatch.id]}
+                    match={latestFinishedMatch}
+                    teamA={data.teamA}
+                    teamB={data.teamB}
+                  />
+                )}
+                {nextHeadToHeadMatch && (
+                  <NextMatchCta
+                    match={nextHeadToHeadMatch}
+                    teamA={data.teamA}
+                    teamB={data.teamB}
+                  />
+                )}
+              </section>
+            )}
+
+            <section className="tl-section space-y-3">
               <h2 className="font-heading text-xl font-extrabold text-slate-950">
-                過去の対戦（{data.history.length}試合）
+                収録対戦リスト
               </h2>
-              <div className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                {data.history.slice(0, 10).map((row) => (
-                  <HistoryMatchRow
-                    key={row.playedOn}
-                    row={row}
+              <div className="tl-ledger divide-y divide-slate-200">
+                {data.matches.map((match) => (
+                  <HeadToHeadMatchRow
+                    key={match.id}
+                    match={match}
                     teamA={data.teamA}
                     teamB={data.teamB}
                   />
                 ))}
-                {data.history.length > 10 && (
-                  <details className="group">
-                    <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-[var(--color-accent)]">
-                      残り {data.history.length - 10} 試合を表示
-                    </summary>
-                    {data.history.slice(10).map((row) => (
-                      <HistoryMatchRow
-                        key={row.playedOn}
-                        row={row}
-                        teamA={data.teamA}
-                        teamB={data.teamB}
-                      />
-                    ))}
-                  </details>
-                )}
               </div>
-              {data.historyFetchedAt && (
-                <p className="text-xs text-[var(--color-ink-muted)]">
-                  出典: Wikipedia『List of Japan national rugby union test
-                  matches』（{formatRetrievedDate(data.historyFetchedAt)}取得）
-                </p>
-              )}
             </section>
-          )}
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <TeamPageLink team={data.teamA} />
-            <TeamPageLink team={data.teamB} />
+            {recordSummary && (
+              <section className="tl-section space-y-3">
+                <h2 className="font-heading text-xl font-extrabold text-slate-950">
+                  過去の対戦（{data.history.length}試合）
+                </h2>
+                <div className="tl-ledger divide-y divide-slate-200">
+                  {data.history.slice(0, 10).map((row) => (
+                    <HistoryMatchRow
+                      key={row.playedOn}
+                      row={row}
+                      teamA={data.teamA}
+                      teamB={data.teamB}
+                    />
+                  ))}
+                  {data.history.length > 10 && (
+                    <details className="group">
+                      <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-[var(--color-accent)]">
+                        残り {data.history.length - 10} 試合を表示
+                      </summary>
+                      {data.history.slice(10).map((row) => (
+                        <HistoryMatchRow
+                          key={row.playedOn}
+                          row={row}
+                          teamA={data.teamA}
+                          teamB={data.teamB}
+                        />
+                      ))}
+                    </details>
+                  )}
+                </div>
+                {data.historyFetchedAt && (
+                  <p className="text-xs text-[var(--color-ink-muted)]">
+                    出典: Wikipedia『List of Japan national rugby union test
+                    matches』（{formatRetrievedDate(data.historyFetchedAt)}
+                    取得）
+                  </p>
+                )}
+              </section>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TeamPageLink team={data.teamA} />
+              <TeamPageLink team={data.teamB} />
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </UserStateProvider>
     </>
   );
 }
@@ -378,12 +395,18 @@ function LatestReviewCta({
     match.homeTeam.slug === teamB.slug ? match.homeScore : match.awayScore;
 
   return (
-    <aside className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm shadow-slate-200/50">
+    <aside className="tl-h2h-callout">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
         直近の対戦
       </p>
       <p className="mt-2 text-sm font-bold text-slate-950">
-        {teamA.name} {teamAScore ?? 0} - {teamBScore ?? 0} {teamB.name}
+        {teamA.name}{" "}
+        <HomepageSpoilerScore className="inline-flex min-h-11 items-center text-sm">
+          <span className="tl-h2h-score tabular-nums">
+            {teamAScore ?? "—"} - {teamBScore ?? "—"}
+          </span>
+        </HomepageSpoilerScore>{" "}
+        {teamB.name}
       </p>
       <p className="mt-1 text-sm text-slate-600">
         {formatKickoffJst(match.kickoffAt)}
@@ -396,7 +419,7 @@ function LatestReviewCta({
             destination: "match",
             match_id: match.id,
           }}
-          className="mt-3 inline-flex text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           href={`/matches/${match.id}`}
         >
           直近の対戦のレビューを読む →
@@ -416,7 +439,7 @@ function NextMatchCta({
   teamB: HeadToHeadTeam;
 }) {
   return (
-    <aside className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm shadow-slate-200/50">
+    <aside className="tl-h2h-callout">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
         次回対戦
       </p>
@@ -433,7 +456,7 @@ function NextMatchCta({
           destination: "match",
           match_id: match.id,
         }}
-        className="mt-3 inline-flex text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+        className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
         href={`/matches/${match.id}`}
       >
         次回対戦の詳細を見る →
@@ -460,10 +483,10 @@ function HistoryMatchRow({
   const japan = teamA.slug === "japan" ? teamA : teamB;
   const opponent = teamA.slug === "japan" ? teamB : teamA;
   const score = japanFirst
-    ? `${japan.name} ${row.teamScore} - ${row.opponentScore} ${opponent.name}`
-    : `${japan.name} ${row.opponentScore} - ${row.teamScore} ${opponent.name}`;
+    ? `${row.teamScore} - ${row.opponentScore}`
+    : `${row.opponentScore} - ${row.teamScore}`;
   return (
-    <div className="grid grid-cols-[7.25rem_minmax(0,1fr)] gap-3 px-4 py-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]">
+    <div className="tl-history-row grid grid-cols-[7.25rem_minmax(0,1fr)] gap-3 px-4 py-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]">
       <time
         className="whitespace-nowrap text-[var(--color-ink-muted)]"
         dateTime={row.playedOn}
@@ -471,7 +494,13 @@ function HistoryMatchRow({
         {formatHistoryDate(row.playedOn)}
       </time>
       <div className="min-w-0">
-        <span className="font-bold text-[var(--color-ink)]">{score}</span>
+        <span className="inline-flex flex-wrap items-center gap-1 font-bold text-[var(--color-ink)]">
+          <span className="whitespace-nowrap">{japan.name}</span>{" "}
+          <HomepageSpoilerScore className="inline-flex min-h-11 items-center text-xs">
+            <span className="tabular-nums">{score}</span>
+          </HomepageSpoilerScore>{" "}
+          <span className="whitespace-nowrap">{opponent.name}</span>
+        </span>
         {row.venue && (
           <span className="ml-2 text-[var(--color-ink-muted)]">
             {row.venue}
@@ -505,7 +534,7 @@ function TeamSummary({
 }) {
   return (
     <Link
-      className={`group flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
+      className={`tl-h2h-team group flex items-center gap-3 px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${
         align === "right" ? "justify-end lg:text-right" : "justify-start"
       }`}
       href={`/teams/${team.slug}`}
@@ -525,7 +554,7 @@ function TeamSummary({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+    <div className="tl-h2h-metric">
       <p className="text-xs font-semibold text-slate-500">{label}</p>
       <p className="mt-1 text-sm font-bold text-slate-950">{value}</p>
     </div>
@@ -547,12 +576,12 @@ function HeadToHeadMatchRow({
     match.homeTeam.slug === teamB.slug ? match.homeScore : match.awayScore;
   const scoreText =
     match.status === "finished"
-      ? `${teamAScore ?? 0} - ${teamBScore ?? 0}`
+      ? `${teamAScore ?? "—"} - ${teamBScore ?? "—"}`
       : "試合前";
 
   return (
     <Link
-      className="grid gap-3 px-4 py-4 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-5"
+      className="tl-hover tl-h2h-row grid gap-3 px-4 py-4 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-5"
       href={`/matches/${match.id}`}
     >
       <span className="min-w-0">
@@ -561,7 +590,7 @@ function HeadToHeadMatchRow({
           {" · "}
           {formatKickoffJst(match.kickoffAt)}
         </span>
-        <span className="mt-1 block truncate text-sm font-bold text-slate-950">
+        <span className="mt-1 block text-sm font-bold text-slate-950">
           {teamA.name} 対 {teamB.name}
         </span>
       </span>
@@ -569,8 +598,14 @@ function HeadToHeadMatchRow({
         <span className="text-xs font-semibold text-slate-500">
           {teamA.shortCode}
         </span>
-        <span className="rounded-full bg-slate-950 px-3 py-1 text-sm font-black tabular-nums text-white">
-          {scoreText}
+        <span className="tl-h2h-row-score">
+          {match.status === "finished" ? (
+            <HomepageSpoilerScore className="inline-flex min-h-11 items-center text-xs">
+              <span className="tabular-nums">{scoreText}</span>
+            </HomepageSpoilerScore>
+          ) : (
+            scoreText
+          )}
         </span>
         <span className="text-xs font-semibold text-slate-500">
           {teamB.shortCode}
@@ -583,7 +618,7 @@ function HeadToHeadMatchRow({
 function TeamPageLink({ team }: { team: HeadToHeadTeam }) {
   return (
     <Link
-      className="rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-950 transition-colors hover:border-slate-300 hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+      className="tl-team-link min-h-11 border-b border-slate-200 px-5 py-4 text-sm font-bold text-slate-950 transition-colors hover:border-slate-300 hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
       href={`/teams/${team.slug}`}
     >
       {team.name}のページへ
