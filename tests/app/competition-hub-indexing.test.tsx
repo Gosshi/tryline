@@ -2,11 +2,21 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CompetitionHubPage from "@/app/c/[competition]/page";
 import { metadata as rwc2027Metadata } from "@/app/c/rwc/2027/page";
+
+const authMock = vi.hoisted(() => ({ getClientUserState: vi.fn() }));
+vi.mock("@/lib/auth/client", () => authMock);
 
 const competitionMocks = vi.hoisted(() => ({
   getCompetitionGuide: vi.fn(),
@@ -178,6 +188,12 @@ const standings = [
 
 describe("competition hub indexing", () => {
   beforeEach(() => {
+    authMock.getClientUserState.mockResolvedValue({
+      favoriteTeamSlugs: [],
+      isPremium: false,
+      spoilerGuardEnabled: false,
+      user: null,
+    });
     competitionMocks.listFamilies.mockResolvedValue(["rwc"]);
     competitionMocks.listSeasonsByFamily.mockResolvedValue([
       {
@@ -454,6 +470,38 @@ describe("competition hub indexing", () => {
     expect(screen.getByText("開幕前")).toBeInTheDocument();
     expect(screen.queryByText(/2026年9月25日/)).not.toBeInTheDocument();
     expect(screen.queryByText(/2027年6月3日/)).not.toBeInTheDocument();
+  });
+
+  it("honors spoiler settings for Japan fixtures without removing their links", async () => {
+    authMock.getClientUserState.mockResolvedValue({
+      favoriteTeamSlugs: [],
+      isPremium: false,
+      spoilerGuardEnabled: true,
+      user: null,
+    });
+    matchMocks.listMatchesForCompetition.mockResolvedValue([
+      match("japan-result", "2026-09-12T10:05:00Z", {
+        homeSlug: "japan",
+        homeScore: 63,
+        awayScore: 14,
+        status: "finished",
+      }),
+    ]);
+    const element = await CompetitionHubPage({
+      params: Promise.resolve({ competition: "rwc" }),
+    });
+    let container!: HTMLElement;
+    await act(async () => {
+      container = render(element).container;
+    });
+    expect(container.textContent).not.toContain("63–14");
+    expect(
+      container.querySelector('a[href="/matches/japan-result"]'),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "タップして結果を見る" }),
+    );
+    expect(screen.getByText("63–14")).toBeInTheDocument();
   });
 
   it("shows post-season JST dates, Japan scores, champion, and standings", async () => {

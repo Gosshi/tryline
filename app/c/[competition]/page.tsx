@@ -6,6 +6,7 @@ import { CompetitionViewingGuide } from "@/components/competition-viewing-guide"
 import { JapanMatchesBlock } from "@/components/japan-matches-block";
 import { MatchCard } from "@/components/match-card";
 import { StandingsTable } from "@/components/standings-table";
+import { UserStateProvider } from "@/components/user-state-provider";
 import { getCompetitionHeroImage } from "@/lib/competition-hero-images";
 import {
   getCompetitionGuide,
@@ -178,269 +179,279 @@ export default async function CompetitionHubPage({ params }: Props) {
   const excerptStandings = selectStandingsExcerpt(standings, hasJapan);
 
   return (
-    <main className="bg-paper min-h-screen">
-      <div className="relative h-48 w-full overflow-hidden sm:h-56">
-        <Image
-          alt={formatFamilyName(competition)}
-          className="object-cover object-center"
-          fill
-          priority
-          sizes="100vw"
-          src={getCompetitionHeroImage(competition)}
-        />
-        <div className="absolute inset-0 bg-slate-950/60" />
-        <div className="absolute inset-0 flex flex-col justify-end px-4 pb-6 sm:px-6 md:px-8">
-          <div className="mx-auto w-full max-w-4xl">
-            <h1 className="font-heading text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-              {formatFamilyName(competition)}
-            </h1>
-            <p className="mt-1 text-sm text-white/70">全シーズン一覧</p>
-            {COMPETITION_DESCRIPTIONS[competition] && (
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">
-                {COMPETITION_DESCRIPTIONS[competition]}
-              </p>
-            )}
+    <UserStateProvider>
+      <main className="tl-scope tl-family bg-paper min-h-screen">
+        <div className="tl-family-band tl-season-band relative w-full overflow-hidden">
+          <Image
+            alt={formatFamilyName(competition)}
+            className="object-cover object-center"
+            fill
+            priority
+            sizes="100vw"
+            src={getCompetitionHeroImage(competition)}
+          />
+          <div className="tl-family-scrim absolute inset-0" />
+          <span
+            className="tl-band-art pointer-events-none absolute inset-0"
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0 flex flex-col justify-end px-4 pb-6 sm:px-6 md:px-8">
+            <div className="relative mx-auto w-full max-w-6xl">
+              <h1 className="font-heading text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+                {formatFamilyName(competition)}
+              </h1>
+              <p className="mt-1 text-sm text-white/70">全シーズン一覧</p>
+              {COMPETITION_DESCRIPTIONS[competition] && (
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">
+                  {COMPETITION_DESCRIPTIONS[competition]}
+                </p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 sm:px-6 md:px-8">
-        <section aria-labelledby="current-season-summary" className="space-y-4">
-          <h2
-            className="font-heading text-xl font-extrabold text-[var(--color-ink)] sm:text-2xl"
-            id="current-season-summary"
+        <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 md:px-8">
+          <section
+            aria-labelledby="current-season-summary"
+            className="tl-section space-y-4"
           >
-            {competitionTitle}の日程・結果
-          </h2>
-          <div className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] ring-1 ring-slate-200 sm:p-6">
-            <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                {state !== "information" && (
-                  <span className="rounded-full bg-[var(--color-accent-subtle)] px-3 py-1 text-sm font-bold text-[var(--color-accent)]">
-                    {state === "pre"
-                      ? "開幕前"
-                      : state === "active"
-                        ? "開催中"
-                        : "終了"}
-                  </span>
-                )}
-                {periodLabel && (
-                  <p className="text-sm font-semibold text-[var(--color-ink)]">
-                    {periodLabel}
-                  </p>
-                )}
-              </div>
-              <Link
-                className="text-sm font-bold text-[var(--color-accent)] hover:text-[var(--color-ink)]"
-                href={`/c/${competition}/${latestSeason.season}`}
-              >
-                {competitionTitle} の全日程・結果を見る →
-              </Link>
-            </div>
-
-            {(previewMatches.length > 0 ||
-              hasJapan ||
-              showStandings ||
-              state !== "information") && (
-              <div className="mt-4 grid gap-5 lg:grid-cols-2">
-                <div className="space-y-5">
-                  {previewMatches.length > 0 && (
-                    <section
-                      aria-labelledby="next-matches-heading"
-                      className="space-y-3"
-                    >
-                      <h3
-                        className="font-heading text-base font-extrabold text-[var(--color-ink)]"
-                        id="next-matches-heading"
-                      >
-                        次の試合（日本時間）
-                      </h3>
-                      <ul className="space-y-2">
-                        {previewMatches.map((match) => (
-                          <li key={match.id}>
-                            <Link
-                              className="grid grid-cols-1 gap-1 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-white sm:grid-cols-[12.5rem_minmax(0,1fr)] sm:items-center sm:gap-x-3"
-                              href={`/matches/${match.id}`}
-                            >
-                              <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
-                                {formatMatchKickoffJst(match.kickoffAt)}
-                              </span>
-                              <span className="font-semibold text-[var(--color-ink)]">
-                                {getMatchLabel(match)}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                      {nextMatches.length > 3 && (
-                        <Link
-                          className="inline-flex text-sm font-bold text-[var(--color-accent)]"
-                          href={`/c/${competition}/${latestSeason.season}#schedule`}
-                        >
-                          残り {nextMatches.length - 3} 試合の日程を見る →
-                        </Link>
-                      )}
-                    </section>
-                  )}
-                  <JapanMatchesBlock
-                    matches={matches}
-                    seasonHref={`/c/${competition}/${latestSeason.season}`}
-                  />
-                </div>
-
-                <div className="space-y-5">
-                  {showStandings && (
-                    <section
-                      aria-labelledby="standings-heading"
-                      className="space-y-3"
-                    >
-                      <h3
-                        className="font-heading text-base font-extrabold text-[var(--color-ink)]"
-                        id="standings-heading"
-                      >
-                        {state === "post" ? "最終順位" : "順位"}
-                      </h3>
-                      {state === "post" && latestSeason.champion && (
-                        <p className="font-bold text-[var(--color-ink)]">
-                          優勝: {latestSeason.champion}
-                        </p>
-                      )}
-                      {leaderLabel && poolStandings.length > 0 && (
-                        <p className="text-sm font-semibold text-[var(--color-ink)]">
-                          {leaderLabel}
-                        </p>
-                      )}
-                      {excerptStandings.length > 0 && (
-                        <StandingsTable
-                          accentColor={getCompetitionFamilyColor(competition)}
-                          standings={excerptStandings}
-                        />
-                      )}
-                      {hasStandings && (
-                        <Link
-                          className="inline-flex text-sm font-bold text-[var(--color-accent)]"
-                          href={`/c/${competition}/${latestSeason.season}/standings`}
-                        >
-                          順位表をすべて見る →
-                        </Link>
-                      )}
-                    </section>
-                  )}
+            <h2
+              className="font-heading text-xl font-extrabold text-[var(--color-ink)] sm:text-2xl"
+              id="current-season-summary"
+            >
+              {competitionTitle}の日程・結果
+            </h2>
+            <div className="tl-family-summary p-5 sm:p-6">
+              <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-3">
                   {state !== "information" && (
-                    <section
-                      aria-labelledby="broadcast-heading"
-                      className="space-y-3"
-                    >
-                      <h3
-                        className="font-heading text-base font-extrabold text-[var(--color-ink)]"
-                        id="broadcast-heading"
+                    <span className="rounded-full bg-[var(--color-accent-subtle)] px-3 py-1 text-sm font-bold text-[var(--color-accent)]">
+                      {state === "pre"
+                        ? "開幕前"
+                        : state === "active"
+                          ? "開催中"
+                          : "終了"}
+                    </span>
+                  )}
+                  {periodLabel && (
+                    <p className="text-sm font-semibold text-[var(--color-ink)]">
+                      {periodLabel}
+                    </p>
+                  )}
+                </div>
+                <Link
+                  className="inline-flex min-h-11 items-center text-sm font-bold text-[var(--color-accent)] hover:text-[var(--color-ink)]"
+                  href={`/c/${competition}/${latestSeason.season}`}
+                >
+                  {competitionTitle} の全日程・結果を見る →
+                </Link>
+              </div>
+
+              {(previewMatches.length > 0 ||
+                hasJapan ||
+                showStandings ||
+                state !== "information") && (
+                <div className="mt-4 grid gap-5 lg:grid-cols-2">
+                  <div className="space-y-5">
+                    {previewMatches.length > 0 && (
+                      <section
+                        aria-labelledby="next-matches-heading"
+                        className="space-y-3"
                       >
-                        日本での視聴方法
-                      </h3>
-                      <p className="text-sm leading-relaxed text-[var(--color-ink-muted)]">
-                        {seasonBroadcastGuide.answer}
-                      </p>
-                      {seasonBroadcastGuide.services.length > 0 && (
-                        <ul className="flex flex-wrap gap-2">
-                          {seasonBroadcastGuide.services.map((service) => (
-                            <li key={service.serviceName}>
-                              <a
-                                className="inline-flex rounded-full border border-slate-200 px-3 py-1.5 text-sm font-semibold text-[var(--color-accent)] hover:bg-slate-50"
-                                href={service.url}
-                                rel="noopener noreferrer"
-                                target="_blank"
+                        <h3
+                          className="font-heading text-base font-extrabold text-[var(--color-ink)]"
+                          id="next-matches-heading"
+                        >
+                          次の試合（日本時間）
+                        </h3>
+                        <ul className="space-y-2">
+                          {previewMatches.map((match) => (
+                            <li key={match.id}>
+                              <Link
+                                className="tl-family-upcoming tl-hover grid grid-cols-1 gap-1 border-b border-slate-200 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-white sm:grid-cols-[12.5rem_minmax(0,1fr)] sm:items-center sm:gap-x-3"
+                                href={`/matches/${match.id}`}
                               >
-                                {service.serviceName}
-                              </a>
+                                <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
+                                  {formatMatchKickoffJst(match.kickoffAt)}
+                                </span>
+                                <span className="font-semibold text-[var(--color-ink)]">
+                                  {getMatchLabel(match)}
+                                </span>
+                              </Link>
                             </li>
                           ))}
                         </ul>
-                      )}
-                    </section>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
+                        {nextMatches.length > 3 && (
+                          <Link
+                            className="inline-flex text-sm font-bold text-[var(--color-accent)]"
+                            href={`/c/${competition}/${latestSeason.season}#schedule`}
+                          >
+                            残り {nextMatches.length - 3} 試合の日程を見る →
+                          </Link>
+                        )}
+                      </section>
+                    )}
+                    <JapanMatchesBlock
+                      matches={matches}
+                      seasonHref={`/c/${competition}/${latestSeason.season}`}
+                    />
+                  </div>
 
-        {recentReviews.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-              最近のレビュー
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {recentReviews.map((match) => (
-                <MatchCard key={match.id} match={match} />
-              ))}
+                  <div className="space-y-5">
+                    {showStandings && (
+                      <section
+                        aria-labelledby="standings-heading"
+                        className="space-y-3"
+                      >
+                        <h3
+                          className="font-heading text-base font-extrabold text-[var(--color-ink)]"
+                          id="standings-heading"
+                        >
+                          {state === "post" ? "最終順位" : "順位"}
+                        </h3>
+                        {state === "post" && latestSeason.champion && (
+                          <p className="font-bold text-[var(--color-ink)]">
+                            優勝: {latestSeason.champion}
+                          </p>
+                        )}
+                        {leaderLabel && poolStandings.length > 0 && (
+                          <p className="text-sm font-semibold text-[var(--color-ink)]">
+                            {leaderLabel}
+                          </p>
+                        )}
+                        {excerptStandings.length > 0 && (
+                          <StandingsTable
+                            compact
+                            accentColor={getCompetitionFamilyColor(competition)}
+                            standings={excerptStandings}
+                          />
+                        )}
+                        {hasStandings && (
+                          <Link
+                            className="inline-flex text-sm font-bold text-[var(--color-accent)]"
+                            href={`/c/${competition}/${latestSeason.season}/standings`}
+                          >
+                            順位表をすべて見る →
+                          </Link>
+                        )}
+                      </section>
+                    )}
+                    {state !== "information" && (
+                      <section
+                        aria-labelledby="broadcast-heading"
+                        className="space-y-3"
+                      >
+                        <h3
+                          className="font-heading text-base font-extrabold text-[var(--color-ink)]"
+                          id="broadcast-heading"
+                        >
+                          日本での視聴方法
+                        </h3>
+                        <p className="text-sm leading-relaxed text-[var(--color-ink-muted)]">
+                          {seasonBroadcastGuide.answer}
+                        </p>
+                        {seasonBroadcastGuide.services.length > 0 && (
+                          <ul className="flex flex-wrap gap-2">
+                            {seasonBroadcastGuide.services.map((service) => (
+                              <li key={service.serviceName}>
+                                <a
+                                  className="inline-flex rounded-full border border-slate-200 px-3 py-1.5 text-sm font-semibold text-[var(--color-accent)] hover:bg-slate-50"
+                                  href={service.url}
+                                  rel="noopener noreferrer"
+                                  target="_blank"
+                                >
+                                  {service.serviceName}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </section>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
-        )}
 
-        <div className="max-w-3xl">
-          <CompetitionViewingGuide
-            markdown={guide?.guideJa ?? null}
-            sourceUrl={guide?.sourceUrl ?? null}
-            verifiedAt={guide?.verifiedAt ?? null}
-          />
-        </div>
+          {recentReviews.length > 0 && (
+            <section className="tl-section space-y-3">
+              <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                最近のレビュー
+              </h2>
+              <div className="tl-family-reviews tl-ledger divide-y divide-slate-200">
+                {recentReviews.map((match) => (
+                  <MatchCard key={match.id} layout="row" match={match} />
+                ))}
+              </div>
+            </section>
+          )}
 
-        <section className="space-y-3">
-          <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-            全シーズン
-          </h2>
-          <ul className="space-y-3">
-            {seasons.map((season) => {
-              const hasContent = season.publishedContentCount > 0;
-              const seasonStats = (
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
-                  <span>{season.matchCount} 試合</span>
-                  {season.champion && (
-                    <span className="font-semibold text-[var(--color-ink)]">
-                      🏆 {season.champion}
-                    </span>
-                  )}
-                </div>
-              );
+          <div className="tl-family-guide max-w-3xl">
+            <CompetitionViewingGuide
+              markdown={guide?.guideJa ?? null}
+              sourceUrl={guide?.sourceUrl ?? null}
+              verifiedAt={guide?.verifiedAt ?? null}
+            />
+          </div>
 
-              return (
-                <li key={season.slug}>
-                  {hasContent ? (
-                    <Link
-                      className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-slate-400 hover:bg-[#f8fafc]"
-                      href={`/c/${competition}/${season.season}`}
-                    >
-                      <div>
-                        <span className="text-lg font-semibold text-slate-900">
-                          {season.season}
-                        </span>
-                        {seasonStats}
-                      </div>
-                      {season.startDate && season.endDate && (
-                        <span className="shrink-0 text-sm text-slate-500">
-                          {season.startDate.slice(0, 7)} 〜{" "}
-                          {season.endDate.slice(0, 7)}
-                        </span>
-                      )}
-                    </Link>
-                  ) : (
-                    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-[#f8fafc] px-5 py-4 opacity-60">
-                      <div>
-                        <span className="text-lg font-semibold text-slate-500">
-                          {season.season}
-                        </span>
-                        {seasonStats}
-                      </div>
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                        準備中
+          <section className="tl-section space-y-3">
+            <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              全シーズン
+            </h2>
+            <ul className="tl-season-index divide-y divide-slate-200">
+              {seasons.map((season) => {
+                const hasContent = season.publishedContentCount > 0;
+                const seasonStats = (
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
+                    <span>{season.matchCount} 試合</span>
+                    {season.champion && (
+                      <span className="font-semibold text-[var(--color-ink)]">
+                        🏆 {season.champion}
                       </span>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      </div>
-    </main>
+                    )}
+                  </div>
+                );
+
+                return (
+                  <li key={season.slug}>
+                    {hasContent ? (
+                      <Link
+                        className="tl-hover flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-white"
+                        href={`/c/${competition}/${season.season}`}
+                      >
+                        <div>
+                          <span className="font-number text-3xl font-semibold text-[var(--color-ink)]">
+                            {season.season}
+                          </span>
+                          {seasonStats}
+                        </div>
+                        {season.startDate && season.endDate && (
+                          <span className="shrink-0 text-sm text-slate-500">
+                            {season.startDate.slice(0, 7)} 〜{" "}
+                            {season.endDate.slice(0, 7)}
+                          </span>
+                        )}
+                      </Link>
+                    ) : (
+                      <div className="flex items-center justify-between gap-4 px-5 py-4 opacity-60">
+                        <div>
+                          <span className="text-lg font-semibold text-slate-500">
+                            {season.season}
+                          </span>
+                          {seasonStats}
+                        </div>
+                        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                          準備中
+                        </span>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        </div>
+      </main>
+    </UserStateProvider>
   );
 }

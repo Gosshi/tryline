@@ -2,8 +2,17 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const authMock = vi.hoisted(() => ({ getClientUserState: vi.fn() }));
+vi.mock("@/lib/auth/client", () => authMock);
 
 const competitionsMock = vi.hoisted(() => ({
   getCompetitionBySlug: vi.fn(),
@@ -53,6 +62,57 @@ const match = {
 describe("round hub page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    authMock.getClientUserState.mockResolvedValue({
+      favoriteTeamSlugs: [],
+      isPremium: false,
+      spoilerGuardEnabled: false,
+      user: null,
+    });
+  });
+
+  afterEach(cleanup);
+
+  it("hides scores without removing the server-rendered match link or preview/recap labels", async () => {
+    authMock.getClientUserState.mockResolvedValue({
+      favoriteTeamSlugs: [],
+      isPremium: false,
+      spoilerGuardEnabled: true,
+      user: null,
+    });
+    competitionsMock.getCompetitionBySlug.mockResolvedValue({
+      family: "pnc",
+      name: "Pacific Nations Cup",
+      season: "2026",
+    });
+    competitionsMock.listSeasonsByFamily.mockResolvedValue([
+      { season: "2026" },
+    ]);
+    matchesMock.getRoundMatches.mockResolvedValue([{ ...match, round: 101 }]);
+    matchesMock.listRoundsForCompetition.mockResolvedValue([101, 102]);
+    contentStatusMock.getContentStatusForMatches.mockResolvedValue({
+      "match-1": { hasPreview: true, hasRecap: true },
+    });
+    const element = await RoundHubPage({
+      params: Promise.resolve({
+        competition: "pnc",
+        round: "101",
+        season: "2026",
+      }),
+    });
+    let container!: HTMLElement;
+    await act(async () => {
+      container = render(element).container;
+    });
+    expect(screen.getByRole("heading", { name: "準決勝" })).toBeInTheDocument();
+    expect(container.querySelector("header")?.textContent).not.toContain("101");
+    expect(container.textContent).not.toContain("24–21");
+    expect(container.querySelector('a[href="/matches/match-1"]')).toBeTruthy();
+    expect(screen.getByText("プレビューあり")).toBeInTheDocument();
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "タップして結果を見る" }),
+      { key: "Enter" },
+    );
+    expect(screen.getByText("24–21")).toBeInTheDocument();
   });
 
   it("generates static params from numeric round hubs", async () => {

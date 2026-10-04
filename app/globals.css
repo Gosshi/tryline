@@ -865,3 +865,297 @@
 .tl-scope .tl-score-graph svg {
   font-family: var(--font-number), sans-serif;
 }
+
+/* PR 5: H2H, competition family and round hubs reuse A4's printed surfaces. */
+.tl-scope .tl-section > h2 {
+  border-top: 3px double var(--color-ink);
+  padding-top: 14px;
+  font-family: var(--font-heading), serif;
+  font-weight: 500;
+  font-size: 26px;
+  color: var(--color-ink);
+  letter-spacing: 0;
+}
+.tl-scope .tl-ledger {
+  border-block: 3px double var(--color-ink);
+  background: #fffdf880;
+}
+.tl-scope .tl-h2h-cover {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--color-ink-strong);
+  border-bottom: 3px solid var(--color-brass);
+}
+.tl-scope .tl-h2h-art {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(180deg, #17191f55, #17191fe8 80%),
+    linear-gradient(110deg, var(--team-home) 0 48%, var(--team-away) 48% 100%);
+}
+.tl-scope .tl-h2h-art::after {
+  content: "";
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border: 1px solid #ffffff38;
+  border-radius: 50%;
+  right: -80px;
+  top: -160px;
+  box-shadow: 0 0 0 35px #ffffff0c;
+}
+.tl-scope .tl-h2h-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2.4fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 32px 24px;
+  color: white;
+}
+.tl-scope .tl-h2h-heading h1 {
+  font-weight: 500;
+  font-size: 36px;
+  text-wrap: balance;
+  line-height: 1.5;
+  color: white;
+}
+.tl-scope .tl-h2h-heading > div {
+  padding: 12px;
+  background: #17191fe8;
+}
+.tl-scope .tl-h2h-heading p {
+  color: #f5f2eb;
+}
+.tl-scope .tl-h2h-heading p:first-child {
+  color: #ddba87;
+  letter-spacing: 0.18em;
+}
+.tl-scope .tl-h2h-team {
+  min-width: 0;
+  background: var(--color-ink-strong);
+  color: white;
+}
+.tl-scope .tl-h2h-team span {
+  color: white;
+}
+.tl-scope .tl-h2h-team > span:first-child {
+  border: 1px solid #ffffff55;
+  border-radius: 2px;
+  font-family: var(--font-number), sans-serif;
+}
+.tl-scope .tl-h2h-team > span:last-child > span:first-child {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.tl-scope .tl-h2h-team > span:last-child > span:last-child {
+  color: #dedbd4;
+}
+.tl-scope .tl-h2h-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px 24px;
+  background: #fffdf8;
+}
+.tl-scope .tl-h2h-metric {
+  flex: 1 1 180px;
+  border-left: 1px solid var(--color-rule);
+  padding-left: 16px;
+}
+.tl-scope .tl-h2h-metric p:first-child {
+  color: var(--color-brass);
+  font-size: 12px;
+}
+.tl-scope .tl-h2h-metric p:last-child {
+  font-family: var(--font-number), var(--font-body), sans-serif;
+  font-size: 27px;
+  font-weight: 600;
+}
+.tl-scope .tl-h2h-callout {
+  padding: 20px;
+  border-top: 1px solid var(--color-brass);
+  background: #fffdf8;
+}
+.tl-scope .tl-h2h-callout > p:first-child {
+  color: var(--color-brass);
+}
+.tl-scope .tl-h2h-score {
+  font-size: 32px;
+  padding-inline: 8px;
+}
+.tl-scope .tl-h2h-row-score {
+  padding: 2px 10px;
+  background: var(--color-ink-strong);
+  color: white;
+  font-size: 18px;
+}
+.tl-scope .tl-h2h-row > span:last-child {
+  justify-content: end;
+}
+.tl-scope .tl-history-row {
+  align-items: center;
+}
+.tl-scope .tl-team-link {
+  background: transparent;
+  color: var(--color-ink);
+}
+.tl-scope .tl-family-band {
+  height: 232px;
+}
+.tl-scope .tl-family-band .tl-band-art {
+  opacity: 0.18;
+}
+.tl-scope .tl-family-scrim {
+  background:
+    linear-gradient(90deg, #17191ff2, #17191f88),
+    linear-gradient(180deg, #17191f22, #17191fcc);
+}
+.tl-scope .tl-family-band h1 {
+  font-size: 38px;
+  font-weight: 500;
+}
+.tl-scope .tl-family-band p {
+  color: #f5f2eb;
+}
+.tl-scope .tl-family-band h1 + p {
+  color: #ddba87;
+}
+.tl-scope .tl-family-summary {
+  background: #fffdf880;
+  border-block: 1px solid var(--color-rule);
+}
+.tl-scope .tl-family-upcoming {
+  border-radius: 0;
+  background: transparent;
+}
+.tl-scope.tl-family #japan-matches-heading + ul > li > div {
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-rule);
+  background: transparent;
+  padding-inline: 0;
+}
+.tl-scope .tl-family-guide {
+  padding-left: 24px;
+  border-left: 1px solid var(--color-brass);
+}
+.tl-scope .tl-family-guide h2 {
+  font-size: 28px;
+  font-weight: 500;
+}
+.tl-scope .tl-season-index {
+  border-bottom: 1px solid var(--color-rule);
+}
+.tl-scope .tl-round-band {
+  min-height: 152px;
+  gap: 24px;
+}
+.tl-scope .tl-round-band h1 {
+  font-size: 40px;
+  font-weight: 500;
+}
+.tl-scope .tl-round-band p {
+  color: #f5f2eb;
+}
+.tl-scope .tl-round-number {
+  position: relative;
+  flex-shrink: 0;
+  font-family: var(--font-number), sans-serif;
+  font-size: 80px;
+  line-height: 1;
+  color: #ddba87;
+}
+.tl-scope .tl-round-day {
+  border-top: 3px double var(--color-brass);
+}
+.tl-scope .tl-round-day span {
+  color: var(--color-brass);
+}
+.tl-scope .tl-round-day h2 {
+  font-family: var(--font-number), sans-serif;
+  font-size: 48px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.tl-scope .tl-round-day span:last-child {
+  background: transparent;
+}
+.tl-scope .tl-round-row {
+  min-height: 88px;
+}
+.tl-scope .tl-round-row > div:last-child {
+  max-width: 88px;
+  text-align: center;
+}
+@media (max-width: 699px) {
+  .tl-scope .tl-h2h-heading {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 20px 16px;
+    gap: 12px;
+  }
+  .tl-scope .tl-h2h-heading > div {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .tl-scope .tl-h2h-heading h1 {
+    font-size: 27px;
+  }
+  .tl-scope .tl-h2h-team {
+    justify-content: start;
+    padding: 10px;
+    gap: 8px;
+  }
+  .tl-scope .tl-h2h-team > span:first-child {
+    width: 32px;
+    height: 36px;
+    font-size: 12px;
+  }
+  .tl-scope .tl-h2h-metrics {
+    gap: 14px;
+    padding: 18px 16px;
+  }
+  .tl-scope .tl-h2h-metric {
+    flex-basis: 130px;
+  }
+  .tl-scope .tl-h2h-metric p:last-child {
+    font-size: 24px;
+  }
+  .tl-scope .tl-family-band {
+    height: 258px;
+  }
+  .tl-scope .tl-family-band h1 {
+    font-size: 27px;
+  }
+  .tl-scope .tl-family-guide {
+    padding-left: 16px;
+  }
+  .tl-scope .tl-round-band {
+    align-items: start;
+    gap: 12px;
+  }
+  .tl-scope .tl-round-number {
+    font-size: 52px;
+  }
+  .tl-scope .tl-round-band h1 {
+    font-size: 32px;
+  }
+  .tl-scope .tl-round-row {
+    grid-template-columns: 48px minmax(0, 1fr) 68px;
+    padding-inline: 8px;
+    gap: 8px;
+  }
+  .tl-scope .tl-round-row > div:last-child {
+    max-width: 68px;
+  }
+  .tl-scope .tl-round-row > div:last-child span[role="button"] {
+    overflow-wrap: anywhere;
+  }
+}
+
+.tl-scope .tl-round-row > div:last-child span[role="button"] {
+  border-radius: 3px;
+  padding-inline: 3px;
+  line-height: 1.45;
+}

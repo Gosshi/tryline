@@ -2,8 +2,17 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const authMock = vi.hoisted(() => ({ getClientUserState: vi.fn() }));
+vi.mock("@/lib/auth/client", () => authMock);
 
 const contentMocks = vi.hoisted(() => ({
   getContentStatusForMatches: vi.fn(),
@@ -150,6 +159,12 @@ const pageData = {
 describe("H2H page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    authMock.getClientUserState.mockResolvedValue({
+      favoriteTeamSlugs: [],
+      isPremium: false,
+      spoilerGuardEnabled: false,
+      user: null,
+    });
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-21T00:00:00.000Z"));
     contentMocks.getContentStatusForMatches.mockResolvedValue({});
@@ -159,6 +174,51 @@ describe("H2H page", () => {
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
+  });
+
+  it("hides individual results in the hero CTA, stored matches and history while retaining links", async () => {
+    authMock.getClientUserState.mockResolvedValue({
+      favoriteTeamSlugs: [],
+      isPremium: false,
+      spoilerGuardEnabled: true,
+      user: null,
+    });
+    matchesMock.getHeadToHeadPageData.mockResolvedValue({
+      ...pageData,
+      history: [
+        {
+          playedOn: "2000-01-01",
+          teamSlug: "japan",
+          teamScore: 31,
+          opponentScore: 19,
+          venue: null,
+          competitionLabel: null,
+        },
+      ],
+    });
+    contentMocks.getContentStatusForMatches.mockResolvedValue({
+      "match-1": { hasRecap: true },
+    });
+    const element = await HeadToHeadPage({
+      params: Promise.resolve({ pair: "leinster-vs-toulouse" }),
+    });
+    let container!: HTMLElement;
+    await act(async () => {
+      container = render(element).container;
+    });
+    expect(container.textContent).not.toContain("27 - 20");
+    expect(container.textContent).not.toContain("31 - 19");
+    expect(
+      screen.getAllByRole("button", { name: "タップして結果を見る" }),
+    ).toHaveLength(3);
+    expect(container.querySelector('a[href="/matches/match-1"]')).toBeTruthy();
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "タップして結果を見る" })[0]!,
+    );
+    expect(container.textContent).toContain("27 - 20");
+    expect(
+      screen.getAllByRole("button", { name: "タップして結果を見る" }),
+    ).toHaveLength(2);
   });
 
   it("generates static params from real stored pairs", async () => {

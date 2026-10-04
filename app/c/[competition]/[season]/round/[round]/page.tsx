@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { HomepageSpoilerScore } from "@/components/home-user-state";
 import { StatusBadge } from "@/components/status-badge";
-import { TeamBadge } from "@/components/team-badge";
+import { UserStateProvider } from "@/components/user-state-provider";
 import {
   getCompetitionBySlug,
   listSeasonsByFamily,
@@ -16,13 +17,13 @@ import {
 import {
   formatCompetitionTitle,
   formatFamilyName,
-  getCompetitionFamilyColor,
 } from "@/lib/format/competition";
 import {
   formatKickoffJstDate,
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
 import { formatRoundLabel } from "@/lib/format/round-label";
+import { getTeamColor, getTeamStripe } from "@/lib/format/team-identity";
 import { SITE_URL } from "@/lib/site";
 
 import type { MatchContentStatus } from "@/lib/db/queries/match-content";
@@ -62,34 +63,6 @@ type DayGroup = {
   matches: MatchListItem[];
 };
 
-function withOpacity(color: string, opacity: number): string {
-  const hex = color.replace("#", "");
-
-  if (!/^[0-9a-f]{6}$/i.test(hex)) {
-    return `rgb(15 23 42 / ${opacity})`;
-  }
-
-  const red = Number.parseInt(hex.slice(0, 2), 16);
-  const green = Number.parseInt(hex.slice(2, 4), 16);
-  const blue = Number.parseInt(hex.slice(4, 6), 16);
-
-  return `rgb(${red} ${green} ${blue} / ${opacity})`;
-}
-
-function darken(color: string): string {
-  const hex = color.replace("#", "");
-
-  if (!/^[0-9a-f]{6}$/i.test(hex)) {
-    return "#0f172a";
-  }
-
-  const channels = [0, 2, 4].map((offset) =>
-    Math.round(Number.parseInt(hex.slice(offset, offset + 2), 16) * 0.55),
-  );
-
-  return `rgb(${channels.join(" ")})`;
-}
-
 function groupMatchesByJstDay(matches: MatchListItem[]): DayGroup[] {
   const groups = new Map<string, DayGroup>();
 
@@ -122,30 +95,25 @@ function getDayLabelParts(dateLabel: string) {
 }
 
 function RoundMatchRow({
-  accentColor,
   contentStatus,
-  index,
   match,
 }: {
-  accentColor: string;
   contentStatus: MatchContentStatus;
-  index: number;
   match: MatchListItem;
 }) {
   const rowStyle = {
-    "--round-row-hover": withOpacity(accentColor, 0.09),
-    "--round-row-tint":
-      index % 2 === 1 ? withOpacity(accentColor, 0.045) : "transparent",
+    "--team-home": getTeamColor(match.homeTeam.slug),
+    "--team-away": getTeamColor(match.awayTeam.slug),
   } as CSSProperties;
   const score =
     match.status === "finished"
-      ? `${match.homeScore ?? 0}–${match.awayScore ?? 0}`
+      ? `${match.homeScore ?? "—"}–${match.awayScore ?? "—"}`
       : null;
 
   return (
     <li style={rowStyle}>
       <Link
-        className="grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-3 bg-[var(--round-row-tint)] px-3 py-3 transition-colors hover:bg-[var(--round-row-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[5.25rem_minmax(0,1fr)_auto] sm:px-4"
+        className="tl-round-row tl-hover grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 transition-colors hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[5.25rem_minmax(0,1fr)_auto] sm:px-4"
         href={`/matches/${match.id}`}
       >
         <time
@@ -155,25 +123,25 @@ function RoundMatchRow({
           {formatKickoffJstTime(match.kickoffAt)}
         </time>
         <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-2 text-sm font-bold text-[var(--color-ink)]">
-            <span className="inline-flex min-w-0 items-center gap-1.5 truncate">
-              <TeamBadge
-                shortCode={match.homeTeam.shortCode}
-                size={20}
-                slug={match.homeTeam.slug}
+          <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-bold text-[var(--color-ink)]">
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className="h-4 w-1 shrink-0"
+                style={{ background: getTeamStripe(match.homeTeam.slug) }}
               />
-              <span className="truncate">{match.homeTeam.name}</span>
+              <span className="break-words">{match.homeTeam.name}</span>
             </span>
             <span className="shrink-0 text-xs font-normal text-[var(--color-ink-muted)]">
               対
             </span>
-            <span className="inline-flex min-w-0 items-center gap-1.5 truncate">
-              <TeamBadge
-                shortCode={match.awayTeam.shortCode}
-                size={20}
-                slug={match.awayTeam.slug}
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className="h-4 w-1 shrink-0"
+                style={{ background: getTeamStripe(match.awayTeam.slug) }}
               />
-              <span className="truncate">{match.awayTeam.name}</span>
+              <span className="break-words">{match.awayTeam.name}</span>
             </span>
           </div>
           <div className="mt-1 flex flex-wrap gap-1.5">
@@ -191,9 +159,11 @@ function RoundMatchRow({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {score ? (
-            <span className="text-base font-black tabular-nums text-[var(--color-ink)]">
-              {score}
-            </span>
+            <HomepageSpoilerScore className="inline-flex min-h-11 items-center text-xs">
+              <span className="text-xl font-bold tabular-nums text-[var(--color-ink)]">
+                {score}
+              </span>
+            </HomepageSpoilerScore>
           ) : (
             <StatusBadge status={match.status} />
           )}
@@ -269,7 +239,6 @@ export default async function RoundHubPage({ params }: Props) {
   const competitionTitle = formatCompetitionTitle(comp, comp.season);
   const roundLabel = formatRoundLabel(roundNumber, comp.family);
   const pageUrl = `${SITE_URL}/c/${competition}/${season}/round/${roundNumber}`;
-  const accentColor = getCompetitionFamilyColor(comp.family);
   const currentRoundIndex = rounds.indexOf(roundNumber);
   const previousRound =
     currentRoundIndex > 0 ? (rounds[currentRoundIndex - 1] ?? null) : null;
@@ -313,145 +282,148 @@ export default async function RoundHubPage({ params }: Props) {
   };
 
   return (
-    <main className="bg-paper min-h-screen">
-      <script
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbJsonLd),
-        }}
-        type="application/ld+json"
-      />
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <nav className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-ink-muted)]">
-          <Link className="hover:text-[var(--color-ink)]" href="/">
-            Tryline
-          </Link>
-          <span>/</span>
-          <Link
-            className="hover:text-[var(--color-ink)]"
-            href={`/c/${competition}`}
-          >
-            {formatFamilyName(comp.family)}
-          </Link>
-          <span>/</span>
-          <Link
-            className="hover:text-[var(--color-ink)]"
-            href={`/c/${competition}/${season}`}
-          >
-            {comp.season}
-          </Link>
-          <span>/</span>
-          <span className="text-[var(--color-ink)]">{roundLabel}</span>
-        </nav>
-
-        <header
-          className="flex flex-col gap-3 rounded-2xl px-5 py-5 text-white shadow-[var(--shadow-soft)] sm:flex-row sm:items-center sm:justify-between sm:px-6"
-          style={{ backgroundColor: darken(accentColor) }}
-        >
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/65">
+    <UserStateProvider>
+      <main className="tl-scope tl-round bg-paper min-h-screen">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(breadcrumbJsonLd),
+          }}
+          type="application/ld+json"
+        />
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
+          <nav className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-ink-muted)]">
+            <Link className="hover:text-[var(--color-ink)]" href="/">
+              Tryline
+            </Link>
+            <span>/</span>
+            <Link
+              className="hover:text-[var(--color-ink)]"
+              href={`/c/${competition}`}
+            >
               {formatFamilyName(comp.family)}
-            </p>
-            <h1 className="mt-1 font-heading text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-              {roundLabel}
-            </h1>
-          </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-white/75 sm:justify-end">
-            <span>{competitionTitle}</span>
-            <span>{matches.length}試合</span>
-            <span>解説{contentCount}本</span>
-            <span>{dayGroups[0]?.dateLabel ?? "日程未定"}</span>
-          </div>
-        </header>
+            </Link>
+            <span>/</span>
+            <Link
+              className="hover:text-[var(--color-ink)]"
+              href={`/c/${competition}/${season}`}
+            >
+              {comp.season}
+            </Link>
+            <span>/</span>
+            <span className="text-[var(--color-ink)]">{roundLabel}</span>
+          </nav>
 
-        <section className="space-y-4" aria-label={`${roundLabel}の試合一覧`}>
-          {dayGroups.map((group) => {
-            const dayParts = getDayLabelParts(group.dateLabel);
+          <header className="tl-round-band tl-season-band relative flex flex-col gap-3 overflow-hidden px-5 py-6 text-white sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <span
+              className="tl-band-art pointer-events-none absolute inset-0"
+              aria-hidden="true"
+            />
+            {/^第\d+節$/.test(roundLabel) && (
+              <span className="tl-round-number" aria-hidden="true">
+                {String(roundNumber).padStart(2, "0")}
+              </span>
+            )}
+            <div className="relative">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/65">
+                {formatFamilyName(comp.family)}
+              </p>
+              <h1 className="mt-1 font-heading text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+                {roundLabel}
+              </h1>
+            </div>
+            <div className="relative flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-white/75 sm:justify-end">
+              <span>{competitionTitle}</span>
+              <span>{matches.length}試合</span>
+              <span>解説{contentCount}本</span>
+              <span>{dayGroups[0]?.dateLabel ?? "日程未定"}</span>
+            </div>
+          </header>
 
-            return (
-              <section
-                className="flex items-stretch gap-3 sm:gap-4"
-                key={group.key}
-                aria-labelledby={`round-date-${group.key}`}
-              >
-                <div
-                  className="flex w-16 shrink-0 flex-col items-center justify-center rounded-2xl px-2 py-4 text-white shadow-sm"
-                  style={{ backgroundColor: accentColor }}
+          <section className="space-y-4" aria-label={`${roundLabel}の試合一覧`}>
+            {dayGroups.map((group) => {
+              const dayParts = getDayLabelParts(group.dateLabel);
+
+              return (
+                <section
+                  className="flex items-stretch gap-3 sm:gap-4"
+                  key={group.key}
+                  aria-labelledby={`round-date-${group.key}`}
                 >
-                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">
-                    {dayParts.weekday}
-                  </span>
-                  <h2
-                    className="mt-1 font-number text-3xl font-extrabold leading-none text-white"
-                    id={`round-date-${group.key}`}
-                  >
-                    {dayParts.day}
-                  </h2>
-                  <span className="mt-1 text-[10px] font-bold text-white/75">
-                    {dayParts.month}
-                  </span>
-                  <span className="mt-3 rounded-full bg-black/15 px-2 py-0.5 text-[10px] font-bold text-white/80">
-                    {group.matches.length}試合
-                  </span>
-                </div>
-                <ul className="min-w-0 flex-1 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                  {group.matches.map((match, index) => (
-                    <RoundMatchRow
-                      accentColor={accentColor}
-                      contentStatus={
-                        contentStatusMap[match.id] ?? {
-                          hasPreview: false,
-                          hasRecap: false,
+                  <div className="tl-round-day flex w-16 shrink-0 flex-col items-center px-2 py-4">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">
+                      {dayParts.weekday}
+                    </span>
+                    <h2
+                      className="mt-1 font-number text-3xl font-extrabold leading-none text-white"
+                      id={`round-date-${group.key}`}
+                    >
+                      {dayParts.day}
+                    </h2>
+                    <span className="mt-1 text-[10px] font-bold text-white/75">
+                      {dayParts.month}
+                    </span>
+                    <span className="mt-3 rounded-full bg-black/15 px-2 py-0.5 text-[10px] font-bold text-white/80">
+                      {group.matches.length}試合
+                    </span>
+                  </div>
+                  <ul className="tl-ledger min-w-0 flex-1 divide-y divide-slate-200">
+                    {group.matches.map((match) => (
+                      <RoundMatchRow
+                        contentStatus={
+                          contentStatusMap[match.id] ?? {
+                            hasPreview: false,
+                            hasRecap: false,
+                          }
                         }
-                      }
-                      index={index}
-                      key={match.id}
-                      match={match}
-                    />
-                  ))}
-                </ul>
-              </section>
-            );
-          })}
-        </section>
+                        key={match.id}
+                        match={match}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              );
+            })}
+          </section>
 
-        <nav
-          aria-label="前後のラウンド"
-          className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div>
-            {previousRound !== null && (
-              <Link
-                className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-slate-300 hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                href={`/c/${competition}/${season}/round/${previousRound}`}
-              >
-                ← {formatRoundLabel(previousRound, comp.family)}
-              </Link>
-            )}
-          </div>
-          <Link
-            className="inline-flex justify-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            href={`/c/${competition}/${season}`}
+          <nav
+            aria-label="前後のラウンド"
+            className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between"
           >
-            シーズン全体を見る →
-          </Link>
-          <div className="text-right">
-            {nextRound !== null && (
-              <Link
-                className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-slate-300 hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                href={`/c/${competition}/${season}/round/${nextRound}`}
-              >
-                {formatRoundLabel(nextRound, comp.family)} →
-              </Link>
-            )}
-          </div>
-        </nav>
+            <div>
+              {previousRound !== null && (
+                <Link
+                  className="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-slate-300 hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                  href={`/c/${competition}/${season}/round/${previousRound}`}
+                >
+                  ← {formatRoundLabel(previousRound, comp.family)}
+                </Link>
+              )}
+            </div>
+            <Link
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+              href={`/c/${competition}/${season}`}
+            >
+              シーズン全体を見る →
+            </Link>
+            <div className="text-right">
+              {nextRound !== null && (
+                <Link
+                  className="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-slate-300 hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                  href={`/c/${competition}/${season}/round/${nextRound}`}
+                >
+                  {formatRoundLabel(nextRound, comp.family)} →
+                </Link>
+              )}
+            </div>
+          </nav>
 
-        {seasons.length > 1 && (
-          <p className="text-xs text-[var(--color-ink-muted)]">
-            他シーズンの一覧は大会ページから確認できます。
-          </p>
-        )}
-      </div>
-    </main>
+          {seasons.length > 1 && (
+            <p className="text-xs text-[var(--color-ink-muted)]">
+              他シーズンの一覧は大会ページから確認できます。
+            </p>
+          )}
+        </div>
+      </main>
+    </UserStateProvider>
   );
 }
