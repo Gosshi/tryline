@@ -165,7 +165,7 @@ export function AuthModal({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50">
       <div className="flex min-h-[100dvh] items-end justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:min-h-full sm:items-center sm:p-0">
         <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-          <h2 className="text-lg font-black text-slate-950">{title}</h2>
+          <h2 className="text-lg font-extrabold text-slate-950">{title}</h2>
           {description && (
             <p className="mt-1 text-sm text-slate-500">{description}</p>
           )}

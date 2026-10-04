@@ -6,6 +6,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { StandingsTable } from "@/components/standings-table";
+import { getTeamStripe } from "@/lib/format/team-identity";
 
 import type { StandingRow } from "@/lib/db/queries/standings";
 
@@ -20,6 +21,7 @@ const standing: StandingRow = {
   position: 1,
   teamName: "Ireland",
   teamShortCode: "IRE",
+  teamSlug: "ireland",
   totalPoints: 13,
   triesFor: 10,
   won: 2,
@@ -41,7 +43,7 @@ describe("StandingsTable", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders standings rows with a dark competition band", () => {
+  it("renders standings rows on a paper surface with team identity", () => {
     const { container } = render(
       <StandingsTable accentColor="#001489" standings={[standing]} />,
     );
@@ -53,17 +55,25 @@ describe("StandingsTable", () => {
     expect(screen.getByText("IRE")).toHaveAttribute("title", "Ireland");
     expect(screen.getByText("82-54")).toBeInTheDocument();
     expect(screen.getByText("13")).toHaveClass(
-      "font-display",
+      "tabular-nums",
+      "font-bold",
       "text-[var(--color-ink)]",
     );
+    expect(screen.getByText("13")).not.toHaveClass("font-display");
     expect(container.querySelector("section")).toHaveClass(
-      "shadow-[var(--shadow-soft)]",
+      "rounded-sm",
+      "border-[var(--color-rule)]",
+      "bg-card",
     );
+    const teamStripe = container.querySelector(
+      "tbody tr td:nth-child(2) [aria-hidden='true']",
+    );
+    expect(teamStripe).toHaveStyle({ background: getTeamStripe("ireland") });
     expect(container.querySelector("tbody tr")).toHaveStyle({
       backgroundColor: "rgb(0 20 137 / 0.16)",
     });
     expect(screen.getByRole("heading", { name: "順位表" })).toHaveClass(
-      "text-white",
+      "text-[var(--color-brass)]",
     );
   });
 

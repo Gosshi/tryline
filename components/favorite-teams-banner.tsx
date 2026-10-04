@@ -43,7 +43,7 @@ export function FavoriteTeamsBanner({
             <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--color-accent)]">
               Follow your team
             </p>
-            <h2 className="mt-1 text-xl font-black text-[var(--color-ink)]">
+            <h2 className="mt-1 text-xl font-extrabold text-[var(--color-ink)]">
               応援チームの試合を、すぐ見つける
             </h2>
             <p className="mt-2 text-sm leading-6 text-[var(--color-ink-muted)]">

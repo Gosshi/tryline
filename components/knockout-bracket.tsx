@@ -46,7 +46,7 @@ export function KnockoutBracket({ matches }: Props) {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                 Knockout
               </p>
-              <h2 className="mt-1 font-heading text-xl font-bold tracking-tight text-[var(--color-ink)]">
+              <h2 className="mt-1 font-heading text-xl font-extrabold tracking-tight text-[var(--color-ink)]">
                 {round.label}
               </h2>
             </header>

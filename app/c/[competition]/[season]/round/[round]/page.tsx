@@ -351,7 +351,7 @@ export default async function RoundHubPage({ params }: Props) {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/65">
               {formatFamilyName(comp.family)}
             </p>
-            <h1 className="mt-1 font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <h1 className="mt-1 font-heading text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
               {roundLabel}
             </h1>
           </div>
@@ -381,7 +381,7 @@ export default async function RoundHubPage({ params }: Props) {
                     {dayParts.weekday}
                   </span>
                   <h2
-                    className="mt-1 font-number text-3xl font-black leading-none text-white"
+                    className="mt-1 font-number text-3xl font-extrabold leading-none text-white"
                     id={`round-date-${group.key}`}
                   >
                     {dayParts.day}

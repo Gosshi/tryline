@@ -34,7 +34,7 @@ export function JapanMatchesBlock({
   return (
     <section aria-labelledby="japan-matches-heading" className="space-y-3">
       <h3
-        className="font-heading text-base font-bold text-[var(--color-ink)]"
+        className="font-heading text-base font-extrabold text-[var(--color-ink)]"
         id="japan-matches-heading"
       >
         日本代表の試合

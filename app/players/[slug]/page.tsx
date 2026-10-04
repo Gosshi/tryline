@@ -86,7 +86,7 @@ function PlayerNextWatchSection({
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
           Next
         </p>
-        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
+        <h2 className="mt-1 text-lg font-extrabold tracking-tight text-slate-950">
           次に見る
         </h2>
       </div>
@@ -129,7 +129,7 @@ function PlayerNextWatchSection({
 
         {teammates.length > 0 && (
           <div className="min-w-0 rounded-xl border border-slate-200 p-4">
-            <h3 className="text-sm font-bold text-[var(--color-ink)]">
+            <h3 className="text-sm font-extrabold text-[var(--color-ink)]">
               同じチームの選手
             </h3>
             <ul className="mt-3 grid gap-2 min-[420px]:grid-cols-2">
@@ -248,7 +248,7 @@ export default async function PlayerPage({ params }: Props) {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
                 Player
               </p>
-              <h1 className="mt-2 font-serif text-3xl font-bold tracking-tight text-[var(--color-ink)] sm:text-4xl">
+              <h1 className="mt-2 font-serif text-3xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-4xl">
                 {player.name}
               </h1>
             </div>
@@ -282,7 +282,7 @@ export default async function PlayerPage({ params }: Props) {
 
         <section className="space-y-4">
           <div>
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+            <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               通算成績
             </h2>
             <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
@@ -321,7 +321,7 @@ export default async function PlayerPage({ params }: Props) {
 
         <section className="space-y-4">
           <div>
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+            <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               出場試合
             </h2>
             <p className="mt-1 text-sm text-[var(--color-ink-muted)]">

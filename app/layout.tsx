@@ -21,7 +21,7 @@ const heading = Shippori_Mincho_B1({
   display: "swap",
   subsets: ["latin"],
   variable: "--font-shippori-mincho",
-  weight: ["700", "800"],
+  weight: ["800"],
 });
 
 const numbers = Outfit({

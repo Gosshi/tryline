@@ -413,7 +413,7 @@ function WeekBoard({
               <div className="space-y-3">
                 {timeGroups.map((timeGroup) => (
                   <section key={timeGroup.kickoffTime}>
-                    <h3 className="mb-1.5 font-number text-xs font-black tabular-nums text-[var(--color-ink-muted)]">
+                    <h3 className="mb-1.5 font-number text-xs font-extrabold tabular-nums text-[var(--color-ink-muted)]">
                       {timeGroup.kickoffTime}
                     </h3>
                     <div
@@ -503,7 +503,7 @@ export function WeekSchedule({
                   {dayParts.weekday}
                 </span>
                 <h3
-                  className="mt-1 font-number text-3xl font-black leading-none"
+                  className="mt-1 font-number text-3xl font-extrabold leading-none"
                   id={`calendar-${group.key}`}
                 >
                   {dayParts.day}

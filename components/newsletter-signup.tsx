@@ -91,7 +91,7 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
 
   return (
     <section
-      className="border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4"
+      className="rounded-sm border border-l-4 border-[var(--color-rule)] border-l-[var(--color-accent)] bg-card px-4 py-4"
       id="newsletter-signup"
       ref={sectionRef}
     >
@@ -110,7 +110,7 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
         </label>
         <input
           autoComplete="email"
-          className="min-w-0 flex-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-[var(--color-ink)] outline-none transition-colors placeholder:text-slate-400 focus:border-[var(--color-accent)]"
+          className="min-h-11 min-w-0 flex-1 rounded-full border border-[var(--color-rule)] bg-card px-4 py-2 text-sm text-[var(--color-ink)] outline-none transition-colors placeholder:text-[var(--color-ink-muted)] focus:border-[var(--color-accent)]"
           id={`newsletter-email-${source}`}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
@@ -119,7 +119,7 @@ export function NewsletterSignup({ source }: NewsletterSignupProps) {
           value={email}
         />
         <button
-          className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-11 rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-60"
           disabled={submitting}
           type="submit"
         >

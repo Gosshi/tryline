@@ -176,7 +176,7 @@ export function MatchEventsSection({
     return (
       <section aria-labelledby="match-highlights-heading">
         <h2
-          className="mb-4 ml-1 flex items-center gap-2.5 text-sm font-bold text-[var(--color-ink-muted)] before:h-5 before:w-1.5 before:rounded-full before:bg-[var(--color-accent)]"
+          className="mb-4 ml-1 flex items-center gap-2.5 text-sm font-extrabold text-[var(--color-ink-muted)] before:h-5 before:w-1.5 before:rounded-full before:bg-[var(--color-accent)]"
           id="match-highlights-heading"
         >
           この試合の要点
@@ -238,7 +238,7 @@ export function MatchEventsSection({
   return (
     <section className="mt-8 border-t border-[var(--color-rule)] pt-6">
       <div className="mb-4">
-        <h2 className="text-base font-black text-[var(--color-ink)]">
+        <h2 className="text-base font-extrabold text-[var(--color-ink)]">
           得点推移
         </h2>
       </div>

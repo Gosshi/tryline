@@ -51,7 +51,7 @@ describe("UserMenu", () => {
     );
 
     expect(screen.getByRole("button", { name: "ログイン" })).toHaveClass(
-      "min-h-[44px]",
+      "min-h-11",
       "sm:min-h-0",
     );
   });
@@ -72,7 +72,7 @@ describe("UserMenu", () => {
     );
 
     expect(screen.getByRole("button", { name: "fan" })).toHaveClass(
-      "min-h-[44px]",
+      "min-h-11",
       "sm:min-h-0",
     );
   });

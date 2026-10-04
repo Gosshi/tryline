@@ -164,7 +164,7 @@ function renderBlock(block: MarkdownBlock, index: number) {
     if (block.level <= 1) {
       return (
         <h3
-          className="flex scroll-mt-6 items-center gap-2.5 text-lg font-black text-[var(--color-ink)] before:h-1 before:w-5 before:shrink-0 before:rounded-full before:bg-[var(--color-accent)]"
+          className="flex scroll-mt-6 items-center gap-2.5 text-lg font-extrabold text-[var(--color-ink)] before:h-1 before:w-5 before:shrink-0 before:rounded-full before:bg-[var(--color-accent)]"
           id={toHeadingId(block.text)}
           key={index}
         >
@@ -175,7 +175,7 @@ function renderBlock(block: MarkdownBlock, index: number) {
 
     return (
       <h4
-        className="text-sm font-black text-[var(--color-ink-muted)]"
+        className="text-sm font-extrabold text-[var(--color-ink-muted)]"
         key={index}
       >
         {renderInline(block.text)}

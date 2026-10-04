@@ -21,7 +21,7 @@ export function PremiumUpsellBanner() {
   }
 
   return (
-    <div className="border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 rounded-xl border px-5 py-4">
+    <div className="border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 rounded-sm border px-5 py-4">
       <p className="text-sm font-semibold text-[var(--color-ink)]">
         試合後の日本語レビュー全文は Premium で読めます
       </p>
@@ -36,7 +36,7 @@ export function PremiumUpsellBanner() {
           destination: "pricing",
           label: "7日間無料でレビュー全文を読む",
         }}
-        className="mt-3 inline-block rounded-full bg-[var(--color-accent)] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90"
+        className="mt-3 inline-flex min-h-11 items-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-xs font-bold text-white hover:opacity-90"
         href="/pricing"
       >
         7日間無料でレビュー全文を読む

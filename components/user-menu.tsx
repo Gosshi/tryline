@@ -60,7 +60,7 @@ export function UserMenu({
     return (
       <>
         <button
-          className="min-h-[44px] rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:min-h-0 sm:py-1.5"
+          className="min-h-11 rounded-full border border-[var(--color-rule)] px-3 py-2 text-xs font-semibold text-[var(--color-ink)] hover:border-[var(--color-ink-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:min-h-0 sm:py-1.5"
           onClick={() => setShowModal(true)}
           type="button"
         >
@@ -78,7 +78,7 @@ export function UserMenu({
       </Suspense>
       <div className="relative">
         <button
-          className="flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:min-h-0 sm:py-1.5"
+          className="flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-rule)] px-3 py-2 text-xs font-semibold text-[var(--color-ink)] hover:border-[var(--color-ink-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:min-h-0 sm:py-1.5"
           onClick={() => setOpen((value) => !value)}
           type="button"
         >
@@ -90,7 +90,7 @@ export function UserMenu({
           {user.email?.split("@")[0]}
         </button>
         {open && (
-          <div className="absolute right-0 mt-2 w-72 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+          <div className="absolute right-0 mt-2 w-72 overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card shadow-[var(--shadow)]">
             {!isPremium && (
               <TrackedLink
                 analytics={{
@@ -99,7 +99,7 @@ export function UserMenu({
                   destination: "pricing",
                   label: "Premium にアップグレード",
                 }}
-                className="block px-4 py-2.5 text-xs font-semibold text-[var(--color-accent)] hover:bg-slate-50"
+                className="block px-4 py-2.5 text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-panel)]"
                 href="/pricing"
               >
                 Premium にアップグレード
@@ -107,14 +107,14 @@ export function UserMenu({
             )}
             {isPremium && (
               <a
-                className="block px-4 py-2.5 text-xs text-slate-600 hover:bg-slate-50"
+                className="block px-4 py-2.5 text-xs text-[var(--color-ink-muted)] hover:bg-[var(--color-panel)]"
                 href="/api/stripe/portal"
               >
                 プランを管理する
               </a>
             )}
             {favoriteTeams.length > 0 && (
-              <div className="space-y-0.5 border-t border-slate-100 px-4 py-2">
+              <div className="space-y-0.5 border-t border-[var(--color-rule)] px-4 py-2">
                 {favoriteTeams.map((team) => (
                   <Link
                     className="block py-1 text-xs font-medium text-[var(--color-accent)] hover:underline"
@@ -127,20 +127,20 @@ export function UserMenu({
                 ))}
               </div>
             )}
-            <div className="border-t border-slate-100 px-4 py-3">
+            <div className="border-t border-[var(--color-rule)] px-4 py-3">
               <TeamPicker
                 initialSelected={favoriteTeamSlugs}
                 teams={allTeams}
               />
             </div>
-            <div className="border-t border-slate-100 px-4 py-2">
+            <div className="border-t border-[var(--color-rule)] px-4 py-2">
               <NotificationSettings
                 initialSpoilerGuard={initialSpoilerGuard}
                 initialTeamSlugs={favoriteTeamSlugs}
               />
             </div>
             <button
-              className="block w-full px-4 py-2.5 text-left text-xs text-slate-600 hover:bg-slate-50"
+              className="block w-full px-4 py-2.5 text-left text-xs text-[var(--color-ink-muted)] hover:bg-[var(--color-panel)]"
               onClick={() => void signOut()}
               type="button"
             >

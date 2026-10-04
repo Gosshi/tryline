@@ -180,7 +180,7 @@ export function SeasonMatchGroups({
       )}
 
       {visibleGroups.length === 0 ? (
-        <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
+        <div className="rounded-sm border border-[var(--color-rule)] bg-card px-6 py-10 text-center">
           <p className="text-sm font-medium text-[var(--color-ink)]">
             この絞り込みに該当する試合はありません。
           </p>
@@ -344,8 +344,8 @@ function RoundFilterTabs({
             aria-selected={selected}
             className={
               selected
-                ? "shrink-0 rounded-full bg-[var(--color-accent)] px-3 py-1.5 text-xs font-bold text-white"
-                : "shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-slate-300 hover:text-[var(--color-ink)]"
+                ? "inline-flex min-h-11 shrink-0 items-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-xs font-bold text-white"
+                : "inline-flex min-h-11 shrink-0 items-center rounded-full border border-[var(--color-rule)] bg-card px-4 py-2 text-xs font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
             }
             key={filter.value}
             onClick={onSelect ? () => onSelect(filter) : undefined}
@@ -412,8 +412,8 @@ function ClassifiedMatchCard({
     <div
       className={
         isTestMatch
-          ? "rounded-xl border-2 border-[var(--color-accent)] bg-white p-1.5 shadow-md"
-          : "rounded-xl border border-slate-200 bg-slate-50 p-1"
+          ? "rounded-sm border-2 border-[var(--color-accent)] bg-card p-1.5"
+          : "rounded-sm border border-[var(--color-rule)] bg-[var(--color-panel)] p-1"
       }
       data-match-type={classification}
     >
@@ -422,7 +422,7 @@ function ClassifiedMatchCard({
           className={
             isTestMatch
               ? "rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[10px] font-black tracking-wide text-white"
-              : "rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[10px] font-bold tracking-wide text-slate-600"
+              : "rounded-full border border-[var(--color-rule)] bg-card px-2 py-0.5 text-[10px] font-bold tracking-wide text-[var(--color-ink-muted)]"
           }
         >
           {isTestMatch ? "テストマッチ" : "ツアー戦"}

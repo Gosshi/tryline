@@ -156,7 +156,7 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                   Head to Head
                 </p>
-                <h1 className="mt-2 font-heading text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+                <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
                   {data.teamA.name} 対 {data.teamB.name} 対戦成績
                 </h1>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
@@ -230,7 +230,7 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
           )}
 
           <section className="space-y-3">
-            <h2 className="font-heading text-xl font-bold text-slate-950">
+            <h2 className="font-heading text-xl font-extrabold text-slate-950">
               収録対戦リスト
             </h2>
             <div className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -247,7 +247,7 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
 
           {recordSummary && (
             <section className="space-y-3">
-              <h2 className="font-heading text-xl font-bold text-slate-950">
+              <h2 className="font-heading text-xl font-extrabold text-slate-950">
                 過去の対戦（{data.history.length}試合）
               </h2>
               <div className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">

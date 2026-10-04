@@ -282,7 +282,7 @@ export default async function HomePage() {
                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
                   Rugby Analysis in Japanese
                 </p>
-                <h1 className="max-w-3xl text-balance font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
+                <h1 className="max-w-3xl text-balance font-serif text-5xl font-extrabold leading-tight tracking-tight text-white sm:text-7xl">
                   {homepageWeekMatches.length > 0
                     ? "今週の海外ラグビーを、日本時間で追う。"
                     : "次の海外ラグビーを、日本時間で待つ。"}
@@ -330,7 +330,7 @@ export default async function HomePage() {
           <NewsletterSignup source="home" />
 
           <section className="space-y-3">
-            <h2 className="font-serif text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
+            <h2 className="font-serif text-2xl font-extrabold text-[var(--color-ink)] sm:text-3xl">
               注目大会
             </h2>
             <FeaturedCompetitionCard
@@ -344,7 +344,7 @@ export default async function HomePage() {
 
           {homepageUpcomingMatches.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
                 今後の試合
               </h2>
               <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -475,7 +475,7 @@ export default async function HomePage() {
 
           {(recentReviewGroups.length > 0 || shouldShowSampleReview) && (
             <section className="space-y-3">
-              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
                 最近のレビュー
               </h2>
               <div className="grid gap-5 xl:grid-cols-2">
@@ -571,7 +571,7 @@ export default async function HomePage() {
                       >
                         <div className="min-w-0 space-y-2">
                           <div className="flex min-w-0 items-center justify-between gap-3">
-                            <h3 className="truncate text-sm font-black text-[var(--color-ink)]">
+                            <h3 className="truncate text-sm font-extrabold text-[var(--color-ink)]">
                               {formatCompetitionTitle(
                                 group.competition,
                                 group.competition.season,
@@ -671,7 +671,7 @@ export default async function HomePage() {
                         {shouldShowStatusPane && (
                           <aside className="min-w-0 border-t border-[var(--color-rule)] pt-5 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
                             <div className="flex items-center justify-between gap-3">
-                              <h3 className="text-sm font-black text-[var(--color-ink)]">
+                              <h3 className="text-sm font-extrabold text-[var(--color-ink)]">
                                 大会の現在地
                               </h3>
                               <span className="text-[11px] font-semibold text-[var(--color-ink-muted)]">
@@ -740,7 +740,7 @@ export default async function HomePage() {
 
           {reviewedFamilies.length > 0 && (
             <section>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              <h2 className="mb-3 text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
                 最近レビューのある大会
               </h2>
               <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -787,7 +787,7 @@ export default async function HomePage() {
           )}
 
           <section className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+            <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               大会アーカイブ
             </h2>
             {homepageCompetitionLinks.length === 0 ? (

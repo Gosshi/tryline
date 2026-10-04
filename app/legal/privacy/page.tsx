@@ -18,20 +18,20 @@ export default function PrivacyPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
           Legal
         </p>
-        <h1 className="text-3xl font-bold tracking-normal">
+        <h1 className="text-3xl font-extrabold tracking-normal">
           プライバシーポリシー
         </h1>
       </header>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">はじめに</h2>
+        <h2 className="text-xl font-extrabold">はじめに</h2>
         <p className="text-sm leading-7 text-[var(--color-ink-muted)]">
           Tryline（以下「当サービス」）は、ユーザーのプライバシーを尊重し、個人情報を適切に管理します。本ポリシーは、当サービスが収集する情報、その利用目的、および管理方法について説明します。
         </p>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">収集する情報</h2>
+        <h2 className="text-xl font-extrabold">収集する情報</h2>
         <p className="text-sm leading-7 text-[var(--color-ink-muted)]">
           以下の情報を収集します。
         </p>
@@ -66,7 +66,7 @@ export default function PrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">情報の利用目的</h2>
+        <h2 className="text-xl font-extrabold">情報の利用目的</h2>
         <p className="text-sm leading-7 text-[var(--color-ink-muted)]">
           収集した情報は以下の目的で利用します。
         </p>
@@ -81,7 +81,7 @@ export default function PrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Cookie およびアクセス解析</h2>
+        <h2 className="text-xl font-extrabold">Cookie およびアクセス解析</h2>
         <p className="text-sm leading-7 text-[var(--color-ink-muted)]">
           当サービスは Google LLC が提供する Google Analytics 4
           を使用しており、Cookie
@@ -103,7 +103,7 @@ export default function PrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">第三者への情報提供</h2>
+        <h2 className="text-xl font-extrabold">第三者への情報提供</h2>
         <p className="text-sm leading-7 text-[var(--color-ink-muted)]">
           当サービスは、以下の第三者サービスを利用しており、必要な範囲で情報を提供しています。
         </p>
@@ -133,21 +133,21 @@ export default function PrivacyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">情報の管理</h2>
+        <h2 className="text-xl font-extrabold">情報の管理</h2>
         <p className="text-sm leading-7 text-[var(--color-ink-muted)]">
           収集した情報は、不正アクセス・紛失・漏洩を防ぐため適切な安全対策を講じて管理します。不要になった情報は速やかに削除します。
         </p>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">プライバシーポリシーの変更</h2>
+        <h2 className="text-xl font-extrabold">プライバシーポリシーの変更</h2>
         <p className="text-sm leading-7 text-[var(--color-ink-muted)]">
           本ポリシーは予告なく変更することがあります。変更後のポリシーは本ページに掲載した時点で効力を生じます。
         </p>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">お問い合わせ</h2>
+        <h2 className="text-xl font-extrabold">お問い合わせ</h2>
         <p className="text-sm leading-7 text-[var(--color-ink-muted)]">
           個人情報の取り扱いに関するお問い合わせは、以下のメールアドレスまでご連絡ください。
         </p>

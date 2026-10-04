@@ -36,7 +36,7 @@ export function TeamPlayersSection({ players }: TeamPlayersSectionProps) {
     <div className="space-y-6">
       {grouped.map(({ group, label, players: groupPlayers }) => (
         <div key={group}>
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+          <h3 className="mb-3 text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
             {label}
           </h3>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">

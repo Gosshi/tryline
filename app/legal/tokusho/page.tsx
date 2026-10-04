@@ -13,7 +13,7 @@ export default function TokushoPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
           Legal
         </p>
-        <h1 className="text-3xl font-bold tracking-normal">
+        <h1 className="text-3xl font-extrabold tracking-normal">
           特定商取引法に基づく表示
         </h1>
       </header>

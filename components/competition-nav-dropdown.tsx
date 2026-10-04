@@ -110,7 +110,7 @@ export function CompetitionNavDropdown() {
       <button
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="-my-1.5 flex min-h-[44px] items-center gap-1 rounded px-3 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0 sm:min-h-0 sm:py-1.5"
+        className="-my-1.5 flex min-h-11 items-center gap-1 rounded-full border border-[var(--color-rule)] px-3 text-sm font-medium text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0"
         onClick={() => setOpen((current) => !current)}
         onKeyDown={handleButtonKeyDown}
         type="button"
@@ -123,13 +123,13 @@ export function CompetitionNavDropdown() {
 
       {open && (
         <ul
-          className="absolute left-1/2 top-full z-50 mt-1 w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-slate-200 bg-white py-1 shadow-lg sm:left-auto sm:right-0 sm:w-64 sm:translate-x-0"
+          className="absolute left-1/2 top-full z-50 mt-1 w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 rounded-sm border border-[var(--color-rule)] bg-card py-1 shadow-[var(--shadow)] sm:left-auto sm:right-0 sm:w-64 sm:translate-x-0"
           role="listbox"
         >
           {HEADER_COMPETITIONS.map((competition) => (
             <li aria-selected="false" key={competition.href} role="option">
               <Link
-                className="block border-l-[3px] px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+                className="block border-l-[3px] px-4 py-2 text-sm text-[var(--color-ink)] transition-colors hover:bg-[var(--color-panel)] focus:bg-[var(--color-panel)] focus:outline-none"
                 href={competition.href}
                 onClick={() => setOpen(false)}
                 style={{

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
-import { getTeamColor, getTeamStripe } from "@/lib/format/team-identity";
+import { getTeamStripe } from "@/lib/format/team-identity";
 import { formatVenueDisplay } from "@/lib/format/venue-timezone";
 import { cn } from "@/lib/utils";
 
@@ -27,34 +27,13 @@ export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
 
   return (
     <Link
-      className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+      className="block rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
       href={href ?? `/matches/${match.id}`}
     >
-      <article
-        className="relative h-full overflow-hidden rounded-xl border border-slate-200 p-5 shadow-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_10px_18px_rgb(15_23_42/0.10)] active:scale-[0.98]"
-        style={{
-          background: `linear-gradient(to right, ${getTeamColor(match.homeTeam.slug)}0a 0%, #ffffff 35%, #ffffff 65%, ${getTeamColor(match.awayTeam.slug)}0a 100%)`,
-        }}
-      >
-        <div
-          aria-hidden
-          className="absolute inset-y-0 left-0 w-[4px]"
-          style={{
-            background: getTeamStripe(match.homeTeam.slug, "vertical"),
-            opacity: match.status === "finished" && awayWon ? 0.25 : 1,
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute inset-y-0 right-0 w-[4px]"
-          style={{
-            background: getTeamStripe(match.awayTeam.slug, "vertical"),
-            opacity: match.status === "finished" && homeWon ? 0.25 : 1,
-          }}
-        />
+      <article className="relative h-full overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card p-5 transition-transform duration-150 ease-out hover:-translate-y-0.5 hover:border-[var(--color-ink-muted)] active:scale-[0.98]">
         <div className="mb-4 flex items-center justify-between gap-4">
           <time
-            className="text-xs font-medium text-slate-500"
+            className="text-xs font-medium text-[var(--color-ink-muted)]"
             dateTime={match.kickoffAt}
           >
             {formatKickoffJst(match.kickoffAt)}
@@ -84,20 +63,25 @@ export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
                 </span>
               )}
               {awayWon && match.status === "finished" && (
-                <span className="rounded bg-slate-100 px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-400">
+                <span className="rounded-sm bg-[var(--color-panel)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-ink-muted)]">
                   L
                 </span>
               )}
             </p>
             <p
               className={cn(
-                "text-xs leading-tight",
+                "flex min-w-0 items-center justify-end gap-1.5 text-xs leading-tight",
                 awayWon
                   ? "text-[var(--color-ink-muted)]"
                   : "text-[var(--color-ink)]",
               )}
             >
-              {match.homeTeam.name}
+              <span
+                aria-hidden="true"
+                className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-black/15"
+                style={{ background: getTeamStripe(match.homeTeam.slug) }}
+              />
+              <span>{match.homeTeam.name}</span>
             </p>
           </div>
 
@@ -154,7 +138,7 @@ export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
                 </span>
               )}
               {homeWon && match.status === "finished" && (
-                <span className="rounded bg-slate-100 px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-400">
+                <span className="rounded-sm bg-[var(--color-panel)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-ink-muted)]">
                   L
                 </span>
               )}
@@ -166,20 +150,25 @@ export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
             </p>
             <p
               className={cn(
-                "text-xs leading-tight",
+                "flex min-w-0 items-center gap-1.5 text-xs leading-tight",
                 homeWon
                   ? "text-[var(--color-ink-muted)]"
                   : "text-[var(--color-ink)]",
               )}
             >
-              {match.awayTeam.name}
+              <span
+                aria-hidden="true"
+                className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-black/15"
+                style={{ background: getTeamStripe(match.awayTeam.slug) }}
+              />
+              <span>{match.awayTeam.name}</span>
             </p>
           </div>
         </div>
 
         {match.venue && (
           <p
-            className="mt-4 truncate text-xs text-slate-400"
+            className="mt-4 truncate text-xs text-[var(--color-ink-muted)]"
             title={formatVenueDisplay(match.venue)}
           >
             {formatVenueDisplay(match.venue)}

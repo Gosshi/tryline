@@ -1,14 +1,26 @@
 import { describe, expect, it, vi } from "vitest";
 
+const shipporiOptions = vi.hoisted(() => vi.fn());
+
 vi.mock("next/font/google", () => ({
   Noto_Sans_JP: () => ({ variable: "--font-noto-sans-jp" }),
   Outfit: () => ({ variable: "--font-number" }),
-  Shippori_Mincho_B1: () => ({ variable: "--font-shippori-mincho" }),
+  Shippori_Mincho_B1: (options: { weight: string[] }) => {
+    shipporiOptions(options);
+
+    return { variable: "--font-shippori-mincho" };
+  },
 }));
 
 import RootLayout, { metadata } from "@/app/layout";
 
 describe("root metadata", () => {
+  it("loads the heading font at weight 800 only", () => {
+    expect(shipporiOptions).toHaveBeenCalledWith(
+      expect.objectContaining({ weight: ["800"] }),
+    );
+  });
+
   it("loads the body, heading, and numeric font variables", () => {
     const layout = RootLayout({ children: null });
     const classes = layout.props.className.split(/\s+/);

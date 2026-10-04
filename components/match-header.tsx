@@ -192,7 +192,7 @@ export function MatchHeader({
           id="broadcasts"
         >
           <div className="flex flex-wrap items-end justify-between gap-2">
-            <h2 className="font-heading text-base font-bold text-white">
+            <h2 className="font-heading text-base font-extrabold text-white">
               視聴方法
             </h2>
             {verifiedDate && (

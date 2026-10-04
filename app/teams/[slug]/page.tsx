@@ -128,7 +128,7 @@ export default async function TeamPage({ params }: Props) {
                 slug={data.team.slug}
               />
               <div className="min-w-0">
-                <h1 className="font-serif text-3xl font-bold tracking-tight text-[var(--color-ink)] sm:text-4xl">
+                <h1 className="font-serif text-3xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-4xl">
                   {data.team.nameJa ?? data.team.name}
                 </h1>
                 <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
@@ -157,7 +157,7 @@ export default async function TeamPage({ params }: Props) {
 
         {upcomingMatches.length > 0 && (
           <section className="space-y-4">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+            <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               次戦
             </h2>
             <div className="grid gap-4 md:grid-cols-2">
@@ -197,7 +197,7 @@ export default async function TeamPage({ params }: Props) {
         )}
 
         <section className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+          <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
             直近の試合
           </h2>
           {data.recentMatches.length === 0 ? (
@@ -218,7 +218,7 @@ export default async function TeamPage({ params }: Props) {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+          <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
             選手
           </h2>
           <TeamPlayersSection players={players} />

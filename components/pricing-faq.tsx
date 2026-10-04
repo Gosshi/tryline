@@ -30,7 +30,7 @@ export function PricingFaq({ faqs }: PricingFaqProps) {
   return (
     <div className="space-y-3">
       <article className="rounded-2xl bg-white p-6 shadow-[0_18px_38px_rgb(15_23_42/0.08)] ring-1 ring-slate-200 sm:p-7">
-        <h3 className="text-xl font-bold tracking-tight text-[var(--color-ink)] sm:text-2xl">
+        <h3 className="text-xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-2xl">
           {hero.question}
         </h3>
         <p className="mt-3 text-sm leading-7 text-[var(--color-ink-muted)]">

@@ -125,7 +125,7 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
         aria-controls="mobile-site-menu"
         aria-expanded={isOpen}
         aria-label={isOpen ? "メニューを閉じる" : "メニューを開く"}
-        className="rounded p-2 text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] md:hidden"
+        className="min-h-11 min-w-11 rounded-full border border-[var(--color-rule)] p-2 text-[var(--color-ink)] transition-colors hover:bg-[var(--color-panel)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] md:hidden"
         onClick={() => setIsOpen((current) => !current)}
         type="button"
       >
@@ -138,7 +138,7 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
           onClick={closeMenu}
         >
           <div
-            className="absolute inset-x-0 top-14 border-t border-slate-200 bg-white shadow-lg"
+            className="absolute inset-x-0 top-14 border-t border-[var(--color-rule)] bg-background shadow-[var(--shadow)]"
             onClick={(event) => event.stopPropagation()}
           >
             <nav
@@ -149,7 +149,7 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
               <ul className="flex flex-col">
                 <li>
                   <Link
-                    className="block min-h-[44px] px-2 py-3 text-sm font-medium text-slate-700"
+                    className="block min-h-[44px] px-2 py-3 text-sm font-medium text-[var(--color-ink)]"
                     href="/"
                     onClick={closeMenu}
                   >
@@ -159,12 +159,15 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
                 <li>
                   <button
                     aria-expanded={isCompetitionsOpen}
-                    className="flex min-h-[44px] w-full items-center justify-between px-2 py-3 text-left text-sm font-medium text-slate-700"
+                    className="flex min-h-[44px] w-full items-center justify-between px-2 py-3 text-left text-sm font-medium text-[var(--color-ink)]"
                     onClick={() => setIsCompetitionsOpen((current) => !current)}
                     type="button"
                   >
                     <span>大会</span>
-                    <span aria-hidden="true" className="text-xs text-slate-500">
+                    <span
+                      aria-hidden="true"
+                      className="text-xs text-[var(--color-ink-muted)]"
+                    >
                       {isCompetitionsOpen ? "▴" : "▾"}
                     </span>
                   </button>
@@ -173,7 +176,7 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
                       {HEADER_COMPETITIONS.map((competition) => (
                         <li key={competition.href}>
                           <Link
-                            className="block min-h-[44px] border-l-[3px] px-4 py-3 text-sm text-slate-600"
+                            className="block min-h-[44px] border-l-[3px] px-4 py-3 text-sm text-[var(--color-ink-muted)]"
                             href={competition.href}
                             onClick={closeMenu}
                             style={{
@@ -191,7 +194,7 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
                 </li>
                 <li>
                   <Link
-                    className="block min-h-[44px] px-2 py-3 text-sm font-medium text-slate-700"
+                    className="block min-h-[44px] px-2 py-3 text-sm font-medium text-[var(--color-ink)]"
                     href="/calendar"
                     onClick={closeMenu}
                   >
@@ -207,7 +210,7 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
                         destination: "pricing",
                         label: "料金",
                       }}
-                      className="block min-h-[44px] px-2 py-3 text-sm font-medium text-slate-700"
+                      className="block min-h-[44px] px-2 py-3 text-sm font-medium text-[var(--color-ink)]"
                       href="/pricing"
                       onClick={closeMenu}
                     >
@@ -218,7 +221,7 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
                 <li>
                   <a
                     aria-label="X (Twitter) @tryline_rugbyjp"
-                    className="flex min-h-[44px] items-center gap-2 px-2 py-3 text-sm font-medium text-slate-700"
+                    className="flex min-h-[44px] items-center gap-2 px-2 py-3 text-sm font-medium text-[var(--color-ink)]"
                     href="https://x.com/tryline_rugbyjp"
                     onClick={closeMenu}
                     rel="noopener noreferrer"
@@ -231,7 +234,7 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
                 <li>
                   <a
                     aria-label="note @tryline_rugbyjp"
-                    className="flex min-h-[44px] items-center gap-2 px-2 py-3 text-sm font-medium text-slate-700"
+                    className="flex min-h-[44px] items-center gap-2 px-2 py-3 text-sm font-medium text-[var(--color-ink)]"
                     href="https://note.com/tryline_rugbyjp"
                     onClick={closeMenu}
                     rel="noopener noreferrer"
@@ -243,7 +246,7 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
                 </li>
               </ul>
 
-              <div className="mt-2 border-t border-slate-200 pt-2">
+              <div className="mt-2 border-t border-[var(--color-rule)] pt-2">
                 {userState.user ? (
                   <UserMenu
                     allTeams={allTeams}
@@ -254,7 +257,7 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
                   />
                 ) : (
                   <button
-                    className="block min-h-[44px] w-full px-2 py-3 text-left text-sm font-medium text-slate-700"
+                    className="block min-h-[44px] w-full px-2 py-3 text-left text-sm font-medium text-[var(--color-ink)]"
                     onClick={() => {
                       closeMenu();
                       setShowAuth(true);

@@ -6,7 +6,7 @@ import {
   formatKickoffJstDate,
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
-import { getTeamColor } from "@/lib/format/team-identity";
+import { getTeamColor, getTeamStripe } from "@/lib/format/team-identity";
 
 import type { CalendarMatch, UpcomingMatch } from "@/lib/db/queries/matches";
 import type { StandingPositionLookup } from "@/lib/db/queries/standings";
@@ -100,7 +100,7 @@ function getLevelMetric(
 function MatchMiniRow({ match }: { match: CalendarMatch }) {
   return (
     <Link
-      className="group flex min-w-0 items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+      className="group flex min-w-0 items-center justify-between gap-3 rounded-sm border border-white/15 bg-white/[0.06] px-3 py-2.5 transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
       href={`/matches/${match.id}`}
     >
       <div className="min-w-0">
@@ -108,9 +108,23 @@ function MatchMiniRow({ match }: { match: CalendarMatch }) {
           {formatKickoffJstTime(match.kickoffAt)}
         </p>
         <p className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden text-xs font-bold text-white">
-          <span className="truncate">{match.homeTeam.shortCode}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
+              style={{ background: getTeamStripe(match.homeTeam.slug) }}
+            />
+            <span className="truncate">{match.homeTeam.shortCode}</span>
+          </span>
           <span className="shrink-0 text-white/35">対</span>
-          <span className="truncate">{match.awayTeam.shortCode}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
+              style={{ background: getTeamStripe(match.awayTeam.slug) }}
+            />
+            <span className="truncate">{match.awayTeam.shortCode}</span>
+          </span>
         </p>
       </div>
       <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/70">
@@ -140,7 +154,7 @@ export function HomeMatchdayBoard({
     return (
       <aside
         aria-label="次の試合"
-        className="border-white/12 rounded-[22px] border bg-white/[0.08] p-4 shadow-2xl shadow-black/25 backdrop-blur-md sm:p-5"
+        className="rounded-sm border border-white/15 bg-white/[0.08] p-4 backdrop-blur-md sm:p-5"
       >
         <div className="flex items-center justify-between gap-3">
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--color-accent)]">
@@ -152,7 +166,7 @@ export function HomeMatchdayBoard({
         </div>
 
         <div
-          className="mt-4 overflow-hidden rounded-2xl p-4 text-white shadow-lg shadow-black/20"
+          className="mt-4 overflow-hidden rounded-sm p-4 text-white"
           style={{
             background: `linear-gradient(160deg, rgb(12 16 28 / 42%), rgb(12 16 28 / 20%)), linear-gradient(135deg, ${getTeamColor(nextUpcomingMatch.homeTeam.slug)}33, ${getTeamColor(nextUpcomingMatch.awayTeam.slug)}33)`,
           }}
@@ -169,6 +183,13 @@ export function HomeMatchdayBoard({
               href={`/teams/${nextUpcomingMatch.homeTeam.slug}`}
             >
               <span className="flex min-w-0 items-center justify-end gap-2 overflow-hidden text-base font-black leading-tight">
+                <span
+                  aria-hidden="true"
+                  className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
+                  style={{
+                    background: getTeamStripe(nextUpcomingMatch.homeTeam.slug),
+                  }}
+                />
                 <span className="truncate">
                   {nextUpcomingMatch.homeTeam.name}
                 </span>
@@ -179,7 +200,7 @@ export function HomeMatchdayBoard({
                 />
               </span>
             </Link>
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-[var(--color-ink)] shadow-sm">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-[var(--color-ink)]">
               対
             </span>
             <Link
@@ -191,6 +212,13 @@ export function HomeMatchdayBoard({
                   shortCode={nextUpcomingMatch.awayTeam.shortCode}
                   size={24}
                   slug={nextUpcomingMatch.awayTeam.slug}
+                />
+                <span
+                  aria-hidden="true"
+                  className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
+                  style={{
+                    background: getTeamStripe(nextUpcomingMatch.awayTeam.slug),
+                  }}
                 />
                 <span className="truncate">
                   {nextUpcomingMatch.awayTeam.name}
@@ -206,19 +234,19 @@ export function HomeMatchdayBoard({
 
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
           <Link
-            className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="rounded-sm border border-white/15 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             href={`/matches/${nextUpcomingMatch.id}`}
           >
             試合の詳細を見る
           </Link>
           <Link
-            className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="rounded-sm border border-white/15 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             href="/calendar"
           >
             カレンダーを見る
           </Link>
           <Link
-            className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="rounded-sm border border-white/15 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             href="/?notifications=open"
           >
             通知設定を開く
@@ -252,7 +280,7 @@ export function HomeMatchdayBoard({
   return (
     <aside
       aria-label="今週の注目試合"
-      className="border-white/12 rounded-[22px] border bg-white/[0.08] p-4 shadow-2xl shadow-black/25 backdrop-blur-md sm:p-5"
+      className="rounded-sm border border-white/15 bg-white/[0.08] p-4 backdrop-blur-md sm:p-5"
     >
       <div className="flex items-center justify-between gap-3">
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--color-accent)]">
@@ -264,7 +292,7 @@ export function HomeMatchdayBoard({
       </div>
 
       <Link
-        className="mt-4 block overflow-hidden rounded-2xl p-4 text-white shadow-lg shadow-black/20 transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="mt-4 block overflow-hidden rounded-sm p-4 text-white transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
         href={`/matches/${focusMatch.id}`}
         style={{
           background: `linear-gradient(160deg, rgb(12 16 28 / 42%), rgb(12 16 28 / 20%)), linear-gradient(135deg, ${getTeamColor(focusMatch.homeTeam.slug)}33, ${getTeamColor(focusMatch.awayTeam.slug)}33)`,
@@ -279,6 +307,11 @@ export function HomeMatchdayBoard({
         <div className="mt-5 grid min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="min-w-0 text-right">
             <p className="flex min-w-0 items-center justify-end gap-2 overflow-hidden text-base font-black leading-tight">
+              <span
+                aria-hidden="true"
+                className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
+                style={{ background: getTeamStripe(focusMatch.homeTeam.slug) }}
+              />
               <span className="truncate">{focusMatch.homeTeam.name}</span>
               <TeamBadge
                 shortCode={focusMatch.homeTeam.shortCode}
@@ -287,7 +320,7 @@ export function HomeMatchdayBoard({
               />
             </p>
           </div>
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-[var(--color-ink)] shadow-sm">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-[var(--color-ink)]">
             対
           </span>
           <div className="min-w-0 text-left">
@@ -296,6 +329,11 @@ export function HomeMatchdayBoard({
                 shortCode={focusMatch.awayTeam.shortCode}
                 size={24}
                 slug={focusMatch.awayTeam.slug}
+              />
+              <span
+                aria-hidden="true"
+                className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
+                style={{ background: getTeamStripe(focusMatch.awayTeam.slug) }}
               />
               <span className="truncate">{focusMatch.awayTeam.name}</span>
             </p>
@@ -306,7 +344,7 @@ export function HomeMatchdayBoard({
       <dl className="mt-4 grid gap-2 sm:grid-cols-3">
         {metrics.map((metric) => (
           <div
-            className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2"
+            className="rounded-sm border border-white/15 bg-white/[0.06] px-3 py-2"
             key={metric.label}
           >
             <dt className="text-[10px] font-bold uppercase tracking-wide text-white/45">

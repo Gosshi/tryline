@@ -174,7 +174,7 @@ export default async function CalendarPage({
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
             Weekly Match Calendar
           </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--color-ink)] sm:text-4xl">
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-4xl">
             今週の試合カレンダー
           </h1>
           <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">

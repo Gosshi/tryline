@@ -8,7 +8,7 @@ export default function NotFound() {
       <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
         Tryline
       </p>
-      <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
+      <h1 className="text-3xl font-extrabold tracking-tight text-slate-950">
         ページが見つかりません
       </h1>
       <p className="text-sm leading-6 text-slate-600">

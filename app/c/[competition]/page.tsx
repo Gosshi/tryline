@@ -191,7 +191,7 @@ export default async function CompetitionHubPage({ params }: Props) {
         <div className="absolute inset-0 bg-slate-950/60" />
         <div className="absolute inset-0 flex flex-col justify-end px-4 pb-6 sm:px-6 md:px-8">
           <div className="mx-auto w-full max-w-4xl">
-            <h1 className="font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <h1 className="font-heading text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
               {formatFamilyName(competition)}
             </h1>
             <p className="mt-1 text-sm text-white/70">全シーズン一覧</p>
@@ -206,7 +206,7 @@ export default async function CompetitionHubPage({ params }: Props) {
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 sm:px-6 md:px-8">
         <section aria-labelledby="current-season-summary" className="space-y-4">
           <h2
-            className="font-heading text-xl font-bold text-[var(--color-ink)] sm:text-2xl"
+            className="font-heading text-xl font-extrabold text-[var(--color-ink)] sm:text-2xl"
             id="current-season-summary"
           >
             {competitionTitle}の日程・結果
@@ -249,7 +249,7 @@ export default async function CompetitionHubPage({ params }: Props) {
                       className="space-y-3"
                     >
                       <h3
-                        className="font-heading text-base font-bold text-[var(--color-ink)]"
+                        className="font-heading text-base font-extrabold text-[var(--color-ink)]"
                         id="next-matches-heading"
                       >
                         次の試合（日本時間）
@@ -294,7 +294,7 @@ export default async function CompetitionHubPage({ params }: Props) {
                       className="space-y-3"
                     >
                       <h3
-                        className="font-heading text-base font-bold text-[var(--color-ink)]"
+                        className="font-heading text-base font-extrabold text-[var(--color-ink)]"
                         id="standings-heading"
                       >
                         {state === "post" ? "最終順位" : "順位"}
@@ -331,7 +331,7 @@ export default async function CompetitionHubPage({ params }: Props) {
                       className="space-y-3"
                     >
                       <h3
-                        className="font-heading text-base font-bold text-[var(--color-ink)]"
+                        className="font-heading text-base font-extrabold text-[var(--color-ink)]"
                         id="broadcast-heading"
                       >
                         日本での視聴方法
@@ -365,7 +365,7 @@ export default async function CompetitionHubPage({ params }: Props) {
 
         {recentReviews.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+            <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               最近のレビュー
             </h2>
             <div className="grid gap-4 md:grid-cols-2">
@@ -385,7 +385,7 @@ export default async function CompetitionHubPage({ params }: Props) {
         </div>
 
         <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+          <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
             全シーズン
           </h2>
           <ul className="space-y-3">
