@@ -59,7 +59,13 @@ export function selectHomeReviews(
 }
 
 export function getHomeReviewExcerpt(excerpt: string): string {
-  const text = excerpt.trim();
+  // recapExcerpt is plain text: stripMarkdown leaves section-heading words.
+  const text = excerpt
+    .trim()
+    .replace(
+      /^(?:この試合の核心|試合全体像|ターニングポイント|注目選手|大会文脈と順位への影響|両チームの近況と戦術傾向|次戦への示唆)(?:\s+|$)/u,
+      "",
+    );
   const firstSentence = text.match(/^.*?[。！？.!?]/u)?.[0] ?? text;
   const characters = Array.from(firstSentence);
   return characters.length <= 60

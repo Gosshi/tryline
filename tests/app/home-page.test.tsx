@@ -300,7 +300,8 @@ describe("HomePage", () => {
           },
           id: "recent-review-not-sample",
           recapGeneratedAt: "2026-07-06T06:30:00.000Z",
-          recapExcerpt: "This recent review is not the free sample.",
+          recapExcerpt:
+            "この試合の核心 This recent review is not the free sample. 次の一文です。",
         },
         latestReviewAt: "2026-07-06T06:30:00.000Z",
         poolName: null,
@@ -398,7 +399,15 @@ describe("HomePage", () => {
         .querySelector('a[href="/matches/recent-review-not-sample"]')
         ?.closest('[data-review-size="lead"]'),
     ).toHaveAttribute("data-review-size", "lead");
-    expect(screen.queryByLabelText("今週の注目試合")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("This recent review is not the free sample."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/この試合の核心|次の一文です/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("これからの試合の一覧"),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText("home_hero_sample_recap"),
     ).not.toBeInTheDocument();
@@ -464,24 +473,27 @@ describe("HomePage", () => {
     render(await HomePage());
 
     expect(focusMocks.selectCalendarFocusMatchId).toHaveBeenCalled();
-    expect(screen.getByLabelText("今週の注目試合")).toBeInTheDocument();
+    expect(screen.getByLabelText("これからの試合の一覧")).toBeInTheDocument();
     expect(
-      within(screen.getByLabelText("今週の注目試合")).getByRole("link", {
+      within(screen.getByLabelText("これからの試合の一覧")).getByRole("link", {
         name: /Japan[\s\S]*Ireland/,
       }),
     ).toHaveAttribute("href", "/matches/japan-match");
     expect(
-      screen.getByRole("heading", { name: "今週の試合" }),
+      screen.getByRole("heading", { name: "これからの試合" }),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/\d+月第\d+週/)).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "注目大会" }),
     ).toBeInTheDocument();
     expect(screen.getByText("プレビュー公開")).toBeInTheDocument();
     expect(
-      within(screen.getByLabelText("今週の注目試合")).getAllByRole("link"),
+      within(screen.getByLabelText("これからの試合の一覧")).getAllByRole(
+        "link",
+      ),
     ).toHaveLength(4);
     expect(
-      screen.getByLabelText("今週の注目試合").querySelector("ul"),
+      screen.getByLabelText("これからの試合の一覧").querySelector("ul"),
     ).toHaveClass("md:grid-cols-2");
     expect(
       document.querySelector('a[href="/c/nations-championship/2026"]'),
@@ -597,13 +609,12 @@ describe("HomePage", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "次の試合" }),
+      screen.getByRole("heading", { name: "これからの試合" }),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByLabelText("次の試合の一覧")).getByRole("link"),
+      within(screen.getByLabelText("これからの試合の一覧")).getByRole("link"),
     ).toHaveAttribute("href", "/matches/next-match");
     expect(screen.queryByText("7月第3週")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("今週の注目試合")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("試合と結果")).not.toBeInTheDocument();
     expect(screen.getByText("次の試合まであと3日")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Japan" })).toHaveAttribute(
@@ -1016,12 +1027,12 @@ describe("HomePage", () => {
     ).toHaveClass("min-w-0");
     expect(
       screen.getByRole("link", {
-        name: "2027年大会（オーストラリア開催）の日程はこちら →",
+        name: "ラグビーワールドカップ 2027",
       }),
     ).toHaveAttribute("href", "/c/rwc/2027");
     expect(
       screen.getAllByRole("link", {
-        name: "2027年大会（オーストラリア開催）の日程はこちら →",
+        name: "ラグビーワールドカップ 2027",
       }),
     ).toHaveLength(1);
   });
@@ -1038,7 +1049,7 @@ describe("HomePage", () => {
       ),
     ]);
     const { container } = render(await HomePage());
-    const board = screen.getByLabelText("今週の注目試合");
+    const board = screen.getByLabelText("これからの試合の一覧");
     expect(
       within(board)
         .getAllByRole("link")
@@ -1062,7 +1073,7 @@ describe("HomePage", () => {
       node.id === "newsletter-signup" ? "ニュースレター" : node.textContent,
     );
     expect(sections).toEqual([
-      "今週の試合",
+      "これからの試合",
       "注目大会",
       "最近のレビュー",
       "ニュースレター",
@@ -1071,7 +1082,7 @@ describe("HomePage", () => {
     expect(screen.queryByText("試合後に聞けること")).not.toBeInTheDocument();
   });
 
-  it("shows next-match copy without a week label when only upcoming fixtures are available", async () => {
+  it("uses the same board heading without a week label when only upcoming fixtures are available", async () => {
     matchMocks.getUpcomingMatches.mockResolvedValue([
       createCalendarMatch({
         id: "upcoming-only",
@@ -1080,11 +1091,11 @@ describe("HomePage", () => {
     ]);
     render(await HomePage());
     expect(
-      screen.getByRole("heading", { name: "次の試合" }),
+      screen.getByRole("heading", { name: "これからの試合" }),
     ).toBeInTheDocument();
     expect(screen.queryByText("7月第3週")).not.toBeInTheDocument();
     expect(
-      within(screen.getByLabelText("次の試合の一覧")).getByRole("link"),
+      within(screen.getByLabelText("これからの試合の一覧")).getByRole("link"),
     ).toHaveAttribute("href", "/matches/upcoming-only");
     expect(matchMocks.getNextUpcomingMatch).not.toHaveBeenCalled();
   });
@@ -1109,8 +1120,12 @@ describe("HomePage", () => {
     await act(async () => {
       render(await HomePage());
     });
-    const board = screen.getByLabelText("次の試合の一覧");
+    const board = screen.getByLabelText("これからの試合の一覧");
     expect(board).not.toHaveTextContent("40–18");
+    expect(
+      screen.getByRole("heading", { name: "これからの試合" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/\d+月第\d+週/)).not.toBeInTheDocument();
     expect(screen.getByLabelText("最新レビューのスコア")).not.toHaveTextContent(
       "24–21",
     );
@@ -1127,10 +1142,11 @@ describe("HomePage", () => {
   it("omits the board when the fallback is also unavailable", async () => {
     render(await HomePage());
     expect(
-      screen.queryByRole("heading", { name: "次の試合" }),
+      screen.queryByRole("heading", { name: "これからの試合" }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("次の試合の一覧")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("今週の注目試合")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("これからの試合の一覧"),
+    ).not.toBeInTheDocument();
     expect(matchMocks.getNextUpcomingMatch).toHaveBeenCalledTimes(1);
   });
 

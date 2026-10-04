@@ -197,6 +197,49 @@ describe("selectHomeReviews", () => {
 });
 
 describe("getHomeReviewExcerpt", () => {
+  it.each([
+    "この試合の核心",
+    "試合全体像",
+    "ターニングポイント",
+    "注目選手",
+    "大会文脈と順位への影響",
+    "両チームの近況と戦術傾向",
+    "次戦への示唆",
+  ])("removes a leading recap section heading: %s", (heading) => {
+    expect(
+      getHomeReviewExcerpt(
+        `${heading} エクセターが接点で優位に立った。続きです。`,
+      ),
+    ).toBe("エクセターが接点で優位に立った。");
+  });
+
+  it("removes the heading before applying the 60-character sentence limit", () => {
+    expect(
+      getHomeReviewExcerpt(
+        "この試合の核心 " + "あ".repeat(59) + "。続きです。",
+      ),
+    ).toBe("あ".repeat(59) + "。");
+    expect(
+      getHomeReviewExcerpt("この試合の核心 " + "あ".repeat(61) + "。"),
+    ).toBe("あ".repeat(59) + "…");
+  });
+
+  it("handles surrounding whitespace, line breaks and a heading without a body", () => {
+    expect(
+      getHomeReviewExcerpt("  この試合の核心\n\n本文です。続きです。  "),
+    ).toBe("本文です。");
+    expect(getHomeReviewExcerpt(" この試合の核心 ")).toBe("");
+  });
+
+  it("keeps heading words that belong to prose rather than a leading heading", () => {
+    expect(
+      getHomeReviewExcerpt("この試合の核心は接点にあった。続きです。"),
+    ).toBe("この試合の核心は接点にあった。");
+    expect(getHomeReviewExcerpt("接点がこの試合の核心だった。続きです。")).toBe(
+      "接点がこの試合の核心だった。",
+    );
+  });
+
   it("shows only the first sentence", () => {
     expect(getHomeReviewExcerpt("最初の一文です。次の一文です。")).toBe(
       "最初の一文です。",

@@ -63,12 +63,6 @@ import type { Metadata } from "next";
 
 export const revalidate = 60;
 
-function getHomeWeekLabel(weekStartJst: string): string {
-  const [, month, day] = weekStartJst.split("-").map(Number);
-
-  return String(month) + "月第" + Math.ceil((day ?? 1) / 7) + "週";
-}
-
 function isFeaturedCompetitionMatch(
   match: { competition: { family: string; season: string } },
   featuredCompetition: { family: string; season: string },
@@ -222,7 +216,7 @@ export default async function HomePage() {
     if (competition.family === "rwc") {
       exploreLinks.set("/c/rwc/2027", {
         href: "/c/rwc/2027",
-        label: "2027年大会（オーストラリア開催）の日程はこちら →",
+        label: "ラグビーワールドカップ 2027",
       });
     }
   }
@@ -468,33 +462,20 @@ export default async function HomePage() {
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-rule)] pb-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-brass)]">
-                  {homepageWeekMatches.length > 0
-                    ? "This week"
-                    : "Next matches"}{" "}
-                  / 日本時間
+                  Next matches / 日本時間
                 </p>
                 <h2
                   className="mt-2 text-3xl font-extrabold"
                   id="home-week-heading"
                 >
-                  {homepageWeekMatches.length > 0 ? "今週の試合" : "次の試合"}
+                  これからの試合
                 </h2>
               </div>
-              {homepageWeekMatches.length > 0 && (
-                <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
-                  {getHomeWeekLabel(weekRange.weekStartJst)}
-                </span>
-              )}
             </div>
             <HomeMatchdayBoard
               focusMatchId={homepageFocusMatchId}
               matches={homepageBoardMatches}
               standingPositions={homepageStandingPositions}
-              weekLabel={
-                homepageWeekMatches.length > 0
-                  ? getHomeWeekLabel(weekRange.weekStartJst)
-                  : ""
-              }
             />
             <TrackedLink
               analytics={{

@@ -78,11 +78,10 @@ describe("HomeMatchdayBoard", () => {
         focusMatchId={null}
         matches={[nextMatch]}
         standingPositions={new Map()}
-        weekLabel="7月第3週"
       />,
     );
 
-    const board = screen.getByLabelText("今週の注目試合");
+    const board = screen.getByLabelText("これからの試合の一覧");
 
     expect(board).toHaveTextContent("ネーションズチャンピオンシップ 2026");
     expect(board).toHaveTextContent("07-20 (月)19:30 JST");
@@ -102,7 +101,6 @@ describe("HomeMatchdayBoard", () => {
         focusMatchId={null}
         matches={[]}
         standingPositions={new Map()}
-        weekLabel="7月第3週"
       />,
     );
 
@@ -114,10 +112,11 @@ describe("HomeMatchdayBoard", () => {
         focusMatchId="focus-second"
         matches={[nextMatch, { ...nextMatch, id: "focus-second" }]}
         standingPositions={new Map()}
-        weekLabel="7月第3週"
       />,
     );
-    const links = screen.getByLabelText("今週の注目試合").querySelectorAll("a");
+    const links = screen
+      .getByLabelText("これからの試合の一覧")
+      .querySelectorAll("a");
     expect([...links].map((link) => link.getAttribute("href"))).toEqual([
       "/matches/next-match",
       "/matches/focus-second",

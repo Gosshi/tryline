@@ -15,7 +15,6 @@ type HomeMatchdayBoardProps = {
   focusMatchId: string | null;
   matches: HomeBoardMatch[];
   standingPositions: StandingPositionLookup;
-  weekLabel: string;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1_000;
@@ -166,7 +165,6 @@ export function HomeMatchdayBoard({
   focusMatchId,
   matches,
   standingPositions,
-  weekLabel,
 }: HomeMatchdayBoardProps) {
   const focusMatch =
     matches.find((match) => match.id === focusMatchId) ?? matches[0] ?? null;
@@ -178,8 +176,7 @@ export function HomeMatchdayBoard({
   const levelMetric = getLevelMetric(focusMatch, standingPositions);
 
   return (
-    <aside aria-label={weekLabel ? "今週の注目試合" : "次の試合の一覧"}>
-      {weekLabel && <p className="sr-only">{weekLabel}</p>}
+    <aside aria-label="これからの試合の一覧">
       <ul className="grid border-t border-[var(--color-rule)] md:grid-cols-2">
         {matches.map((match) => (
           <li className="min-w-0" key={match.id}>
