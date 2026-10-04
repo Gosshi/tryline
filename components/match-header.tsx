@@ -82,24 +82,19 @@ export function MatchHeader({
 
   return (
     <section
-      className="relative isolate overflow-hidden rounded-[var(--radius-lg)] px-4 py-5 text-white shadow-[var(--shadow)] sm:px-7 sm:py-7"
+      className="relative isolate overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-ink-strong)] px-4 py-5 text-white shadow-[var(--shadow)] sm:px-7 sm:py-7"
       style={
         {
           "--team-away": awayColor,
           "--team-home": homeColor,
-          background: `
-            linear-gradient(180deg, rgb(12 16 28 / 16%), rgb(12 16 28 / 38%)),
-            radial-gradient(135% 110% at 6% 0%, color-mix(in srgb, ${homeColor} 92%, transparent), transparent 62%),
-            radial-gradient(135% 110% at 96% 100%, color-mix(in srgb, ${awayColor} 92%, transparent), transparent 62%),
-            linear-gradient(135deg, color-mix(in srgb, ${homeColor} 88%, transparent), color-mix(in srgb, ${awayColor} 88%, transparent)),
-            url(/visuals/match-detail-bg.jpg)
-          `,
-          backgroundBlendMode: "normal, normal, normal, screen, normal",
-          backgroundPosition: "center, center, center, center, center",
-          backgroundSize: "cover, cover, cover, cover, cover",
         } as React.CSSProperties
       }
     >
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 grid grid-cols-2">
+        <span style={{ backgroundColor: homeColor }} />
+        <span style={{ backgroundColor: awayColor }} />
+        <span className="absolute inset-0 bg-[var(--color-ink-strong)]/[0.7]" />
+      </div>
       <h1 className="sr-only font-heading">
         {homeName} {matchupConnector} {awayName}
       </h1>
@@ -112,7 +107,7 @@ export function MatchHeader({
             : ""}
         </p>
         {match.status === "in_progress" ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500 px-3 py-1 text-[11px] font-black text-white shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-3 py-1 text-[11px] font-black text-white shadow-sm">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
             LIVE
           </span>
@@ -130,10 +125,10 @@ export function MatchHeader({
           shortCode={match.homeTeam.shortCode}
         />
 
-        <div className="min-w-[5.5rem] text-center sm:min-w-[10rem]">
+        <div className="flex h-[104px] min-w-[5.5rem] items-center justify-center rounded-sm bg-[var(--color-ink-strong)] px-2 text-center sm:h-[116px] sm:min-w-[10rem] sm:px-4">
           {showScore ? (
             <SpoilerScore
-              className="max-w-[9rem] text-white sm:max-w-[12rem]"
+              className="min-h-11 max-w-[9rem] text-white sm:max-w-[12rem]"
               enabled={spoilerGuardEnabled}
             >
               <p className="flex items-center justify-center gap-1.5 font-number text-[clamp(2.25rem,10vw,4rem)] font-bold tabular-nums leading-none sm:gap-3">
@@ -151,7 +146,7 @@ export function MatchHeader({
               </p>
             </SpoilerScore>
           ) : (
-            <p className="font-number text-xl font-bold text-white/70">VS</p>
+            <p className="font-number text-xl font-bold text-white/80">VS</p>
           )}
         </div>
 
@@ -188,7 +183,7 @@ export function MatchHeader({
 
       {match.broadcasts.length > 0 && (
         <div
-          className="bg-white/12 mt-5 rounded-2xl border border-white/20 p-4 backdrop-blur-sm"
+          className="bg-white/12 mt-5 rounded-sm border border-white/20 p-4 backdrop-blur-sm"
           id="broadcasts"
         >
           <div className="flex flex-wrap items-end justify-between gap-2">
@@ -196,7 +191,7 @@ export function MatchHeader({
               視聴方法
             </h2>
             {verifiedDate && (
-              <p className="text-[11px] font-bold text-white/70">
+              <p className="text-[11px] font-bold text-white/80">
                 確認日: {verifiedDate}
               </p>
             )}
@@ -272,7 +267,7 @@ function ScoreNumber({
     <span className="relative">
       {score}
       {isWinner && (
-        <span className="absolute -right-1 -top-3 rounded-md bg-white px-1.5 py-0.5 font-number text-[8px] font-bold leading-none text-[var(--team-home)] sm:-right-2 sm:text-[9px]">
+        <span className="absolute -right-1 -top-3 rounded-md bg-white px-1.5 py-0.5 font-number text-[8px] font-bold leading-none text-[var(--color-accent)] sm:-right-2 sm:text-[9px]">
           WIN
         </span>
       )}
@@ -294,10 +289,10 @@ function TeamBlock({
   shortCode: string;
 }) {
   return (
-    <div className={cn("min-w-0 text-center", dimmed && "opacity-70")}>
+    <div className={cn("min-w-0 text-center", dimmed && "opacity-95")}>
       <div
         className={cn(
-          "mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white/95 shadow-sm sm:h-14 sm:w-14",
+          "mx-auto grid h-12 w-12 place-items-center rounded-sm bg-white/95 shadow-sm sm:h-14 sm:w-14",
           isWinner &&
             "ring-2 ring-white/70 ring-offset-2 ring-offset-transparent",
         )}
@@ -311,7 +306,7 @@ function TeamBlock({
       >
         {name}
       </Link>
-      <span className="mt-0.5 block font-number text-[10px] font-bold text-white/65">
+      <span className="mt-0.5 block font-number text-[10px] font-bold text-white/80">
         {shortCode}
       </span>
     </div>

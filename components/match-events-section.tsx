@@ -182,8 +182,8 @@ export function MatchEventsSection({
           この試合の要点
         </h2>
         {primary && primaryLabel && (
-          <div className="flex items-center gap-4 rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
-            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-[18px] bg-[var(--color-accent-subtle)] text-center font-number font-bold leading-none text-[var(--color-accent)]">
+          <div className="flex items-center gap-4 rounded-[var(--radius-md)] bg-card p-5 shadow-[var(--shadow-soft)] sm:p-6">
+            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-sm bg-[var(--color-accent-subtle)] text-center font-number font-bold leading-none text-[var(--color-accent)]">
               {primary.event.minute === null ? (
                 <span className="text-sm">得点</span>
               ) : (
@@ -207,12 +207,12 @@ export function MatchEventsSection({
           </div>
         )}
         {chips.length > 0 && (
-          <div className="mt-3 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
+          <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-1 min-[360px]:grid-cols-2">
             {chips.map((chip, index) => (
               <div
                 className={cn(
-                  "rounded-[var(--radius-sm)] bg-white p-4 shadow-[var(--shadow-soft)]",
-                  index === 1 && "bg-[#ebeff8]",
+                  "rounded-[var(--radius-sm)] bg-card p-4 shadow-[var(--shadow-soft)]",
+                  index === 1 && "bg-[var(--color-panel)]",
                 )}
                 key={chip.key}
               >
@@ -222,7 +222,7 @@ export function MatchEventsSection({
                 <p
                   className={cn(
                     "mt-1.5 text-sm font-bold text-[var(--color-ink)]",
-                    index === 1 && "text-[#38589f]",
+                    index === 1 && "text-[var(--color-ink)]",
                   )}
                 >
                   {chip.value}

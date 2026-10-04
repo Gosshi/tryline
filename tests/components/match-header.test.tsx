@@ -135,6 +135,33 @@ describe("MatchHeader", () => {
     expect(hero?.getAttribute("style")).toContain("#002395");
   });
 
+  it("renders separate team faces and the ink score box for unknown teams", () => {
+    const { container } = render(
+      <MatchHeader
+        match={{
+          ...match,
+          homeTeam: { ...match.homeTeam, slug: "unknown-home" },
+          awayTeam: { ...match.awayTeam, slug: "unknown-away" },
+          homeScore: 24,
+          awayScore: 18,
+          status: "finished",
+        }}
+      />,
+    );
+    expect(container.querySelector("section")).toHaveStyle(
+      "--team-home: #94a3b8",
+    );
+    expect(container.querySelector("section")).toHaveStyle(
+      "--team-away: #94a3b8",
+    );
+    const panels = container.querySelector("section > [aria-hidden]")!;
+    expect(panels.children[0]).toHaveStyle("background-color: #94a3b8");
+    expect(panels.children[1]).toHaveStyle("background-color: #94a3b8");
+    expect(screen.getByText("24").closest("div")).toHaveClass(
+      "bg-[var(--color-ink-strong)]",
+    );
+  });
+
   it("renders SVG flags with the team short codes", () => {
     const { container } = render(<MatchHeader match={match} />);
     const header = within(container);

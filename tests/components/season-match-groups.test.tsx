@@ -3,6 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -12,6 +13,7 @@ import {
   getMatchClassification,
   getDefaultOpenGroupIndex,
   getDefaultOpenGroupIndexes,
+  getSeasonGroupDisplayOrder,
   shouldCollapseRoundGroups,
 } from "@/components/season-match-groups";
 
@@ -284,6 +286,80 @@ describe("season match groups", () => {
       ),
     ]).toEqual([1, 2]);
   });
+
+  it.each([
+    ["middle", new Set([3, 4, 5]), [4, 5, 6, 7, 8, 9, 10, 3, 2, 1]],
+    ["preseason", new Set([0, 1]), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]],
+    ["finished", new Set([8, 9]), [9, 10, 8, 7, 6, 5, 4, 3, 2, 1]],
+  ])(
+    "orders %s rounds without mutating chronological data",
+    (_, open, expected) => {
+      const groups = Array.from({ length: 10 }, (_, index) =>
+        buildGroup(index + 1, "2026-01-01T00:00:00.000Z"),
+      );
+      const original = [...groups];
+      expect(
+        getSeasonGroupDisplayOrder(groups, open).map((index) => index + 1),
+      ).toEqual(expected);
+      expect(groups).toEqual(original);
+    },
+  );
+
+  it("keeps a single group and an empty season unchanged", () => {
+    expect(
+      getSeasonGroupDisplayOrder(
+        [buildGroup(1, "2026-01-01T00:00:00.000Z")],
+        new Set([0]),
+      ),
+    ).toEqual([0]);
+    expect(getSeasonGroupDisplayOrder([], new Set())).toEqual([]);
+  });
+
+  it.each(["top-14", "rwc"])(
+    "keeps every %s round and match link in server HTML in display order",
+    (family) => {
+      const groups = Array.from({ length: 10 }, (_, index) =>
+        buildGroup(
+          index + 1,
+          new Date(Date.UTC(2026, 0, index + 1)).toISOString(),
+        ),
+      );
+      const html = renderToStaticMarkup(
+        <SeasonMatchGroups
+          contentStatusMap={{}}
+          family={family}
+          groupedMatches={groups}
+          initialNow="2026-01-04T12:00:00.000Z"
+          roundHubBasePath={`/c/${family}/2027`}
+        />,
+      );
+      const dom = document.createElement("div");
+      dom.innerHTML = html;
+      expect(
+        [...dom.querySelectorAll("button[data-round-index]")].map(
+          (button) => Number(button.getAttribute("data-round-index")) + 1,
+        ),
+      ).toEqual([4, 5, 6, 7, 8, 9, 10, 3, 2, 1]);
+      expect(dom.querySelectorAll('a[href^="/matches/"]')).toHaveLength(10);
+      expect(
+        dom.querySelectorAll(`a[href^="/c/${family}/2027/round/"]`),
+      ).toHaveLength(10);
+      const past = dom.querySelector("h3");
+      expect(past).toHaveTextContent("これまでの節");
+      expect(past?.parentElement?.querySelector("button")).toHaveAttribute(
+        "data-round-index",
+        "2",
+      );
+      expect(dom.querySelector('button[data-round-index="3"]')).toHaveAttribute(
+        "aria-expanded",
+        "true",
+      );
+      expect(dom.querySelector('button[data-round-index="2"]')).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+    },
+  );
 
   it("toggles a collapsible round section", () => {
     const groupedMatches = Array.from({ length: 10 }, (_, index) =>

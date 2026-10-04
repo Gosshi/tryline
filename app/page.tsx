@@ -5,7 +5,10 @@ import { Suspense } from "react";
 import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { FeaturedCompetitionCard } from "@/components/featured-competition-card";
 import { HeroTexture } from "@/components/hero-texture";
-import { HomeMatchdayBoard } from "@/components/home-matchday-board";
+import {
+  getNextMatchCountdownLabel,
+  HomeMatchdayBoard,
+} from "@/components/home-matchday-board";
 import {
   HomepageFavoriteTeams,
   HomepagePremiumCta,
@@ -217,8 +220,6 @@ export default async function HomePage() {
     publishedReviewCount: featuredCompetitionLink?.publishedRecapCount ?? 0,
     weekMatchCount: featuredCompetitionMatches.length,
   };
-  const hasHomeMatchBoard =
-    homepageWeekMatches.length > 0 || homepageNextUpcomingMatch !== null;
   const shouldShowSampleReview = Boolean(sampleMatch?.recapExcerpt);
   const jsonLd = [
     {
@@ -256,42 +257,58 @@ export default async function HomePage() {
           <CheckoutSuccessTracker />
           <SignupSuccessTracker />
         </Suspense>
-        <section className="relative overflow-hidden bg-[var(--color-ink)] py-16 sm:py-24">
+        <section className="relative min-h-[480px] overflow-hidden bg-[var(--color-ink-strong)] py-14 sm:min-h-[560px] sm:py-20">
           <HeroTexture />
           <div aria-hidden className="absolute inset-0 z-0">
             <Image
               alt=""
-              className="object-cover object-center opacity-25"
+              className="object-cover object-center"
               fill
               priority
               sizes="100vw"
               src="/visuals/home-hero.jpg"
             />
-            <div className="bg-[var(--color-ink)]/60 absolute inset-0" />
+            <div className="absolute inset-0 bg-[linear-gradient(100deg,rgb(23_25_31_/_0.92),rgb(23_25_31_/_0.72)_55%,rgb(23_25_31_/_0.45))]" />
           </div>
 
           <div className="relative z-10 mx-auto max-w-[1536px] px-4 sm:px-6 md:px-8">
-            <div
-              className={
-                hasHomeMatchBoard
-                  ? "grid grid-cols-[minmax(0,1fr)] items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px] xl:grid-cols-[minmax(0,1.25fr)_minmax(460px,0.75fr)]"
-                  : "max-w-3xl"
-              }
-            >
+            <div className="max-w-5xl">
               <div>
-                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#d5b88b]">
                   Rugby Analysis in Japanese
                 </p>
-                <h1 className="max-w-3xl text-balance font-serif text-5xl font-extrabold leading-tight tracking-tight text-white sm:text-7xl">
+                <h1 className="max-w-5xl text-balance font-serif text-[clamp(2.5rem,6.5vw,6rem)] font-extrabold leading-[1.25] tracking-tight text-white">
                   {homepageWeekMatches.length > 0
                     ? "今週の海外ラグビーを、日本時間で追う。"
                     : "次の海外ラグビーを、日本時間で待つ。"}
                 </h1>
-                <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60">
+                <p className="mt-5 max-w-xl text-base leading-relaxed text-white/[0.85]">
                   {homepageWeekMatches.length > 0
                     ? "PNC、Six Nations、Premiership、URC。週末に重なる試合を、日程・結果・順位・日本語レビューまでひとつの流れで確認できます。"
                     : "次のキックオフに備えて、日程と応援したいチームを確認。試合が始まれば、日本語レビューまでひとつの流れで追えます。"}
                 </p>
+                {homepageWeekMatches.length === 0 &&
+                  homepageNextUpcomingMatch && (
+                    <div className="mt-4 space-y-2 text-sm font-semibold text-white/[0.85]">
+                      <p>
+                        {getNextMatchCountdownLabel(
+                          homepageNextUpcomingMatch.kickoffAt,
+                        )}
+                      </p>
+                      <p className="flex flex-wrap items-center gap-2">
+                        <Link className="min-h-11 inline-flex items-center underline underline-offset-4" href={`/teams/${homepageNextUpcomingMatch.homeTeam.slug}`}>
+                          {homepageNextUpcomingMatch.homeTeam.name}
+                        </Link>
+                        <span>対</span>
+                        <Link className="min-h-11 inline-flex items-center underline underline-offset-4" href={`/teams/${homepageNextUpcomingMatch.awayTeam.slug}`}>
+                          {homepageNextUpcomingMatch.awayTeam.name}
+                        </Link>
+                        <Link className="min-h-11 inline-flex items-center rounded-full border border-white/30 px-4" href="/?notifications=open">
+                          通知設定を開く
+                        </Link>
+                      </p>
+                    </div>
+                  )}
                 <div className="mt-8 flex flex-wrap gap-3">
                   <TrackedLink
                     analytics={{
@@ -313,16 +330,89 @@ export default async function HomePage() {
                   <HomepagePremiumCta />
                 </div>
               </div>
-              <HomeMatchdayBoard
-                focusMatchId={homepageFocusMatchId}
-                matches={homepageWeekMatches}
-                nextUpcomingMatch={homepageNextUpcomingMatch}
-                standingPositions={homepageStandingPositions}
-                weekLabel={getHomeWeekLabel(weekRange.weekStartJst)}
-              />
             </div>
           </div>
         </section>
+
+        {weeklyMatches.length > 0 && (
+          <aside
+            aria-label="試合と結果"
+            className="overflow-x-auto border-b border-[var(--color-rule)] bg-[var(--color-ink-strong)] text-white"
+          >
+            <div className="mx-auto max-w-[1536px] px-4 sm:px-6 md:px-8">
+              {[false, true].map((duplicate) => (
+                <div
+                  aria-hidden={duplicate ? true : undefined}
+                  className={duplicate ? "hidden" : "flex w-max gap-8 py-3"}
+                  inert={duplicate ? true : undefined}
+                  key={String(duplicate)}
+                >
+                  {weeklyMatches.map((match) => (
+                    <Link
+                      className="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                      href={`/matches/${match.id}`}
+                      key={match.id}
+                      tabIndex={duplicate ? -1 : undefined}
+                    >
+                      <span className="text-xs text-white/75">
+                        {formatFamilyName(match.competition.family)} ·{" "}
+                        {formatKickoffJstDate(match.kickoffAt)}
+                      </span>
+                      <span className="font-semibold">
+                        {match.homeTeam.name}
+                      </span>
+                      {match.homeScore !== null && match.awayScore !== null ? (
+                        <HomepageSpoilerScore className="min-h-11 text-white">
+                          <span className="font-bold tabular-nums">
+                            {match.homeScore}–{match.awayScore}
+                          </span>
+                        </HomepageSpoilerScore>
+                      ) : (
+                        <span className="text-white/75">対</span>
+                      )}
+                      <span className="font-semibold">
+                        {match.awayTeam.name}
+                      </span>
+                      <span className="text-xs tabular-nums text-white/75">
+                        {formatKickoffJstTime(match.kickoffAt)}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </aside>
+        )}
+
+        {homepageWeekMatches.length > 0 && (
+          <section
+            aria-labelledby="home-week-heading"
+            className="mx-auto max-w-[1536px] px-4 pt-8 sm:px-6 sm:pt-12 md:px-8"
+          >
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-rule)] pb-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-brass)]">
+                  This week / 日本時間
+                </p>
+                <h2
+                  className="mt-2 text-3xl font-extrabold"
+                  id="home-week-heading"
+                >
+                  今週の試合
+                </h2>
+              </div>
+              <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
+                {getHomeWeekLabel(weekRange.weekStartJst)}
+              </span>
+            </div>
+            <HomeMatchdayBoard
+              focusMatchId={homepageFocusMatchId}
+              matches={homepageWeekMatches}
+              standingPositions={homepageStandingPositions}
+              weekLabel={getHomeWeekLabel(weekRange.weekStartJst)}
+            />
+          </section>
+        )}
 
         <HomepageFavoriteTeams allTeams={allTeams} />
 
@@ -347,7 +437,7 @@ export default async function HomePage() {
               <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
                 今後の試合
               </h2>
-              <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <ul className="divide-y divide-[var(--color-rule)] overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-rule)] bg-card">
                 {homepageUpcomingMatches.map((match, index) => {
                   const family = match.competition.slug.replace(
                     /-\d{4}(-\d{2})?$/,
@@ -372,7 +462,7 @@ export default async function HomePage() {
                           }}
                         />
                         <Link
-                          className="block px-5 py-5 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:px-6"
+                          className="block px-5 py-5 transition-colors hover:bg-[var(--color-panel)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:px-6"
                           href={`/matches/${match.id}`}
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -391,8 +481,8 @@ export default async function HomePage() {
                               {formatKickoffJstTime(match.kickoffAt)}
                             </time>
                           </div>
-                          <div className="mt-4 flex min-w-0 items-center justify-between gap-3">
-                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <div className="mt-4 flex min-w-0 flex-wrap items-center gap-3">
+                            <div className="flex min-w-0 items-center gap-3">
                               <TeamBadge
                                 shortCode={match.homeTeam.shortCode}
                                 size={44}
@@ -405,7 +495,7 @@ export default async function HomePage() {
                             <span className="shrink-0 text-sm font-semibold text-slate-400">
                               対
                             </span>
-                            <div className="flex min-w-0 flex-1 items-center justify-end gap-3 text-right">
+                            <div className="flex min-w-0 items-center gap-3">
                               <span className="truncate text-base font-bold text-[var(--color-ink)] sm:text-lg">
                                 {match.awayTeam.name}
                               </span>
@@ -427,7 +517,7 @@ export default async function HomePage() {
                   return (
                     <li key={match.id}>
                       <Link
-                        className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:gap-4"
+                        className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--color-panel)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:gap-4"
                         href={`/matches/${match.id}`}
                       >
                         <div className="shrink-0">
@@ -475,13 +565,44 @@ export default async function HomePage() {
 
           {(recentReviewGroups.length > 0 || shouldShowSampleReview) && (
             <section className="space-y-3">
-              <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              <h2 className="border-b border-[var(--color-rule)] pb-4 text-3xl font-extrabold text-[var(--color-ink)]">
                 最近のレビュー
               </h2>
-              <div className="grid gap-5 xl:grid-cols-2">
+              <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
                 {shouldShowSampleReview && sampleMatch && (
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
-                    <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-[#f8fafc] px-5 py-3">
+                  <div
+                    className={`overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-rule)] bg-card ${recentReviewGroups.length === 0 ? "xl:col-span-2" : "xl:row-span-3"}`}
+                    data-review-size="lead"
+                  >
+                    <div
+                      aria-label="サンプル試合のスコア"
+                      className="relative flex min-h-48 items-center justify-center overflow-hidden sm:min-h-60"
+                    >
+                      <span
+                        aria-hidden
+                        className="absolute inset-y-0 left-0 w-1/2"
+                        style={{
+                          backgroundColor: getTeamColor(
+                            sampleMatch.homeTeam.slug,
+                          ),
+                        }}
+                      />
+                      <span
+                        aria-hidden
+                        className="absolute inset-y-0 right-0 w-1/2"
+                        style={{
+                          backgroundColor: getTeamColor(
+                            sampleMatch.awayTeam.slug,
+                          ),
+                        }}
+                      />
+                      <div className="relative flex min-h-[100px] w-[8ch] max-w-full items-center justify-center rounded-sm bg-[var(--color-ink-strong)] px-6 py-4 text-5xl font-bold tabular-nums text-white sm:min-h-[116px] sm:text-6xl">
+                        <HomepageSpoilerScore className="min-h-11 text-white">
+                          {sampleMatch.homeScore}–{sampleMatch.awayScore}
+                        </HomepageSpoilerScore>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-b border-[var(--color-rule)] bg-[var(--color-panel)] px-5 py-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
                         無料で読めるレビュー
                       </p>
@@ -489,7 +610,7 @@ export default async function HomePage() {
                         Sample
                       </span>
                     </div>
-                    <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_240px]">
+                    <div className="grid gap-4 p-5">
                       <div>
                         <p className="text-xs text-[var(--color-ink-muted)]">
                           {formatCompetitionTitle(
@@ -505,7 +626,7 @@ export default async function HomePage() {
                           {sampleMatch.recapExcerpt}
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
+                      <div className="rounded-[var(--radius-md)] border border-[var(--color-rule)] bg-[var(--color-panel)] p-4">
                         <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--color-accent)]">
                           試合後に聞けること
                         </p>
@@ -516,7 +637,7 @@ export default async function HomePage() {
                         </ul>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-4">
+                    <div className="flex flex-wrap items-center gap-3 border-t border-[var(--color-rule)] px-5 py-4">
                       <TrackedLink
                         analytics={{
                           content_type: "recap",
@@ -547,8 +668,9 @@ export default async function HomePage() {
                     </div>
                   </div>
                 )}
-                {recentReviewGroups.map((group) => {
+                {recentReviewGroups.map((group, index) => {
                   const match = group.hero;
+                  const isLead = !shouldShowSampleReview && index === 0;
                   const shouldShowStatusPane =
                     recentReviewGroups.length === 1 &&
                     shouldShowRecentReviewStatusPane;
@@ -556,17 +678,19 @@ export default async function HomePage() {
                   return (
                     <div
                       className={
+                        !shouldShowSampleReview &&
                         recentReviewGroups.length === 1
                           ? "xl:col-span-2"
-                          : undefined
+                          : isLead
+                            ? "xl:row-span-3"
+                            : undefined
                       }
+                      data-review-size={isLead ? "lead" : "minor"}
                       key={`${group.competition.slug}-${group.latestReviewAt}`}
                     >
                       <div
                         className={
-                          shouldShowStatusPane
-                            ? "grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]"
-                            : "space-y-2"
+                          shouldShowStatusPane ? "space-y-5" : "space-y-2"
                         }
                       >
                         <div className="min-w-0 space-y-2">
@@ -577,63 +701,65 @@ export default async function HomePage() {
                                 group.competition.season,
                               )}
                             </h3>
-                            <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[var(--color-ink-muted)] ring-1 ring-slate-200">
+                            <span className="shrink-0 rounded-full bg-card px-2.5 py-1 text-[11px] font-bold text-[var(--color-ink-muted)] ring-1 ring-[var(--color-rule)]">
                               最新節
                             </span>
                           </div>
                           <Link
-                            className="group block overflow-hidden rounded-2xl px-5 py-5 text-white shadow-[0_18px_36px_rgb(15_23_42/0.18)] transition-all duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.98]"
+                            className={`group relative block overflow-hidden rounded-[var(--radius-md)] px-5 py-5 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${isLead ? "min-h-72 sm:py-10" : "min-h-40"}`}
                             href={`/matches/${match.id}`}
                             style={{
-                              background: `linear-gradient(180deg, rgb(12 16 28 / 12%), rgb(12 16 28 / 34%)), linear-gradient(120deg, ${getTeamColor(match.homeTeam.slug)}, ${getTeamColor(match.awayTeam.slug)})`,
+                              background: `linear-gradient(90deg, ${getTeamColor(match.homeTeam.slug)} 50%, ${getTeamColor(match.awayTeam.slug)} 50%)`,
                             }}
                           >
-                            <p className="bg-white/18 inline-flex rounded-full px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur-sm">
-                              {formatCompetitionTitle(
-                                match.competition,
-                                match.competition.season,
-                              )}
-                            </p>
-                            <div className="mt-4 flex min-w-0 items-center justify-between gap-4">
-                              <div className="min-w-0">
-                                <p className="flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
-                                  <TeamBadge
-                                    shortCode={match.homeTeam.shortCode}
-                                    size={24}
-                                    slug={match.homeTeam.slug}
-                                  />
-                                  <span className="truncate">
-                                    {match.homeTeam.name}
-                                  </span>
-                                </p>
-                                <p className="mt-2 flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
-                                  <TeamBadge
-                                    shortCode={match.awayTeam.shortCode}
-                                    size={24}
-                                    slug={match.awayTeam.slug}
-                                  />
-                                  <span className="truncate">
-                                    {match.awayTeam.name}
-                                  </span>
+                            <div className="rounded-sm bg-[var(--color-ink-strong)] p-4">
+                              <p className="inline-flex rounded-full px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur-sm">
+                                {formatCompetitionTitle(
+                                  match.competition,
+                                  match.competition.season,
+                                )}
+                              </p>
+                              <div className="mt-4 flex min-w-0 items-center justify-between gap-4">
+                                <div className="min-w-0">
+                                  <p className="flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
+                                    <TeamBadge
+                                      shortCode={match.homeTeam.shortCode}
+                                      size={24}
+                                      slug={match.homeTeam.slug}
+                                    />
+                                    <span className="truncate">
+                                      {match.homeTeam.name}
+                                    </span>
+                                  </p>
+                                  <p className="mt-2 flex min-w-0 items-center gap-2 overflow-hidden text-lg font-black leading-tight sm:text-xl">
+                                    <TeamBadge
+                                      shortCode={match.awayTeam.shortCode}
+                                      size={24}
+                                      slug={match.awayTeam.slug}
+                                    />
+                                    <span className="truncate">
+                                      {match.awayTeam.name}
+                                    </span>
+                                  </p>
+                                </div>
+                                <p className="flex h-16 w-32 max-w-[40%] shrink-0 items-center justify-center font-number text-3xl font-black tabular-nums sm:text-4xl">
+                                  <HomepageSpoilerScore className="min-h-11 max-w-[8rem] text-white">
+                                    {match.homeScore}–{match.awayScore}
+                                  </HomepageSpoilerScore>
                                 </p>
                               </div>
-                              <p className="shrink-0 font-number text-3xl font-black tabular-nums sm:text-4xl">
-                                <HomepageSpoilerScore className="max-w-[8rem] text-white">
-                                  {match.homeScore}–{match.awayScore}
-                                </HomepageSpoilerScore>
-                              </p>
+                              <span className="mt-4 inline-flex text-sm font-bold text-white/90 transition-transform group-hover:translate-x-1">
+                                レビューを読む →
+                              </span>
                             </div>
-                            <span className="mt-4 inline-flex text-sm font-bold text-white/90 transition-transform group-hover:translate-x-1">
-                              レビューを読む →
-                            </span>
                           </Link>
 
                           {group.compact.length > 0 && (
-                            <ul className="divide-y divide-slate-200 rounded-xl bg-white px-1 shadow-sm shadow-slate-200/40 ring-1 ring-slate-200">
+                            <ul className="divide-y divide-[var(--color-rule)] rounded-[var(--radius-md)] bg-card px-1 shadow-sm shadow-slate-200/40 ring-1 ring-[var(--color-rule)]">
                               {group.compact.map((compactMatch) => (
                                 <li key={compactMatch.id}>
                                   <Link
-                                    className="group flex items-center justify-between gap-3 px-3 py-3 transition-colors hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
+                                    className="group flex items-center justify-between gap-3 px-3 py-3 transition-colors hover:bg-[var(--color-panel)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
                                     href={`/matches/${compactMatch.id}`}
                                   >
                                     <div className="min-w-0">
@@ -669,7 +795,7 @@ export default async function HomePage() {
                         </div>
 
                         {shouldShowStatusPane && (
-                          <aside className="min-w-0 border-t border-[var(--color-rule)] pt-5 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+                          <aside className="min-w-0 border-t border-[var(--color-rule)] pt-5">
                             <div className="flex items-center justify-between gap-3">
                               <h3 className="text-sm font-extrabold text-[var(--color-ink)]">
                                 大会の現在地
@@ -747,7 +873,7 @@ export default async function HomePage() {
                 {reviewedFamilies.map((item) => (
                   <li key={item.family}>
                     <Link
-                      className="group grid h-full grid-cols-[6rem_minmax(0,1fr)_auto] overflow-hidden rounded-xl border border-slate-200 bg-white transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm active:scale-[0.98] sm:grid-cols-[8rem_minmax(0,1fr)_auto]"
+                      className="group grid h-full grid-cols-[6rem_minmax(0,1fr)_auto] overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-rule)] bg-card transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm active:scale-[0.98] sm:grid-cols-[8rem_minmax(0,1fr)_auto]"
                       href={`/c/${item.family}/${item.competitionSeason}`}
                     >
                       <div className="relative min-h-[4.5rem] overflow-hidden sm:min-h-24">
@@ -791,7 +917,7 @@ export default async function HomePage() {
               大会アーカイブ
             </h2>
             {homepageCompetitionLinks.length === 0 ? (
-              <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-sm text-[var(--color-ink-muted)]">
+              <p className="rounded-[var(--radius-md)] border border-[var(--color-rule)] bg-card px-4 py-6 text-sm text-[var(--color-ink-muted)]">
                 表示できる大会はありません
               </p>
             ) : (
@@ -807,13 +933,13 @@ export default async function HomePage() {
                     >
                       <Link
                         aria-label={`${formatFamilyName(competition.family)} ${competition.season} 最新シーズン`}
-                        className="group flex h-24 flex-col justify-between overflow-hidden rounded-2xl px-4 py-3 text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.98]"
+                        className="group flex h-24 flex-col justify-between overflow-hidden rounded-[var(--radius-md)] px-4 py-3 text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.98]"
                         href={`/c/${competition.family}/${competition.season}`}
                         style={{
                           background: `linear-gradient(160deg, color-mix(in srgb, ${accent} 92%, #111827), ${accent})`,
                         }}
                       >
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 shadow-sm ring-1 ring-white/40">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] bg-white/90 shadow-sm ring-1 ring-white/40">
                           <Image
                             alt=""
                             aria-hidden="true"
@@ -830,7 +956,7 @@ export default async function HomePage() {
                           <span className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-white/75">
                             {competition.season}
                             {competition.family === "league-one" && (
-                              <span className="bg-white/18 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/85">
+                              <span className="bg-white/18 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/[0.85]">
                                 EN
                               </span>
                             )}

@@ -271,6 +271,53 @@ describe("MatchContentSection", () => {
     expect(screen.getByText("約1分")).toBeInTheDocument();
   });
 
+  it("places the existing highlights beside the article at lg and preserves their mobile order", () => {
+    const { container } = render(
+      <MatchContentSection
+        betweenLeadAndBody={<p>イベント由来の要点</p>}
+        content={{
+          ...content,
+          contentMdJa: "# 核心\n\n導入\n\n# 全体像\n\n記事本文",
+        }}
+        contentType="recap"
+        isPremium
+        match={match}
+      />,
+    );
+    const aside = screen.getByRole("complementary", { name: "試合の要点" });
+    expect(aside.parentElement).toHaveClass(
+      "lg:grid-cols-[minmax(0,1fr)_320px]",
+    );
+    expect(aside).toHaveClass(
+      "lg:col-start-2",
+      "lg:row-start-1",
+      "lg:row-span-2",
+    );
+    expect(aside).toHaveTextContent("イベント由来の要点");
+    const body = screen.getByText("記事本文");
+    expect(body.closest("section")).toHaveClass("lg:col-start-1");
+    expect(
+      Boolean(
+        aside.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true);
+    expect(container.querySelector(".max-w-\\[40em\\]")).toBeInTheDocument();
+  });
+
+  it("uses a single column when no event highlights are provided", () => {
+    render(
+      <MatchContentSection
+        content={content}
+        contentType="preview"
+        isPremium
+        match={match}
+      />,
+    );
+    expect(
+      screen.queryByRole("complementary", { name: "試合の要点" }),
+    ).toBeNull();
+  });
+
   it("renders ContentPlaceholder when content is null", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2027-02-03T00:00:00.000Z"));

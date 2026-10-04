@@ -26,6 +26,9 @@ const nextMatch = {
     season: "2026",
     slug: "nations-championship-2026",
   },
+  hasBroadcasts: false,
+  hasPreview: false,
+  hasRecap: false,
   homeScore: null,
   homeTeam: {
     id: "home-id",
@@ -69,40 +72,31 @@ describe("HomeMatchdayBoard", () => {
     ).toBe("次の試合まであと3日");
   });
 
-  it("renders next-match actions instead of an empty board", () => {
+  it("renders current-week fixtures in a left-aligned two-column board", () => {
     render(
       <HomeMatchdayBoard
         focusMatchId={null}
-        matches={[]}
-        nextUpcomingMatch={nextMatch}
+        matches={[nextMatch]}
         standingPositions={new Map()}
         weekLabel="7月第3週"
       />,
     );
 
-    const board = screen.getByLabelText("次の試合");
+    const board = screen.getByLabelText("今週の注目試合");
 
     expect(board).toHaveTextContent("ネーションズチャンピオンシップ 2026");
     expect(board).toHaveTextContent("2026-07-20 (月) 19:30 JST");
-    expect(screen.getByRole("link", { name: "Japan" })).toHaveAttribute(
-      "href",
-      "/teams/japan",
-    );
-    expect(screen.getByRole("link", { name: "Ireland" })).toHaveAttribute(
-      "href",
-      "/teams/ireland",
-    );
     expect(
-      screen.getByRole("link", { name: "通知設定を開く" }),
-    ).toHaveAttribute("href", "/?notifications=open");
+      screen.getByRole("link", { name: /Japan.*Ireland/ }),
+    ).toHaveAttribute("href", "/matches/next-match");
+    expect(board.querySelector("ul")).toHaveClass("lg:grid-cols-2");
   });
 
-  it("hides the alternate card when no future match exists", () => {
+  it("omits the board when the week has no matches", () => {
     const { container } = render(
       <HomeMatchdayBoard
         focusMatchId={null}
         matches={[]}
-        nextUpcomingMatch={null}
         standingPositions={new Map()}
         weekLabel="7月第3週"
       />,

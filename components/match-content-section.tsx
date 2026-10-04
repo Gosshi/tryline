@@ -103,13 +103,19 @@ export function MatchContentSection({
   const sectionTitle = contentHeading?.text ?? TITLES[language][contentType];
 
   return (
-    <>
-      <section className="rounded-[var(--radius-md)] bg-white px-5 py-6 shadow-[var(--shadow-soft)] sm:px-7 sm:py-7">
-        <h2 className="text-[clamp(1.35rem,4vw,1.75rem)] font-extrabold leading-[1.5] text-[var(--color-ink)]">
+    <div
+      className={
+        content && betweenLeadAndBody
+          ? "grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start"
+          : "space-y-5"
+      }
+    >
+      <section className="min-w-0 rounded-[var(--radius-md)] border border-[var(--color-rule)] bg-card px-5 py-6 sm:px-7 sm:py-7">
+        <h2 className="mx-auto max-w-[40rem] text-[clamp(1.35rem,4vw,1.75rem)] font-extrabold leading-[1.5] text-[var(--color-ink)]">
           {sectionTitle}
         </h2>
         {lead?.type === "paragraph" && (
-          <p className="mt-4 text-[15px] font-medium leading-[1.95] text-[#434b59]">
+          <p className="mx-auto mt-4 max-w-[40em] text-[15px] leading-[2] text-[var(--color-ink)]">
             {lead.text}
           </p>
         )}
@@ -139,10 +145,17 @@ export function MatchContentSection({
         )}
       </section>
 
-      {content && betweenLeadAndBody}
+      {content && betweenLeadAndBody && (
+        <aside
+          aria-label="試合の要点"
+          className="min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-4"
+        >
+          {betweenLeadAndBody}
+        </aside>
+      )}
 
       {content && (
-        <section className="rounded-[var(--radius-md)] bg-white px-5 py-6 shadow-[var(--shadow-soft)] sm:px-7 sm:py-7">
+        <section className="lg:col-start-1 min-w-0 rounded-[var(--radius-md)] border border-[var(--color-rule)] bg-card px-5 py-6 sm:px-7 sm:py-7">
           <h2 className="sr-only">{TITLES[language][contentType]}本文</h2>
           <MatchContent
             content={content}
@@ -162,6 +175,6 @@ export function MatchContentSection({
           {afterBody}
         </section>
       )}
-    </>
+    </div>
   );
 }

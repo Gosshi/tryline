@@ -104,6 +104,26 @@ export function getDefaultOpenGroupIndexes(
   );
 }
 
+// Return original indexes so expansion state and round links keep their identity.
+export function getSeasonGroupDisplayOrder(
+  groupedMatches: Array<[GroupKey, MatchListItem[]]>,
+  defaultOpenIndexes: ReadonlySet<number>,
+): number[] {
+  const indexes = groupedMatches.map((_, index) => index);
+  const open = indexes.filter((index) => defaultOpenIndexes.has(index));
+
+  const firstOpen = open[0];
+  const lastOpen = open[open.length - 1];
+
+  if (firstOpen === undefined || lastOpen === undefined) return indexes;
+
+  return [
+    ...open,
+    ...indexes.filter((index) => index > lastOpen),
+    ...indexes.filter((index) => index < firstOpen).reverse(),
+  ];
+}
+
 export function SeasonMatchGroups({
   contentStatusMap,
   family,
@@ -131,6 +151,10 @@ export function SeasonMatchGroups({
     () => getDefaultOpenGroupIndexes(visibleGroups, now),
     [now, visibleGroups],
   );
+  const displayOrder = collapsible
+    ? getSeasonGroupDisplayOrder(visibleGroups, defaultOpenIndexes)
+    : visibleGroups.map((_, index) => index);
+  const firstPastIndex = collapsible ? Math.min(...defaultOpenIndexes) - 1 : -1;
   const defaultScrollIndex = useMemo(() => {
     const indexes = [...defaultOpenIndexes].sort((left, right) => left - right);
 
@@ -192,7 +216,10 @@ export function SeasonMatchGroups({
           </Link>
         </div>
       ) : (
-        visibleGroups.map(([groupKey, roundMatches], index) => {
+        displayOrder.map((index) => {
+          const group = visibleGroups[index];
+          if (!group) return null;
+          const [groupKey, roundMatches] = group;
           const key =
             groupKey.type === "round"
               ? (groupKey.round ?? groupKey.roundName ?? "unassigned")
@@ -204,6 +231,11 @@ export function SeasonMatchGroups({
 
           return (
             <section className="space-y-4" key={key}>
+              {index === firstPastIndex && (
+                <h3 className="border-t border-[var(--color-rule)] pt-4 text-sm font-semibold text-[var(--color-ink-muted)]">
+                  これまでの節
+                </h3>
+              )}
               {collapsible ? (
                 <>
                   <button
