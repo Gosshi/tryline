@@ -1,42 +1,45 @@
 ---
 version: "alpha"
-name: "Tryline Soft Modern"
-description: "The current soft-modern design system for a Japanese rugby analysis product."
+name: "Tryline Touchline"
+description: "A paper-toned Japanese rugby reading system with ink-dark surfaces, brand red, and Mincho headings."
 colors:
-  page-background: "#f1efe9"
-  panel: "#f5f6f8"
-  ink: "#1f2530"
-  ink-muted: "#646a76"
-  rule: "#eceef2"
+  page-background: "#f5f2eb"
+  panel: "#eae7e0"
+  ink: "#20232a"
+  ink-muted: "#606269"
+  rule: "#d8d5ce"
+  ink-strong: "#17191f"
+  brass: "#956137"
   accent: "#c93a40"
   accent-dim: "color-mix(in srgb, var(--color-accent) 15%, transparent)"
   accent-subtle: "color-mix(in srgb, var(--color-accent) 10%, transparent)"
   team-home: "#667085"
   team-away: "#475467"
   shadcn:
-    background: "220 13% 97%"
-    foreground: "219 22% 15%"
-    card: "0 0% 100%"
-    card-foreground: "219 22% 15%"
+    background: "42 33% 94%"
+    foreground: "222 13.5% 14.5%"
+    card: "42.9 100% 98.6%"
+    card-foreground: "222 13.5% 14.5%"
     primary: "357 57% 51%"
     primary-foreground: "0 0% 100%"
-    muted: "220 14% 95%"
-    muted-foreground: "220 7% 42%"
-    border: "220 16% 94%"
-    input: "220 16% 94%"
+    muted: "42 19.2% 89.8%"
+    muted-foreground: "226.7 4.5% 39.4%"
+    border: "42 11.4% 82.7%"
+    input: "42 11.4% 82.7%"
     ring: "357 57% 51%"
 typography:
   family:
-    body: "Zen Maru Gothic via --font-zen-maru"
-    heading: "Zen Maru Gothic via --font-zen-maru"
+    body: "Noto Sans JP via --font-noto-sans-jp"
+    heading: "Shippori Mincho B1 via --font-shippori-mincho"
     number: "Outfit via --font-number"
   weights:
-    Zen Maru Gothic: [500, 700, 900]
+    Noto Sans JP: [400]
+    Shippori Mincho B1: [700, 800]
     Outfit: [500, 700]
   body:
-    fontWeight: 500
+    fontWeight: 400
   heading:
-    fontWeight: 900
+    fontWeight: 800
   numeric:
     fontFeature: "tabular-nums"
   scale:
@@ -92,25 +95,25 @@ layout:
 
 ## Overview
 
-Tryline is a Japanese rugby analysis product for fans who already watch overseas rugby through DAZN, J SPORTS, WOWOW, or similar services. The interface is a soft-modern, friendly and app-like match companion: fast to scan before kickoff and calm enough to read after full time.
+Tryline serves Japanese rugby fans who follow overseas competitions and want fixtures, results, standings, and readable Japanese analysis together. The design direction is THE TOUCHLINE (Owner decision D037, 2026-10-04): a paper-colored reading surface, ink-dark areas, a restrained brand-red accent, and Mincho headings paired with sans-serif body text.
 
-This direction was selected on 2026-06-23. The reference mock is [soft-v3](docs/design/mock-1-soft-v3.html). Match cards, scores, flags, and team color stripes provide the sports energy; rounded surfaces, soft depth, and rounded Japanese typography keep the reading experience approachable.
+The reference is [THE TOUCHLINE A4](docs/notes/gpt-web-redesign-2026-10-03/mock-a4.html). This system is being introduced in stages. Color and typography are the first stage; corner radii, shadows, motion, and page composition are handled by later specifications.
 
 ## Colors
 
-The page background is not a single flat token. `body` uses `#f1efe9` as its background color, overlaid with a red 5% radial gradient (`rgb(201 58 58 / 5%)`), a blue 5% radial gradient (`rgb(26 58 92 / 5%)`), a `#f8f7f4` → `#f1efe9` → `#eceae3` linear gradient, and a low-opacity SVG noise texture. `.bg-paper` applies the same layers.
+The page background is paper `#f5f2eb`. `body` and `.bg-paper` share a subtle linear gradient from `#f8f6f1` through `#f5f2eb` to `#efebe3`, plus the existing low-opacity SVG grain. The former red and blue radial gradients have been removed.
 
-`--color-panel` is `#f5f6f8`; it is an internal-panel token, not the page background. It is used for interior panels on the match page, match events section, and score graph. `--color-ink` is `#1f2530`, `--color-ink-muted` is `#646a76`, `--color-rule` is `#eceef2`, and the brand accent is red: `--color-accent: #c93a40`. `--color-accent-dim` and `--color-accent-subtle` mix that accent with transparency at 15% and 10% respectively. `--team-home` is `#667085` and `--team-away` is `#475467`.
+`--color-panel` and shadcn `--muted` use `#eae7e0`. `--color-ink` is `#20232a`, `--color-ink-muted` is `#606269`, and `--color-rule` is `#d8d5ce`. Ink-dark `--color-ink-strong` (`#17191f`) is reserved for large surfaces in later page work. Brass `--color-brass` (`#956137`) is reserved for small editorial labels. The existing brand red `--color-accent: #c93a40`, its dim and subtle variants, and the team identity tokens are unchanged.
 
-The shadcn-compatible tokens use HSL values: `--background: 220 13% 97%`, `--foreground: 219 22% 15%`, `--card: 0 0% 100%`, `--card-foreground: 219 22% 15%`, `--primary: 357 57% 51%`, `--primary-foreground: 0 0% 100%`, `--muted: 220 14% 95%`, `--muted-foreground: 220 7% 42%`, `--border: 220 16% 94%`, `--input: 220 16% 94%`, and `--ring: 357 57% 51%`. These provide the compatibility layer for controls and surfaces alongside the named Tryline tokens.
+The shadcn-compatible HSL tokens are `--background: 42 33% 94%`, `--foreground: 222 13.5% 14.5%`, `--card: 42.9 100% 98.6%`, `--card-foreground: 222 13.5% 14.5%`, `--primary: 357 57% 51%`, `--primary-foreground: 0 0% 100%`, `--muted: 42 19.2% 89.8%`, `--muted-foreground: 226.7 4.5% 39.4%`, `--border: 42 11.4% 82.7%`, `--input: 42 11.4% 82.7%`, and `--ring: 357 57% 51%`.
 
 ## Typography
 
-Zen Maru Gothic is the single Japanese interface family. `--font-body` and `--font-heading` both alias `--font-zen-maru`; they are roles, not different typefaces. The loaded Zen Maru Gothic weights are 500, 700, and 900. Body text is rendered at weight 500, and `h1`, `h2`, and `h3` at weight 900.
+Noto Sans JP is the body family, loaded with `--font-noto-sans-jp` and rendered at weight 400. Shippori Mincho B1 is the heading family, loaded with `--font-shippori-mincho`; `h1`, `h2`, and `h3` use weight 800. Both are fixed web fonts so Japanese glyph shapes do not vary by operating system. `display: "swap"` preserves visible fallback text while fonts load.
 
-Outfit is loaded separately through `--font-number` at weights 500 and 700. It is reserved for `.tabular-nums`, which also applies `font-variant-numeric: tabular-nums`, so score and statistic columns retain stable figure widths.
+Outfit remains loaded through `--font-number` at weights 500 and 700. It is reserved for `.tabular-nums`, which also applies `font-variant-numeric: tabular-nums`, so score and statistic columns retain stable figure widths.
 
-The type scale has eight tokens: `--text-xs: 0.75rem`, `--text-sm: 0.875rem`, `--text-base: 1rem`, `--text-lg: 1.125rem`, `--text-xl: 1.25rem`, `--text-2xl: 1.5rem`, `--text-3xl: 2rem`, and `--text-4xl: 2.5rem`. Use scale and weight to establish hierarchy without making dense match data harder to scan on small screens.
+The type scale has eight tokens: `--text-xs: 0.75rem`, `--text-sm: 0.875rem`, `--text-base: 1rem`, `--text-lg: 1.125rem`, `--text-xl: 1.25rem`, `--text-2xl: 1.5rem`, `--text-3xl: 2rem`, and `--text-4xl: 2.5rem`.
 
 ## Spacing
 
@@ -247,14 +250,12 @@ Do not use team colors for body text. Do not add decorative effects that obscure
 
 ## Brand Position
 
-Tryline serves Japanese rugby fans who want a better post-match and pre-match reading experience than raw English feeds or score-only apps. The product is friendly, soft-modern, editorial, and useful during a rugby weekend—not a return to the rejected sparse-serif "margin premium" direction.
-
-The user expectation is a composed match companion: next matches, finished match results, official-looking match context, and Japanese AI analysis that is easy to read.
+Tryline helps Japanese rugby fans follow overseas rugby through a readable Japanese interface. THE TOUCHLINE uses paper-colored reading areas, ink-dark surfaces, and restrained red emphasis. The web font pair is Mincho headings with sans-serif body text. The app icon and current site logo remain unchanged.
 
 ## Visual Principles
 
 1. Make match state scannable. Scores, teams, kickoff context, and availability should read quickly.
-2. Let rounded Japanese typography and soft surfaces create an approachable application feel.
+2. Use Mincho headings and sans-serif body text on paper-colored surfaces.
 3. Keep color functional. Use the red accent for actions and emphasis, and team colors for identity rather than body text.
 4. Use depth purposefully. Existing gradients, texture, blur, borders, and shadows should clarify layers instead of competing with data.
 5. Keep mobile reading comfortable. Preserve useful text size and regroup content before compressing it.
@@ -269,7 +270,7 @@ Japanese long-form analysis needs room to breathe. Keep narrative content visibl
 
 ## Accessibility
 
-Contrast is calculated with the WCAG relative-luminance formula (linearized sRGB channels, then `(L1 + 0.05) / (L2 + 0.05)`) using the solid `body` base color `#f1efe9` and the white card surface. `--color-ink` (`#1f2530`) against the `body` base is 13.37:1. `--color-ink-muted` (`#646a76`) is 4.73:1 against the `body` base and 5.43:1 against a white card. The shadcn-compatible `--muted-foreground` (`220 7% 42%`, rendered as `#646973`) is 4.79:1 against the `body` base and 5.51:1 against a white card. Both secondary-text tokens meet the WCAG AA 4.5:1 requirement for normal text. The gradient and texture layers mean the painted page background varies slightly; these figures document the implemented solid base comparison.
+Contrast is calculated with the WCAG relative-luminance formula (linearized sRGB channels, then `(L1 + 0.05) / (L2 + 0.05)`). Body text `#20232a` against the paper base `#f5f2eb` is 14.07:1. Muted text `#606269` is 5.45:1 against paper and 5.99:1 against the card surface `#fffdf8`. Brass `#956137` against paper is 4.65:1. White text on brand red `#c93a40` is 5.04:1, and red text against paper is 4.51:1. These are solid-color comparisons; the subtle paper gradient and grain vary the rendered background slightly.
 
 Interactive elements use visible focus treatment. The shared `--ring` token is `357 57% 51%`, and existing controls commonly use `focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]`.
 
