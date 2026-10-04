@@ -104,7 +104,7 @@ export function MatchHeader({
     <section
       data-tl-motion="score"
       data-tl-score
-      className="relative isolate overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-ink-strong)] px-4 py-5 text-white shadow-[var(--shadow)] sm:px-7 sm:py-7"
+      className="tl-score-hero relative isolate overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-ink-strong)] px-4 py-5 text-white shadow-[var(--shadow)] sm:px-7 sm:py-7"
       style={
         {
           "--team-away": awayColor,
@@ -124,7 +124,7 @@ export function MatchHeader({
       </h1>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="rounded-full bg-[var(--color-ink-strong)] px-3 py-1.5 text-[11px] font-bold backdrop-blur-sm sm:text-xs">
+        <p className="rounded-none bg-[var(--color-ink-strong)] px-3 py-1.5 text-[11px] font-bold backdrop-blur-sm sm:text-xs">
           {formatCompetitionTitle(match.competition, match.competition.season)}
           {match.round !== null
             ? ` · ${formatRoundLabel(match.round, match.competition.family)}`
@@ -151,7 +151,7 @@ export function MatchHeader({
           shortCode={match.homeTeam.shortCode}
         />
 
-        <div className="flex h-[104px] min-w-[5.5rem] items-center justify-center rounded-sm bg-[var(--color-ink-strong)] px-2 text-center sm:h-[116px] sm:min-w-[10rem] sm:px-4">
+        <div className="tl-score-box flex h-[104px] min-w-[5.5rem] items-center justify-center rounded-sm bg-[var(--color-ink-strong)] px-2 text-center sm:h-[116px] sm:min-w-[10rem] sm:px-4">
           {showScore ? (
             <SpoilerScore
               className="min-h-11 max-w-[9rem] text-white sm:max-w-[12rem]"
@@ -189,21 +189,21 @@ export function MatchHeader({
 
       <div className="mt-6 flex flex-wrap gap-2 text-[11px] font-bold text-white/95 sm:mt-7 sm:text-xs">
         <time
-          className="rounded-full bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm"
+          className="rounded-none bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm"
           dateTime={match.kickoffAt}
         >
           {formatKickoffJst(match.kickoffAt)}
         </time>
         {localTimezone !== null && localTimezone !== "Asia/Tokyo" && (
           <time
-            className="rounded-full bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm"
+            className="rounded-none bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm"
             dateTime={match.kickoffAt}
           >
             現地 {formatKickoffLocal(match.kickoffAt, localTimezone)}
           </time>
         )}
         {match.venue && (
-          <span className="rounded-full bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm">
+          <span className="rounded-none bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm">
             {formatVenueDisplay(match.venue)}
           </span>
         )}
@@ -332,10 +332,16 @@ function TeamBlock({
       >
         <TeamBadge shortCode={shortCode} size={36} slug={slug} />
       </div>
+      <span
+        style={{ backgroundColor: background }}
+        className="mt-0.5 block font-number text-xs font-bold tracking-[0.16em]"
+      >
+        {shortCode}
+      </span>
       <Link
         style={{ backgroundColor: background }}
         className={cn(
-          "mx-auto mt-2 block max-w-[9rem] whitespace-normal break-words text-xs leading-tight hover:underline sm:max-w-none sm:truncate sm:whitespace-nowrap sm:text-sm",
+          "mx-auto mt-2 flex min-h-11 max-w-full items-center justify-center whitespace-normal break-words text-sm leading-relaxed hover:underline sm:text-lg",
           dimmed ? "font-medium" : "font-bold",
         )}
         href={`/teams/${slug}`}
@@ -343,12 +349,6 @@ function TeamBlock({
       >
         {name}
       </Link>
-      <span
-        style={{ backgroundColor: background }}
-        className="mt-0.5 block font-number text-[10px] font-bold"
-      >
-        {shortCode}
-      </span>
     </div>
   );
 }

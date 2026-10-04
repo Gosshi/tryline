@@ -277,12 +277,12 @@ export default async function HomePage() {
           <CheckoutSuccessTracker />
           <SignupSuccessTracker />
         </Suspense>
-        <section className="relative min-h-[480px] overflow-hidden bg-[var(--color-ink-strong)] py-14 sm:min-h-[560px] sm:py-20">
+        <section className="tl-home-hero relative min-h-[480px] overflow-hidden bg-[var(--color-ink-strong)] py-14 sm:min-h-[560px] sm:py-20">
           <HeroTexture />
           <div
             aria-hidden
             data-tl-loop="poster"
-            className="absolute inset-0 z-0"
+            className="tl-poster-field absolute inset-0 z-0"
           >
             <Image
               alt=""
@@ -292,16 +292,20 @@ export default async function HomePage() {
               sizes="100vw"
               src="/visuals/home-hero.jpg"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(100deg,rgb(23_25_31_/_0.92),rgb(23_25_31_/_0.52)_55%,rgb(23_25_31_/_0.12))]" />
+            <span className="tl-stadium-ring" />
+            <span className="tl-stadium-ring tl-ring-two" />
+            <span className="tl-pitch-lines" />
+            <span className="tl-goal-post" />
+            <div className="tl-hero-scrim absolute inset-0" />
           </div>
 
           <div className="relative z-10 mx-auto max-w-[1536px] px-4 sm:px-6 md:px-8">
-            <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(360px,0.7fr)] lg:gap-12">
+            <div className="tl-hero-layout grid items-center gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(360px,0.7fr)] lg:gap-12">
               <div>
                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#d5b88b]">
                   Rugby Analysis in Japanese
                 </p>
-                <h1 className="max-w-5xl text-balance font-serif text-[clamp(2.5rem,6.5vw,6rem)] font-extrabold leading-[1.25] tracking-tight text-white">
+                <h1 className="tl-hero-heading max-w-5xl text-balance font-serif text-[clamp(2.5rem,6.5vw,6rem)] font-extrabold leading-[1.25] tracking-tight text-white">
                   <span data-tl-motion="headline" className="inline-block">
                     {homepageWeekMatches.length > 0 ? "今週の海外" : "次の海外"}
                   </span>
@@ -372,7 +376,7 @@ export default async function HomePage() {
                 </div>
               </div>
               <figure
-                className="relative aspect-[4/3] min-w-0 overflow-hidden rounded-sm border border-white/40"
+                className="tl-introduction-poster relative aspect-[4/3] min-w-0 overflow-hidden rounded-sm border border-white/40"
                 aria-label="紹介動画の静止ポスター"
               >
                 <svg
@@ -480,7 +484,7 @@ export default async function HomePage() {
             aria-labelledby="home-week-heading"
             className="mx-auto max-w-[1536px] px-4 pt-6 sm:px-6 sm:pt-6 md:px-8"
           >
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-rule)] pb-3">
+            <div className="tl-section-heading mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-rule)] pb-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-brass)]">
                   Next matches / 日本時間
@@ -516,7 +520,7 @@ export default async function HomePage() {
         <HomepageFavoriteTeams allTeams={allTeams} />
 
         <div className="mx-auto max-w-[1536px] space-y-6 px-4 py-6 sm:px-6 sm:py-6 md:px-8">
-          <section className="space-y-3">
+          <section className="tl-editorial-section space-y-3">
             <h2 className="font-serif text-2xl font-extrabold text-[var(--color-ink)] sm:text-3xl">
               注目大会
             </h2>
@@ -532,7 +536,7 @@ export default async function HomePage() {
           {leadReview && (
             <section
               aria-labelledby="home-reviews-heading"
-              className="space-y-4"
+              className="tl-editorial-section space-y-4"
             >
               <h2
                 id="home-reviews-heading"
@@ -541,10 +545,10 @@ export default async function HomePage() {
                 最近のレビュー
               </h2>
               <div
-                className={`grid grid-cols-1 items-start gap-5 ${minorReviews.length > 0 || shouldShowRecentReviewStatusPane ? "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" : ""}`}
+                className={`tl-editorial-reviews grid grid-cols-1 items-start gap-5 ${minorReviews.length > 0 || shouldShowRecentReviewStatusPane ? "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" : ""}`}
               >
                 <article
-                  className="tl-hover min-w-0 overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card"
+                  className="tl-review-card tl-review-lead tl-hover min-w-0"
                   data-review-size="lead"
                   style={
                     {
@@ -560,18 +564,27 @@ export default async function HomePage() {
                   >
                     <div
                       aria-label="最新レビューのスコア"
-                      className="flex min-h-48 items-center justify-center p-6 sm:min-h-56"
-                      style={{
-                        background: `linear-gradient(90deg, ${getTeamColor(leadReview.homeTeam.slug)} 50%, ${getTeamColor(leadReview.awayTeam.slug)} 50%)`,
-                      }}
+                      className="tl-review-visual"
                     >
-                      <div className="flex min-h-24 min-w-[8ch] items-center justify-center rounded-sm bg-[var(--color-ink-strong)] px-5 py-3 text-5xl font-bold tabular-nums text-white sm:text-6xl">
+                      <span className="tl-visual-code">
+                        {leadReview.homeTeam.shortCode ||
+                          leadReview.homeTeam.name}
+                        <i aria-hidden="true">/</i>
+                        {leadReview.awayTeam.shortCode ||
+                          leadReview.awayTeam.name}
+                      </span>
+                      <strong className="tl-review-score tabular-nums">
                         <HomepageSpoilerScore className="min-h-11 text-white">
                           {leadReview.homeScore}–{leadReview.awayScore}
                         </HomepageSpoilerScore>
-                      </div>
+                      </strong>
+                      <span className="tl-visual-footer">
+                        <span>{leadReview.homeTeam.name}</span>
+                        <span>対</span>
+                        <span>{leadReview.awayTeam.name}</span>
+                      </span>
                     </div>
-                    <div className="p-5 sm:p-6">
+                    <div className="tl-review-copy">
                       <p className="text-xs font-semibold text-[var(--color-brass)]">
                         {formatCompetitionTitle(
                           leadReview.competition,
@@ -592,10 +605,10 @@ export default async function HomePage() {
                 </article>
                 {(minorReviews.length > 0 ||
                   shouldShowRecentReviewStatusPane) && (
-                  <div className="min-w-0 space-y-4">
+                  <div className="tl-review-minors min-w-0 space-y-4">
                     {minorReviews.map((match) => (
                       <article
-                        className="tl-hover overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card"
+                        className="tl-review-card tl-review-small tl-hover"
                         data-review-size="minor"
                         style={
                           {
@@ -606,22 +619,22 @@ export default async function HomePage() {
                         key={match.id}
                       >
                         <Link
-                          className="group grid grid-cols-[112px_minmax(0,1fr)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[144px_minmax(0,1fr)]"
+                          className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
                           href={`/matches/${match.id}`}
                         >
-                          <div
-                            className="flex min-h-32 items-center justify-center px-2"
-                            style={{
-                              background: `linear-gradient(90deg, ${getTeamColor(match.homeTeam.slug)} 50%, ${getTeamColor(match.awayTeam.slug)} 50%)`,
-                            }}
-                          >
-                            <div className="flex min-h-16 min-w-[6ch] items-center justify-center rounded-sm bg-[var(--color-ink-strong)] px-2 py-2 text-2xl font-bold tabular-nums text-white">
+                          <div className="tl-review-visual">
+                            <span className="tl-visual-code">
+                              {match.homeTeam.shortCode || match.homeTeam.name}
+                              <i aria-hidden="true">/</i>
+                              {match.awayTeam.shortCode || match.awayTeam.name}
+                            </span>
+                            <strong className="tl-review-score tabular-nums">
                               <HomepageSpoilerScore className="min-h-11 max-w-full px-1 text-[10px] text-white">
                                 {match.homeScore}–{match.awayScore}
                               </HomepageSpoilerScore>
-                            </div>
+                            </strong>
                           </div>
-                          <div className="min-w-0 p-3">
+                          <div className="tl-review-copy min-w-0">
                             <p className="text-[11px] font-semibold text-[var(--color-brass)]">
                               {formatCompetitionTitle(
                                 match.competition,

@@ -85,9 +85,7 @@ export function MatchEventsSection({
   }
 
   const eventIntegrity =
-    status !== "finished" ||
-    finalHomeScore === null ||
-    finalAwayScore === null
+    status !== "finished" || finalHomeScore === null || finalAwayScore === null
       ? "unavailable"
       : !hasOnlyMatchTeams(events, homeTeamId, awayTeamId ?? "")
         ? "mismatch"
@@ -174,20 +172,23 @@ export function MatchEventsSection({
     }
 
     return (
-      <section aria-labelledby="match-highlights-heading">
+      <section
+        className="tl-note-panel"
+        aria-labelledby="match-highlights-heading"
+      >
         <h2
-          className="mb-4 ml-1 flex items-center gap-2.5 text-sm font-extrabold text-[var(--color-ink-muted)] before:h-5 before:w-1.5 before:rounded-full before:bg-[var(--color-accent)]"
+          className="mb-5 text-xs font-semibold tracking-[0.12em] text-[var(--color-brass)]"
           id="match-highlights-heading"
         >
           この試合の要点
         </h2>
         {primary && primaryLabel && (
-          <div className="flex items-center gap-4 rounded-[var(--radius-md)] bg-card p-5 shadow-[var(--shadow-soft)] sm:p-6">
-            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-sm bg-[var(--color-accent-subtle)] text-center font-number font-bold leading-none text-[var(--color-accent)]">
+          <div className="flex items-center gap-5">
+            <div className="tl-turning-point shrink-0 text-center font-number leading-none text-[var(--color-brass)]">
               {primary.event.minute === null ? (
                 <span className="text-sm">得点</span>
               ) : (
-                <span className="text-2xl">
+                <span className="text-[70px] italic">
                   {primary.event.minute}
                   <small className="mt-1 block font-body text-[10px]">分</small>
                 </span>
@@ -207,12 +208,12 @@ export function MatchEventsSection({
           </div>
         )}
         {chips.length > 0 && (
-          <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-1 min-[360px]:grid-cols-2">
+          <div className="mt-3 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 lg:grid-cols-1">
             {chips.map((chip, index) => (
               <div
                 className={cn(
-                  "rounded-[var(--radius-sm)] bg-card p-4 shadow-[var(--shadow-soft)]",
-                  index === 1 && "bg-[var(--color-panel)]",
+                  "border-t border-[var(--color-rule)] pt-3",
+                  index === 1 && "text-[var(--color-ink)]",
                 )}
                 key={chip.key}
               >
@@ -236,7 +237,7 @@ export function MatchEventsSection({
   }
 
   return (
-    <section className="mt-8 border-t border-[var(--color-rule)] pt-6">
+    <section className="tl-graph-panel mt-8 border-t border-[var(--color-rule)] pt-6">
       <div className="mb-4">
         <h2 className="text-base font-extrabold text-[var(--color-ink)]">
           得点推移
@@ -246,6 +247,8 @@ export function MatchEventsSection({
       {timeline.length > 1 && (
         <div className="mb-4">
           <ScoreGraph
+            awayTeamName={awayTeamName}
+            homeTeamName={homeTeamName}
             awayTeamSlug={awayTeamSlug}
             finalAwayScore={finalAwayScore ?? 0}
             finalHomeScore={finalHomeScore ?? 0}
