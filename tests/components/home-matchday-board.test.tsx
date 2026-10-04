@@ -85,11 +85,15 @@ describe("HomeMatchdayBoard", () => {
     const board = screen.getByLabelText("今週の注目試合");
 
     expect(board).toHaveTextContent("ネーションズチャンピオンシップ 2026");
-    expect(board).toHaveTextContent("2026-07-20 (月) 19:30 JST");
+    expect(board).toHaveTextContent("07-20 (月)19:30 JST");
     expect(
       screen.getByRole("link", { name: /Japan.*Ireland/ }),
     ).toHaveAttribute("href", "/matches/next-match");
     expect(board.querySelector("ul")).toHaveClass("lg:grid-cols-2");
+    expect(board.querySelector("a")).toHaveAttribute(
+      "data-match-layout",
+      "row",
+    );
   });
 
   it("omits the board when the week has no matches", () => {

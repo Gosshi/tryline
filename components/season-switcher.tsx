@@ -26,7 +26,7 @@ export function SeasonSwitcher({
               {isCurrent ? (
                 <span
                   aria-current="page"
-                  className="inline-flex items-center rounded-full bg-emerald-600 px-3.5 py-1.5 text-sm font-semibold text-white"
+                  className="inline-flex items-center rounded-full bg-[var(--color-ink-strong)] px-3.5 py-1.5 text-sm font-semibold text-white"
                 >
                   {season}
                 </span>

@@ -39,7 +39,7 @@ describe("SeasonSwitcher", () => {
 
     expect(screen.getByRole("list")).toHaveClass("overflow-x-auto");
     expect(current).toHaveAttribute("aria-current", "page");
-    expect(current).toHaveClass("bg-emerald-600", "text-white");
+    expect(current).toHaveClass("bg-[var(--color-ink-strong)]", "text-white");
   });
 
   it("links non-current seasons to their season pages", () => {

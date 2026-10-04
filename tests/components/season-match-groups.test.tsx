@@ -361,6 +361,49 @@ describe("season match groups", () => {
     },
   );
 
+  it("puts current rounds first even when only six rounds are available", () => {
+    const groups = Array.from({ length: 6 }, (_, index) =>
+      buildGroup(
+        index + 1,
+        new Date(Date.UTC(2026, 8, 6 + index * 7)).toISOString(),
+      ),
+    );
+    const html = renderToStaticMarkup(
+      <SeasonMatchGroups
+        contentStatusMap={{}}
+        groupedMatches={groups}
+        initialNow="2026-10-04T01:00:00.000Z"
+        roundHubBasePath="/c/top-14/2026-27"
+      />,
+    );
+    const dom = document.createElement("div");
+    dom.innerHTML = html;
+    expect(
+      [...dom.querySelectorAll('a[href^="/matches/"]')].map((link) =>
+        link.getAttribute("href"),
+      ),
+    ).toEqual([
+      "/matches/5",
+      "/matches/6",
+      "/matches/4",
+      "/matches/3",
+      "/matches/2",
+      "/matches/1",
+    ]);
+    expect(
+      dom.querySelectorAll('a[href^="/c/top-14/2026-27/round/"]'),
+    ).toHaveLength(6);
+    expect(dom.querySelector("h3")).toHaveTextContent("これまでの節");
+    expect(dom.querySelector("[data-round-number]")).toHaveTextContent("05");
+    expect(dom.querySelector('a[href="/matches/5"]')).toHaveAttribute(
+      "data-match-layout",
+      "row",
+    );
+    expect(
+      dom.querySelector('a[href="/matches/1"]')?.closest(".hidden"),
+    ).toBeNull();
+  });
+
   it("toggles a collapsible round section", () => {
     const groupedMatches = Array.from({ length: 10 }, (_, index) =>
       buildGroup(

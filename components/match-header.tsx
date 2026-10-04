@@ -59,6 +59,25 @@ function formatBroadcastVerifiedDate(broadcasts: MatchBroadcast[]): string {
   }).format(new Date(latestVerifiedAt));
 }
 
+function getTeamForegroundColor(color: string): string {
+  const luminance = (hex: string) => {
+    const rgb = Number.parseInt(hex.slice(1), 16);
+    const linear = [rgb >> 16, (rgb >> 8) & 255, rgb & 255].map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045
+        ? value / 12.92
+        : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    const [red = 0, green = 0, blue = 0] = linear;
+    return red * 0.2126 + green * 0.7152 + blue * 0.0722;
+  };
+  const background = luminance(color);
+  if (1.05 / (background + 0.05) >= 4.5) return "#ffffff";
+  return (background + 0.05) / (luminance("#17191f") + 0.05) >= 4.5
+    ? "#17191f"
+    : "#000000";
+}
+
 export function MatchHeader({
   awayDisplayName,
   headToHeadHref,
@@ -90,17 +109,19 @@ export function MatchHeader({
         } as React.CSSProperties
       }
     >
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 grid grid-cols-2">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 grid grid-cols-2"
+      >
         <span style={{ backgroundColor: homeColor }} />
         <span style={{ backgroundColor: awayColor }} />
-        <span className="absolute inset-0 bg-[var(--color-ink-strong)]/[0.7]" />
       </div>
       <h1 className="sr-only font-heading">
         {homeName} {matchupConnector} {awayName}
       </h1>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-bold backdrop-blur-sm sm:text-xs">
+        <p className="rounded-full bg-[var(--color-ink-strong)] px-3 py-1.5 text-[11px] font-bold backdrop-blur-sm sm:text-xs">
           {formatCompetitionTitle(match.competition, match.competition.season)}
           {match.round !== null
             ? ` · ${formatRoundLabel(match.round, match.competition.family)}`
@@ -118,6 +139,7 @@ export function MatchHeader({
 
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:mt-8 sm:gap-5">
         <TeamBlock
+          foreground={getTeamForegroundColor(homeColor)}
           dimmed={outcome === "away_win"}
           isWinner={outcome === "home_win"}
           name={homeName}
@@ -151,6 +173,7 @@ export function MatchHeader({
         </div>
 
         <TeamBlock
+          foreground={getTeamForegroundColor(awayColor)}
           dimmed={outcome === "home_win"}
           isWinner={outcome === "away_win"}
           name={awayName}
@@ -161,21 +184,21 @@ export function MatchHeader({
 
       <div className="mt-6 flex flex-wrap gap-2 text-[11px] font-bold text-white/95 sm:mt-7 sm:text-xs">
         <time
-          className="rounded-full bg-white/15 px-3 py-1.5 backdrop-blur-sm"
+          className="rounded-full bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm"
           dateTime={match.kickoffAt}
         >
           {formatKickoffJst(match.kickoffAt)}
         </time>
         {localTimezone !== null && localTimezone !== "Asia/Tokyo" && (
           <time
-            className="rounded-full bg-white/15 px-3 py-1.5 backdrop-blur-sm"
+            className="rounded-full bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm"
             dateTime={match.kickoffAt}
           >
             現地 {formatKickoffLocal(match.kickoffAt, localTimezone)}
           </time>
         )}
         {match.venue && (
-          <span className="rounded-full bg-white/15 px-3 py-1.5 backdrop-blur-sm">
+          <span className="rounded-full bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm">
             {formatVenueDisplay(match.venue)}
           </span>
         )}
@@ -183,7 +206,7 @@ export function MatchHeader({
 
       {match.broadcasts.length > 0 && (
         <div
-          className="bg-white/12 mt-5 rounded-sm border border-white/20 p-4 backdrop-blur-sm"
+          className="mt-5 rounded-sm border border-white/20 bg-[var(--color-ink-strong)] p-4 backdrop-blur-sm"
           id="broadcasts"
         >
           <div className="flex flex-wrap items-end justify-between gap-2">
@@ -241,7 +264,7 @@ export function MatchHeader({
           )}
           {headToHeadHref && (
             <Link
-              className="inline-flex min-h-11 items-center rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="inline-flex min-h-11 items-center rounded-full border border-white/30 bg-[var(--color-ink-strong)] px-4 py-2 text-xs font-bold text-white backdrop-blur-sm transition-colors hover:bg-[#262930] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               href={headToHeadHref}
             >
               両者の対戦成績
@@ -277,36 +300,42 @@ function ScoreNumber({
 
 function TeamBlock({
   dimmed,
+  foreground,
   isWinner,
   name,
   slug,
   shortCode,
 }: {
   dimmed: boolean;
+  foreground: string;
   isWinner: boolean;
   name: string;
   slug: string;
   shortCode: string;
 }) {
   return (
-    <div className={cn("min-w-0 text-center", dimmed && "opacity-95")}>
+    <div className="min-w-0 text-center" style={{ color: foreground }}>
       <div
         className={cn(
-          "mx-auto grid h-12 w-12 place-items-center rounded-sm bg-white/95 shadow-sm sm:h-14 sm:w-14",
+          "mx-auto grid h-12 w-12 place-items-center rounded-sm border bg-white shadow-sm sm:h-14 sm:w-14",
           isWinner &&
-            "ring-2 ring-white/70 ring-offset-2 ring-offset-transparent",
+            "ring-2 ring-current ring-offset-2 ring-offset-transparent",
         )}
+        style={{ borderColor: foreground }}
       >
         <TeamBadge shortCode={shortCode} size={36} slug={slug} />
       </div>
       <Link
-        className="mx-auto mt-2 block max-w-[9rem] whitespace-normal break-words text-xs font-bold leading-tight text-white hover:underline sm:max-w-none sm:truncate sm:whitespace-nowrap sm:text-sm"
+        className={cn(
+          "mx-auto mt-2 block max-w-[9rem] whitespace-normal break-words text-xs leading-tight hover:underline sm:max-w-none sm:truncate sm:whitespace-nowrap sm:text-sm",
+          dimmed ? "font-medium" : "font-bold",
+        )}
         href={`/teams/${slug}`}
         title={name}
       >
         {name}
       </Link>
-      <span className="mt-0.5 block font-number text-[10px] font-bold text-white/80">
+      <span className="mt-0.5 block font-number text-[10px] font-bold">
         {shortCode}
       </span>
     </div>

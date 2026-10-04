@@ -101,53 +101,61 @@ function MatchMiniRow({
 }) {
   return (
     <Link
-      className={`group block min-w-0 rounded-sm border border-[var(--color-rule)] bg-card px-4 py-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${focused ? "border-l-4 border-l-[var(--color-accent)]" : ""}`}
+      data-match-layout="row"
+      className={`group grid min-h-[76px] min-w-0 grid-cols-[76px_minmax(0,1fr)_64px] items-center gap-2 border-b border-[var(--color-rule)] bg-card px-3 py-3 hover:bg-[var(--color-panel)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[104px_minmax(0,1fr)_80px] sm:gap-3 ${focused ? "border-l-4 border-l-[var(--color-accent)]" : ""}`}
       href={`/matches/${match.id}`}
     >
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-ink-muted)]">
-        <time className="tabular-nums" dateTime={match.kickoffAt}>
-          {formatKickoffJstDate(match.kickoffAt)}{" "}
-          {formatKickoffJstTime(match.kickoffAt)}
-        </time>
-        <span>
-          {formatCompetitionTitle(match.competition, match.competition.season)}
+      <time
+        className="text-[10px] tabular-nums leading-relaxed text-[var(--color-ink-muted)] sm:text-xs"
+        dateTime={match.kickoffAt}
+      >
+        <span className="block">
+          {formatKickoffJstDate(match.kickoffAt).slice(5)}
         </span>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-base font-bold text-[var(--color-ink)]">
-        <span className="inline-flex items-center gap-2">
-          <span
-            aria-hidden
-            className="h-4 w-1 shrink-0 border border-black/10"
-            style={{ background: getTeamStripe(match.homeTeam.slug) }}
-          />
-          {match.homeTeam.name}
+        <span className="block">{formatKickoffJstTime(match.kickoffAt)}</span>
+      </time>
+      <span className="min-w-0">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold sm:text-sm">
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="h-[0.85em] w-1 shrink-0 border border-black/15"
+              style={{ background: getTeamStripe(match.homeTeam.slug) }}
+            />
+            <span className="break-words">{match.homeTeam.name}</span>
+          </span>
+          <span className="text-[10px] font-normal text-[var(--color-ink-muted)]">
+            対
+          </span>
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="h-[0.85em] w-1 shrink-0 border border-black/15"
+              style={{ background: getTeamStripe(match.awayTeam.slug) }}
+            />
+            <span className="break-words">{match.awayTeam.name}</span>
+          </span>
         </span>
+        <span className="mt-1 block text-[10px] leading-relaxed text-[var(--color-ink-muted)]">
+          {formatCompetitionTitle(match.competition, match.competition.season)}{" "}
+          ·{" "}
+          <span className="text-[var(--color-brass)]">
+            {getContentLabel(match)}
+          </span>
+          {levelMetric && <> · {levelMetric}</>}
+        </span>
+      </span>
+      <span className="flex min-h-11 items-center justify-end text-right text-lg font-bold tabular-nums sm:text-xl">
         {match.homeScore !== null && match.awayScore !== null ? (
-          <HomepageSpoilerScore>
-            <span className="tabular-nums">
+          <HomepageSpoilerScore className="min-h-11 max-w-full px-1 text-[10px]">
+            <span>
               {match.homeScore}–{match.awayScore}
             </span>
           </HomepageSpoilerScore>
         ) : (
-          <span className="text-xs font-normal text-[var(--color-ink-muted)]">
-            対
-          </span>
+          <span className="font-normal text-[var(--color-ink-muted)]">—</span>
         )}
-        <span className="inline-flex items-center gap-2">
-          <span
-            aria-hidden
-            className="h-4 w-1 shrink-0 border border-black/10"
-            style={{ background: getTeamStripe(match.awayTeam.slug) }}
-          />
-          {match.awayTeam.name}
-        </span>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--color-ink-muted)]">
-        <span className="font-semibold text-[var(--color-brass)]">
-          {getContentLabel(match)}
-        </span>
-        {levelMetric && <span className="tabular-nums">{levelMetric}</span>}
-      </div>
+      </span>
     </Link>
   );
 }
@@ -174,7 +182,7 @@ export function HomeMatchdayBoard({
   return (
     <aside aria-label="今週の注目試合">
       <p className="sr-only">{weekLabel}</p>
-      <ul className="grid gap-3 lg:grid-cols-2">
+      <ul className="grid border-t border-[var(--color-rule)] lg:grid-cols-2">
         {orderedMatches.map((match) => (
           <li className="min-w-0" key={match.id}>
             <MatchMiniRow

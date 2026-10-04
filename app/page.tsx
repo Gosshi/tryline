@@ -268,19 +268,25 @@ export default async function HomePage() {
               sizes="100vw"
               src="/visuals/home-hero.jpg"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(100deg,rgb(23_25_31_/_0.92),rgb(23_25_31_/_0.72)_55%,rgb(23_25_31_/_0.45))]" />
+            <div className="absolute inset-0 bg-[linear-gradient(100deg,rgb(23_25_31_/_0.92),rgb(23_25_31_/_0.52)_55%,rgb(23_25_31_/_0.12))]" />
           </div>
 
           <div className="relative z-10 mx-auto max-w-[1536px] px-4 sm:px-6 md:px-8">
-            <div className="max-w-5xl">
+            <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(360px,0.7fr)] lg:gap-12">
               <div>
                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#d5b88b]">
                   Rugby Analysis in Japanese
                 </p>
                 <h1 className="max-w-5xl text-balance font-serif text-[clamp(2.5rem,6.5vw,6rem)] font-extrabold leading-[1.25] tracking-tight text-white">
-                  {homepageWeekMatches.length > 0
-                    ? "今週の海外ラグビーを、日本時間で追う。"
-                    : "次の海外ラグビーを、日本時間で待つ。"}
+                  <span className="inline-block">
+                    {homepageWeekMatches.length > 0 ? "今週の海外" : "次の海外"}
+                  </span>
+                  <span className="inline-block">ラグビーを、</span>
+                  <span className="inline-block">
+                    {homepageWeekMatches.length > 0
+                      ? "日本時間で追う。"
+                      : "日本時間で待つ。"}
+                  </span>
                 </h1>
                 <p className="mt-5 max-w-xl text-base leading-relaxed text-white/[0.85]">
                   {homepageWeekMatches.length > 0
@@ -296,14 +302,23 @@ export default async function HomePage() {
                         )}
                       </p>
                       <p className="flex flex-wrap items-center gap-2">
-                        <Link className="min-h-11 inline-flex items-center underline underline-offset-4" href={`/teams/${homepageNextUpcomingMatch.homeTeam.slug}`}>
+                        <Link
+                          className="inline-flex min-h-11 items-center underline underline-offset-4"
+                          href={`/teams/${homepageNextUpcomingMatch.homeTeam.slug}`}
+                        >
                           {homepageNextUpcomingMatch.homeTeam.name}
                         </Link>
                         <span>対</span>
-                        <Link className="min-h-11 inline-flex items-center underline underline-offset-4" href={`/teams/${homepageNextUpcomingMatch.awayTeam.slug}`}>
+                        <Link
+                          className="inline-flex min-h-11 items-center underline underline-offset-4"
+                          href={`/teams/${homepageNextUpcomingMatch.awayTeam.slug}`}
+                        >
                           {homepageNextUpcomingMatch.awayTeam.name}
                         </Link>
-                        <Link className="min-h-11 inline-flex items-center rounded-full border border-white/30 px-4" href="/?notifications=open">
+                        <Link
+                          className="inline-flex min-h-11 items-center rounded-full border border-white/30 px-4"
+                          href="/?notifications=open"
+                        >
                           通知設定を開く
                         </Link>
                       </p>
@@ -330,6 +345,47 @@ export default async function HomePage() {
                   <HomepagePremiumCta />
                 </div>
               </div>
+              <figure
+                className="relative aspect-[4/3] min-w-0 overflow-hidden rounded-sm border border-white/40"
+                aria-label="紹介動画の静止ポスター"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full text-white/80"
+                  viewBox="0 0 480 360"
+                  fill="none"
+                >
+                  <path
+                    d="M40 270L460 210M20 310L440 250M90 360L160 210M280 360L310 190"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    opacity=".45"
+                  />
+                  <path
+                    d="M265 65V260M360 65V250M265 170H360"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  />
+                  <ellipse
+                    cx="290"
+                    cy="15"
+                    rx="240"
+                    ry="80"
+                    stroke="currentColor"
+                    opacity=".35"
+                  />
+                </svg>
+                <figcaption className="bg-[var(--color-ink-strong)]/90 absolute inset-x-0 bottom-0 border-t border-white/30 px-5 py-4 text-white">
+                  <span className="block text-xs font-semibold tracking-[0.2em]">
+                    INTRODUCTION FILM
+                  </span>
+                  <span className="mt-2 block text-xs leading-relaxed text-white/80">
+                    15–30秒 / 音なし・ループ予定
+                    <br />
+                    現在は静止ポスター
+                  </span>
+                </figcaption>
+              </figure>
             </div>
           </div>
         </section>
@@ -568,7 +624,7 @@ export default async function HomePage() {
               <h2 className="border-b border-[var(--color-rule)] pb-4 text-3xl font-extrabold text-[var(--color-ink)]">
                 最近のレビュー
               </h2>
-              <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+              <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
                 {shouldShowSampleReview && sampleMatch && (
                   <div
                     className={`overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-rule)] bg-card ${recentReviewGroups.length === 0 ? "xl:col-span-2" : "xl:row-span-3"}`}

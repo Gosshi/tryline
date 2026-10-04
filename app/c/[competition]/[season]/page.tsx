@@ -773,6 +773,7 @@ export default async function SeasonPage({ params }: Props) {
       return (
         <StandingsTable
           accentColor={accentColor}
+          compact
           standings={rows}
           title={title}
         />
@@ -783,6 +784,7 @@ export default async function SeasonPage({ params }: Props) {
       <div className="space-y-3">
         <StandingsTable
           accentColor={accentColor}
+          compact
           standings={excerpt}
           title={title ?? "順位表"}
         />
@@ -793,6 +795,7 @@ export default async function SeasonPage({ params }: Props) {
           <div className="mt-4 border-t border-slate-100 pt-4">
             <StandingsTable
               accentColor={accentColor}
+              compact
               standings={rows}
               title={title}
             />
@@ -816,7 +819,7 @@ export default async function SeasonPage({ params }: Props) {
         }}
         type="application/ld+json"
       />
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 sm:gap-5 sm:px-6 md:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4 sm:gap-5 sm:px-6 sm:py-6 md:px-8">
         <header className="relative overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-ink-strong)]">
           <div className="relative min-h-40 overflow-hidden sm:min-h-44">
             <Image
@@ -852,7 +855,7 @@ export default async function SeasonPage({ params }: Props) {
           {(leaderLabel || seasonProgress) && (
             <div className="relative z-10 grid divide-y divide-white/15 bg-[var(--color-ink-strong)] text-white sm:absolute sm:right-6 sm:top-4 sm:w-56 sm:bg-transparent">
               {leaderLabel && (
-                <div className="px-5 py-3 sm:px-0">
+                <div className="px-5 py-2 sm:px-0 sm:py-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
                     首位
                   </p>
@@ -862,7 +865,7 @@ export default async function SeasonPage({ params }: Props) {
                 </div>
               )}
               {seasonProgress && (
-                <div className="px-5 py-3 sm:px-0">
+                <div className="px-5 py-2 sm:px-0 sm:py-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
                     進行
                   </p>

@@ -591,6 +591,15 @@ describe("HomePage", () => {
     expect(matchMocks.getNextUpcomingMatch).toHaveBeenCalledTimes(1);
   });
 
+  it("reserves the introduction poster with goal-post artwork", async () => {
+    render(await HomePage());
+    const poster=screen.getByLabelText("紹介動画の静止ポスター");
+    expect(poster).toHaveClass("aspect-[4/3]");
+    expect(poster.querySelector("svg")).toHaveAttribute("aria-hidden","true");
+    expect(poster).toHaveTextContent("INTRODUCTION FILM");
+    expect(poster).toHaveTextContent("現在は静止ポスター");
+  });
+
   it("uses weekly results in the ticker and excludes the duplicate group from accessibility and keyboard navigation", async () => {
     matchMocks.getMatchesInRange.mockResolvedValue([
       createCalendarMatch({ homeScore: 40, awayScore: 18, status: "finished" }),

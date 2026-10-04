@@ -151,10 +151,15 @@ export function SeasonMatchGroups({
     () => getDefaultOpenGroupIndexes(visibleGroups, now),
     [now, visibleGroups],
   );
-  const displayOrder = collapsible
+  const reorderRounds =
+    visibleGroups.length > 1 &&
+    visibleGroups.every(([key]) => key.type === "round");
+  const displayOrder = reorderRounds
     ? getSeasonGroupDisplayOrder(visibleGroups, defaultOpenIndexes)
     : visibleGroups.map((_, index) => index);
-  const firstPastIndex = collapsible ? Math.min(...defaultOpenIndexes) - 1 : -1;
+  const firstPastIndex = reorderRounds
+    ? Math.min(...defaultOpenIndexes) - 1
+    : -1;
   const defaultScrollIndex = useMemo(() => {
     const indexes = [...defaultOpenIndexes].sort((left, right) => left - right);
 
@@ -230,7 +235,7 @@ export function SeasonMatchGroups({
             groupKey.type === "round" ? groupKey.round : null;
 
           return (
-            <section className="space-y-4" key={key}>
+            <section className="space-y-2" key={key}>
               {index === firstPastIndex && (
                 <h3 className="border-t border-[var(--color-rule)] pt-4 text-sm font-semibold text-[var(--color-ink-muted)]">
                   これまでの節
@@ -258,7 +263,21 @@ export function SeasonMatchGroups({
                     type="button"
                   >
                     <div className="min-w-0 flex-1">
-                      <RoundHeading family={family} groupKey={groupKey} />
+                      <div className="flex min-w-0 items-center gap-3">
+                        {groupKey.type === "round" &&
+                          groupKey.round !== null && (
+                            <span
+                              aria-hidden="true"
+                              data-round-number
+                              className="font-number text-5xl font-semibold tabular-nums leading-none text-[var(--color-brass)]"
+                            >
+                              {String(groupKey.round).padStart(2, "0")}
+                            </span>
+                          )}
+                        <div className="min-w-0 flex-1">
+                          <RoundHeading family={family} groupKey={groupKey} />
+                        </div>
+                      </div>
                     </div>
                     <ChevronIcon open={isOpen} />
                   </button>
@@ -266,7 +285,11 @@ export function SeasonMatchGroups({
                     <RoundHubLink href={roundHubHref} round={roundHubRound} />
                   )}
                   <div
-                    className={isOpen ? "grid gap-4 md:grid-cols-2" : "hidden"}
+                    className={
+                      isOpen
+                        ? "divide-y divide-[var(--color-rule)] border-y border-[var(--color-rule)]"
+                        : "hidden"
+                    }
                   >
                     {roundMatches.map((match) => (
                       <ClassifiedMatchCard
@@ -281,7 +304,20 @@ export function SeasonMatchGroups({
               ) : (
                 <>
                   <div className="space-y-2">
-                    <RoundHeading family={family} groupKey={groupKey} />
+                    <div className="flex min-w-0 items-center gap-3">
+                      {groupKey.type === "round" && groupKey.round !== null && (
+                        <span
+                          aria-hidden="true"
+                          data-round-number
+                          className="font-number text-5xl font-semibold tabular-nums leading-none text-[var(--color-brass)]"
+                        >
+                          {String(groupKey.round).padStart(2, "0")}
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <RoundHeading family={family} groupKey={groupKey} />
+                      </div>
+                    </div>
                     {roundHubHref && (
                       <div className="text-center">
                         <RoundHubLink
@@ -291,7 +327,7 @@ export function SeasonMatchGroups({
                       </div>
                     )}
                   </div>
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="divide-y divide-[var(--color-rule)] border-y border-[var(--color-rule)]">
                     {roundMatches.map((match) => (
                       <ClassifiedMatchCard
                         contentStatus={contentStatusMap[match.id]}
@@ -433,6 +469,7 @@ function ClassifiedMatchCard({
     return (
       <MatchCard
         contentStatus={contentStatus ?? defaultContentStatus}
+        layout="row"
         match={match}
       />
     );
@@ -467,6 +504,7 @@ function ClassifiedMatchCard({
       </div>
       <MatchCard
         contentStatus={contentStatus ?? defaultContentStatus}
+        layout="row"
         match={match}
       />
     </div>

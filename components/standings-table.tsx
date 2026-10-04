@@ -47,12 +47,14 @@ function buildTableEntries(
 
 export function StandingsTable({
   accentColor = "#1e293b",
+  compact = false,
   highlightedTeams = [],
   excerptThreshold = 10,
   standings,
   title = "順位表",
 }: {
   accentColor?: string;
+  compact?: boolean;
   excerptThreshold?: number;
   highlightedTeams?: string[];
   standings: StandingRow[];
@@ -78,17 +80,45 @@ export function StandingsTable({
 
     return (
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[34rem] text-sm">
+        <table
+          className={
+            compact
+              ? "w-full table-fixed text-xs"
+              : "w-full min-w-[34rem] text-sm"
+          }
+        >
+          {compact && (
+            <colgroup>
+              <col style={{ width: 22 }} />
+              <col />
+              {["played", "won", "drawn", "lost"].map((key) => (
+                <col key={key} style={{ width: 26 }} />
+              ))}
+              <col style={{ width: 34 }} />
+            </colgroup>
+          )}
           <thead>
             <tr className="border-b border-[var(--color-rule)] text-xs font-semibold text-[var(--color-ink-muted)]">
               <th className="pb-2 text-left">#</th>
               <th className="pb-2 text-left">チーム</th>
               <th className="pb-2 text-right">試</th>
               <th className="pb-2 text-right">勝</th>
-              <th className="hidden pb-2 text-right sm:table-cell">分</th>
+              <th
+                className={
+                  compact
+                    ? "pb-2 text-right"
+                    : "hidden pb-2 text-right sm:table-cell"
+                }
+              >
+                分
+              </th>
               <th className="pb-2 text-right">敗</th>
-              <th className="hidden pb-2 text-right sm:table-cell">得点</th>
-              <th className="hidden pb-2 text-right sm:table-cell">T</th>
+              {!compact && (
+                <>
+                  <th className="hidden pb-2 text-right sm:table-cell">得点</th>
+                  <th className="hidden pb-2 text-right sm:table-cell">T</th>
+                </>
+              )}
               <th className="pb-2 text-right font-bold text-[var(--color-ink-muted)]">
                 勝点
               </th>
@@ -103,7 +133,7 @@ export function StandingsTable({
                     className="border-b border-[var(--color-rule)] text-center text-[var(--color-ink-muted)]"
                     key={entry.key}
                   >
-                    <td className="py-1" colSpan={9}>
+                    <td className="py-1" colSpan={compact ? 7 : 9}>
                       …
                     </td>
                   </tr>
@@ -139,11 +169,29 @@ export function StandingsTable({
                         : undefined,
                   }}
                 >
-                  <td className="py-2 pr-3 tabular-nums text-[var(--color-ink-muted)]">
+                  <td
+                    className={
+                      compact
+                        ? "py-2 tabular-nums text-[var(--color-ink-muted)]"
+                        : "py-2 pr-3 tabular-nums text-[var(--color-ink-muted)]"
+                    }
+                  >
                     {row.position}
                   </td>
-                  <td className="py-2 pr-4 font-semibold text-[var(--color-ink)]">
-                    <span className="inline-flex items-center gap-2">
+                  <td
+                    className={
+                      compact
+                        ? "py-2 pr-1 font-semibold text-[var(--color-ink)]"
+                        : "py-2 pr-4 font-semibold text-[var(--color-ink)]"
+                    }
+                  >
+                    <span
+                      className={
+                        compact
+                          ? "flex min-w-0 items-center gap-1.5"
+                          : "inline-flex items-center gap-2"
+                      }
+                    >
                       <span
                         aria-hidden="true"
                         className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-black/15"
@@ -151,10 +199,20 @@ export function StandingsTable({
                           background: getTeamStripe(row.teamSlug ?? ""),
                         }}
                       />
-                      <span className="hidden sm:inline">{row.teamName}</span>
-                      <span className="sm:hidden" title={row.teamName}>
-                        {row.teamShortCode}
-                      </span>
+                      {compact ? (
+                        <span className="min-w-0 truncate" title={row.teamName}>
+                          {row.teamName}
+                        </span>
+                      ) : (
+                        <>
+                          <span className="hidden sm:inline">
+                            {row.teamName}
+                          </span>
+                          <span className="sm:hidden" title={row.teamName}>
+                            {row.teamShortCode}
+                          </span>
+                        </>
+                      )}
                     </span>
                   </td>
                   <td className="py-2 text-right tabular-nums text-[var(--color-ink-muted)]">
@@ -163,18 +221,28 @@ export function StandingsTable({
                   <td className="py-2 text-right tabular-nums text-[var(--color-ink-muted)]">
                     {row.won}
                   </td>
-                  <td className="hidden py-2 text-right tabular-nums text-[var(--color-ink-muted)] sm:table-cell">
+                  <td
+                    className={
+                      compact
+                        ? "py-2 text-right tabular-nums text-[var(--color-ink-muted)]"
+                        : "hidden py-2 text-right tabular-nums text-[var(--color-ink-muted)] sm:table-cell"
+                    }
+                  >
                     {row.drawn}
                   </td>
                   <td className="py-2 text-right tabular-nums text-[var(--color-ink-muted)]">
                     {row.lost}
                   </td>
-                  <td className="hidden py-2 text-right tabular-nums text-[var(--color-ink-muted)] sm:table-cell">
-                    {row.pointsFor}-{row.pointsAgainst}
-                  </td>
-                  <td className="hidden py-2 text-right tabular-nums text-[var(--color-ink-muted)] sm:table-cell">
-                    {row.triesFor}
-                  </td>
+                  {!compact && (
+                    <>
+                      <td className="hidden py-2 text-right tabular-nums text-[var(--color-ink-muted)] sm:table-cell">
+                        {row.pointsFor}-{row.pointsAgainst}
+                      </td>
+                      <td className="hidden py-2 text-right tabular-nums text-[var(--color-ink-muted)] sm:table-cell">
+                        {row.triesFor}
+                      </td>
+                    </>
+                  )}
                   <td className="py-2 text-right font-bold tabular-nums text-[var(--color-ink)]">
                     {row.totalPoints}
                   </td>
@@ -189,12 +257,18 @@ export function StandingsTable({
 
   return (
     <section className="overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card">
-      <div className="flex items-center border-b border-[var(--color-rule)] px-5 py-3 sm:px-6">
+      <div
+        className={
+          compact
+            ? "flex items-center border-b border-[var(--color-rule)] px-3 py-3"
+            : "flex items-center border-b border-[var(--color-rule)] px-5 py-3 sm:px-6"
+        }
+      >
         <h2 className="font-heading text-sm font-extrabold tracking-wide text-[var(--color-brass)]">
           {title}
         </h2>
       </div>
-      <div className="p-5 sm:p-6">
+      <div className={compact ? "p-3" : "p-5 sm:p-6"}>
         {shouldUseExcerpt ? (
           <div className="space-y-4">
             {renderTable(excerptRows, true)}
