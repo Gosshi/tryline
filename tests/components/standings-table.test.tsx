@@ -55,9 +55,11 @@ describe("StandingsTable", () => {
     expect(screen.getByText("IRE")).toHaveAttribute("title", "Ireland");
     expect(screen.getByText("82-54")).toBeInTheDocument();
     expect(screen.getByText("13")).toHaveClass(
-      "font-display",
+      "tabular-nums",
+      "font-bold",
       "text-[var(--color-ink)]",
     );
+    expect(screen.getByText("13")).not.toHaveClass("font-display");
     expect(container.querySelector("section")).toHaveClass(
       "rounded-sm",
       "border-[var(--color-rule)]",

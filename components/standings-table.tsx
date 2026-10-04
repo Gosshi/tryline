@@ -175,7 +175,7 @@ export function StandingsTable({
                   <td className="hidden py-2 text-right tabular-nums text-[var(--color-ink-muted)] sm:table-cell">
                     {row.triesFor}
                   </td>
-                  <td className="py-2 text-right font-display font-bold tabular-nums text-[var(--color-ink)]">
+                  <td className="py-2 text-right font-bold tabular-nums text-[var(--color-ink)]">
                     {row.totalPoints}
                   </td>
                 </tr>
