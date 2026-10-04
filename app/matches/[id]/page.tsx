@@ -457,7 +457,7 @@ export default async function MatchDetailPage({
                 className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)]"
               >
                 <h2
-                  className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--color-ink-muted)]"
+                  className="mb-3 text-sm font-extrabold uppercase tracking-wider text-[var(--color-ink-muted)]"
                   id="pool-info-heading"
                 >
                   {match.poolName} 参加チーム

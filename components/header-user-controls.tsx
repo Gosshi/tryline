@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import {
-  getClientUserState,
-  type ClientUserState,
-} from "@/lib/auth/client";
+import { getClientUserState, type ClientUserState } from "@/lib/auth/client";
 
 import { TrackedLink } from "./tracked-link";
 import { UserMenu } from "./user-menu";
@@ -24,8 +21,7 @@ type HeaderUserControlsProps = {
 };
 
 export function HeaderUserControls({ allTeams }: HeaderUserControlsProps) {
-  const [userState, setUserState] =
-    useState<ClientUserState>(SIGNED_OUT_STATE);
+  const [userState, setUserState] = useState<ClientUserState>(SIGNED_OUT_STATE);
 
   useEffect(() => {
     let active = true;
@@ -57,7 +53,7 @@ export function HeaderUserControls({ allTeams }: HeaderUserControlsProps) {
             destination: "pricing",
             label: "料金",
           }}
-          className="-my-1.5 rounded px-3 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0 sm:py-1.5"
+          className="-my-1.5 inline-flex min-h-11 items-center rounded-full border border-[var(--color-rule)] px-3 text-sm font-medium text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0"
           href="/pricing"
         >
           料金

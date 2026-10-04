@@ -288,7 +288,7 @@ export function MatchChat({
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
           MATCH Q&A
         </p>
-        <h2 className="mt-1 text-lg font-black text-[var(--color-ink)]">
+        <h2 className="mt-1 text-lg font-extrabold text-[var(--color-ink)]">
           この試合について質問する
         </h2>
       </div>

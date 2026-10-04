@@ -83,7 +83,7 @@ export function NextWatchSection({
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
           Next
         </p>
-        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
+        <h2 className="mt-1 text-lg font-extrabold tracking-tight text-slate-950">
           次に見る
         </h2>
       </div>
@@ -152,7 +152,7 @@ export function NextWatchSection({
 
       {relatedRecaps.length > 0 && (
         <div className="mt-5 border-t border-slate-100 pt-4">
-          <h3 className="text-sm font-bold text-[var(--color-ink)]">
+          <h3 className="text-sm font-extrabold text-[var(--color-ink)]">
             同じ大会のレビュー
           </h3>
           <ul className="mt-3 space-y-2">

@@ -66,7 +66,7 @@ function PendingState(props: PendingStateProps) {
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
         Bracket
       </p>
-      <h1 className="mt-3 font-heading text-3xl font-bold tracking-tight text-[var(--color-ink)]">
+      <h1 className="mt-3 font-heading text-3xl font-extrabold tracking-tight text-[var(--color-ink)]">
         Rugby World Cup 2027
       </h1>
       {detail}
@@ -129,7 +129,7 @@ export default async function Rwc2027BracketPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
               Knockout
             </p>
-            <h1 className="mt-1 font-heading text-3xl font-bold tracking-tight text-[var(--color-ink)] sm:text-4xl">
+            <h1 className="mt-1 font-heading text-3xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-4xl">
               Rugby World Cup 2027
             </h1>
           </div>

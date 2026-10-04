@@ -9,6 +9,7 @@ export type StandingRow = {
   position: number;
   teamName: string;
   teamShortCode: string;
+  teamSlug?: string;
   played: number;
   won: number;
   drawn: number;
@@ -113,6 +114,7 @@ async function loadStandingsForCompetition(
         })
       : "-",
     teamShortCode: row.team?.short_code ?? "-",
+    teamSlug: row.team?.slug,
     totalPoints: row.total_points,
     triesFor: row.tries_for,
     won: row.won,
@@ -329,6 +331,7 @@ export async function getPoolStandingsForCompetition(
           })
         : "-",
       teamShortCode: row.team?.short_code ?? "-",
+      teamSlug: row.team?.slug,
       totalPoints: row.total_points,
       triesFor: row.tries_for,
       won: row.won,

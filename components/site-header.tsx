@@ -13,14 +13,14 @@ export async function SiteHeader() {
   const allTeams = await listAllTeams();
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 w-full border-b border-[var(--color-rule)] bg-background/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 md:px-8">
         <Link
           className="flex items-center gap-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           href="/"
         >
           <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-accent)]" />
-          <span className="text-xl font-black tracking-tight text-slate-950">
+          <span className="text-xl font-black tracking-tight text-[var(--color-ink)]">
             Tryline
           </span>
         </Link>
@@ -34,7 +34,7 @@ export async function SiteHeader() {
           <ul className="flex items-center gap-1">
             <li>
               <Link
-                className="-my-1.5 rounded px-3 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0 sm:py-1.5"
+                className="-my-1.5 inline-flex min-h-11 items-center rounded-full border border-[var(--color-rule)] px-3 text-sm font-medium text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0"
                 href="/"
               >
                 試合
@@ -51,7 +51,7 @@ export async function SiteHeader() {
                   destination: "calendar",
                   label: "カレンダー",
                 }}
-                className="-my-1.5 rounded px-3 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0 sm:py-1.5"
+                className="-my-1.5 inline-flex min-h-11 items-center rounded-full border border-[var(--color-rule)] px-3 text-sm font-medium text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] sm:my-0"
                 href="/calendar"
               >
                 カレンダー
@@ -60,7 +60,7 @@ export async function SiteHeader() {
           </ul>
           <a
             aria-label="X (Twitter) @tryline_rugbyjp"
-            className="flex items-center rounded p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[var(--color-rule)] p-2 text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             href="https://x.com/tryline_rugbyjp"
             rel="noopener noreferrer"
             target="_blank"
@@ -69,7 +69,7 @@ export async function SiteHeader() {
           </a>
           <a
             aria-label="note @tryline_rugbyjp"
-            className="flex items-center rounded p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[var(--color-rule)] p-2 text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             href="https://note.com/tryline_rugbyjp"
             rel="noopener noreferrer"
             target="_blank"

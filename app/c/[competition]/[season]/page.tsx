@@ -839,7 +839,7 @@ export default async function SeasonPage({ params }: Props) {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/75">
                 {formatFamilyName(family)}
               </p>
-              <h1 className="mt-2 max-w-3xl font-heading text-3xl font-bold tracking-tight text-white sm:text-5xl">
+              <h1 className="mt-2 max-w-3xl font-heading text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
                 {formatCompetitionTitle(comp, comp.season)}
               </h1>
               {dateRange && (
@@ -1059,7 +1059,7 @@ export default async function SeasonPage({ params }: Props) {
           <section className="scroll-mt-4 space-y-4" id="standings">
             {seasonNotStarted ? (
               <>
-                <h2 className="font-heading text-2xl font-bold text-[var(--color-ink)]">
+                <h2 className="font-heading text-2xl font-extrabold text-[var(--color-ink)]">
                   参加チーム
                 </h2>
                 <PoolTeamGrid
@@ -1098,7 +1098,7 @@ export default async function SeasonPage({ params }: Props) {
         >
           <section aria-labelledby="season-broadcast-guide-heading">
             <h2
-              className="font-heading text-2xl font-bold text-[var(--color-ink)]"
+              className="font-heading text-2xl font-extrabold text-[var(--color-ink)]"
               id="season-broadcast-guide-heading"
             >
               日本での視聴方法

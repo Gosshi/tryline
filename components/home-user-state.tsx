@@ -88,7 +88,7 @@ export function HomepageFavoriteTeams({
         className="mb-4 flex items-center justify-between gap-4"
         id="favorite-heading"
       >
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-[var(--color-accent)]">
+        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[var(--color-accent)]">
           応援チームの試合
         </h2>
         {favoriteTeamPageSlug && (

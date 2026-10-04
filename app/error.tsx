@@ -14,7 +14,7 @@ export default function GlobalError({
       <body className="bg-paper">
         <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col items-start justify-center gap-4 px-6 py-16">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Tryline</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-950">
             ページの表示に失敗しました
           </h1>
           <p className="text-sm leading-6 text-slate-600">

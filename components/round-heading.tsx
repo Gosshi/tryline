@@ -36,7 +36,7 @@ export function RoundHeading({ family, groupKey }: RoundHeadingProps) {
   return (
     <div className="flex items-center gap-3">
       <div className="h-px flex-1 bg-[var(--color-rule)]" />
-      <h2 className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-ink-muted)]">
+      <h2 className="font-display text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--color-ink-muted)]">
         {label}
       </h2>
       <div className="h-px flex-1 bg-[var(--color-rule)]" />

@@ -65,7 +65,11 @@ describe("SiteHeader", () => {
     const matchesLink = screen.getByRole("link", { name: "試合" });
 
     expect(matchesLink).toHaveAttribute("href", "/");
-    expect(matchesLink).toHaveClass("-my-1.5", "py-3", "sm:py-1.5");
+    expect(matchesLink).toHaveClass(
+      "min-h-11",
+      "rounded-full",
+      "border-[var(--color-rule)]",
+    );
     expect(screen.getByRole("button", { name: "大会" })).toHaveAttribute(
       "aria-haspopup",
       "listbox",

@@ -6,6 +6,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { MatchCard } from "@/components/match-card";
+import { getTeamStripe } from "@/lib/format/team-identity";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
 
@@ -45,7 +46,7 @@ const baseMatch: MatchListItem = {
 
 describe("MatchCard", () => {
   it("renders a finished scoreline and dims the losing team", () => {
-    render(
+    const { container } = render(
       <MatchCard
         match={{
           ...baseMatch,
@@ -55,25 +56,31 @@ describe("MatchCard", () => {
         }}
       />,
     );
+    const card = within(container);
 
-    expect(screen.getByText("24")).toHaveClass(
+    expect(card.getByText("24")).toHaveClass(
       "text-4xl",
       "font-black",
       "text-[var(--color-accent)]",
     );
-    expect(screen.getByText("21")).toHaveClass(
+    expect(card.getByText("21")).toHaveClass(
       "text-3xl",
       "text-[var(--color-ink-muted)]",
     );
-    expect(screen.getByText("FRA")).toHaveClass(
+    expect(card.getByText("FRA")).toHaveClass(
       "text-[var(--color-ink-muted)]",
     );
-    expect(screen.getByText("Ireland")).toHaveClass("text-[var(--color-ink)]");
-    expect(screen.getByText("W")).toHaveClass(
+    expect(card.getByText("Ireland").parentElement).toHaveClass(
+      "text-[var(--color-ink)]",
+    );
+    expect(card.getByText("W")).toHaveClass(
       "bg-[var(--color-accent-dim)]",
       "text-[var(--color-accent)]",
     );
-    expect(screen.getByText("L")).toHaveClass("bg-slate-100", "text-slate-400");
+    expect(screen.getByText("L")).toHaveClass(
+      "bg-[var(--color-panel)]",
+      "text-[var(--color-ink-muted)]",
+    );
   });
 
   it("renders an em dash for a scheduled match", () => {
@@ -156,30 +163,28 @@ describe("MatchCard", () => {
     );
   });
 
-  it("uses the redesigned lifted card treatment", () => {
+  it("uses a flat paper card with the new content radius", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
+    const article = container.querySelector("article");
 
     expect(container.querySelector("a")).toHaveClass(
       "focus-visible:ring-[var(--color-accent)]",
     );
-    expect(container.querySelector("article")).toHaveClass(
-      "shadow-sm",
-      "transition-all",
+    expect(article).toHaveClass(
+      "rounded-sm",
+      "border-[var(--color-rule)]",
+      "bg-card",
       "hover:-translate-y-0.5",
-      "hover:border-slate-300",
-      "hover:shadow-[0_10px_18px_rgb(15_23_42/0.10)]",
     );
+    expect(article).not.toHaveClass("shadow-sm");
   });
 
-  it("uses a subtle home-away team color background", () => {
+  it("does not use a team-tinted background on the paper card", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
     const article = container.querySelector("article");
 
-    expect(article).not.toHaveClass("bg-white");
-    expect(article).toHaveStyle({
-      background:
-        "linear-gradient(to right, #009A440a 0%, #ffffff 35%, #ffffff 65%, #0023950a 100%)",
-    });
+    expect(article).toHaveClass("bg-card");
+    expect(article).not.toHaveAttribute("style");
   });
 
   it("uses the body font for the score column", () => {
@@ -191,39 +196,21 @@ describe("MatchCard", () => {
     );
   });
 
-  it("uses home and away team stripes on the card edges", () => {
+  it("places each team's existing color stripe beside its name", () => {
     const { container } = render(<MatchCard match={baseMatch} />);
-    const stripes = container.querySelectorAll(
-      "article > [aria-hidden='true']",
-    );
+    const card = within(container);
+    const homeName = card.getByText("Ireland");
+    const awayName = card.getByText("France");
 
-    expect(container.querySelector("article")).not.toHaveClass("border-l-4");
-    expect(stripes).toHaveLength(2);
-    expect(stripes[0]).toHaveClass(
-      "absolute",
-      "inset-y-0",
-      "left-0",
-      "w-[4px]",
-    );
-    expect(stripes[0]).toHaveStyle({
-      background:
-        "linear-gradient(to bottom, #169B62 0%, #169B62 33%, #FFFFFF 33%, #FFFFFF 67%, #F77F00 67%, #F77F00 100%)",
-      opacity: "1",
-    });
-    expect(stripes[1]).toHaveClass(
-      "absolute",
-      "inset-y-0",
-      "right-0",
-      "w-[4px]",
-    );
-    expect(stripes[1]).toHaveStyle({
-      background:
-        "linear-gradient(to bottom, #002395 0%, #002395 33%, #FFFFFF 33%, #FFFFFF 67%, #ED2939 67%, #ED2939 100%)",
-      opacity: "1",
-    });
+    expect(
+      homeName.parentElement?.querySelector("[aria-hidden='true']"),
+    ).toHaveStyle({ background: getTeamStripe("ireland") });
+    expect(
+      awayName.parentElement?.querySelector("[aria-hidden='true']"),
+    ).toHaveStyle({ background: getTeamStripe("france") });
   });
 
-  it("dims the losing side stripe for finished matches", () => {
+  it("keeps the losing team's color stripe beside its muted name", () => {
     const { container } = render(
       <MatchCard
         match={{
@@ -234,12 +221,13 @@ describe("MatchCard", () => {
         }}
       />,
     );
-    const stripes = container.querySelectorAll(
-      "article > [aria-hidden='true']",
-    );
+    const loserName = within(container).getByText("France");
+    const loserRow = loserName.parentElement;
 
-    expect(stripes[0]).toHaveStyle({ opacity: "1" });
-    expect(stripes[1]).toHaveStyle({ opacity: "0.25" });
+    expect(loserRow).toHaveClass("text-[var(--color-ink-muted)]");
+    expect(loserRow?.querySelector("[aria-hidden='true']")).toHaveStyle({
+      background: getTeamStripe("france"),
+    });
   });
 
   it("does not show a winner badge for drawn finished matches", () => {

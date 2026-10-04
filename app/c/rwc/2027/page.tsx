@@ -66,7 +66,7 @@ function PendingState({ matchCount }: { matchCount?: number }) {
       <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-accent)]">
         Coming Soon
       </p>
-      <h1 className="mt-4 font-serif text-4xl font-bold text-[var(--color-ink)]">
+      <h1 className="mt-4 font-serif text-4xl font-extrabold text-[var(--color-ink)]">
         Rugby World Cup 2027
       </h1>
       <p className="mt-6 text-base leading-relaxed text-[var(--color-ink-muted)]">
@@ -189,7 +189,7 @@ export default async function RWC2027Page() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
             Rugby World Cup
           </p>
-          <h1 className="mt-1 font-heading text-4xl font-bold tracking-tight text-[var(--color-ink)] sm:text-5xl">
+          <h1 className="mt-1 font-heading text-4xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-5xl">
             ラグビーワールドカップ2027
           </h1>
           <div className="mt-4">
@@ -210,7 +210,7 @@ export default async function RWC2027Page() {
           <section className="space-y-4">
             {poolStandings.map((pool) => (
               <div className="space-y-3" key={pool.poolName}>
-                <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
                   {pool.poolName} 順位表
                 </h2>
                 <StandingsTable standings={pool.standings} />
@@ -222,7 +222,7 @@ export default async function RWC2027Page() {
         {venues.length > 0 && (
           <section aria-labelledby="venues-heading" className="space-y-4">
             <h2
-              className="font-heading text-2xl font-bold text-[var(--color-ink)]"
+              className="font-heading text-2xl font-extrabold text-[var(--color-ink)]"
               id="venues-heading"
             >
               開催都市・会場
@@ -260,7 +260,7 @@ export default async function RWC2027Page() {
           className="rounded-lg border border-[var(--color-rule)] bg-white px-6 py-4 text-sm text-[var(--color-ink-muted)]"
         >
           <h2
-            className="font-heading text-lg font-bold text-[var(--color-ink)]"
+            className="font-heading text-lg font-extrabold text-[var(--color-ink)]"
             id="broadcast-heading"
           >
             日本での視聴方法

@@ -28,7 +28,7 @@ export default function SupportPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
             Support
           </p>
-          <h1 className="text-3xl font-bold tracking-normal">
+          <h1 className="text-3xl font-extrabold tracking-normal">
             サポート・お問い合わせ
           </h1>
           <p className="text-sm leading-7 text-[var(--color-ink-muted)]">
@@ -37,7 +37,7 @@ export default function SupportPage() {
         </header>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold">お問い合わせ方法</h2>
+          <h2 className="text-xl font-extrabold">お問い合わせ方法</h2>
           <p className="text-sm leading-7 text-[var(--color-ink-muted)]">
             ご質問・ご要望・不具合のご報告は、以下のメールアドレスまでお送りください。
           </p>
@@ -55,10 +55,10 @@ export default function SupportPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">よくある質問</h2>
+          <h2 className="text-xl font-extrabold">よくある質問</h2>
           <div className="space-y-5 text-sm leading-7 text-[var(--color-ink-muted)]">
             <section className="space-y-1">
-              <h3 className="font-semibold text-[var(--color-ink)]">
+              <h3 className="font-extrabold text-[var(--color-ink)]">
                 ログインできない・パスワードを忘れた
               </h3>
               <p>
@@ -66,7 +66,7 @@ export default function SupportPage() {
               </p>
             </section>
             <section className="space-y-1">
-              <h3 className="font-semibold text-[var(--color-ink)]">
+              <h3 className="font-extrabold text-[var(--color-ink)]">
                 Premium の登録・解約
               </h3>
               <p>
@@ -75,7 +75,7 @@ export default function SupportPage() {
               </p>
             </section>
             <section className="space-y-1">
-              <h3 className="font-semibold text-[var(--color-ink)]">
+              <h3 className="font-extrabold text-[var(--color-ink)]">
                 アカウントを削除したい
               </h3>
               <p>
@@ -83,7 +83,7 @@ export default function SupportPage() {
               </p>
             </section>
             <section className="space-y-1">
-              <h3 className="font-semibold text-[var(--color-ink)]">
+              <h3 className="font-extrabold text-[var(--color-ink)]">
                 試合データ・解説の誤りを見つけた
               </h3>
               <p>
@@ -94,7 +94,7 @@ export default function SupportPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold">関連リンク</h2>
+          <h2 className="text-xl font-extrabold">関連リンク</h2>
           <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-[var(--color-ink-muted)]">
             {relatedLinks.map((link) => (
               <li key={link.href}>

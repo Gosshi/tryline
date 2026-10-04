@@ -31,7 +31,7 @@ export default async function EnglishLandingPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
             Tryline English
           </p>
-          <h1 className="mt-4 max-w-3xl font-serif text-5xl font-bold leading-tight tracking-tight text-white sm:text-6xl">
+          <h1 className="mt-4 max-w-3xl font-serif text-5xl font-extrabold leading-tight tracking-tight text-white sm:text-6xl">
             Japan Rugby League One
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/70">
@@ -49,7 +49,7 @@ export default async function EnglishLandingPage() {
                 League One
               </p>
               <h2
-                className="mt-1 font-serif text-3xl font-bold text-[var(--color-ink)]"
+                className="mt-1 font-serif text-3xl font-extrabold text-[var(--color-ink)]"
                 id="upcoming-heading"
               >
                 Upcoming
@@ -72,7 +72,7 @@ export default async function EnglishLandingPage() {
                 English recaps
               </p>
               <h2
-                className="mt-1 font-serif text-3xl font-bold text-[var(--color-ink)]"
+                className="mt-1 font-serif text-3xl font-extrabold text-[var(--color-ink)]"
                 id="recent-heading"
               >
                 Recent Results

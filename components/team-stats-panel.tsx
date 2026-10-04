@@ -29,7 +29,7 @@ function formatAverage(value: number): string {
 function StatCard({ children, title }: { children: ReactNode; title: string }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50">
-      <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+      <h3 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
         {title}
       </h3>
       <div className="mt-4">{children}</div>
@@ -45,7 +45,7 @@ export function TeamStatsPanel({
   return (
     <section aria-labelledby="team-stats-heading" className="space-y-4">
       <h2
-        className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]"
+        className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]"
         id="team-stats-heading"
       >
         チームスタッツ
@@ -159,7 +159,7 @@ export function TeamStatsPanel({
         </StatCard>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 md:col-span-2">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+          <h3 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
             トップスコアラー
           </h3>
           {topScorers.length === 0 ? (

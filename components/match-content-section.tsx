@@ -105,7 +105,7 @@ export function MatchContentSection({
   return (
     <>
       <section className="rounded-[var(--radius-md)] bg-white px-5 py-6 shadow-[var(--shadow-soft)] sm:px-7 sm:py-7">
-        <h2 className="text-[clamp(1.35rem,4vw,1.75rem)] font-black leading-[1.5] text-[var(--color-ink)]">
+        <h2 className="text-[clamp(1.35rem,4vw,1.75rem)] font-extrabold leading-[1.5] text-[var(--color-ink)]">
           {sectionTitle}
         </h2>
         {lead?.type === "paragraph" && (

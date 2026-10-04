@@ -28,7 +28,7 @@ export function FeaturedCompetitionCard({
   const imageSrc = getCompetitionHeroImage(family);
 
   return (
-    <aside className="grid overflow-hidden rounded-[22px] bg-[var(--color-ink)] text-white shadow-sm ring-1 ring-slate-900/10 md:min-h-[236px] md:grid-cols-[minmax(260px,0.82fr)_minmax(0,1.18fr)]">
+    <aside className="grid overflow-hidden rounded-sm bg-[var(--color-ink-strong)] text-white ring-1 ring-white/10 md:min-h-[236px] md:grid-cols-[minmax(260px,0.82fr)_minmax(0,1.18fr)]">
       <div className="relative min-h-44 overflow-hidden md:min-h-full">
         <Image
           alt=""
@@ -37,14 +37,14 @@ export function FeaturedCompetitionCard({
           sizes="(min-width: 1024px) 420px, 100vw"
           src={imageSrc}
         />
-        <div className="via-[var(--color-ink)]/25 absolute inset-0 bg-gradient-to-t from-[var(--color-ink)] to-transparent md:bg-gradient-to-r" />
+        <div className="via-[var(--color-ink-strong)]/25 absolute inset-0 bg-gradient-to-t from-[var(--color-ink-strong)] to-transparent md:bg-gradient-to-r" />
       </div>
       <div className="flex min-w-0 flex-col justify-between gap-5 p-5 sm:p-6 md:p-7">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-accent)]">
             Featured Competition
           </p>
-          <h3 className="mt-2 text-balance font-serif text-2xl font-bold leading-tight sm:text-3xl">
+          <h3 className="mt-2 text-balance font-serif text-2xl font-extrabold leading-tight sm:text-3xl">
             {headline}
           </h3>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">
@@ -52,7 +52,7 @@ export function FeaturedCompetitionCard({
           </p>
         </div>
         <dl className="grid gap-2 sm:grid-cols-[minmax(0,1.35fr)_minmax(82px,0.55fr)_minmax(82px,0.55fr)]">
-          <div className="rounded-xl bg-white/[0.07] px-3 py-2.5">
+          <div className="rounded-sm bg-white/[0.07] px-3 py-2.5">
             <dt className="text-[10px] font-bold text-white/45">次戦</dt>
             <dd className="mt-1 text-sm font-black leading-tight text-white">
               {stats.nextMatchLabel}
@@ -61,13 +61,13 @@ export function FeaturedCompetitionCard({
               {stats.nextMatchSubLabel}
             </dd>
           </div>
-          <div className="rounded-xl bg-white/[0.07] px-3 py-2.5">
+          <div className="rounded-sm bg-white/[0.07] px-3 py-2.5">
             <dt className="text-[10px] font-bold text-white/45">レビュー</dt>
             <dd className="mt-1 text-sm font-black text-white">
               {stats.publishedReviewCount}本
             </dd>
           </div>
-          <div className="rounded-xl bg-white/[0.07] px-3 py-2.5">
+          <div className="rounded-sm bg-white/[0.07] px-3 py-2.5">
             <dt className="text-[10px] font-bold text-white/45">今週</dt>
             <dd className="mt-1 text-sm font-black text-white">
               {stats.weekMatchCount}試合
@@ -82,7 +82,7 @@ export function FeaturedCompetitionCard({
               destination: "competition",
               label: headline,
             }}
-            className="inline-flex rounded-full bg-white px-4 py-2 text-xs font-black text-[var(--color-ink)] transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="inline-flex min-h-11 items-center rounded-full bg-white px-4 py-2 text-xs font-black text-[var(--color-ink)] transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             href={`/c/${family}/${season}`}
           >
             大会ページを見る →
@@ -94,7 +94,7 @@ export function FeaturedCompetitionCard({
               destination: "calendar",
               label: "全日程をカレンダーで見る",
             }}
-            className="inline-flex text-xs font-bold text-white/60 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="inline-flex min-h-11 items-center text-xs font-bold text-white/60 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             href="/calendar"
           >
             全日程を見る →

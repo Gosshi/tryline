@@ -139,7 +139,7 @@ export default async function PricingPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
             Tryline Premium
           </p>
-          <h1 className="mt-4 max-w-3xl text-balance font-serif text-4xl font-bold tracking-tight sm:text-6xl">
+          <h1 className="mt-4 max-w-3xl text-balance font-serif text-4xl font-extrabold tracking-tight sm:text-6xl">
             見逃した海外ラグビーを、日本語で深く追える。
           </h1>
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/60">
@@ -189,7 +189,7 @@ export default async function PricingPage() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
             プロダクトデモ
           </p>
-          <h2 className="mb-6 text-2xl font-black tracking-tight text-[var(--color-ink)] sm:text-3xl">
+          <h2 className="mb-6 text-2xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-3xl">
             実際の画面を見てみる
           </h2>
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -238,7 +238,7 @@ export default async function PricingPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
               Sample
             </p>
-            <h2 className="mt-2 font-serif text-3xl font-bold text-[var(--color-ink)]">
+            <h2 className="mt-2 font-serif text-3xl font-extrabold text-[var(--color-ink)]">
               まず無料サンプルで確認できます
             </h2>
           </div>
@@ -287,7 +287,7 @@ export default async function PricingPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-2xl font-black tracking-tight text-[var(--color-ink)] sm:text-3xl">
+          <h2 className="mb-2 text-2xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-3xl">
             Premiumで使える機能
           </h2>
           <p className="mb-10 text-sm text-[var(--color-ink-muted)]">
@@ -328,7 +328,7 @@ export default async function PricingPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-3xl font-bold text-[var(--color-ink)]">
+          <h2 className="font-serif text-3xl font-extrabold text-[var(--color-ink)]">
             FAQ
           </h2>
           <PricingFaq faqs={faqs} />

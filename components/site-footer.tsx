@@ -25,10 +25,10 @@ export function SiteFooter() {
   ];
 
   return (
-    <footer className="mt-16 border-t border-slate-200 bg-white">
+    <footer className="mt-16 border-t border-[var(--color-rule)] bg-background">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:px-8">
         <div className="grid gap-8 sm:grid-cols-[1fr_2fr]">
-          <p className="text-sm font-black tracking-tight text-slate-950">
+          <p className="text-sm font-black tracking-tight text-[var(--color-ink)]">
             Tryline
           </p>
           <nav
@@ -36,13 +36,16 @@ export function SiteFooter() {
             className="grid gap-8 sm:grid-cols-3"
           >
             <div>
-              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-900">
+              <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink)]">
                 大会
               </h2>
-              <ul className="mt-3 space-y-2 text-xs text-slate-500">
+              <ul className="mt-3 space-y-2 text-xs text-[var(--color-ink-muted)]">
                 {competitionLinks.map((link) => (
                   <li key={link.href}>
-                    <Link className="hover:text-slate-900" href={link.href}>
+                    <Link
+                      className="hover:text-[var(--color-ink)]"
+                      href={link.href}
+                    >
                       {link.label}
                     </Link>
                   </li>
@@ -50,13 +53,16 @@ export function SiteFooter() {
               </ul>
             </div>
             <div>
-              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-900">
+              <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink)]">
                 サービス
               </h2>
-              <ul className="mt-3 space-y-2 text-xs text-slate-500">
+              <ul className="mt-3 space-y-2 text-xs text-[var(--color-ink-muted)]">
                 {serviceLinks.map((link) => (
                   <li key={link.href}>
-                    <Link className="hover:text-slate-900" href={link.href}>
+                    <Link
+                      className="hover:text-[var(--color-ink)]"
+                      href={link.href}
+                    >
                       {link.label}
                     </Link>
                   </li>
@@ -64,13 +70,13 @@ export function SiteFooter() {
               </ul>
             </div>
             <div>
-              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-900">
+              <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink)]">
                 フォロー
               </h2>
-              <ul className="mt-3 space-y-2 text-xs text-slate-500">
+              <ul className="mt-3 space-y-2 text-xs text-[var(--color-ink-muted)]">
                 <li>
                   <Link
-                    className="hover:text-slate-900"
+                    className="hover:text-[var(--color-ink)]"
                     href="/rss.xml"
                     rel="alternate"
                     type="application/rss+xml"
@@ -81,7 +87,7 @@ export function SiteFooter() {
                 <li>
                   <a
                     aria-label="X (Twitter) @tryline_rugbyjp"
-                    className="flex items-center gap-1.5 hover:text-slate-900"
+                    className="flex items-center gap-1.5 hover:text-[var(--color-ink)]"
                     href="https://x.com/tryline_rugbyjp"
                     rel="noopener noreferrer"
                     target="_blank"
@@ -93,7 +99,7 @@ export function SiteFooter() {
                 <li>
                   <a
                     aria-label="note @tryline_rugbyjp"
-                    className="flex items-center gap-1.5 hover:text-slate-900"
+                    className="flex items-center gap-1.5 hover:text-[var(--color-ink)]"
                     href="https://note.com/tryline_rugbyjp"
                     rel="noopener noreferrer"
                     target="_blank"
@@ -106,7 +112,7 @@ export function SiteFooter() {
             </div>
           </nav>
         </div>
-        <p className="mt-8 text-xs text-slate-400">
+        <p className="mt-8 text-xs text-[var(--color-ink-muted)]">
           © {new Date().getFullYear()} Tryline. All rights reserved.
         </p>
       </div>

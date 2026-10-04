@@ -1,7 +1,4 @@
-import {
-  getIosAppStoreUrl,
-  type IosAppCtaSurface,
-} from "@/lib/ios-app";
+import { getIosAppStoreUrl, type IosAppCtaSurface } from "@/lib/ios-app";
 
 type IosAppCtaProps = {
   surface: IosAppCtaSurface;
@@ -9,7 +6,7 @@ type IosAppCtaProps = {
 
 export function IosAppCta({ surface }: IosAppCtaProps) {
   return (
-    <section className="border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4">
+    <section className="rounded-sm border border-l-4 border-[var(--color-rule)] border-l-[var(--color-accent)] bg-card px-4 py-4">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
         iPhone アプリ
       </p>
@@ -20,7 +17,7 @@ export function IosAppCta({ surface }: IosAppCtaProps) {
         気になる試合のキックオフ前に、iOSアプリでお知らせを受け取れます。
       </p>
       <a
-        className="mt-3 inline-flex rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
+        className="mt-3 inline-flex min-h-11 items-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
         href={getIosAppStoreUrl(surface)}
       >
         iOSアプリで通知を受け取る

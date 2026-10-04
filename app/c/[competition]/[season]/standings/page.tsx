@@ -165,7 +165,7 @@ export default async function CompetitionStandingsPage({ params }: Props) {
             >
               {formatFamilyName(comp.family)}
             </p>
-            <h1 className="mt-1 font-heading text-xl font-bold tracking-tight text-[var(--color-ink)] sm:text-2xl">
+            <h1 className="mt-1 font-heading text-xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-2xl">
               {competitionTitle} 順位表
             </h1>
           </div>

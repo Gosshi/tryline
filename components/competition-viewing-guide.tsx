@@ -86,7 +86,7 @@ function renderBlock(block: MarkdownBlock, index: number) {
   if (block.type === "heading") {
     return (
       <h3
-        className="font-heading text-lg font-bold text-[var(--color-ink)]"
+        className="font-heading text-lg font-extrabold text-[var(--color-ink)]"
         key={index}
       >
         {renderInline(block.text)}
@@ -251,7 +251,7 @@ export function CompetitionViewingGuide({
   return (
     <section aria-labelledby="viewing-guide-heading" className="space-y-4">
       <h2
-        className="font-heading text-2xl font-bold text-[var(--color-ink)]"
+        className="font-heading text-2xl font-extrabold text-[var(--color-ink)]"
         id="viewing-guide-heading"
       >
         大会ガイド
@@ -280,7 +280,7 @@ export function CompetitionViewingGuide({
           className="rounded-lg border border-slate-200 bg-slate-50 p-4"
         >
           <h3
-            className="font-heading text-lg font-bold text-[var(--color-ink)]"
+            className="font-heading text-lg font-extrabold text-[var(--color-ink)]"
             id="broadcast-services-heading"
           >
             日本での視聴方法
