@@ -30,7 +30,7 @@ A4 のモックでは、1440px で最初の試合が 623px、順位表も 1 画�
 - `tests/app/` の大会シーズンページのテストの更新
 
 対象外（この PR では触らない）:
-- **共有の部品の中身**: `components/season-match-groups.tsx`・`components/standings-table.tsx`・`components/season-switcher.tsx`・`components/japan-matches-block.tsx`・`components/ios-app-cta.tsx`・`components/competition-calendar-links.tsx`・`components/newsletter-signup.tsx`・`components/competition-viewing-guide.tsx`。`StandingsTable` はトップ・試合ページ・順位表ページでも使っているので、見た目の変更は部品単位の後続 spec で行う
+- **共有の部品の中身**（`components/season-match-groups.tsx` は下の「2b」の範囲だけ変更してよい。2026-10-04 改訂）: `components/standings-table.tsx`・`components/season-switcher.tsx`・`components/japan-matches-block.tsx`・`components/ios-app-cta.tsx`・`components/competition-calendar-links.tsx`・`components/newsletter-signup.tsx`・`components/competition-viewing-guide.tsx`。`StandingsTable` はトップ・試合ページ・順位表ページでも使っているので、見た目の変更は部品単位の後続 spec で行う
 - 動き（行が順に現れる・勝点の数え上げ）。動きの共通の仕組みと合わせて次の spec で扱う
 - 角丸・影の値（`--radius*` / `--shadow*`）
 - データの取得（`getSeasonProgress`・`selectStandingsExcerpt` など）、メタデータ・JSON-LD・`revalidate`
@@ -80,6 +80,27 @@ A4 のモックでは、1440px で最初の試合が 623px、順位表も 1 画�
 - `hasStandings` が false の大会（`/c/pnc/2026` など）は 2 列にせず、日程を全幅にする（今と同じ見た目）。
 - `scroll-mt-4` と `id="schedule"` / `id="standings"` は残す（ページ内ナビ・外部リンクの `#standings` が今どおり動くこと）。
 
+### 2b. 日程の節の並び順と Premium 案内（2026-10-04 改訂。Codex の実測による）
+
+**改訂の理由**: Codex が 26 節ある大会（Premium 案内が出る状態）で確かめたところ、上の 1・2 だけでは最初の試合の下端が 1440px で 1,131px、390px で 1,300px になり、受け入れ条件 2 を満たせなかった。`SeasonMatchGroups` は、既定で開く節より前に、過去の節の見出し（閉じた状態）を順に並べる。さらにその上に `PremiumUpsellBanner` が出る。
+
+**変更**:
+1. `components/season-match-groups.tsx` の表示順を変える。データ（`groupedMatches`）の中身と、既定で開く節の決め方（`getDefaultOpenGroupIndexes`、今は「中心の節とその前後」）は変えない。表示の順だけを次にする:
+   - ① 既定で開く節（元の時系列の順のまま）
+   - ② それより後の節（昇順）
+   - ③ それより前の節（新しい順）。③の前に小見出し「これまでの節」を置く
+2. 節の絞り込み（`RoundFilterTabs`、URL の `?round=`）で 1 つの節を選んだときの表示は今のまま。
+3. **すべての節と試合のリンクは、今どおりサーバーの HTML に出す**（並びが変わるだけで、出す・出さないは変えない）。受け入れ条件 5 の数が変わらないこと。
+4. 並び替えは、`groupedMatches` と既定で開く節の集合から表示順を返す純粋な関数として切り出し、その関数を単体テストする。
+5. `app/c/rwc/2027/page.tsx` も `SeasonMatchGroups` を使っているので、同じ並びになる。確認する画面に `/c/rwc/2027` を足す。
+6. `PremiumUpsellBanner` を `#schedule` の中の先頭から、日程（`SeasonMatchGroups` と「他の大会も含めた今週の試合 →」）の後ろへ移す。表示条件（`hasAnyContent`）と `cta_id` は変えない。
+   - 判断材料: この案内のクリック（`cta_id: premium_upsell_banner_pricing`）は GA4 で直近 28 日 0 回（2026-10-04、Claude Code が確認）。
+
+**追加の受け入れ条件**:
+- 並び替えの関数のテスト: 10 節・中心が 5 節目のとき、表示順が [4, 5, 6, 7, 8, 9, 10, 3, 2, 1]。中心が先頭の節（開幕前）のとき [1, 2, …]。全節が終わっているとき（中心が最後）、開く節が先頭に来て、その前の節が新しい順に続く。節が 1 つのとき、そのまま。
+- 「壊して落ちる」確認（コミットしない）: 並び替えを元の時系列に戻すと、上のテストが落ちる。
+- 受け入れ条件 2 の 1 画面目の測定を、26 節ある大会（`/c/top-14/2026-27`）で、Premium 案内が出る状態で行う。
+
 ### 3. ページ内ナビ
 
 - 今の丸いピル型（白い背景・赤い塗りの選択）を、A4 の**下線のタブ**にする: 背景なし、下に `border-b border-[var(--color-rule)]`、項目は文字のみ、最初の項目（「日程・結果」）に `border-b-2 border-[var(--color-accent)]` と `text-[var(--color-ink)]`、他は `text-[var(--color-ink-muted)]`。
@@ -94,6 +115,7 @@ Vercel のプレビューで次を撮り、PR 本文に貼る（1440×900 と 39
 - `/c/pnc/2026`（順位表なし・終了・日本代表あり）
 - `/c/nations-championship/2026`（プール別の順位表・日本代表あり）
 - `/c/urc/2026-27`（試合数の多い大会）
+- `/c/rwc/2027`（専用ページ。2b の並び替えの影響を確認）
 
 ## LLM 連携
 
