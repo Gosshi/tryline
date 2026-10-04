@@ -2,13 +2,28 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MatchCard } from "@/components/match-card";
 import { getTeamStripe } from "@/lib/format/team-identity";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
+
+const guard = vi.hoisted(() => ({ enabled: false }));
+vi.mock("@/components/user-state-provider", () => ({
+  useUserState: () => ({ spoilerGuardEnabled: guard.enabled }),
+}));
+beforeEach(() => {
+  cleanup();
+  guard.enabled = false;
+});
 
 vi.mock("next/link", () => ({
   default: ({
@@ -45,6 +60,56 @@ const baseMatch: MatchListItem = {
 };
 
 describe("MatchCard", () => {
+  it("renders the season row with time, grouped teams and a separate score cell", () => {
+    const { container } = render(
+      <MatchCard
+        layout="row"
+        match={{
+          ...baseMatch,
+          status: "finished",
+          homeScore: 24,
+          awayScore: 21,
+        }}
+      />,
+    );
+    const row = container.querySelector("a")!;
+    expect(row).toHaveAttribute("data-match-layout", "row");
+    expect(row).toHaveClass("grid-cols-[76px_minmax(0,1fr)_64px]");
+    expect(row.firstElementChild).toHaveAttribute(
+      "datetime",
+      baseMatch.kickoffAt,
+    );
+    expect(row.children[1]).toHaveTextContent("Ireland対France");
+    expect(row.children[2]).toHaveTextContent("24–21");
+    expect(row).toHaveAttribute("href", `/matches/${baseMatch.id}`);
+    expect(row.querySelector("article")).toBeNull();
+  });
+
+  it("hides row scores and winner cues when the existing guard is enabled", () => {
+    guard.enabled = true;
+    const { container } = render(
+      <MatchCard
+        layout="row"
+        match={{
+          ...baseMatch,
+          status: "finished",
+          homeScore: 24,
+          awayScore: 21,
+        }}
+      />,
+    );
+    expect(container).not.toHaveTextContent("24–21");
+    expect(container).not.toHaveTextContent("WIN");
+    expect(container.querySelector("a")).toHaveAttribute(
+      "href",
+      `/matches/${baseMatch.id}`,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "タップして結果を見る" }),
+    );
+    expect(container).toHaveTextContent("24–21");
+  });
+
   it("renders a finished scoreline and dims the losing team", () => {
     const { container } = render(
       <MatchCard
@@ -67,9 +132,7 @@ describe("MatchCard", () => {
       "text-3xl",
       "text-[var(--color-ink-muted)]",
     );
-    expect(card.getByText("FRA")).toHaveClass(
-      "text-[var(--color-ink-muted)]",
-    );
+    expect(card.getByText("FRA")).toHaveClass("text-[var(--color-ink-muted)]");
     expect(card.getByText("Ireland").parentElement).toHaveClass(
       "text-[var(--color-ink)]",
     );

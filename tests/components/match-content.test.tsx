@@ -112,7 +112,8 @@ describe("MatchContent", () => {
 
     expect(screen.getByText("本文カラムの確認").parentElement).toHaveClass(
       "mx-auto",
-      "max-w-3xl",
+      "max-w-[40em]",
+      "text-[15px]",
     );
   });
 

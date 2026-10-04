@@ -1,28 +1,21 @@
 import Link from "next/link";
 
-import { TeamBadge } from "@/components/team-badge";
+import { HomepageSpoilerScore } from "@/components/home-user-state";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import {
   formatKickoffJstDate,
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
-import { getTeamColor, getTeamStripe } from "@/lib/format/team-identity";
+import { getTeamStripe } from "@/lib/format/team-identity";
 
-import type { CalendarMatch, UpcomingMatch } from "@/lib/db/queries/matches";
+import type { CalendarMatch } from "@/lib/db/queries/matches";
 import type { StandingPositionLookup } from "@/lib/db/queries/standings";
-import type { ReactNode } from "react";
 
 type HomeMatchdayBoardProps = {
   focusMatchId: string | null;
   matches: CalendarMatch[];
-  nextUpcomingMatch: UpcomingMatch | null;
   standingPositions: StandingPositionLookup;
   weekLabel: string;
-};
-
-type BoardMetric = {
-  label: string;
-  value: ReactNode;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1_000;
@@ -97,38 +90,71 @@ function getLevelMetric(
   return null;
 }
 
-function MatchMiniRow({ match }: { match: CalendarMatch }) {
+function MatchMiniRow({
+  match,
+  focused = false,
+  levelMetric,
+}: {
+  match: CalendarMatch;
+  focused?: boolean;
+  levelMetric?: string | null;
+}) {
   return (
     <Link
-      className="group flex min-w-0 items-center justify-between gap-3 rounded-sm border border-white/15 bg-white/[0.06] px-3 py-2.5 transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+      data-match-layout="row"
+      className={`group grid min-h-[76px] min-w-0 grid-cols-[76px_minmax(0,1fr)_64px] items-center gap-2 border-b border-[var(--color-rule)] bg-card px-3 py-3 hover:bg-[var(--color-panel)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[104px_minmax(0,1fr)_80px] sm:gap-3 ${focused ? "border-l-4 border-l-[var(--color-accent)]" : ""}`}
       href={`/matches/${match.id}`}
     >
-      <div className="min-w-0">
-        <p className="text-[11px] font-bold tabular-nums text-white/55">
-          {formatKickoffJstTime(match.kickoffAt)}
-        </p>
-        <p className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden text-xs font-bold text-white">
-          <span className="flex min-w-0 items-center gap-1.5">
+      <time
+        className="text-[10px] tabular-nums leading-relaxed text-[var(--color-ink-muted)] sm:text-xs"
+        dateTime={match.kickoffAt}
+      >
+        <span className="block">
+          {formatKickoffJstDate(match.kickoffAt).slice(5)}
+        </span>
+        <span className="block">{formatKickoffJstTime(match.kickoffAt)}</span>
+      </time>
+      <span className="min-w-0">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold sm:text-sm">
+          <span className="inline-flex min-w-0 items-center gap-1.5">
             <span
               aria-hidden="true"
-              className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
+              className="h-[0.85em] w-1 shrink-0 border border-black/15"
               style={{ background: getTeamStripe(match.homeTeam.slug) }}
             />
-            <span className="truncate">{match.homeTeam.shortCode}</span>
+            <span className="break-words">{match.homeTeam.name}</span>
           </span>
-          <span className="shrink-0 text-white/35">対</span>
-          <span className="flex min-w-0 items-center gap-1.5">
+          <span className="text-[10px] font-normal text-[var(--color-ink-muted)]">
+            対
+          </span>
+          <span className="inline-flex min-w-0 items-center gap-1.5">
             <span
               aria-hidden="true"
-              className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
+              className="h-[0.85em] w-1 shrink-0 border border-black/15"
               style={{ background: getTeamStripe(match.awayTeam.slug) }}
             />
-            <span className="truncate">{match.awayTeam.shortCode}</span>
+            <span className="break-words">{match.awayTeam.name}</span>
           </span>
-        </p>
-      </div>
-      <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/70">
-        {getContentLabel(match)}
+        </span>
+        <span className="mt-1 block text-[10px] leading-relaxed text-[var(--color-ink-muted)]">
+          {formatCompetitionTitle(match.competition, match.competition.season)}{" "}
+          ·{" "}
+          <span className="text-[var(--color-brass)]">
+            {getContentLabel(match)}
+          </span>
+          {levelMetric && <> · {levelMetric}</>}
+        </span>
+      </span>
+      <span className="flex min-h-11 items-center justify-end text-right text-lg font-bold tabular-nums sm:text-xl">
+        {match.homeScore !== null && match.awayScore !== null ? (
+          <HomepageSpoilerScore className="min-h-11 max-w-full px-1 text-[10px]">
+            <span>
+              {match.homeScore}–{match.awayScore}
+            </span>
+          </HomepageSpoilerScore>
+        ) : (
+          <span className="font-normal text-[var(--color-ink-muted)]">—</span>
+        )}
       </span>
     </Link>
   );
@@ -137,128 +163,9 @@ function MatchMiniRow({ match }: { match: CalendarMatch }) {
 export function HomeMatchdayBoard({
   focusMatchId,
   matches,
-  nextUpcomingMatch,
   standingPositions,
   weekLabel,
 }: HomeMatchdayBoardProps) {
-  if (matches.length === 0) {
-    if (!nextUpcomingMatch) {
-      return null;
-    }
-
-    const competitionTitle = formatCompetitionTitle(
-      nextUpcomingMatch.competition,
-      nextUpcomingMatch.competition.season,
-    );
-
-    return (
-      <aside
-        aria-label="次の試合"
-        className="rounded-sm border border-white/15 bg-white/[0.08] p-4 backdrop-blur-md sm:p-5"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--color-accent)]">
-            Next Kickoff
-          </p>
-          <p className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold text-white/70">
-            {getNextMatchCountdownLabel(nextUpcomingMatch.kickoffAt)}
-          </p>
-        </div>
-
-        <div
-          className="mt-4 overflow-hidden rounded-sm p-4 text-white"
-          style={{
-            background: `linear-gradient(160deg, rgb(12 16 28 / 42%), rgb(12 16 28 / 20%)), linear-gradient(135deg, ${getTeamColor(nextUpcomingMatch.homeTeam.slug)}33, ${getTeamColor(nextUpcomingMatch.awayTeam.slug)}33)`,
-          }}
-        >
-          <Link
-            className="bg-white/16 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold text-white/85 backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            href={`/matches/${nextUpcomingMatch.id}`}
-          >
-            {competitionTitle}
-          </Link>
-          <div className="mt-5 grid min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-3">
-            <Link
-              className="min-w-0 text-right focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              href={`/teams/${nextUpcomingMatch.homeTeam.slug}`}
-            >
-              <span className="flex min-w-0 items-center justify-end gap-2 overflow-hidden text-base font-black leading-tight">
-                <span
-                  aria-hidden="true"
-                  className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
-                  style={{
-                    background: getTeamStripe(nextUpcomingMatch.homeTeam.slug),
-                  }}
-                />
-                <span className="truncate">
-                  {nextUpcomingMatch.homeTeam.name}
-                </span>
-                <TeamBadge
-                  shortCode={nextUpcomingMatch.homeTeam.shortCode}
-                  size={24}
-                  slug={nextUpcomingMatch.homeTeam.slug}
-                />
-              </span>
-            </Link>
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-[var(--color-ink)]">
-              対
-            </span>
-            <Link
-              className="min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              href={`/teams/${nextUpcomingMatch.awayTeam.slug}`}
-            >
-              <span className="flex min-w-0 items-center gap-2 overflow-hidden text-base font-black leading-tight">
-                <TeamBadge
-                  shortCode={nextUpcomingMatch.awayTeam.shortCode}
-                  size={24}
-                  slug={nextUpcomingMatch.awayTeam.slug}
-                />
-                <span
-                  aria-hidden="true"
-                  className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
-                  style={{
-                    background: getTeamStripe(nextUpcomingMatch.awayTeam.slug),
-                  }}
-                />
-                <span className="truncate">
-                  {nextUpcomingMatch.awayTeam.name}
-                </span>
-              </span>
-            </Link>
-          </div>
-          <p className="mt-4 text-center text-xs font-bold text-white/75">
-            {formatKickoffJstDate(nextUpcomingMatch.kickoffAt)}{" "}
-            {formatKickoffJstTime(nextUpcomingMatch.kickoffAt)}
-          </p>
-        </div>
-
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
-          <Link
-            className="rounded-sm border border-white/15 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            href={`/matches/${nextUpcomingMatch.id}`}
-          >
-            試合の詳細を見る
-          </Link>
-          <Link
-            className="rounded-sm border border-white/15 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            href="/calendar"
-          >
-            カレンダーを見る
-          </Link>
-          <Link
-            className="rounded-sm border border-white/15 bg-white/[0.06] px-3 py-2.5 text-center text-xs font-bold text-white transition-colors hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            href="/?notifications=open"
-          >
-            通知設定を開く
-          </Link>
-        </div>
-        <p className="mt-3 text-center text-[11px] leading-5 text-white/55">
-          応援したいチームを選ぶと、チームページからお気に入りに登録できます。
-        </p>
-      </aside>
-    );
-  }
-
   const focusMatch =
     matches.find((match) => match.id === focusMatchId) ?? matches[0] ?? null;
 
@@ -266,113 +173,26 @@ export function HomeMatchdayBoard({
     return null;
   }
 
-  const quickMatches = matches
-    .filter((match) => match.id !== focusMatch.id)
-    .slice(0, 3);
-  const overflowCount = Math.max(0, matches.length - 1 - quickMatches.length);
   const levelMetric = getLevelMetric(focusMatch, standingPositions);
-  const metrics: BoardMetric[] = [
-    { label: "キックオフ", value: formatKickoffJstTime(focusMatch.kickoffAt) },
-    ...(levelMetric ? [{ label: "順位情報", value: levelMetric }] : []),
-    { label: "コンテンツ", value: getContentLabel(focusMatch) },
+  const orderedMatches = [
+    focusMatch,
+    ...matches.filter((match) => match.id !== focusMatch.id),
   ];
 
   return (
-    <aside
-      aria-label="今週の注目試合"
-      className="rounded-sm border border-white/15 bg-white/[0.08] p-4 backdrop-blur-md sm:p-5"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--color-accent)]">
-          Matchday Board
-        </p>
-        <p className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold text-white/70">
-          {weekLabel}
-        </p>
-      </div>
-
-      <Link
-        className="mt-4 block overflow-hidden rounded-sm p-4 text-white transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-        href={`/matches/${focusMatch.id}`}
-        style={{
-          background: `linear-gradient(160deg, rgb(12 16 28 / 42%), rgb(12 16 28 / 20%)), linear-gradient(135deg, ${getTeamColor(focusMatch.homeTeam.slug)}33, ${getTeamColor(focusMatch.awayTeam.slug)}33)`,
-        }}
-      >
-        <span className="bg-white/16 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold text-white/85 backdrop-blur-sm">
-          {formatCompetitionTitle(
-            focusMatch.competition,
-            focusMatch.competition.season,
-          )}
-        </span>
-        <div className="mt-5 grid min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <div className="min-w-0 text-right">
-            <p className="flex min-w-0 items-center justify-end gap-2 overflow-hidden text-base font-black leading-tight">
-              <span
-                aria-hidden="true"
-                className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
-                style={{ background: getTeamStripe(focusMatch.homeTeam.slug) }}
-              />
-              <span className="truncate">{focusMatch.homeTeam.name}</span>
-              <TeamBadge
-                shortCode={focusMatch.homeTeam.shortCode}
-                size={24}
-                slug={focusMatch.homeTeam.slug}
-              />
-            </p>
-          </div>
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-[var(--color-ink)]">
-            対
-          </span>
-          <div className="min-w-0 text-left">
-            <p className="flex min-w-0 items-center gap-2 overflow-hidden text-base font-black leading-tight">
-              <TeamBadge
-                shortCode={focusMatch.awayTeam.shortCode}
-                size={24}
-                slug={focusMatch.awayTeam.slug}
-              />
-              <span
-                aria-hidden="true"
-                className="h-[0.85em] w-1 shrink-0 rounded-[1px] border border-white/30"
-                style={{ background: getTeamStripe(focusMatch.awayTeam.slug) }}
-              />
-              <span className="truncate">{focusMatch.awayTeam.name}</span>
-            </p>
-          </div>
-        </div>
-      </Link>
-
-      <dl className="mt-4 grid gap-2 sm:grid-cols-3">
-        {metrics.map((metric) => (
-          <div
-            className="rounded-sm border border-white/15 bg-white/[0.06] px-3 py-2"
-            key={metric.label}
-          >
-            <dt className="text-[10px] font-bold uppercase tracking-wide text-white/45">
-              {metric.label}
-            </dt>
-            <dd className="mt-1 truncate text-xs font-black text-white">
-              {metric.value}
-            </dd>
-          </div>
+    <aside aria-label="今週の注目試合">
+      <p className="sr-only">{weekLabel}</p>
+      <ul className="grid border-t border-[var(--color-rule)] lg:grid-cols-2">
+        {orderedMatches.map((match) => (
+          <li className="min-w-0" key={match.id}>
+            <MatchMiniRow
+              focused={match.id === focusMatch.id}
+              levelMetric={match.id === focusMatch.id ? levelMetric : null}
+              match={match}
+            />
+          </li>
         ))}
-      </dl>
-
-      {quickMatches.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {quickMatches.map((match) => (
-            <MatchMiniRow key={match.id} match={match} />
-          ))}
-        </div>
-      )}
-
-      {overflowCount > 0 && (
-        <Link
-          className="mt-3 inline-flex text-xs font-bold text-white/70 transition-colors hover:text-white"
-          href="/calendar"
-        >
-          ほか{overflowCount}試合 →
-        </Link>
-      )}
+      </ul>
     </aside>
   );
 }

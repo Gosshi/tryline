@@ -627,7 +627,6 @@ export default async function SeasonPage({ params }: Props) {
   const dateRange = formatDateRange(comp.startDate, comp.endDate);
   const family = comp.family;
   const accentColor = getCompetitionFamilyColor(family);
-  const heroScrimColor = `color-mix(in srgb, ${accentColor} 42%, #06090f)`;
   const pageUrl = `${SITE_URL}/c/${competition}/${season}`;
   const competitionCalendarFeedUrl = `${SITE_URL}/api/calendar/${comp.slug}.ics`;
   const competitionTitle = formatCompetitionTitle(comp, comp.season);
@@ -774,6 +773,7 @@ export default async function SeasonPage({ params }: Props) {
       return (
         <StandingsTable
           accentColor={accentColor}
+          compact
           standings={rows}
           title={title}
         />
@@ -784,6 +784,7 @@ export default async function SeasonPage({ params }: Props) {
       <div className="space-y-3">
         <StandingsTable
           accentColor={accentColor}
+          compact
           standings={excerpt}
           title={title ?? "順位表"}
         />
@@ -794,6 +795,7 @@ export default async function SeasonPage({ params }: Props) {
           <div className="mt-4 border-t border-slate-100 pt-4">
             <StandingsTable
               accentColor={accentColor}
+              compact
               standings={rows}
               title={title}
             />
@@ -817,9 +819,9 @@ export default async function SeasonPage({ params }: Props) {
         }}
         type="application/ld+json"
       />
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <header className="overflow-hidden rounded-2xl bg-[var(--color-ink)] shadow-[var(--shadow-soft)]">
-          <div className="relative min-h-64 overflow-hidden sm:min-h-72">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4 sm:gap-5 sm:px-6 sm:py-6 md:px-8">
+        <header className="relative overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-ink-strong)]">
+          <div className="relative min-h-40 overflow-hidden sm:min-h-44">
             <Image
               alt={formatFamilyName(family)}
               className="object-cover object-center"
@@ -832,14 +834,15 @@ export default async function SeasonPage({ params }: Props) {
               aria-hidden
               className="absolute inset-0"
               style={{
-                background: `linear-gradient(100deg, color-mix(in srgb, ${heroScrimColor} 92%, transparent) 0%, color-mix(in srgb, ${heroScrimColor} 74%, transparent) 45%, color-mix(in srgb, ${heroScrimColor} 30%, transparent) 100%)`,
+                background:
+                  "linear-gradient(100deg, rgb(23 25 31 / 0.92) 0%, rgb(23 25 31 / 0.78) 45%, rgb(23 25 31 / 0.45) 100%)",
               }}
             />
-            <div className="relative z-10 flex min-h-64 flex-col justify-end px-5 py-6 sm:min-h-72 sm:px-8 sm:py-8">
+            <div className="relative z-10 flex min-h-40 flex-col justify-center px-5 py-5 sm:min-h-44 sm:px-6 sm:pr-72">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/75">
                 {formatFamilyName(family)}
               </p>
-              <h1 className="mt-2 max-w-3xl font-heading text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
+              <h1 className="mt-2 max-w-3xl font-heading text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
                 {formatCompetitionTitle(comp, comp.season)}
               </h1>
               {dateRange && (
@@ -850,11 +853,9 @@ export default async function SeasonPage({ params }: Props) {
             </div>
           </div>
           {(leaderLabel || seasonProgress) && (
-            <div
-              className={`grid divide-y divide-white/15 bg-black/55 text-white sm:divide-x sm:divide-y-0 ${leaderLabel && seasonProgress ? "sm:grid-cols-2" : ""}`}
-            >
+            <div className="relative z-10 grid divide-y divide-white/15 bg-[var(--color-ink-strong)] text-white sm:absolute sm:right-6 sm:top-4 sm:w-56 sm:bg-transparent">
               {leaderLabel && (
-                <div className="px-5 py-4 sm:px-6">
+                <div className="px-5 py-2 sm:px-0 sm:py-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
                     首位
                   </p>
@@ -864,7 +865,7 @@ export default async function SeasonPage({ params }: Props) {
                 </div>
               )}
               {seasonProgress && (
-                <div className="px-5 py-4 sm:px-6">
+                <div className="px-5 py-2 sm:px-0 sm:py-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
                     進行
                   </p>
@@ -884,29 +885,28 @@ export default async function SeasonPage({ params }: Props) {
               )}
             </div>
           )}
-          <div className="bg-white px-5 py-5 sm:px-8">
-            <div className="flex flex-wrap gap-2">
-              <CompetitionCalendarLinks
-                competitionSlug={competition}
-                icalHref={competitionCalendarFeedUrl}
-                season={season}
-                webcalHref={getWebcalUrl(competitionCalendarFeedUrl)}
-              />
-              <TrackedLink
-                analytics={{
-                  cta_id: "hub_hero_calendar",
-                  cta_location: "hub_hero",
-                  destination: "calendar",
-                  label: "今週の全試合を見る",
-                }}
-                className="inline-flex items-center px-1 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                href="/calendar"
-              >
-                今週の全試合を見る →
-              </TrackedLink>
-            </div>
-          </div>
         </header>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <CompetitionCalendarLinks
+            competitionSlug={competition}
+            icalHref={competitionCalendarFeedUrl}
+            season={season}
+            webcalHref={getWebcalUrl(competitionCalendarFeedUrl)}
+          />
+          <TrackedLink
+            analytics={{
+              cta_id: "hub_hero_calendar",
+              cta_location: "hub_hero",
+              destination: "calendar",
+              label: "今週の全試合を見る",
+            }}
+            className="inline-flex items-center px-1 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            href="/calendar"
+          >
+            今週の全試合を見る →
+          </TrackedLink>
+        </div>
 
         <SeasonSwitcher
           competition={competition}
@@ -914,14 +914,31 @@ export default async function SeasonPage({ params }: Props) {
           seasons={seasons}
         />
 
-        <SeasonSummaryBand
-          competition={competition}
-          latestReviewMatch={latestReviewMatch}
-          nextJapanCompetitionLabel={nextJapanCompetitionLabel}
-          nextJapanMatch={hasJapanInSeason ? nextJapanMatch : null}
-          nextMatch={nextMatch}
-          season={season}
-        />
+        <nav
+          aria-label="シーズンページ内ナビ"
+          className="flex gap-5 overflow-x-auto border-b border-[var(--color-rule)] text-sm font-bold [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <a
+            className="inline-flex min-h-11 shrink-0 items-center border-b-2 border-[var(--color-accent)] px-1 text-[var(--color-ink)]"
+            href="#schedule"
+          >
+            日程・結果
+          </a>
+          {hasStandings && (
+            <a
+              className="inline-flex min-h-11 shrink-0 items-center px-1 text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] lg:hidden"
+              href="#standings"
+            >
+              {seasonNotStarted ? "参加チーム" : "順位"}
+            </a>
+          )}
+          <a
+            className="inline-flex min-h-11 shrink-0 items-center px-1 text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+            href="#guide"
+          >
+            大会ガイド
+          </a>
+        </nav>
 
         <JapanMatchesBlock
           headToHeadHrefByMatchId={headToHeadHrefByMatchId}
@@ -933,34 +950,6 @@ export default async function SeasonPage({ params }: Props) {
           seasonHref={`/c/${competition}/${season}`}
         />
 
-        <IosAppCta surface="hub" />
-
-        <nav
-          aria-label="シーズンページ内ナビ"
-          className="flex gap-2 overflow-x-auto rounded-full border border-slate-200 bg-white p-1 text-sm font-bold shadow-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          <a
-            className="shrink-0 rounded-full bg-[var(--color-accent)] px-4 py-2 text-white"
-            href="#schedule"
-          >
-            日程・結果
-          </a>
-          {hasStandings && (
-            <a
-              className="shrink-0 rounded-full px-4 py-2 text-[var(--color-ink-muted)] transition-colors hover:bg-slate-50 hover:text-[var(--color-ink)]"
-              href="#standings"
-            >
-              {seasonNotStarted ? "参加チーム" : "順位"}
-            </a>
-          )}
-          <a
-            className="shrink-0 rounded-full px-4 py-2 text-[var(--color-ink-muted)] transition-colors hover:bg-slate-50 hover:text-[var(--color-ink)]"
-            href="#guide"
-          >
-            大会ガイド
-          </a>
-        </nav>
-
         {family === "league-one" && (
           <p className="text-xs text-[var(--color-ink-muted)]">
             🌐 English match reviews available — select a match to read in
@@ -968,127 +957,153 @@ export default async function SeasonPage({ params }: Props) {
           </p>
         )}
 
-        <section className="scroll-mt-4 space-y-4" id="schedule">
-          {hasIncompleteScheduleCoverage && (
-            <ScheduleCoverageNotice
-              competitions={[
-                { ...comp, ...incompleteScheduleCoverage, ingestedRoundCount },
-              ]}
-            />
-          )}
-          {matches.length === 0 ? (
-            <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
-              <p className="text-sm font-medium text-[var(--color-ink)]">
-                {comp.seasonStatus === "not_held"
-                  ? "この年度の大会は開催されません"
-                  : "試合データを確認中です"}
-              </p>
-              <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
-                {comp.seasonStatus === "not_held"
-                  ? "この年度は開催されないため、試合情報はありません。"
-                  : comp.seasonStatus === "held"
-                    ? "試合情報を確認しています。公式日程をご確認ください。"
-                    : "このシーズンの試合情報は確認できていません。"}
-              </p>
-              <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                {comp.seasonStatus === "not_held" &&
-                  comp.replacementCompetition && (
-                    <Link
-                      className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
-                      href={`/c/${comp.replacementCompetition.family}/${comp.replacementCompetition.season}`}
-                    >
-                      {comp.replacementCompetition.nameJa ??
-                        comp.replacementCompetition.name}{" "}
-                      を見る
-                    </Link>
-                  )}
-                {comp.seasonStatus === "held" && (
-                  <a
-                    className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
-                    href="https://www.world.rugby/competitions"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    公式日程を確認する
-                  </a>
-                )}
-                <Link
-                  className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
-                  href={`/c/${competition}`}
-                >
-                  他のシーズンを見る
-                </Link>
-                <span className="hidden text-[var(--color-ink-muted)] sm:inline">
-                  ·
-                </span>
-                <Link
-                  className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
-                  href="/"
-                >
-                  トップへ戻る
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <>
-              {hasAnyContent && <PremiumUpsellBanner />}
-              <SeasonMatchGroups
-                contentStatusMap={contentStatusMap}
-                family={family}
-                groupedMatches={groupedMatches}
-                initialNow={new Date().toISOString()}
-                roundHubBasePath={`/c/${competition}/${season}`}
+        <div
+          className={
+            hasStandings
+              ? "grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]"
+              : undefined
+          }
+        >
+          <section className="scroll-mt-4 space-y-4" id="schedule">
+            {hasIncompleteScheduleCoverage && (
+              <ScheduleCoverageNotice
+                competitions={[
+                  {
+                    ...comp,
+                    ...incompleteScheduleCoverage,
+                    ingestedRoundCount,
+                  },
+                ]}
               />
-              <TrackedLink
-                analytics={{
-                  cta_id: "hub_schedule_calendar",
-                  cta_location: "hub_schedule",
-                  destination: "calendar",
-                  label: "他の大会も含めた今週の試合",
-                }}
-                className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:border-[var(--color-accent)] hover:bg-slate-50"
-                href="/calendar"
-              >
-                他の大会も含めた今週の試合 →
-              </TrackedLink>
-            </>
-          )}
-        </section>
-
-        {hasStandings && (
-          <section className="scroll-mt-4 space-y-4" id="standings">
-            {seasonNotStarted ? (
-              <>
-                <h2 className="font-heading text-2xl font-extrabold text-[var(--color-ink)]">
-                  参加チーム
-                </h2>
-                <PoolTeamGrid
-                  ariaLabel="参加チーム"
-                  poolStandings={teamPools}
-                />
-              </>
-            ) : poolStandings.length > 0 ? (
-              poolStandings.map((pool) => (
-                <div key={pool.poolName}>
-                  {renderStandingsBlock(
-                    pool.standings,
-                    formatPoolName(pool.poolName),
-                  )}
-                </div>
-              ))
-            ) : (
-              renderStandingsBlock(standings)
             )}
-            {!seasonNotStarted && (
-              <Link
-                className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:border-[var(--color-accent)] hover:bg-slate-50"
-                href={`/c/${competition}/${season}/standings`}
-              >
-                順位表をすべて見る →
-              </Link>
+            {matches.length === 0 ? (
+              <div className="rounded-lg border border-[var(--color-rule)] bg-[#f8fafc] px-6 py-10 text-center">
+                <p className="text-sm font-medium text-[var(--color-ink)]">
+                  {comp.seasonStatus === "not_held"
+                    ? "この年度の大会は開催されません"
+                    : "試合データを確認中です"}
+                </p>
+                <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
+                  {comp.seasonStatus === "not_held"
+                    ? "この年度は開催されないため、試合情報はありません。"
+                    : comp.seasonStatus === "held"
+                      ? "試合情報を確認しています。公式日程をご確認ください。"
+                      : "このシーズンの試合情報は確認できていません。"}
+                </p>
+                <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                  {comp.seasonStatus === "not_held" &&
+                    comp.replacementCompetition && (
+                      <Link
+                        className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+                        href={`/c/${comp.replacementCompetition.family}/${comp.replacementCompetition.season}`}
+                      >
+                        {comp.replacementCompetition.nameJa ??
+                          comp.replacementCompetition.name}{" "}
+                        を見る
+                      </Link>
+                    )}
+                  {comp.seasonStatus === "held" && (
+                    <a
+                      className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+                      href="https://www.world.rugby/competitions"
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      公式日程を確認する
+                    </a>
+                  )}
+                  <Link
+                    className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+                    href={`/c/${competition}`}
+                  >
+                    他のシーズンを見る
+                  </Link>
+                  <span className="hidden text-[var(--color-ink-muted)] sm:inline">
+                    ·
+                  </span>
+                  <Link
+                    className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+                    href="/"
+                  >
+                    トップへ戻る
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <>
+                <SeasonMatchGroups
+                  contentStatusMap={contentStatusMap}
+                  family={family}
+                  groupedMatches={groupedMatches}
+                  initialNow={new Date().toISOString()}
+                  roundHubBasePath={`/c/${competition}/${season}`}
+                />
+                <TrackedLink
+                  analytics={{
+                    cta_id: "hub_schedule_calendar",
+                    cta_location: "hub_schedule",
+                    destination: "calendar",
+                    label: "他の大会も含めた今週の試合",
+                  }}
+                  className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:border-[var(--color-accent)] hover:bg-slate-50"
+                  href="/calendar"
+                >
+                  他の大会も含めた今週の試合 →
+                </TrackedLink>
+                {hasAnyContent && <PremiumUpsellBanner />}
+              </>
             )}
           </section>
-        )}
+
+          {hasStandings && (
+            <section
+              className="scroll-mt-4 space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-y-auto"
+              id="standings"
+            >
+              {seasonNotStarted ? (
+                <>
+                  <h2 className="font-heading text-2xl font-extrabold text-[var(--color-ink)]">
+                    参加チーム
+                  </h2>
+                  <PoolTeamGrid
+                    ariaLabel="参加チーム"
+                    poolStandings={teamPools}
+                  />
+                </>
+              ) : poolStandings.length > 0 ? (
+                poolStandings.map((pool) => (
+                  <div key={pool.poolName}>
+                    {renderStandingsBlock(
+                      pool.standings,
+                      formatPoolName(pool.poolName),
+                    )}
+                  </div>
+                ))
+              ) : (
+                renderStandingsBlock(standings)
+              )}
+              {!seasonNotStarted && (
+                <Link
+                  className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:border-[var(--color-accent)] hover:bg-slate-50"
+                  href={`/c/${competition}/${season}/standings`}
+                >
+                  順位表をすべて見る →
+                </Link>
+              )}
+            </section>
+          )}
+        </div>
+
+        <SeasonSummaryBand
+          competition={competition}
+          latestReviewMatch={latestReviewMatch}
+          nextJapanCompetitionLabel={nextJapanCompetitionLabel}
+          nextJapanMatch={hasJapanInSeason ? nextJapanMatch : null}
+          nextMatch={nextMatch}
+          season={season}
+        />
+
+        <IosAppCta surface="hub" />
 
         <NewsletterSignup source="competition" />
 

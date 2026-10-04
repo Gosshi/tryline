@@ -413,7 +413,7 @@ describe("season page information architecture", () => {
     vi.useRealTimers();
   });
 
-  it("places the summary and schedule before standings while keeping the guide expanded", async () => {
+  it("places schedule and standings before summary and iOS CTA while keeping the guide expanded", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([
       { ...match, id: "finished-match", status: "finished" },
       match,
@@ -482,6 +482,73 @@ describe("season page information architecture", () => {
     expect(follows(schedule!, standings!)).toBe(true);
     expect(follows(matchGroups, standings!)).toBe(true);
     expect(follows(standings!, guideFrame!)).toBe(true);
+  });
+
+  it.each([true, false])(
+    "keeps schedule/standings in the proper layout and summary/app after data (hasStandings=%s)",
+    async (hasStandings) => {
+      standingsMocks.getStandingsForCompetition.mockResolvedValue(
+        hasStandings ? [standing] : [],
+      );
+      const { container } = render(
+        await SeasonPage({
+          params: Promise.resolve({
+            competition: "premiership",
+            season: "2025-26",
+          }),
+        }),
+      );
+      const schedule = container.querySelector("#schedule")!;
+      const standings = container.querySelector("#standings");
+      const frame = schedule.parentElement!;
+      if (hasStandings) {
+        expect(standings?.parentElement).toBe(frame);
+        expect(frame).toHaveClass(
+          "grid",
+          "grid-cols-1",
+          "lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]",
+        );
+        expect(standings).toHaveClass(
+          "lg:sticky",
+          "lg:max-h-[calc(100vh-2rem)]",
+          "lg:overflow-y-auto",
+        );
+      } else {
+        expect(standings).toBeNull();
+        expect(frame).not.toHaveClass("grid");
+      }
+      const summary = screen.getByLabelText("シーズン要約");
+      const app = screen.getByRole("link", {
+        name: "iOSアプリで通知を受け取る",
+      });
+      const lastData = standings ?? schedule;
+      expect(follows(lastData, summary)).toBe(true);
+      expect(follows(lastData, app)).toBe(true);
+      expect(follows(summary, app)).toBe(true);
+      expect(follows(app, screen.getByLabelText("メールアドレス"))).toBe(true);
+    },
+  );
+
+  it("places Premium after all schedule groups and the calendar link", async () => {
+    const { container } = render(
+      await SeasonPage({
+        params: Promise.resolve({ competition: "top-14", season: "2026-27" }),
+      }),
+    );
+    const groups = screen.getByTestId("season-match-groups");
+    const calendar = screen.getByRole("link", {
+      name: "他の大会も含めた今週の試合 →",
+    });
+    const premium = screen.getByTestId("premium-upsell");
+    expect(
+      groups.compareDocumentPosition(calendar) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      calendar.compareDocumentPosition(premium) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(container.querySelector("#schedule")).toContainElement(premium);
   });
 
   it("uses configured total rounds for progress and reports an incomplete schedule", async () => {
@@ -561,11 +628,10 @@ describe("season page information architecture", () => {
       .querySelector("header > div > .absolute.inset-0")
       ?.getAttribute("style");
 
-    expect(scrimStyle).toContain("color-mix(in srgb");
-    expect(scrimStyle).toContain("42%");
-    expect(scrimStyle).toContain("92%");
-    expect(scrimStyle).toContain("74%");
-    expect(scrimStyle).toContain("30%");
+    expect(scrimStyle).toContain("rgba(23, 25, 31, 0.92)");
+    expect(scrimStyle).toContain("rgba(23, 25, 31, 0.78)");
+    expect(scrimStyle).toContain("rgba(23, 25, 31, 0.45)");
+    expect(scrimStyle).not.toContain("color-mix");
     expect(matchesMocks.listMatchesForCompetition).toHaveBeenCalledTimes(1);
   });
 
@@ -663,7 +729,9 @@ describe("season page information architecture", () => {
       "href",
       "webcal://www.trylinerugby.com/api/calendar/premiership-2025-26.ics",
     );
-    expect(screen.getByRole("link", { name: "iCal URL を開く" })).toHaveAttribute(
+    expect(
+      screen.getByRole("link", { name: "iCal URL を開く" }),
+    ).toHaveAttribute(
       "href",
       "https://www.trylinerugby.com/api/calendar/premiership-2025-26.ics",
     );
@@ -722,7 +790,9 @@ describe("season page information architecture", () => {
       "href",
       "https://example.com/j-sports-3",
     );
-    expect(screen.getByText(/確認済みのサービス: J SPORTS 3（2026-09-05確認）。/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/確認済みのサービス: J SPORTS 3（2026-09-05確認）。/),
+    ).toBeInTheDocument();
     expect(getFaqJsonLd(container)?.mainEntity).toContainEqual(
       expect.objectContaining({
         acceptedAnswer: expect.objectContaining({
@@ -731,9 +801,9 @@ describe("season page information architecture", () => {
         name: "Greatest Rivalryはどこで見られますか？",
       }),
     );
-    expect(
-      broadcastMocks.getMatchBroadcastsForMatches,
-    ).toHaveBeenCalledWith(["match-1"]);
+    expect(broadcastMocks.getMatchBroadcastsForMatches).toHaveBeenCalledWith([
+      "match-1",
+    ]);
   });
 
   it("keeps standings and guide in the DOM when no matches are available", async () => {
@@ -765,32 +835,94 @@ describe("season page information architecture", () => {
   it("explains a not-held season and links to its configured replacement", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({});
-    competitionMocks.getCompetitionBySlug.mockResolvedValue({ ...competition, seasonStatus: "not_held", replacementCompetition: { family: "nations-championship", name: "Nations Championship", nameJa: "ネーションズ・チャンピオンシップ", season: "2026", slug: "nations-championship-2026" } });
+    competitionMocks.getCompetitionBySlug.mockResolvedValue({
+      ...competition,
+      seasonStatus: "not_held",
+      replacementCompetition: {
+        family: "nations-championship",
+        name: "Nations Championship",
+        nameJa: "ネーションズ・チャンピオンシップ",
+        season: "2026",
+        slug: "nations-championship-2026",
+      },
+    });
 
-    render(await SeasonPage({ params: Promise.resolve({ competition: "premiership", season: "2025-26" }) }));
-    expect(screen.getByText("この年度の大会は開催されません")).toBeInTheDocument();
-    expect(screen.getByText("この年度は開催されないため、試合情報はありません。")).toBeInTheDocument();
-    expect(screen.queryByText("このシーズンの試合情報は確認できていません。")).toBeNull();
-    expect(screen.queryByText("このシーズンの試合情報はまもなく公開予定です。")).toBeNull();
-    expect(screen.getByRole("link", { name: "ネーションズ・チャンピオンシップ を見る" })).toHaveAttribute("href", "/c/nations-championship/2026");
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    );
+    expect(
+      screen.getByText("この年度の大会は開催されません"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("この年度は開催されないため、試合情報はありません。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("このシーズンの試合情報は確認できていません。"),
+    ).toBeNull();
+    expect(
+      screen.queryByText("このシーズンの試合情報はまもなく公開予定です。"),
+    ).toBeNull();
+    expect(
+      screen.getByRole("link", {
+        name: "ネーションズ・チャンピオンシップ を見る",
+      }),
+    ).toHaveAttribute("href", "/c/nations-championship/2026");
   });
 
   it("keeps the existing fallback links when a replacement is not configured", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({});
-    competitionMocks.getCompetitionBySlug.mockResolvedValue({ ...competition, seasonStatus: "not_held", replacementCompetition: null });
+    competitionMocks.getCompetitionBySlug.mockResolvedValue({
+      ...competition,
+      seasonStatus: "not_held",
+      replacementCompetition: null,
+    });
 
-    render(await SeasonPage({ params: Promise.resolve({ competition: "premiership", season: "2025-26" }) }));
-    expect(screen.getByRole("link", { name: "他のシーズンを見る" })).toHaveAttribute("href", "/c/premiership");
-    expect(screen.getByRole("link", { name: "トップへ戻る" })).toHaveAttribute("href", "/");
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    );
+    expect(
+      screen.getByRole("link", { name: "他のシーズンを見る" }),
+    ).toHaveAttribute("href", "/c/premiership");
+    expect(screen.getByRole("link", { name: "トップへ戻る" })).toHaveAttribute(
+      "href",
+      "/",
+    );
   });
 
   it("does not infer not-held from a configured replacement", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([]);
     contentMocks.getContentStatusForMatches.mockResolvedValue({});
-    competitionMocks.getCompetitionBySlug.mockResolvedValue({ ...competition, seasonStatus: "unknown", replacementCompetition: { family: "nations-championship", name: "Nations Championship", nameJa: null, season: "2026", slug: "nations-championship-2026" } });
+    competitionMocks.getCompetitionBySlug.mockResolvedValue({
+      ...competition,
+      seasonStatus: "unknown",
+      replacementCompetition: {
+        family: "nations-championship",
+        name: "Nations Championship",
+        nameJa: null,
+        season: "2026",
+        slug: "nations-championship-2026",
+      },
+    });
 
-    render(await SeasonPage({ params: Promise.resolve({ competition: "premiership", season: "2025-26" }) }));
+    render(
+      await SeasonPage({
+        params: Promise.resolve({
+          competition: "premiership",
+          season: "2025-26",
+        }),
+      }),
+    );
     expect(screen.getByText("試合データを確認中です")).toBeInTheDocument();
     expect(screen.queryByText("この年度の大会は開催されません")).toBeNull();
   });
@@ -1013,7 +1145,7 @@ describe("season page information architecture", () => {
     expect(link).toHaveAttribute("href", "/matches/japan-match-1");
     expect(link).toHaveTextContent("Fiji 対 Japan");
     expect(link).toHaveTextContent("2026-02-28 (土) 18:00 JST");
-    expect(follows(link!, schedule!)).toBe(true);
+    expect(follows(schedule!, link!)).toBe(true);
     expect(follows(screen.getByTestId("season-match-groups"), standings!)).toBe(
       true,
     );
@@ -1072,10 +1204,12 @@ describe("season page information architecture", () => {
       "2026-02-01T00:00:00.000Z",
     );
     expect(screen.getByLabelText("シーズン要約")).toHaveClass("lg:grid-cols-3");
-    expect(screen.getByLabelText("シーズン要約")).not.toHaveClass("lg:grid-cols-4");
+    expect(screen.getByLabelText("シーズン要約")).not.toHaveClass(
+      "lg:grid-cols-4",
+    );
   });
 
-  it("places the Japan matches block between the summary, iOS CTA, and page navigation", async () => {
+  it("places Japan matches after navigation and before schedule, summary and iOS CTA", async () => {
     matchesMocks.listMatchesForCompetition.mockResolvedValue([
       match,
       japanMatch,
@@ -1099,9 +1233,12 @@ describe("season page information architecture", () => {
     });
 
     expect(japanBlock).not.toBeNull();
-    expect(follows(summary, japanBlock!)).toBe(true);
-    expect(follows(japanBlock!, iosCta)).toBe(true);
-    expect(follows(iosCta, pageNavigation)).toBe(true);
+    expect(follows(pageNavigation, japanBlock!)).toBe(true);
+    expect(follows(japanBlock!, container.querySelector("#schedule")!)).toBe(
+      true,
+    );
+    expect(follows(container.querySelector("#standings")!, summary)).toBe(true);
+    expect(follows(summary, iosCta)).toBe(true);
     expect(container.querySelectorAll("#japan-matches-heading")).toHaveLength(
       1,
     );

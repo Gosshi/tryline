@@ -77,6 +77,28 @@ describe("StandingsTable", () => {
     );
   });
 
+  it("fits the hub column with seven columns while keeping full tables unchanged", () => {
+    const { container, rerender } = render(
+      <StandingsTable
+        compact
+        standings={[{ ...standing, teamName: "グラスゴー・ウォリアーズ" }]}
+      />,
+    );
+    const table = container.querySelector("table")!;
+    expect(table).toHaveClass("table-fixed");
+    expect(table).not.toHaveClass("min-w-[34rem]");
+    expect(
+      [...table.querySelectorAll("th")].map((th) => th.textContent),
+    ).toEqual(["#", "チーム", "試", "勝", "分", "敗", "勝点"]);
+    expect(table.querySelectorAll("tbody td")).toHaveLength(7);
+    expect(table.querySelector("td:last-child")).toHaveTextContent("13");
+    expect(table.querySelector("th:nth-child(5)")).not.toHaveClass("hidden");
+    rerender(<StandingsTable standings={[standing]} />);
+    expect(container.querySelector("table")).toHaveClass("min-w-[34rem]");
+    expect(container.querySelectorAll("th")).toHaveLength(9);
+    expect(container.querySelector("tbody")).toHaveTextContent("82-54");
+  });
+
   it("uses three rank tint levels and leaves fifth place untinted", () => {
     const { container } = render(
       <StandingsTable

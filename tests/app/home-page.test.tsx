@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HomePage from "@/app/page";
@@ -356,7 +356,7 @@ describe("HomePage", () => {
       name: "最近のレビュー",
     });
     expect(recentReviewHeading.parentElement?.querySelector("div")).toHaveClass(
-      "xl:grid-cols-2",
+      "xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]",
     );
 
     expect(matchMocks.getRecentlyReviewedMatchById).toHaveBeenCalledWith(
@@ -385,8 +385,8 @@ describe("HomePage", () => {
     expect(
       container
         .querySelector('a[href="/matches/recent-review-not-sample"]')
-        ?.closest(".xl\\:col-span-2"),
-    ).toHaveClass("xl:col-span-2");
+        ?.closest('[data-review-size="minor"]'),
+    ).toHaveAttribute("data-review-size", "minor");
     expect(screen.queryByLabelText("今週の注目試合")).not.toBeInTheDocument();
     expect(
       screen.queryByText("home_hero_sample_recap"),
@@ -460,16 +460,14 @@ describe("HomePage", () => {
       }),
     ).toHaveAttribute("href", "/matches/japan-match");
     expect(
-      screen.queryByRole("heading", { name: "今週の試合" }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("heading", { name: "今週の試合" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "注目大会" }),
     ).toBeInTheDocument();
     expect(screen.getByText("プレビュー公開")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "ほか1試合 →" })).toHaveAttribute(
-      "href",
-      "/calendar",
-    );
+    expect(within(screen.getByLabelText("今週の注目試合")).getAllByRole("link")).toHaveLength(5);
+    expect(screen.getByLabelText("今週の注目試合").querySelector("ul")).toHaveClass("lg:grid-cols-2");
     expect(
       document.querySelector('a[href="/c/nations-championship/2026"]'),
     ).toHaveTextContent("大会ページを見る →");
@@ -559,7 +557,7 @@ describe("HomePage", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the next-match board and alternate hero copy when the current week is empty", async () => {
+  it("omits the ticker and weekly board but keeps alternate hero copy when the current week is empty", async () => {
     matchMocks.getNextUpcomingMatch.mockResolvedValue(
       createCalendarMatch({
         awayTeam: { name: "Ireland", shortCode: "IRE", slug: "ireland" },
@@ -583,20 +581,117 @@ describe("HomePage", () => {
         name: "次の海外ラグビーを、日本時間で待つ。",
       }),
     ).toBeInTheDocument();
-    const board = screen.getByLabelText("次の試合");
-
-    expect(within(board).getByText("次の試合まであと3日")).toBeInTheDocument();
-    expect(
-      within(board).getByRole("link", { name: "JapanJPN" }),
-    ).toHaveAttribute("href", "/teams/japan");
-    expect(
-      within(board).getByRole("link", { name: "IREIreland" }),
-    ).toHaveAttribute("href", "/teams/ireland");
-    expect(
-      within(board).getByRole("link", { name: "通知設定を開く" }),
-    ).toHaveAttribute("href", "/?notifications=open");
+    expect(screen.queryByLabelText("次の試合")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("今週の注目試合")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("試合と結果")).not.toBeInTheDocument();
+    expect(screen.getByText("次の試合まであと3日")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Japan" })).toHaveAttribute("href", "/teams/japan");
+    expect(screen.getByRole("link", { name: "Ireland" })).toHaveAttribute("href", "/teams/ireland");
+    expect(screen.getByRole("link", { name: "通知設定を開く" })).toHaveAttribute("href", "/?notifications=open");
     expect(matchMocks.getNextUpcomingMatch).toHaveBeenCalledTimes(1);
   });
+
+  it("reserves the introduction poster with goal-post artwork", async () => {
+    render(await HomePage());
+    const poster=screen.getByLabelText("紹介動画の静止ポスター");
+    expect(poster).toHaveClass("aspect-[4/3]");
+    expect(poster.querySelector("svg")).toHaveAttribute("aria-hidden","true");
+    expect(poster).toHaveTextContent("INTRODUCTION FILM");
+    expect(poster).toHaveTextContent("現在は静止ポスター");
+  });
+
+  it("uses weekly results in the ticker and excludes the duplicate group from accessibility and keyboard navigation", async () => {
+    matchMocks.getMatchesInRange.mockResolvedValue([
+      createCalendarMatch({ homeScore: 40, awayScore: 18, status: "finished" }),
+    ]);
+    render(await HomePage());
+    const ticker = screen.getByLabelText("試合と結果");
+    expect(within(ticker).getByRole("link")).toHaveTextContent(
+      "Home Team40–18Away Team",
+    );
+    const duplicate = ticker.querySelector('[aria-hidden="true"]')!;
+    expect(duplicate).toHaveAttribute("inert");
+    expect(duplicate.querySelector("a")).toHaveAttribute("tabindex", "-1");
+    expect(duplicate).toHaveTextContent("40–18");
+    expect(
+      ticker.querySelectorAll('a[href="/matches/calendar-match"]'),
+    ).toHaveLength(2);
+  });
+
+  it("hides ticker and lead review scores for a user with spoiler guard enabled", async () => {
+    authClientMocks.getClientUserState.mockResolvedValue({
+      favoriteTeamSlugs: [],
+      isPremium: false,
+      spoilerGuardEnabled: true,
+      user: { id: "user-id" },
+    });
+    matchMocks.getMatchesInRange.mockResolvedValue([
+      createCalendarMatch({ homeScore: 40, awayScore: 18, status: "finished" }),
+    ]);
+    await act(async () => {
+      render(await HomePage());
+    });
+    expect(screen.getByLabelText("試合と結果")).not.toHaveTextContent("40–18");
+    expect(screen.getByLabelText("サンプル試合のスコア")).not.toHaveTextContent(
+      "33–26",
+    );
+    expect(screen.getByLabelText("サンプル試合のスコア")).toHaveTextContent(
+      "タップして結果を見る",
+    );
+    fireEvent.click(
+      within(screen.getByLabelText("試合と結果")).getByRole("button", {
+        name: "タップして結果を見る",
+      }),
+    );
+    expect(screen.getByLabelText("試合と結果")).toHaveTextContent("40–18");
+    expect(screen.getByLabelText("サンプル試合のスコア")).not.toHaveTextContent(
+      "33–26",
+    );
+  });
+
+  it.each([0, 1, 3])(
+    "renders %s recent review groups with one lead and smaller remaining reviews",
+    async (count) => {
+      const groups = Array.from({ length: count }, (_, index) => ({
+        compact: [],
+        competition: {
+          family: "top-14",
+          name: "Top 14",
+          season: "2026-27",
+          slug: `top-14-${index}`,
+        },
+        hero: {
+          ...createCalendarMatch({
+            id: `review-${index}`,
+            homeScore: 40,
+            awayScore: 18,
+          }),
+          recapExcerpt: "公開済みのレビュー",
+        },
+        latestReviewAt: "2026-07-06T06:30:00.000Z",
+        poolName: null,
+        round: 1,
+        roundName: null,
+      }));
+      matchMocks.getRecentlyReviewedMatchById.mockResolvedValue(null);
+      matchMocks.getRecentlyReviewedCompetitionGroups.mockResolvedValue(groups);
+      const { container } = render(await HomePage());
+      expect(
+        container.querySelectorAll('[data-review-size="lead"]'),
+      ).toHaveLength(count ? 1 : 0);
+      expect(
+        container.querySelectorAll('[data-review-size="minor"]'),
+      ).toHaveLength(Math.max(0, count - 1));
+      expect(
+        screen.queryByRole("heading", { name: "最近のレビュー" }) !== null,
+      ).toBe(count > 0);
+      for (let index = 0; index < count; index++) {
+        expect(
+          container.querySelector(`a[href="/matches/review-${index}"]`),
+        ).toHaveTextContent("レビューを読む");
+      }
+    },
+  );
 
   it("renders multiple recent review competition blocks", async () => {
     matchMocks.getRecentlyReviewedCompetitionGroups.mockResolvedValue([
@@ -749,7 +844,7 @@ describe("HomePage", () => {
     }
 
     expect(statusPane?.parentElement).toHaveClass(
-      "lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]",
+      "space-y-5",
     );
     expect(
       within(statusPane).getByRole("heading", { name: "現在の順位" }),
@@ -815,8 +910,8 @@ describe("HomePage", () => {
     expect(
       container
         .querySelector('a[href="/matches/recent-review-not-sample"]')
-        ?.closest(".xl\\:col-span-2"),
-    ).toHaveClass("xl:col-span-2");
+        ?.closest('[data-review-size="minor"]'),
+    ).toHaveAttribute("data-review-size", "minor");
   });
 
   it("keeps the sample review layout stable without recent review groups", async () => {

@@ -503,19 +503,21 @@ export default async function MatchDetailPage({
                     </>
                   }
                   betweenLeadAndBody={
-                    <MatchEventsSection
-                      awayTeamId={match.awayTeamId}
-                      awayTeamName={match.awayTeam.name}
-                      awayTeamSlug={match.awayTeam.slug}
-                      events={events}
-                      finalAwayScore={match.awayScore}
-                      finalHomeScore={match.homeScore}
-                      homeTeamId={match.homeTeamId}
-                      homeTeamName={match.homeTeam.name}
-                      homeTeamSlug={match.homeTeam.slug}
-                      playerLinks={eventPlayerLinks}
-                      status={match.status}
-                    />
+                    events.length > 0 ? (
+                      <MatchEventsSection
+                        awayTeamId={match.awayTeamId}
+                        awayTeamName={match.awayTeam.name}
+                        awayTeamSlug={match.awayTeam.slug}
+                        events={events}
+                        finalAwayScore={match.awayScore}
+                        finalHomeScore={match.homeScore}
+                        homeTeamId={match.homeTeamId}
+                        homeTeamName={match.homeTeam.name}
+                        homeTeamSlug={match.homeTeam.slug}
+                        playerLinks={eventPlayerLinks}
+                        status={match.status}
+                      />
+                    ) : null
                   }
                   content={publishedContent.recap}
                   contentType="recap"
@@ -552,7 +554,7 @@ export default async function MatchDetailPage({
                   ) : null
                 }
                 betweenLeadAndBody={
-                  publishedContent.recap ? (
+                  publishedContent.recap && events.length > 0 ? (
                     <MatchEventsSection
                       awayTeamId={match.awayTeamId}
                       awayTeamName={match.awayTeam.name}

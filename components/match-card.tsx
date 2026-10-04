@@ -1,6 +1,11 @@
 import Link from "next/link";
 
-import { formatKickoffJst } from "@/lib/format/kickoff";
+import { HomepageSpoilerScore } from "@/components/home-user-state";
+import {
+  formatKickoffJstDate,
+  formatKickoffJstTime,
+  formatKickoffJst,
+} from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
 import { getTeamStripe } from "@/lib/format/team-identity";
 import { formatVenueDisplay } from "@/lib/format/venue-timezone";
@@ -16,9 +21,19 @@ type MatchCardProps = {
   contentStatus?: MatchContentStatus;
   href?: string;
   match: MatchListItem;
+  layout?: "card" | "row";
 };
 
-export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
+export function MatchCard({
+  contentStatus,
+  href,
+  match,
+  layout = "card",
+}: MatchCardProps) {
+  if (layout === "row")
+    return (
+      <MatchListRow contentStatus={contentStatus} href={href} match={match} />
+    );
   const outcome = getMatchOutcome(match);
   const homeWon = outcome === "home_win";
   const awayWon = outcome === "away_win";
@@ -190,6 +205,76 @@ export function MatchCard({ contentStatus, href, match }: MatchCardProps) {
           </div>
         )}
       </article>
+    </Link>
+  );
+}
+
+function MatchListRow({ contentStatus, href, match }: MatchCardProps) {
+  const showScore =
+    (match.status === "finished" || match.status === "in_progress") &&
+    match.homeScore !== null &&
+    match.awayScore !== null;
+  return (
+    <Link
+      data-match-layout="row"
+      className="group grid min-h-[72px] min-w-0 grid-cols-[76px_minmax(0,1fr)_64px] items-center gap-2 bg-card px-3 py-3 text-[var(--color-ink)] hover:bg-[var(--color-panel)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[104px_minmax(0,1fr)_80px] sm:gap-3"
+      href={href ?? `/matches/${match.id}`}
+    >
+      <time
+        className="text-[10px] tabular-nums leading-relaxed text-[var(--color-ink-muted)] sm:text-xs"
+        dateTime={match.kickoffAt}
+      >
+        <span className="block">
+          {formatKickoffJstDate(match.kickoffAt).slice(5)}
+        </span>
+        <span className="block">{formatKickoffJstTime(match.kickoffAt)}</span>
+      </time>
+      <span className="min-w-0">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold sm:text-sm">
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="h-[0.85em] w-1 shrink-0 border border-black/15"
+              style={{ background: getTeamStripe(match.homeTeam.slug) }}
+            />
+            <span className="break-words">{match.homeTeam.name}</span>
+          </span>
+          <span className="text-[10px] font-normal text-[var(--color-ink-muted)]">
+            対
+          </span>
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="h-[0.85em] w-1 shrink-0 border border-black/15"
+              style={{ background: getTeamStripe(match.awayTeam.slug) }}
+            />
+            <span className="break-words">{match.awayTeam.name}</span>
+          </span>
+        </span>
+        {contentStatus &&
+          (contentStatus.hasPreview || contentStatus.hasRecap) && (
+            <span className="mt-1 block text-[10px] text-[var(--color-brass)]">
+              {contentStatus.hasRecap ? "レビューあり" : "プレビューあり"}
+            </span>
+          )}
+      </span>
+      <span className="flex min-h-11 items-center justify-end text-right text-lg font-bold tabular-nums sm:text-xl">
+        {showScore ? (
+          <HomepageSpoilerScore className="min-h-11 max-w-full px-1 text-[10px]">
+            <span>
+              {match.homeScore}–{match.awayScore}
+            </span>
+          </HomepageSpoilerScore>
+        ) : (
+          <span className="text-[10px] font-medium text-[var(--color-ink-muted)]">
+            {match.status === "scheduled" ? (
+              "—"
+            ) : (
+              <StatusBadge status={match.status} />
+            )}
+          </span>
+        )}
+      </span>
     </Link>
   );
 }

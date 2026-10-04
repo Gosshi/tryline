@@ -135,6 +135,79 @@ describe("MatchHeader", () => {
     expect(hero?.getAttribute("style")).toContain("#002395");
   });
 
+  it("renders separate team faces and the ink score box for unknown teams", () => {
+    const { container } = render(
+      <MatchHeader
+        match={{
+          ...match,
+          homeTeam: { ...match.homeTeam, slug: "unknown-home" },
+          awayTeam: { ...match.awayTeam, slug: "unknown-away" },
+          homeScore: 24,
+          awayScore: 18,
+          status: "finished",
+        }}
+      />,
+    );
+    expect(container.querySelector("section")).toHaveStyle(
+      "--team-home: #94a3b8",
+    );
+    expect(container.querySelector("section")).toHaveStyle(
+      "--team-away: #94a3b8",
+    );
+    const panels = container.querySelector("section > [aria-hidden]")!;
+    expect(panels.children[0]).toHaveStyle("background-color: #94a3b8");
+    expect(panels.children[1]).toHaveStyle("background-color: #94a3b8");
+    expect(screen.getByText("24").closest("div")).toHaveClass(
+      "bg-[var(--color-ink-strong)]",
+    );
+  });
+
+  it.each([
+    ["australia", "#FFD700"],
+    ["france", "#002395"],
+    ["south-africa", "#007A4D"],
+    ["toulouse", "#E30613"],
+    ["unknown-team", "#94a3b8"],
+  ])(
+    "keeps %s team text above 4.5:1 on its actual team face",
+    (slug, background) => {
+      const { container } = render(
+        <MatchHeader
+          match={{ ...match, homeTeam: { ...match.homeTeam, slug } }}
+        />,
+      );
+      const team = container.querySelector(
+        `a[href="/teams/${slug}"]`,
+      )!.parentElement!;
+      const color = team.style.color;
+      expect(color).not.toBe("");
+      const luminance = (rgb: number[]) =>
+        rgb.reduce((sum, channel, index) => {
+          const s = channel / 255;
+          return (
+            sum +
+            (s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4) *
+              [0.2126, 0.7152, 0.0722][index]!
+          );
+        }, 0);
+      const bg = luminance(
+        background
+          .slice(1)
+          .match(/../g)!
+          .map((hex) => parseInt(hex, 16)),
+      );
+      const fg = luminance((color.match(/\d+/g) ?? []).map(Number));
+      expect(
+        (Math.max(bg, fg) + 0.05) / (Math.min(bg, fg) + 0.05),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        container.querySelector("section > [aria-hidden]")?.children,
+      ).toHaveLength(2);
+      if (slug === "australia") expect(color).toBe("rgb(23, 25, 31)");
+      expect(team).not.toHaveClass("opacity-95");
+    },
+  );
+
   it("renders SVG flags with the team short codes", () => {
     const { container } = render(<MatchHeader match={match} />);
     const header = within(container);

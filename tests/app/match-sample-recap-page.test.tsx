@@ -303,6 +303,7 @@ describe("match sample recap page", () => {
       screen.getByText("これは無料サンプルのレビューです。"),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("premium-recap-section")).toBeNull();
+    expect(screen.queryByRole("complementary", { name: "試合の要点" })).toBeNull();
     const previewDetails = screen
       .getByText("試合前のプレビューを表示")
       .closest("details");
