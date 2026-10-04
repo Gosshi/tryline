@@ -197,11 +197,11 @@
 .tl-enhanced .tl-ticker-window {
   overflow: hidden;
 }
-.tl-enhanced .tl-ticker-track {
-  animation: tl-ticker 36s linear infinite;
+.tl-enhanced .tl-ticker-measured .tl-ticker-track {
+  animation: tl-ticker var(--tl-ticker-duration) linear infinite;
   animation-play-state: paused;
 }
-.tl-enhanced .tl-ticker-lap.tl-duplicate {
+.tl-enhanced .tl-ticker-measured .tl-ticker-lap.tl-duplicate {
   display: flex;
 }
 .tl-loop-active[data-tl-loop="poster"],

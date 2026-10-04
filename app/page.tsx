@@ -59,6 +59,7 @@ import {
   getHomeReviewExcerpt,
   selectHomeBoardMatches,
   selectHomeReviews,
+  selectHomeTickerMatches,
 } from "@/lib/home-selection";
 import { getPrimarySampleMatchId } from "@/lib/sample-matches";
 import { SITE_URL } from "@/lib/site";
@@ -165,6 +166,7 @@ export default async function HomePage() {
   );
   const now = new Date();
   const nowIso = now.toISOString();
+  const tickerMatches = selectHomeTickerMatches(weeklyMatches, now);
   const homepageWeekMatches = weeklyMatches
     .filter((match) => match.kickoffAt > nowIso)
     .slice(0, 6);
@@ -414,7 +416,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {weeklyMatches.length > 0 && (
+        {tickerMatches.length > 0 && (
           <aside
             aria-label="試合と結果"
             data-tl-loop="ticker"
@@ -431,7 +433,7 @@ export default async function HomePage() {
                     inert={duplicate ? true : undefined}
                     key={String(duplicate)}
                   >
-                    {weeklyMatches.map((match) => (
+                    {tickerMatches.map((match) => (
                       <Link
                         className="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
                         href={`/matches/${match.id}`}

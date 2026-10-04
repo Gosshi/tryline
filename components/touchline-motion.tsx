@@ -119,6 +119,32 @@ export function TouchlineMotion({
     const active = new Map<Element, ReturnType<typeof setTimeout>>();
     const visibleLoops = new Set<Element>();
     const observed = new WeakSet<Element>();
+    const resizedLaps = new WeakSet<Element>();
+
+    function measureTickers() {
+      root
+        ?.querySelectorAll<HTMLElement>('[data-tl-loop="ticker"]')
+        .forEach((ticker) => {
+          const lap = ticker.querySelector<HTMLElement>(".tl-ticker-lap");
+          const width = reduced.matches
+            ? 0
+            : (lap?.getBoundingClientRect().width ?? 0);
+          if (width > 0) {
+            ticker.style.setProperty("--tl-ticker-duration", `${width / 40}s`);
+            ticker.classList.add("tl-ticker-measured");
+          } else {
+            ticker.style.removeProperty("--tl-ticker-duration");
+            ticker.classList.remove("tl-ticker-measured");
+          }
+          if (lap && resizeObserver && !resizedLaps.has(lap)) {
+            resizedLaps.add(lap);
+            resizeObserver.observe(lap);
+          }
+        });
+    }
+    const resizeObserver = window.ResizeObserver
+      ? new ResizeObserver(measureTickers)
+      : null;
 
     function finish(node: Element) {
       clearTimeout(active.get(node));
@@ -176,6 +202,7 @@ export function TouchlineMotion({
 
     function scan() {
       if (!root) return;
+      measureTickers();
       const headlines = Array.from(
         root.querySelectorAll<HTMLElement>('[data-tl-motion="headline"]'),
       );
@@ -245,6 +272,7 @@ export function TouchlineMotion({
     }
     function onPreferenceChange() {
       if (reduced.matches) for (const node of active.keys()) finish(node);
+      measureTickers();
       syncLoops();
     }
     root.classList.add("tl-enhanced");
@@ -258,11 +286,20 @@ export function TouchlineMotion({
     });
     root.addEventListener("animationend", onEnd);
     document.addEventListener("visibilitychange", syncLoops);
+    window.addEventListener("resize", measureTickers);
     reduced.addEventListener("change", onPreferenceChange);
     return () => {
       observer.disconnect();
       loopObserver.disconnect();
       mutations.disconnect();
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", measureTickers);
+      root
+        .querySelectorAll<HTMLElement>('[data-tl-loop="ticker"]')
+        .forEach((ticker) => {
+          ticker.style.removeProperty("--tl-ticker-duration");
+          ticker.classList.remove("tl-ticker-measured");
+        });
       root.removeEventListener("animationend", onEnd);
       document.removeEventListener("visibilitychange", syncLoops);
       reduced.removeEventListener("change", onPreferenceChange);

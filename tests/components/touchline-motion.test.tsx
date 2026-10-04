@@ -112,6 +112,74 @@ afterEach(() => {
 });
 
 describe("Touchline motion", () => {
+  it("sets a 100-second duration for a 4,000px lap and remeasures on resize", () => {
+    let width = 4000;
+    const rect = vi
+      .spyOn(Element.prototype, "getBoundingClientRect")
+      .mockImplementation(() => new DOMRect(0, 0, width, 50));
+    try {
+      const { container, unmount } = render(
+        <TouchlineMotion page="home">
+          <aside className="tl-ticker" data-tl-loop="ticker">
+            <div className="tl-ticker-track">
+              <div className="tl-ticker-lap">試合</div>
+            </div>
+          </aside>
+        </TouchlineMotion>,
+      );
+      const ticker = container.querySelector<HTMLElement>(".tl-ticker")!;
+      expect(ticker.style.getPropertyValue("--tl-ticker-duration")).toBe(
+        "100s",
+      );
+      expect(ticker).toHaveClass("tl-ticker-measured");
+      width = 2000;
+      fireEvent(window, new Event("resize"));
+      expect(ticker.style.getPropertyValue("--tl-ticker-duration")).toBe("50s");
+      act(() => {
+        reduced = true;
+        preferenceChanged?.();
+      });
+      expect(ticker).not.toHaveClass("tl-ticker-measured");
+      expect(ticker.style.getPropertyValue("--tl-ticker-duration")).toBe("");
+      act(() => {
+        reduced = false;
+        preferenceChanged?.();
+      });
+      expect(ticker.style.getPropertyValue("--tl-ticker-duration")).toBe("50s");
+      unmount();
+      expect(ticker.style.getPropertyValue("--tl-ticker-duration")).toBe("");
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  it("keeps the ticker unmeasured and static for zero width or reduced motion", () => {
+    const content = () => (
+      <TouchlineMotion page="home">
+        <aside className="tl-ticker" data-tl-loop="ticker">
+          <div className="tl-ticker-lap">試合</div>
+        </aside>
+      </TouchlineMotion>
+    );
+    const { container, unmount } = render(content());
+    expect(container.querySelector(".tl-ticker-measured")).toBeNull();
+    unmount();
+    reduced = true;
+    const rect = vi
+      .spyOn(Element.prototype, "getBoundingClientRect")
+      .mockReturnValue(new DOMRect(0, 0, 4000, 50));
+    try {
+      const rendered = render(content());
+      expect(
+        rendered.container.querySelector(".tl-ticker-measured"),
+      ).toBeNull();
+      expect(renderToStaticMarkup(content())).not.toContain(
+        "--tl-ticker-duration",
+      );
+    } finally {
+      rect.mockRestore();
+    }
+  });
   it.each([
     { tops: [0, 0, 100], delays: ["0ms", "0ms", "100ms"] },
     { tops: [0, 100, 200], delays: ["0ms", "80ms", "160ms"] },

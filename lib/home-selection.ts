@@ -8,6 +8,33 @@ import type {
 export type HomeBoardMatch = UpcomingMatch &
   Partial<Pick<CalendarMatch, "hasPreview" | "hasRecap">>;
 
+export function selectHomeTickerMatches(
+  matches: readonly CalendarMatch[],
+  now: Date,
+): CalendarMatch[] {
+  const unique = [
+    ...new Map(matches.map((match) => [match.id, match])).values(),
+  ];
+  const kickoff = (match: CalendarMatch) => new Date(match.kickoffAt).getTime();
+  const results = unique
+    .filter((match) => match.status === "finished")
+    .sort((left, right) => kickoff(right) - kickoff(left));
+  const upcoming = unique
+    .filter(
+      (match) => match.status === "scheduled" && kickoff(match) > now.getTime(),
+    )
+    .sort((left, right) => kickoff(left) - kickoff(right));
+  // Reserve four slots for each side of kickoff; fill shortages from the other.
+  const resultCount = Math.min(
+    results.length,
+    Math.max(4, 8 - upcoming.length),
+  );
+  return [
+    ...results.slice(0, resultCount),
+    ...upcoming.slice(0, 8 - resultCount),
+  ];
+}
+
 export function selectHomeBoardMatches({
   weekMatches,
   upcomingMatches,
