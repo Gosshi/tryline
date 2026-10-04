@@ -821,7 +821,7 @@ export default async function SeasonPage({ params }: Props) {
         type="application/ld+json"
       />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4 sm:gap-5 sm:px-6 sm:py-6 md:px-8">
-        <header className="relative overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-ink-strong)]">
+        <header className="tl-season-band relative overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-ink-strong)]">
           <div className="relative min-h-40 overflow-hidden sm:min-h-44">
             <Image
               alt={formatFamilyName(family)}
@@ -833,7 +833,7 @@ export default async function SeasonPage({ params }: Props) {
             />
             <div
               aria-hidden
-              className="absolute inset-0"
+              className="tl-band-art absolute inset-0"
               style={{
                 background:
                   "linear-gradient(100deg, rgb(23 25 31 / 0.92) 0%, rgb(23 25 31 / 0.78) 45%, rgb(23 25 31 / 0.45) 100%)",

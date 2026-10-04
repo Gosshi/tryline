@@ -7,9 +7,11 @@ import { getTeamColor } from "@/lib/format/team-identity";
 import type { ScorePoint } from "@/lib/format/match-timeline";
 
 type ScoreGraphProps = {
+  awayTeamName: string;
   awayTeamSlug: string;
   finalAwayScore: number;
   finalHomeScore: number;
+  homeTeamName: string;
   homeTeamSlug: string;
   timeline: ScorePoint[];
 };
@@ -19,9 +21,11 @@ const HEIGHT = 120;
 const PADDING = { bottom: 20, left: 28, right: 8, top: 8 };
 
 export function ScoreGraph({
+  awayTeamName,
   awayTeamSlug,
   finalAwayScore,
   finalHomeScore,
+  homeTeamName,
   homeTeamSlug,
   timeline,
 }: ScoreGraphProps) {
@@ -54,7 +58,7 @@ export function ScoreGraph({
     .join(" ");
 
   return (
-    <div className="relative w-full overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-panel)] px-2 pt-2">
+    <div className="tl-score-graph relative w-full overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-panel)] px-2 pt-2">
       <svg
         data-tl-motion="chart"
         aria-label="スコア推移グラフ"
@@ -66,7 +70,7 @@ export function ScoreGraph({
         {[0, Math.round(maxScore / 2), maxScore].map((score) => (
           <g key={score}>
             <line
-              stroke="#dfe2e8"
+              stroke="#d8d5ce"
               strokeWidth={0.5}
               x1={PADDING.left}
               x2={WIDTH - PADDING.right}
@@ -74,7 +78,7 @@ export function ScoreGraph({
               y2={toY(score)}
             />
             <text
-              fill="#767d8b"
+              fill="#606269"
               fontSize={11}
               textAnchor="end"
               x={PADDING.left - 4}
@@ -85,7 +89,7 @@ export function ScoreGraph({
           </g>
         ))}
         <line
-          stroke="#dfe2e8"
+          stroke="#d8d5ce"
           strokeDasharray="3,3"
           strokeWidth={0.5}
           x1={toX(80)}
@@ -97,16 +101,32 @@ export function ScoreGraph({
           <path
             d={homePath}
             fill="none"
+            stroke="#20232a"
+            strokeOpacity={0.65}
+            strokeWidth={5}
+            strokeLinejoin="round"
+          />
+          <path
+            d={awayPath}
+            fill="none"
+            stroke="#20232a"
+            strokeOpacity={0.65}
+            strokeWidth={5}
+            strokeLinejoin="round"
+          />
+          <path
+            d={homePath}
+            fill="none"
             stroke={homeColor}
             strokeLinejoin="round"
-            strokeWidth={2}
+            strokeWidth={3}
           />
           <path
             d={awayPath}
             fill="none"
             stroke={awayColor}
             strokeLinejoin="round"
-            strokeWidth={2}
+            strokeWidth={3}
           />
           {timeline
             .filter((point) => point.type !== "kickoff")
@@ -139,7 +159,7 @@ export function ScoreGraph({
         </g>
         {[0, 20, 40, 60, 80].map((minute) => (
           <text
-            fill="#767d8b"
+            fill="#606269"
             fontSize={11}
             key={minute}
             textAnchor="middle"
@@ -171,6 +191,21 @@ export function ScoreGraph({
           </g>
         )}
       </svg>
+      <div className="flex flex-wrap gap-x-5 gap-y-2 border-t border-[var(--color-rule)] py-3 text-xs text-[var(--color-ink-muted)]">
+        {[
+          { name: homeTeamName, color: homeColor },
+          { name: awayTeamName, color: awayColor },
+        ].map(({ name, color }) => (
+          <span className="inline-flex items-center gap-2" key={name}>
+            <i
+              aria-hidden="true"
+              className="h-[3px] w-5 border border-[var(--color-ink-muted)]"
+              style={{ backgroundColor: color }}
+            />
+            {name}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

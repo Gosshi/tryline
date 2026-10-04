@@ -183,7 +183,7 @@ export function HomeMatchdayBoard({
 
   return (
     <aside aria-label="これからの試合の一覧">
-      <ul className="grid border-t border-[var(--color-rule)] md:grid-cols-2">
+      <ul className="tl-home-schedule grid border-t border-[var(--color-rule)] md:grid-cols-2">
         {matches.map((match) => (
           <li className="min-w-0" key={match.id}>
             <MatchMiniRow

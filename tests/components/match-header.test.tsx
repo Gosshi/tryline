@@ -453,7 +453,7 @@ describe("MatchHeader", () => {
     expect(screen.queryByText(/Round 1/)).not.toBeInTheDocument();
   });
 
-  it("allows long team names to wrap on mobile", () => {
+  it("keeps the complete long team name wrapping at every viewport", () => {
     render(
       <MatchHeader
         match={{
@@ -468,12 +468,7 @@ describe("MatchHeader", () => {
 
     expect(
       screen.getByText("Northampton Saints RFC Extended Name"),
-    ).toHaveClass(
-      "max-w-[9rem]",
-      "whitespace-normal",
-      "break-words",
-      "sm:truncate",
-    );
+    ).toHaveClass("max-w-full", "whitespace-normal", "break-words");
   });
 
   it("links both team names to the new team pages", () => {

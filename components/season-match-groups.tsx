@@ -269,7 +269,7 @@ export function SeasonMatchGroups({
                             <span
                               aria-hidden="true"
                               data-round-number
-                              className="font-number text-5xl font-semibold tabular-nums leading-none text-[var(--color-brass)]"
+                              className="font-number text-[64px] font-semibold italic tabular-nums leading-none tracking-[-0.06em] text-[var(--color-brass)]"
                             >
                               {String(groupKey.round).padStart(2, "0")}
                             </span>
@@ -309,7 +309,7 @@ export function SeasonMatchGroups({
                         <span
                           aria-hidden="true"
                           data-round-number
-                          className="font-number text-5xl font-semibold tabular-nums leading-none text-[var(--color-brass)]"
+                          className="font-number text-[64px] font-semibold italic tabular-nums leading-none tracking-[-0.06em] text-[var(--color-brass)]"
                         >
                           {String(groupKey.round).padStart(2, "0")}
                         </span>

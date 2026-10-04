@@ -84,7 +84,7 @@ export function StandingsTable({
         <table
           className={
             compact
-              ? "w-full table-fixed text-xs"
+              ? "tl-standings-table w-full table-fixed text-xs"
               : "w-full min-w-[34rem] text-sm"
           }
         >
@@ -257,7 +257,13 @@ export function StandingsTable({
   }
 
   return (
-    <section className="overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card">
+    <section
+      className={
+        compact
+          ? "tl-standings-panel"
+          : "overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card"
+      }
+    >
       <div
         className={
           compact
