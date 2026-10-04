@@ -8,14 +8,13 @@ import {
 } from "@/lib/format/kickoff";
 import { getTeamStripe } from "@/lib/format/team-identity";
 
-import type { CalendarMatch } from "@/lib/db/queries/matches";
 import type { StandingPositionLookup } from "@/lib/db/queries/standings";
+import type { HomeBoardMatch } from "@/lib/home-selection";
 
 type HomeMatchdayBoardProps = {
   focusMatchId: string | null;
-  matches: CalendarMatch[];
+  matches: HomeBoardMatch[];
   standingPositions: StandingPositionLookup;
-  weekLabel: string;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1_000;
@@ -50,7 +49,7 @@ export function getNextMatchCountdownLabel(
   return `次の試合まであと${daysUntilKickoff}日`;
 }
 
-function getContentLabel(match: CalendarMatch): string {
+function getContentLabel(match: HomeBoardMatch): string {
   if (match.hasRecap) {
     return "レビュー公開";
   }
@@ -59,11 +58,13 @@ function getContentLabel(match: CalendarMatch): string {
     return "プレビュー公開";
   }
 
+  if (match.status === "finished") return "結果";
+
   return "試合前";
 }
 
 function getLevelMetric(
-  match: CalendarMatch,
+  match: HomeBoardMatch,
   standingPositions: StandingPositionLookup,
 ): string | null {
   const competitionId = match.competition.id;
@@ -95,7 +96,7 @@ function MatchMiniRow({
   focused = false,
   levelMetric,
 }: {
-  match: CalendarMatch;
+  match: HomeBoardMatch;
   focused?: boolean;
   levelMetric?: string | null;
 }) {
@@ -164,7 +165,6 @@ export function HomeMatchdayBoard({
   focusMatchId,
   matches,
   standingPositions,
-  weekLabel,
 }: HomeMatchdayBoardProps) {
   const focusMatch =
     matches.find((match) => match.id === focusMatchId) ?? matches[0] ?? null;
@@ -174,16 +174,11 @@ export function HomeMatchdayBoard({
   }
 
   const levelMetric = getLevelMetric(focusMatch, standingPositions);
-  const orderedMatches = [
-    focusMatch,
-    ...matches.filter((match) => match.id !== focusMatch.id),
-  ];
 
   return (
-    <aside aria-label="今週の注目試合">
-      <p className="sr-only">{weekLabel}</p>
-      <ul className="grid border-t border-[var(--color-rule)] lg:grid-cols-2">
-        {orderedMatches.map((match) => (
+    <aside aria-label="これからの試合の一覧">
+      <ul className="grid border-t border-[var(--color-rule)] md:grid-cols-2">
+        {matches.map((match) => (
           <li className="min-w-0" key={match.id}>
             <MatchMiniRow
               focused={match.id === focusMatch.id}

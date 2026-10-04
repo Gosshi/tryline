@@ -78,18 +78,17 @@ describe("HomeMatchdayBoard", () => {
         focusMatchId={null}
         matches={[nextMatch]}
         standingPositions={new Map()}
-        weekLabel="7月第3週"
       />,
     );
 
-    const board = screen.getByLabelText("今週の注目試合");
+    const board = screen.getByLabelText("これからの試合の一覧");
 
     expect(board).toHaveTextContent("ネーションズチャンピオンシップ 2026");
     expect(board).toHaveTextContent("07-20 (月)19:30 JST");
     expect(
       screen.getByRole("link", { name: /Japan.*Ireland/ }),
     ).toHaveAttribute("href", "/matches/next-match");
-    expect(board.querySelector("ul")).toHaveClass("lg:grid-cols-2");
+    expect(board.querySelector("ul")).toHaveClass("md:grid-cols-2");
     expect(board.querySelector("a")).toHaveAttribute(
       "data-match-layout",
       "row",
@@ -102,10 +101,26 @@ describe("HomeMatchdayBoard", () => {
         focusMatchId={null}
         matches={[]}
         standingPositions={new Map()}
-        weekLabel="7月第3週"
       />,
     );
 
     expect(container).toBeEmptyDOMElement();
+  });
+  it("highlights the focus fixture without moving it ahead of earlier fixtures", () => {
+    render(
+      <HomeMatchdayBoard
+        focusMatchId="focus-second"
+        matches={[nextMatch, { ...nextMatch, id: "focus-second" }]}
+        standingPositions={new Map()}
+      />,
+    );
+    const links = screen
+      .getByLabelText("これからの試合の一覧")
+      .querySelectorAll("a");
+    expect([...links].map((link) => link.getAttribute("href"))).toEqual([
+      "/matches/next-match",
+      "/matches/focus-second",
+    ]);
+    expect(links[1]).toHaveClass("border-l-4");
   });
 });
