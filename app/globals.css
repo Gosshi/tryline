@@ -4,24 +4,26 @@
 
 @layer base {
   :root {
-    --background: 220 13% 97%;
-    --foreground: 219 22% 15%;
-    --card: 0 0% 100%;
-    --card-foreground: 219 22% 15%;
+    --background: 42 33% 94%;
+    --foreground: 222 13.5% 14.5%;
+    --card: 42.9 100% 98.6%;
+    --card-foreground: 222 13.5% 14.5%;
     --primary: 357 57% 51%;
     --primary-foreground: 0 0% 100%;
-    --muted: 220 14% 95%;
-    --muted-foreground: 220 7% 42%;
-    --border: 220 16% 94%;
-    --input: 220 16% 94%;
+    --muted: 42 19.2% 89.8%;
+    --muted-foreground: 226.7 4.5% 39.4%;
+    --border: 42 11.4% 82.7%;
+    --input: 42 11.4% 82.7%;
     --ring: 357 57% 51%;
     --radius: 1rem;
 
     /* Tryline design tokens */
-    --color-panel: #f5f6f8;
-    --color-ink: #1f2530;
-    --color-ink-muted: #646a76;
-    --color-rule: #eceef2;
+    --color-panel: #eae7e0;
+    --color-ink: #20232a;
+    --color-ink-muted: #606269;
+    --color-rule: #d8d5ce;
+    --color-ink-strong: #17191f;
+    --color-brass: #956137;
     --color-accent: #c93a40;
     --color-accent-dim: color-mix(
       in srgb,
@@ -40,8 +42,8 @@
     --radius-sm: 1rem;
     --shadow: 0 20px 44px -24px rgb(28 38 64 / 40%);
     --shadow-soft: 0 12px 28px -20px rgb(28 38 64 / 45%);
-    --font-body: var(--font-zen-maru);
-    --font-heading: var(--font-zen-maru);
+    --font-body: var(--font-noto-sans-jp);
+    --font-heading: var(--font-shippori-mincho);
 
     /* spacing scale */
     --space-0-5: 2px;
@@ -75,15 +77,13 @@
   }
 
   body {
-    background-color: #f1efe9;
+    background-color: #f5f2eb;
     background-image:
-      radial-gradient(120% 60% at 20% 0%, rgb(201 58 58 / 5%), transparent 60%),
-      radial-gradient(120% 60% at 100% 40%, rgb(26 58 92 / 5%), transparent 55%),
-      linear-gradient(180deg, #f8f7f4 0%, #f1efe9 45%, #eceae3 100%),
+      linear-gradient(180deg, #f8f6f1 0%, #f5f2eb 45%, #efebe3 100%),
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.02 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     color: var(--color-ink);
     font-family: var(--font-body);
-    font-weight: 500;
+    font-weight: 400;
     overflow-x: clip;
     -webkit-font-smoothing: antialiased;
   }
@@ -91,8 +91,8 @@
   h1,
   h2,
   h3 {
-    font-family: var(--font-heading), sans-serif;
-    font-weight: 900;
+    font-family: var(--font-heading), serif;
+    font-weight: 800;
   }
 
   .tabular-nums {
@@ -114,11 +114,9 @@
 
 @layer utilities {
   .bg-paper {
-    background-color: #f1efe9;
+    background-color: #f5f2eb;
     background-image:
-      radial-gradient(120% 60% at 20% 0%, rgb(201 58 58 / 5%), transparent 60%),
-      radial-gradient(120% 60% at 100% 40%, rgb(26 58 92 / 5%), transparent 55%),
-      linear-gradient(180deg, #f8f7f4 0%, #f1efe9 45%, #eceae3 100%),
+      linear-gradient(180deg, #f8f6f1 0%, #f5f2eb 45%, #efebe3 100%),
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.02 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 }

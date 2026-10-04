@@ -1,5 +1,5 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
-import { Outfit, Zen_Maru_Gothic } from "next/font/google";
+import { Noto_Sans_JP, Outfit, Shippori_Mincho_B1 } from "next/font/google";
 
 import { ReturnVisitTracker } from "@/components/return-visit-tracker";
 import { SiteFooter } from "@/components/site-footer";
@@ -11,11 +11,17 @@ import type { Metadata, Viewport } from "next";
 
 import "./globals.css";
 
-const body = Zen_Maru_Gothic({
+const body = Noto_Sans_JP({
   display: "swap",
   subsets: ["latin"],
-  variable: "--font-zen-maru",
-  weight: ["500", "700", "900"],
+  variable: "--font-noto-sans-jp",
+});
+
+const heading = Shippori_Mincho_B1({
+  display: "swap",
+  subsets: ["latin"],
+  variable: "--font-shippori-mincho",
+  weight: ["700", "800"],
 });
 
 const numbers = Outfit({
@@ -70,7 +76,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className={`${body.variable} ${numbers.variable}`} lang="ja">
+    <html
+      className={`${body.variable} ${heading.variable} ${numbers.variable}`}
+      lang="ja"
+    >
       <body className="min-h-screen">
         <SiteHeader />
         <ReturnVisitTracker />

@@ -34,10 +34,10 @@ const config: Config = {
       },
       fontFamily: {
         body: ["var(--font-body)", "sans-serif"],
-        display: ["var(--font-heading)", "sans-serif"],
-        heading: ["var(--font-heading)", "sans-serif"],
+        display: ["var(--font-heading)", "serif"],
+        heading: ["var(--font-heading)", "serif"],
         number: ["var(--font-number)", "sans-serif"],
-        serif: ["var(--font-heading)", "sans-serif"],
+        serif: ["var(--font-heading)", "serif"],
       },
     },
   },
