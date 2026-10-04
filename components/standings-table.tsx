@@ -1,3 +1,4 @@
+import { MotionNumber } from "@/components/touchline-motion";
 import { getTeamStripe } from "@/lib/format/team-identity";
 
 import type { StandingRow } from "@/lib/db/queries/standings";
@@ -244,7 +245,7 @@ export function StandingsTable({
                     </>
                   )}
                   <td className="py-2 text-right font-bold tabular-nums text-[var(--color-ink)]">
-                    {row.totalPoints}
+                    <MotionNumber value={row.totalPoints} />
                   </td>
                 </tr>
               );

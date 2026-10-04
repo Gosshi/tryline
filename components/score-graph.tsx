@@ -56,6 +56,7 @@ export function ScoreGraph({
   return (
     <div className="relative w-full overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-panel)] px-2 pt-2">
       <svg
+        data-tl-motion="chart"
         aria-label="スコア推移グラフ"
         className="w-full"
         role="img"
@@ -92,48 +93,50 @@ export function ScoreGraph({
           y1={PADDING.top}
           y2={HEIGHT - PADDING.bottom}
         />
-        <path
-          d={homePath}
-          fill="none"
-          stroke={homeColor}
-          strokeLinejoin="round"
-          strokeWidth={2}
-        />
-        <path
-          d={awayPath}
-          fill="none"
-          stroke={awayColor}
-          strokeLinejoin="round"
-          strokeWidth={2}
-        />
-        {timeline
-          .filter((point) => point.type !== "kickoff")
-          .map((point, index) => {
-            const cx = toX(point.minute);
-            const cy = toY(
-              point.team === "home" ? point.homeScore : point.awayScore,
-            );
-            const color = point.team === "home" ? homeColor : awayColor;
+        <g data-tl-lines>
+          <path
+            d={homePath}
+            fill="none"
+            stroke={homeColor}
+            strokeLinejoin="round"
+            strokeWidth={2}
+          />
+          <path
+            d={awayPath}
+            fill="none"
+            stroke={awayColor}
+            strokeLinejoin="round"
+            strokeWidth={2}
+          />
+          {timeline
+            .filter((point) => point.type !== "kickoff")
+            .map((point, index) => {
+              const cx = toX(point.minute);
+              const cy = toY(
+                point.team === "home" ? point.homeScore : point.awayScore,
+              );
+              const color = point.team === "home" ? homeColor : awayColor;
 
-            return (
-              <circle
-                className="cursor-pointer"
-                cx={cx}
-                cy={cy}
-                fill={color}
-                key={`${point.minute}-${point.type}-${index}`}
-                onMouseEnter={() =>
-                  setTooltip({
-                    text: `${point.minute}' ${point.playerName ?? ""}（${point.type}）`,
-                    x: cx,
-                    y: cy,
-                  })
-                }
-                onMouseLeave={() => setTooltip(null)}
-                r={3}
-              />
-            );
-          })}
+              return (
+                <circle
+                  className="cursor-pointer"
+                  cx={cx}
+                  cy={cy}
+                  fill={color}
+                  key={`${point.minute}-${point.type}-${index}`}
+                  onMouseEnter={() =>
+                    setTooltip({
+                      text: `${point.minute}' ${point.playerName ?? ""}（${point.type}）`,
+                      x: cx,
+                      y: cy,
+                    })
+                  }
+                  onMouseLeave={() => setTooltip(null)}
+                  r={3}
+                />
+              );
+            })}
+        </g>
         {[0, 20, 40, 60, 80].map((minute) => (
           <text
             fill="#767d8b"

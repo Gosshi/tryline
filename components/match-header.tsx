@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { MotionNumber } from "@/components/touchline-motion";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
@@ -101,6 +102,8 @@ export function MatchHeader({
 
   return (
     <section
+      data-tl-motion="score"
+      data-tl-score
       className="relative isolate overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-ink-strong)] px-4 py-5 text-white shadow-[var(--shadow)] sm:px-7 sm:py-7"
       style={
         {
@@ -113,8 +116,8 @@ export function MatchHeader({
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 grid grid-cols-2"
       >
-        <span style={{ backgroundColor: homeColor }} />
-        <span style={{ backgroundColor: awayColor }} />
+        <span data-tl-team="home" style={{ backgroundColor: homeColor }} />
+        <span data-tl-team="away" style={{ backgroundColor: awayColor }} />
       </div>
       <h1 className="sr-only font-heading">
         {homeName} {matchupConnector} {awayName}
@@ -139,6 +142,7 @@ export function MatchHeader({
 
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:mt-8 sm:gap-5">
         <TeamBlock
+          background={homeColor}
           foreground={getTeamForegroundColor(homeColor)}
           dimmed={outcome === "away_win"}
           isWinner={outcome === "home_win"}
@@ -173,6 +177,7 @@ export function MatchHeader({
         </div>
 
         <TeamBlock
+          background={awayColor}
           foreground={getTeamForegroundColor(awayColor)}
           dimmed={outcome === "home_win"}
           isWinner={outcome === "away_win"}
@@ -288,7 +293,7 @@ function ScoreNumber({
 }) {
   return (
     <span className="relative">
-      {score}
+      <MotionNumber value={score} />
       {isWinner && (
         <span className="absolute -right-1 -top-3 rounded-md bg-white px-1.5 py-0.5 font-number text-[8px] font-bold leading-none text-[var(--color-accent)] sm:-right-2 sm:text-[9px]">
           WIN
@@ -299,6 +304,7 @@ function ScoreNumber({
 }
 
 function TeamBlock({
+  background,
   dimmed,
   foreground,
   isWinner,
@@ -306,6 +312,7 @@ function TeamBlock({
   slug,
   shortCode,
 }: {
+  background: string;
   dimmed: boolean;
   foreground: string;
   isWinner: boolean;
@@ -326,6 +333,7 @@ function TeamBlock({
         <TeamBadge shortCode={shortCode} size={36} slug={slug} />
       </div>
       <Link
+        style={{ backgroundColor: background }}
         className={cn(
           "mx-auto mt-2 block max-w-[9rem] whitespace-normal break-words text-xs leading-tight hover:underline sm:max-w-none sm:truncate sm:whitespace-nowrap sm:text-sm",
           dimmed ? "font-medium" : "font-bold",
@@ -335,7 +343,10 @@ function TeamBlock({
       >
         {name}
       </Link>
-      <span className="mt-0.5 block font-number text-[10px] font-bold">
+      <span
+        style={{ backgroundColor: background }}
+        className="mt-0.5 block font-number text-[10px] font-bold"
+      >
         {shortCode}
       </span>
     </div>
