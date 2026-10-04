@@ -4,6 +4,7 @@ import {
   getHomeReviewExcerpt,
   selectHomeBoardMatches,
   selectHomeReviews,
+  selectHomeTickerMatches,
 } from "@/lib/home-selection";
 
 import type {
@@ -51,6 +52,72 @@ const future = (index: number) =>
 const result = (index: number) =>
   match(`result-${index}`, `2026-10-0${index}T01:00:00.000Z`, "finished");
 const ids = (matches: { id: string }[]) => matches.map(({ id }) => id);
+
+describe("selectHomeTickerMatches", () => {
+  it("limits 20 inputs to eight, keeping recent results and next fixtures in order", () => {
+    const results = Array.from({ length: 10 }, (_, index) =>
+      match(
+        `result-${index}`,
+        new Date(now.getTime() - (index + 1) * 3600000).toISOString(),
+        "finished",
+      ),
+    );
+    const upcoming = Array.from({ length: 10 }, (_, index) =>
+      match(
+        `next-${index}`,
+        new Date(now.getTime() + (index + 1) * 3600000).toISOString(),
+      ),
+    );
+    const input = [...upcoming, ...results].reverse();
+    const original = [...input];
+    expect(ids(selectHomeTickerMatches(input, now))).toEqual([
+      "result-0",
+      "result-1",
+      "result-2",
+      "result-3",
+      "next-0",
+      "next-1",
+      "next-2",
+      "next-3",
+    ]);
+    expect(input).toEqual(original);
+  });
+
+  it.each(["finished", "scheduled"] as const)(
+    "fills all eight slots when only %s matches exist",
+    (status) => {
+      const input = Array.from({ length: 20 }, (_, index) =>
+        match(
+          String(index),
+          new Date(
+            now.getTime() +
+              (status === "finished" ? -1 : 1) * (index + 1) * 3600000,
+          ).toISOString(),
+          status,
+        ),
+      ).reverse();
+      expect(ids(selectHomeTickerMatches(input, now))).toEqual(
+        Array.from({ length: 8 }, (_, index) => String(index)),
+      );
+    },
+  );
+
+  it("deduplicates and excludes cancelled or already-started unfinished matches", () => {
+    const input = [
+      result(1),
+      result(1),
+      future(1),
+      future(1),
+      match("cancelled", future(1).kickoffAt, "cancelled"),
+      match("live", now.toISOString(), "in_progress"),
+    ];
+    expect(ids(selectHomeTickerMatches(input, now))).toEqual([
+      "result-1",
+      "future-1",
+    ]);
+    expect(selectHomeTickerMatches([], now)).toEqual([]);
+  });
+});
 
 describe("selectHomeBoardMatches", () => {
   it("takes the earliest four of six future weekly matches without changing the input", () => {

@@ -6,7 +6,7 @@ import {
   formatKickoffJstDate,
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
-import { getTeamStripe } from "@/lib/format/team-identity";
+import { getTeamColor, getTeamStripe } from "@/lib/format/team-identity";
 
 import type { StandingPositionLookup } from "@/lib/db/queries/standings";
 import type { HomeBoardMatch } from "@/lib/home-selection";
@@ -103,7 +103,13 @@ function MatchMiniRow({
   return (
     <Link
       data-match-layout="row"
-      className={`group grid min-h-[76px] min-w-0 grid-cols-[76px_minmax(0,1fr)_64px] items-center gap-2 border-b border-[var(--color-rule)] bg-card px-3 py-3 hover:bg-[var(--color-panel)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[104px_minmax(0,1fr)_80px] sm:gap-3 ${focused ? "border-l-4 border-l-[var(--color-accent)]" : ""}`}
+      style={
+        {
+          "--team-home": getTeamColor(match.homeTeam.slug),
+          "--team-away": getTeamColor(match.awayTeam.slug),
+        } as React.CSSProperties
+      }
+      className={`tl-hover group grid min-h-[76px] min-w-0 grid-cols-[76px_minmax(0,1fr)_64px] items-center gap-2 border-b border-[var(--color-rule)] bg-card px-3 py-3 hover:bg-[var(--color-panel)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[104px_minmax(0,1fr)_80px] sm:gap-3 ${focused ? "border-l-4 border-l-[var(--color-accent)]" : ""}`}
       href={`/matches/${match.id}`}
     >
       <time

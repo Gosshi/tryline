@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { FavoriteTeamFollowButton } from "@/components/favorite-team-follow-button";
 import { MatchHeader } from "@/components/match-header";
+import { MotionCountGate } from "@/components/touchline-motion";
 import { useUserState } from "@/components/user-state-provider";
 import {
   formatKickoffJstDate,
@@ -33,11 +34,13 @@ export function MatchDetailHeader({
   const userState = useUserState();
 
   return (
-    <MatchHeader
-      headToHeadHref={headToHeadHref}
-      match={match}
-      spoilerGuardEnabled={userState?.spoilerGuardEnabled ?? false}
-    />
+    <MotionCountGate disabled={!userState}>
+      <MatchHeader
+        headToHeadHref={headToHeadHref}
+        match={match}
+        spoilerGuardEnabled={userState?.spoilerGuardEnabled ?? false}
+      />
+    </MotionCountGate>
   );
 }
 

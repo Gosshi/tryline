@@ -247,7 +247,8 @@ describe("MatchCard", () => {
     const article = container.querySelector("article");
 
     expect(article).toHaveClass("bg-card");
-    expect(article).not.toHaveAttribute("style");
+    expect(article?.style.background).toBe("");
+    expect(article?.style.backgroundColor).toBe("");
   });
 
   it("uses the body font for the score column", () => {

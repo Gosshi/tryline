@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { MotionCountGate } from "@/components/touchline-motion";
 import { cn } from "@/lib/utils";
 
 import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
@@ -22,7 +23,7 @@ export function SpoilerScore({
   const [revealed, setRevealed] = useState(false);
 
   if (!enabled || revealed) {
-    return <>{children}</>;
+    return <MotionCountGate disabled={enabled}>{children}</MotionCountGate>;
   }
 
   function reveal(event: MouseEvent<HTMLSpanElement>) {
@@ -45,7 +46,7 @@ export function SpoilerScore({
     <span
       aria-label={label}
       className={cn(
-        "inline-flex cursor-pointer select-none items-center justify-center rounded-full border border-current/20 bg-current/5 px-3 py-1 text-center text-xs font-bold leading-tight",
+        "border-current/20 bg-current/5 inline-flex cursor-pointer select-none items-center justify-center rounded-full border px-3 py-1 text-center text-xs font-bold leading-tight",
         className,
       )}
       onClick={reveal}

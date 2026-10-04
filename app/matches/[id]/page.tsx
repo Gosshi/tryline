@@ -15,6 +15,7 @@ import { PremiumMatchChat } from "@/components/premium-match-chat";
 import { PremiumRecapSection } from "@/components/premium-recap-section";
 import { SampleRecapCta } from "@/components/sample-recap-cta";
 import { StandingsTable } from "@/components/standings-table";
+import { TouchlineMotion } from "@/components/touchline-motion";
 import { UserStateProvider } from "@/components/user-state-provider";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
 import { getMatchEventsForMatch } from "@/lib/db/queries/match-events";
@@ -377,7 +378,7 @@ export default async function MatchDetailPage({
         type="application/ld+json"
       />
       <UserStateProvider>
-      <main className="min-h-screen bg-paper">
+      <TouchlineMotion page="match" className="min-h-screen bg-paper">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 overflow-hidden px-3 py-6 sm:px-6 sm:py-8 md:px-8">
           <nav aria-label="パンくずリスト">
             <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
@@ -644,7 +645,7 @@ export default async function MatchDetailPage({
 
           <PremiumMatchChat isSample={isSample} matchId={id} />
         </div>
-      </main>
+      </TouchlineMotion>
       </UserStateProvider>
     </>
   );

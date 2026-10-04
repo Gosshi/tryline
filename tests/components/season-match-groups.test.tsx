@@ -16,6 +16,7 @@ import {
   getSeasonGroupDisplayOrder,
   shouldCollapseRoundGroups,
 } from "@/components/season-match-groups";
+import { TouchlineMotion } from "@/components/touchline-motion";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { GroupKey } from "@/lib/format/match-groups";
@@ -100,6 +101,38 @@ function buildPoolGroup(
 }
 
 describe("season match groups", () => {
+  it.each([
+    ["top-14", 42],
+    ["pnc", 5],
+    ["six-nations", 15],
+  ] as const)(
+    "preserves all server links in the motion boundary (%s, %i fixture matches)",
+    (family, count) => {
+      const groups = Array.from({ length: count }, (_, index) =>
+        buildGroup(index + 1, "2027-01-01T00:00:00.000Z"),
+      );
+      const schedule = (
+        <SeasonMatchGroups
+          contentStatusMap={{}}
+          family={family}
+          groupedMatches={groups}
+          initialNow="2026-10-04T00:00:00.000Z"
+        />
+      );
+      const links = (html: string) =>
+        [...html.matchAll(/href="(\/matches\/[^"]+)"/g)]
+          .map((match) => match[1])
+          .sort();
+      const before = links(renderToStaticMarkup(schedule));
+      const after = links(
+        renderToStaticMarkup(
+          <TouchlineMotion page="season">{schedule}</TouchlineMotion>,
+        ),
+      );
+      expect(before).toHaveLength(count);
+      expect(after).toEqual(before);
+    },
+  );
   it("does not create filters for competitions without pools", () => {
     const groupedMatches = Array.from({ length: 20 }, (_, index) =>
       buildGroup(index + 1, "2026-01-01T00:00:00.000Z"),

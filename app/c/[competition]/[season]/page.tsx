@@ -15,6 +15,7 @@ import { ScheduleCoverageNotice } from "@/components/schedule-coverage-notice";
 import { SeasonMatchGroups } from "@/components/season-match-groups";
 import { SeasonSwitcher } from "@/components/season-switcher";
 import { StandingsTable } from "@/components/standings-table";
+import { TouchlineMotion } from "@/components/touchline-motion";
 import { TrackedLink } from "@/components/tracked-link";
 import { getCompetitionHeroImage } from "@/lib/competition-hero-images";
 import {
@@ -806,7 +807,7 @@ export default async function SeasonPage({ params }: Props) {
   }
 
   return (
-    <main className="bg-paper min-h-screen">
+    <TouchlineMotion page="season" className="bg-paper min-h-screen">
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbJsonLd),
@@ -1144,6 +1145,6 @@ export default async function SeasonPage({ params }: Props) {
           />
         </div>
       </div>
-    </main>
+    </TouchlineMotion>
   );
 }

@@ -663,6 +663,36 @@ describe("HomePage", () => {
     ).toHaveLength(2);
   });
 
+  it("renders only eight weekly ticker matches even when twenty are returned", async () => {
+    const matches = Array.from({ length: 20 }, (_, index) =>
+      createCalendarMatch({
+        id: `ticker-${index}`,
+        status: index < 10 ? "finished" : "scheduled",
+        homeScore: index < 10 ? 40 : null,
+        awayScore: index < 10 ? 18 : null,
+        kickoffAt: new Date(Date.now() + (index - 9.5) * 3600000).toISOString(),
+      }),
+    );
+    matchMocks.getMatchesInRange.mockResolvedValue(matches);
+    render(await HomePage());
+    const ticker = screen.getByLabelText("試合と結果");
+    expect(
+      within(ticker)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual([
+      "/matches/ticker-9",
+      "/matches/ticker-8",
+      "/matches/ticker-7",
+      "/matches/ticker-6",
+      "/matches/ticker-10",
+      "/matches/ticker-11",
+      "/matches/ticker-12",
+      "/matches/ticker-13",
+    ]);
+    expect(ticker.querySelectorAll(".tl-duplicate a")).toHaveLength(8);
+  });
+
   it("hides ticker and lead review scores for a user with spoiler guard enabled", async () => {
     authClientMocks.getClientUserState.mockResolvedValue({
       favoriteTeamSlugs: [],

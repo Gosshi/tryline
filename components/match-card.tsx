@@ -7,7 +7,7 @@ import {
   formatKickoffJst,
 } from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
-import { getTeamStripe } from "@/lib/format/team-identity";
+import { getTeamColor, getTeamStripe } from "@/lib/format/team-identity";
 import { formatVenueDisplay } from "@/lib/format/venue-timezone";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +45,15 @@ export function MatchCard({
       className="block rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
       href={href ?? `/matches/${match.id}`}
     >
-      <article className="relative h-full overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card p-5 transition-transform duration-150 ease-out hover:-translate-y-0.5 hover:border-[var(--color-ink-muted)] active:scale-[0.98]">
+      <article
+        style={
+          {
+            "--team-home": getTeamColor(match.homeTeam.slug),
+            "--team-away": getTeamColor(match.awayTeam.slug),
+          } as React.CSSProperties
+        }
+        className="tl-hover relative h-full overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card p-5 transition-transform duration-150 ease-out hover:-translate-y-0.5 hover:border-[var(--color-ink-muted)] active:scale-[0.98]"
+      >
         <div className="mb-4 flex items-center justify-between gap-4">
           <time
             className="text-xs font-medium text-[var(--color-ink-muted)]"
@@ -217,7 +225,13 @@ function MatchListRow({ contentStatus, href, match }: MatchCardProps) {
   return (
     <Link
       data-match-layout="row"
-      className="group grid min-h-[72px] min-w-0 grid-cols-[76px_minmax(0,1fr)_64px] items-center gap-2 bg-card px-3 py-3 text-[var(--color-ink)] hover:bg-[var(--color-panel)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[104px_minmax(0,1fr)_80px] sm:gap-3"
+      style={
+        {
+          "--team-home": getTeamColor(match.homeTeam.slug),
+          "--team-away": getTeamColor(match.awayTeam.slug),
+        } as React.CSSProperties
+      }
+      className="tl-hover group grid min-h-[72px] min-w-0 grid-cols-[76px_minmax(0,1fr)_64px] items-center gap-2 bg-card px-3 py-3 text-[var(--color-ink)] hover:bg-[var(--color-panel)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[104px_minmax(0,1fr)_80px] sm:gap-3"
       href={href ?? `/matches/${match.id}`}
     >
       <time

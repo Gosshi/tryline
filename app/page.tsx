@@ -17,6 +17,10 @@ import {
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { SignupSuccessTracker } from "@/components/signup-success-tracker";
 import { StandingsTable } from "@/components/standings-table";
+import {
+  TouchlineMotion,
+  TouchlineTickerButton,
+} from "@/components/touchline-motion";
 import { TrackedLink } from "@/components/tracked-link";
 import { UserStateProvider } from "@/components/user-state-provider";
 import {
@@ -55,6 +59,7 @@ import {
   getHomeReviewExcerpt,
   selectHomeBoardMatches,
   selectHomeReviews,
+  selectHomeTickerMatches,
 } from "@/lib/home-selection";
 import { getPrimarySampleMatchId } from "@/lib/sample-matches";
 import { SITE_URL } from "@/lib/site";
@@ -161,6 +166,7 @@ export default async function HomePage() {
   );
   const now = new Date();
   const nowIso = now.toISOString();
+  const tickerMatches = selectHomeTickerMatches(weeklyMatches, now);
   const homepageWeekMatches = weeklyMatches
     .filter((match) => match.kickoffAt > nowIso)
     .slice(0, 6);
@@ -261,7 +267,7 @@ export default async function HomePage() {
   ];
 
   return (
-    <main className="bg-paper min-h-screen">
+    <TouchlineMotion page="home" className="bg-paper min-h-screen">
       <UserStateProvider>
         <script
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -273,7 +279,11 @@ export default async function HomePage() {
         </Suspense>
         <section className="relative min-h-[480px] overflow-hidden bg-[var(--color-ink-strong)] py-14 sm:min-h-[560px] sm:py-20">
           <HeroTexture />
-          <div aria-hidden className="absolute inset-0 z-0">
+          <div
+            aria-hidden
+            data-tl-loop="poster"
+            className="absolute inset-0 z-0"
+          >
             <Image
               alt=""
               className="object-cover object-center"
@@ -292,11 +302,13 @@ export default async function HomePage() {
                   Rugby Analysis in Japanese
                 </p>
                 <h1 className="max-w-5xl text-balance font-serif text-[clamp(2.5rem,6.5vw,6rem)] font-extrabold leading-[1.25] tracking-tight text-white">
-                  <span className="inline-block">
+                  <span data-tl-motion="headline" className="inline-block">
                     {homepageWeekMatches.length > 0 ? "今週の海外" : "次の海外"}
                   </span>
-                  <span className="inline-block">ラグビーを、</span>
-                  <span className="inline-block">
+                  <span data-tl-motion="headline" className="inline-block">
+                    ラグビーを、
+                  </span>
+                  <span data-tl-motion="headline" className="inline-block">
                     {homepageWeekMatches.length > 0
                       ? "日本時間で追う。"
                       : "日本時間で待つ。"}
@@ -404,53 +416,62 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {weeklyMatches.length > 0 && (
+        {tickerMatches.length > 0 && (
           <aside
             aria-label="試合と結果"
-            className="overflow-x-auto border-b border-[var(--color-rule)] bg-[var(--color-ink-strong)] text-white"
+            data-tl-loop="ticker"
+            className="tl-ticker border-b border-[var(--color-rule)] bg-[var(--color-ink-strong)] text-white"
           >
-            <div className="mx-auto max-w-[1536px] px-4 sm:px-6 md:px-8">
-              {[false, true].map((duplicate) => (
-                <div
-                  aria-hidden={duplicate ? true : undefined}
-                  className={duplicate ? "hidden" : "flex w-max gap-8 py-3"}
-                  inert={duplicate ? true : undefined}
-                  key={String(duplicate)}
-                >
-                  {weeklyMatches.map((match) => (
-                    <Link
-                      className="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
-                      href={`/matches/${match.id}`}
-                      key={match.id}
-                      tabIndex={duplicate ? -1 : undefined}
-                    >
-                      <span className="text-xs text-white/75">
-                        {formatFamilyName(match.competition.family)} ·{" "}
-                        {formatKickoffJstDate(match.kickoffAt)}
-                      </span>
-                      <span className="font-semibold">
-                        {match.homeTeam.name}
-                      </span>
-                      {match.homeScore !== null && match.awayScore !== null ? (
-                        <HomepageSpoilerScore className="min-h-11 text-white">
-                          <span className="font-bold tabular-nums">
-                            {match.homeScore}–{match.awayScore}
-                          </span>
-                        </HomepageSpoilerScore>
-                      ) : (
-                        <span className="text-white/75">対</span>
-                      )}
-                      <span className="font-semibold">
-                        {match.awayTeam.name}
-                      </span>
-                      <span className="text-xs tabular-nums text-white/75">
-                        {formatKickoffJstTime(match.kickoffAt)}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              ))}
+            <div className="tl-ticker-window">
+              <div className="tl-ticker-track">
+                {[false, true].map((duplicate) => (
+                  <div
+                    aria-hidden={duplicate ? true : undefined}
+                    className={
+                      duplicate ? "tl-ticker-lap tl-duplicate" : "tl-ticker-lap"
+                    }
+                    inert={duplicate ? true : undefined}
+                    key={String(duplicate)}
+                  >
+                    {tickerMatches.map((match) => (
+                      <Link
+                        className="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                        href={`/matches/${match.id}`}
+                        key={match.id}
+                        tabIndex={duplicate ? -1 : undefined}
+                      >
+                        <span className="text-xs text-white/75">
+                          {formatFamilyName(match.competition.family)} ·{" "}
+                          {formatKickoffJstDate(match.kickoffAt)}
+                        </span>
+                        <span className="font-semibold">
+                          {match.homeTeam.name}
+                        </span>
+                        <span className="inline-flex w-16 shrink-0 items-center justify-center">
+                          {match.homeScore !== null &&
+                          match.awayScore !== null ? (
+                            <HomepageSpoilerScore className="min-h-11 max-w-full whitespace-normal px-1 text-[10px] text-white">
+                              <span className="font-bold tabular-nums">
+                                {match.homeScore}–{match.awayScore}
+                              </span>
+                            </HomepageSpoilerScore>
+                          ) : (
+                            <span className="text-white/75">対</span>
+                          )}
+                        </span>
+                        <span className="font-semibold">
+                          {match.awayTeam.name}
+                        </span>
+                        <span className="text-xs tabular-nums text-white/75">
+                          {formatKickoffJstTime(match.kickoffAt)}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
+            <TouchlineTickerButton />
           </aside>
         )}
 
@@ -523,8 +544,14 @@ export default async function HomePage() {
                 className={`grid grid-cols-1 items-start gap-5 ${minorReviews.length > 0 || shouldShowRecentReviewStatusPane ? "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" : ""}`}
               >
                 <article
-                  className="min-w-0 overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card"
+                  className="tl-hover min-w-0 overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card"
                   data-review-size="lead"
+                  style={
+                    {
+                      "--team-home": getTeamColor(leadReview.homeTeam.slug),
+                      "--team-away": getTeamColor(leadReview.awayTeam.slug),
+                    } as React.CSSProperties
+                  }
                   key={leadReview.id}
                 >
                   <Link
@@ -568,8 +595,14 @@ export default async function HomePage() {
                   <div className="min-w-0 space-y-4">
                     {minorReviews.map((match) => (
                       <article
-                        className="overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card"
+                        className="tl-hover overflow-hidden rounded-sm border border-[var(--color-rule)] bg-card"
                         data-review-size="minor"
+                        style={
+                          {
+                            "--team-home": getTeamColor(match.homeTeam.slug),
+                            "--team-away": getTeamColor(match.awayTeam.slug),
+                          } as React.CSSProperties
+                        }
                         key={match.id}
                       >
                         <Link
@@ -745,6 +778,6 @@ export default async function HomePage() {
           </section>
         </div>
       </UserStateProvider>
-    </main>
+    </TouchlineMotion>
   );
 }

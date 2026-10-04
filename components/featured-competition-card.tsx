@@ -28,7 +28,7 @@ export function FeaturedCompetitionCard({
   const imageSrc = getCompetitionHeroImage(family);
 
   return (
-    <aside className="grid overflow-hidden rounded-sm bg-[var(--color-ink-strong)] text-white ring-1 ring-white/10 md:min-h-[236px] md:grid-cols-[minmax(260px,0.82fr)_minmax(0,1.18fr)]">
+    <aside className="tl-hover grid overflow-hidden rounded-sm bg-[var(--color-ink-strong)] text-white ring-1 ring-white/10 md:min-h-[236px] md:grid-cols-[minmax(260px,0.82fr)_minmax(0,1.18fr)]">
       <div className="relative min-h-44 overflow-hidden md:min-h-full">
         <Image
           alt=""
