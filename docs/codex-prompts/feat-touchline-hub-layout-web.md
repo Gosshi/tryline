@@ -1,5 +1,7 @@
 # Codex 指示書: デザイン刷新 第2弾（Web）— 大会シーズンページで日程と順位を 1 画面目に出す
 
+> **2026-10-04 追記**: この指示書は使わない。`docs/codex-prompts/feat-touchline-redesign-web.md` に統合した。
+
 仕様書: `specs/feat-touchline-hub-layout-web.md`
 決定: `docs/decisions.md` の D037
 基準ビジュアル: `docs/notes/gpt-web-redesign-2026-10-03/mock-a4.html` の「Web 大会」タブ
