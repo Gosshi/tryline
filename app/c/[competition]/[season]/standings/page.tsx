@@ -124,61 +124,93 @@ export default async function CompetitionStandingsPage({ params }: Props) {
   };
 
   return (
-    <main className="bg-paper min-h-screen">
+    <main className="tl-scope tl-standings-page bg-paper min-h-screen">
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbJsonLd),
         }}
         type="application/ld+json"
       />
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <nav className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-ink-muted)]">
-          <Link className="hover:text-[var(--color-ink)]" href="/">
-            Tryline
-          </Link>
-          <span>/</span>
-          <Link
-            className="hover:text-[var(--color-ink)]"
-            href={`/c/${competition}`}
+      <header className="tl-standings-band tl-season-band relative overflow-hidden">
+        <span
+          className="tl-band-art pointer-events-none absolute inset-0"
+          aria-hidden="true"
+        />
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 md:px-8">
+          <nav className="flex flex-wrap items-center gap-2 text-xs text-[#dedbd4]">
+            <Link className="hover:text-white" href="/">
+              Tryline
+            </Link>
+            <span>/</span>
+            <Link className="hover:text-white" href={`/c/${competition}`}>
+              {formatFamilyName(comp.family)}
+            </Link>
+            <span>/</span>
+            <Link
+              className="hover:text-white"
+              href={`/c/${competition}/${season}`}
+            >
+              {comp.season}
+            </Link>
+            <span>/</span>
+            <span className="text-white">順位表</span>
+          </nav>
+          <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ddba87]">
+                {formatFamilyName(comp.family)}
+              </p>
+              <h1 className="mt-2 font-heading text-[28px] font-extrabold leading-snug tracking-tight text-white sm:text-[40px]">
+                {competitionTitle} 順位表
+              </h1>
+            </div>
+            {updatedAt && (
+              <p className="tl-standings-updated text-xs leading-6 text-[#dedbd4]">
+                最終更新: {formatUpdatedAt(updatedAt)}
+              </p>
+            )}
+          </div>
+        </div>
+      </header>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-10 sm:px-6 md:px-8">
+        <nav
+          aria-label="大会ページへの導線"
+          className="tl-standings-nav flex flex-wrap gap-x-6"
+        >
+          <span
+            aria-current="page"
+            className="inline-flex min-h-11 items-center border-b-2 border-[var(--color-ink)] py-2 text-sm font-bold text-[var(--color-ink)]"
           >
-            {formatFamilyName(comp.family)}
-          </Link>
-          <span>/</span>
+            順位表
+          </span>
           <Link
-            className="hover:text-[var(--color-ink)]"
+            className="inline-flex min-h-11 items-center border-b-2 border-transparent py-2 text-sm font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             href={`/c/${competition}/${season}`}
           >
-            {comp.season}
+            大会ハブへ戻る
           </Link>
-          <span>/</span>
-          <span className="text-[var(--color-ink)]">順位表</span>
+          <Link
+            className="inline-flex min-h-11 items-center border-b-2 border-transparent py-2 text-sm font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            href={`/c/${competition}/${season}#schedule`}
+          >
+            日程・結果を見る
+          </Link>
+          <TrackedLink
+            analytics={{
+              cta_id: "standings_calendar",
+              cta_location: "standings_page",
+              destination: "calendar",
+              label: "今週の全試合を見る",
+            }}
+            className="inline-flex min-h-11 items-center border-b-2 border-transparent py-2 text-sm font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            href="/calendar"
+          >
+            今週の全試合を見る →
+          </TrackedLink>
         </nav>
-
-        <header
-          className="flex flex-col gap-2 border-b-2 pb-4 sm:flex-row sm:items-end sm:justify-between"
-          style={{ borderColor: accentColor }}
-        >
-          <div>
-            <p
-              className="text-xs font-semibold uppercase tracking-[0.18em]"
-              style={{ color: accentColor }}
-            >
-              {formatFamilyName(comp.family)}
-            </p>
-            <h1 className="mt-1 font-heading text-xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-2xl">
-              {competitionTitle} 順位表
-            </h1>
-          </div>
-          {updatedAt && (
-            <p className="text-xs text-[var(--color-ink-muted)] sm:text-right">
-              最終更新: {formatUpdatedAt(updatedAt)}
-            </p>
-          )}
-        </header>
-
         <section
           aria-label={`${competitionTitle}の順位表`}
-          className="space-y-4"
+          className="tl-standings-sheet space-y-6"
         >
           {poolStandings.length > 0 ? (
             poolStandings.map((pool) => (
@@ -193,36 +225,6 @@ export default async function CompetitionStandingsPage({ params }: Props) {
             <StandingsTable accentColor={accentColor} standings={standings} />
           )}
         </section>
-
-        <nav
-          aria-label="大会ページへの導線"
-          className="flex flex-wrap gap-3 border-t border-slate-200 pt-6"
-        >
-          <Link
-            className="inline-flex rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            href={`/c/${competition}/${season}`}
-          >
-            大会ハブへ戻る
-          </Link>
-          <Link
-            className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-slate-300 hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            href={`/c/${competition}/${season}#schedule`}
-          >
-            日程・結果を見る
-          </Link>
-          <TrackedLink
-            analytics={{
-              cta_id: "standings_calendar",
-              cta_location: "standings_page",
-              destination: "calendar",
-              label: "今週の全試合を見る",
-            }}
-            className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[var(--color-ink-muted)] transition-colors hover:border-slate-300 hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            href="/calendar"
-          >
-            今週の全試合を見る →
-          </TrackedLink>
-        </nav>
       </div>
     </main>
   );
