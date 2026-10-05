@@ -129,10 +129,10 @@ export default async function CalendarPage({
   const user = await getUser();
   const [matches, spoilerGuardEnabled, incompleteCompetitions] =
     await Promise.all([
-    getMatchesInRange(range.startUtcIso, range.endUtcIso),
-    getSpoilerGuardEnabledForUser(user?.id),
-    listCompetitionScheduleCoverage(),
-  ]);
+      getMatchesInRange(range.startUtcIso, range.endUtcIso),
+      getSpoilerGuardEnabledForUser(user?.id),
+      listCompetitionScheduleCoverage(),
+    ]);
   const competitionIds = matches
     .map((match) => match.competition.id)
     .filter((id): id is string => Boolean(id));
@@ -155,82 +155,95 @@ export default async function CalendarPage({
   const incompleteCompetitionsOutsideSelectedWeek =
     incompleteCompetitions.filter(
       (competition) =>
-        !matches.some(
-          (match) => match.competition.slug === competition.slug,
-        ),
+        !matches.some((match) => match.competition.slug === competition.slug),
     );
 
   return (
-    <main className="bg-paper min-h-screen">
-      <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:px-8">
-          <nav className="mb-4 text-xs text-[var(--color-ink-muted)]">
-            <Link className="hover:text-[var(--color-ink)]" href="/">
-              ホーム
-            </Link>
-            <span className="mx-2">/</span>
-            <span>今週の試合</span>
-          </nav>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-            Weekly Match Calendar
-          </p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-4xl">
-            今週の試合カレンダー
-          </h1>
-          <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
-            {formatJstWeekRangeLabel(range.weekStartJst)}
-          </p>
-          <div className="mt-5 flex flex-wrap gap-2" aria-label="週を移動">
-            <Link
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-              href={getCalendarHref(previousWeek)}
-            >
-              前週
-            </Link>
-            <Link
-              className="rounded-full bg-[var(--color-ink)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-accent)]"
-              href="/calendar"
-            >
-              今週
-            </Link>
-            <Link
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-              href={getCalendarHref(nextWeek)}
-            >
-              翌週
-            </Link>
-          </div>
-          {competitionsInWeek.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-                大会別に見る
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {competitionsInWeek.map((competition) => (
-                  <TrackedLink
-                    analytics={{
-                      cta_id: "calendar_competition_list",
-                      cta_location: "calendar_header",
-                      destination: "competition_hub",
-                      label: formatCompetitionTitle(
-                        competition,
-                        competition.season,
-                      ),
-                    }}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-                    href={`/c/${competition.family}/${competition.season}`}
-                    key={`${competition.family}:${competition.season}`}
+    <main className="tl-scope tl-calendar bg-paper min-h-screen">
+      <section className="tl-calendar-header">
+        <div className="tl-calendar-band tl-season-band relative overflow-hidden">
+          <span
+            className="tl-band-art pointer-events-none absolute inset-0"
+            aria-hidden="true"
+          />
+          <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 md:px-8">
+            <nav className="mb-4 text-xs text-[var(--color-ink-muted)]">
+              <Link className="hover:text-[var(--color-ink)]" href="/">
+                ホーム
+              </Link>
+              <span className="mx-2">/</span>
+              <span>今週の試合</span>
+            </nav>
+            <div className="tl-calendar-heading">
+              <div className="tl-calendar-title">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                  Weekly Match Calendar
+                </p>
+                <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-4xl">
+                  今週の試合カレンダー
+                </h1>
+              </div>
+              <div className="tl-calendar-week">
+                <p className="mt-2 font-number text-lg font-semibold text-[var(--color-ink)]">
+                  {formatJstWeekRangeLabel(range.weekStartJst)}
+                </p>
+                <div
+                  className="mt-3 flex flex-wrap gap-2"
+                  aria-label="週を移動"
+                >
+                  <Link
+                    className="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                    href={getCalendarHref(previousWeek)}
                   >
-                    {formatCompetitionTitle(competition, competition.season)}
-                  </TrackedLink>
-                ))}
+                    前週
+                  </Link>
+                  <Link
+                    className="tl-calendar-current inline-flex min-h-11 items-center rounded-full bg-[var(--color-ink)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-accent)]"
+                    href="/calendar"
+                  >
+                    今週
+                  </Link>
+                  <Link
+                    className="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                    href={getCalendarHref(nextWeek)}
+                  >
+                    翌週
+                  </Link>
+                </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
+        {competitionsInWeek.length > 0 && (
+          <div className="tl-calendar-competitions mx-auto max-w-6xl px-4 py-3 sm:px-6 md:px-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              大会別に見る
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {competitionsInWeek.map((competition) => (
+                <TrackedLink
+                  analytics={{
+                    cta_id: "calendar_competition_list",
+                    cta_location: "calendar_header",
+                    destination: "competition_hub",
+                    label: formatCompetitionTitle(
+                      competition,
+                      competition.season,
+                    ),
+                  }}
+                  className="inline-flex min-h-11 items-center border-b-2 border-transparent px-3 py-1.5 text-xs font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  href={`/c/${competition.family}/${competition.season}`}
+                  key={`${competition.family}:${competition.season}`}
+                >
+                  {formatCompetitionTitle(competition, competition.season)}
+                </TrackedLink>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-8">
+      <section className="tl-calendar-schedule mx-auto max-w-6xl px-4 py-6 sm:px-6 md:px-8">
         <ScheduleCoverageNotice
           competitions={incompleteCompetitionsOutsideSelectedWeek}
         />
@@ -242,25 +255,25 @@ export default async function CalendarPage({
         />
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-10 sm:px-6 md:px-8">
+      <section className="tl-calendar-follow mx-auto max-w-6xl px-4 pb-10 sm:px-6 md:px-8">
         <p className="max-w-2xl text-sm leading-6 text-[var(--color-ink-muted)]">
           月曜 00:00 JST から翌月曜 00:00 JST
           までの試合を、全大会横断で曜日ごとにまとめています。レビュー・プレビューが公開済みの試合にはバッジが付きます。
         </p>
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4">
+          <div className="tl-calendar-subscribe border-l-4 border-[var(--color-accent)] bg-slate-50 px-4 py-4">
             <p className="text-sm font-bold text-[var(--color-ink)]">
               カレンダー購読
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
-                className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
+                className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]"
                 href={getWebcalUrl(allCalendarFeedUrl)}
               >
                 全大会を購読
               </Link>
               <Link
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                className="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
                 href={allCalendarFeedUrl}
               >
                 iCal URL

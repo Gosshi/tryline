@@ -13,9 +13,11 @@ import {
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
 import { getStatusPresentation } from "@/lib/format/status";
+import { getTeamColor } from "@/lib/format/team-identity";
 import { formatVenueDisplay } from "@/lib/format/venue-timezone";
 
 import type { CalendarMatch } from "@/lib/db/queries/matches";
+import type { CSSProperties } from "react";
 
 type WeekScheduleProps = {
   emptyMessage?: string;
@@ -140,7 +142,7 @@ function getContentBadge(match: CalendarMatch) {
       }
     : match.hasPreview
       ? {
-          className: "bg-slate-100 text-slate-600",
+          className: "bg-[var(--color-panel)] text-[var(--color-ink-muted)]",
           label: "プレビュー",
           shortLabel: "P",
         }
@@ -164,7 +166,16 @@ function MobileMatchRow({
     : "group rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 hover:bg-slate-50";
 
   return (
-    <div className={rowClassName}>
+    <div
+      className={`tl-calendar-mobile-match tl-hover ${rowClassName}`}
+      data-calendar-highlighted={isHighlighted}
+      style={
+        {
+          "--team-home": getTeamColor(match.homeTeam.slug),
+          "--team-away": getTeamColor(match.awayTeam.slug),
+        } as CSSProperties
+      }
+    >
       <TrackedLink
         analytics={{
           cta_id: "calendar_match_competition",
@@ -196,7 +207,7 @@ function MobileMatchRow({
                   size={20}
                   slug={match.homeTeam.slug}
                 />
-                <span className="truncate">{match.homeTeam.name}</span>
+                <span className="break-words">{match.homeTeam.name}</span>
               </span>
               <span className="shrink-0 text-xs font-normal uppercase text-slate-400">
                 対
@@ -207,7 +218,7 @@ function MobileMatchRow({
                   size={20}
                   slug={match.awayTeam.slug}
                 />
-                <span className="truncate">{match.awayTeam.name}</span>
+                <span className="break-words">{match.awayTeam.name}</span>
               </span>
             </div>
             {match.venue && (
@@ -238,7 +249,10 @@ function MobileMatchRow({
             )}
             <span className="min-w-[72px] text-right text-sm font-bold tabular-nums text-[var(--color-ink)]">
               {match.status === "finished" ? (
-                <SpoilerScore enabled={spoilerGuardEnabled}>
+                <SpoilerScore
+                  className="min-h-11"
+                  enabled={spoilerGuardEnabled}
+                >
                   {stateLabel}
                 </SpoilerScore>
               ) : (
@@ -250,7 +264,7 @@ function MobileMatchRow({
       </Link>
       {match.hasBroadcasts && (
         <Link
-          className="border-[var(--color-accent)]/25 bg-[var(--color-accent)]/10 hover:border-[var(--color-accent)]/45 hover:bg-[var(--color-accent)]/15 mt-3 inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-xs font-bold text-[var(--color-accent)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          className="border-[var(--color-accent)]/25 bg-[var(--color-accent)]/10 hover:border-[var(--color-accent)]/45 hover:bg-[var(--color-accent)]/15 mt-3 inline-flex min-h-11 items-center rounded-full border px-3 py-1 text-xs font-bold text-[var(--color-accent)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           href={`/matches/${match.id}#broadcasts`}
         >
           視聴
@@ -278,15 +292,20 @@ function BoardMatch({
 
   return (
     <article
-      className={`border-l-[3px] bg-white px-3 py-3 ${
+      className={`tl-calendar-match tl-hover border-l-[3px] bg-white px-3 py-3 ${
         isHighlighted
           ? "bg-[var(--color-accent)]/10"
           : "border-y border-y-slate-200"
       }`}
       data-testid="calendar-board-match"
-      style={{
-        borderLeftColor: getCompetitionFamilyColor(match.competition.family),
-      }}
+      data-calendar-highlighted={isHighlighted}
+      style={
+        {
+          borderLeftColor: getCompetitionFamilyColor(match.competition.family),
+          "--team-home": getTeamColor(match.homeTeam.slug),
+          "--team-away": getTeamColor(match.awayTeam.slug),
+        } as CSSProperties
+      }
     >
       <Link
         className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
@@ -327,7 +346,10 @@ function BoardMatch({
             )}
             {match.status === "finished" && (
               <span className="ml-auto text-xs font-black tabular-nums text-[var(--color-ink)]">
-                <SpoilerScore enabled={spoilerGuardEnabled}>
+                <SpoilerScore
+                  className="min-h-11"
+                  enabled={spoilerGuardEnabled}
+                >
                   {stateLabel}
                 </SpoilerScore>
               </span>
@@ -337,7 +359,7 @@ function BoardMatch({
       </Link>
       {match.hasBroadcasts && (
         <Link
-          className="mt-2 inline-flex text-xs font-bold text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          className="mt-2 inline-flex min-h-11 items-center text-xs font-bold text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           href={`/matches/${match.id}#broadcasts`}
         >
           視聴
@@ -369,7 +391,7 @@ function WeekBoard({
 
   return (
     <section
-      className="hidden lg:block"
+      className="tl-calendar-board hidden lg:block"
       data-testid="calendar-week-board"
       aria-label="週ボード"
     >
@@ -488,7 +510,7 @@ export function WeekSchedule({
         highlightMatchId={highlightMatchId}
         spoilerGuardEnabled={spoilerGuardEnabled}
       />
-      <div className="space-y-6 lg:hidden">
+      <div className="tl-calendar-mobile space-y-6 lg:hidden">
         {groups.map((group) => {
           const dayParts = getDayLabelParts(group.dateLabel);
 
@@ -498,7 +520,7 @@ export function WeekSchedule({
               key={group.key}
               aria-labelledby={`calendar-${group.key}`}
             >
-              <div className="flex w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-[var(--color-ink)] px-2 py-4 text-white shadow-sm">
+              <div className="tl-calendar-mobile-day flex w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-[var(--color-ink)] px-2 py-4 text-white shadow-sm">
                 <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/65">
                   {dayParts.weekday}
                 </span>

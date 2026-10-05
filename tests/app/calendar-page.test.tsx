@@ -3,6 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup, render, screen, within } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CalendarMatch } from "@/lib/db/queries/matches";
@@ -244,6 +245,30 @@ describe("/calendar page", () => {
       schedule.compareDocumentPosition(calendarSubscription) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).not.toBe(0);
+  });
+
+  it("passes the existing user's spoiler setting to SSR while retaining desktop and mobile match links", async () => {
+    authMock.getUser.mockResolvedValue({ id: "signed-in-user" });
+    spoilerGuardMock.getSpoilerGuardEnabledForUser.mockResolvedValue(true);
+    matchQueryMock.getMatchesInRange.mockResolvedValue([
+      createCalendarMatch({
+        id: "finished-match",
+        homeScore: 24,
+        awayScore: 19,
+        status: "finished",
+      }),
+    ]);
+    const { default: CalendarPage } = await import("@/app/calendar/page");
+    const html = renderToStaticMarkup(await CalendarPage({}));
+    expect(spoilerGuardMock.getSpoilerGuardEnabledForUser).toHaveBeenCalledWith(
+      "signed-in-user",
+    );
+    expect(html).not.toContain("24–19");
+    expect(html.match(/href="\/matches\/finished-match"/g)).toHaveLength(2);
+    expect(html.match(/タップして結果を見る/g)?.length).toBeGreaterThanOrEqual(
+      2,
+    );
+    expect(html).toContain("National Stadium");
   });
 
   it("uses a valid monday week query", async () => {
