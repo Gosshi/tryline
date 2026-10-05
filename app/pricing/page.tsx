@@ -77,11 +77,12 @@ const pricingVideoJsonLd = {
   "@context": "https://schema.org",
   "@type": "VideoObject",
   description:
-    "海外ラグビーの試合を日本語で解説。プレビュー・レビュー・試合Q&Aを紹介する Tryline の動画です。",
-  embedUrl: "https://www.youtube.com/embed/2kFHgiaI-NA",
-  name: "Tryline — ラグビー解説サービス紹介",
-  thumbnailUrl: "https://img.youtube.com/vi/2kFHgiaI-NA/maxresdefault.jpg",
-  uploadDate: "2026-05-18",
+    "日本語で海外ラグビーを追うための Tryline の紹介。今週の試合と結果を日本時間で、大会ごとの日程・結果・順位表、試合ごとの日本語のプレビューとレビュー、日本代表の対戦成績、スコアを自分で開くまで隠せる iPhone アプリ。",
+  duration: "PT31S",
+  embedUrl: "https://www.youtube.com/embed/FiIQ26g19ek",
+  name: "Tryline 紹介｜海外ラグビーを、日本語で（2026年10月）",
+  thumbnailUrl: "https://i.ytimg.com/vi/FiIQ26g19ek/hqdefault.jpg",
+  uploadDate: "2026-10-05",
 };
 
 function createPricingFaqJsonLd(billingTerms: BillingTerms) {
@@ -206,8 +207,8 @@ export default async function PricingPage() {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                   className="absolute inset-0 h-full w-full"
-                  src="https://www.youtube.com/embed/2kFHgiaI-NA?rel=0&modestbranding=1"
-                  title="Tryline プロダクトデモ"
+                  src="https://www.youtube.com/embed/FiIQ26g19ek?rel=0&modestbranding=1"
+                  title="Tryline 紹介動画"
                 />
               </div>
             </div>

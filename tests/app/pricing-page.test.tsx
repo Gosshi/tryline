@@ -9,6 +9,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import PricingPage, { metadata } from "@/app/pricing/page";
@@ -201,19 +202,46 @@ describe("PricingPage", () => {
     const jsonLdPayloads = [...document.querySelectorAll('script[type="application/ld+json"]')]
       .map((script) => JSON.parse(script.textContent ?? "{}"));
     const faqJsonLd = jsonLdPayloads.find((payload) => payload["@type"] === "FAQPage");
-    const videoJsonLd = jsonLdPayloads.find((payload) => payload["@type"] === "VideoObject");
     expect(JSON.stringify(faqJsonLd)).not.toContain("AI チャット");
-    expect(videoJsonLd?.description).toBe(
-      "海外ラグビーの試合を日本語で解説。プレビュー・レビュー・試合Q&Aを紹介する Tryline の動画です。",
-    );
-    expect(videoJsonLd?.uploadDate).toBe("2026-05-18");
-    expect(videoJsonLd?.uploadDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(faqJsonLd?.mainEntity).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: "無料トライアルはありますか？" }),
       ]),
     );
     expect(screen.getByText("支払い方法は？")).toBeInTheDocument();
+  });
+
+  it("includes the current introduction film and its VideoObject in server HTML", async () => {
+    const html = renderToStaticMarkup(await PricingPage());
+    const container = document.createElement("div");
+    container.innerHTML = html;
+
+    expect(container.querySelector("iframe")).toHaveAttribute(
+      "src",
+      "https://www.youtube.com/embed/FiIQ26g19ek?rel=0&modestbranding=1",
+    );
+    expect(container.querySelector("iframe")).toHaveAttribute(
+      "title",
+      "Tryline 紹介動画",
+    );
+    const videoJsonLd = [
+      ...container.querySelectorAll('script[type="application/ld+json"]'),
+    ]
+      .map((script) => JSON.parse(script.textContent ?? "{}"))
+      .find((payload) => payload["@type"] === "VideoObject");
+    expect(videoJsonLd).toEqual({
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      description:
+        "日本語で海外ラグビーを追うための Tryline の紹介。今週の試合と結果を日本時間で、大会ごとの日程・結果・順位表、試合ごとの日本語のプレビューとレビュー、日本代表の対戦成績、スコアを自分で開くまで隠せる iPhone アプリ。",
+      duration: "PT31S",
+      embedUrl: "https://www.youtube.com/embed/FiIQ26g19ek",
+      name: "Tryline 紹介｜海外ラグビーを、日本語で（2026年10月）",
+      thumbnailUrl: "https://i.ytimg.com/vi/FiIQ26g19ek/hqdefault.jpg",
+      uploadDate: "2026-10-05",
+    });
+    expect(container.textContent).toContain("実際の画面を見てみる");
+    expect(container.textContent).toContain("プロダクトデモ");
   });
 
   it("renders a meaningful fallback when no sample recap exists", async () => {
