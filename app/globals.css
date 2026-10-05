@@ -474,9 +474,6 @@
 .tl-scope .tl-introduction-poster {
   border: 0;
 }
-.tl-scope .tl-introduction-poster > svg {
-  opacity: 0.7;
-}
 .tl-scope .tl-introduction-poster > figcaption {
   background: transparent;
   border-top: 0;
@@ -799,8 +796,7 @@
     position: absolute;
     right: 32px;
     bottom: -32px;
-    width: 250px;
-    opacity: 0.85;
+    width: clamp(300px, 28vw, 420px);
   }
   .tl-scope .tl-editorial-reviews {
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
