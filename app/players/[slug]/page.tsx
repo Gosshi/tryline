@@ -16,6 +16,7 @@ import {
   formatKickoffJstDate,
   formatKickoffJstTime,
 } from "@/lib/format/kickoff";
+import { getTeamColor } from "@/lib/format/team-identity";
 
 import type { UpcomingMatch } from "@/lib/db/queries/matches";
 import type {
@@ -24,6 +25,7 @@ import type {
   TeamPlayerItem,
 } from "@/lib/db/queries/players";
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -81,7 +83,7 @@ function PlayerNextWatchSection({
   }
 
   return (
-    <section className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
+    <section className="tl-player-next tl-profile-section">
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
           Next
@@ -120,7 +122,7 @@ function PlayerNextWatchSection({
             </p>
           )}
           <Link
-            className="mt-4 inline-flex min-h-9 items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[var(--color-ink)] transition-colors hover:border-slate-300 hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[var(--color-ink)] transition-colors hover:border-slate-300 hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             href={`/teams/${teamSlug}`}
           >
             {teamName}を見る
@@ -139,7 +141,7 @@ function PlayerNextWatchSection({
                     className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm transition-colors hover:border-slate-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                     href={`/players/${teammate.slug}`}
                   >
-                    <span className="truncate font-semibold text-[var(--color-ink)]">
+                    <span className="break-words font-semibold text-[var(--color-ink)]">
                       {teammate.name}
                     </span>
                     {teammate.position && (
@@ -222,65 +224,79 @@ export default async function PlayerPage({ params }: Props) {
     .slice(0, 4);
 
   return (
-    <main className="bg-paper min-h-screen">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 md:px-8">
-        <nav aria-label="パンくずリスト">
-          <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
-            <li>
-              <Link
-                className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                href="/"
-              >
-                Tryline
-              </Link>
-            </li>
-            <li aria-hidden className="select-none">
-              /
-            </li>
-            <li className="text-[var(--color-ink)]">{player.name}</li>
-          </ol>
-        </nav>
+    <main
+      className="tl-scope tl-player-page bg-paper min-h-screen"
+      style={
+        {
+          "--team-primary": getTeamColor(player.teamSlug ?? ""),
+        } as CSSProperties
+      }
+    >
+      <div className="tl-profile-band relative overflow-hidden">
+        <span
+          className="tl-profile-art pointer-events-none absolute inset-0"
+          aria-hidden="true"
+        />
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 md:px-8">
+          <nav aria-label="パンくずリスト">
+            <ol className="flex flex-wrap items-center gap-1 text-sm text-[var(--color-ink-muted)]">
+              <li>
+                <Link
+                  className="transition-colors hover:text-[var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                  href="/"
+                >
+                  Tryline
+                </Link>
+              </li>
+              <li aria-hidden className="select-none">
+                /
+              </li>
+              <li className="text-[var(--color-ink)]">{player.name}</li>
+            </ol>
+          </nav>
 
-        <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 sm:p-6">
-          <div className="flex items-start gap-4">
-            <PlayerAvatar position={player.position} size={48} />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                Player
-              </p>
-              <h1 className="mt-2 font-serif text-3xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-4xl">
-                {player.name}
-              </h1>
+          <header className="tl-profile-heading mt-6">
+            <div className="flex items-start gap-4">
+              <PlayerAvatar position={player.position} size={48} />
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                  Player
+                </p>
+                <h1 className="mt-2 font-serif text-3xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-4xl">
+                  {player.name}
+                </h1>
+              </div>
             </div>
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--color-ink-muted)]">
-            {player.position && <span>{player.position}</span>}
-            {player.position && <span aria-hidden>·</span>}
-            {player.teamSlug ? (
-              <Link
-                className="font-medium text-[var(--color-ink)] underline decoration-slate-300 underline-offset-4 transition-colors hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                href={`/teams/${player.teamSlug}`}
-              >
-                {player.teamName}
-              </Link>
-            ) : (
-              <span>{player.teamName}</span>
-            )}
-            {player.aliasTeams.map((team) => (
-              <Fragment key={team.slug}>
-                <span aria-hidden>·</span>
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--color-ink-muted)]">
+              {player.position && <span>{player.position}</span>}
+              {player.position && <span aria-hidden>·</span>}
+              {player.teamSlug ? (
                 <Link
                   className="font-medium text-[var(--color-ink)] underline decoration-slate-300 underline-offset-4 transition-colors hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                  href={`/teams/${team.slug}`}
+                  href={`/teams/${player.teamSlug}`}
                 >
-                  {team.name}
+                  {player.teamName}
                 </Link>
-              </Fragment>
-            ))}
-          </div>
-        </header>
-
-        <section className="space-y-4">
+              ) : (
+                <span>{player.teamName}</span>
+              )}
+              {player.aliasTeams.map((team) => (
+                <Fragment key={team.slug}>
+                  <span aria-hidden>·</span>
+                  <Link
+                    className="font-medium text-[var(--color-ink)] underline decoration-slate-300 underline-offset-4 transition-colors hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                    href={`/teams/${team.slug}`}
+                  >
+                    {team.name}
+                  </Link>
+                </Fragment>
+              ))}
+            </div>
+          </header>
+        </div>
+      </div>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 md:px-8">
+        <section className="tl-profile-section space-y-4">
           <div>
             <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               通算成績
@@ -291,7 +307,7 @@ export default async function PlayerPage({ params }: Props) {
           </div>
 
           {hasRecordedScoringStats(careerStats) ? (
-            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
+            <dl className="tl-player-metrics grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
               {[
                 ["出場", careerStats.appearances],
                 ["トライ", careerStats.tries],
@@ -319,7 +335,7 @@ export default async function PlayerPage({ params }: Props) {
           )}
         </section>
 
-        <section className="space-y-4">
+        <section className="tl-profile-section space-y-4">
           <div>
             <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
               出場試合
@@ -334,7 +350,7 @@ export default async function PlayerPage({ params }: Props) {
               出場試合データがありません
             </p>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
+            <div className="tl-player-matches overflow-hidden">
               {matches.map((match) => (
                 <Link
                   className="grid gap-2 border-b border-slate-100 px-4 py-4 text-sm transition-colors last:border-b-0 hover:bg-[#f8fafc] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)] sm:grid-cols-[7rem_minmax(0,1fr)_5rem_5rem] sm:items-center sm:gap-4"
@@ -342,26 +358,26 @@ export default async function PlayerPage({ params }: Props) {
                   key={`${match.matchId}-${match.jerseyNumber}`}
                 >
                   <time
-                    className="font-medium text-[var(--color-ink-muted)]"
+                    className="font-medium tabular-nums text-[var(--color-ink-muted)]"
                     dateTime={match.kickoffAt || undefined}
                   >
                     {formatDate(match.kickoffAt)}
                   </time>
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-[var(--color-ink)]">
+                    <p className="break-words font-semibold text-[var(--color-ink)]">
                       {match.homeTeamName} 対 {match.awayTeamName}
                     </p>
-                    <p className="mt-1 truncate text-xs text-[var(--color-ink-muted)]">
+                    <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
                       {formatCompetitionTitle(
                         match.competitionName,
                         match.competitionSeason,
                       )}
                     </p>
                   </div>
-                  <div className="font-semibold text-[var(--color-ink)] sm:text-center">
+                  <div className="font-semibold tabular-nums text-[var(--color-ink)] sm:text-center">
                     {formatScore(match)}
                   </div>
-                  <div className="text-xs font-medium text-[var(--color-ink-muted)] sm:text-right">
+                  <div className="text-xs font-medium tabular-nums text-[var(--color-ink-muted)] sm:text-right">
                     #{match.jerseyNumber}{" "}
                     {match.isStarter ? "先発" : "途中出場"}
                   </div>
