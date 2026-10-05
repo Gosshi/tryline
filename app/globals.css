@@ -163,7 +163,7 @@
 }
 .tl-ticker {
   display: flex;
-  overflow: hidden;
+  overflow: clip;
 }
 .tl-ticker-window {
   flex: 1;

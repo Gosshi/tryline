@@ -356,4 +356,21 @@ describe("HomeIntroFilm", () => {
     expect(video().paused).toBe(false);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+
+  it.each(["紹介動画を拡大して見る", "拡大して見る"])(
+    "restores %s focus without scrolling the clipped hero",
+    (name) => {
+      render(<HomeIntroFilm />);
+      const trigger = screen.getByRole("button", { name });
+      fireEvent.click(trigger);
+      const focus = vi.spyOn(trigger, "focus");
+      fireEvent.click(
+        within(screen.getByRole("dialog")).getByRole("button", {
+          name: "閉じる",
+        }),
+      );
+      expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+      expect(trigger).toHaveFocus();
+    },
+  );
 });

@@ -10,12 +10,12 @@
 - SSRはwidth=1280 / height=720 / poster / preload=noneのvideoを描き、src・source要素は出さない。aspect-video / object-containで映像を切り抜かない。fetchpriority、lazy、動画preloadリンクは追加なし。
 - 自動取得はwindow.load後（completeなら直後）、701px以上、Reduce Motionオフのみ。条件が変われば停止・src解除・loadでメディアを解放。muted / playsInline / autoplay / loop、一時停止・再生ボタンは44px以上、aria-pressedで状態を表示。
 - Ownerの追加レビューに従い、デスクトップを拡大前の配置に戻した。見出しは72〜96px、最終spanだけ改行し2行。ヒーローは最小670px、上120px・下76px。動画は右側の独立した枠、幅clamp(390px,32vw,460px)。390pxでも本文と重ならないよう説明文の右側に32pxの余裕を確保し、枠の位置を見出しの1行目より下へ調整。1024px未満の配置は維持。
-- 「拡大して見る」はスマホとReduce Motionでも表示。JSがないSSRでは無効、hydration後に有効。native dialogのshowModalで背景をinertにし、閉じるボタンへフォーカス。閉じるボタンまたはEsc由来のcancelでcloseし、実際に開いたボタンへフォーカスを戻す。
+- 「拡大して見る」はスマホとReduce Motionでも表示。JSがないSSRでは無効、hydration後に有効。native dialogのshowModalで背景をinertにし、閉じるボタンへフォーカス。閉じるボタンまたはEsc由来のcancelでcloseし、実際に開いたボタンへfocus({ preventScroll: true })でフォーカスを戻す。
 - 動画面にaria-label「紹介動画を拡大して見る」のnative buttonを重ね、マウスとキーボードの両方で開けるようにした。中央の四隅の矢印はhover／focus-visible時だけ表示。一時停止ボタンは別の兄弟要素として上の層に置き、独立した操作を維持。枠のポスター表示中・エラー時も拡大できる。
 - ダイアログ動画は開いたときだけ描画・src設定。controls / muted / playsInline / autoplay、ループなし。最大1100pxのダイアログ内で16:9表示。閉じると動画を取り除き、停止・src解除・loadでメディアを解放。
 - 拡大中は背面の動画を停止。閉じると、拡大前に再生中で今も自動再生の条件を満たす場合だけ再開。利用者が先に停止していた場合は停止を維持。
 - インライン・拡大表示それぞれの読み込みエラーは、同寸法のポスター画像へ復帰。閉じる操作は残る。インラインの自動再生拒否は再生ボタンを残す。
-- ダイアログ名はaria-labelledbyで提供し、既存ページのh1/h2階層は変更しない。新しい計測なし、cta_idは27→27。紹介枠の置換とimportを除きHomePageのソースは同一。
+- ダイアログ名はaria-labelledbyで提供し、既存ページのh1/h2階層は変更しない。新しい計測なし、cta_idは27→27。紹介枠の置換・importとヒーローのoverflow-clipへの変更を除きHomePageのソースは同一。
 
 ### Ownerが指定した仕様の読み替え
 
@@ -24,12 +24,12 @@
 ## 自動検証
 
 - レビューの追加要件のテストを先に追加し、未実装状態で失敗を確認してから修正。
-- HomeIntroFilmの22件: SSR、390/700px、701/1440px、Reduce Motion、load待ち、停止／再生、条件変更、エラー、自動再生拒否、解除、明示拡大での取得、controls/muted、閉じる・cancel・フォーカス復帰、背面停止と再開、先に停止していた状態の維持、ダイアログ内のポスター復帰。追加レビューでは動画面からの拡大と元の動画面へのフォーカス復帰（390px・1440px・Reduce Motion）、一時停止ボタンの独立操作を4件追加。
-- HomePageの既存25件を含む関連テスト47件成功。既存のポスター期待値1件のみ初回実装で更新し、レビュー修正ではHomePageのテストを変更していない。
+- HomeIntroFilmの24件: SSR、390/700px、701/1440px、Reduce Motion、load待ち、停止／再生、条件変更、エラー、自動再生拒否、解除、明示拡大での取得、controls/muted、閉じる・cancel・フォーカス復帰、背面停止と再開、先に停止していた状態の維持、ダイアログ内のポスター復帰。追加レビューでは動画面からの拡大と元の動画面へのフォーカス復帰（390px・1440px・Reduce Motion）、一時停止ボタンの独立操作を4件追加。
+- HomePageの既存25件を含むHomePageとの関連テスト49件、TouchlineMotionを含む65件成功。既存のポスター期待値1件のみ初回実装で更新し、横スクロール修正ではヒーローのoverflow-clip／overflow-hiddenなしを既存テストに追加。両方の拡大ボタンへのフォーカス復帰がpreventScroll:trueを渡すテストを2件追加。修正前に3件の失敗を確認。
 - pnpm lint: 成功。
 - pnpm typecheck（tsc --noEmit）: 成功。
-- pnpm test: 338ファイル・2,319件成功。
-- pnpm build: コンパイル成功（4.4秒）。秘密ファイルを読まず、明示的なダミー設定とローカルDB URLで実行。ページデータ収集でECONNREFUSED 127.0.0.1:54321、/c/[competition]/[season]/standingsで停止。ビルド全体は未完了。
+- pnpm test: 338ファイル・2,321件成功。
+- pnpm build: コンパイル成功（5.2秒）。秘密ファイルを読まず、明示的なダミー設定とローカルDB URLで実行。ページデータ収集でECONNREFUSED 127.0.0.1:54321、/c/[competition]/[season]/standingsで停止。ビルド全体は未完了。
 - cta_id集合: 27→27、差なし。仕様書・指示書・元素材の一致確認、git diff --check成功。新規依存なし。
 
 ## ローカル実ブラウザでの確認
@@ -52,6 +52,27 @@
 | インラインを先に停止 | 停止してから拡大し、閉じてもpaused=trueを維持 |
 
 初回実装時に確認した内容: 1440pxの音なしループ（終端へシーク後先頭へ戻る）、停止・再生、700pxの通信0件、700→701pxの取得開始と701→700pxの解除、クライアントスクリプトなしのSSRポスター、存在しない動画URLによるポスター復帰。これらの挙動のコードはレビュー修正でも維持し、自動テストで再確認した。
+
+### ダイアログを閉じる際の横スクロール修正
+
+ヒーローはoverflow-hiddenからoverflow-clipへ変更。外側のティッカーもoverflow:clipへ変更した。JavaScriptなしで利用する内側のtl-ticker-windowのoverflow-x:auto、および強化後の内側のクリッピングは維持し、試合リンクを読む操作を変えていない。
+
+同じローカル実コンポーネントでヒーローのclassを実際のapp/page.tsxから取得して確認。装飾面が幅からはみ出している状態で測定した。
+
+| 幅 | clientWidth / scrollWidth | 動画面から開閉後のscrollLeft | 各リンク・ボタンへ順にfocus()後のscrollLeft |
+|---|---|---|---|
+| 1440px | 1440 / 2087 | 0 | 5要素すべて0 |
+| 1024px | 1024 / 1679 | 0 | 5要素すべて0 |
+| 390px | 390 / 972 | 0 | 4要素すべて0（自動再生の停止ボタンなし） |
+
+1440pxでは下の「拡大して見る」から開閉した後も0。両方とも押したボタンへフォーカス復帰。computed overflowはヒーロー・ティッカーともclip。hero.scrollLeft=449を試みても0のままで、スクロールコンテナーにならないことを確認した。実キーTabによる移動の代用とは扱わない。
+
+#### 実キーTabの確認手順
+
+1. Chromeでトップを1440px幅で開き、DevToolsのLive Expressionに `document.querySelector('section.tl-home-hero').scrollLeft` を登録する。初期値0を確認。
+2. 動画面の「紹介動画を拡大して見る」を押してダイアログを開き、閉じるボタンとEscの両方で閉じる。毎回0、押したボタンへのフォーカス復帰、見出しと背景の位置が変わらないことを確認。同様に下の「拡大して見る」でも確認。
+3. ページ先頭からTab／Shift+Tabで「今週の試合を見る」「Premium無料体験」「紹介動画を拡大して見る」「紹介動画を一時停止」「拡大して見る」を順にたどる。毎回0を維持し、左側の見出しが切れないことを確認。
+4. 1024px、390px、Reduce Motion設定でも同じ手順を繰り返す。390px／Reduce Motionでは一時停止ボタンはなく、明示操作でのみ動画を取得する。
 
 ### ブラウザ操作の制限
 

@@ -278,7 +278,7 @@ export default async function HomePage() {
           <CheckoutSuccessTracker />
           <SignupSuccessTracker />
         </Suspense>
-        <section className="tl-home-hero relative min-h-[480px] overflow-hidden bg-[var(--color-ink-strong)] py-14 sm:min-h-[560px] sm:py-20">
+        <section className="tl-home-hero relative min-h-[480px] overflow-clip bg-[var(--color-ink-strong)] py-14 sm:min-h-[560px] sm:py-20">
           <HeroTexture />
           <div
             aria-hidden

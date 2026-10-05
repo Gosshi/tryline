@@ -95,7 +95,7 @@ export function HomeIntroFilm() {
       void inlineVideo.play().catch(() => setPaused(inlineVideo.paused));
     }
     resumeInlineRef.current = false;
-    expandButtonRef.current?.focus();
+    expandButtonRef.current?.focus({ preventScroll: true });
   }
 
   function togglePlayback() {

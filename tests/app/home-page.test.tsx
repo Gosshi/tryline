@@ -1082,6 +1082,12 @@ describe("HomePage", () => {
       ),
     ]);
     const { container } = render(await HomePage());
+    expect(container.querySelector("section.tl-home-hero")).toHaveClass(
+      "overflow-clip",
+    );
+    expect(container.querySelector("section.tl-home-hero")).not.toHaveClass(
+      "overflow-hidden",
+    );
     const board = screen.getByLabelText("これからの試合の一覧");
     expect(
       within(board)
