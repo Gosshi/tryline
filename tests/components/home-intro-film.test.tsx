@@ -175,7 +175,7 @@ describe("HomeIntroFilm", () => {
     changeMedia(1440, true);
     expect(video()).not.toHaveAttribute("src");
     expect(
-      screen.queryByRole("button", { name: /紹介動画を/ }),
+      screen.queryByRole("button", { name: /^紹介動画を(再生|一時停止)$/ }),
     ).not.toBeInTheDocument();
   });
 
@@ -187,7 +187,7 @@ describe("HomeIntroFilm", () => {
       "/videos/tryline-promo-poster.jpg",
     );
     expect(
-      screen.queryByRole("button", { name: /紹介動画を/ }),
+      screen.queryByRole("button", { name: /^紹介動画を(再生|一時停止)$/ }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("サイトとアプリの紹介（音なし）"),
@@ -309,6 +309,51 @@ describe("HomeIntroFilm", () => {
       "/videos/tryline-promo-poster.jpg",
     );
     fireEvent.click(within(dialog).getByRole("button", { name: "閉じる" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    { viewportWidth: 390, reduce: false },
+    { viewportWidth: 1440, reduce: false },
+    { viewportWidth: 1440, reduce: true },
+  ])(
+    "expands from the video surface and returns focus to that trigger at $viewportWidth px, reduce=$reduce",
+    ({ viewportWidth, reduce }) => {
+      width = viewportWidth;
+      reduced = reduce;
+      render(<HomeIntroFilm />);
+      const surface = screen.getByRole("button", {
+        name: "紹介動画を拡大して見る",
+      });
+      expect(surface.tagName).toBe("BUTTON");
+      expect(surface).toHaveAttribute("type", "button");
+      expect(surface).toBeEnabled();
+      expect(surface.querySelector("button")).toBeNull();
+      fireEvent.click(surface);
+      const dialog = screen.getByRole("dialog");
+      expect(
+        within(dialog).getByLabelText(
+          "サイトとアプリの紹介・拡大表示（音なし）",
+        ),
+      ).toHaveAttribute("src", "/videos/tryline-promo-720p.mp4");
+      fireEvent.click(within(dialog).getByRole("button", { name: "閉じる" }));
+      expect(surface).toHaveFocus();
+      expect(document.querySelector("dialog video")).toBeNull();
+    },
+  );
+
+  it("keeps the playback button separate from the surface expansion button", () => {
+    render(<HomeIntroFilm />);
+    const surface = screen.getByRole("button", {
+      name: "紹介動画を拡大して見る",
+    });
+    const pause = screen.getByRole("button", { name: "紹介動画を一時停止" });
+    expect(surface.contains(pause)).toBe(false);
+    fireEvent.click(pause);
+    expect(video().paused).toBe(true);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "紹介動画を再生" }));
+    expect(video().paused).toBe(false);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

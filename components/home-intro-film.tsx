@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { type MouseEvent, useEffect, useId, useRef, useState } from "react";
 
 const POSTER_SRC = "/videos/tryline-promo-poster.jpg";
 const VIDEO_SRC = "/videos/tryline-promo-720p.mp4";
@@ -74,10 +74,11 @@ export function HomeIntroFilm() {
     };
   }, [expanded, dialogFailed]);
 
-  function openDialog() {
+  function openDialog(event: MouseEvent<HTMLButtonElement>) {
     const dialog = dialogRef.current;
     if (!dialog || dialog.open) return;
 
+    expandButtonRef.current = event.currentTarget;
     const inlineVideo = videoRef.current;
     resumeInlineRef.current = Boolean(inlineVideo && !inlineVideo.paused);
     inlineVideo?.pause();
@@ -144,11 +145,36 @@ export function HomeIntroFilm() {
             width={1280}
           />
         )}
+        <button
+          aria-label="紹介動画を拡大して見る"
+          className="tl-intro-expand absolute inset-0 z-10 cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white"
+          disabled={!ready}
+          onClick={openDialog}
+          type="button"
+        >
+          <span className="tl-intro-expand-icon absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/60 bg-[var(--color-ink-strong)] text-white">
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="28"
+              viewBox="0 0 24 24"
+              width="28"
+            >
+              <path
+                d="M8 3H3v5m0-5 6 6m7-6h5v5m0-5-6 6M3 16v5h5m-5 0 6-6m12 1v5h-5m5 0-6-6"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+              />
+            </svg>
+          </span>
+        </button>
         {enabled && !failed && (
           <button
             aria-label={paused ? "紹介動画を再生" : "紹介動画を一時停止"}
             aria-pressed={paused}
-            className="absolute bottom-2 right-2 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/40 bg-[var(--color-ink-strong)] px-4 text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="absolute bottom-2 right-2 z-20 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/40 bg-[var(--color-ink-strong)] px-4 text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             onClick={togglePlayback}
             type="button"
           >
@@ -169,7 +195,6 @@ export function HomeIntroFilm() {
           className="inline-flex min-h-11 items-center rounded-full border border-white/40 px-4 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           disabled={!ready}
           onClick={openDialog}
-          ref={expandButtonRef}
           type="button"
         >
           拡大して見る
