@@ -62,11 +62,11 @@ function formatMatchKickoffJst(kickoffAt: string): string {
 
 function PendingState({ matchCount }: { matchCount?: number }) {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-24 text-center">
+    <div className="tl-rwc-pending mx-auto max-w-2xl px-6 py-16 text-center">
       <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-accent)]">
         Coming Soon
       </p>
-      <h1 className="mt-4 font-serif text-4xl font-extrabold text-[var(--color-ink)]">
+      <h1 className="mt-4 font-heading text-4xl font-extrabold text-[var(--color-ink)]">
         Rugby World Cup 2027
       </h1>
       <p className="mt-6 text-base leading-relaxed text-[var(--color-ink-muted)]">
@@ -81,7 +81,7 @@ function PendingState({ matchCount }: { matchCount?: number }) {
       )}
       <div className="mt-8">
         <Link
-          className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+          className="inline-flex min-h-11 items-center text-sm font-medium text-[var(--color-accent)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-accent)]"
           href="/"
         >
           トップへ戻る
@@ -93,7 +93,7 @@ function PendingState({ matchCount }: { matchCount?: number }) {
 
 function PreTournamentBanner({ matchCount }: { matchCount: number }) {
   return (
-    <div className="rounded-lg border border-[var(--color-rule)] bg-white px-6 py-4 text-sm text-[var(--color-ink-muted)]">
+    <div className="tl-rwc-notice border border-[var(--color-rule)] px-5 py-4 text-sm leading-relaxed text-[var(--color-ink-muted)]">
       {RWC2027_TOURNAMENT_DATES}、オーストラリアで開催。24チーム・
       {RWC2027_TOURNAMENT_MATCH_COUNT}
       試合の大会です。Trylineでは現在{matchCount}
@@ -107,7 +107,7 @@ export default async function RWC2027Page() {
 
   if (!competition) {
     return (
-      <main className="min-h-screen bg-paper">
+      <main className="tl-scope tl-rwc-page bg-paper min-h-screen">
         <PendingState />
       </main>
     );
@@ -121,7 +121,7 @@ export default async function RWC2027Page() {
 
   if (matches.length === 0) {
     return (
-      <main className="min-h-screen bg-paper">
+      <main className="tl-scope tl-rwc-page bg-paper min-h-screen">
         <PendingState matchCount={0} />
       </main>
     );
@@ -177,40 +177,43 @@ export default async function RWC2027Page() {
   };
 
   return (
-    <main className="min-h-screen bg-paper">
+    <main className="tl-scope tl-rwc-page bg-paper min-h-screen">
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(rwcFaqJsonLd),
         }}
         type="application/ld+json"
       />
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 md:px-8">
-        <header className="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-slate-200">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+      <header className="tl-season-band tl-rwc-band relative overflow-hidden bg-[var(--color-ink-strong)] text-white">
+        <div
+          aria-hidden="true"
+          className="tl-band-art pointer-events-none absolute inset-0"
+        />
+        <div className="relative mx-auto w-full max-w-6xl px-4 py-7 sm:px-6 md:px-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em]">
             Rugby World Cup
           </p>
-          <h1 className="mt-1 font-heading text-4xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-5xl">
+          <h1 className="mt-3 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
             ラグビーワールドカップ2027
           </h1>
-          <div className="mt-4">
-            <Link
-              className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
-              href="/c/rwc/2027/bracket"
-            >
-              ノックアウトブラケット →
-            </Link>
-          </div>
-        </header>
-
+          <Link
+            className="tl-rwc-band-link mt-4 inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4"
+            href="/c/rwc/2027/bracket"
+          >
+            ノックアウトブラケット →
+          </Link>
+        </div>
+      </header>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 md:px-8">
         {!tournamentStarted && (
           <PreTournamentBanner matchCount={matches.length} />
         )}
 
         {tournamentStarted && poolStandings.length > 0 && (
-          <section className="space-y-4">
+          <section className="tl-rwc-standings space-y-6">
             {poolStandings.map((pool) => (
               <div className="space-y-3" key={pool.poolName}>
-                <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                <h2 className="font-heading text-2xl font-extrabold text-[var(--color-ink)]">
                   {pool.poolName} 順位表
                 </h2>
                 <StandingsTable standings={pool.standings} />
@@ -219,8 +222,30 @@ export default async function RWC2027Page() {
           </section>
         )}
 
+        <div className="tl-rwc-schedule space-y-5">
+          <Suspense>
+            <SeasonMatchGroups
+              contentStatusMap={Object.fromEntries(contentStatusMap)}
+              family="rwc"
+              groupedMatches={groupedMatches}
+            />
+          </Suspense>
+        </div>
+
+        {!tournamentStarted && (
+          <div className="tl-rwc-pools">
+            <PoolTeamGrid
+              ariaLabel="RWC 2027 プール分け"
+              poolStandings={poolStandings}
+            />
+          </div>
+        )}
+
         {venues.length > 0 && (
-          <section aria-labelledby="venues-heading" className="space-y-4">
+          <section
+            aria-labelledby="venues-heading"
+            className="tl-rwc-venues space-y-4"
+          >
             <h2
               className="font-heading text-2xl font-extrabold text-[var(--color-ink)]"
               id="venues-heading"
@@ -230,7 +255,7 @@ export default async function RWC2027Page() {
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {venues.map((venue) => (
                 <li
-                  className="rounded-[var(--radius-md)] bg-white px-4 py-3 text-sm font-medium text-[var(--color-ink)] shadow-[var(--shadow-soft)]"
+                  className="border-b border-[var(--color-rule)] px-4 py-4 text-sm font-medium leading-relaxed text-[var(--color-ink)]"
                   key={venue}
                 >
                   {venue}
@@ -240,24 +265,9 @@ export default async function RWC2027Page() {
           </section>
         )}
 
-        <Suspense>
-          <SeasonMatchGroups
-            contentStatusMap={Object.fromEntries(contentStatusMap)}
-            family="rwc"
-            groupedMatches={groupedMatches}
-          />
-        </Suspense>
-
-        {!tournamentStarted && (
-          <PoolTeamGrid
-            ariaLabel="RWC 2027 プール分け"
-            poolStandings={poolStandings}
-          />
-        )}
-
         <section
           aria-labelledby="broadcast-heading"
-          className="rounded-lg border border-[var(--color-rule)] bg-white px-6 py-4 text-sm text-[var(--color-ink-muted)]"
+          className="tl-rwc-notice border border-[var(--color-rule)] px-5 py-4 text-sm leading-relaxed text-[var(--color-ink-muted)]"
         >
           <h2
             className="font-heading text-lg font-extrabold text-[var(--color-ink)]"
@@ -279,7 +289,7 @@ export default async function RWC2027Page() {
           </p>
         </section>
 
-        <div className="rounded-[var(--radius-md)] bg-white p-5 shadow-[var(--shadow-soft)] sm:p-6">
+        <div className="tl-rwc-guide p-5 sm:p-6">
           <CompetitionViewingGuide
             markdown={guide?.guideJa ?? null}
             sourceUrl={guide?.sourceUrl ?? null}

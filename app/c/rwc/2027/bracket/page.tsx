@@ -45,7 +45,7 @@ function PendingState(props: PendingStateProps) {
           まで予定されています。終了後に対戦表へ反映します。
         </p>
         <Link
-          className="mt-5 inline-block text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+          className="mt-5 inline-flex min-h-11 items-center text-sm font-medium text-[var(--color-accent)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-accent)]"
           href="/c/rwc/2027"
         >
           プール戦の日程を見る
@@ -62,7 +62,7 @@ function PendingState(props: PendingStateProps) {
     );
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
+    <div className="tl-rwc-pending border border-[var(--color-rule)] px-6 py-12 text-center">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
         Bracket
       </p>
@@ -107,7 +107,7 @@ export default async function Rwc2027BracketPage() {
 
   if (!competition) {
     return (
-      <main className="min-h-screen bg-paper">
+      <main className="tl-scope tl-rwc-page bg-paper min-h-screen">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
           <PendingState type="competition-unavailable" />
         </div>
@@ -122,25 +122,28 @@ export default async function Rwc2027BracketPage() {
   const poolStageComplete = isPoolStageComplete(poolMatches, poolStageEndsAt);
 
   return (
-    <main className="min-h-screen bg-paper">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-              Knockout
-            </p>
-            <h1 className="mt-1 font-heading text-3xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-4xl">
-              Rugby World Cup 2027
-            </h1>
-          </div>
+    <main className="tl-scope tl-rwc-page bg-paper min-h-screen">
+      <header className="tl-season-band tl-rwc-band relative overflow-hidden bg-[var(--color-ink-strong)] text-white">
+        <div
+          aria-hidden="true"
+          className="tl-band-art pointer-events-none absolute inset-0"
+        />
+        <div className="relative mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 md:px-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em]">
+            Knockout
+          </p>
+          <h1 className="mt-3 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
+            Rugby World Cup 2027
+          </h1>
           <Link
-            className="text-sm font-medium text-[var(--color-accent)] underline underline-offset-4"
+            className="tl-rwc-band-link mt-4 inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4"
             href="/c/rwc/2027"
           >
             大会ページへ戻る
           </Link>
         </div>
-
+      </header>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
         {matches.length > 0 ? (
           <KnockoutBracket matches={matches} />
         ) : poolStageComplete || poolStageEndsAt === null ? (

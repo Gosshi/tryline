@@ -1829,3 +1829,143 @@
     padding: 20px;
   }
 }
+
+/* RWC's dedicated hub and bracket reuse Touchline's compact ink band. */
+.tl-scope .tl-rwc-band h1 {
+  max-width: 100%;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  color: #fffdf8;
+}
+.tl-scope .tl-rwc-band-link {
+  color: #fffdf8;
+}
+.tl-scope .tl-rwc-band-link:hover {
+  text-decoration-thickness: 2px;
+}
+.tl-scope .tl-rwc-notice,
+.tl-scope .tl-rwc-pending,
+.tl-scope .tl-rwc-guide {
+  border-top: 3px double var(--color-brass);
+  border-radius: 3px;
+  background: #fffdf8;
+}
+.tl-scope .tl-rwc-pending {
+  margin-top: 32px;
+  line-height: 1.8;
+}
+.tl-scope .tl-rwc-pending > p:first-child {
+  color: var(--color-brass);
+}
+.tl-scope .tl-rwc-schedule [role="tablist"] {
+  gap: 4px;
+  border-bottom: 1px solid var(--color-rule);
+  padding-bottom: 0;
+}
+.tl-scope .tl-rwc-schedule [role="tab"] {
+  min-height: 44px;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--color-ink-muted);
+}
+.tl-scope .tl-rwc-schedule [role="tab"][aria-selected="true"] {
+  border-bottom-color: var(--color-ink);
+  color: var(--color-ink);
+  font-weight: 700;
+}
+.tl-scope .tl-rwc-schedule section > div:first-child h2 {
+  font-size: 24px;
+  line-height: 1.4;
+  letter-spacing: 0;
+  color: var(--color-ink);
+}
+.tl-scope .tl-rwc-schedule section > div:last-child {
+  border-top: 3px double var(--color-ink);
+}
+.tl-scope .tl-rwc-schedule [data-match-layout="row"] {
+  background: #fffdf880;
+}
+.tl-scope .tl-rwc-pools section > div {
+  border: 1px solid var(--color-rule);
+  border-top: 3px double var(--color-brass);
+  border-radius: 3px;
+  background: #fffdf8;
+  box-shadow: none;
+}
+.tl-scope .tl-rwc-pools section > div > p {
+  font-family: var(--font-heading), serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: var(--color-ink);
+}
+.tl-scope .tl-rwc-pools li + li {
+  border-top: 1px solid var(--color-rule);
+  padding-top: 10px;
+}
+.tl-scope .tl-rwc-venues h2,
+.tl-scope .tl-rwc-standings h2 {
+  border-top: 3px double var(--color-ink);
+  padding-top: 16px;
+}
+.tl-scope .tl-rwc-venues ul {
+  gap: 0 24px;
+  background: #fffdf880;
+}
+.tl-scope .tl-rwc-guide {
+  border-inline: 1px solid var(--color-rule);
+  border-bottom: 1px solid var(--color-rule);
+}
+.tl-scope .tl-rwc-guide > section {
+  max-width: 72ch;
+}
+.tl-scope .tl-rwc-guide h2,
+.tl-scope .tl-rwc-guide h3 {
+  font-family: var(--font-heading), serif;
+  font-weight: 800;
+}
+.tl-scope .tl-rwc-guide a,
+.tl-scope .tl-rwc-notice a {
+  overflow-wrap: anywhere;
+}
+.tl-scope .tl-knockout-round {
+  border-radius: 3px;
+  background: #fffdf8;
+}
+.tl-scope .tl-knockout-heading {
+  border-bottom: 3px solid var(--color-brass);
+  background:
+    linear-gradient(115deg, transparent 60%, #ddba8710 60%),
+    var(--color-ink-strong);
+  color: #fffdf8;
+}
+.tl-scope .tl-knockout-heading > p {
+  color: #ddba87;
+}
+.tl-scope .tl-knockout-number {
+  color: #ddba8740;
+  pointer-events: none;
+}
+.tl-scope .tl-knockout-match {
+  border-radius: 2px;
+  background: #fffdf8;
+}
+.tl-scope .tl-knockout-match::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 14px;
+  background: linear-gradient(
+    110deg,
+    var(--home-color) 50%,
+    var(--away-color) 50%
+  );
+  pointer-events: none;
+}
+.tl-scope .tl-knockout-match:hover {
+  border-color: var(--color-ink);
+}
