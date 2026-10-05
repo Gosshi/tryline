@@ -631,13 +631,16 @@ describe("HomePage", () => {
     expect(matchMocks.getNextUpcomingMatch).toHaveBeenCalledTimes(1);
   });
 
-  it("reserves the introduction poster with goal-post artwork", async () => {
+  it("reserves the introduction film with a 16:9 poster", async () => {
     render(await HomePage());
-    const poster = screen.getByLabelText("紹介動画の静止ポスター");
-    expect(poster).toHaveClass("aspect-[4/3]");
-    expect(poster.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    const poster = screen.getByLabelText("Tryline の紹介動画");
+    expect(poster.firstElementChild).toHaveClass("aspect-video");
+    expect(poster.querySelector("video")).toHaveAttribute(
+      "poster",
+      "/videos/tryline-promo-poster.jpg",
+    );
     expect(poster).toHaveTextContent("INTRODUCTION FILM");
-    expect(poster).toHaveTextContent("現在は静止ポスター");
+    expect(poster).toHaveTextContent("サイトとアプリの紹介（音なし）");
   });
 
   it("uses weekly results in the ticker and excludes the duplicate group from accessibility and keyboard navigation", async () => {
@@ -1079,6 +1082,12 @@ describe("HomePage", () => {
       ),
     ]);
     const { container } = render(await HomePage());
+    expect(container.querySelector("section.tl-home-hero")).toHaveClass(
+      "overflow-clip",
+    );
+    expect(container.querySelector("section.tl-home-hero")).not.toHaveClass(
+      "overflow-hidden",
+    );
     const board = screen.getByLabelText("これからの試合の一覧");
     expect(
       within(board)

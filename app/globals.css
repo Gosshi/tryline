@@ -163,7 +163,7 @@
 }
 .tl-ticker {
   display: flex;
-  overflow: hidden;
+  overflow: clip;
 }
 .tl-ticker-window {
   flex: 1;
@@ -474,13 +474,32 @@
 .tl-scope .tl-introduction-poster {
   border: 0;
 }
-.tl-scope .tl-introduction-poster > svg {
-  opacity: 0.7;
-}
 .tl-scope .tl-introduction-poster > figcaption {
   background: transparent;
   border-top: 0;
   border-left: 1px solid #e0c493;
+}
+.tl-scope .tl-intro-expand-icon {
+  opacity: 0;
+}
+.tl-scope .tl-intro-expand:hover .tl-intro-expand-icon,
+.tl-scope .tl-intro-expand:focus-visible .tl-intro-expand-icon {
+  opacity: 1;
+}
+.tl-scope .tl-intro-dialog {
+  width: min(1100px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  overflow: auto;
+  border: 1px solid #ddba87;
+  border-radius: 3px;
+  padding: 16px;
+  background: var(--color-ink-strong);
+  color: #fffdf8;
+}
+.tl-scope .tl-intro-dialog::backdrop {
+  background: #17191fcc;
 }
 .tl-scope .tl-ticker {
   border-bottom: 2px solid var(--color-accent);
@@ -795,12 +814,14 @@
   .tl-scope .tl-hero-heading > span:last-child {
     display: block;
   }
+  .tl-scope .tl-hero-layout > div > p:not(:first-child) {
+    max-width: min(36rem, calc(100% - clamp(390px, 32vw, 460px) - 32px));
+  }
   .tl-scope .tl-introduction-poster {
     position: absolute;
     right: 32px;
-    bottom: -32px;
-    width: 250px;
-    opacity: 0.85;
+    bottom: -64px;
+    width: clamp(390px, 32vw, 460px);
   }
   .tl-scope .tl-editorial-reviews {
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);

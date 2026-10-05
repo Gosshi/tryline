@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
 import { FeaturedCompetitionCard } from "@/components/featured-competition-card";
 import { HeroTexture } from "@/components/hero-texture";
+import { HomeIntroFilm } from "@/components/home-intro-film";
 import {
   getNextMatchCountdownLabel,
   HomeMatchdayBoard,
@@ -277,7 +278,7 @@ export default async function HomePage() {
           <CheckoutSuccessTracker />
           <SignupSuccessTracker />
         </Suspense>
-        <section className="tl-home-hero relative min-h-[480px] overflow-hidden bg-[var(--color-ink-strong)] py-14 sm:min-h-[560px] sm:py-20">
+        <section className="tl-home-hero relative min-h-[480px] overflow-clip bg-[var(--color-ink-strong)] py-14 sm:min-h-[560px] sm:py-20">
           <HeroTexture />
           <div
             aria-hidden
@@ -375,47 +376,7 @@ export default async function HomePage() {
                   <HomepagePremiumCta />
                 </div>
               </div>
-              <figure
-                className="tl-introduction-poster relative aspect-[4/3] min-w-0 overflow-hidden rounded-sm border border-white/40"
-                aria-label="紹介動画の静止ポスター"
-              >
-                <svg
-                  aria-hidden="true"
-                  className="absolute inset-0 h-full w-full text-white/80"
-                  viewBox="0 0 480 360"
-                  fill="none"
-                >
-                  <path
-                    d="M40 270L460 210M20 310L440 250M90 360L160 210M280 360L310 190"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    opacity=".45"
-                  />
-                  <path
-                    d="M265 65V260M360 65V250M265 170H360"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                  />
-                  <ellipse
-                    cx="290"
-                    cy="15"
-                    rx="240"
-                    ry="80"
-                    stroke="currentColor"
-                    opacity=".35"
-                  />
-                </svg>
-                <figcaption className="bg-[var(--color-ink-strong)]/90 absolute inset-x-0 bottom-0 border-t border-white/30 px-5 py-4 text-white">
-                  <span className="block text-xs font-semibold tracking-[0.2em]">
-                    INTRODUCTION FILM
-                  </span>
-                  <span className="mt-2 block text-xs leading-relaxed text-white/80">
-                    15–30秒 / 音なし・ループ予定
-                    <br />
-                    現在は静止ポスター
-                  </span>
-                </figcaption>
-              </figure>
+              <HomeIntroFilm />
             </div>
           </div>
         </section>
