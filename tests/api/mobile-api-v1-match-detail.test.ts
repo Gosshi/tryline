@@ -172,6 +172,7 @@ describe("GET /api/v1/matches/[id]", () => {
       data: {
         match: {
           away_team: {
+            color: "#002395",
             english_name: "France",
             flag_code: "🇫🇷",
             id: "away-id",
@@ -204,6 +205,7 @@ describe("GET /api/v1/matches/[id]", () => {
             },
           ],
           home_team: {
+            color: "#BC002D",
             english_name: "Japan",
             flag_code: "🇯🇵",
             id: "home-id",
@@ -322,8 +324,8 @@ describe("GET /api/v1/matches/[id]", () => {
       "competition-1",
     ]);
     expect(body.data.match).toMatchObject({
-      away_team: { flag_code: null },
-      home_team: { flag_code: null },
+      away_team: { color: "#002395", flag_code: null },
+      home_team: { color: "#BC002D", flag_code: null },
     });
   });
 
@@ -365,10 +367,20 @@ describe("GET /api/v1/matches/[id]", () => {
       teamIds: ["home-id", "away-id"],
     });
     expect(body.data.match.related_recaps).toEqual([
-      expect.objectContaining({ has_recap: true, id: "related-recap" }),
+      expect.objectContaining({
+        has_recap: true,
+        id: "related-recap",
+        home_team: expect.objectContaining({ color: "#BC002D" }),
+        away_team: expect.objectContaining({ color: "#002395" }),
+      }),
     ]);
     expect(body.data.match.next_team_matches).toEqual([
-      expect.objectContaining({ has_recap: false, id: "next-match" }),
+      expect.objectContaining({
+        has_recap: false,
+        id: "next-match",
+        home_team: expect.objectContaining({ color: "#BC002D" }),
+        away_team: expect.objectContaining({ color: "#002395" }),
+      }),
     ]);
   });
 

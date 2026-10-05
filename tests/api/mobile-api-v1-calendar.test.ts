@@ -106,6 +106,7 @@ describe("GET /api/v1/calendar", () => {
         matches: [
           {
             away_team: {
+              color: "#002395",
               flag_code: "🇫🇷",
               id: "away-id",
               name: "フランス",
@@ -123,6 +124,7 @@ describe("GET /api/v1/calendar", () => {
             has_preview: true,
             has_recap: true,
             home_team: {
+              color: "#BC002D",
               flag_code: "🇯🇵",
               id: "home-id",
               name: "日本",
@@ -139,6 +141,18 @@ describe("GET /api/v1/calendar", () => {
       error: null,
       success: true,
     });
+  });
+
+  it("returns null instead of the Web gray fallback for a colorless team", async () => {
+    matchesMock.getMatchesInRange.mockResolvedValue([
+      { ...match, homeTeam: { ...match.homeTeam, slug: "us-montauban" } },
+    ]);
+    const { GET } = await import("@/app/api/v1/calendar/route");
+    const response = await GET(new Request("http://localhost/api/v1/calendar"));
+    const body = await response.json();
+
+    expect(body.data.matches[0].home_team.color).toBeNull();
+    expect(body.data.matches[0].away_team.color).toBe("#002395");
   });
 
   it("returns has_broadcasts false when only the legacy broadcast URL exists", async () => {
@@ -202,8 +216,8 @@ describe("GET /api/v1/calendar", () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: "league-one-match",
-          away_team: expect.objectContaining({ flag_code: null }),
-          home_team: expect.objectContaining({ flag_code: null }),
+          away_team: expect.objectContaining({ color: "#002395", flag_code: null }),
+          home_team: expect.objectContaining({ color: "#BC002D", flag_code: null }),
         }),
         expect.objectContaining({
           id: "super-rugby-match",

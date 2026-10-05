@@ -83,6 +83,8 @@ const TEAM_IDENTITY: Record<string, TeamIdentity> = {
   "glasgow-warriors": { color: "#111111", flag: "🏉" },
   harlequins: { color: "#1E7F3B", flag: "🏉" },
   highlanders: { color: "#FFD100", flag: "🏉" },
+  "honda-heat": { color: "#E60012", flag: "🏉" },
+  "hong-kong-china": { color: "#C8102E", flag: "🇭🇰" },
   hurricanes: { color: "#FEDD00", flag: "🏉" },
   ireland: { color: "#009A44", flag: "🇮🇪" },
   italy: { color: "#0070B8", flag: "🇮🇹" },
@@ -137,6 +139,7 @@ const TEAM_IDENTITY: Record<string, TeamIdentity> = {
   wales: { color: "#C8102E", flag: getSubdivisionFlag("gbwls") },
   waratahs: { color: "#6EC6E8", flag: "🏉" },
   zebre: { color: "#111111", flag: "🏉" },
+  zimbabwe: { color: "#006B3F", flag: "🇿🇼" },
 };
 
 const TEAM_STRIPES: Record<string, string[]> = {
@@ -245,6 +248,10 @@ export function getTeamFlagSvg(slug: string): string {
 
 export function getTeamColor(slug: string): string {
   return TEAM_IDENTITY[slug]?.color ?? "#94a3b8";
+}
+
+export function getTeamColorOrNull(slug: string): string | null {
+  return TEAM_IDENTITY[slug]?.color ?? null;
 }
 
 export function getTeamStripeColors(slug: string): string[] {

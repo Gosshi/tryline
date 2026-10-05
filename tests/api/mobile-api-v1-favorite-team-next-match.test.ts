@@ -127,6 +127,7 @@ describe("GET /api/v1/me/next-matches", () => {
         matches: [
           {
             away_team: {
+              color: "#002395",
               flag_code: "🇫🇷",
               id: "france-id",
               name: "フランス",
@@ -137,6 +138,7 @@ describe("GET /api/v1/me/next-matches", () => {
             competition_name: "シックスネーションズ",
             has_recap: false,
             home_team: {
+              color: "#BC002D",
               flag_code: "🇯🇵",
               id: "japan-id",
               name: "日本",

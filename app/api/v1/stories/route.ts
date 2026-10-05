@@ -15,6 +15,7 @@ import {
   type StorySourcedFact,
 } from "@/lib/db/queries/sourced-facts";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
+import { getTeamColorOrNull } from "@/lib/format/team-identity";
 import {
   formatJstWeekRangeLabel,
   getCurrentJstWeekRangeUtc,
@@ -114,6 +115,7 @@ function mapMatch(
 ): V1CalendarMatch {
   return {
     away_team: {
+      color: getTeamColorOrNull(match.awayTeam.slug),
       flag_code: suppressFlags ? null : (match.awayTeam.flagCode ?? null),
       id: match.awayTeam.id ?? null,
       name: match.awayTeam.name,
@@ -131,6 +133,7 @@ function mapMatch(
     has_preview: match.hasPreview,
     has_recap: match.hasRecap,
     home_team: {
+      color: getTeamColorOrNull(match.homeTeam.slug),
       flag_code: suppressFlags ? null : (match.homeTeam.flagCode ?? null),
       id: match.homeTeam.id ?? null,
       name: match.homeTeam.name,

@@ -9,6 +9,7 @@ import {
   getStandingsForCompetition,
 } from "@/lib/db/queries/standings";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
+import { getTeamColorOrNull } from "@/lib/format/team-identity";
 
 import type { V1Standing, V1StandingsData } from "@/lib/api/v1/types";
 import type { StandingRow } from "@/lib/db/queries/standings";
@@ -23,8 +24,12 @@ function mapStanding(standing: StandingRow): V1Standing {
     points_against: standing.pointsAgainst,
     points_for: standing.pointsFor,
     position: standing.position,
+    team_color: standing.teamSlug
+      ? getTeamColorOrNull(standing.teamSlug)
+      : null,
     team_name: standing.teamName,
     team_short_code: standing.teamShortCode,
+    team_slug: standing.teamSlug ?? null,
     total_points: standing.totalPoints,
     tries_for: standing.triesFor,
     won: standing.won,

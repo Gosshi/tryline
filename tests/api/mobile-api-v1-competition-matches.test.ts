@@ -111,6 +111,7 @@ describe("GET /api/v1/competitions/[slug]/matches", () => {
         matches: [
           {
             away_team: {
+              color: "#002395",
               flag_code: "🇫🇷",
               id: "away-id",
               name: "フランス",
@@ -128,6 +129,7 @@ describe("GET /api/v1/competitions/[slug]/matches", () => {
             has_preview: true,
             has_recap: true,
             home_team: {
+              color: "#BC002D",
               flag_code: "🇯🇵",
               id: "home-id",
               name: "日本",

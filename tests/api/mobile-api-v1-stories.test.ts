@@ -178,8 +178,8 @@ describe("GET /api/v1/stories", () => {
       "nations-championship-2026",
     ]);
     expect(body.data.matches[0].match).toMatchObject({
-      away_team: { flag_code: null },
-      home_team: { flag_code: null },
+      away_team: { color: "#002395", flag_code: null },
+      home_team: { color: "#BC002D", flag_code: null },
     });
   });
 
