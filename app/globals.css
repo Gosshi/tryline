@@ -1313,3 +1313,97 @@
     gap: 12px;
   }
 }
+
+/* Standalone standings use the complete shared table on a paper ledger. */
+.tl-scope .tl-standings-band {
+  background: var(--color-ink-strong);
+}
+.tl-scope .tl-standings-updated {
+  border-left: 1px solid #ddba8766;
+  padding-left: 16px;
+}
+.tl-scope .tl-standings-nav {
+  border-bottom: 1px solid var(--color-rule);
+  padding-top: 8px;
+}
+.tl-scope .tl-standings-sheet > section {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.tl-scope .tl-standings-sheet > section > div:first-child {
+  border: 0;
+  padding: 0 0 16px;
+}
+.tl-scope .tl-standings-sheet h2 {
+  color: var(--color-ink);
+  font-size: 24px;
+  font-weight: 800;
+}
+.tl-scope .tl-standings-sheet > section > div:last-child {
+  padding: 0;
+}
+.tl-scope .tl-standings-sheet table {
+  background: #fffdf880;
+  border-block: 3px double var(--color-ink);
+}
+.tl-scope .tl-standings-sheet th {
+  padding: 12px 10px;
+  background: var(--color-panel);
+  white-space: nowrap;
+}
+.tl-scope .tl-standings-sheet td {
+  padding: 10px;
+  color: var(--color-ink);
+}
+.tl-scope .tl-standings-sheet td:first-child {
+  width: 52px;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.tl-scope .tl-standings-sheet td:nth-child(2) {
+  width: 36%;
+  overflow-wrap: anywhere;
+}
+.tl-scope .tl-standings-sheet td:nth-child(2) > span {
+  min-height: 24px;
+}
+.tl-scope .tl-standings-sheet td:nth-child(2) > span > span:first-child {
+  height: 24px;
+  width: 3px;
+  border-radius: 0;
+}
+.tl-scope .tl-standings-sheet td:last-child {
+  background: #fffdf866;
+  font-size: 24px;
+  color: var(--color-ink);
+}
+@media (max-width: 639px) {
+  .tl-scope .tl-standings-band h1 {
+    min-width: 260px;
+  }
+  .tl-scope .tl-standings-updated {
+    flex-basis: 100%;
+  }
+  .tl-scope .tl-standings-sheet table {
+    min-width: 0;
+    table-layout: fixed;
+  }
+  .tl-scope .tl-standings-sheet th,
+  .tl-scope .tl-standings-sheet td {
+    padding-inline: 6px;
+  }
+  .tl-scope .tl-standings-sheet th:first-child,
+  .tl-scope .tl-standings-sheet td:first-child {
+    width: 36px;
+    font-size: 18px;
+  }
+  .tl-scope .tl-standings-sheet th:nth-child(2),
+  .tl-scope .tl-standings-sheet td:nth-child(2) {
+    width: 32%;
+  }
+  .tl-scope .tl-standings-sheet td:last-child {
+    font-size: 22px;
+  }
+}
