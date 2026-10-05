@@ -110,8 +110,8 @@ describe("calculate-standings", () => {
     expect(top14.away!.bonusPointsTry).toBe(0);
   });
 
-  it("rejects all calculation when a finished match has no events", () => {
-    expect(() =>
+  it("returns pending match ids when finished matches have no events", () => {
+    expect(
       ensureMatchEventsAvailable(
         [
           {
@@ -124,6 +124,6 @@ describe("calculate-standings", () => {
         ],
         new Set(),
       ),
-    ).toThrow("finished_match_events_missing: missing-events");
+    ).toEqual(["missing-events"]);
   });
 });

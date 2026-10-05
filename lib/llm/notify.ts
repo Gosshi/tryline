@@ -1,3 +1,4 @@
+import { getSupabaseServerClient } from "@/lib/db/server";
 import { getServerEnv, hasConfiguredValue } from "@/lib/env";
 
 import type { InternationalFixture } from "@/lib/audit/missing-internationals";
@@ -201,6 +202,57 @@ async function postOpsAlert(text: string): Promise<void> {
     }
   } catch (error) {
     console.error("[content-pipeline] failed to send Discord ops alert", error);
+  }
+}
+
+export async function notifyStandingsIngestionIssue(params: {
+  competition: string;
+  error?: string;
+  pendingMatchIds?: string[];
+  reason?: string;
+  status: "failed" | "skipped" | "updated";
+}): Promise<void> {
+  if (
+    params.status !== "failed" &&
+    !(params.status === "skipped" && params.reason === "events_pending")
+  )
+    return;
+
+  try {
+    if (params.status === "skipped") {
+      if (!params.pendingMatchIds?.length) return;
+      const db = getSupabaseServerClient();
+      const { data, error } = await db
+        .from("matches")
+        .select("kickoff_at")
+        .in("id", params.pendingMatchIds)
+        .order("kickoff_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (
+        !data ||
+        Date.now() - Date.parse(data.kickoff_at) <= 48 * 60 * 60 * 1000
+      )
+        return;
+    }
+    await postOpsAlert(
+      [
+        "⚠️ 順位表の取り込みに要対応",
+        `大会: ${params.competition}`,
+        `理由: ${params.status === "failed" ? "failed" : params.reason}`,
+        ...(params.error ? [`詳細: ${params.error}`] : []),
+        ...(params.status === "skipped"
+          ? [
+              `保留中の試合ID: ${params.pendingMatchIds!.join(", ")}`,
+              "最も古いキックオフから48時間を超えています",
+            ]
+          : []),
+      ].join("\n"),
+    );
+  } catch (error) {
+    // Alert delivery/lookup failures must not change the ingestion HTTP status.
+    console.error("[standings-ingestion] failed to notify Discord", error);
   }
 }
 

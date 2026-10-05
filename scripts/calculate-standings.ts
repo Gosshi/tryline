@@ -254,10 +254,9 @@ export function ensureMatchEventsAvailable(
   matches: MatchRow[],
   eventMatchIds: Set<string>,
 ) {
-  const missingMatch = matches.find((match) => !eventMatchIds.has(match.id));
-  if (missingMatch) {
-    throw new Error(`finished_match_events_missing: ${missingMatch.id}`);
-  }
+  return matches
+    .filter((match) => !eventMatchIds.has(match.id))
+    .map((match) => match.id);
 }
 
 export function calculateRows(params: {
@@ -377,7 +376,15 @@ export async function calculateStandings(slug: string) {
   const { eventMatchIds, triesByMatchAndTeam } = await loadTryCounts(
     matches.map((match) => match.id),
   );
-  ensureMatchEventsAvailable(matches, eventMatchIds);
+  const pendingMatchIds = ensureMatchEventsAvailable(matches, eventMatchIds);
+  if (pendingMatchIds.length > 0) {
+    // Missing try counts would produce incorrect bonus points; keep the last table.
+    return {
+      status: "skipped" as const,
+      reason: "events_pending" as const,
+      pendingMatchIds,
+    };
+  }
   const rows = calculateRows({
     competitionFamily: competition.family,
     matches,
@@ -386,7 +393,7 @@ export async function calculateStandings(slug: string) {
   });
   const result = await upsertRows(competition.id, rows);
 
-  return { competition, matches, result, rows };
+  return { status: "updated" as const, competition, matches, result, rows };
 }
 
 export async function calculateLatestTop14Standings() {
@@ -403,10 +410,13 @@ export async function calculateLatestTop14Standings() {
     throw error;
   }
   if (!data) {
-    return { reason: "competition_not_found", status: "skipped" as const };
+    return { reason: "competition_not_found" as const, status: "skipped" as const };
   }
 
   const calculation = await calculateStandings(data.slug);
+  if (calculation.status === "skipped") {
+    return { ...calculation, competitionSlug: data.slug };
+  }
   return {
     competitionSlug: calculation.competition.slug,
     status: "updated" as const,
@@ -424,7 +434,14 @@ async function main() {
     process.exit(1);
   }
 
-  const { competition, matches, result, rows } = await calculateStandings(slug);
+  const calculation = await calculateStandings(slug);
+  if (calculation.status === "skipped") {
+    console.log(
+      `Skipped standings for ${slug}: ${calculation.reason} pending_match_ids=${calculation.pendingMatchIds.join(",")}`,
+    );
+    return;
+  }
+  const { competition, matches, result, rows } = calculation;
 
   console.log(
     `Calculated standings for ${competition.slug}: teams=${rows.length} finished_matches=${matches.length} upserted=${result.upserted}`,
