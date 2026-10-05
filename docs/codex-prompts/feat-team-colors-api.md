@@ -6,7 +6,7 @@
 
 ## やること
 - `lib/format/team-identity.ts` に `getTeamColorOrNull(slug)` を足す（色が無ければ `null`。今の `getTeamColor` は変えない）。
-- 仕様書の「未解決の質問 1」で Owner が決めたチームの色を `TEAM_IDENTITY` に足す。決まっていない slug は足さない。
+- 仕様書の「未解決の質問 1」の 3 チーム（香港・ジンバブエ・ホンダヒート）を `TEAM_IDENTITY` に足す。`us-montauban` は足さない。
 - `lib/api/v1/types.ts` の `V1TeamSummary` に `color: string | null`、`V1Standing` に `team_slug`・`team_color` を足し、`app/api/v1/` の各ルートで値を入れる（場所は仕様書の一覧。`rg -n "short_code:" app/api/v1` で漏れが無いか確かめる）。
 - 仕様書の受け入れ条件 1〜4 のテストを足す。網羅のテストの fixture は仕様書の付録の 91 件をそのまま使う。
 

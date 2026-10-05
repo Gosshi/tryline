@@ -101,11 +101,13 @@ export type V1Standing = {
 
 ## 未解決の質問
 
-1. **色の無い 4 チームの色**（Owner が決める。決めない slug は `null` のまま＝アプリでは墨色の面）。Claude Code の候補（公式のジャージの主な色。**未確認なので、採用する場合は Owner が公式サイトで確認する**）:
-   - `hong-kong-china`: 赤 `#C8102E`
-   - `zimbabwe`: 緑 `#006B3F`
-   - `honda-heat`: 赤 `#E60012`
-   - `us-montauban`: 候補なし（直近の試合が無く、Claude Code は色を確認できていない）→ `null` を推奨
+1. ~~色の無い 4 チームの色~~ → **2026-10-05 Owner 決定**。`TEAM_IDENTITY` に次の 3 チームを足す（`flag` は国代表は国旗、クラブは `"🏉"`。既存の書き方に合わせる）:
+   - `hong-kong-china`: `#C8102E`（`flag`: `"🇭🇰"`）
+   - `zimbabwe`: `#006B3F`（`flag`: `"🇿🇼"`）
+   - `honda-heat`: `#E60012`（`flag`: `"🏉"`）
+   - `us-montauban`: **足さない**（色なし＝`null`）。受け入れ条件 2 で `null` を許す slug はこの 1 件だけ。
+
+残る未解決の質問は無い。
 
 ## 付録: 本番の teams の slug（2026-10-05、91 件）
 
