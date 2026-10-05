@@ -479,6 +479,21 @@
   border-top: 0;
   border-left: 1px solid #e0c493;
 }
+.tl-scope .tl-intro-dialog {
+  width: min(1100px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  overflow: auto;
+  border: 1px solid #ddba87;
+  border-radius: 3px;
+  padding: 16px;
+  background: var(--color-ink-strong);
+  color: #fffdf8;
+}
+.tl-scope .tl-intro-dialog::backdrop {
+  background: #17191fcc;
+}
 .tl-scope .tl-ticker {
   border-bottom: 2px solid var(--color-accent);
 }
@@ -778,25 +793,25 @@
 }
 @media (min-width: 1024px) {
   .tl-scope .tl-home-hero {
-    min-height: 670px;
-    padding-top: 120px;
-    padding-bottom: 76px;
+    min-height: 620px;
+    padding-top: 64px;
+    padding-bottom: 64px;
   }
   .tl-scope .tl-hero-layout {
-    display: block;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(640px, 50vw, 720px);
+    gap: 32px;
   }
   .tl-scope .tl-hero-heading {
-    max-width: 1160px;
-    font-size: clamp(72px, 6.35vw, 96px);
+    max-width: 100%;
+    font-size: clamp(34px, calc(6.25vw - 30px), 64px);
   }
-  .tl-scope .tl-hero-heading > span:last-child {
+  .tl-scope .tl-hero-heading > span {
     display: block;
   }
   .tl-scope .tl-introduction-poster {
-    position: absolute;
-    right: 32px;
-    bottom: -32px;
-    width: clamp(300px, 28vw, 420px);
+    position: static;
+    width: 100%;
   }
   .tl-scope .tl-editorial-reviews {
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);

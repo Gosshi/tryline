@@ -1,17 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 const POSTER_SRC = "/videos/tryline-promo-poster.jpg";
 const VIDEO_SRC = "/videos/tryline-promo-720p.mp4";
 
 export function HomeIntroFilm() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const dialogVideoRef = useRef<HTMLVideoElement>(null);
+  const expandButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const resumeInlineRef = useRef(false);
+  const dialogTitleId = useId();
+  const [ready, setReady] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [dialogFailed, setDialogFailed] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [failed, setFailed] = useState(false);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
+    setReady(true);
     if (typeof window.matchMedia !== "function") return;
 
     const desktop = window.matchMedia("(min-width: 701px)");
@@ -51,6 +61,41 @@ export function HomeIntroFilm() {
       video.load();
     };
   }, [enabled, failed]);
+
+  useEffect(() => {
+    const video = dialogVideoRef.current;
+    if (!expanded || dialogFailed || !video) return;
+
+    video.muted = true;
+    return () => {
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [expanded, dialogFailed]);
+
+  function openDialog() {
+    const dialog = dialogRef.current;
+    if (!dialog || dialog.open) return;
+
+    const inlineVideo = videoRef.current;
+    resumeInlineRef.current = Boolean(inlineVideo && !inlineVideo.paused);
+    inlineVideo?.pause();
+    setDialogFailed(false);
+    setExpanded(true);
+    dialog.showModal();
+    closeButtonRef.current?.focus();
+  }
+
+  function handleDialogClose() {
+    setExpanded(false);
+    const inlineVideo = videoRef.current;
+    if (resumeInlineRef.current && enabled && !failed && inlineVideo) {
+      void inlineVideo.play().catch(() => setPaused(inlineVideo.paused));
+    }
+    resumeInlineRef.current = false;
+    expandButtonRef.current?.focus();
+  }
 
   function togglePlayback() {
     const video = videoRef.current;
@@ -111,14 +156,79 @@ export function HomeIntroFilm() {
           </button>
         )}
       </div>
-      <figcaption className="mt-3 border-l border-[#e0c493] pl-4 text-white">
-        <span className="block text-xs font-semibold tracking-[0.2em]">
-          INTRODUCTION FILM
-        </span>
-        <span className="mt-1 block text-xs leading-relaxed text-white/80">
-          サイトとアプリの紹介（音なし）
-        </span>
+      <figcaption className="mt-3 flex flex-wrap items-center justify-between gap-3 border-l border-[#e0c493] pl-4 text-white">
+        <div>
+          <span className="block text-xs font-semibold tracking-[0.2em]">
+            INTRODUCTION FILM
+          </span>
+          <span className="mt-1 block text-xs leading-relaxed text-white/80">
+            サイトとアプリの紹介（音なし）
+          </span>
+        </div>
+        <button
+          className="inline-flex min-h-11 items-center rounded-full border border-white/40 px-4 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          disabled={!ready}
+          onClick={openDialog}
+          ref={expandButtonRef}
+          type="button"
+        >
+          拡大して見る
+        </button>
       </figcaption>
+      <dialog
+        aria-labelledby={dialogTitleId}
+        className="tl-intro-dialog"
+        onCancel={(event) => {
+          event.preventDefault();
+          dialogRef.current?.close();
+        }}
+        onClose={handleDialogClose}
+        ref={dialogRef}
+      >
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <p className="text-base font-semibold" id={dialogTitleId}>
+            Tryline の紹介動画を拡大
+          </p>
+          <button
+            className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-white/40 px-4 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            onClick={() => dialogRef.current?.close()}
+            ref={closeButtonRef}
+            type="button"
+          >
+            閉じる
+          </button>
+        </div>
+        {expanded && (
+          <div className="aspect-video overflow-hidden bg-[var(--color-ink-strong)]">
+            {dialogFailed ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                alt="Tryline 海外ラグビーを、日本語で。"
+                className="h-full w-full object-contain"
+                height={720}
+                src={POSTER_SRC}
+                width={1280}
+              />
+            ) : (
+              <video
+                aria-label="サイトとアプリの紹介・拡大表示（音なし）"
+                autoPlay
+                className="h-full w-full object-contain"
+                controls
+                height={720}
+                muted
+                onError={() => setDialogFailed(true)}
+                playsInline
+                poster={POSTER_SRC}
+                preload="none"
+                ref={dialogVideoRef}
+                src={VIDEO_SRC}
+                width={1280}
+              />
+            )}
+          </div>
+        )}
+      </dialog>
     </figure>
   );
 }

@@ -8,6 +8,7 @@ import {
   fireEvent,
   render,
   screen,
+  within,
 } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,6 +25,21 @@ beforeEach(() => {
   reduced = false;
   paused = true;
   mediaListeners.clear();
+  Object.defineProperties(HTMLDialogElement.prototype, {
+    showModal: {
+      configurable: true,
+      value: function (this: HTMLDialogElement) {
+        this.setAttribute("open", "");
+      },
+    },
+    close: {
+      configurable: true,
+      value: function (this: HTMLDialogElement) {
+        this.removeAttribute("open");
+        this.dispatchEvent(new Event("close"));
+      },
+    },
+  });
   vi.spyOn(document, "readyState", "get").mockReturnValue("complete");
   vi.stubGlobal("matchMedia", (query: string) => ({
     get matches() {
@@ -90,7 +106,9 @@ describe("HomeIntroFilm", () => {
     expect(html).toContain('preload="none"');
     expect(html).not.toContain("src=");
     expect(html).not.toMatch(/fetchpriority|loading="lazy"/i);
-    expect(html).not.toContain("<button");
+    expect(html).toContain("拡大して見る");
+    expect(html).not.toContain("<dialog open");
+    expect(html).not.toContain("controls=");
   });
 
   it.each([390, 700])("does not load the video at %ipx", (viewportWidth) => {
@@ -156,7 +174,9 @@ describe("HomeIntroFilm", () => {
     expect(video()).toHaveAttribute("src");
     changeMedia(1440, true);
     expect(video()).not.toHaveAttribute("src");
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /紹介動画を/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("falls back to the poster after a media error", () => {
@@ -166,7 +186,9 @@ describe("HomeIntroFilm", () => {
       "src",
       "/videos/tryline-promo-poster.jpg",
     );
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /紹介動画を/ }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("サイトとアプリの紹介（音なし）"),
     ).not.toBeInTheDocument();
@@ -192,5 +214,101 @@ describe("HomeIntroFilm", () => {
     unmount();
     expect(mediaListeners.size).toBe(0);
     expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled();
+  });
+
+  it.each([
+    { viewportWidth: 390, reduce: false },
+    { viewportWidth: 1440, reduce: true },
+  ])(
+    "loads the dialog only on explicit expansion at $viewportWidth px, reduce=$reduce",
+    ({ viewportWidth, reduce }) => {
+      width = viewportWidth;
+      reduced = reduce;
+      render(<HomeIntroFilm />);
+      expect(video()).not.toHaveAttribute("src");
+      expect(document.querySelector("dialog video")).toBeNull();
+      const expand = screen.getByRole("button", { name: "拡大して見る" });
+      fireEvent.click(expand);
+      const dialog = screen.getByRole("dialog", {
+        name: "Tryline の紹介動画を拡大",
+      });
+      const largeVideo = within(dialog).getByLabelText(
+        "サイトとアプリの紹介・拡大表示（音なし）",
+      ) as HTMLVideoElement;
+      expect(largeVideo).toHaveAttribute(
+        "src",
+        "/videos/tryline-promo-720p.mp4",
+      );
+      expect(largeVideo.controls).toBe(true);
+      expect(largeVideo.muted).toBe(true);
+      expect(largeVideo.playsInline).toBe(true);
+      expect(video()).not.toHaveAttribute("src");
+      expect(
+        within(dialog).getByRole("button", { name: "閉じる" }),
+      ).toHaveFocus();
+      fireEvent.click(within(dialog).getByRole("button", { name: "閉じる" }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(document.querySelector("dialog video")).toBeNull();
+      expect(expand).toHaveFocus();
+      expect(video()).not.toHaveAttribute("src");
+    },
+  );
+
+  it("closes on native cancel and restores the expansion trigger focus", () => {
+    render(<HomeIntroFilm />);
+    const expand = screen.getByRole("button", { name: "拡大して見る" });
+    fireEvent.click(expand);
+    const dialog = screen.getByRole("dialog");
+    fireEvent(dialog, new Event("cancel", { cancelable: true }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(expand).toHaveFocus();
+  });
+
+  it("pauses the inline video during expansion and restores playback on close", () => {
+    render(<HomeIntroFilm />);
+    const inlineVideo = video();
+    const pause = vi.spyOn(inlineVideo, "pause");
+    fireEvent.click(screen.getByRole("button", { name: "拡大して見る" }));
+    expect(pause).toHaveBeenCalled();
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "閉じる",
+      }),
+    );
+    expect(
+      screen.getByRole("button", { name: "紹介動画を一時停止" }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps an intentionally paused inline video paused after closing", () => {
+    render(<HomeIntroFilm />);
+    fireEvent.click(screen.getByRole("button", { name: "紹介動画を一時停止" }));
+    const play = vi.spyOn(video(), "play");
+    play.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "拡大して見る" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "閉じる",
+      }),
+    );
+    expect(play).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "紹介動画を再生" }),
+    ).toBeInTheDocument();
+  });
+
+  it("falls back to the poster within the dialog on error and can close", () => {
+    render(<HomeIntroFilm />);
+    fireEvent.click(screen.getByRole("button", { name: "拡大して見る" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.error(
+      within(dialog).getByLabelText("サイトとアプリの紹介・拡大表示（音なし）"),
+    );
+    expect(within(dialog).getByRole("img")).toHaveAttribute(
+      "src",
+      "/videos/tryline-promo-poster.jpg",
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "閉じる" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

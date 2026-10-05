@@ -1,65 +1,68 @@
 # ホーム紹介動画の実装・検証
 
-2026-10-05。最新origin/main `3a2cd947` から `codex/feat-home-intro-film` を作成。
-仕様: `specs/feat-home-intro-film.md`、指示書: `docs/codex-prompts/feat-home-intro-film.md`。文書は変更なし。
+2026-10-05。origin/main `3a2cd947` から作成した `codex/feat-home-intro-film`、PR #919へのレビュー修正を含む記録。
+仕様: `specs/feat-home-intro-film.md`、指示書: `docs/codex-prompts/feat-home-intro-film.md`。文書の改訂なし。
 
-## 実装
+## 実装とレビューへの対応
 
-- 指定の素材をpublic/videosへコピー。元のdocs素材は既にmainにあり、変更・移動・削除せず、PRの差分にも含めない。1080p版とsourceの未追跡ファイルも対象外。
-- 動画: 1,194,970 bytes、H.264、1280×720、31.5秒、音声ストリームなし。ポスター: 19,148 bytes。元ファイルとバイト一致。MP4のmoovがmdatより先にありfaststartを保持。
-- HomeIntroFilmはサーバーHTMLでwidth=1280 / height=720 / poster / preload=noneのvideoだけを描き、srcとsource要素は出さない。媒体の面はaspect-video / object-containで、映像を切り抜かない。fetchpriority、lazy、動画preloadリンクは追加なし。
-- window.load後（既にcompleteなら直後）、min-width:701px、Reduce Motionオフのときにだけsrcを付ける。700px以下やReduce Motionはsrcなし。条件が変われば再生を止めてsrcを外し、loadでメディアを解放。
-- muted / playsInline / autoplay / loop。一時停止・再生ボタンは44px以上、文言とaria-pressedで状態を表示。ボタンに新しい計測は付けない。
-- 読み込みエラーはvideoを同寸法のポスター画像へ戻し、エラー文言・操作ボタンは出さない。ブラウザが自動再生を拒否した場合は再生ボタンを残す。
-- キャプションをINTRODUCTION FILM／サイトとアプリの紹介（音なし）へ変更。figureのaria-labelはTryline の紹介動画。
-- デスクトップの枠の幅だけclamp(300px,28vw,420px)へ変更し、映像を薄くしないよう枠全体のopacity=0.85を削除。キャプションは映像の下に置いて映像を隠さない。枠の面が16:9で、figureにはこの面とキャプションを含める。
-- 紹介枠以外のHomePageのコードは同一（置換箇所とimportを除いた比較で一致）。データ、見出し、日程、ティッカー、既存の動き、CTA、SEO、spoilerに変更なし。
+- 指定素材をpublic/videosへコピー。元のdocs素材はmainにあり、変更・移動・削除なし。1080p版とsourceの未追跡ファイルは対象外。
+- 動画: 1,194,970 bytes、H.264、1280×720、31.5秒、音声ストリームなし。ポスター: 19,148 bytes。元ファイルとバイト一致、moovがmdatより先のfaststartを保持。レビュー修正では素材を変更していない。
+- SSRはwidth=1280 / height=720 / poster / preload=noneのvideoを描き、src・source要素は出さない。aspect-video / object-containで映像を切り抜かない。fetchpriority、lazy、動画preloadリンクは追加なし。
+- 自動取得はwindow.load後（completeなら直後）、701px以上、Reduce Motionオフのみ。条件が変われば停止・src解除・loadでメディアを解放。muted / playsInline / autoplay / loop、一時停止・再生ボタンは44px以上、aria-pressedで状態を表示。
+- 1024px以上は左右のgrid配置に変更。動画の幅はclamp(640px,50vw,720px)、見出しは既存の3つのspanを行ごとに表示し34〜64pxで可変。ヒーローは最小620px、上下64px。キャプションとボタンは映像の下。1024px未満の配置は維持。
+- 「拡大して見る」はスマホとReduce Motionでも表示。JSがないSSRでは無効、hydration後に有効。native dialogのshowModalで背景をinertにし、閉じるボタンへフォーカス。閉じるボタンまたはEsc由来のcancelでcloseし、開いたボタンへフォーカスを戻す。
+- ダイアログ動画は開いたときだけ描画・src設定。controls / muted / playsInline / autoplay、ループなし。最大1100pxのダイアログ内で16:9表示。閉じると動画を取り除き、停止・src解除・loadでメディアを解放。
+- 拡大中は背面の動画を停止。閉じると、拡大前に再生中で今も自動再生の条件を満たす場合だけ再開。利用者が先に停止していた場合は停止を維持。
+- インライン・拡大表示それぞれの読み込みエラーは、同寸法のポスター画像へ復帰。閉じる操作は残る。インラインの自動再生拒否は再生ボタンを残す。
+- ダイアログ名はaria-labelledbyで提供し、既存ページのh1/h2階層は変更しない。新しい計測なし、cta_idは27→27。紹介枠の置換とimportを除きHomePageのソースは同一。
 
-## 自動テスト
+### Ownerが指定した仕様の読み替え
 
-- 新規home-intro-film.test.tsxの12件: SSRでsrcなし、390/700px、Reduce Motion、701/1440px、load待ち、停止／再生、条件変更、エラーのポスター表示、自動再生拒否、アンマウント時の解除。
-- 既存HomePageテスト1件の4:3線画ポスターの期待値を、16:9面・動画ポスター・新文言へ更新。ほかの既存assertは変更なし。
-- 関連テスト37件成功。
+レビューの指示に従い「700px以下とReduce Motionでは取得しない」は「自動では取得しない。利用者が拡大ボタンを押したときだけ取得」に読み替えた。ダイアログ内の再生は明示操作後のみ。仕様書自体は編集していない。
+
+## 自動検証
+
+- レビューの追加要件のテストを先に追加し、未実装状態で失敗を確認してから修正。
+- HomeIntroFilmの18件: SSR、390/700px、701/1440px、Reduce Motion、load待ち、停止／再生、条件変更、エラー、自動再生拒否、解除、明示拡大での取得、controls/muted、閉じる・cancel・フォーカス復帰、背面停止と再開、先に停止していた状態の維持、ダイアログ内のポスター復帰。
+- HomePageの既存25件を含む関連テスト43件成功。既存のポスター期待値1件のみ初回実装で更新し、レビュー修正ではHomePageのテストを変更していない。
 - pnpm lint: 成功。
 - pnpm typecheck（tsc --noEmit）: 成功。
-- pnpm test: 338ファイル・2,309件成功。
-- pnpm build: コンパイル成功（4.7秒）。明示的なダミー設定・ローカルDB URLで実行。ページデータ収集で127.0.0.1:54321へのECONNREFUSED、/c/[competition]/[season]/round/[round]で停止。ビルド全体の成功・CIは未確認。秘密ファイルを読んでいない。
-- cta_id: 27→27、差なし。git diff --check成功。
+- pnpm test: 338ファイル・2,315件成功。
+- pnpm build: コンパイル成功（6.3秒）。秘密ファイルを読まず、明示的なダミー設定とローカルDB URLで実行。ページデータ収集でECONNREFUSED 127.0.0.1:54321、/matches/[id]/enで停止。ビルド全体は未完了。
+- cta_id集合: 27→27、差なし。仕様書・指示書・元素材の一致確認、git diff --check成功。新規依存なし。
 
 ## ローカル実ブラウザでの確認
 
-公開中のトップHTMLの紹介枠だけ、実装コンポーネントのSSRと同じReactコンポーネントのhydrationに置き換えた検証ページを使用。CSSは実装のTailwind、動画・ポスターは実際のpublic素材。データ取得・LLMの呼び出しなし。新規依存は追加せず既存Viteのesbuildを検証用バンドルに使用。トップ全体のNext.js hydrationやログインのE2Eではない。
+公開中トップのHTMLの紹介枠だけ、実装したHomeIntroFilmのSSRと同じReactコンポーネントのhydrationに置き換えたローカルページを使用。実装のTailwind CSSと実際の動画・ポスターを使用。データ取得・LLM呼び出しなし、既存Viteのesbuildで検証用バンドルを作成。トップ全体のNext.js hydrationやログインのE2Eではない。Vercelを開いていない。
 
-Playwright MCPはブラウザが既に使用中というエラー。コード実行ツールは「承認が必要だがapproval policyがnever」で拒否され、Node側のPlaywright読み込みもモジュールエラーとなったため、Playwrightによる確認は未実施。Chrome DevToolsで以下を確認した。
-
-| 状態 | 結果 |
+| 幅・状態 | 確認結果 |
 |---|---|
-| 1440×900 | srcあり、paused=false、muted=true、loop=true、playsInline=true、autoplay=true、readyState=4 |
-| ループ | 終端の0.15秒前へシークし、0.7秒後のcurrentTime=0.697649秒。先頭へ戻り継続再生 |
-| 一時停止 | paused=true、currentTimeが安定、文言「再生」、aria-pressed=true |
-| 再生 | paused=falseへ戻る |
-| 390×844（読み込み前に設定） | srcなし、mp4リクエスト0件、操作ボタンなし |
-| 700×900（読み込み前に設定） | srcなし、mp4リクエスト0件 |
-| 701pxへ拡大 | srcあり、paused=false、mp4リクエスト1件 |
-| 700pxへ戻す | src属性なし、srcプロパティ空、paused=true、readyState=0、networkState=0 |
-| 1440px、Reduce Motion条件 | 初期matchMediaにreduce=trueを注入して条件を検証。srcなし、mp4リクエスト0件、操作ボタンなし。OS／CSSの実際のreduceエミュレーションは未確認 |
-| クライアントスクリプトなし | 同一コンポーネントのSSRのみ。srcなし、mp4リクエスト0件、ポスター表示、面403.2×226.8px。Next.js全体でJavaScriptを無効にした確認は未実施 |
-| 動画404 | ローカルで存在しない動画URLに変更してエラーを発生。videoと操作ボタンが消え、1280×720のポスター画像に戻る。エラー文言なし |
+| 1440×900 | 映像720×405px、figure下端582px、h1=60px。見出し・CTA・映像が1画面目に収まり、横はみ出しなし |
+| 1024×900 | 映像640×360px、figure下端537px、h1=34px。2つのCTAの下端478.7/532.7px、重なり・横はみ出しなし |
+| 390×844 | 映像358×201.375px、figure下端754px。srcなし・mp4通信0件、拡大ボタンは有効、横はみ出しなし |
+| 拡大・1440px | ダイアログ1100×693.625px、映像1066×599.625px。muted/controls=true、背面は停止、閉じると背面を再開し拡大ボタンへフォーカス復帰 |
+| 拡大・1024px | ダイアログ992×632.875px、映像958×538.875px。cancelイベントで閉じ、動画がDOMから消え、フォーカス復帰 |
+| 拡大・390px | ダイアログ358×276.25px、映像324×182.25px。押した後だけmp4通信1件、muted/controls=true、再生中。閉じると動画を除去しフォーカス復帰。インラインのsrcは引き続きなし |
+| Reduce Motion条件・1440px | 初期matchMediaにreduce=trueを注入。押す前はsrcなし・mp4通信0件、押した後だけ1件。閉じると動画を除去しフォーカス復帰、インラインのsrcはなし。OS／CSSの実際のreduce設定は未確認 |
+| ダイアログの背景フォーカス | 開いている間、背景CTAへfocus()しても移らず、閉じるボタンに留まる。標準showModalのinertによる制限を確認 |
+| インラインを先に停止 | 停止してから拡大し、閉じてもpaused=trueを維持 |
 
-mp4通信0件はPerformance Resource TimingとChromeのmediaリクエスト一覧の両方で確認。読み込み前から狭い幅／reduce条件にした新しいコンテキストを使用。
+初回実装時に確認した内容: 1440pxの音なしループ（終端へシーク後先頭へ戻る）、停止・再生、700pxの通信0件、700→701pxの取得開始と701→700pxの解除、クライアントスクリプトなしのSSRポスター、存在しない動画URLによるポスター復帰。これらの挙動のコードはレビュー修正でも維持し、自動テストで再確認した。
 
-枠の面: 1440pxで403.2×226.8、1024pxで300×168.75、390pxで358×201.375。いずれも16:9。横はみ出しなし、見出し・説明・ボタンと重ならず、映像を切らずに表示。
+### ブラウザ操作の制限
+
+Playwrightはブラウザ使用中・コード実行の承認制限・Node側のモジュールエラーで利用できず、Chrome DevToolsで代替した。キーボード送信も「MCP tool call requires approval, but approval policy is never」で拒否されたため、実キーのTab/Shift+Tab・Escは未確認。Escが発生させるnative cancelの閉じる処理は単体テストと実ブラウザへのcancelイベント送信で確認した。フォーカス保持は標準dialogのshowModalと上記の背景focus確認に基づき、実キー検証に成功したとは扱わない。
 
 ## スクリーンショット
 
-ローカルの実コンポーネントを載せたトップ。ページ先頭、DPR=1。1440/1024は再生中のフレーム、390は静止ポスター。
+ローカルの実コンポーネントを載せたトップ、ページ先頭、DPR=1。通常表示の1440/1024pxは再生中、390pxは静止ポスター。拡大表示はすべて明示操作後の再生画面。
 
-- [1440×900](after-1440.jpg)
-- [1024×900](after-1024.jpg)
-- [390×844](after-390.jpg)
+| 幅 | 通常表示 | 拡大表示 |
+|---|---|---|
+| 1440×900 | [通常](after-1440.jpg) | [ダイアログ](dialog-1440.jpg) |
+| 1024×900 | [通常](after-1024.jpg) | [ダイアログ](dialog-1024.jpg) |
+| 390×844 | [通常](after-390.jpg) | [ダイアログ](dialog-390.jpg) |
 
 ## 性能・未確認
 
-LCP／CLSの本番（PR前）・プレビューの3回中央値は未測定。静的HTML＋検証用バンドルは実際のNext.jsの取得・hydration経路と異なるので、性能値の代用にはしない。以前のOwner方針「確認はこちらで以後やる」に従ってVercelを開いていない。Ownerのプレビュー確認が必要。
-
-性能条件（CLS<0.1、LCPが本番より0.5秒以上悪化しない）の充足は未確認。合格したとは扱わない。メディア寸法はSSRから固定し、動画の取得はload後、700px以下／reduce条件ではsrc自体を付けない。Playwrightの実環境確認、Next.jsのJavaScript無効、ビルド全体、CIも上記のとおり未確認。
+本番／プレビューのLCP・CLSの3回中央値は未測定。性能条件（CLS<0.1、LCPが本番より0.5秒以上悪化しない）の充足は未確認。静的HTML＋検証用バンドルは実際のNext.jsの取得・hydration経路と異なるため性能値の代用にはしない。SSRからメディア寸法を固定し、自動取得はload後、700px以下／reduce条件は明示操作までsrcなしを維持。Playwright、実キー操作、OSのReduce Motion、Next.js全体のJavaScript無効状態、ビルド全体の完了・CIも未確認として分ける。
