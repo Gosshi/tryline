@@ -123,6 +123,25 @@ export async function ingestStandingsForFamily(
     };
   }
 
+  const db = getSupabaseServerClient();
+  const { count, error } = await db
+    .from("matches")
+    .select("id", { count: "exact", head: true })
+    .eq("competition_id", competition.id);
+  if (error) throw error;
+  if (count === 0) {
+    return {
+      competitionSlug: competition.slug,
+      family,
+      matched: 0,
+      parsed: 0,
+      reason: "no_matches",
+      season: competition.season,
+      status: "skipped",
+      upserted: 0,
+    };
+  }
+
   const sourceUrl = resolveWikipediaStandingsUrl(family, competition.season);
   const rows = await scrapeCompetitionStandings(sourceUrl);
 
