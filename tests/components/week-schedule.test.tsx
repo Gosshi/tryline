@@ -3,6 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -213,6 +214,29 @@ describe("WeekSchedule", () => {
     expect(
       board.querySelectorAll('[data-testid="calendar-board-match"]'),
     ).toHaveLength(5);
+  });
+
+  it("keeps all seven day groups and match links in SSR without enabling the single-day width rule", () => {
+    const matches = Array.from({ length: 7 }, (_, index) => ({
+      ...baseMatch,
+      id: `seven-day-${index}`,
+      kickoffAt: `2026-06-${String(7 + index).padStart(2, "0")}T15:30:00.000Z`,
+    }));
+    const { container } = render(<WeekSchedule matches={matches} />);
+    const board = getDesktopBoard(container);
+    const days = board.querySelectorAll('[data-testid="calendar-board-day"]');
+    expect(days).toHaveLength(7);
+    for (const day of days) {
+      expect(day).not.toHaveAttribute("style");
+      expect(
+        day.querySelectorAll('[data-testid="calendar-board-match"]'),
+      ).toHaveLength(1);
+    }
+    const html = renderToStaticMarkup(<WeekSchedule matches={matches} />);
+    for (const match of matches)
+      expect(html).toContain(`href="/matches/${match.id}"`);
+    expect(board).not.toHaveTextContent("National Stadium");
+    expect(board.querySelectorAll("svg")).toHaveLength(0);
   });
 
   it("never exposes a competition family slug in the board legend", () => {
