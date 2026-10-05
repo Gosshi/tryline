@@ -14,6 +14,7 @@ export type V1CompetitionSummary = {
 };
 
 export type V1TeamSummary = {
+  color: string | null;
   flag_code: string | null;
   id: string | null;
   name: string;
@@ -169,8 +170,10 @@ export type V1Standing = {
   points_against: number;
   points_for: number;
   position: number;
+  team_color: string | null;
   team_name: string;
   team_short_code: string;
+  team_slug: string | null;
   total_points: number;
   tries_for: number;
   won: number;

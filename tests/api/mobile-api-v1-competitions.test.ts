@@ -39,6 +39,7 @@ const standing = {
   position: 1,
   teamName: "日本",
   teamShortCode: "JPN",
+  teamSlug: "japan",
   totalPoints: 5,
   triesFor: 3,
   won: 1,
@@ -112,8 +113,10 @@ describe("GET /api/v1/competitions/[slug]/standings", () => {
         standings: [
           {
             position: 1,
+            team_color: "#BC002D",
             team_name: "日本",
             team_short_code: "JPN",
+            team_slug: "japan",
             total_points: 5,
           },
         ],
@@ -136,10 +139,44 @@ describe("GET /api/v1/competitions/[slug]/standings", () => {
       {
         pool_name: "Pool A",
         standings: [
-          expect.objectContaining({ position: 1, team_name: "日本" }),
+          expect.objectContaining({
+            position: 1,
+            team_name: "日本",
+            team_slug: "japan",
+            team_color: "#BC002D",
+          }),
         ],
       },
     ]);
+  });
+
+  it.each([false, true])(
+    "returns null identity fields for a missing slug (pools: %s)",
+    async (hasPools) => {
+      const withoutSlug = { ...standing, teamSlug: undefined };
+      standingsMock.getStandingsForCompetition.mockResolvedValue([withoutSlug]);
+      standingsMock.getPoolStandingsForCompetition.mockResolvedValue(
+        hasPools ? [{ poolName: "Pool A", standings: [withoutSlug] }] : [],
+      );
+      const response = await requestStandings();
+      const body = await response.json();
+      const rows = hasPools ? body.data.pools[0].standings : body.data.standings;
+
+      expect(rows[0]).toMatchObject({ team_slug: null, team_color: null });
+    },
+  );
+
+  it("preserves an unknown team slug and returns a null color", async () => {
+    standingsMock.getStandingsForCompetition.mockResolvedValue([
+      { ...standing, teamSlug: "us-montauban" },
+    ]);
+    const response = await requestStandings();
+    const body = await response.json();
+
+    expect(body.data.standings[0]).toMatchObject({
+      team_slug: "us-montauban",
+      team_color: null,
+    });
   });
 
   it("matches the Web behavior with 200 and empty arrays when no standings exist", async () => {

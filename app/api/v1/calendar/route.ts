@@ -13,6 +13,7 @@ import {
   getSingleNationCompetitionIds,
 } from "@/lib/db/queries/matches";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
+import { getTeamColorOrNull } from "@/lib/format/team-identity";
 import { getCurrentJstWeekRangeUtc } from "@/lib/format/week";
 
 import type { V1CalendarData, V1CalendarMatch } from "@/lib/api/v1/types";
@@ -99,6 +100,7 @@ export async function GET(request: Request) {
 
     return {
       away_team: {
+        color: getTeamColorOrNull(match.awayTeam.slug),
         flag_code: suppressFlags ? null : (match.awayTeam.flagCode ?? null),
         id: match.awayTeam.id ?? null,
         name: match.awayTeam.name,
@@ -116,6 +118,7 @@ export async function GET(request: Request) {
       has_preview: contentStatus?.hasPreview ?? false,
       has_recap: contentStatus?.hasRecap ?? false,
       home_team: {
+        color: getTeamColorOrNull(match.homeTeam.slug),
         flag_code: suppressFlags ? null : (match.homeTeam.flagCode ?? null),
         id: match.homeTeam.id ?? null,
         name: match.homeTeam.name,

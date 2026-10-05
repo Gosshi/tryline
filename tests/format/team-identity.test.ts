@@ -1,12 +1,109 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
   getTeamColor,
+  getTeamColorOrNull,
   getTeamFlag,
   getTeamFlagSvg,
   getTeamStripe,
   getTeamStripeColors,
 } from "@/lib/format/team-identity";
+
+// Production teams snapshot from specs/feat-team-colors-api.md (2026-10-05).
+const productionTeamSlugs = [
+  "argentina",
+  "australia",
+  "bath",
+  "bayonne",
+  "benetton",
+  "blues",
+  "bordeaux-begles",
+  "bristol-bears",
+  "brumbies",
+  "bulls",
+  "canada",
+  "canon-eagles",
+  "cardiff",
+  "castres",
+  "chiefs",
+  "chile",
+  "clermont",
+  "connacht",
+  "crusaders",
+  "dragons",
+  "edinburgh",
+  "england",
+  "exeter-chiefs",
+  "fiji",
+  "fijian-drua",
+  "force",
+  "france",
+  "georgia",
+  "glasgow-warriors",
+  "gloucester",
+  "grenoble",
+  "harlequins",
+  "highlanders",
+  "honda-heat",
+  "hong-kong-china",
+  "hurricanes",
+  "ireland",
+  "italy",
+  "japan",
+  "kobelco-kobe-steelers",
+  "kubota-spears",
+  "la-rochelle",
+  "leicester-tigers",
+  "leinster",
+  "lions",
+  "lyon",
+  "mitsubishi-dynaboars",
+  "moana-pasifika",
+  "montpellier",
+  "munster",
+  "namibia",
+  "new-zealand",
+  "newcastle-falcons",
+  "northampton-saints",
+  "ospreys",
+  "pau",
+  "perpignan",
+  "portugal",
+  "racing-92",
+  "rebels",
+  "reds",
+  "ricoh-black-rams",
+  "romania",
+  "saitama-wild-knights",
+  "sale-sharks",
+  "samoa",
+  "saracens",
+  "scarlets",
+  "scotland",
+  "sharks",
+  "shizuoka-blue-revs",
+  "south-africa",
+  "spain",
+  "stade-francais",
+  "stormers",
+  "tokyo-suntory-sungoliath",
+  "tonga",
+  "toshiba-brave-lupus",
+  "toulon",
+  "toulouse",
+  "toyota-verblitz",
+  "ulster",
+  "urayasu-d-rocks",
+  "uruguay",
+  "us-montauban",
+  "usa",
+  "vannes",
+  "wales",
+  "waratahs",
+  "zebre",
+  "zimbabwe",
+];
 
 describe("team identity formatter", () => {
   it("returns subdivision flags instead of a bare black flag", () => {
@@ -74,6 +171,45 @@ describe("team identity formatter", () => {
     expect(getTeamColor("shizuoka-blue-revs")).toBe("#1E88E5");
     expect(getTeamColor("unknown")).toBe("#94a3b8");
   });
+
+  it("returns a nullable API color without changing the Web fallback", () => {
+    expect(getTeamColorOrNull("japan")).toBe("#BC002D");
+    expect(getTeamColorOrNull("unknown")).toBeNull();
+    expect(getTeamColor("unknown")).toBe("#94a3b8");
+  });
+
+  it("covers all 91 production teams except the approved colorless Montauban", () => {
+    expect(productionTeamSlugs).toHaveLength(91);
+    expect(
+      productionTeamSlugs.filter((slug) => getTeamColorOrNull(slug) === null),
+    ).toEqual(["us-montauban"]);
+  });
+
+  it("keeps every TEAM_IDENTITY color in uppercase six-digit hex format", () => {
+    const source = readFileSync("lib/format/team-identity.ts", "utf8");
+    const identity = source
+      .split("const TEAM_IDENTITY:")[1]
+      ?.split("const TEAM_STRIPES:")[0];
+    const colors = [...(identity ?? "").matchAll(/color: "([^"]+)"/g)];
+    expect(colors.length).toBeGreaterThan(0);
+    for (const [, color] of colors) {
+      expect(color).toMatch(/^#[0-9A-F]{6}$/);
+    }
+  });
+
+  it.each([
+    ["hong-kong-china", "#C8102E", "🇭🇰"],
+    ["zimbabwe", "#006B3F", "🇿🇼"],
+    ["honda-heat", "#E60012", "🏉"],
+  ])(
+    "adds the approved identity for %s without changing stripes",
+    (slug, color, flag) => {
+      expect(getTeamColorOrNull(slug)).toBe(color);
+      expect(getTeamColor(slug)).toBe(color);
+      expect(getTeamFlag(slug)).toBe(flag);
+      expect(getTeamStripe(slug)).toBe("#94a3b8");
+    },
+  );
 
   it("returns team flag stripes and a slate fallback for unknown teams", () => {
     expect(getTeamStripe("england")).toBe(

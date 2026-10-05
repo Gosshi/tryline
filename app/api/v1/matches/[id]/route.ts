@@ -20,6 +20,7 @@ import {
 } from "@/lib/db/queries/matches";
 import { getStorySourcedFactsForMatches } from "@/lib/db/queries/sourced-facts";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
+import { getTeamColorOrNull } from "@/lib/format/team-identity";
 import {
   computeEventPointTotals,
   eventTotalsMatchFinalScore,
@@ -34,6 +35,7 @@ function mapNextReadMatch(
 ): V1NextReadMatch {
   return {
     away_team: {
+      color: getTeamColorOrNull(match.awayTeam.slug),
       flag_code: suppressFlags ? null : (match.awayTeam.flagCode ?? null),
       id: match.awayTeam.id ?? null,
       name: match.awayTeam.name,
@@ -44,6 +46,7 @@ function mapNextReadMatch(
     competition_name: getCompetitionDisplayName(match.competition),
     has_recap: hasRecap,
     home_team: {
+      color: getTeamColorOrNull(match.homeTeam.slug),
       flag_code: suppressFlags ? null : (match.homeTeam.flagCode ?? null),
       id: match.homeTeam.id ?? null,
       name: match.homeTeam.name,
@@ -153,6 +156,7 @@ export async function GET(
   const data: V1MatchDetailData = {
     match: {
       away_team: {
+        color: getTeamColorOrNull(match.awayTeam.slug),
         english_name: match.awayTeam.englishName,
         flag_code: suppressMatchFlags
           ? null
@@ -182,6 +186,7 @@ export async function GET(
         type: event.type,
       })),
       home_team: {
+        color: getTeamColorOrNull(match.homeTeam.slug),
         english_name: match.homeTeam.englishName,
         flag_code: suppressMatchFlags
           ? null

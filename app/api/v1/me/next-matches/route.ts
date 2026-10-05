@@ -11,6 +11,7 @@ import {
   type UpcomingMatch,
 } from "@/lib/db/queries/matches";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
+import { getTeamColorOrNull } from "@/lib/format/team-identity";
 
 import type { V1NextMatchesData, V1NextReadMatch } from "@/lib/api/v1/types";
 
@@ -20,6 +21,7 @@ function mapNextReadMatch(
 ): V1NextReadMatch {
   return {
     away_team: {
+      color: getTeamColorOrNull(match.awayTeam.slug),
       flag_code: suppressFlags ? null : (match.awayTeam.flagCode ?? null),
       id: match.awayTeam.id ?? null,
       name: match.awayTeam.name,
@@ -30,6 +32,7 @@ function mapNextReadMatch(
     competition_name: getCompetitionDisplayName(match.competition),
     has_recap: false,
     home_team: {
+      color: getTeamColorOrNull(match.homeTeam.slug),
       flag_code: suppressFlags ? null : (match.homeTeam.flagCode ?? null),
       id: match.homeTeam.id ?? null,
       name: match.homeTeam.name,
