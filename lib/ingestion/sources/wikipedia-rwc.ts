@@ -219,6 +219,7 @@ export const RWC_2027_TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
   ...RWC_TEAM_SLUG_BY_WIKIPEDIA_NAME,
   Canada: "canada",
   Chile: "chile",
+  "Hong Kong": "hong-kong-china",
   "Hong Kong China": "hong-kong-china",
   Spain: "spain",
   USA: "usa",
