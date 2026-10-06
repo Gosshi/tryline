@@ -10,7 +10,9 @@ export function parseSixNations2027LiveHtml(
   html: string,
   wikipediaUrl: string | null = null,
 ): ParsedLiveMatch[] {
-  return parseWikipediaSixNations2027Html(html, wikipediaUrl);
+  return parseWikipediaSixNations2027Html(html, wikipediaUrl).filter(
+    (match): match is ParsedLiveMatch => match.kickoffAt !== null,
+  );
 }
 
 export async function fetchSixNations2027(): Promise<ParsedLiveMatch[]> {

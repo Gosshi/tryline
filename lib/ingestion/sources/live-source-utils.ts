@@ -6,6 +6,7 @@ import type { Json } from "@/lib/db/types";
 import type { ParsedWikipediaMatch } from "@/lib/ingestion/sources/wikipedia-six-nations";
 
 export type ParsedLiveMatch = ParsedWikipediaMatch & {
+  kickoffAt: string;
   awayTeamSlug?: string;
   externalIds?: Record<string, Json>;
   homeTeamSlug?: string;
@@ -133,6 +134,13 @@ export function mapWithTeamSlugs(
   slugsByName: Record<string, string>,
 ): ParsedLiveMatch[] {
   return matches.flatMap((match) => {
+    if (match.kickoffAt === null) {
+      console.warn(
+        `Skipping live match without kickoff: ${match.homeTeamName} vs ${match.awayTeamName}`,
+      );
+      return [];
+    }
+
     const homeTeamSlug = slugsByName[match.homeTeamName];
     const awayTeamSlug = slugsByName[match.awayTeamName];
 
@@ -146,6 +154,7 @@ export function mapWithTeamSlugs(
     return [
       {
         ...match,
+        kickoffAt: match.kickoffAt,
         awayTeamSlug,
         homeTeamSlug,
       },

@@ -1,3 +1,121 @@
+import { load } from "cheerio";
+import { parse } from "date-fns";
+
+import { parseWikipediaSixNationsHtml } from "./wikipedia-six-nations";
+
+const RWC_2027_VENUE_TIMEZONES: Record<string, string> = {
+  Sydney: "Australia/Sydney",
+  Newcastle: "Australia/Sydney",
+  Melbourne: "Australia/Melbourne",
+  Brisbane: "Australia/Brisbane",
+  Townsville: "Australia/Brisbane",
+  Adelaide: "Australia/Adelaide",
+  Perth: "Australia/Perth",
+};
+
+export function resolveRwc2027VenueTimeZone(
+  venue: string | null,
+): string | null {
+  if (!venue) {
+    return null;
+  }
+
+  const city = Object.keys(RWC_2027_VENUE_TIMEZONES).find((name) =>
+    new RegExp(`\\b${name}\\b`, "i").test(venue),
+  );
+
+  return city ? RWC_2027_VENUE_TIMEZONES[city]! : null;
+}
+
+function localKickoffToUtc(
+  dateText: string,
+  timeText: string,
+  timeZone: string,
+): string {
+  const date = parse(dateText, "d MMMM yyyy", new Date());
+  const [hours, minutes] = timeText.split(":").map(Number);
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    hours === undefined ||
+    minutes === undefined ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    throw new Error(
+      `Unable to parse RWC 2027 kickoff: ${dateText} ${timeText}`,
+    );
+  }
+
+  const wallTimestamp = Date.UTC(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    hours,
+    minutes,
+  );
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "longOffset",
+  });
+  let utcTimestamp = wallTimestamp;
+
+  // Re-evaluate at the UTC candidate: its offset can differ from the initial
+  // wall-clock-as-UTC probe on the day daylight saving changes.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const offsetText =
+      formatter
+        .formatToParts(new Date(utcTimestamp))
+        .find((part) => part.type === "timeZoneName")?.value ?? "";
+    const offset = offsetText.match(/^GMT([+-])(\d{2}):(\d{2})$/);
+
+    if (!offset) {
+      throw new Error(
+        `Unable to resolve RWC 2027 timezone offset: ${timeZone} ${offsetText}`,
+      );
+    }
+
+    const offsetMinutes =
+      (Number(offset[2]) * 60 + Number(offset[3])) *
+      (offset[1] === "+" ? 1 : -1);
+    const nextTimestamp = wallTimestamp - offsetMinutes * 60 * 1000;
+
+    if (nextTimestamp === utcTimestamp) {
+      return new Date(utcTimestamp).toISOString();
+    }
+
+    utcTimestamp = nextTimestamp;
+  }
+
+  throw new Error(
+    `Unable to resolve RWC 2027 local kickoff: ${dateText} ${timeText} ${timeZone}`,
+  );
+}
+
+export function parseWikipediaRwc2027Html(
+  html: string,
+  wikipediaUrl: string | null = null,
+) {
+  return parseWikipediaSixNationsHtml(html, wikipediaUrl).map((match) => {
+    const timeZone = resolveRwc2027VenueTimeZone(match.venue);
+    const $ = load(match.rawHtml);
+    const kickoffText = $("table").first().text().replace(/\s+/g, " ").trim();
+    const localKickoff = kickoffText.match(
+      /(\d{1,2} [A-Za-z]+ \d{4})\s*(\d{1,2}:\d{2})/,
+    );
+
+    return {
+      ...match,
+      kickoffAt:
+        timeZone && localKickoff
+          ? localKickoffToUtc(localKickoff[1]!, localKickoff[2]!, timeZone)
+          : null,
+    };
+  });
+}
+
 export const RWC_TEAM_SLUG_BY_WIKIPEDIA_NAME: Record<string, string> = {
   Argentina: "argentina",
   Australia: "australia",

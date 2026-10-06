@@ -153,6 +153,7 @@ describe("parsePacificNationsCupResultsHtml", () => {
       home_team_slug: "samoa",
       round: 4,
     });
+    expect(results[2]?.kickoff_at).toBe("2025-09-14T18:35:00.000Z");
     expect(results[3]).toMatchObject({
       away_team_slug: "japan",
       home_team_slug: "usa",

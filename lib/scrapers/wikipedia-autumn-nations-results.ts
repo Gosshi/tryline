@@ -69,7 +69,10 @@ export function parseAutumnNationsResultsHtml(
   const parsedMatches = parseWikipediaSixNationsHtml(html);
 
   return parsedMatches
-    .filter((match) => match.status === "finished")
+    .filter(
+      (match): match is typeof match & { kickoffAt: string } =>
+        match.status === "finished" && match.kickoffAt !== null,
+    )
     .flatMap((match) => {
       const homeSlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[match.homeTeamName];
       const awaySlug = TEAM_SLUG_BY_WIKIPEDIA_NAME[match.awayTeamName];

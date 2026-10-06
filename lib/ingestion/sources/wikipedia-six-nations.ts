@@ -4,22 +4,38 @@ import { parse } from "date-fns";
 const ROUND_ID_PATTERN = /^Round_(\d+)$/;
 const SCORE_PATTERN = /(\d+)\s*[–-]\s*(\d+)/;
 const TIMEZONE_OFFSETS: Record<string, number> = {
+  ACDT: 10.5,
+  ACST: 9.5,
   AEDT: 11,
   AEST: 10,
   ART: -3,
+  AST: 3, // Arabia Standard Time, used for Doha fixtures.
+  AWST: 8,
+  BRT: -3,
   BST: 1,
+  CAT: 2,
+  CDT: -5,
   CEST: 2,
   CET: 1,
+  CLT: -4,
+  COT: -5,
   EDT: -4,
+  EET: 2,
   FJT: 12,
   GMT: 0,
+  GST: 4, // Georgia Standard Time, used for Batumi fixtures.
+  HKT: 8,
+  IST: 1, // Irish Standard Time, used for Dublin fixtures.
   JST: 9,
+  MDT: -6,
   NZDT: 13,
   NZST: 12,
   PDT: -7,
   SAST: 2,
   TOT: 13,
+  TST: 13, // Tonga Standard Time, also written as TOT in these sources.
   UTC: 0,
+  WET: 0,
 };
 
 export type ParsedWikipediaMatch = {
@@ -28,7 +44,7 @@ export type ParsedWikipediaMatch = {
   eventId: string | null;
   homeScore: number | null;
   homeTeamName: string;
-  kickoffAt: string;
+  kickoffAt: string | null;
   lineupTableHtml: string | null;
   round: number | null;
   roundName: string | null;
@@ -88,14 +104,21 @@ function buildUtcIsoString(params: {
     );
   }
 
-  const timezoneOffset = TIMEZONE_OFFSETS[params.timezoneText ?? "UTC"] ?? 0;
-  const utcTimestamp = Date.UTC(
-    parsedDate.getFullYear(),
-    parsedDate.getMonth(),
-    parsedDate.getDate(),
-    hours - timezoneOffset,
-    minutes,
-  );
+  const timezoneOffset = TIMEZONE_OFFSETS[params.timezoneText ?? "UTC"];
+
+  if (timezoneOffset === undefined) {
+    return null;
+  }
+
+  const utcTimestamp =
+    Date.UTC(
+      parsedDate.getFullYear(),
+      parsedDate.getMonth(),
+      parsedDate.getDate(),
+      hours,
+      minutes,
+    ) -
+    timezoneOffset * 60 * 60 * 1000;
 
   return new Date(utcTimestamp).toISOString();
 }
@@ -104,7 +127,7 @@ function parseKickoffAt(blockText: string) {
   const normalized = normalizeWhitespace(blockText);
   const withTime =
     normalized.match(
-      /(\d{1,2} [A-Za-z]+ \d{4})\s*(\d{1,2}:\d{2})\s*([A-Z]{2,4})/,
+      /(\d{1,2} [A-Za-z]+ \d{4})\s*(\d{1,2}:\d{2})\s*([A-Z]{2,})\b/,
     ) ?? [];
 
   if (withTime.length === 4) {
