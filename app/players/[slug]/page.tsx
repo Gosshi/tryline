@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Fragment } from "react";
 
+import { HomepageSpoilerScore } from "@/components/home-user-state";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { getNextMatchesForTeams } from "@/lib/db/queries/matches";
 import {
@@ -382,7 +383,7 @@ export default async function PlayerPage({ params }: Props) {
                     </p>
                   </div>
                   <div className="font-semibold tabular-nums text-[var(--color-ink)] sm:text-center">
-                    {formatScore(match)}
+                    {match.status === "finished" ? <HomepageSpoilerScore location="player_matches">{formatScore(match)}</HomepageSpoilerScore> : formatScore(match)}
                   </div>
                   <div className="text-xs font-medium tabular-nums text-[var(--color-ink-muted)] sm:text-right">
                     #{match.jerseyNumber}{" "}

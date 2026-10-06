@@ -13,6 +13,11 @@ describe("ReturnVisitTracker", () => {
     vi.unstubAllGlobals();
   });
 
+  it.each(["getItem", "setItem"] as const)("does not break the page when storage %s throws", (method) => {
+    vi.spyOn(Storage.prototype, method).mockImplementation(() => { throw new Error("blocked"); });
+    expect(() => render(<ReturnVisitTracker />)).not.toThrow();
+  });
+
   it("tracks return_visit when the previous visit was within seven days", async () => {
     localStorage.setItem(
       "tryline_last_visit_at",

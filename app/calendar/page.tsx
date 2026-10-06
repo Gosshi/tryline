@@ -5,10 +5,8 @@ import { IosAppCta } from "@/components/ios-app-cta";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { ScheduleCoverageNotice } from "@/components/schedule-coverage-notice";
 import { TrackedLink } from "@/components/tracked-link";
-import { getUser } from "@/lib/auth/server";
 import { listCompetitionScheduleCoverage } from "@/lib/db/queries/competitions";
 import { getMatchesInRange } from "@/lib/db/queries/matches";
-import { getSpoilerGuardEnabledForUser } from "@/lib/db/queries/spoiler-guard";
 import { getStandingPositionLookupForCompetitions } from "@/lib/db/queries/standings";
 import { selectCalendarFocusMatchId } from "@/lib/format/calendar-focus";
 import { formatCompetitionTitle } from "@/lib/format/competition";
@@ -127,11 +125,9 @@ export default async function CalendarPage({
   const range = weekParam
     ? getJstWeekRangeUtc(weekParam)
     : getCurrentJstWeekRangeUtc();
-  const user = await getUser();
-  const [matches, spoilerGuardEnabled, incompleteCompetitions] =
+  const [matches, incompleteCompetitions] =
     await Promise.all([
       getMatchesInRange(range.startUtcIso, range.endUtcIso),
-      getSpoilerGuardEnabledForUser(user?.id),
       listCompetitionScheduleCoverage(),
     ]);
   const competitionIds = matches
@@ -252,7 +248,6 @@ export default async function CalendarPage({
           emptyMessage="この週に表示できる試合はありません。大会ページから過去シーズンの試合を確認できます。"
           highlightMatchId={focusMatchId}
           matches={matches}
-          spoilerGuardEnabled={spoilerGuardEnabled}
         />
       </section>
 

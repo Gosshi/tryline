@@ -156,9 +156,9 @@ export function NotificationSettings({
         </button>
       </div>
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-slate-700">ネタバレ防止モード</span>
+        <span className="text-sm text-slate-700">通知にスコアを含めない</span>
         <button
-          aria-label="ネタバレ防止モード"
+          aria-label="通知にスコアを含めない"
           aria-pressed={spoilerGuard}
           className={[
             "rounded-full px-3 py-1 text-xs font-semibold transition-colors",

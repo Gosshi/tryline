@@ -8,6 +8,7 @@ import { AuthModal } from "@/components/auth-modal";
 import { HEADER_COMPETITIONS } from "@/components/competition-nav-dropdown";
 import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
+import { SpoilerGuardToggle } from "@/components/spoiler-guard-toggle";
 import { TrackedLink } from "@/components/tracked-link";
 import { UserMenu } from "@/components/user-menu";
 import { getClientUserState, type ClientUserState } from "@/lib/auth/client";
@@ -146,6 +147,7 @@ export function MobileHeaderMenu({ allTeams }: MobileHeaderMenuProps) {
               className="px-4 py-2"
               id="mobile-site-menu"
             >
+              <SpoilerGuardToggle location="mobile_menu" className="my-2 w-full justify-between" />
               <ul className="flex flex-col">
                 <li>
                   <Link

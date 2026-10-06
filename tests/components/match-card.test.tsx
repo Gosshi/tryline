@@ -13,6 +13,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MatchCard } from "@/components/match-card";
 import { getTeamStripe } from "@/lib/format/team-identity";
+import { writeSpoilerGuard } from "@/lib/spoiler-guard";
 
 import type { MatchListItem } from "@/lib/db/queries/matches";
 
@@ -61,6 +62,16 @@ const baseMatch: MatchListItem = {
 };
 
 describe("MatchCard", () => {
+  it("keeps preview and review availability visible while masking the score and winner badges", () => {
+    writeSpoilerGuard(true);
+    render(<MatchCard contentStatus={{ hasPreview: true, hasRecap: true }} match={{ ...baseMatch, status: "finished", homeScore: 24, awayScore: 21 }} />);
+    expect(screen.getByText("プレビューあり")).toBeVisible();
+    expect(screen.getByText("レビューあり")).toBeVisible();
+    expect(screen.getByText("24")).not.toBeVisible();
+    expect(screen.getByText("W")).not.toBeVisible();
+    expect(screen.getByText("L")).not.toBeVisible();
+  });
+
   it("renders the season row with time, grouped teams and a separate score cell", () => {
     const { container } = render(
       <MatchCard
@@ -87,6 +98,7 @@ describe("MatchCard", () => {
   });
 
   it("hides row scores and winner cues when the existing guard is enabled", () => {
+    writeSpoilerGuard(true);
     guard.enabled = true;
     const { container } = render(
       <MatchCard
@@ -99,7 +111,7 @@ describe("MatchCard", () => {
         }}
       />,
     );
-    expect(container).not.toHaveTextContent("24–21");
+    expect(screen.getByText("24–21")).not.toBeVisible();
     expect(container).not.toHaveTextContent("WIN");
     expect(container.querySelector("a")).toHaveAttribute(
       "href",

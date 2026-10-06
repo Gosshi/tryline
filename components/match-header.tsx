@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SpoilerGuardToggle } from "@/components/spoiler-guard-toggle";
 import { MotionNumber } from "@/components/touchline-motion";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import {
@@ -29,7 +30,6 @@ type MatchHeaderProps = {
   homeDisplayName?: string;
   language?: "ja" | "en";
   match: MatchDetail;
-  spoilerGuardEnabled?: boolean;
 };
 
 function buildYouTubeSearchUrl(
@@ -89,7 +89,6 @@ export function MatchHeader({
   homeDisplayName,
   language = "ja",
   match,
-  spoilerGuardEnabled = false,
 }: MatchHeaderProps) {
   const localTimezone = resolveVenueTimezone(match.venue);
   const outcome = getMatchOutcome(match);
@@ -144,6 +143,12 @@ export function MatchHeader({
         )}
       </div>
 
+      {match.status === "finished" && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <SpoilerGuardToggle location="match_header" />
+          <p className="text-xs text-white/80">録画を見る前なら、スコアを隠せます</p>
+        </div>
+      )}
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:mt-8 sm:gap-5">
         <TeamBlock
           background={homeColor}
@@ -159,7 +164,7 @@ export function MatchHeader({
           {showScore ? (
             <SpoilerScore
               className="min-h-11 max-w-[9rem] text-white sm:max-w-[12rem]"
-              enabled={spoilerGuardEnabled}
+              location="match_header"
             >
               <p className="flex items-center justify-center gap-1.5 font-number text-[clamp(2.25rem,10vw,4rem)] font-bold tabular-nums leading-none sm:gap-3">
                 <ScoreNumber
@@ -342,6 +347,7 @@ function TeamBlock({
   return (
     <div className="min-w-0 text-center" style={{ color: foreground }}>
       <div
+        data-spoiler-team-outcome
         className={cn(
           "mx-auto grid h-12 w-12 place-items-center rounded-sm border bg-white shadow-sm sm:h-14 sm:w-14",
           isWinner &&
@@ -363,6 +369,7 @@ function TeamBlock({
           "mx-auto mt-2 flex min-h-11 max-w-full items-center justify-center whitespace-normal break-words text-sm leading-relaxed hover:underline sm:text-lg",
           dimmed ? "font-medium" : "font-bold",
         )}
+        data-spoiler-team-outcome
         href={`/teams/${slug}`}
         title={name}
       >

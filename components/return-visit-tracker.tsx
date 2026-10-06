@@ -13,33 +13,37 @@ const MIN_RETURN_VISIT_MS = 6 * 60 * 60 * 1000;
 
 export function ReturnVisitTracker() {
   useEffect(() => {
-    const now = Date.now();
-    const previous = Number(localStorage.getItem(LAST_VISIT_KEY));
-    const lastEvent = Number(localStorage.getItem(LAST_RETURN_EVENT_KEY));
-    const alreadyTrackedInSession =
-      sessionStorage.getItem(SESSION_RETURN_EVENT_KEY) === "1";
+    try {
+      const now = Date.now();
+      const previous = Number(localStorage.getItem(LAST_VISIT_KEY));
+      const lastEvent = Number(localStorage.getItem(LAST_RETURN_EVENT_KEY));
+      const alreadyTrackedInSession =
+        sessionStorage.getItem(SESSION_RETURN_EVENT_KEY) === "1";
 
-    if (Number.isFinite(previous) && previous > 0) {
-      const elapsedMs = now - previous;
-      const elapsedDays = elapsedMs / DAY_MS;
-      const alreadyTrackedToday =
-        Number.isFinite(lastEvent) && now - lastEvent < DAY_MS;
+      if (Number.isFinite(previous) && previous > 0) {
+        const elapsedMs = now - previous;
+        const elapsedDays = elapsedMs / DAY_MS;
+        const alreadyTrackedToday =
+          Number.isFinite(lastEvent) && now - lastEvent < DAY_MS;
 
-      if (
-        elapsedMs >= MIN_RETURN_VISIT_MS &&
-        elapsedDays <= RETURN_WINDOW_DAYS &&
-        !alreadyTrackedToday &&
-        !alreadyTrackedInSession
-      ) {
-        trackReturnVisit({
-          days_since_last_visit: Math.max(1, Math.floor(elapsedDays)),
-        });
-        localStorage.setItem(LAST_RETURN_EVENT_KEY, String(now));
-        sessionStorage.setItem(SESSION_RETURN_EVENT_KEY, "1");
+        if (
+          elapsedMs >= MIN_RETURN_VISIT_MS &&
+          elapsedDays <= RETURN_WINDOW_DAYS &&
+          !alreadyTrackedToday &&
+          !alreadyTrackedInSession
+        ) {
+          trackReturnVisit({
+            days_since_last_visit: Math.max(1, Math.floor(elapsedDays)),
+          });
+          localStorage.setItem(LAST_RETURN_EVENT_KEY, String(now));
+          sessionStorage.setItem(SESSION_RETURN_EVENT_KEY, "1");
+        }
       }
-    }
 
-    localStorage.setItem(LAST_VISIT_KEY, String(now));
+      localStorage.setItem(LAST_VISIT_KEY, String(now));
+    } catch {
+      // Storage can be unavailable in private browsing; tracking must not break the page.
+    }
   }, []);
 
   return null;

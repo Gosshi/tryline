@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { HomepageSpoilerScore } from "@/components/home-user-state";
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import { getTeamColor } from "@/lib/format/team-identity";
 import { cn } from "@/lib/utils";
@@ -84,7 +85,7 @@ export function KnockoutBracket({ matches }: Props) {
                         </p>
                         <p className="mt-2 font-number text-sm tabular-nums text-[var(--color-ink-muted)]">
                           {match.status === "finished"
-                            ? `${match.homeScore ?? 0} – ${match.awayScore ?? 0}`
+                            ? <HomepageSpoilerScore location="knockout_bracket">{`${match.homeScore ?? 0} – ${match.awayScore ?? 0}`}</HomepageSpoilerScore>
                             : formatKickoffJst(
                                 match.kickoffAt,
                                 match.kickoffTimeTbd,

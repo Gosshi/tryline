@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CompetitionHubPage from "@/app/c/[competition]/page";
 import { metadata as rwc2027Metadata } from "@/app/c/rwc/2027/page";
+import { writeSpoilerGuard } from "@/lib/spoiler-guard";
 
 const authMock = vi.hoisted(() => ({ getClientUserState: vi.fn() }));
 vi.mock("@/lib/auth/client", () => authMock);
@@ -473,6 +474,7 @@ describe("competition hub indexing", () => {
   });
 
   it("honors spoiler settings for Japan fixtures without removing their links", async () => {
+    writeSpoilerGuard(true);
     authMock.getClientUserState.mockResolvedValue({
       favoriteTeamSlugs: [],
       isPremium: false,
@@ -494,7 +496,7 @@ describe("competition hub indexing", () => {
     await act(async () => {
       container = render(element).container;
     });
-    expect(container.textContent).not.toContain("63–14");
+    expect(screen.getAllByText("63–14")[0]).not.toBeVisible();
     expect(
       container.querySelector('a[href="/matches/japan-result"]'),
     ).toBeTruthy();

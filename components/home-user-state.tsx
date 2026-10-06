@@ -137,18 +137,18 @@ export function HomepagePremiumCta() {
 type HomepageSpoilerScoreProps = {
   children: ReactNode;
   className?: string;
+  location?: string;
 };
 
 export function HomepageSpoilerScore({
   children,
   className,
+  location,
 }: HomepageSpoilerScoreProps) {
-  const userState = useUserState();
-
   return (
     <SpoilerScore
       className={className}
-      enabled={userState?.spoilerGuardEnabled ?? false}
+      location={location}
     >
       {children}
     </SpoilerScore>

@@ -1990,3 +1990,28 @@
 .tl-scope .tl-knockout-match:hover {
   border-color: var(--color-ink);
 }
+
+/* Spoiler guard: keep results in server HTML, hide them before hydration. */
+[data-spoiler-reveal] {
+  display: none;
+}
+html[data-spoiler-guard="on"] [data-spoiler-score]:not([data-spoiler-revealed="true"]) > [data-spoiler-value] {
+  display: none;
+}
+html[data-spoiler-guard="on"] [data-spoiler-score]:not([data-spoiler-revealed="true"]) > [data-spoiler-reveal] {
+  display: inline-flex;
+}
+html[data-spoiler-guard="on"] [data-match-spoiler="finished"]:not([data-match-revealed="true"]) [data-spoiler-content] {
+  display: none;
+}
+html[data-spoiler-guard="on"] [data-spoiler-outcome] {
+  display: none;
+}
+html[data-spoiler-guard="on"] [data-spoiler-card-team] {
+  color: var(--color-ink);
+}
+html[data-spoiler-guard="on"] [data-match-spoiler="finished"]:not([data-match-revealed="true"]) [data-spoiler-team-outcome] {
+  box-shadow: none;
+  font-weight: 700;
+}
+/* End spoiler guard */

@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HomePage from "@/app/page";
 import { PRIMARY_SAMPLE_MATCH_ID } from "@/lib/sample-matches";
+import { writeSpoilerGuard } from "@/lib/spoiler-guard";
 
 const authMocks = vi.hoisted(() => ({
   getUser: vi.fn(),
@@ -655,7 +656,7 @@ describe("HomePage", () => {
     render(await HomePage());
     const ticker = screen.getByLabelText("試合と結果");
     expect(within(ticker).getByRole("link")).toHaveTextContent(
-      "Home Team40–18Away Team",
+      "Home Team40–18タップして結果を見るAway Team",
     );
     const duplicate = ticker.querySelector('[aria-hidden="true"]')!;
     expect(duplicate).toHaveAttribute("inert");
@@ -697,6 +698,7 @@ describe("HomePage", () => {
   });
 
   it("hides ticker and lead review scores for a user with spoiler guard enabled", async () => {
+    writeSpoilerGuard(true);
     authClientMocks.getClientUserState.mockResolvedValue({
       favoriteTeamSlugs: [],
       isPremium: false,
@@ -714,10 +716,8 @@ describe("HomePage", () => {
     await act(async () => {
       render(await HomePage());
     });
-    expect(screen.getByLabelText("試合と結果")).not.toHaveTextContent("40–18");
-    expect(screen.getByLabelText("最新レビューのスコア")).not.toHaveTextContent(
-      "24–21",
-    );
+    expect(within(screen.getByLabelText("試合と結果")).getAllByText("40–18")[0]).not.toBeVisible();
+    expect(within(screen.getByLabelText("最新レビューのスコア")).getByText("24–21")).not.toBeVisible();
     expect(screen.getByLabelText("最新レビューのスコア")).toHaveTextContent(
       "タップして結果を見る",
     );
@@ -727,9 +727,7 @@ describe("HomePage", () => {
       }),
     );
     expect(screen.getByLabelText("試合と結果")).toHaveTextContent("40–18");
-    expect(screen.getByLabelText("最新レビューのスコア")).not.toHaveTextContent(
-      "24–21",
-    );
+    expect(within(screen.getByLabelText("最新レビューのスコア")).getByText("24–21")).not.toBeVisible();
   });
 
   it.each([0, 1, 2, 3, 5])(
@@ -1140,6 +1138,7 @@ describe("HomePage", () => {
   });
 
   it("fills the board with finished results without fetching the fallback and hides results independently", async () => {
+    writeSpoilerGuard(true);
     authClientMocks.getClientUserState.mockResolvedValue({
       favoriteTeamSlugs: [],
       isPremium: false,
@@ -1160,21 +1159,17 @@ describe("HomePage", () => {
       render(await HomePage());
     });
     const board = screen.getByLabelText("これからの試合の一覧");
-    expect(board).not.toHaveTextContent("40–18");
+    expect(within(board).getByText("40–18")).not.toBeVisible();
     expect(
       screen.getByRole("heading", { name: "これからの試合" }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/\d+月第\d+週/)).not.toBeInTheDocument();
-    expect(screen.getByLabelText("最新レビューのスコア")).not.toHaveTextContent(
-      "24–21",
-    );
+    expect(within(screen.getByLabelText("最新レビューのスコア")).getByText("24–21")).not.toBeVisible();
     fireEvent.click(
       within(board).getByRole("button", { name: "タップして結果を見る" }),
     );
     expect(board).toHaveTextContent("40–18");
-    expect(screen.getByLabelText("最新レビューのスコア")).not.toHaveTextContent(
-      "24–21",
-    );
+    expect(within(screen.getByLabelText("最新レビューのスコア")).getByText("24–21")).not.toBeVisible();
     expect(matchMocks.getNextUpcomingMatch).not.toHaveBeenCalled();
   });
 

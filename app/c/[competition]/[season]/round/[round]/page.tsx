@@ -163,7 +163,7 @@ function RoundMatchRow({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {score ? (
-            <HomepageSpoilerScore className="inline-flex min-h-11 items-center text-xs">
+            <HomepageSpoilerScore location="competition_round" className="inline-flex min-h-11 items-center text-xs">
               <span className="text-xl font-bold tabular-nums text-[var(--color-ink)]">
                 {score}
               </span>

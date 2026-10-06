@@ -104,6 +104,7 @@ export function MatchContentSection({
 
   return (
     <div
+      data-spoiler-content={contentType === "recap" && match.status === "finished" ? "recap" : undefined}
       className={
         content && betweenLeadAndBody
           ? "grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start"
