@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { HomepageSpoilerScore } from "@/components/home-user-state";
+import { SpoilerGuardToggle } from "@/components/spoiler-guard-toggle";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import {
   formatKickoffJstDate,
@@ -160,7 +161,7 @@ function MatchMiniRow({
       </span>
       <span className="flex min-h-11 items-center justify-end text-right text-lg font-bold tabular-nums sm:text-xl">
         {match.homeScore !== null && match.awayScore !== null ? (
-          <HomepageSpoilerScore className="min-h-11 max-w-full px-1 text-[10px]">
+          <HomepageSpoilerScore location="home_board" className="min-h-11 max-w-full px-1 text-[10px]">
             <span>
               {match.homeScore}–{match.awayScore}
             </span>
@@ -189,6 +190,7 @@ export function HomeMatchdayBoard({
 
   return (
     <aside aria-label="これからの試合の一覧">
+      <div className="mb-3 flex justify-end"><SpoilerGuardToggle location="home_board" /></div>
       <ul className="tl-home-schedule grid border-t border-[var(--color-rule)] md:grid-cols-2">
         {matches.map((match) => (
           <li className="min-w-0" key={match.id}>

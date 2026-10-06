@@ -248,7 +248,7 @@ describe("/calendar page", () => {
     ).not.toBe(0);
   });
 
-  it("passes the existing user's spoiler setting to SSR while retaining desktop and mobile match links", async () => {
+  it("keeps scores in SSR independently of notification settings while retaining desktop and mobile match links", async () => {
     authMock.getUser.mockResolvedValue({ id: "signed-in-user" });
     spoilerGuardMock.getSpoilerGuardEnabledForUser.mockResolvedValue(true);
     matchQueryMock.getMatchesInRange.mockResolvedValue([
@@ -261,10 +261,8 @@ describe("/calendar page", () => {
     ]);
     const { default: CalendarPage } = await import("@/app/calendar/page");
     const html = renderToStaticMarkup(await CalendarPage({}));
-    expect(spoilerGuardMock.getSpoilerGuardEnabledForUser).toHaveBeenCalledWith(
-      "signed-in-user",
-    );
-    expect(html).not.toContain("24–19");
+    expect(spoilerGuardMock.getSpoilerGuardEnabledForUser).not.toHaveBeenCalled();
+    expect(html).toContain("24–19");
     expect(html.match(/href="\/matches\/finished-match"/g)).toHaveLength(2);
     expect(html.match(/タップして結果を見る/g)?.length).toBeGreaterThanOrEqual(
       2,

@@ -11,6 +11,7 @@ import {
 } from "@/components/match-detail-user-state";
 import { MatchEventsSection } from "@/components/match-events-section";
 import { MatchLineupsSection } from "@/components/match-lineups-section";
+import { MatchSpoilerBoundary } from "@/components/match-spoiler-boundary";
 import { PremiumMatchChat } from "@/components/premium-match-chat";
 import { PremiumRecapSection } from "@/components/premium-recap-section";
 import { SampleRecapCta } from "@/components/sample-recap-cta";
@@ -381,6 +382,7 @@ export default async function MatchDetailPage({
         type="application/ld+json"
       />
       <UserStateProvider>
+      <MatchSpoilerBoundary key={id} finished={match.status === "finished"}>
       <TouchlineMotion page="match" className="min-h-screen bg-paper">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 overflow-hidden px-3 py-6 sm:px-6 sm:py-8 md:px-8">
           <nav aria-label="パンくずリスト">
@@ -635,6 +637,7 @@ export default async function MatchDetailPage({
             players={lineups}
           />
 
+          <div data-spoiler-content={match.status === "finished" ? "standings" : undefined}>
           <StandingsTable
             highlightedTeams={[
               match.homeTeam.name,
@@ -645,10 +648,12 @@ export default async function MatchDetailPage({
             standings={standings}
             title="順位への影響"
           />
+          </div>
 
           <PremiumMatchChat isSample={isSample} matchId={id} />
         </div>
       </TouchlineMotion>
+      </MatchSpoilerBoundary>
       </UserStateProvider>
     </>
   );

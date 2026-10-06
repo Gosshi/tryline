@@ -58,7 +58,7 @@ describe("NotificationSettings", () => {
 
     render(<NotificationSettings initialTeamSlugs={["japan"]} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "ネタバレ防止モード" }));
+    fireEvent.click(screen.getByRole("button", { name: "通知にスコアを含めない" }));
     fireEvent.click(
       screen.getByRole("button", { name: "レビュー公開通知をオン" }),
     );

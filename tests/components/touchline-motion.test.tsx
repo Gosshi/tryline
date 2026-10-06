@@ -19,9 +19,11 @@ import {
   TouchlineMotion,
   TouchlineTickerButton,
 } from "@/components/touchline-motion";
+import { writeSpoilerGuard } from "@/lib/spoiler-guard";
 
 let reduced = false;
 let preferenceChanged: (() => void) | undefined;
+
 const observers: FakeObserver[] = [];
 
 class FakeObserver {
@@ -329,14 +331,15 @@ describe("Touchline motion", () => {
   });
 
   it("never counts guarded results, including after explicit reveal", () => {
+    writeSpoilerGuard(true);
     const { container } = render(
       <TouchlineMotion page="match">
-        <SpoilerScore enabled>
+        <SpoilerScore>
           <MotionNumber value={42} />
         </SpoilerScore>
       </TouchlineMotion>,
     );
-    expect(container).not.toHaveTextContent("42");
+    expect(screen.getByText("42")).not.toBeVisible();
     expect(container.querySelector("[data-tl-motion='count']")).toBeNull();
     fireEvent.click(
       screen.getByRole("button", { name: "タップして結果を見る" }),
@@ -365,22 +368,23 @@ describe("Touchline motion", () => {
   });
 
   it("removes a running score immediately if spoiler guard is enabled", () => {
-    const content = (enabled: boolean) => (
+    const content = () => (
       <TouchlineMotion page="match">
-        <SpoilerScore enabled={enabled}>
+        <SpoilerScore>
           <MotionNumber value={42} />
         </SpoilerScore>
       </TouchlineMotion>
     );
-    const { container, rerender } = render(content(false));
+    const { container, rerender } = render(content());
     const count = container.querySelector('[data-tl-motion="count"]')!;
     act(() => observers[0]!.enter(count));
     expect(count.querySelector(".tl-count-track")).not.toBeNull();
-    rerender(content(true));
-    expect(container.querySelector(".tl-number, .tl-count-track")).toBeNull();
-    expect(container).not.toHaveTextContent("42");
+    act(() => { writeSpoilerGuard(true); });
+    rerender(content());
+    expect(container.querySelector(".tl-count-track")).toBeNull();
+    expect(screen.getByText("42")).not.toBeVisible();
     act(() => vi.advanceTimersByTime(700));
-    expect(container).not.toHaveTextContent("42");
+    expect(screen.getByText("42")).not.toBeVisible();
     fireEvent.click(
       screen.getByRole("button", { name: "タップして結果を見る" }),
     );

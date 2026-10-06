@@ -71,6 +71,7 @@ export function MatchCard({
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <div className="text-right">
             <p
+              data-spoiler-card-team
               className={cn(
                 "flex items-center justify-end gap-1.5 text-base font-bold sm:text-xl",
                 awayWon
@@ -85,17 +86,18 @@ export function MatchCard({
               />
               {match.homeTeam.shortCode}
               {homeWon && match.status === "finished" && (
-                <span className="rounded bg-[var(--color-accent-dim)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
+                <span data-spoiler-outcome className="rounded bg-[var(--color-accent-dim)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
                   W
                 </span>
               )}
               {awayWon && match.status === "finished" && (
-                <span className="rounded-sm bg-[var(--color-panel)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-ink-muted)]">
+                <span data-spoiler-outcome className="rounded-sm bg-[var(--color-panel)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-ink-muted)]">
                   L
                 </span>
               )}
             </p>
             <p
+              data-spoiler-card-team
               className={cn(
                 "flex min-w-0 items-center justify-end gap-1.5 text-xs leading-tight",
                 awayWon
@@ -119,7 +121,7 @@ export function MatchCard({
             )}
           >
             {match.status === "finished" ? (
-              <>
+              <HomepageSpoilerScore location="match_card" className="min-h-11 max-w-24 text-[10px]">
                 <span
                   className={
                     homeWon
@@ -143,7 +145,7 @@ export function MatchCard({
                 >
                   {match.awayScore ?? 0}
                 </span>
-              </>
+              </HomepageSpoilerScore>
             ) : (
               "—"
             )}
@@ -151,6 +153,7 @@ export function MatchCard({
 
           <div className="text-left">
             <p
+              data-spoiler-card-team
               className={cn(
                 "flex items-center gap-1.5 text-base font-bold sm:text-xl",
                 homeWon
@@ -160,12 +163,12 @@ export function MatchCard({
             >
               {match.awayTeam.shortCode}
               {awayWon && match.status === "finished" && (
-                <span className="rounded bg-[var(--color-accent-dim)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
+                <span data-spoiler-outcome className="rounded bg-[var(--color-accent-dim)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-accent)]">
                   W
                 </span>
               )}
               {homeWon && match.status === "finished" && (
-                <span className="rounded-sm bg-[var(--color-panel)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-ink-muted)]">
+                <span data-spoiler-outcome className="rounded-sm bg-[var(--color-panel)] px-1 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--color-ink-muted)]">
                   L
                 </span>
               )}
@@ -176,6 +179,7 @@ export function MatchCard({
               />
             </p>
             <p
+              data-spoiler-card-team
               className={cn(
                 "flex min-w-0 items-center gap-1.5 text-xs leading-tight",
                 homeWon
@@ -284,7 +288,7 @@ function MatchListRow({ contentStatus, href, match }: MatchCardProps) {
       </span>
       <span className="flex min-h-11 items-center justify-end text-right text-lg font-bold tabular-nums sm:text-xl">
         {showScore ? (
-          <HomepageSpoilerScore className="min-h-11 max-w-full px-1 text-[10px]">
+          <HomepageSpoilerScore location="match_card" className="min-h-11 max-w-full px-1 text-[10px]">
             <span>
               {match.homeScore}–{match.awayScore}
             </span>

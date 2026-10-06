@@ -6,6 +6,7 @@ import { MatchContentSection } from "@/components/match-content-section";
 import { MatchEventsSection } from "@/components/match-events-section";
 import { MatchHeader } from "@/components/match-header";
 import { MatchLineupsSection } from "@/components/match-lineups-section";
+import { MatchSpoilerBoundary } from "@/components/match-spoiler-boundary";
 import { PremiumMatchChat } from "@/components/premium-match-chat";
 import { PremiumRecapSection } from "@/components/premium-recap-section";
 import { SampleRecapCta } from "@/components/sample-recap-cta";
@@ -133,6 +134,7 @@ export default async function MatchEnglishPage({
 
   return (
     <UserStateProvider>
+      <MatchSpoilerBoundary key={id} finished={match.status === "finished"}>
       <main className="min-h-screen bg-paper">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 md:px-8">
         <nav aria-label="Breadcrumb">
@@ -229,6 +231,7 @@ export default async function MatchEnglishPage({
         </section>
         </div>
       </main>
+      </MatchSpoilerBoundary>
     </UserStateProvider>
   );
 }

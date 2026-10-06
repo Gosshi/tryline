@@ -415,7 +415,7 @@ export default async function HomePage() {
                         <span className="inline-flex w-16 shrink-0 items-center justify-center">
                           {match.homeScore !== null &&
                           match.awayScore !== null ? (
-                            <HomepageSpoilerScore className="min-h-11 max-w-full whitespace-normal px-1 text-[10px] text-white">
+                            <HomepageSpoilerScore location="home_results" className="min-h-11 max-w-full whitespace-normal px-1 text-[10px] text-white">
                               <span className="font-bold tabular-nums">
                                 {match.homeScore}–{match.awayScore}
                               </span>
@@ -538,7 +538,7 @@ export default async function HomePage() {
                           leadReview.awayTeam.name}
                       </span>
                       <strong className="tl-review-score tabular-nums">
-                        <HomepageSpoilerScore className="min-h-11 text-white">
+                        <HomepageSpoilerScore location="home_results" className="min-h-11 text-white">
                           {leadReview.homeScore}–{leadReview.awayScore}
                         </HomepageSpoilerScore>
                       </strong>
@@ -558,7 +558,7 @@ export default async function HomePage() {
                       <h3 className="mt-2 text-xl font-extrabold text-[var(--color-ink)] sm:text-2xl">
                         {leadReview.homeTeam.name} 対 {leadReview.awayTeam.name}
                       </h3>
-                      <p className="mt-3 text-sm leading-relaxed text-[var(--color-ink-muted)]">
+                      <p data-spoiler-outcome className="mt-3 text-sm leading-relaxed text-[var(--color-ink-muted)]">
                         {getHomeReviewExcerpt(leadReview.recapExcerpt)}
                       </p>
                       <span className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-[var(--color-accent)] group-hover:underline">
@@ -593,7 +593,7 @@ export default async function HomePage() {
                               {match.awayTeam.shortCode || match.awayTeam.name}
                             </span>
                             <strong className="tl-review-score tabular-nums">
-                              <HomepageSpoilerScore className="min-h-11 max-w-full px-1 text-[10px] text-white">
+                              <HomepageSpoilerScore location="home_results" className="min-h-11 max-w-full px-1 text-[10px] text-white">
                                 {match.homeScore}–{match.awayScore}
                               </HomepageSpoilerScore>
                             </strong>

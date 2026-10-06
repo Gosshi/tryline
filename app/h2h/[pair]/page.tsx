@@ -401,7 +401,7 @@ function LatestReviewCta({
       </p>
       <p className="mt-2 text-sm font-bold text-slate-950">
         {teamA.name}{" "}
-        <HomepageSpoilerScore className="inline-flex min-h-11 items-center text-sm">
+        <HomepageSpoilerScore location="head_to_head" className="inline-flex min-h-11 items-center text-sm">
           <span className="tl-h2h-score tabular-nums">
             {teamAScore ?? "—"} - {teamBScore ?? "—"}
           </span>
@@ -496,7 +496,7 @@ function HistoryMatchRow({
       <div className="min-w-0">
         <span className="inline-flex flex-wrap items-center gap-1 font-bold text-[var(--color-ink)]">
           <span className="whitespace-nowrap">{japan.name}</span>{" "}
-          <HomepageSpoilerScore className="inline-flex min-h-11 items-center text-xs">
+          <HomepageSpoilerScore location="head_to_head" className="inline-flex min-h-11 items-center text-xs">
             <span className="tabular-nums">{score}</span>
           </HomepageSpoilerScore>{" "}
           <span className="whitespace-nowrap">{opponent.name}</span>
@@ -600,7 +600,7 @@ function HeadToHeadMatchRow({
         </span>
         <span className="tl-h2h-row-score">
           {match.status === "finished" ? (
-            <HomepageSpoilerScore className="inline-flex min-h-11 items-center text-xs">
+            <HomepageSpoilerScore location="head_to_head" className="inline-flex min-h-11 items-center text-xs">
               <span className="tabular-nums">{scoreText}</span>
             </HomepageSpoilerScore>
           ) : (

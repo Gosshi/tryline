@@ -69,7 +69,7 @@ export function JapanMatchesBlock({
                         match.awayScore !== null && (
                           <>
                             {" "}
-                            <HomepageSpoilerScore className="inline-flex min-h-11 items-center text-xs">
+                            <HomepageSpoilerScore location="japan_matches" className="inline-flex min-h-11 items-center text-xs">
                               <span className="tabular-nums">
                                 {match.homeScore}–{match.awayScore}
                               </span>

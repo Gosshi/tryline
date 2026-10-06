@@ -11,6 +11,12 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import RoundHubPage, {
+  generateMetadata,
+  generateStaticParams,
+} from "@/app/c/[competition]/[season]/round/[round]/page";
+import { writeSpoilerGuard } from "@/lib/spoiler-guard";
+
 const authMock = vi.hoisted(() => ({ getClientUserState: vi.fn() }));
 vi.mock("@/lib/auth/client", () => authMock);
 
@@ -41,11 +47,6 @@ vi.mock("@/lib/db/queries/match-content", () => contentStatusMock);
 vi.mock("@/lib/db/queries/matches", () => matchesMock);
 vi.mock("next/navigation", () => navigationMock);
 
-import RoundHubPage, {
-  generateMetadata,
-  generateStaticParams,
-} from "@/app/c/[competition]/[season]/round/[round]/page";
-
 const match = {
   awayScore: 21,
   awayTeam: { name: "France", shortCode: "FRA", slug: "france" },
@@ -73,6 +74,7 @@ describe("round hub page", () => {
   afterEach(cleanup);
 
   it("hides scores without removing the server-rendered match link or preview/recap labels", async () => {
+    writeSpoilerGuard(true);
     authMock.getClientUserState.mockResolvedValue({
       favoriteTeamSlugs: [],
       isPremium: false,
@@ -105,7 +107,7 @@ describe("round hub page", () => {
     });
     expect(screen.getByRole("heading", { name: "準決勝" })).toBeInTheDocument();
     expect(container.querySelector("header")?.textContent).not.toContain("101");
-    expect(container.textContent).not.toContain("24–21");
+    expect(screen.getAllByText("24–21")[0]).not.toBeVisible();
     expect(container.querySelector('a[href="/matches/match-1"]')).toBeTruthy();
     expect(screen.getByText("プレビューあり")).toBeInTheDocument();
     fireEvent.keyDown(

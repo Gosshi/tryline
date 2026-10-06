@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SpoilerGuardToggle } from "@/components/spoiler-guard-toggle";
 import { TrackedLink } from "@/components/tracked-link";
 import { listAllTeams } from "@/lib/db/queries/teams";
 
@@ -76,6 +77,7 @@ export async function SiteHeader() {
           >
             <NoteIcon className="h-4 w-12" />
           </a>
+          <SpoilerGuardToggle location="site_header" />
           <HeaderUserControls allTeams={allTeams} />
         </nav>
       </div>

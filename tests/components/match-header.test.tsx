@@ -12,6 +12,7 @@ import {
 import { afterEach, describe, expect, it } from "vitest";
 
 import { MatchHeader } from "@/components/match-header";
+import { writeSpoilerGuard } from "@/lib/spoiler-guard";
 
 import type { MatchDetail } from "@/lib/db/queries/matches";
 
@@ -270,6 +271,7 @@ describe("MatchHeader", () => {
   });
 
   it("hides finished scores behind spoiler guard until clicked", () => {
+    writeSpoilerGuard(true);
     render(
       <MatchHeader
         match={{
@@ -278,12 +280,11 @@ describe("MatchHeader", () => {
           homeScore: 24,
           status: "finished",
         }}
-        spoilerGuardEnabled
       />,
     );
 
-    expect(screen.queryByText("24")).not.toBeInTheDocument();
-    expect(screen.queryByText("18")).not.toBeInTheDocument();
+    expect(screen.getByText("24")).not.toBeVisible();
+    expect(screen.getByText("18")).not.toBeVisible();
 
     fireEvent.click(
       screen.getByRole("button", { name: "タップして結果を見る" }),

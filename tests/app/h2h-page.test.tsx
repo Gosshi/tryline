@@ -11,6 +11,12 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import HeadToHeadPage, {
+  generateMetadata,
+  generateStaticParams,
+} from "@/app/h2h/[pair]/page";
+import { writeSpoilerGuard } from "@/lib/spoiler-guard";
+
 const authMock = vi.hoisted(() => ({ getClientUserState: vi.fn() }));
 vi.mock("@/lib/auth/client", () => authMock);
 
@@ -118,11 +124,6 @@ vi.mock("@/components/tracked-link", () => ({
 }));
 vi.mock("next/navigation", () => navigationMock);
 
-import HeadToHeadPage, {
-  generateMetadata,
-  generateStaticParams,
-} from "@/app/h2h/[pair]/page";
-
 import type { ReactNode } from "react";
 
 const pageData = {
@@ -177,6 +178,7 @@ describe("H2H page", () => {
   });
 
   it("hides individual results in the hero CTA, stored matches and history while retaining links", async () => {
+    writeSpoilerGuard(true);
     authMock.getClientUserState.mockResolvedValue({
       favoriteTeamSlugs: [],
       isPremium: false,
@@ -206,8 +208,8 @@ describe("H2H page", () => {
     await act(async () => {
       container = render(element).container;
     });
-    expect(container.textContent).not.toContain("27 - 20");
-    expect(container.textContent).not.toContain("31 - 19");
+    expect(screen.getAllByText("27 - 20")[0]).not.toBeVisible();
+    expect(screen.getByText("31 - 19")).not.toBeVisible();
     expect(
       screen.getAllByRole("button", { name: "タップして結果を見る" }),
     ).toHaveLength(3);

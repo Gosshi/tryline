@@ -38,7 +38,6 @@ export function MatchDetailHeader({
       <MatchHeader
         headToHeadHref={headToHeadHref}
         match={match}
-        spoilerGuardEnabled={userState?.spoilerGuardEnabled ?? false}
       />
     </MotionCountGate>
   );
@@ -161,7 +160,7 @@ export function NextWatchSection({
       </div>
 
       {relatedRecaps.length > 0 && (
-        <div className="mt-5 border-t border-slate-100 pt-4">
+        <div data-spoiler-content className="mt-5 border-t border-slate-100 pt-4">
           <h3 className="text-sm font-extrabold text-[var(--color-ink)]">
             同じ大会のレビュー
           </h3>

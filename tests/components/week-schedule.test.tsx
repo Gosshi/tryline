@@ -11,6 +11,7 @@ import {
   groupMatchesByJstTime,
   WeekSchedule,
 } from "@/components/calendar/week-schedule";
+import { writeSpoilerGuard } from "@/lib/spoiler-guard";
 
 import type { CalendarMatch } from "@/lib/db/queries/matches";
 
@@ -25,6 +26,7 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+
 
 const baseMatch: CalendarMatch = {
   awayScore: null,
@@ -336,6 +338,7 @@ describe("WeekSchedule", () => {
   });
 
   it("hides finished scores behind spoiler guard until clicked", () => {
+    writeSpoilerGuard(true);
     const { container } = render(
       <WeekSchedule
         matches={[
@@ -347,12 +350,11 @@ describe("WeekSchedule", () => {
             status: "finished",
           },
         ]}
-        spoilerGuardEnabled
       />,
     );
     const board = getDesktopBoard(container);
 
-    expect(board).not.toHaveTextContent("24–19");
+    expect(board.querySelector("[data-spoiler-value]")).not.toBeVisible();
 
     fireEvent.click(board.querySelector('[role="button"]') as HTMLElement);
 

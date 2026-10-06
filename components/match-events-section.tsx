@@ -109,6 +109,7 @@ export function MatchEventsSection({
 
     return (
       <section
+        data-spoiler-content="events"
         aria-label="得点記録"
         className="rounded-[var(--radius-md)] bg-[var(--color-panel)] p-5 sm:p-6"
       >
@@ -173,6 +174,7 @@ export function MatchEventsSection({
 
     return (
       <section
+        data-spoiler-content="events"
         className="tl-note-panel"
         aria-labelledby="match-highlights-heading"
       >
@@ -237,7 +239,7 @@ export function MatchEventsSection({
   }
 
   return (
-    <section className="tl-graph-panel mt-8 border-t border-[var(--color-rule)] pt-6">
+    <section data-spoiler-content="timeline" className="tl-graph-panel mt-8 border-t border-[var(--color-rule)] pt-6">
       <div className="mb-4">
         <h2 className="text-base font-extrabold text-[var(--color-ink)]">
           得点推移

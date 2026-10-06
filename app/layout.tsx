@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { IOS_APP_ID } from "@/lib/ios-app";
 import { SITE_URL } from "@/lib/site";
+import { SPOILER_GUARD_BOOTSTRAP } from "@/lib/spoiler-guard";
 
 import type { Metadata, Viewport } from "next";
 
@@ -79,7 +80,11 @@ export default function RootLayout({
     <html
       className={`${body.variable} ${heading.variable} ${numbers.variable}`}
       lang="ja"
+      suppressHydrationWarning
     >
+      <head>
+        <script id="spoiler-guard-bootstrap" dangerouslySetInnerHTML={{ __html: SPOILER_GUARD_BOOTSTRAP }} />
+      </head>
       <body className="min-h-screen">
         <SiteHeader />
         <ReturnVisitTracker />

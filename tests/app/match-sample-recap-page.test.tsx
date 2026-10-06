@@ -494,7 +494,7 @@ describe("match sample recap page", () => {
     expect(previewDetails).toHaveTextContent("プレビュー本文");
   });
 
-  it("uses client user state for spoiler guard and favorite team controls", async () => {
+  it("uses client user state for favorite controls but not the browser spoiler setting", async () => {
     authClientMocks.getClientUserState.mockResolvedValue({
       favoriteTeamSlugs: ["sample-away"],
       isPremium: false,
@@ -511,7 +511,7 @@ describe("match sample recap page", () => {
     await waitFor(() => {
       expect(screen.getByTestId("match-header")).toHaveAttribute(
         "data-spoiler-guard-enabled",
-        "true",
+        "false",
       );
       expect(
         screen.getAllByRole("button", { name: "サンプルホームを追う" }),

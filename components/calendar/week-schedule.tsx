@@ -23,7 +23,6 @@ type WeekScheduleProps = {
   emptyMessage?: string;
   highlightMatchId?: string | null;
   matches: CalendarMatch[];
-  spoilerGuardEnabled?: boolean;
 };
 
 export type CalendarDayGroup = {
@@ -152,11 +151,9 @@ function getContentBadge(match: CalendarMatch) {
 function MobileMatchRow({
   isHighlighted,
   match,
-  spoilerGuardEnabled,
 }: {
   isHighlighted: boolean;
   match: CalendarMatch;
-  spoilerGuardEnabled: boolean;
 }) {
   const status = getStatusPresentation(match.status);
   const stateLabel = getMatchStateLabel(match);
@@ -251,7 +248,7 @@ function MobileMatchRow({
               {match.status === "finished" ? (
                 <SpoilerScore
                   className="min-h-11"
-                  enabled={spoilerGuardEnabled}
+                  location="calendar"
                 >
                   {stateLabel}
                 </SpoilerScore>
@@ -280,11 +277,9 @@ function MobileMatchRow({
 function BoardMatch({
   isHighlighted,
   match,
-  spoilerGuardEnabled,
 }: {
   isHighlighted: boolean;
   match: CalendarMatch;
-  spoilerGuardEnabled: boolean;
 }) {
   const status = getStatusPresentation(match.status);
   const contentBadge = getContentBadge(match);
@@ -348,7 +343,7 @@ function BoardMatch({
               <span className="ml-auto text-xs font-black tabular-nums text-[var(--color-ink)]">
                 <SpoilerScore
                   className="min-h-11"
-                  enabled={spoilerGuardEnabled}
+                  location="calendar"
                 >
                   {stateLabel}
                 </SpoilerScore>
@@ -372,11 +367,9 @@ function BoardMatch({
 function WeekBoard({
   groups,
   highlightMatchId,
-  spoilerGuardEnabled,
 }: {
   groups: CalendarDayGroup[];
   highlightMatchId: string | null;
-  spoilerGuardEnabled: boolean;
 }) {
   const isSingleDay = groups.length === 1;
   const competitions = Array.from(
@@ -451,7 +444,6 @@ function WeekBoard({
                           isHighlighted={match.id === highlightMatchId}
                           key={match.id}
                           match={match}
-                          spoilerGuardEnabled={spoilerGuardEnabled}
                         />
                       ))}
                     </div>
@@ -491,7 +483,6 @@ export function WeekSchedule({
   emptyMessage = "今週の試合はありません。",
   highlightMatchId = null,
   matches,
-  spoilerGuardEnabled = false,
 }: WeekScheduleProps) {
   if (matches.length === 0) {
     return (
@@ -508,7 +499,6 @@ export function WeekSchedule({
       <WeekBoard
         groups={groups}
         highlightMatchId={highlightMatchId}
-        spoilerGuardEnabled={spoilerGuardEnabled}
       />
       <div className="tl-calendar-mobile space-y-6 lg:hidden">
         {groups.map((group) => {
@@ -543,8 +533,7 @@ export function WeekSchedule({
                     <MobileMatchRow
                       isHighlighted={match.id === highlightMatchId}
                       match={match}
-                      spoilerGuardEnabled={spoilerGuardEnabled}
-                    />
+                                  />
                   </li>
                 ))}
               </ul>
