@@ -67,7 +67,9 @@ function parseOptions(argv: string[]): CliOptions {
       continue;
     }
 
-    console.error("Usage: pnpm tsx scripts/import-rwc-results.ts --season 2023");
+    console.error(
+      "Usage: pnpm tsx scripts/import-rwc-results.ts --season 2023",
+    );
     process.exit(1);
   }
 
@@ -143,7 +145,9 @@ async function getTeamLookup(teamSlugs: string[]) {
   return lookup;
 }
 
-function buildExternalIds(match: ReturnType<typeof parseRwcHtml>[number]): Record<string, Json> {
+function buildExternalIds(
+  match: ReturnType<typeof parseRwcHtml>[number],
+): Record<string, Json> {
   return {
     phase: match.phase,
     pool_name: match.pool_name,
@@ -154,7 +158,10 @@ function buildExternalIds(match: ReturnType<typeof parseRwcHtml>[number]): Recor
   };
 }
 
-async function upsertCompetitionTeams(competitionId: string, teamLookup: Record<string, string>) {
+async function upsertCompetitionTeams(
+  competitionId: string,
+  teamLookup: Record<string, string>,
+) {
   const client = getSupabaseServerClient();
   const rows = Object.values(teamLookup).map((teamId) => ({
     competition_id: competitionId,
@@ -171,13 +178,17 @@ async function upsertCompetitionTeams(competitionId: string, teamLookup: Record<
   return rows.length;
 }
 
-async function upsertCompetitionPools(competitionId: string, teamLookup: Record<string, string>) {
+async function upsertCompetitionPools(
+  competitionId: string,
+  teamLookup: Record<string, string>,
+) {
   const client = getSupabaseServerClient();
   const rows = Object.entries(RWC_2023_POOL_ASSIGNMENTS).map(([slug, poolName]) => ({
     competition_id: competitionId,
     pool_name: poolName,
     team_id: teamLookup[slug]!,
-  }));
+    }),
+  );
   const { error } = await client
     .from("competition_pools")
     .upsert(rows, { onConflict: "competition_id,team_id" });
@@ -363,7 +374,9 @@ async function buildPoolStandings(): Promise<ParsedStandingsRow[]> {
     const rows = toParsedStandingsRows(standings, finishedMatches);
 
     if (rows.length !== 5) {
-      throw new Error(`Expected 5 standings rows for ${poolName}, got ${rows.length}.`);
+      throw new Error(
+        `Expected 5 standings rows for ${poolName}, got ${rows.length}.`,
+      );
     }
 
     allRows.push(...rows);
@@ -393,8 +406,12 @@ async function main() {
     resolveRwcTeamSlug(match.home_team_name),
     resolveRwcTeamSlug(match.away_team_name),
   ]);
-  const teamLookup = await getTeamLookup(Object.keys(RWC_2023_POOL_ASSIGNMENTS));
-  const competitionId = await upsertCompetition(matches.map((match) => match.kickoff_at));
+  const teamLookup = await getTeamLookup(
+    Object.keys(RWC_2023_POOL_ASSIGNMENTS),
+  );
+  const competitionId = await upsertCompetition(
+    matches.map((match) => match.kickoff_at),
+  );
 
   const upsertedMatches = await upsertMatches(
     matches.map((match) => ({
@@ -405,13 +422,20 @@ async function main() {
       homeScore: match.home_score,
       homeTeamId: teamLookup[resolveRwcTeamSlug(match.home_team_name)]!,
       kickoffAt: match.kickoff_at,
+      kickoffTimeTbd: match.kickoff_time_tbd ?? false,
       status: match.status,
       venue: match.venue,
     })),
   );
 
-  const competitionTeamsCount = await upsertCompetitionTeams(competitionId, teamLookup);
-  const poolAssignmentsCount = await upsertCompetitionPools(competitionId, teamLookup);
+  const competitionTeamsCount = await upsertCompetitionTeams(
+    competitionId,
+    teamLookup,
+  );
+  const poolAssignmentsCount = await upsertCompetitionPools(
+    competitionId,
+    teamLookup,
+  );
 
   const standingsNameToTeamId = Object.fromEntries(
     Object.keys(teamLookup).map((slug) => {

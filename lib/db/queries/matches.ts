@@ -22,6 +22,7 @@ export type MatchListItem = {
   id: string;
   broadcastJpUrl?: string | null;
   kickoffAt: string;
+  kickoffTimeTbd: boolean;
   updatedAt?: string;
   status: MatchStatus;
   homeTeam: {
@@ -229,6 +230,7 @@ type BaseMatchRow = {
   id: string;
   broadcast_jp_url?: string | null;
   kickoff_at: string;
+  kickoff_time_tbd: boolean;
   updated_at?: string;
   status: string;
   home_score: number | null;
@@ -385,6 +387,7 @@ type MatchContentIdRow = {
 type RoundHubQueryRow = {
   external_ids: Json;
   kickoff_at: string;
+  kickoff_time_tbd: boolean;
   competition: {
     family: string;
     season: string;
@@ -412,6 +415,7 @@ type HeadToHeadPairQueryRow = {
   away_team: HeadToHeadTeamRow | null;
   home_team: HeadToHeadTeamRow | null;
   kickoff_at: string;
+  kickoff_time_tbd: boolean;
   status?: string;
 };
 
@@ -421,6 +425,7 @@ const RECENTLY_REVIEWED_MATCH_SELECT = `
   match:matches!match_content_match_id_fkey (
     id,
     kickoff_at,
+    kickoff_time_tbd,
     status,
     home_score,
     away_score,
@@ -619,6 +624,7 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
     id: row.id,
     broadcastJpUrl: row.broadcast_jp_url ?? null,
     kickoffAt: row.kickoff_at,
+    kickoffTimeTbd: row.kickoff_time_tbd ?? false,
     updatedAt: row.updated_at,
     poolName: getPoolNameFromExternalIds(row.external_ids),
     round: getRoundFromExternalIds(row.external_ids),
@@ -628,7 +634,9 @@ function mapMatchRow(row: BaseMatchRow): MatchListItem {
   };
 }
 
-function normalizeTeamKind(kind: string | null | undefined): TeamKind | undefined {
+function normalizeTeamKind(
+  kind: string | null | undefined,
+): TeamKind | undefined {
   return kind === "club" || kind === "national" ? kind : undefined;
 }
 
@@ -696,6 +704,7 @@ export async function getLatestCompetitionWithMatches(): Promise<CompetitionSumm
     .select(
       `
         kickoff_at,
+        kickoff_time_tbd,
         competition:competitions!matches_competition_id_fkey (
           slug,
           name,
@@ -1010,6 +1019,7 @@ export async function getRecentlyReviewedMatchesForFamily(
         match:matches!inner (
           id,
           kickoff_at,
+          kickoff_time_tbd,
           status,
           home_score,
           away_score,
@@ -1067,6 +1077,7 @@ export async function getRecentLeagueOneEnglishRecaps(
         match:matches!match_content_match_id_fkey (
           id,
           kickoff_at,
+          kickoff_time_tbd,
           status,
           home_score,
           away_score,
@@ -1122,6 +1133,7 @@ async function loadUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
       `
         id,
         kickoff_at,
+        kickoff_time_tbd,
         status,
         home_score,
         away_score,
@@ -1195,6 +1207,7 @@ export async function getNextMatchForCompetition({
       `
         id,
         kickoff_at,
+        kickoff_time_tbd,
         status,
         home_score,
         away_score,
@@ -1259,6 +1272,7 @@ export async function getNextUpcomingMatch(): Promise<UpcomingMatch | null> {
       `
         id,
         kickoff_at,
+        kickoff_time_tbd,
         status,
         home_score,
         away_score,
@@ -1340,6 +1354,7 @@ export async function getNextMatchesForTeams({
       `
         id,
         kickoff_at,
+        kickoff_time_tbd,
         status,
         home_score,
         away_score,
@@ -1456,6 +1471,7 @@ export async function getRelatedPublishedRecapsForMatch({
         match:matches!inner (
           id,
           kickoff_at,
+          kickoff_time_tbd,
           status,
           home_score,
           away_score,
@@ -1551,6 +1567,7 @@ export async function getMatchesInRange(
         id,
         broadcast_jp_url,
         kickoff_at,
+        kickoff_time_tbd,
         updated_at,
         status,
         home_score,
@@ -1704,6 +1721,7 @@ export async function getFavoriteTeamMatches(
       `
         id,
         kickoff_at,
+        kickoff_time_tbd,
         status,
         home_score,
         away_score,
@@ -1813,9 +1831,7 @@ export async function listMatchIdsWithContent(): Promise<SitemapMatch[]> {
   );
 }
 
-function mapSitemapContentRows(
-  rows: SitemapContentMatchRow[],
-): SitemapMatch[] {
+function mapSitemapContentRows(rows: SitemapContentMatchRow[]): SitemapMatch[] {
   const seen = new Set<string>();
   const result: SitemapMatch[] = [];
 
@@ -1852,6 +1868,7 @@ export async function listPrerenderMatchIds(): Promise<SitemapMatch[]> {
         match_id,
         match:matches!inner (
           kickoff_at,
+          kickoff_time_tbd,
           competition:competitions!matches_competition_id_fkey (
             family,
             slug
@@ -1922,6 +1939,7 @@ export async function listRoundHubParams(): Promise<RoundHubParam[]> {
     .select(
       `
         kickoff_at,
+        kickoff_time_tbd,
         external_ids,
         competition:competitions!matches_competition_id_fkey (
           family,
@@ -1948,6 +1966,7 @@ export async function listPrerenderRoundHubParams(): Promise<RoundHubParam[]> {
     .select(
       `
         kickoff_at,
+        kickoff_time_tbd,
         external_ids,
         competition:competitions!matches_competition_id_fkey (
           family,
@@ -2099,6 +2118,7 @@ export async function listHeadToHeadPairs(
         .select(
           `
         kickoff_at,
+        kickoff_time_tbd,
         status,
         home_team:teams!matches_home_team_id_fkey (
           id,
@@ -2150,6 +2170,7 @@ export async function getHeadToHeadMatches(
       `
         id,
         kickoff_at,
+        kickoff_time_tbd,
         status,
         home_score,
         away_score,
@@ -2482,6 +2503,7 @@ export async function getMatchesByTeamSlug(
       `
         id,
         kickoff_at,
+        kickoff_time_tbd,
         status,
         home_score,
         away_score,
@@ -2550,6 +2572,7 @@ export async function listMatchesForCompetition(
       `
         id,
         kickoff_at,
+        kickoff_time_tbd,
         status,
         home_score,
         away_score,
@@ -2655,6 +2678,7 @@ export async function getMatchById(
         id,
         broadcast_jp_url,
         kickoff_at,
+        kickoff_time_tbd,
         status,
         home_team_id,
         away_team_id,

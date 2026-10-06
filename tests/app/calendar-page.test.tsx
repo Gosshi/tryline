@@ -76,6 +76,7 @@ function createCalendarMatch(
     },
     id: "match-1",
     kickoffAt: "2026-07-18T10:00:00.000Z",
+    kickoffTimeTbd: false,
     poolName: null,
     round: 1,
     roundName: "Round 1",

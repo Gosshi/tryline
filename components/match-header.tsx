@@ -2,7 +2,11 @@ import Link from "next/link";
 
 import { MotionNumber } from "@/components/touchline-motion";
 import { formatCompetitionTitle } from "@/lib/format/competition";
-import { formatKickoffJst, formatKickoffLocal } from "@/lib/format/kickoff";
+import {
+  formatKickoffJst,
+  formatKickoffJstDate,
+  formatKickoffLocal,
+} from "@/lib/format/kickoff";
 import { getMatchOutcome } from "@/lib/format/match-outcome";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { getTeamColor } from "@/lib/format/team-identity";
@@ -190,18 +194,33 @@ export function MatchHeader({
       <div className="mt-6 flex flex-wrap gap-2 text-[11px] font-bold text-white/95 sm:mt-7 sm:text-xs">
         <time
           className="rounded-none bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm"
-          dateTime={match.kickoffAt}
+          dateTime={
+            match.kickoffTimeTbd
+              ? formatKickoffJstDate(match.kickoffAt).slice(0, 10)
+              : match.kickoffAt
+          }
         >
-          {formatKickoffJst(match.kickoffAt)}
+          {formatKickoffJst(match.kickoffAt, match.kickoffTimeTbd)}
         </time>
-        {localTimezone !== null && localTimezone !== "Asia/Tokyo" && (
-          <time
-            className="rounded-none bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm"
-            dateTime={match.kickoffAt}
-          >
-            現地 {formatKickoffLocal(match.kickoffAt, localTimezone)}
-          </time>
-        )}
+        {!match.kickoffTimeTbd &&
+          localTimezone !== null &&
+          localTimezone !== "Asia/Tokyo" && (
+            <time
+              className="rounded-none bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm"
+              dateTime={
+                match.kickoffTimeTbd
+                  ? formatKickoffJstDate(match.kickoffAt).slice(0, 10)
+                  : match.kickoffAt
+              }
+            >
+              現地{" "}
+              {formatKickoffLocal(
+                match.kickoffAt,
+                localTimezone,
+                match.kickoffTimeTbd,
+              )}
+            </time>
+          )}
         {match.venue && (
           <span className="rounded-none bg-[var(--color-ink-strong)] px-3 py-1.5 backdrop-blur-sm">
             {formatVenueDisplay(match.venue)}

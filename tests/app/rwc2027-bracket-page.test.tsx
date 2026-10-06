@@ -50,6 +50,7 @@ function buildMatch(params: Partial<MatchListItem>): MatchListItem {
     homeTeam: { name: "Home", shortCode: "HME", slug: "home" },
     id: "match-1",
     kickoffAt: "2027-10-17T08:00:00.000Z",
+    kickoffTimeTbd: false,
     poolName: "Pool A",
     round: null,
     roundName: null,

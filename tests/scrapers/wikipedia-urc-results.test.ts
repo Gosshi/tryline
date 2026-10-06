@@ -33,6 +33,8 @@ describe("parseUrcResultsHtml", () => {
       round: 1,
       season: "2024-25",
     });
+    expect(results[0]?.kickoff_time_tbd).toBe(true);
+    expect(results[1]?.kickoff_time_tbd).toBe(false);
     expect(results[0]?.kickoff_at).toBe("2025-05-30T00:00:00.000Z");
     expect(results[1]).toMatchObject({
       away_team_slug: "edinburgh",

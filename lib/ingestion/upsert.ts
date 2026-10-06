@@ -10,6 +10,7 @@ export type ResolvedMatchCandidate = {
   homeScore: number | null;
   homeTeamId: string;
   kickoffAt: string | null;
+  kickoffTimeTbd?: boolean;
   status: "finished" | "scheduled";
   venue: string | null;
 };
@@ -41,6 +42,7 @@ type ExistingMatch = {
   home_team_id: string;
   id: string;
   kickoff_at: string;
+  kickoff_time_tbd: boolean;
   status: string;
   venue: string | null;
 };
@@ -75,6 +77,9 @@ function buildMatchUpdate(
       ? existing.home_score
       : candidate.homeScore,
     kickoff_at: candidate.kickoffAt ?? existing?.kickoff_at,
+    kickoff_time_tbd:
+      candidate.kickoffTimeTbd ??
+      (candidate.kickoffAt ? false : (existing?.kickoff_time_tbd ?? false)),
     status: keepExistingFinishedScore ? "finished" : candidate.status,
     venue: candidate.venue,
   };
@@ -90,23 +95,35 @@ async function findExistingMatch(candidate: ResolvedMatchCandidate) {
     );
 
   if (stableExternalId) {
-    const matchByStableExternalId = await client
-      .from("matches")
-      .select(
-        "id, competition_id, home_team_id, away_team_id, kickoff_at, status, venue, home_score, away_score, external_ids",
-      )
-      .eq("competition_id", candidate.competitionId)
-      .contains("external_ids", {
-        [stableExternalId.key]: stableExternalId.value,
-      })
-      .maybeSingle();
+    // Older no-id rugbyboxes used timestamps. Accept their IDs while moving
+    // to a date-only ID, so announcing a kickoff updates the original row.
+    const legacyIds = candidate.externalIds.wikipedia_legacy_event_ids;
+    const ids = [
+      stableExternalId.value,
+      ...(stableExternalId.key === "wikipedia_event_id" &&
+      Array.isArray(legacyIds)
+        ? legacyIds.filter((id): id is string => typeof id === "string")
+        : []),
+    ];
+    for (const id of new Set(ids)) {
+      const matchByStableExternalId = await client
+        .from("matches")
+        .select(
+          "id, competition_id, home_team_id, away_team_id, kickoff_at, kickoff_time_tbd, status, venue, home_score, away_score, external_ids",
+        )
+        .eq("competition_id", candidate.competitionId)
+        .contains("external_ids", {
+          [stableExternalId.key]: id,
+        })
+        .maybeSingle();
 
-    if (matchByStableExternalId.error) {
-      throw matchByStableExternalId.error;
-    }
+      if (matchByStableExternalId.error) {
+        throw matchByStableExternalId.error;
+      }
 
-    if (matchByStableExternalId.data) {
-      return matchByStableExternalId.data;
+      if (matchByStableExternalId.data) {
+        return matchByStableExternalId.data;
+      }
     }
   }
 
@@ -117,7 +134,7 @@ async function findExistingMatch(candidate: ResolvedMatchCandidate) {
   const exactMatch = await client
     .from("matches")
     .select(
-      "id, competition_id, home_team_id, away_team_id, kickoff_at, status, venue, home_score, away_score, external_ids",
+      "id, competition_id, home_team_id, away_team_id, kickoff_at, kickoff_time_tbd, status, venue, home_score, away_score, external_ids",
     )
     .eq("competition_id", candidate.competitionId)
     .eq("home_team_id", candidate.homeTeamId)
@@ -143,7 +160,7 @@ async function findExistingMatch(candidate: ResolvedMatchCandidate) {
   const scheduledMatch = await client
     .from("matches")
     .select(
-      "id, competition_id, home_team_id, away_team_id, kickoff_at, status, venue, home_score, away_score, external_ids",
+      "id, competition_id, home_team_id, away_team_id, kickoff_at, kickoff_time_tbd, status, venue, home_score, away_score, external_ids",
     )
     .eq("competition_id", candidate.competitionId)
     .eq("home_team_id", candidate.homeTeamId)
@@ -224,6 +241,7 @@ export async function upsertMatches(
         home_score: candidate.homeScore,
         home_team_id: candidate.homeTeamId,
         kickoff_at: candidate.kickoffAt,
+        kickoff_time_tbd: candidate.kickoffTimeTbd ?? false,
         status: candidate.status,
         venue: candidate.venue,
       })

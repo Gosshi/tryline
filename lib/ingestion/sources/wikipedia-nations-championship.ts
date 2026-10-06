@@ -131,7 +131,10 @@ function logEmptyWikipediaParse(response: Response, html: string) {
   });
 }
 
-function logMissingSource(source: "wikipedia" | "world-rugby", error: FetchError) {
+function logMissingSource(
+  source: "wikipedia" | "world-rugby",
+  error: FetchError,
+) {
   if (source === "wikipedia") {
     console.warn("Nations Championship 2026 Wikipedia diagnostics", {
       age: null,
@@ -221,6 +224,7 @@ function parseRoundTableMatches(
             homeScore: score.homeScore,
             homeTeamName,
             kickoffAt: buildUtcIsoString({ dateText }),
+            kickoffTimeTbd: true,
             lineupTableHtml: null,
             rawHtml: $.html(row),
             round,
@@ -281,6 +285,7 @@ export function parseNationsChampionshipLiveHtml(
     return {
       ...match,
       kickoffAt: kickoffTime.kickoffAt,
+      kickoffTimeTbd: false,
       round: kickoffTime.round,
       venue: kickoffTime.venue ?? match.venue,
     };

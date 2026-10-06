@@ -58,21 +58,25 @@ describe("head-to-head match queries", () => {
           away_team: toulouse,
           home_team: leinster,
           kickoff_at: "2025-05-01T12:00:00.000Z",
+          kickoff_time_tbd: false,
         },
         {
           away_team: leinster,
           home_team: toulouse,
           kickoff_at: "2026-05-01T12:00:00.000Z",
+          kickoff_time_tbd: false,
         },
         {
           away_team: bath,
           home_team: leinster,
           kickoff_at: "2026-01-01T12:00:00.000Z",
+          kickoff_time_tbd: false,
         },
         {
           away_team: null,
           home_team: leinster,
           kickoff_at: "2026-02-01T12:00:00.000Z",
+          kickoff_time_tbd: false,
         },
       ]),
     ).toEqual([
@@ -132,6 +136,7 @@ describe("head-to-head match queries", () => {
         away_team: awayTeam,
         home_team: homeTeam,
         kickoff_at: `2026-11-${String(matchIndex + 1).padStart(2, "0")}T12:00:00.000Z`,
+        kickoff_time_tbd: false,
         status: "finished",
       }));
     }).flat();
@@ -149,12 +154,14 @@ describe("head-to-head match queries", () => {
           away_team: awayTeam,
           home_team: homeTeam,
           kickoff_at: "2025-11-01T12:00:00.000Z",
+          kickoff_time_tbd: false,
           status: "finished",
         },
         {
           away_team: awayTeam,
           home_team: homeTeam,
           kickoff_at: `${pair.date}T12:00:00.000Z`,
+          kickoff_time_tbd: false,
           status: "scheduled",
         },
       );
@@ -175,6 +182,7 @@ describe("head-to-head match queries", () => {
       away_team: toulouse,
       home_team: leinster,
       kickoff_at: new Date(Date.UTC(2020, 0, 1 + index)).toISOString(),
+      kickoff_time_tbd: false,
       status: "finished",
     }));
     const range = vi.fn((from: number, to: number) =>
@@ -214,6 +222,7 @@ describe("head-to-head match queries", () => {
               away_team: toulouse,
               home_team: leinster,
               kickoff_at: "2025-05-01T12:00:00.000Z",
+              kickoff_time_tbd: false,
             },
           ],
           error: null,

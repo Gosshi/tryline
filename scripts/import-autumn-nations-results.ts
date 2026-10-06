@@ -124,6 +124,7 @@ async function upsertMatches(
       home_score: result.home_score,
       home_team_id: homeTeamId,
       kickoff_at: result.kickoff_at,
+      kickoff_time_tbd: result.kickoff_time_tbd ?? false,
       status: "finished",
       venue: result.venue,
     };

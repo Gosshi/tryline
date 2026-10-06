@@ -271,7 +271,10 @@ export default async function CompetitionHubPage({ params }: Props) {
                                 href={`/matches/${match.id}`}
                               >
                                 <span className="text-sm tabular-nums text-[var(--color-ink-muted)]">
-                                  {formatMatchKickoffJst(match.kickoffAt)}
+                                  {formatMatchKickoffJst(
+                                    match.kickoffAt,
+                                    match.kickoffTimeTbd,
+                                  )}
                                 </span>
                                 <span className="font-semibold text-[var(--color-ink)]">
                                   {getMatchLabel(match)}

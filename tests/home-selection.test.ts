@@ -23,6 +23,7 @@ function match(
   return {
     id,
     kickoffAt,
+    kickoffTimeTbd: false,
     status,
     competition: {
       family: "top-14",

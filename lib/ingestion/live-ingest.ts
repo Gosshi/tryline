@@ -374,6 +374,9 @@ export async function ingestLiveCompetition(
         homeScore: match.homeScore,
         homeTeamId,
         kickoffAt: match.preserveExistingKickoffAt ? null : match.kickoffAt,
+        kickoffTimeTbd: match.preserveExistingKickoffAt
+          ? undefined
+          : (match.kickoffTimeTbd ?? false),
         rawHtml: match.rawHtml,
         status: match.status,
         venue: match.venue,

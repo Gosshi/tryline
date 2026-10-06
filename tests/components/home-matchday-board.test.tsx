@@ -39,6 +39,7 @@ const nextMatch = {
   },
   id: "next-match",
   kickoffAt: "2026-07-20T10:30:00.000Z",
+  kickoffTimeTbd: false,
   poolName: null,
   round: null,
   roundName: null,

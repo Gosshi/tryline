@@ -30,6 +30,7 @@ export type PlayerMatchRow = {
   isStarter: boolean;
   jerseyNumber: number;
   kickoffAt: string;
+  kickoffTimeTbd: boolean;
   matchId: string;
   status: string;
 };
@@ -68,6 +69,7 @@ type PlayerLineupRow = {
     home_team: { name: string } | null;
     id: string;
     kickoff_at: string;
+    kickoff_time_tbd: boolean;
     status: string;
   } | null;
 };
@@ -506,6 +508,7 @@ export async function getMatchesForPlayer(
         match:matches!match_lineups_match_id_fkey (
           id,
           kickoff_at,
+          kickoff_time_tbd,
           status,
           home_score,
           away_score,
@@ -548,6 +551,7 @@ export async function getMatchesForPlayer(
       isStarter: row.is_starter,
       jerseyNumber: row.jersey_number,
       kickoffAt: match.kickoff_at,
+      kickoffTimeTbd: match.kickoff_time_tbd ?? false,
       matchId: match.id,
       status: match.status,
     };

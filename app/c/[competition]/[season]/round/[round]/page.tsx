@@ -118,9 +118,13 @@ function RoundMatchRow({
       >
         <time
           className="text-xs font-bold tabular-nums text-[var(--color-ink-muted)]"
-          dateTime={match.kickoffAt}
+          dateTime={
+            match.kickoffTimeTbd
+              ? formatKickoffJstDate(match.kickoffAt).slice(0, 10)
+              : match.kickoffAt
+          }
         >
-          {formatKickoffJstTime(match.kickoffAt)}
+          {formatKickoffJstTime(match.kickoffAt, match.kickoffTimeTbd)}
         </time>
         <div className="min-w-0">
           <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-bold text-[var(--color-ink)]">

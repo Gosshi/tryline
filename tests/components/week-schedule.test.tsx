@@ -50,6 +50,7 @@ const baseMatch: CalendarMatch = {
   },
   id: "match-1",
   kickoffAt: "2026-06-07T15:30:00.000Z",
+  kickoffTimeTbd: false,
   poolName: null,
   round: null,
   roundName: null,
@@ -68,6 +69,30 @@ function getDesktopBoard(container: HTMLElement) {
 }
 
 describe("WeekSchedule grouping", () => {
+  it("separates TBD fixtures from a real 09:00 kickoff", () => {
+    const matches = [
+      {
+        ...baseMatch,
+        id: "pending",
+        kickoffAt: "2026-10-09T00:00:00.000Z",
+        kickoffTimeTbd: true,
+      },
+      {
+        ...baseMatch,
+        id: "confirmed",
+        kickoffAt: "2026-10-09T00:00:00.000Z",
+        kickoffTimeTbd: false,
+      },
+    ];
+    expect(
+      groupMatchesByJstTime(matches).map((group) => group.kickoffTime),
+    ).toEqual(["時刻未定", "09:00"]);
+    const { container } = render(<WeekSchedule matches={[matches[0]!]} />);
+    expect(container).toHaveTextContent("時刻未定");
+    expect(container).not.toHaveTextContent("09:00");
+    cleanup();
+  });
+
   it("groups seven simultaneous matches into one kickoff-time group", () => {
     const matches = Array.from({ length: 7 }, (_, index) => ({
       ...baseMatch,
@@ -105,6 +130,7 @@ describe("WeekSchedule grouping", () => {
         ...baseMatch,
         id: `match-${index}`,
         kickoffAt: `2026-06-${String(7 + index).padStart(2, "0")}T15:30:00.000Z`,
+        kickoffTimeTbd: false,
       })),
     );
 
@@ -135,12 +161,14 @@ describe("WeekSchedule", () => {
             homeScore: 24,
             id: "match-2",
             kickoffAt: "2026-06-08T15:00:00.000Z",
+            kickoffTimeTbd: false,
             status: "finished",
           },
           {
             ...baseMatch,
             id: "match-3",
             kickoffAt: "2026-06-08T16:00:00.000Z",
+            kickoffTimeTbd: false,
             status: "in_progress",
           },
         ]}
@@ -221,6 +249,7 @@ describe("WeekSchedule", () => {
       ...baseMatch,
       id: `seven-day-${index}`,
       kickoffAt: `2026-06-${String(7 + index).padStart(2, "0")}T15:30:00.000Z`,
+      kickoffTimeTbd: false,
     }));
     const { container } = render(<WeekSchedule matches={matches} />);
     const board = getDesktopBoard(container);

@@ -68,12 +68,15 @@ function parseNonNegativeCount(value: string | null): number {
   return Number.isSafeInteger(count) ? count : 0;
 }
 
-function formatCalendarFocusKickoff(value: string | null): string | null {
+function formatCalendarFocusKickoff(
+  value: string | null,
+  kickoffTimeTbd = false,
+): string | null {
   if (!value || Number.isNaN(new Date(value).getTime())) {
     return null;
   }
 
-  return formatKickoffJstCompact(value);
+  return formatKickoffJstCompact(value, kickoffTimeTbd);
 }
 
 function parseStoryItemType(value: string | null): StoryItemType | null {
@@ -339,8 +342,14 @@ function storyImage(
   const height = isPortrait ? 1920 : 630;
   const homeColor = getTeamColor(match.home_team.slug);
   const awayColor = getTeamColor(match.away_team.slug);
-  const home = truncate(getStoryTeamLabel(match.home_team), isPortrait ? 18 : 20);
-  const away = truncate(getStoryTeamLabel(match.away_team), isPortrait ? 18 : 20);
+  const home = truncate(
+    getStoryTeamLabel(match.home_team),
+    isPortrait ? 18 : 20,
+  );
+  const away = truncate(
+    getStoryTeamLabel(match.away_team),
+    isPortrait ? 18 : 20,
+  );
   const competition = truncate(
     formatCompetitionTitle(
       {
@@ -479,13 +488,7 @@ function storyImage(
           left: isPortrait ? 78 : 64,
           position: "absolute",
           right: isPortrait ? 78 : 64,
-          top: renderText
-            ? isPortrait
-              ? 220
-              : 112
-            : isPortrait
-              ? 860
-              : 250,
+          top: renderText ? (isPortrait ? 220 : 112) : isPortrait ? 860 : 250,
         }}
       >
         {storyFlagChip(match.home_team, isPortrait, renderText)}
@@ -884,7 +887,10 @@ export async function GET(request: Request) {
       ? truncate(focusCompetition, 30)
       : "";
     const focusKickoffLabel = hasFocus
-      ? formatCalendarFocusKickoff(searchParams.get("focus_kickoff"))
+      ? formatCalendarFocusKickoff(
+          searchParams.get("focus_kickoff"),
+          searchParams.get("focus_kickoff_tbd") === "true",
+        )
       : null;
 
     return new ImageResponse(

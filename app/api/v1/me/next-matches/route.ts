@@ -42,6 +42,7 @@ function mapNextReadMatch(
     },
     id: match.id,
     kickoff_utc: match.kickoffAt,
+    kickoff_time_tbd: match.kickoffTimeTbd ?? false,
   };
 }
 
@@ -103,7 +104,9 @@ export async function GET(request: Request) {
     });
   const competitionIds = uniqueMatches
     .map((match) => match.competition.id)
-    .filter((competitionId): competitionId is string => competitionId !== undefined);
+    .filter(
+      (competitionId): competitionId is string => competitionId !== undefined,
+    );
   const singleNationCompetitionIds =
     await getSingleNationCompetitionIds(competitionIds);
   const data: V1NextMatchesData = {

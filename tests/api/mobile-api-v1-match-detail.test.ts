@@ -158,6 +158,23 @@ describe("GET /api/v1/matches/[id]", () => {
     sourcedFactsMock.getStorySourcedFactsForMatches.mockResolvedValue([]);
   });
 
+  it.each([false, true])(
+    "returns kickoff_time_tbd=%s without changing kickoff_utc",
+    async (kickoffTimeTbd) => {
+      matchesMock.getMatchById.mockResolvedValue({ ...match, kickoffTimeTbd });
+      const { GET } = await import("@/app/api/v1/matches/[id]/route");
+      const response = await GET(
+        new Request("http://localhost/api/v1/matches/match-1"),
+        { params: Promise.resolve({ id: "match-1" }) },
+      );
+      const returned = (await response.json()).data.match;
+      expect(returned).toMatchObject({
+        kickoff_time_tbd: kickoffTimeTbd,
+        kickoff_utc: match.kickoffAt,
+      });
+    },
+  );
+
   it("returns match details with events, lineups and broadcast information", async () => {
     const { GET } = await import("@/app/api/v1/matches/[id]/route");
     const response = await GET(
@@ -239,7 +256,9 @@ describe("GET /api/v1/matches/[id]", () => {
       homeScore: 56,
       id: matchId,
     });
-    eventsMock.getMatchEventsForMatch.mockResolvedValue(eventsWithTotals32To35());
+    eventsMock.getMatchEventsForMatch.mockResolvedValue(
+      eventsWithTotals32To35(),
+    );
 
     const { GET } = await import("@/app/api/v1/matches/[id]/route");
     const response = await GET(
@@ -260,7 +279,9 @@ describe("GET /api/v1/matches/[id]", () => {
       homeScore: 32,
       id: matchId,
     });
-    eventsMock.getMatchEventsForMatch.mockResolvedValue(eventsWithTotals32To35());
+    eventsMock.getMatchEventsForMatch.mockResolvedValue(
+      eventsWithTotals32To35(),
+    );
 
     const { GET } = await import("@/app/api/v1/matches/[id]/route");
     const response = await GET(
@@ -427,9 +448,9 @@ describe("GET /api/v1/matches/[id]", () => {
     );
     const body = await response.json();
 
-    expect(sourcedFactsMock.getStorySourcedFactsForMatches).toHaveBeenCalledWith(
-      ["match-1"],
-    );
+    expect(
+      sourcedFactsMock.getStorySourcedFactsForMatches,
+    ).toHaveBeenCalledWith(["match-1"]);
     expect(body.data.match.related_news).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

@@ -165,6 +165,7 @@ const match: MatchDetail = {
   homeTeamId: "home-team",
   id: sampleMatchId,
   kickoffAt: "2026-05-30T14:00:00.000Z",
+  kickoffTimeTbd: false,
   poolName: null,
   round: 18,
   roundName: null,
@@ -263,6 +264,29 @@ describe("match sample recap page", () => {
     expect(matchMocks.listMatchIdsWithContent).not.toHaveBeenCalled();
   });
 
+  it.each([false, true])(
+    "emits the correct SportsEvent startDate (TBD=%s)",
+    async (kickoffTimeTbd) => {
+      setCommonMocks({
+        match: { kickoffAt: "2026-10-09T00:00:00.000Z", kickoffTimeTbd },
+      });
+      const element = await MatchDetailPage({
+        params: Promise.resolve({ id: sampleMatchId }),
+      });
+      const { container } = render(element);
+      const data = JSON.parse(
+        container.querySelector('script[type="application/ld+json"]')
+          ?.textContent ?? "{}",
+      );
+      const event = Array.isArray(data)
+        ? data.find((entry) => entry["@type"] === "SportsEvent")
+        : data;
+      expect(event.startDate).toBe(
+        kickoffTimeTbd ? "2026-10-09" : "2026-10-09T00:00:00.000Z",
+      );
+    },
+  );
+
   it("removes venue footnotes from the SportsEvent JSON-LD location", async () => {
     setCommonMocks({
       match: { venue: "Twickenham Stadium, London[9]" },
@@ -303,7 +327,9 @@ describe("match sample recap page", () => {
       screen.getByText("これは無料サンプルのレビューです。"),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("premium-recap-section")).toBeNull();
-    expect(screen.queryByRole("complementary", { name: "試合の要点" })).toBeNull();
+    expect(
+      screen.queryByRole("complementary", { name: "試合の要点" }),
+    ).toBeNull();
     const previewDetails = screen
       .getByText("試合前のプレビューを表示")
       .closest("details");
@@ -518,6 +544,7 @@ describe("match sample recap page", () => {
           },
           id: "next-home-match",
           kickoffAt: "2026-06-06T10:00:00.000Z",
+          kickoffTimeTbd: false,
           status: "scheduled",
         },
         teamId: "home-team",
@@ -777,6 +804,7 @@ describe("match sample recap page", () => {
         awayScore: null,
         homeScore: null,
         kickoffAt: "2027-10-01T10:00:00.000Z",
+        kickoffTimeTbd: false,
         status: "scheduled",
       },
       publishedContent: {
@@ -801,6 +829,7 @@ describe("match sample recap page", () => {
         awayScore: null,
         homeScore: null,
         kickoffAt: "2026-07-12T10:00:00.000Z",
+        kickoffTimeTbd: false,
         status: "scheduled",
       },
       publishedContent: {
@@ -820,6 +849,7 @@ describe("match sample recap page", () => {
         awayScore: null,
         homeScore: null,
         kickoffAt: "2027-10-01T10:00:00.000Z",
+        kickoffTimeTbd: false,
         status: "scheduled",
       },
       publishedContent: {

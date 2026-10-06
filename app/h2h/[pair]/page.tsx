@@ -409,7 +409,7 @@ function LatestReviewCta({
         {teamB.name}
       </p>
       <p className="mt-1 text-sm text-slate-600">
-        {formatKickoffJst(match.kickoffAt)}
+        {formatKickoffJst(match.kickoffAt, match.kickoffTimeTbd)}
       </p>
       {contentStatus?.hasRecap && (
         <TrackedLink
@@ -447,7 +447,7 @@ function NextMatchCta({
         {teamA.name} 対 {teamB.name}
       </p>
       <p className="mt-1 text-sm text-slate-600">
-        {formatKickoffJst(match.kickoffAt)}
+        {formatKickoffJst(match.kickoffAt, match.kickoffTimeTbd)}
       </p>
       <TrackedLink
         analytics={{
@@ -588,7 +588,7 @@ function HeadToHeadMatchRow({
         <span className="block text-xs font-semibold text-slate-500">
           {formatCompetitionTitle(match.competition, match.competition.season)}
           {" · "}
-          {formatKickoffJst(match.kickoffAt)}
+          {formatKickoffJst(match.kickoffAt, match.kickoffTimeTbd)}
         </span>
         <span className="mt-1 block text-sm font-bold text-slate-950">
           {teamA.name} 対 {teamB.name}

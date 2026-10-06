@@ -12,8 +12,11 @@ import type {
 import type { MatchListItem } from "@/lib/db/queries/matches";
 import type { PoolStanding, StandingRow } from "@/lib/db/queries/standings";
 
-export function formatMatchKickoffJst(kickoffAt: string): string {
-  return `${formatKickoffJstDate(kickoffAt)} ${formatKickoffJstTime(kickoffAt)}`;
+export function formatMatchKickoffJst(
+  kickoffAt: string,
+  kickoffTimeTbd = false,
+): string {
+  return `${formatKickoffJstDate(kickoffAt)} ${formatKickoffJstTime(kickoffAt, kickoffTimeTbd)}`;
 }
 
 export function findNextScheduledMatch(

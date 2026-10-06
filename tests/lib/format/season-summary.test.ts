@@ -23,6 +23,7 @@ const baseMatch: MatchListItem = {
   homeTeam: { name: "Japan", shortCode: "JPN", slug: "japan" },
   id: "match-1",
   kickoffAt: "2027-10-01T18:45:00Z",
+  kickoffTimeTbd: false,
   poolName: null,
   round: null,
   roundName: null,
@@ -182,18 +183,21 @@ describe("season summary helpers", () => {
           {
             ...baseMatch,
             kickoffAt: "2026-09-12T10:05:00Z",
+            kickoffTimeTbd: false,
             status: "finished",
           },
           {
             ...baseMatch,
             id: "match-2",
             kickoffAt: "2026-09-19T15:30:00Z",
+            kickoffTimeTbd: false,
             status: "finished",
           },
           {
             ...baseMatch,
             id: "match-3",
             kickoffAt: "2026-09-26T10:00:00Z",
+            kickoffTimeTbd: false,
             status: "cancelled",
           },
         ],
@@ -207,6 +211,7 @@ describe("season summary helpers", () => {
           {
             ...baseMatch,
             kickoffAt: "2026-08-07T15:00:00Z",
+            kickoffTimeTbd: false,
             status: "finished",
           },
         ],
@@ -223,12 +228,14 @@ describe("season summary helpers", () => {
           {
             ...baseMatch,
             kickoffAt: "2026-09-12T10:05:00Z",
+            kickoffTimeTbd: false,
             status: "finished",
           },
           {
             ...baseMatch,
             id: "match-last",
             kickoffAt: "2026-09-19T15:30:00Z",
+            kickoffTimeTbd: false,
             status: "finished",
           },
         ],

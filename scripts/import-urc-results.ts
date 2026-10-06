@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { upsertMatches as upsertResolvedMatches } from "@/lib/ingestion/upsert";
 import {
   wikipediaUrcResultsScraper,
   type HistoricalMatchResult,
@@ -101,7 +102,6 @@ async function upsertMatches(
   competitionId: string,
   teamLookup: TeamLookup,
 ) {
-  const client = getSupabaseServerClient();
   const rows = results.map((result) => {
     const homeTeamId = teamLookup[result.home_team_slug];
     const awayTeamId = teamLookup[result.away_team_slug];
@@ -121,23 +121,27 @@ async function upsertMatches(
       home_score: result.home_score,
       home_team_id: homeTeamId,
       kickoff_at: result.kickoff_at,
+      kickoff_time_tbd: result.kickoff_time_tbd ?? false,
       status: "finished",
       venue: result.venue,
     };
   });
 
-  const { data, error } = await client
-    .from("matches")
-    .upsert(rows, {
-      onConflict: "competition_id,home_team_id,away_team_id,kickoff_at",
-    })
-    .select("id");
-
-  if (error) {
-    throw error;
-  }
-
-  return data.length;
+  const result = await upsertResolvedMatches(
+    rows.map((row) => ({
+      awayScore: row.away_score,
+      awayTeamId: row.away_team_id,
+      competitionId: row.competition_id,
+      externalIds: row.external_ids,
+      homeScore: row.home_score,
+      homeTeamId: row.home_team_id,
+      kickoffAt: row.kickoff_at,
+      kickoffTimeTbd: row.kickoff_time_tbd,
+      status: "finished",
+      venue: row.venue,
+    })),
+  );
+  return result.matchesInserted + result.matchesUpdated;
 }
 
 async function upsertCompetitionTeams(

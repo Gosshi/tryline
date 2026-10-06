@@ -29,6 +29,7 @@ const matchRow = {
   },
   id: "match-1",
   kickoff_at: "2026-01-01T00:00:00.000Z",
+  kickoff_time_tbd: false,
   status: "scheduled",
   venue: null,
 };
@@ -66,21 +67,25 @@ describe("round hub match queries", () => {
           competition: { family: "six-nations", season: "2025" },
           external_ids: { wikipedia_round: 3 },
           kickoff_at: "2025-02-15T12:00:00.000Z",
+          kickoff_time_tbd: false,
         },
         {
           competition: { family: "six-nations", season: "2025" },
           external_ids: { round_name: "Final" },
           kickoff_at: "2025-03-15T12:00:00.000Z",
+          kickoff_time_tbd: false,
         },
         {
           competition: { family: "premiership", season: "2024-25" },
           external_ids: { round: 18 },
           kickoff_at: "2025-05-10T12:00:00.000Z",
+          kickoff_time_tbd: false,
         },
         {
           competition: null,
           external_ids: { round: 1 },
           kickoff_at: "2025-01-01T12:00:00.000Z",
+          kickoff_time_tbd: false,
         },
       ]),
     ).toEqual([
@@ -106,16 +111,19 @@ describe("round hub match queries", () => {
           competition: { family: "six-nations", season: "2025" },
           external_ids: { wikipedia_round: 1 },
           kickoff_at: "2025-02-01T12:00:00.000Z",
+          kickoff_time_tbd: false,
         },
         {
           competition: { family: "six-nations", season: "2025" },
           external_ids: { wikipedia_round: 1 },
           kickoff_at: "2025-02-02T12:00:00.000Z",
+          kickoff_time_tbd: false,
         },
         {
           competition: { family: "six-nations", season: "2025" },
           external_ids: { round_name: "Semi-final" },
           kickoff_at: "2025-03-01T12:00:00.000Z",
+          kickoff_time_tbd: false,
         },
       ]),
     );

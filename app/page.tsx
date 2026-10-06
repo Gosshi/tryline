@@ -203,7 +203,7 @@ export default async function HomePage() {
   );
   const featuredCompetitionStats = {
     nextMatchLabel: featuredCompetitionNextMatch
-      ? `${formatKickoffJstDate(featuredCompetitionNextMatch.kickoffAt)} ${formatKickoffJstTime(featuredCompetitionNextMatch.kickoffAt)}`
+      ? `${formatKickoffJstDate(featuredCompetitionNextMatch.kickoffAt)} ${formatKickoffJstTime(featuredCompetitionNextMatch.kickoffAt, featuredCompetitionNextMatch.kickoffTimeTbd)}`
       : "次回日程を確認中",
     nextMatchSubLabel: featuredCompetitionNextMatch
       ? `${featuredCompetitionNextMatch.homeTeam.name} 対 ${featuredCompetitionNextMatch.awayTeam.name}`
@@ -428,7 +428,10 @@ export default async function HomePage() {
                           {match.awayTeam.name}
                         </span>
                         <span className="text-xs tabular-nums text-white/75">
-                          {formatKickoffJstTime(match.kickoffAt)}
+                          {formatKickoffJstTime(
+                            match.kickoffAt,
+                            match.kickoffTimeTbd,
+                          )}
                         </span>
                       </Link>
                     ))}
@@ -659,7 +662,13 @@ export default async function HomePage() {
                                 </div>
                                 <time
                                   className="shrink-0 text-right text-xs tabular-nums text-[var(--color-ink-muted)]"
-                                  dateTime={recentReviewNextMatch.kickoffAt}
+                                  dateTime={
+                                    recentReviewNextMatch.kickoffTimeTbd
+                                      ? formatKickoffJstDate(
+                                          recentReviewNextMatch.kickoffAt,
+                                        ).slice(0, 10)
+                                      : recentReviewNextMatch.kickoffAt
+                                  }
                                 >
                                   {formatKickoffJstDate(
                                     recentReviewNextMatch.kickoffAt,
@@ -667,6 +676,7 @@ export default async function HomePage() {
                                   <br />
                                   {formatKickoffJstTime(
                                     recentReviewNextMatch.kickoffAt,
+                                    recentReviewNextMatch.kickoffTimeTbd,
                                   )}
                                 </time>
                               </Link>

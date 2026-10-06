@@ -98,6 +98,29 @@ describe("getMatchesInRange", () => {
     });
   });
 
+  it("selects and maps the explicit TBD flag", async () => {
+    const { getMatchesInRange } = await import("@/lib/db/queries/matches");
+    dbMock.matchRows = [
+      {
+        ...createMatchRow({
+          competitionName: "URC",
+          id: "tbd",
+          kickoffAt: "2026-10-09T00:00:00.000Z",
+          status: "scheduled",
+        }),
+        kickoff_time_tbd: true,
+      },
+    ];
+    const result = await getMatchesInRange(
+      "2026-10-09T00:00:00.000Z",
+      "2026-10-10T00:00:00.000Z",
+    );
+    expect(dbMock.matchesBuilder.select).toHaveBeenCalledWith(
+      expect.stringContaining("kickoff_time_tbd"),
+    );
+    expect(result[0]?.kickoffTimeTbd).toBe(true);
+  });
+
   it("returns mixed statuses in range with preview and recap flags", async () => {
     dbMock.matchRows = [
       createMatchRow({

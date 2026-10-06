@@ -990,6 +990,7 @@ export type Database = {
           home_team_id: string;
           id: string;
           kickoff_at: string;
+          kickoff_time_tbd: boolean;
           status: string;
           updated_at: string;
           venue: string | null;
@@ -1005,6 +1006,7 @@ export type Database = {
           home_team_id: string;
           id?: string;
           kickoff_at: string;
+          kickoff_time_tbd?: boolean;
           status?: string;
           updated_at?: string;
           venue?: string | null;
@@ -1020,6 +1022,7 @@ export type Database = {
           home_team_id?: string;
           id?: string;
           kickoff_at?: string;
+          kickoff_time_tbd?: boolean;
           status?: string;
           updated_at?: string;
           venue?: string | null;

@@ -51,13 +51,17 @@ function findNextJapanMatch(matches: MatchListItem[]): MatchListItem | null {
           match.status === "scheduled" &&
           new Date(match.kickoffAt).getTime() >= now,
       )
-      .sort((left, right) => left.kickoffAt.localeCompare(right.kickoffAt))[0] ??
-    null
+      .sort((left, right) =>
+        left.kickoffAt.localeCompare(right.kickoffAt),
+      )[0] ?? null
   );
 }
 
-function formatMatchKickoffJst(kickoffAt: string): string {
-  return `${formatKickoffJstDate(kickoffAt)} ${formatKickoffJstTime(kickoffAt)}`;
+function formatMatchKickoffJst(
+  kickoffAt: string,
+  kickoffTimeTbd = false,
+): string {
+  return `${formatKickoffJstDate(kickoffAt)} ${formatKickoffJstTime(kickoffAt, kickoffTimeTbd)}`;
 }
 
 function PendingState({ matchCount }: { matchCount?: number }) {
@@ -158,7 +162,7 @@ export default async function RWC2027Page() {
     },
     {
       answer: nextJapanMatch
-        ? `日本代表の次の試合は${formatMatchKickoffJst(nextJapanMatch.kickoffAt)}（日本時間）、${nextJapanMatch.homeTeam.name} 対 ${nextJapanMatch.awayTeam.name}です。`
+        ? `日本代表の次の試合は${formatMatchKickoffJst(nextJapanMatch.kickoffAt, nextJapanMatch.kickoffTimeTbd)}（日本時間）、${nextJapanMatch.homeTeam.name} 対 ${nextJapanMatch.awayTeam.name}です。`
         : "日本代表の次の試合は、対戦カードと日程の確定後にこのページでお知らせします。",
       question: "日本代表の次の試合はいつですか（日本時間）？",
     },

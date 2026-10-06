@@ -2,12 +2,13 @@ import { load } from "cheerio";
 
 import { resolvePremiershipTeamSlug } from "@/lib/ingestion/sources/premiership-team-slugs";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
-import { parsePremiershipKickoffAt } from "@/lib/scrapers/premiership-kickoff";
+import { parsePremiershipKickoff } from "@/lib/scrapers/premiership-kickoff";
 
 export type HistoricalMatchResult = {
   season: string;
   round: number | null;
   kickoff_at: string;
+  kickoff_time_tbd?: boolean;
   home_team_slug: string;
   away_team_slug: string;
   home_score: number;
@@ -151,9 +152,9 @@ export function parsePremiershipResultsHtml(
       firstRowCells.eq(2).find("a").last().text(),
     );
 
-    const kickoffAt = parsePremiershipKickoffAt(dateTable.text());
+    const kickoff = parsePremiershipKickoff(dateTable.text());
 
-    if (!kickoffAt) {
+    if (!kickoff) {
       console.warn(
         `Skipping Premiership result with unparseable kickoff: ${homeTeamName} vs ${awayTeamName}`,
       );
@@ -182,7 +183,8 @@ export function parsePremiershipResultsHtml(
       away_team_slug: awayTeamSlug,
       home_score: score.homeScore,
       home_team_slug: homeTeamSlug,
-      kickoff_at: kickoffAt,
+      kickoff_at: kickoff.kickoffAt,
+      kickoff_time_tbd: kickoff.kickoffTimeTbd,
       round: parseRoundFromHeading($, block),
       season: parsedSeason,
       source_url: sourceUrl,

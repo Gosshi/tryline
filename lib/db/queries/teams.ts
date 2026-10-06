@@ -32,6 +32,7 @@ export type TeamMatchItem = {
   homeTeam: { slug: string; name: string; shortCode: string | null };
   id: string;
   kickoffAt: string;
+  kickoffTimeTbd: boolean;
   round: number | null;
   status: MatchStatus;
   venue: string | null;
@@ -60,6 +61,7 @@ type TeamMatchRow = {
   home_team: { slug: string; name: string; short_code: string | null } | null;
   id: string;
   kickoff_at: string;
+  kickoff_time_tbd: boolean;
   status: string;
   venue: string | null;
 };
@@ -115,6 +117,7 @@ function mapTeamMatchRow(row: TeamMatchRow): TeamMatchItem {
     },
     id: row.id,
     kickoffAt: row.kickoff_at,
+    kickoffTimeTbd: row.kickoff_time_tbd ?? false,
     round: getRoundFromExternalIds(row.external_ids),
     status: row.status,
     venue: row.venue,
@@ -150,6 +153,7 @@ async function loadMatchesByTeamId(params: {
       `
         id,
         kickoff_at,
+        kickoff_time_tbd,
         status,
         home_score,
         away_score,
