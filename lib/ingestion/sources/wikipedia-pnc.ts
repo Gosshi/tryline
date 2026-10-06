@@ -192,7 +192,11 @@ export function parsePncLiveHtml(
     ["Unable to locate the Wikipedia fixtures section", "No fixture vevent"],
   );
 
-  return attachKnownPncTeamSlugs(parsedMatches);
+  return attachKnownPncTeamSlugs(
+    parsedMatches.flatMap((match) =>
+      match.kickoffAt === null ? [] : [{ ...match, kickoffAt: match.kickoffAt }],
+    ),
+  );
 }
 
 export async function fetchPnc2026(): Promise<ParsedLiveMatch[]> {

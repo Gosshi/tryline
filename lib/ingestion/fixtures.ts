@@ -1,6 +1,8 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
 import {
+  parseWikipediaRwc2027Html,
   resolveRwc2027TeamSlug,
+  resolveRwc2027VenueTimeZone,
   RWC_2027_COMPETITION_SLUG,
   RWC_2027_POOL_ASSIGNMENTS,
   RWC_2027_POOL_PAGE_URLS,
@@ -347,7 +349,7 @@ export async function ingestRwc2027Fixtures() {
         const html = await response.text();
 
         return {
-          matches: parseWikipediaSixNations2027Html(html).map((match) => ({
+          matches: parseWikipediaRwc2027Html(html, sourceUrl).map((match) => ({
             ...match,
             poolName,
             sourceUrl,
@@ -358,7 +360,21 @@ export async function ingestRwc2027Fixtures() {
       },
     ),
   );
-  const parsedMatches = poolPages.flatMap((page) => page.matches);
+  let skippedUnknownVenue = 0;
+  const parsedMatches = poolPages
+    .flatMap((page) => page.matches)
+    .filter((match) => {
+      if (resolveRwc2027VenueTimeZone(match.venue)) {
+        return true;
+      }
+
+      skippedUnknownVenue += 1;
+      console.warn("[ingestion] skipped RWC 2027 match with unknown venue", {
+        teams: `${match.homeTeamName} vs ${match.awayTeamName}`,
+        venue: match.venue,
+      });
+      return false;
+    });
   const competitionId = await getCompetitionIdBySlug(RWC_2027_COMPETITION_SLUG);
   const teamLookupBySlug = await getTeamLookupBySlug(
     Object.keys(RWC_2027_POOL_ASSIGNMENTS),
@@ -403,6 +419,7 @@ export async function ingestRwc2027Fixtures() {
       matches_updated: result.matchesUpdated,
       pool_assignments_upserted: poolAssignmentsUpserted,
       raw_data_rows: result.records.length,
+      skipped_unknown_venue: skippedUnknownVenue,
       standings_upserted: standingsUpserted,
     },
   };

@@ -14,3 +14,11 @@ jobs:
           curl -f -X POST \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             https://tryline-six.vercel.app/api/cron/ingest-fixtures
+      - name: Trigger RWC 2027 ingest-fixtures
+        if: always()
+        run: |
+          curl -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"competition":"rwc-2027"}' \
+            https://tryline-six.vercel.app/api/cron/ingest-fixtures

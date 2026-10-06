@@ -89,7 +89,8 @@ async function main() {
   const html = await response.text();
   const parsedMatches = parseWikipediaSixNationsHtml(html);
   const finishedMatches = parsedMatches.filter(
-    (match) => match.status === "finished",
+    (match): match is typeof match & { kickoffAt: string } =>
+      match.status === "finished" && match.kickoffAt !== null,
   );
 
   if (finishedMatches.length !== 15) {

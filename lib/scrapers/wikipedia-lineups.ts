@@ -197,7 +197,7 @@ export function parseSeasonPageLineupHtml(params: {
 
     return (
       !params.kickoffAt ||
-      match.kickoffAt.slice(0, 10) === params.kickoffAt.slice(0, 10)
+      match.kickoffAt?.slice(0, 10) === params.kickoffAt.slice(0, 10)
     );
   });
 

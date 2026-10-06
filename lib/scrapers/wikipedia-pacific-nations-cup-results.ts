@@ -177,7 +177,10 @@ export function parsePacificNationsCupResultsHtml(
   );
 
   return parsedMatches
-    .filter((match) => match.status === "finished")
+    .filter(
+      (match): match is typeof match & { kickoffAt: string } =>
+        match.status === "finished" && match.kickoffAt !== null,
+    )
     .map((match) => {
       if (match.homeScore === null || match.awayScore === null) {
         throw new Error(

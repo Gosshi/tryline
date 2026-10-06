@@ -196,6 +196,10 @@ function parseKnockoutMatches(
         throw new Error(`Unable to parse RWC knockout vevent: ${phaseDef.id}`);
       }
 
+      if (parsed.kickoffAt === null) {
+        continue;
+      }
+
       resolveRwcTeamSlug(parsed.homeTeamName);
       resolveRwcTeamSlug(parsed.awayTeamName);
 

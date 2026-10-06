@@ -30,7 +30,7 @@ function existingMatch() {
     away_score: null,
     away_team_id: "away-team",
     competition_id: "competition",
-    external_ids: { top14_lnr_id: "lnr-11819" },
+    external_ids: { top14_lnr_id: "lnr-11819" } as Record<string, string>,
     home_score: null,
     home_team_id: "home-team",
     id: "match-1",
@@ -40,7 +40,9 @@ function existingMatch() {
   };
 }
 
-function createExistingMatchBuilder(existing: ReturnType<typeof existingMatch> | null) {
+function createExistingMatchBuilder(
+  existing: ReturnType<typeof existingMatch> | null,
+) {
   return {
     contains: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
@@ -122,5 +124,50 @@ describe("upsertMatches kickoff preservation", () => {
     );
 
     warn.mockRestore();
+  });
+
+  it("updates the same Wikipedia event when only the RWC 2027 kickoff changes", async () => {
+    const updates: unknown[] = [];
+    const lookup = createExistingMatchBuilder({
+      ...existingMatch(),
+      external_ids: {
+        ...existingMatch().external_ids,
+        wikipedia_event_id: "Japan_v_United_States",
+      },
+      kickoff_at: "2027-10-15T20:00:00.000Z",
+    });
+    const update = createUpdateBuilder(updates);
+    dbMock.from.mockReturnValueOnce(lookup).mockReturnValueOnce(update);
+
+    const result = await upsertMatches([
+      candidate({
+        externalIds: { wikipedia_event_id: "Japan_v_United_States" },
+        homeScore: null,
+        kickoffAt: "2027-10-15T09:30:00.000Z",
+        status: "scheduled",
+      }),
+    ]);
+
+    expect(lookup.contains).toHaveBeenCalledWith("external_ids", {
+      wikipedia_event_id: "Japan_v_United_States",
+    });
+    expect(lookup.eq).toHaveBeenCalledExactlyOnceWith(
+      "competition_id",
+      "competition",
+    );
+    expect(update.update.mock.results[0]!.value.eq).toHaveBeenCalledWith(
+      "id",
+      "match-1",
+    );
+    expect(updates).toEqual([
+      expect.objectContaining({ kickoff_at: "2027-10-15T09:30:00.000Z" }),
+    ]);
+    expect(result).toMatchObject({
+      matchesInserted: 0,
+      matchesUpdated: 1,
+      records: [{ id: "match-1" }],
+    });
+    // A third query would be needed for any insertion or kickoff-based lookup.
+    expect(dbMock.from).toHaveBeenCalledTimes(2);
   });
 });
