@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { FixtureIngestSafetyError } from "@/lib/ingestion/fixture-ingest-error";
 import {
   parseWikipediaRwc2027Html,
   resolveRwc2027TeamSlug,
@@ -15,12 +16,17 @@ import {
   WIKIPEDIA_SIX_NATIONS_2027_URL,
 } from "@/lib/ingestion/sources/wikipedia-six-nations-2027";
 import { upsertCompetitionStandings } from "@/lib/ingestion/standings";
-import { upsertMatches } from "@/lib/ingestion/upsert";
+import {
+  planMatchUpserts,
+  upsertMatches,
+  upsertPlannedMatches,
+} from "@/lib/ingestion/upsert";
 import { fetchWithPolicy, saveRawData } from "@/lib/scrapers";
 import { parseCompetitionStandingsHtml } from "@/lib/scrapers/wikipedia-standings";
 
 import type { Json } from "@/lib/db/types";
 import type { ParsedWikipediaMatch } from "@/lib/ingestion/sources/wikipedia-six-nations-2027";
+import type { MatchUpsertPlan } from "@/lib/ingestion/upsert";
 
 type TeamLookup = Record<string, string>;
 
@@ -62,18 +68,21 @@ async function getCompetitionIdBySlug(competitionSlug: string) {
   return data.id;
 }
 
-async function getTeamLookup(teamNames: string[]): Promise<TeamLookup> {
+async function getTeamLookup(teamNames: string[]) {
   const client = getSupabaseServerClient();
   const { data, error } = await client
     .from("teams")
-    .select("id, name")
+    .select("id, name, slug")
     .in("name", [...new Set(teamNames)]);
 
   if (error) {
     throw error;
   }
 
-  return Object.fromEntries(data.map((team) => [team.name, team.id]));
+  return {
+    byName: Object.fromEntries(data.map((team) => [team.name, team.id])),
+    slugsById: Object.fromEntries(data.map((team) => [team.id, team.slug])),
+  };
 }
 
 async function getTeamLookupBySlug(teamSlugs: string[]): Promise<TeamLookup> {
@@ -290,13 +299,39 @@ async function upsertEmptyRwc2027Standings(
   return data?.length ?? 0;
 }
 
-export async function ingestSixNations2027Fixtures() {
+function dryRunResult(
+  plan: MatchUpsertPlan,
+  slugsById: TeamLookup,
+  parsedCount: number,
+) {
+  return {
+    counts: {
+      parsed: parsedCount,
+      insert: plan.filter((entry) => entry.operation === "insert").length,
+      update: plan.filter((entry) => entry.operation === "update").length,
+      unchanged: plan.filter((entry) => entry.operation === "unchanged").length,
+    },
+    matches: plan.map((entry) => ({
+      home_slug: slugsById[entry.candidate.homeTeamId]!,
+      away_slug: slugsById[entry.candidate.awayTeamId]!,
+      kickoff_at: entry.candidate.kickoffAt,
+      venue: entry.candidate.venue,
+      operation: entry.operation,
+      ...(entry.existing ? { id: entry.existing.id } : {}),
+      ...(entry.operation === "update" ? { changes: entry.changes } : {}),
+    })),
+  };
+}
+
+export async function ingestSixNations2027Fixtures(
+  options: { dryRun?: boolean } = {},
+) {
   const response = await fetchWithPolicy(WIKIPEDIA_SIX_NATIONS_2027_URL);
   const html = await response.text();
   const parsedMatches = parseWikipediaSixNations2027Html(html);
   const parsedStandings = parseCompetitionStandingsHtml(html);
   const competitionId = await getCompetitionId();
-  const teamLookup = await getTeamLookup(
+  const { byName: teamLookup, slugsById } = await getTeamLookup(
     parsedMatches
       .flatMap((match) => [match.homeTeamName, match.awayTeamName])
       .concat(parsedStandings.map((row) => row.teamName)),
@@ -306,6 +341,19 @@ export async function ingestSixNations2027Fixtures() {
     competitionId,
     teamLookup,
   );
+  if (options.dryRun) {
+    const plan = await planMatchUpserts(resolvedMatches);
+    return {
+      competition: SIX_NATIONS_2027_COMPETITION_SLUG,
+      counts: {
+        matches_inserted: 0,
+        matches_updated: 0,
+        raw_data_rows: 0,
+        standings_upserted: 0,
+      },
+      dry_run: dryRunResult(plan, slugsById, parsedMatches.length),
+    };
+  }
   const result = await upsertMatches(resolvedMatches);
 
   await Promise.all(
@@ -343,7 +391,9 @@ export async function ingestSixNations2027Fixtures() {
   };
 }
 
-export async function ingestRwc2027Fixtures() {
+export async function ingestRwc2027Fixtures(
+  options: { dryRun?: boolean } = {},
+) {
   const poolPages = await Promise.all(
     Object.entries(RWC_2027_POOL_PAGE_URLS).map(
       async ([poolName, sourceUrl]) => {
@@ -386,7 +436,42 @@ export async function ingestRwc2027Fixtures() {
     competitionId,
     teamLookupBySlug,
   );
-  const result = await upsertMatches(resolvedMatches);
+  const plan = await planMatchUpserts(resolvedMatches, {
+    matchByTeamPair: true,
+  });
+  const dryRun = dryRunResult(
+    plan,
+    Object.fromEntries(
+      Object.entries(teamLookupBySlug).map(([slug, id]) => [id, slug]),
+    ),
+    parsedMatches.length,
+  );
+  if (options.dryRun) {
+    return {
+      competition: RWC_2027_COMPETITION_SLUG,
+      counts: {
+        competition_teams_upserted: 0,
+        matches_inserted: 0,
+        matches_updated: 0,
+        pool_assignments_upserted: 0,
+        raw_data_rows: 0,
+        skipped_unknown_venue: skippedUnknownVenue,
+        standings_upserted: 0,
+      },
+      dry_run: dryRun,
+    };
+  }
+  if (parsedMatches.length !== 36) {
+    throw new FixtureIngestSafetyError(
+      `Expected 36 RWC 2027 matches, parsed ${parsedMatches.length}`,
+    );
+  }
+  if (dryRun.counts.insert > 0) {
+    throw new FixtureIngestSafetyError(
+      `Refusing RWC 2027 ingest: ${dryRun.counts.insert} insert(s) planned`,
+    );
+  }
+  const result = await upsertPlannedMatches(plan);
 
   await Promise.all(
     result.records.map((record, index) =>
