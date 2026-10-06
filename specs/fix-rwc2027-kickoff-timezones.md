@@ -129,3 +129,17 @@
 ## 未解決の質問
 
 - なし。
+
+## 2026-10-06 追記: 取り込み直しが「Hong Kong」で止まった
+
+PR #924 のマージ後、Owner の承認を得て Claude Code が `Cron — Ingest Fixtures` を手動実行した（run 37414586377）。シックスネーションズ 2027 は成功（inserted 0・updated 15）、RWC 2027 は **500** で失敗した。Vercel のログ: `Unknown RWC 2027 team name: Hong Kong`。
+
+- Wikipedia のプール A のページが、香港を「Hong Kong China」ではなく「**Hong Kong**」と書くようになった。`RWC_2027_TEAM_SLUG_BY_WIKIPEDIA_NAME`（`lib/ingestion/sources/wikipedia-rwc.ts`）には「Hong Kong China」しか無い。
+- 書き込みの前に止まったので、DB は変わっていない（36 試合とも `updated_at` は 2026-05-20 のまま、Claude Code 確認）。
+
+追加の修正:
+1. 表に `"Hong Kong": "hong-kong-china"` を足す（「Hong Kong China」も残す）。
+2. 今の 6 つのプールのページ（`RWC_2027_POOL_PAGE_URLS`）に出てくるチーム名 24 個を取得して、表にすべてあることを確かめ、PR 本文に一覧を貼る。足りない名前があれば同じく足す。
+3. テスト: `resolveRwc2027TeamSlug("Hong Kong")` が `"hong-kong-china"` を返す。
+
+マージ後、Claude Code が再び手動実行し、上の「実行範囲」の 2・3 を確かめる。
