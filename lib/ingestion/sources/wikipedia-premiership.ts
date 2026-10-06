@@ -14,7 +14,10 @@ import {
   stripWikitextMarkup,
 } from "@/lib/ingestion/sources/wikipedia-wikitext";
 import { fetchWithPolicy } from "@/lib/scrapers/fetcher";
-import { parsePremiershipKickoffAt } from "@/lib/scrapers/premiership-kickoff";
+import {
+  parsePremiershipKickoff,
+  parsePremiershipKickoffAt,
+} from "@/lib/scrapers/premiership-kickoff";
 
 import type { ParsedLiveMatch } from "@/lib/ingestion/sources/live-source-utils";
 
@@ -72,7 +75,10 @@ function preserveMatchEventHtml(
     ),
   );
   const rawHtmlByMatchKey = new Map(
-    htmlMatches.map((match) => [buildPremiershipMatchKey(match), match.rawHtml]),
+    htmlMatches.map((match) => [
+      buildPremiershipMatchKey(match),
+      match.rawHtml,
+    ]),
   );
 
   return wikitextMatches.map((match) => {
@@ -152,9 +158,9 @@ export function parsePremiershipLiveHtml(
       continue;
     }
 
-    const kickoffAt = parsePremiershipKickoffAt(dateTable.text());
+    const kickoff = parsePremiershipKickoff(dateTable.text());
 
-    if (!kickoffAt) {
+    if (!kickoff) {
       console.warn(
         `Skipping Premiership live match with unparseable kickoff: ${homeTeamName} vs ${awayTeamName}`,
       );
@@ -169,7 +175,8 @@ export function parsePremiershipLiveHtml(
       homeScore: score.homeScore,
       homeTeamName,
       homeTeamSlug,
-      kickoffAt,
+      kickoffAt: kickoff.kickoffAt,
+      kickoffTimeTbd: kickoff.kickoffTimeTbd,
       lineupTableHtml: null,
       rawHtml: $.html(block),
       round,
@@ -216,18 +223,18 @@ export function parsePremiershipLiveWikitext(
       continue;
     }
 
-    const kickoffAt = parsePremiershipKickoffAt(
-      `${dateText} ${timeText}`.trim(),
-    );
+    const kickoff = parsePremiershipKickoff(`${dateText} ${timeText}`.trim());
 
-    if (!kickoffAt) {
+    if (!kickoff) {
       console.warn(
         `Skipping Premiership live match with unparseable kickoff: ${homeTeamName} vs ${awayTeamName}`,
       );
       continue;
     }
 
-    const score = parseScoreText(stripWikitextMarkup(rugbybox.params.score ?? ""));
+    const score = parseScoreText(
+      stripWikitextMarkup(rugbybox.params.score ?? ""),
+    );
     const { round, roundName } = getWikitextRoundInfo(
       wikitext,
       rugbybox.startIndex,
@@ -239,11 +246,20 @@ export function parsePremiershipLiveWikitext(
       awayTeamSlug,
       eventId: rugbybox.params.id
         ? normalizeWikipediaEventId(rugbybox.params.id)
-        : `${homeTeamSlug}_${awayTeamSlug}_${kickoffAt}`,
+        : `${homeTeamSlug}_${awayTeamSlug}_${kickoff.fixtureDate}`,
+      externalIds: rugbybox.params.id
+        ? undefined
+        : {
+            wikipedia_legacy_event_ids: [
+              `${homeTeamSlug}_${awayTeamSlug}_${kickoff.kickoffAt}`,
+              `${homeTeamSlug}_${awayTeamSlug}_${parsePremiershipKickoffAt(dateText)}`,
+            ],
+          },
       homeScore: score.homeScore,
       homeTeamName,
       homeTeamSlug,
-      kickoffAt,
+      kickoffAt: kickoff.kickoffAt,
+      kickoffTimeTbd: kickoff.kickoffTimeTbd,
       lineupTableHtml: null,
       rawHtml: "",
       round,

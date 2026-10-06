@@ -70,6 +70,7 @@ function buildMatch(
     },
     id,
     kickoffAt,
+    kickoffTimeTbd: false,
     poolName: null,
     round,
     roundName: null,

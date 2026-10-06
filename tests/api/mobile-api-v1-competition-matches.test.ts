@@ -139,6 +139,7 @@ describe("GET /api/v1/competitions/[slug]/matches", () => {
             },
             id: "match-1",
             kickoff_utc: "2027-02-05T20:00:00.000Z",
+            kickoff_time_tbd: false,
             status: "finished",
           },
         ],

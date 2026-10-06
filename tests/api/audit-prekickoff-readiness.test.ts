@@ -37,7 +37,9 @@ function createQuery(data: unknown[]) {
       onfulfilled?:
         | ((value: typeof result) => TResult1 | PromiseLike<TResult1>)
         | null,
-      onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+      onrejected?:
+        | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+        | null,
     ) => Promise.resolve(result).then(onfulfilled, onrejected),
   };
 
@@ -76,6 +78,7 @@ function createMatch(
     },
     id,
     kickoffAt: "2026-08-22T15:10:00.000Z",
+    kickoffTimeTbd: false,
     poolName: null,
     round: null,
     roundName: null,
@@ -149,9 +152,18 @@ describe("/api/cron/audit-prekickoff-readiness", () => {
         { match_id: "draft", status: "draft" },
       ],
       externalIds: [
-        { external_ids: { wikipedia_url: "https://example.com/match" }, id: "published" },
-        { external_ids: { wikipedia_url: "https://example.com/match" }, id: "draft" },
-        { external_ids: { wikipedia_url: "https://example.com/match" }, id: "wiki-missing-lineup" },
+        {
+          external_ids: { wikipedia_url: "https://example.com/match" },
+          id: "published",
+        },
+        {
+          external_ids: { wikipedia_url: "https://example.com/match" },
+          id: "draft",
+        },
+        {
+          external_ids: { wikipedia_url: "https://example.com/match" },
+          id: "wiki-missing-lineup",
+        },
         { external_ids: {}, id: "no-wikipedia-url" },
       ],
       facts: [{ match_id: "published" }, { match_id: "draft" }],
@@ -197,7 +209,9 @@ describe("/api/cron/audit-prekickoff-readiness", () => {
     );
     const notified = notifyMock.notifyPrekickoffReadinessAudit.mock.calls[0]?.[0];
     expect(notified).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ matchId: "published" })]),
+      expect.arrayContaining([
+        expect.objectContaining({ matchId: "published" }),
+      ]),
     );
     expect(dbMock.from).toHaveBeenCalledWith("match_content");
     expect(dbMock.from).toHaveBeenCalledWith("match_sourced_facts");
@@ -211,7 +225,10 @@ describe("/api/cron/audit-prekickoff-readiness", () => {
     mockAuditRows({
       content: [{ match_id: "published", status: "published" }],
       externalIds: [
-        { external_ids: { wikipedia_url: "https://example.com/match" }, id: "published" },
+        {
+          external_ids: { wikipedia_url: "https://example.com/match" },
+          id: "published",
+        },
       ],
       facts: [{ match_id: "published" }],
       lineups: [{ match_id: "published" }],

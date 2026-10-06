@@ -87,6 +87,24 @@ describe("GET /api/v1/calendar", () => {
     vi.useRealTimers();
   });
 
+  it.each([false, true])(
+    "returns kickoff_time_tbd=%s without changing kickoff_utc",
+    async (kickoffTimeTbd) => {
+      matchesMock.getMatchesInRange.mockResolvedValue([
+        { ...match, kickoffTimeTbd },
+      ]);
+      const { GET } = await import("@/app/api/v1/calendar/route");
+      const response = await GET(
+        new Request("http://localhost/api/v1/calendar"),
+      );
+      const returned = (await response.json()).data.matches[0];
+      expect(returned).toMatchObject({
+        kickoff_time_tbd: kickoffTimeTbd,
+        kickoff_utc: match.kickoffAt,
+      });
+    },
+  );
+
   it("returns the current JST Monday-to-Sunday week with Japanese names", async () => {
     const { GET } = await import("@/app/api/v1/calendar/route");
     const response = await GET(new Request("http://localhost/api/v1/calendar"));
@@ -134,6 +152,7 @@ describe("GET /api/v1/calendar", () => {
             },
             id: "match-1",
             kickoff_utc: "2026-07-18T10:00:00.000Z",
+            kickoff_time_tbd: false,
             status: "finished",
           },
         ],
@@ -216,8 +235,14 @@ describe("GET /api/v1/calendar", () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: "league-one-match",
-          away_team: expect.objectContaining({ color: "#002395", flag_code: null }),
-          home_team: expect.objectContaining({ color: "#BC002D", flag_code: null }),
+          away_team: expect.objectContaining({
+            color: "#002395",
+            flag_code: null,
+          }),
+          home_team: expect.objectContaining({
+            color: "#BC002D",
+            flag_code: null,
+          }),
         }),
         expect.objectContaining({
           id: "super-rugby-match",

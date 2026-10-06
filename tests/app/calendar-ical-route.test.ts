@@ -50,6 +50,7 @@ function createCalendarMatch(
     },
     id: "match-1",
     kickoffAt: "2026-11-07T10:30:00.000Z",
+    kickoffTimeTbd: false,
     poolName: null,
     round: 1,
     roundName: "Round 1",
@@ -118,6 +119,36 @@ describe("/api/calendar/[feed].ics", () => {
     expect(body).toContain("DTSTART;TZID=Asia/Tokyo:20261107T193000");
     expect(body).toContain("SUMMARY:日本 vs イングランド");
     expect(body).toContain("URL:https://www.trylinerugby.com/matches/match-1");
+  });
+
+  it("uses an all-day event for TBD and preserves UID when the kickoff is announced", async () => {
+    const { GET } = await import("@/app/api/calendar/[feed]/route");
+    matchQueryMock.getMatchesInRange.mockResolvedValue([
+      createCalendarMatch({
+        kickoffAt: "2026-10-09T00:00:00.000Z",
+        kickoffTimeTbd: true,
+      }),
+    ]);
+    const request = () =>
+      GET(new Request("https://example.com/api/calendar/all.ics"), {
+        params: Promise.resolve({ feed: "all.ics" }),
+      });
+    const body = await (await request()).text();
+    expect(body).toContain("DTSTART;VALUE=DATE:20261009");
+    expect(body).toContain("DTEND;VALUE=DATE:20261010");
+    expect(body).toContain("SUMMARY:日本 vs イングランド（時刻未定）");
+    expect(body).toContain("UID:match-1@trylinerugby.com");
+    expect(body).not.toContain("20261009T090000");
+    matchQueryMock.getMatchesInRange.mockResolvedValue([
+      createCalendarMatch({
+        kickoffAt: "2026-10-09T18:00:00.000Z",
+        kickoffTimeTbd: false,
+      }),
+    ]);
+    const confirmed = await (await request()).text();
+    expect(confirmed).toContain("UID:match-1@trylinerugby.com");
+    expect(confirmed).toContain("DTSTART;TZID=Asia/Tokyo:20261010T030000");
+    expect(confirmed).not.toContain("（時刻未定）");
   });
 
   it("filters competition feeds by slug", async () => {

@@ -76,3 +76,19 @@ export function parsePremiershipKickoffAt(value: string): string | null {
     ),
   ).toISOString();
 }
+
+export function parsePremiershipKickoff(value: string) {
+  const kickoffAt = parsePremiershipKickoffAt(value);
+  const matched = normalizeWhitespace(value).match(KICKOFF_PATTERN);
+  if (!kickoffAt || !matched) return null;
+  const date = parse(
+    `${matched[1]} ${matched[2]} ${matched[3]}`,
+    "d MMMM yyyy",
+    new Date(),
+  );
+  return {
+    kickoffAt,
+    kickoffTimeTbd: !matched[4],
+    fixtureDate: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+  };
+}

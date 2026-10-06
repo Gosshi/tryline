@@ -160,6 +160,7 @@ function buildMatch(
     },
     id: `rwc-match-${index}`,
     kickoffAt: `2027-10-${String((index % 28) + 1).padStart(2, "0")}T08:00:00.000Z`,
+    kickoffTimeTbd: false,
     poolName: `Pool ${String.fromCharCode(65 + (index % 6))}`,
     round: Math.floor(index / 6) + 1,
     roundName: null,
@@ -244,6 +245,7 @@ describe("RWC 2027 hub page", () => {
               slug: "japan",
             },
             kickoffAt: "2027-10-01T08:00:00.000Z",
+            kickoffTimeTbd: false,
             venue: `Venue ${index % 8}`,
           }
         : { ...match, venue: `Venue ${index % 8}` };
@@ -263,12 +265,16 @@ describe("RWC 2027 hub page", () => {
     expect(
       screen.getByText(/日本国内の放送予定は未発表です。決定次第更新します。/),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "大会公式サイト" })).toHaveAttribute(
+    expect(
+      screen.getByRole("link", { name: "大会公式サイト" }),
+    ).toHaveAttribute(
       "href",
       "https://www.rugbyworldcup.com/en/news/976797/about-mens-rugby-world-cup-2027",
     );
 
-    const jsonLd = container.querySelector('script[type="application/ld+json"]');
+    const jsonLd = container.querySelector(
+      'script[type="application/ld+json"]',
+    );
     expect(jsonLd).not.toBeNull();
     expect(JSON.parse(jsonLd?.textContent ?? "")).toEqual({
       "@context": "https://schema.org",
@@ -302,7 +308,9 @@ describe("RWC 2027 hub page", () => {
     ]);
 
     const { container } = render(await RWC2027Page());
-    const jsonLd = container.querySelector('script[type="application/ld+json"]');
+    const jsonLd = container.querySelector(
+      'script[type="application/ld+json"]',
+    );
     const structuredData = JSON.parse(jsonLd?.textContent ?? "") as {
       mainEntity: Array<{ acceptedAnswer: { text: string }; name: string }>;
     };
@@ -356,7 +364,9 @@ describe("RWC 2027 hub page", () => {
     expect(
       screen.queryByText(/全52試合のスケジュールが確定しています/),
     ).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("RWC 2027 プール分け")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("RWC 2027 プール分け"),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Pool A 順位表")).toBeInTheDocument();
 
     const standingsHeading = screen.getByText("Pool A 順位表");
@@ -399,7 +409,9 @@ describe("RWC 2027 hub page", () => {
 
     render(await RWC2027Page());
 
-    expect(screen.queryByLabelText("RWC 2027 プール分け")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("RWC 2027 プール分け"),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Pool A 順位表")).toBeInTheDocument();
     expect(screen.getByLabelText("RWC 2027 全日程")).toHaveTextContent(
       "全36試合の日程",

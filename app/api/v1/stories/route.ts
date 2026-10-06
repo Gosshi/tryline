@@ -20,7 +20,10 @@ import {
   formatJstWeekRangeLabel,
   getCurrentJstWeekRangeUtc,
 } from "@/lib/format/week";
-import { parseMarkdown, splitRecapForPaywall } from "@/lib/match-content/markdown";
+import {
+  parseMarkdown,
+  splitRecapForPaywall,
+} from "@/lib/match-content/markdown";
 import { isSampleMatch } from "@/lib/sample-matches";
 import { SITE_URL } from "@/lib/site";
 import { truncateAtSentenceBoundary } from "@/lib/text";
@@ -51,9 +54,7 @@ function parseDate(value: string): number | null {
   return new Date(utcMs).toISOString().slice(0, 10) === value ? utcMs : null;
 }
 
-function resolveRange(
-  request: Request,
-):
+function resolveRange(request: Request):
   | {
       endUtcIso: string;
       from: string;
@@ -143,6 +144,7 @@ function mapMatch(
     },
     id: match.id,
     kickoff_utc: match.kickoffAt,
+    kickoff_time_tbd: match.kickoffTimeTbd ?? false,
     status: match.status,
   };
 }

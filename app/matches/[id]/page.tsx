@@ -36,6 +36,7 @@ import {
   formatCompetitionTitle,
   getCompetitionDisplayName,
 } from "@/lib/format/competition";
+import { formatKickoffJstDate } from "@/lib/format/kickoff";
 import { buildMatchEventPlayerLinks } from "@/lib/format/match-event-player-links";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { formatVenueDisplay } from "@/lib/format/venue-timezone";
@@ -320,7 +321,9 @@ export default async function MatchDetailPage({
     eventStatus: toEventStatus(match.status),
     name: matchupTitle,
     sport: "Rugby Union",
-    startDate: match.kickoffAt,
+    startDate: match.kickoffTimeTbd
+      ? formatKickoffJstDate(match.kickoffAt).slice(0, 10)
+      : match.kickoffAt,
     ...(match.venue
       ? {
           location: {

@@ -148,6 +148,7 @@ describe("GET /api/v1/me/next-matches", () => {
             },
             id: "match-1",
             kickoff_utc: "2026-08-01T10:00:00.000Z",
+            kickoff_time_tbd: false,
           },
         ],
       },

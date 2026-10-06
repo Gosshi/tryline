@@ -5,6 +5,7 @@ export type HistoricalMatchResult = {
   season: number;
   round: number | null;
   kickoff_at: string;
+  kickoff_time_tbd?: boolean;
   home_team_slug: string;
   away_team_slug: string;
   home_score: number;
@@ -94,6 +95,7 @@ export function parseAutumnNationsResultsHtml(
           home_score: match.homeScore,
           home_team_slug: homeSlug,
           kickoff_at: match.kickoffAt,
+          kickoff_time_tbd: match.kickoffTimeTbd ?? false,
           round: match.round,
           season: seasonNumber,
           source_url: sourceUrl,

@@ -378,7 +378,10 @@ function SeasonSummaryBand({
           },
           label: "次戦",
           primary: getMatchLabel(nextMatch),
-          secondary: formatMatchKickoffJst(nextMatch.kickoffAt),
+          secondary: formatMatchKickoffJst(
+            nextMatch.kickoffAt,
+            nextMatch.kickoffTimeTbd,
+          ),
         }
       : null,
     latestReviewMatch
@@ -395,7 +398,10 @@ function SeasonSummaryBand({
           },
           label: "最新レビュー",
           primary: getMatchLabel(latestReviewMatch),
-          secondary: formatMatchKickoffJst(latestReviewMatch.kickoffAt),
+          secondary: formatMatchKickoffJst(
+            latestReviewMatch.kickoffAt,
+            latestReviewMatch.kickoffTimeTbd,
+          ),
         }
       : null,
     nextJapanMatch
@@ -413,7 +419,10 @@ function SeasonSummaryBand({
           label: "日本代表の次戦",
           primary: getMatchLabel(nextJapanMatch),
           secondary: [
-            formatMatchKickoffJst(nextJapanMatch.kickoffAt),
+            formatMatchKickoffJst(
+              nextJapanMatch.kickoffAt,
+              nextJapanMatch.kickoffTimeTbd,
+            ),
             nextJapanCompetitionLabel,
           ]
             .filter(Boolean)
@@ -695,7 +704,7 @@ export default async function SeasonPage({ params }: Props) {
     incompleteScheduleCoverage,
   );
   const nextMatchJst = nextMatch
-    ? formatMatchKickoffJst(nextMatch.kickoffAt)
+    ? formatMatchKickoffJst(nextMatch.kickoffAt, nextMatch.kickoffTimeTbd)
     : null;
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",

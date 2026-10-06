@@ -33,6 +33,7 @@ export type V1CalendarMatch = {
   home_team: V1TeamSummary;
   id: string;
   kickoff_utc: string;
+  kickoff_time_tbd: boolean;
   status: string;
 };
 
@@ -100,6 +101,7 @@ export type V1NextReadMatch = {
   home_team: V1TeamSummary;
   id: string;
   kickoff_utc: string;
+  kickoff_time_tbd: boolean;
 };
 
 export type V1NextMatchesData = {
@@ -116,6 +118,7 @@ export type V1MatchDetail = {
   home_team: V1TeamSummary & { english_name: string | null };
   id: string;
   kickoff_utc: string;
+  kickoff_time_tbd: boolean;
   lineups: V1MatchLineupPlayer[];
   next_team_matches: V1NextReadMatch[];
   pool_name: string | null;

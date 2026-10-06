@@ -108,12 +108,19 @@ function PlayerNextWatchSection({
               </Link>
               <time
                 className="mt-2 block text-xs tabular-nums text-[var(--color-ink-muted)]"
-                dateTime={nextMatch.kickoffAt}
+                dateTime={
+                  nextMatch.kickoffTimeTbd
+                    ? formatKickoffJstDate(nextMatch.kickoffAt).slice(0, 10)
+                    : nextMatch.kickoffAt
+                }
               >
                 <span className="font-semibold text-[var(--color-accent)]">
                   {formatKickoffJstDate(nextMatch.kickoffAt)}
                 </span>{" "}
-                {formatKickoffJstTime(nextMatch.kickoffAt)}
+                {formatKickoffJstTime(
+                  nextMatch.kickoffAt,
+                  nextMatch.kickoffTimeTbd,
+                )}
               </time>
             </>
           ) : (

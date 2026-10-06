@@ -56,6 +56,7 @@ function mapNextReadMatch(
     },
     id: match.id,
     kickoff_utc: match.kickoffAt,
+    kickoff_time_tbd: match.kickoffTimeTbd ?? false,
   };
 }
 
@@ -199,6 +200,7 @@ export async function GET(
       },
       id: match.id,
       kickoff_utc: match.kickoffAt,
+      kickoff_time_tbd: match.kickoffTimeTbd ?? false,
       lineups: lineups.map((player) => ({
         is_starter: player.isStarter,
         jersey_number: player.jerseyNumber,

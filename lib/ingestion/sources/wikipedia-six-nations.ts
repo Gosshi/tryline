@@ -45,6 +45,7 @@ export type ParsedWikipediaMatch = {
   homeScore: number | null;
   homeTeamName: string;
   kickoffAt: string | null;
+  kickoffTimeTbd?: boolean;
   lineupTableHtml: string | null;
   round: number | null;
   roundName: string | null;
@@ -240,6 +241,7 @@ export function parseWikipediaSixNationsHtml(
       homeScore: score.homeScore,
       homeTeamName,
       kickoffAt: parseKickoffAt(dateTable.text()),
+      kickoffTimeTbd: !/\d{1,2}:\d{2}/.test(dateTable.text()),
       lineupTableHtml: findLineupTableHtml($, block),
       rawHtml: $.html(block),
       round,

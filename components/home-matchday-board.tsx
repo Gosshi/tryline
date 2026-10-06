@@ -114,12 +114,18 @@ function MatchMiniRow({
     >
       <time
         className="text-[10px] tabular-nums leading-relaxed text-[var(--color-ink-muted)] sm:text-xs"
-        dateTime={match.kickoffAt}
+        dateTime={
+          match.kickoffTimeTbd
+            ? formatKickoffJstDate(match.kickoffAt).slice(0, 10)
+            : match.kickoffAt
+        }
       >
         <span className="block">
           {formatKickoffJstDate(match.kickoffAt).slice(5)}
         </span>
-        <span className="block">{formatKickoffJstTime(match.kickoffAt)}</span>
+        <span className="block">
+          {formatKickoffJstTime(match.kickoffAt, match.kickoffTimeTbd)}
+        </span>
       </time>
       <span className="min-w-0">
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold sm:text-sm">

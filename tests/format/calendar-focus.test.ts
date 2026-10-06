@@ -34,6 +34,7 @@ function createMatch(overrides: Partial<CalendarMatch>): CalendarMatch {
     },
     id: "match",
     kickoffAt: "2026-07-06T10:00:00.000Z",
+    kickoffTimeTbd: false,
     poolName: null,
     round: null,
     roundName: null,

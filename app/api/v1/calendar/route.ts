@@ -128,6 +128,7 @@ export async function GET(request: Request) {
       },
       id: match.id,
       kickoff_utc: match.kickoffAt,
+      kickoff_time_tbd: match.kickoffTimeTbd ?? false,
       status: match.status,
     };
   });

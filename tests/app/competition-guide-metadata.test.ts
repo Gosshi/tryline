@@ -38,6 +38,7 @@ const scheduledMatches = [
     id: "match-id-1",
     homeTeam: { name: "Team A", shortCode: "TMA", slug: "team-a" },
     kickoffAt: "2026-08-09T05:00:00.000Z",
+    kickoffTimeTbd: false,
     status: "scheduled",
   },
   {
@@ -45,6 +46,7 @@ const scheduledMatches = [
     id: "match-id-2",
     homeTeam: { name: "Team C", shortCode: "TMC", slug: "team-c" },
     kickoffAt: "2026-08-16T05:00:00.000Z",
+    kickoffTimeTbd: false,
     status: "scheduled",
   },
   {
@@ -52,6 +54,7 @@ const scheduledMatches = [
     id: "match-id-3",
     homeTeam: { name: "Team E", shortCode: "TME", slug: "team-e" },
     kickoffAt: "2026-08-23T05:00:00.000Z",
+    kickoffTimeTbd: false,
     status: "scheduled",
   },
 ];
@@ -223,6 +226,7 @@ describe("competition guide metadata", () => {
         id: "match-id-1",
         homeTeam: teams[0],
         kickoffAt: "2026-08-09T05:00:00.000Z",
+        kickoffTimeTbd: false,
         status: "scheduled",
       },
       {
@@ -230,6 +234,7 @@ describe("competition guide metadata", () => {
         id: "match-id-2",
         homeTeam: teams[2],
         kickoffAt: "2026-10-24T05:00:00.000Z",
+        kickoffTimeTbd: false,
         status: "scheduled",
       },
     ]);
@@ -281,6 +286,7 @@ describe("competition guide metadata", () => {
           slug: "team-a",
         },
         kickoffAt: "2026-08-09T05:00:00.000Z",
+        kickoffTimeTbd: false,
         round: 1,
         status: "scheduled",
       },
@@ -290,7 +296,10 @@ describe("competition guide metadata", () => {
     ]);
 
     const metadata = await generateSeasonMetadata({
-      params: Promise.resolve({ competition: "test-competition", season: "2026" }),
+      params: Promise.resolve({
+        competition: "test-competition",
+        season: "2026",
+      }),
     });
 
     expect(metadata.description).toBe(
@@ -331,6 +340,7 @@ describe("competition guide metadata", () => {
           slug: "team-a",
         },
         kickoffAt: "2026-08-09T05:00:00.000Z",
+        kickoffTimeTbd: false,
         round: 1,
         status: "scheduled",
       },
@@ -341,7 +351,10 @@ describe("competition guide metadata", () => {
     ]);
 
     const metadata = await generateSeasonMetadata({
-      params: Promise.resolve({ competition: "test-competition", season: "2026" }),
+      params: Promise.resolve({
+        competition: "test-competition",
+        season: "2026",
+      }),
     });
 
     expect(metadata.description).toContain("全1試合");
@@ -386,6 +399,7 @@ describe("competition guide metadata", () => {
         homeScore: null,
         id: "match-id",
         kickoffAt: "2026-08-09T05:00:00.000Z",
+        kickoffTimeTbd: false,
         poolName: null,
         round: null,
         roundName: null,
@@ -404,12 +418,23 @@ describe("competition guide metadata", () => {
   it("unions standings and fixture teams", () => {
     const matches: MatchListItem[] = [
       {
-        awayTeam: { name: "Beta", nameJa: "チームB", shortCode: "BET", slug: "beta" },
+        awayTeam: {
+          name: "Beta",
+          nameJa: "チームB",
+          shortCode: "BET",
+          slug: "beta",
+        },
         awayScore: null,
-        homeTeam: { name: "Alpha", nameJa: "チームA", shortCode: "ALP", slug: "alpha" },
+        homeTeam: {
+          name: "Alpha",
+          nameJa: "チームA",
+          shortCode: "ALP",
+          slug: "alpha",
+        },
         homeScore: null,
         id: "match-id",
         kickoffAt: "2026-08-09T05:00:00.000Z",
+        kickoffTimeTbd: false,
         poolName: null,
         round: 1,
         roundName: null,
@@ -418,9 +443,8 @@ describe("competition guide metadata", () => {
       },
     ];
 
-    expect(getCompetitionMetadataTeams(matches, [standingRow("チームA")])).toEqual([
-      "チームA",
-      "チームB",
-    ]);
+    expect(
+      getCompetitionMetadataTeams(matches, [standingRow("チームA")]),
+    ).toEqual(["チームA", "チームB"]);
   });
 });

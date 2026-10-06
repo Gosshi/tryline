@@ -11,6 +11,7 @@ const baseMatch: MatchListItem = {
   homeTeam: { name: "Ireland", shortCode: "IRL", slug: "ireland" },
   id: "match-1",
   kickoffAt: "2025-11-02T12:00:00.000Z",
+  kickoffTimeTbd: false,
   poolName: null,
   round: null,
   roundName: null,
@@ -31,11 +32,13 @@ describe("match groups", () => {
         ...baseMatch,
         id: "match-2",
         kickoffAt: "2025-11-03T12:00:00.000Z",
+        kickoffTimeTbd: false,
       },
       {
         ...baseMatch,
         id: "match-3",
         kickoffAt: "2025-11-08T12:00:00.000Z",
+        kickoffTimeTbd: false,
       },
     ]);
 

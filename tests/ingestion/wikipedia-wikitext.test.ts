@@ -112,7 +112,7 @@ describe("Wikipedia wikitext ingestion", () => {
       roundName: null,
     });
     expect(parsePremiershipLiveWikitext(withoutId)[0]?.eventId).toBe(
-      "sale-sharks_gloucester_2025-09-25T18:45:00.000Z",
+      "sale-sharks_gloucester_2025-09-25",
     );
     expect(
       parsePremiershipLiveWikitext(
@@ -138,9 +138,7 @@ describe("Wikipedia wikitext ingestion", () => {
   });
 
   it("uses link display text instead of its target", () => {
-    expect(stripWikitextMarkup("[[Saracens F.C.|Saracens]]")).toBe(
-      "Saracens",
-    );
+    expect(stripWikitextMarkup("[[Saracens F.C.|Saracens]]")).toBe("Saracens");
   });
 
   it("keeps a linked team when a flagicon template is also present", () => {

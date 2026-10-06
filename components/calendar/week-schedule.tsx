@@ -80,10 +80,10 @@ export function groupMatchesByJstTime(
   const groups = new Map<string, CalendarTimeGroup>();
 
   for (const match of matches) {
-    const kickoffTime = formatKickoffJstTime(match.kickoffAt).replace(
-      /\s*JST$/,
-      "",
-    );
+    const kickoffTime = formatKickoffJstTime(
+      match.kickoffAt,
+      match.kickoffTimeTbd,
+    ).replace(/\s*JST$/, "");
     const group = groups.get(kickoffTime) ?? {
       kickoffTime,
       matches: [],
@@ -127,7 +127,7 @@ function getMatchStateLabel(match: CalendarMatch): string {
   }
 
   if (match.status === "scheduled") {
-    return formatKickoffJstTime(match.kickoffAt);
+    return formatKickoffJstTime(match.kickoffAt, match.kickoffTimeTbd);
   }
 
   return getStatusPresentation(match.status).label;

@@ -26,7 +26,12 @@ function formatFromParts(parts: Record<string, string>) {
   return `${parts.year}-${parts.month}-${parts.day} (${parts.weekday}) ${parts.hour}:${parts.minute} ${parts.timeZoneName}`;
 }
 
-export function formatKickoffJst(kickoffAtUtc: string): string {
+export function formatKickoffJst(
+  kickoffAtUtc: string,
+  kickoffTimeTbd = false,
+): string {
+  if (kickoffTimeTbd) return `${formatKickoffJstDate(kickoffAtUtc)} 時刻未定`;
+
   return formatFromParts(
     getFormatterParts(kickoffAtUtc, {
       locale: "ja-JP",
@@ -44,7 +49,11 @@ export function formatKickoffJstDate(kickoffAtUtc: string): string {
   return `${parts.year}-${parts.month}-${parts.day} (${parts.weekday})`;
 }
 
-export function formatKickoffJstTime(kickoffAtUtc: string): string {
+export function formatKickoffJstTime(
+  kickoffAtUtc: string,
+  kickoffTimeTbd = false,
+): string {
+  if (kickoffTimeTbd) return "時刻未定";
   const parts = getFormatterParts(kickoffAtUtc, {
     locale: "ja-JP",
     timeZone: "Asia/Tokyo",
@@ -53,19 +62,24 @@ export function formatKickoffJstTime(kickoffAtUtc: string): string {
   return `${parts.hour}:${parts.minute} JST`;
 }
 
-export function formatKickoffJstCompact(kickoffAtUtc: string): string {
+export function formatKickoffJstCompact(
+  kickoffAtUtc: string,
+  kickoffTimeTbd = false,
+): string {
   const parts = getFormatterParts(kickoffAtUtc, {
     locale: "ja-JP",
     timeZone: "Asia/Tokyo",
   });
 
-  return `${Number(parts.month)}/${Number(parts.day)} (${parts.weekday}) ${parts.hour}:${parts.minute} JST`;
+  return `${Number(parts.month)}/${Number(parts.day)} (${parts.weekday}) ${kickoffTimeTbd ? "時刻未定" : `${parts.hour}:${parts.minute} JST`}`;
 }
 
 export function formatKickoffLocal(
   kickoffAtUtc: string,
   ianaTimezone = "Europe/London",
+  kickoffTimeTbd = false,
 ): string {
+  if (kickoffTimeTbd) return "時刻未定";
   return formatFromParts(
     getFormatterParts(kickoffAtUtc, {
       locale: "en-GB",

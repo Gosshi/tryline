@@ -41,6 +41,7 @@ const match: MatchDetail = {
   homeTeamId: "00000000-0000-0000-0000-000000000002",
   id: "00000000-0000-0000-0000-000000000001",
   kickoffAt: "2027-02-06T15:00:00.000Z",
+  kickoffTimeTbd: false,
   poolName: null,
   round: 1,
   roundName: null,
@@ -53,6 +54,22 @@ afterEach(() => {
 });
 
 describe("MatchHeader", () => {
+  it("hides placeholder times in both JST and local labels", () => {
+    const { container } = render(
+      <MatchHeader
+        match={{
+          ...match,
+          kickoffAt: "2026-10-09T00:00:00.000Z",
+          kickoffTimeTbd: true,
+          venue: "Twickenham Stadium, London",
+        }}
+      />,
+    );
+    expect(container).toHaveTextContent("2026-10-09 (金) 時刻未定");
+    expect(container).not.toHaveTextContent("09:00");
+    expect(container).not.toHaveTextContent("01:00");
+  });
+
   it.each([
     null,
     "",
@@ -81,6 +98,7 @@ describe("MatchHeader", () => {
             ...match,
             homeTeam: { ...match.homeTeam, slug },
             kickoffAt: "2026-08-15T05:00:00.000Z",
+            kickoffTimeTbd: false,
             venue: "North Queensland Stadium, Townsville[17]",
           }}
         />,

@@ -106,17 +106,22 @@ export function buildMatchCalendarIcs(
   for (const match of matches) {
     const kickoff = new Date(match.kickoffAt);
     const matchUrl = `${siteUrl}/matches/${match.id}`;
-    const summary = buildMatchTitle(match);
+    const summary = `${buildMatchTitle(match)}${match.kickoffTimeTbd ? "（時刻未定）" : ""}`;
     const description = buildMatchDescription(match, matchUrl);
 
     lines.push(
       "BEGIN:VEVENT",
       `UID:${match.id}@trylinerugby.com`,
       `DTSTAMP:${stamp}`,
-      `DTSTART;TZID=Asia/Tokyo:${formatJstDateTime(kickoff)}`,
-      `DTEND;TZID=Asia/Tokyo:${formatJstDateTime(
-        new Date(kickoff.getTime() + DEFAULT_EVENT_DURATION_MS),
-      )}`,
+      ...(match.kickoffTimeTbd
+        ? [
+            `DTSTART;VALUE=DATE:${formatJstDateTime(kickoff).slice(0, 8)}`,
+            `DTEND;VALUE=DATE:${formatJstDateTime(new Date(kickoff.getTime() + 24 * 60 * 60 * 1000)).slice(0, 8)}`,
+          ]
+        : [
+            `DTSTART;TZID=Asia/Tokyo:${formatJstDateTime(kickoff)}`,
+            `DTEND;TZID=Asia/Tokyo:${formatJstDateTime(new Date(kickoff.getTime() + DEFAULT_EVENT_DURATION_MS))}`,
+          ]),
       `SUMMARY:${escapeIcsText(summary)}`,
       `DESCRIPTION:${escapeIcsText(description)}`,
       `URL:${matchUrl}`,

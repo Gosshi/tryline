@@ -161,6 +161,7 @@ const match: MatchListItem = {
   },
   id: "match-1",
   kickoffAt: "2026-03-01T12:00:00.000Z",
+  kickoffTimeTbd: false,
   poolName: null,
   round: 1,
   roundName: null,
@@ -182,6 +183,7 @@ const japanMatch: MatchListItem = {
   },
   id: "japan-match-1",
   kickoffAt: "2026-02-28T09:00:00.000Z",
+  kickoffTimeTbd: false,
 };
 
 function follows(left: Element, right: Element): boolean {
@@ -341,6 +343,7 @@ describe("season page information architecture", () => {
         ...match,
         id: `scheduled-${index + 1}`,
         kickoffAt: `2026-09-${String((index % 20) + 1).padStart(2, "0")}T12:00:00.000Z`,
+        kickoffTimeTbd: false,
       })),
     );
     standingsMocks.getStandingsForCompetition.mockResolvedValue(
@@ -682,6 +685,7 @@ describe("season page information architecture", () => {
       ...match,
       id: "match-a",
       kickoffAt: "2026-01-31T12:00:00.000Z",
+      kickoffTimeTbd: false,
       round: 1,
       status: "scheduled" as const,
     };
@@ -689,6 +693,7 @@ describe("season page information architecture", () => {
       ...match,
       id: "match-b",
       kickoffAt: "2026-02-02T12:00:00.000Z",
+      kickoffTimeTbd: false,
       round: 2,
       status: "scheduled" as const,
     };
@@ -1156,12 +1161,14 @@ describe("season page information architecture", () => {
       ...japanMatch,
       id: "older-review",
       kickoffAt: "2026-01-15T09:00:00.000Z",
+      kickoffTimeTbd: false,
       status: "finished",
     };
     const latestReview = {
       ...japanMatch,
       id: "latest-review",
       kickoffAt: "2026-01-22T09:00:00.000Z",
+      kickoffTimeTbd: false,
       status: "finished",
     };
     matchesMocks.listMatchesForCompetition.mockResolvedValue([
@@ -1179,6 +1186,7 @@ describe("season page information architecture", () => {
       },
       id: "japan-australia",
       kickoffAt: "2026-02-10T09:00:00.000Z",
+      kickoffTimeTbd: false,
     });
     contentMocks.getContentStatusForMatches.mockResolvedValue({
       [olderReview.id]: { hasPreview: false, hasRecap: true },
@@ -1251,11 +1259,13 @@ describe("season page information architecture", () => {
       homeTeam: { name: "Wales", shortCode: "WAL", slug: "wales" },
       id: "japan-wales-1",
       kickoffAt: "2026-11-07T16:40:00.000Z",
+      kickoffTimeTbd: false,
     };
     const walesTwo = {
       ...walesOne,
       id: "japan-wales-2",
       kickoffAt: "2026-11-14T16:40:00.000Z",
+      kickoffTimeTbd: false,
     };
     const ireland = {
       ...japanMatch,
@@ -1263,6 +1273,7 @@ describe("season page information architecture", () => {
       homeTeam: { name: "Ireland", shortCode: "IRE", slug: "ireland" },
       id: "japan-ireland",
       kickoffAt: "2026-11-21T16:40:00.000Z",
+      kickoffTimeTbd: false,
     };
     const cancelled = {
       ...walesOne,
@@ -1351,6 +1362,7 @@ describe("season page information architecture", () => {
     const novemberJapanMatch = {
       ...japanMatch,
       kickoffAt: "2026-11-21T14:10:00.000Z",
+      kickoffTimeTbd: false,
       id: "japan-scotland",
     };
     competitionMocks.getCompetitionBySlug.mockResolvedValue(nationsCompetition);
@@ -1377,6 +1389,7 @@ describe("season page information architecture", () => {
         ...novemberJapanMatch,
         id: "japan-finals",
         kickoffAt: "2026-11-28T16:40:00.000Z",
+        kickoffTimeTbd: false,
       },
     ]);
     render(

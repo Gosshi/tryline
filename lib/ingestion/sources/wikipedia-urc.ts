@@ -282,6 +282,7 @@ export function parseUrcLiveHtml(
       homeTeamName,
       homeTeamSlug,
       kickoffAt,
+      kickoffTimeTbd: !/\d{1,2}:\d{2}/.test(timeText),
       lineupTableHtml: null,
       rawHtml: $.html(block),
       round,
@@ -350,11 +351,20 @@ export function parseUrcLiveWikitext(
       awayTeamSlug,
       eventId: rugbybox.params.id
         ? normalizeWikipediaEventId(rugbybox.params.id)
-        : `${homeTeamSlug}_${awayTeamSlug}_${kickoffAt}`,
+        : `${homeTeamSlug}_${awayTeamSlug}_${parseUrcWikitextKickoffAt(dateText, "", season)?.slice(0, 10)}`,
+      externalIds: rugbybox.params.id
+        ? undefined
+        : {
+            wikipedia_legacy_event_ids: [
+              `${homeTeamSlug}_${awayTeamSlug}_${kickoffAt}`,
+              `${homeTeamSlug}_${awayTeamSlug}_${parseUrcWikitextKickoffAt(dateText, "", season)}`,
+            ],
+          },
       homeScore: score.homeScore,
       homeTeamName,
       homeTeamSlug,
       kickoffAt,
+      kickoffTimeTbd: !/\d{1,2}:\d{2}/.test(timeText),
       lineupTableHtml: null,
       rawHtml: "",
       round,

@@ -57,7 +57,10 @@ export function JapanMatchesBlock({
                     href={`/matches/${match.id}`}
                   >
                     <span className="whitespace-nowrap text-sm tabular-nums text-[var(--color-ink-muted)]">
-                      {formatMatchKickoffJst(match.kickoffAt)}
+                      {formatMatchKickoffJst(
+                        match.kickoffAt,
+                        match.kickoffTimeTbd,
+                      )}
                     </span>
                     <span className="font-semibold text-[var(--color-ink)]">
                       {getMatchLabel(match)}

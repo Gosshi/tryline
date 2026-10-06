@@ -30,7 +30,10 @@ function buildRoundSlots(matches: MatchListItem[], round: BracketRound) {
     .filter((match) => match.round === round.round)
     .sort((left, right) => left.kickoffAt.localeCompare(right.kickoffAt));
 
-  return Array.from({ length: round.slots }, (_, index) => roundMatches[index] ?? null);
+  return Array.from(
+    { length: round.slots },
+    (_, index) => roundMatches[index] ?? null,
+  );
 }
 
 export function KnockoutBracket({ matches }: Props) {
@@ -82,7 +85,10 @@ export function KnockoutBracket({ matches }: Props) {
                         <p className="mt-2 font-number text-sm tabular-nums text-[var(--color-ink-muted)]">
                           {match.status === "finished"
                             ? `${match.homeScore ?? 0} – ${match.awayScore ?? 0}`
-                            : formatKickoffJst(match.kickoffAt)}
+                            : formatKickoffJst(
+                                match.kickoffAt,
+                                match.kickoffTimeTbd,
+                              )}
                         </p>
                       </div>
                       <span

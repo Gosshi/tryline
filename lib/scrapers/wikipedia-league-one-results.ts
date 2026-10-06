@@ -6,6 +6,7 @@ export type HistoricalMatchResult = {
   season: string;
   round: number | null;
   kickoff_at: string;
+  kickoff_time_tbd?: boolean;
   home_team_slug: string;
   away_team_slug: string;
   home_score: number;
@@ -221,6 +222,7 @@ function parseSection(
         home_score: match.homeScore,
         home_team_slug: resolveTeamSlug(match.homeTeamName),
         kickoff_at: parseKickoffAt(dateMatch[1]!),
+        kickoff_time_tbd: true,
         round: stage.round,
         season,
         source_url: sourceUrl,

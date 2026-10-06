@@ -16,6 +16,7 @@ export type RwcPhase =
 
 export type RwcMatch = {
   kickoff_at: string;
+  kickoff_time_tbd?: boolean;
   home_team_name: string;
   away_team_name: string;
   home_score: number | null;
@@ -50,7 +51,14 @@ function parseDateOnly(dateText: string) {
   }
 
   return new Date(
-    Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 0, 0, 0),
+    Date.UTC(
+      parsed.getFullYear(),
+      parsed.getMonth(),
+      parsed.getDate(),
+      0,
+      0,
+      0,
+    ),
   ).toISOString();
 }
 
@@ -62,7 +70,10 @@ function extractEventIdFromHref(href: string | undefined) {
   return href.split("#")[1] ?? null;
 }
 
-function resolveWikipediaSourceUrl(sourceUrl: string, href: string | undefined) {
+function resolveWikipediaSourceUrl(
+  sourceUrl: string,
+  href: string | undefined,
+) {
   if (!href) {
     return sourceUrl;
   }
@@ -122,7 +133,10 @@ function parsePoolMatches(
         .some((row) => {
           const cells = $(row).children("td");
 
-          return cells.length >= 5 && SCORE_PATTERN.test(normalizeWhitespace(cells.eq(2).text()));
+          return (
+            cells.length >= 5 &&
+            SCORE_PATTERN.test(normalizeWhitespace(cells.eq(2).text()))
+          );
         });
     });
 
@@ -144,8 +158,12 @@ function parsePoolMatches(
         return;
       }
 
-      const homeTeamName = normalizeWhitespace(cells.eq(1).find("a").last().text());
-      const awayTeamName = normalizeWhitespace(cells.eq(3).find("a").last().text());
+      const homeTeamName = normalizeWhitespace(
+        cells.eq(1).find("a").last().text(),
+      );
+      const awayTeamName = normalizeWhitespace(
+        cells.eq(3).find("a").last().text(),
+      );
 
       resolveRwcTeamSlug(homeTeamName);
       resolveRwcTeamSlug(awayTeamName);
@@ -159,10 +177,14 @@ function parsePoolMatches(
         home_score: Number(matchedScore[1]),
         home_team_name: homeTeamName,
         kickoff_at: parseDateOnly(normalizeWhitespace(cells.eq(0).text())),
+        kickoff_time_tbd: true,
         phase: "pool",
         pool_name: poolName,
         round: Math.floor(index / 2) + 1,
-        source_url: resolveWikipediaSourceUrl(sourceUrl, scoreLink.attr("href")),
+        source_url: resolveWikipediaSourceUrl(
+          sourceUrl,
+          scoreLink.attr("href"),
+        ),
         status: "finished",
         venue: normalizeWhitespace(cells.eq(4).text()) || null,
       });
@@ -218,10 +240,14 @@ function parseKnockoutMatches(
         home_score: parsed.homeScore,
         home_team_name: parsed.homeTeamName,
         kickoff_at: parsed.kickoffAt,
+        kickoff_time_tbd: parsed.kickoffTimeTbd ?? false,
         phase: phaseDef.phase,
         pool_name: null,
         round: phaseDef.round,
-        source_url: resolveWikipediaSourceUrl(sourceUrl, scoreLink.attr("href")),
+        source_url: resolveWikipediaSourceUrl(
+          sourceUrl,
+          scoreLink.attr("href"),
+        ),
         status: parsed.status,
         venue: parsed.venue,
       });
@@ -236,11 +262,16 @@ export function parseRwcHtml(
   sourceUrl: string = RWC_2023_WIKIPEDIA_URL,
 ): RwcMatch[] {
   const $ = load(html);
-  const matches = [...parsePoolMatches($, sourceUrl), ...parseKnockoutMatches($, sourceUrl)];
+  const matches = [
+    ...parsePoolMatches($, sourceUrl),
+    ...parseKnockoutMatches($, sourceUrl),
+  ];
 
   if (matches.length === 0) {
     throw new Error("No RWC 2023 matches were found in the Wikipedia page.");
   }
 
-  return matches.sort((left, right) => left.kickoff_at.localeCompare(right.kickoff_at));
+  return matches.sort((left, right) =>
+    left.kickoff_at.localeCompare(right.kickoff_at),
+  );
 }
