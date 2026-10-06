@@ -1,6 +1,10 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { parseWikipediaRwc2027Html } from "@/lib/ingestion/sources/wikipedia-rwc";
+import {
+  parseWikipediaRwc2027Html,
+  RWC_2027_POOL_PAGE_URLS,
+} from "@/lib/ingestion/sources/wikipedia-rwc";
 import { parseWikipediaSixNationsHtml } from "@/lib/ingestion/sources/wikipedia-six-nations";
 import schedule from "@/tests/fixtures/rwc2027-kickoffs.json";
 
@@ -105,4 +109,55 @@ describe("shared Wikipedia timezone abbreviations", () => {
       "2027-10-15T00:00:00.000Z",
     );
   });
+});
+
+const teamCodes: Record<string, string> = {
+  Australia: "AUS",
+  "Hong Kong": "HKG",
+  "New Zealand": "NZL",
+  Chile: "CHI",
+  "South Africa": "RSA",
+  Italy: "ITA",
+  Georgia: "GEO",
+  Romania: "ROU",
+  Argentina: "ARG",
+  Fiji: "FIJ",
+  Spain: "ESP",
+  Canada: "CAN",
+  Ireland: "IRE",
+  Scotland: "SCO",
+  Uruguay: "URU",
+  Portugal: "POR",
+  France: "FRA",
+  Japan: "JPN",
+  "United States": "USA",
+  Samoa: "SAM",
+  England: "ENG",
+  Wales: "WAL",
+  Tonga: "TGA",
+  Zimbabwe: "ZIM",
+};
+
+it("reads all 36 authoritative UTC kickoffs from the six saved Wikipedia pages", () => {
+  const actual = Object.entries(RWC_2027_POOL_PAGE_URLS).flatMap(
+    ([pool, url]) =>
+      parseWikipediaRwc2027Html(
+        readFileSync(
+          `tests/fixtures/wikipedia-rwc2027-pool-${pool.slice(-1).toLowerCase()}.html`,
+          "utf8",
+        ),
+        url,
+      ),
+  );
+  expect(actual).toHaveLength(36);
+  const byMatch = new Map(
+    actual.map((match) => [
+      `${teamCodes[match.homeTeamName]} v ${teamCodes[match.awayTeamName]}`,
+      match.kickoffAt,
+    ]),
+  );
+  expect(byMatch.size).toBe(36);
+  for (const row of schedule) {
+    expect(byMatch.get(row.match), row.match).toBe(row.expectedUtc);
+  }
 });

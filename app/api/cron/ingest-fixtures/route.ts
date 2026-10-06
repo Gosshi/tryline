@@ -6,12 +6,14 @@ import {
   revalidatePublicData,
 } from "@/lib/cache/public-data";
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
+import { FixtureIngestSafetyError } from "@/lib/ingestion/fixture-ingest-error";
 import {
   ingestRwc2027Fixtures,
   ingestSixNations2027Fixtures,
 } from "@/lib/ingestion/fixtures";
 
 const bodySchema = z.object({
+  dryRun: z.boolean().default(false),
   competition: z
     .enum(["six-nations-2027", "rwc-2027"])
     .default("six-nations-2027"),
@@ -36,19 +38,22 @@ export async function POST(request: Request) {
     const body = await parseOptionalBody(request);
     const result =
       body.competition === "rwc-2027"
-        ? await ingestRwc2027Fixtures()
-        : await ingestSixNations2027Fixtures();
+        ? await ingestRwc2027Fixtures({ dryRun: body.dryRun })
+        : await ingestSixNations2027Fixtures({ dryRun: body.dryRun });
 
-    revalidatePublicData(
-      PUBLIC_DATA_CACHE_TAGS.competitions,
-      PUBLIC_DATA_CACHE_TAGS.matches,
-      PUBLIC_DATA_CACHE_TAGS.teams,
-    );
+    if (!body.dryRun) {
+      revalidatePublicData(
+        PUBLIC_DATA_CACHE_TAGS.competitions,
+        PUBLIC_DATA_CACHE_TAGS.matches,
+        PUBLIC_DATA_CACHE_TAGS.teams,
+      );
+    }
 
     return NextResponse.json({
       status: "ok",
       competition: result.competition,
       counts: result.counts,
+      ...(result.dry_run ? { dry_run: result.dry_run } : {}),
       duration_ms: Date.now() - startedAt,
     });
   } catch (error) {
@@ -60,6 +65,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "invalid_body", issues: error.issues },
         { status: 400 },
+      );
+    }
+
+    if (error instanceof FixtureIngestSafetyError) {
+      return NextResponse.json(
+        { error: "Failed to ingest fixtures", reason: error.message },
+        { status: 500 },
       );
     }
 

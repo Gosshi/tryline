@@ -2,23 +2,40 @@ name: Cron — Ingest Fixtures
 
 on:
   schedule:
-    - cron: '0 2 * * 1'
+    - cron: "0 2 * * 1"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Read and plan fixtures without writing to the database"
+        type: boolean
+        default: false
 
 jobs:
   ingest-fixtures:
     runs-on: ubuntu-latest
+    env:
+      DRY_RUN: ${{ inputs.dry_run || false }}
     steps:
       - name: Trigger ingest-fixtures
         run: |
+          payload='{"competition":"six-nations-2027"}'
+          if [ "$DRY_RUN" = "true" ]; then
+            payload='{"competition":"six-nations-2027","dryRun":true}'
+          fi
           curl -f -X POST \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d "$payload" \
             https://tryline-six.vercel.app/api/cron/ingest-fixtures
       - name: Trigger RWC 2027 ingest-fixtures
         if: always()
         run: |
+          payload='{"competition":"rwc-2027"}'
+          if [ "$DRY_RUN" = "true" ]; then
+            payload='{"competition":"rwc-2027","dryRun":true}'
+          fi
           curl -f -X POST \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
-            -d '{"competition":"rwc-2027"}' \
+            -d "$payload" \
             https://tryline-six.vercel.app/api/cron/ingest-fixtures

@@ -1,4 +1,7 @@
+import { isDeepStrictEqual } from "node:util";
+
 import { getSupabaseServerClient } from "@/lib/db/server";
+import { FixtureIngestSafetyError } from "@/lib/ingestion/fixture-ingest-error";
 
 import type { Json } from "@/lib/db/types";
 
@@ -175,11 +178,78 @@ async function findExistingMatch(candidate: ResolvedMatchCandidate) {
   return scheduledMatch.data;
 }
 
-export async function upsertMatches(
+export type MatchUpsertPlan = Array<{
+  candidate: ResolvedMatchCandidate;
+  existing: ExistingMatch | null;
+  operation: "insert" | "update" | "unchanged";
+  changes: Record<string, { before: Json; after: Json }>;
+}>;
+
+async function findExistingTeamPair(candidate: ResolvedMatchCandidate) {
+  const { data, error } = await getSupabaseServerClient()
+    .from("matches")
+    .select(
+      "id, competition_id, home_team_id, away_team_id, kickoff_at, kickoff_time_tbd, status, venue, home_score, away_score, external_ids",
+    )
+    .eq("competition_id", candidate.competitionId)
+    .eq("home_team_id", candidate.homeTeamId)
+    .eq("away_team_id", candidate.awayTeamId)
+    .limit(2);
+
+  if (error) throw error;
+  if (data && data.length > 1) {
+    throw new FixtureIngestSafetyError(
+      `Duplicate existing RWC 2027 team pair: ${candidate.homeTeamId} vs ${candidate.awayTeamId}`,
+    );
+  }
+  return data?.[0] ?? null;
+}
+
+// Preflight performs reads only. RWC ignores page-local symbols for matching
+// and drops the incoming symbol so buildMatchUpdate retains the stored ID.
+export async function planMatchUpserts(
   candidates: ResolvedMatchCandidate[],
-  options: {
-    insertMissing?: boolean;
-  } = {},
+  options: { matchByTeamPair?: boolean } = {},
+): Promise<MatchUpsertPlan> {
+  const plan: MatchUpsertPlan = [];
+  for (const original of candidates) {
+    const existing = options.matchByTeamPair
+      ? await findExistingTeamPair(original)
+      : await findExistingMatch(original);
+    const candidate = { ...original, externalIds: { ...original.externalIds } };
+    if (options.matchByTeamPair)
+      delete candidate.externalIds.wikipedia_event_id;
+    const changes: MatchUpsertPlan[number]["changes"] = {};
+    if (existing) {
+      const update = buildMatchUpdate(existing, candidate);
+      for (const [key, after] of Object.entries(update)) {
+        const before = existing[key as keyof ExistingMatch];
+        if (!isDeepStrictEqual(before, after)) {
+          changes[key] = { before: before ?? null, after: after ?? null };
+        }
+      }
+    }
+    plan.push({
+      candidate,
+      existing,
+      changes,
+      operation: !existing
+        ? "insert"
+        : Object.keys(changes).length
+          ? "update"
+          : "unchanged",
+    });
+  }
+  return plan;
+}
+
+async function writeMatches(
+  candidates: ResolvedMatchCandidate[],
+  findExisting: (
+    candidate: ResolvedMatchCandidate,
+    index: number,
+  ) => Promise<ExistingMatch | null>,
+  options: { insertMissing?: boolean } = {},
 ): Promise<UpsertedMatch> {
   const client = getSupabaseServerClient();
   const { insertMissing = true } = options;
@@ -188,7 +258,7 @@ export async function upsertMatches(
   let matchesUpdated = 0;
 
   for (const [candidateIndex, candidate] of candidates.entries()) {
-    const existing = await findExistingMatch(candidate);
+    const existing = await findExisting(candidate, candidateIndex);
 
     if (existing) {
       const previousStatus = existing.status;
@@ -270,4 +340,21 @@ export async function upsertMatches(
     matchesUpdated,
     records,
   };
+}
+
+export async function upsertMatches(
+  candidates: ResolvedMatchCandidate[],
+  options: { insertMissing?: boolean } = {},
+): Promise<UpsertedMatch> {
+  return writeMatches(candidates, findExistingMatch, options);
+}
+
+// Apply the exact preflight decisions rather than looking up page IDs again.
+export async function upsertPlannedMatches(
+  plan: MatchUpsertPlan,
+): Promise<UpsertedMatch> {
+  return writeMatches(
+    plan.map((entry) => entry.candidate),
+    async (_candidate, index) => plan[index]!.existing,
+  );
 }
