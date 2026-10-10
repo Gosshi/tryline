@@ -2,5 +2,12 @@
   "ignoreCommand": "sh scripts/vercel-ignore-build.sh",
   "crons": [
     { "path": "/api/cron/weekly-digest", "schedule": "0 12 * * 1" }
+  ],
+  "redirects": [
+    {
+      "source": "/matches/3c4daa44-a9da-438b-b2df-d4ba1",
+      "destination": "/matches/3c4daa44-a9da-438b-b2df-d4ba11bf767e",
+      "permanent": false
+    }
   ]
 }
