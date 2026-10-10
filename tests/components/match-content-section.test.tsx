@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MatchContentSection } from "@/components/match-content-section";
@@ -77,6 +77,97 @@ describe("MatchContentSection", () => {
       screen.queryByText("プレビューは試合開始 48 時間前に公開予定"),
     ).not.toBeInTheDocument();
   });
+
+  it.each(["paragraph", "blockquote"] as const)(
+    "uses only the immediate %s as the card lead and preserves the second section",
+    (type) => {
+      const { container } = render(
+        <MatchContentSection
+          content={{
+            ...content,
+            contentMdJa: `# この試合の核心\n\n${type === "blockquote" ? "> " : ""}核心の文。\n\n# 二つ目の見出し\n\n二つ目の段落。\n\n# 三つ目の見出し\n\n三つ目の段落。`,
+          }}
+          contentType="preview"
+          isPremium
+          match={match}
+        />,
+      );
+      const [card, body] = container.querySelectorAll("section");
+      const lead = within(card!).getByText("核心の文。");
+      expect(lead.tagName).toBe("P");
+      expect(lead).toHaveClass(
+        "mx-auto",
+        "mt-4",
+        "max-w-[40em]",
+        "text-[15px]",
+        "leading-[2]",
+        "text-[var(--color-ink)]",
+      );
+      expect(card!.querySelector("blockquote")).toBeNull();
+      const secondHeading = within(body!).getByRole("heading", {
+        name: "二つ目の見出し",
+      });
+      expect(secondHeading.nextElementSibling).toBe(
+        within(body!).getByText("二つ目の段落。"),
+      );
+      expect(within(body!).queryByText("核心の文。")).toBeNull();
+      expect(
+        within(body!).queryByRole("heading", { name: "この試合の核心" }),
+      ).toBeNull();
+      expect(within(body!).getByText("三つ目の段落。")).toBeInTheDocument();
+    },
+  );
+
+  it("does not search beyond a list for the card lead", () => {
+    const { container } = render(
+      <MatchContentSection
+        content={{
+          ...content,
+          contentMdJa:
+            "# 核心\n\n- 箇条書きの本文\n\n# 次の見出し\n\n次の段落。",
+        }}
+        contentType="preview"
+        isPremium
+        match={match}
+      />,
+    );
+    const [card, body] = container.querySelectorAll("section");
+    expect(
+      within(card!).getByRole("heading", { name: "核心" }),
+    ).toBeInTheDocument();
+    expect(card!.querySelector("p")).toBeNull();
+    expect(within(body!).getByRole("listitem")).toHaveTextContent(
+      "箇条書きの本文",
+    );
+    expect(
+      within(body!).getByRole("heading", { name: "次の見出し" })
+        .nextElementSibling,
+    ).toBe(within(body!).getByText("次の段落。"));
+  });
+
+  it.each(["paragraph", "blockquote"] as const)(
+    "uses the first %s when there is no heading",
+    (type) => {
+      const { container } = render(
+        <MatchContentSection
+          content={{
+            ...content,
+            contentMdJa: `${type === "blockquote" ? "> " : ""}冒頭文。\n\n後の段落。`,
+          }}
+          contentType="preview"
+          isPremium
+          match={match}
+        />,
+      );
+      const [card, body] = container.querySelectorAll("section");
+      expect(
+        within(card!).getByRole("heading", { name: "プレビュー" }),
+      ).toBeInTheDocument();
+      expect(within(card!).getByText("冒頭文。").tagName).toBe("P");
+      expect(within(body!).queryByText("冒頭文。")).toBeNull();
+      expect(within(body!).getByText("後の段落。")).toBeInTheDocument();
+    },
+  );
 
   it("passes showCta to published MatchContent", () => {
     render(

@@ -1,6 +1,6 @@
 import { ContentPlaceholder } from "@/components/content-placeholder";
 import { MatchContent } from "@/components/match-content";
-import { parseMarkdown } from "@/lib/match-content/markdown";
+import { parseMarkdown, selectMatchLead } from "@/lib/match-content/markdown";
 import { deriveContentState } from "@/lib/match-content/state";
 
 import type { PublishedMatchContent } from "@/lib/db/queries/match-content";
@@ -88,8 +88,8 @@ export function MatchContentSection({
       ? `${match.homeTeam.englishName ?? match.homeTeam.name} vs ${match.awayTeam.englishName ?? match.awayTeam.name}`
       : `${match.homeTeam.name} 対 ${match.awayTeam.name}`;
   const blocks = content ? parseMarkdown(content.contentMdJa) : [];
-  const contentHeading = blocks.find((block) => block.type === "heading");
-  const lead = blocks.find((block) => block.type === "paragraph");
+  const { headingIndex, lead } = selectMatchLead(blocks);
+  const contentHeading = headingIndex === null ? null : blocks[headingIndex];
   const includesLockedContent =
     hasLockedContent === true && isPremium && Boolean(lockedContentMd);
   const readingBlocks = includesLockedContent
@@ -100,7 +100,10 @@ export function MatchContentSection({
     : null;
   const isFreeSectionReadingTime =
     hasLockedContent === true && !includesLockedContent;
-  const sectionTitle = contentHeading?.text ?? TITLES[language][contentType];
+  const sectionTitle =
+    contentHeading?.type === "heading"
+      ? contentHeading.text
+      : TITLES[language][contentType];
 
   return (
     <div
@@ -115,7 +118,7 @@ export function MatchContentSection({
         <h2 className="mx-auto max-w-[40rem] text-[clamp(1.35rem,4vw,1.75rem)] font-extrabold leading-[1.5] text-[var(--color-ink)]">
           {sectionTitle}
         </h2>
-        {lead?.type === "paragraph" && (
+        {lead && (
           <p className="mx-auto mt-4 max-w-[40em] text-[15px] leading-[2] text-[var(--color-ink)]">
             {lead.text}
           </p>

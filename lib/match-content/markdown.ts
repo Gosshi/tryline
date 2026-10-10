@@ -116,6 +116,23 @@ export function parseMarkdown(markdown: string): MarkdownBlock[] {
   return blocks;
 }
 
+export function selectMatchLead(blocks: MarkdownBlock[]): {
+  headingIndex: number | null;
+  lead: { index: number; text: string } | null;
+} {
+  const headingIndex = blocks.findIndex((block) => block.type === "heading");
+  const leadIndex = headingIndex + 1;
+  const block = blocks[leadIndex];
+
+  return {
+    headingIndex: headingIndex < 0 ? null : headingIndex,
+    lead:
+      block?.type === "paragraph" || block?.type === "blockquote"
+        ? { index: leadIndex, text: block.text }
+        : null,
+  };
+}
+
 function getHeadingText(line: string) {
   return line.replace(/^#{1,6}\s*/, "").trim();
 }
