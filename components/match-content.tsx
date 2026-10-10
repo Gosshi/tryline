@@ -4,7 +4,7 @@ import { NoteIcon } from "@/components/icons/note-icon";
 import { XIcon } from "@/components/icons/x-icon";
 import { PaywallViewBoundary } from "@/components/paywall-view-tracker";
 import { TrackedLink } from "@/components/tracked-link";
-import { parseMarkdown } from "@/lib/match-content/markdown";
+import { parseMarkdown, selectMatchLead } from "@/lib/match-content/markdown";
 
 import type { PublishedMatchContent } from "@/lib/db/queries/match-content";
 import type { MarkdownBlock } from "@/lib/match-content/markdown";
@@ -306,13 +306,9 @@ export function MatchContent({
       return input;
     }
 
-    const headingIndex = input.findIndex((block) => block.type === "heading");
-    const paragraphIndex = input.findIndex(
-      (block, index) => block.type === "paragraph" && index > headingIndex,
-    );
-
+    const { headingIndex, lead } = selectMatchLead(input);
     return input.filter(
-      (_, index) => index !== headingIndex && index !== paragraphIndex,
+      (_, index) => index !== headingIndex && index !== lead?.index,
     );
   };
   const allBlocks = parseMarkdown(combinedMarkdown);

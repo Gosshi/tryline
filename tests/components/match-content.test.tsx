@@ -93,6 +93,27 @@ describe("MatchContent", () => {
     expect(container.querySelector("script")).toBeNull();
   });
 
+  it("hideLead removes the immediate quote without removing a later paragraph", () => {
+    render(
+      <MatchContent
+        content={{
+          ...baseContent,
+          contentMdJa:
+            "# この試合の核心\n\n> 核心の文。\n\n# 二つ目の見出し\n\n二つ目の段落。\n\n# 三つ目の見出し\n\n三つ目の段落。",
+        }}
+        contentType="preview"
+        isPremium
+        hideLead
+      />,
+    );
+    const heading = screen.getByRole("heading", { name: "二つ目の見出し" });
+    expect(heading.nextElementSibling).toBe(screen.getByText("二つ目の段落。"));
+    expect(screen.queryByText("核心の文。")).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "この試合の核心" }),
+    ).toBeNull();
+  });
+
   it("shows generatedAt in JST", () => {
     render(
       <MatchContent content={baseContent} contentType="preview" isPremium />,
