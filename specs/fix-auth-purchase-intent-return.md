@@ -124,4 +124,4 @@
 1. **【解決済み 2026-10-11】Supabase の Redirect URLs：** Supabase ダッシュボード（Authentication → URL Configuration）で確認した。Site URL は `https://www.trylinerugby.com`、Redirect URLs は `https://www.trylinerugby.com/**` の1件だけ。
    - 本番：`**` は任意の文字列に一致するので、`/auth/callback?next=...` も許可される。**設定の変更は不要。**
    - プレビュー：Vercel のプレビュー用ドメインは許可されていない。プレビューでログインすると Supabase が Site URL（本番）に戻すため、プレビューではこの流れを最後まで確かめられない。そのため受け入れ条件7は、マージ後に本番で、Checkout 画面が開くところまで確認する形にした。プレビュー用ドメインを許可リストに足すのは、この修正の範囲外。
-2. **【Owner 確認】決定Aの「/account」：** 計画書では「すでに Premium の人は `/account` へ」としていたが、`/account` というページは存在しない（`app/account` が無い）。代わりに、この spec では「`/pricing?already_premium=1` で案内を出す」としている。お支払いの管理は今もヘッダーのメニュー（`components/user-menu.tsx:111`）から行える。これで良いか。
+2. **【解決済み 2026-10-11】決定Aの「/account」：** `/account` というページは存在しない（`app/account` が無い）。Owner の了承を得て、すでに Premium の人は `/pricing?already_premium=1` に送り、案内を出す形にした。お支払いの管理は今もヘッダーのメニュー（`components/user-menu.tsx:111`）から行える。
