@@ -62,10 +62,15 @@ describe("GET /api/v1/matches/[id]/content", () => {
   async function requestContent(authorization?: string) {
     const { GET } = await import("@/app/api/v1/matches/[id]/content/route");
     const response = await GET(
-      new Request("http://localhost/api/v1/matches/match-1/content", {
-        headers: authorization ? { Authorization: authorization } : undefined,
-      }),
-      { params: Promise.resolve({ id: "match-1" }) },
+      new Request(
+        "http://localhost/api/v1/matches/1e74662b-af45-4ef1-b267-156eb87329d5/content",
+        {
+          headers: authorization ? { Authorization: authorization } : undefined,
+        },
+      ),
+      {
+        params: Promise.resolve({ id: "1e74662b-af45-4ef1-b267-156eb87329d5" }),
+      },
     );
 
     return response;
@@ -178,5 +183,63 @@ describe("GET /api/v1/matches/[id]/content", () => {
       error: null,
       success: true,
     });
+  });
+});
+
+describe("invalid match ID", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    contentMock.getPublishedContentForMatch.mockResolvedValue({
+      preview: null,
+      recap: null,
+    });
+    bearerMock.getUserFromBearer.mockResolvedValue(null);
+    sampleMock.isSampleMatch.mockResolvedValue(false);
+  });
+  it.each(["abc", "1e74662b-af45-4ef1-b267-156eb87329d"])(
+    "returns public 404 for %s before DB or authentication",
+    async (id) => {
+      const { GET } = await import("@/app/api/v1/matches/[id]/content/route");
+      const response = await GET(
+        new Request("http://localhost/api/v1/matches/" + id),
+        { params: Promise.resolve({ id }) },
+      );
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({
+        data: null,
+        error: "match not found",
+        success: false,
+      });
+      expect(response.headers.get("cache-control")).toBe(
+        "public, s-maxage=300, stale-while-revalidate=600",
+      );
+      for (const mocks of [bearerMock, serverMock, contentMock, sampleMock]) {
+        for (const mock of Object.values(mocks))
+          expect(mock).not.toHaveBeenCalled();
+      }
+    },
+  );
+});
+
+it("preserves the response for a valid missing UUID", async () => {
+  vi.clearAllMocks();
+  const id = "00000000-0000-4000-8000-000000000000";
+  const { GET } = await import("@/app/api/v1/matches/[id]/content/route");
+  contentMock.getPublishedContentForMatch.mockResolvedValue({
+    preview: null,
+    recap: null,
+  });
+  bearerMock.getUserFromBearer.mockResolvedValue(null);
+  sampleMock.isSampleMatch.mockResolvedValue(false);
+  const response = await GET(
+    new Request("http://localhost/api/v1/matches/" + id),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(response.status).toBe(200);
+  expect(contentMock.getPublishedContentForMatch).toHaveBeenCalledWith(id);
+  expect(await response.json()).toEqual({
+    data: { isPremium: false, locked: false, preview: null, recap: null },
+    error: null,
+    success: true,
   });
 });

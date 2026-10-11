@@ -41,6 +41,7 @@ import { formatKickoffJstDate } from "@/lib/format/kickoff";
 import { buildMatchEventPlayerLinks } from "@/lib/format/match-event-player-links";
 import { formatRoundLabel } from "@/lib/format/round-label";
 import { formatVenueDisplay } from "@/lib/format/venue-timezone";
+import { isUuid } from "@/lib/ids";
 import {
   computeEventPointTotals,
   eventTotalsMatchFinalScore,
@@ -111,6 +112,10 @@ export async function generateMetadata({
   params,
 }: MatchDetailPageProps): Promise<Metadata> {
   const { id } = await params;
+  if (!isUuid(id)) {
+    return { title: "Match Not Found" };
+  }
+
   const [match, content] = await Promise.all([
     getMatchById(id),
     getPublishedContentForMatch(id),
@@ -189,6 +194,10 @@ export default async function MatchDetailPage({
   params,
 }: MatchDetailPageProps) {
   const { id } = await params;
+  if (!isUuid(id)) {
+    notFound();
+  }
+
   const [match, publishedContent, events, lineups, sourcedFactSummary] =
     await Promise.all([
       getMatchById(id),

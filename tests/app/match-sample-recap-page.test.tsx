@@ -124,6 +124,7 @@ vi.mock("next/navigation", () => navigationMocks);
 
 import MatchEnglishPage, {
   generateStaticParams as generateEnglishStaticParams,
+  generateMetadata as generateEnglishMetadata,
 } from "@/app/matches/[id]/en/page";
 import MatchDetailPage, {
   generateMetadata,
@@ -864,5 +865,69 @@ describe("match sample recap page", () => {
       }),
     ).resolves.not.toHaveProperty("robots");
     vi.useRealTimers();
+  });
+});
+
+describe.each([
+  { name: "Japanese", page: MatchDetailPage, metadata: generateMetadata },
+  {
+    name: "English",
+    page: MatchEnglishPage,
+    metadata: generateEnglishMetadata,
+  },
+])("$name match ID validation", ({ page, metadata }) => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setCommonMocks({});
+  });
+
+  function expectNoQueries() {
+    for (const mocks of [
+      matchMocks,
+      matchContentMocks,
+      matchEventMocks,
+      matchLineupMocks,
+      standingsMocks,
+      sourcedFactMocks,
+      sampleMatchMocks,
+      authServerMocks,
+    ]) {
+      for (const mock of Object.values(mocks))
+        expect(mock).not.toHaveBeenCalled();
+    }
+  }
+
+  it.each(["abc", "1e74662b-af45-4ef1-b267-156eb87329d"])(
+    "rejects page ID %s before querying",
+    async (id) => {
+      await expect(page({ params: Promise.resolve({ id }) })).rejects.toThrow(
+        "NEXT_NOT_FOUND",
+      );
+      expect(navigationMocks.notFound).toHaveBeenCalledOnce();
+      expectNoQueries();
+    },
+  );
+
+  it.each(["abc", "1e74662b-af45-4ef1-b267-156eb87329d"])(
+    "rejects metadata ID %s before querying",
+    async (id) => {
+      expect(await metadata({ params: Promise.resolve({ id }) })).toEqual({
+        title: "Match Not Found",
+      });
+      expectNoQueries();
+    },
+  );
+
+  it("queries a valid missing UUID and preserves not found behavior", async () => {
+    const id = "00000000-0000-4000-8000-000000000000";
+    matchMocks.getMatchById.mockResolvedValue(null);
+    expect(await metadata({ params: Promise.resolve({ id }) })).toEqual({
+      title: "Match Not Found",
+    });
+    expect(matchMocks.getMatchById).toHaveBeenCalledWith(id);
+    await expect(page({ params: Promise.resolve({ id }) })).rejects.toThrow(
+      "NEXT_NOT_FOUND",
+    );
+    expect(navigationMocks.notFound).toHaveBeenCalledOnce();
   });
 });

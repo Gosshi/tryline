@@ -20,6 +20,7 @@ import {
 } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatRoundLabel } from "@/lib/format/round-label";
+import { isUuid } from "@/lib/ids";
 import { extractDescription } from "@/lib/match-content/description";
 import { splitRecapForPaywall } from "@/lib/match-content/markdown";
 import { isSampleMatch } from "@/lib/sample-matches";
@@ -48,6 +49,10 @@ export async function generateMetadata({
   params,
 }: MatchEnglishPageProps): Promise<Metadata> {
   const { id } = await params;
+  if (!isUuid(id)) {
+    return { title: "Match Not Found" };
+  }
+
   const [match, content] = await Promise.all([
     getMatchById(id),
     getMatchContentEn(id),
@@ -108,6 +113,10 @@ export default async function MatchEnglishPage({
   params,
 }: MatchEnglishPageProps) {
   const { id } = await params;
+  if (!isUuid(id)) {
+    notFound();
+  }
+
   const [match, englishContent, events, lineups] = await Promise.all([
     getMatchById(id),
     getMatchContentEn(id),

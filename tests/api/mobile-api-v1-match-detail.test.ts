@@ -24,6 +24,8 @@ const sourcedFactsMock = vi.hoisted(() => ({
   getStorySourcedFactsForMatches: vi.fn(),
 }));
 
+const bearerMock = vi.hoisted(() => ({ getUserFromBearer: vi.fn() }));
+vi.mock("@/lib/auth/bearer", () => bearerMock);
 vi.mock("@/lib/db/queries/matches", () => matchesMock);
 vi.mock("@/lib/db/queries/match-events", () => eventsMock);
 vi.mock("@/lib/db/queries/match-lineups", () => lineupsMock);
@@ -57,7 +59,7 @@ const match = {
     slug: "japan",
   },
   homeTeamId: "home-id",
-  id: "match-1",
+  id: "1e74662b-af45-4ef1-b267-156eb87329d5",
   kickoffAt: "2026-07-18T10:00:00.000Z",
   poolName: "Pool A",
   round: 1,
@@ -134,12 +136,14 @@ describe("GET /api/v1/matches/[id]", () => {
       },
     ]);
     serverMock.getBroadcastUrlsForMatches.mockResolvedValue(
-      new Map([["match-1", "https://example.com/watch"]]),
+      new Map([
+        ["1e74662b-af45-4ef1-b267-156eb87329d5", "https://example.com/watch"],
+      ]),
     );
     serverMock.getV1BroadcastsForMatches.mockResolvedValue(
       new Map([
         [
-          "match-1",
+          "1e74662b-af45-4ef1-b267-156eb87329d5",
           [
             {
               kind: "tv",
@@ -164,8 +168,14 @@ describe("GET /api/v1/matches/[id]", () => {
       matchesMock.getMatchById.mockResolvedValue({ ...match, kickoffTimeTbd });
       const { GET } = await import("@/app/api/v1/matches/[id]/route");
       const response = await GET(
-        new Request("http://localhost/api/v1/matches/match-1"),
-        { params: Promise.resolve({ id: "match-1" }) },
+        new Request(
+          "http://localhost/api/v1/matches/1e74662b-af45-4ef1-b267-156eb87329d5",
+        ),
+        {
+          params: Promise.resolve({
+            id: "1e74662b-af45-4ef1-b267-156eb87329d5",
+          }),
+        },
       );
       const returned = (await response.json()).data.match;
       expect(returned).toMatchObject({
@@ -178,8 +188,12 @@ describe("GET /api/v1/matches/[id]", () => {
   it("returns match details with events, lineups and broadcast information", async () => {
     const { GET } = await import("@/app/api/v1/matches/[id]/route");
     const response = await GET(
-      new Request("http://localhost/api/v1/matches/match-1"),
-      { params: Promise.resolve({ id: "match-1" }) },
+      new Request(
+        "http://localhost/api/v1/matches/1e74662b-af45-4ef1-b267-156eb87329d5",
+      ),
+      {
+        params: Promise.resolve({ id: "1e74662b-af45-4ef1-b267-156eb87329d5" }),
+      },
     );
     const body = await response.json();
 
@@ -229,7 +243,7 @@ describe("GET /api/v1/matches/[id]", () => {
             name: "日本",
             short_code: "JPN",
           },
-          id: "match-1",
+          id: "1e74662b-af45-4ef1-b267-156eb87329d5",
           lineups: [
             {
               is_starter: true,
@@ -244,8 +258,12 @@ describe("GET /api/v1/matches/[id]", () => {
       error: null,
       success: true,
     });
-    expect(eventsMock.getMatchEventsForMatch).toHaveBeenCalledWith("match-1");
-    expect(lineupsMock.getMatchLineupsForMatch).toHaveBeenCalledWith("match-1");
+    expect(eventsMock.getMatchEventsForMatch).toHaveBeenCalledWith(
+      "1e74662b-af45-4ef1-b267-156eb87329d5",
+    );
+    expect(lineupsMock.getMatchLineupsForMatch).toHaveBeenCalledWith(
+      "1e74662b-af45-4ef1-b267-156eb87329d5",
+    );
   });
 
   it("returns mismatch and no events for the contaminated 56–17 match", async () => {
@@ -302,8 +320,12 @@ describe("GET /api/v1/matches/[id]", () => {
 
     const { GET } = await import("@/app/api/v1/matches/[id]/route");
     const response = await GET(
-      new Request("http://localhost/api/v1/matches/match-1"),
-      { params: Promise.resolve({ id: "match-1" }) },
+      new Request(
+        "http://localhost/api/v1/matches/1e74662b-af45-4ef1-b267-156eb87329d5",
+      ),
+      {
+        params: Promise.resolve({ id: "1e74662b-af45-4ef1-b267-156eb87329d5" }),
+      },
     );
     const body = await response.json();
 
@@ -336,8 +358,12 @@ describe("GET /api/v1/matches/[id]", () => {
     );
     const { GET } = await import("@/app/api/v1/matches/[id]/route");
     const response = await GET(
-      new Request("http://localhost/api/v1/matches/match-1"),
-      { params: Promise.resolve({ id: "match-1" }) },
+      new Request(
+        "http://localhost/api/v1/matches/1e74662b-af45-4ef1-b267-156eb87329d5",
+      ),
+      {
+        params: Promise.resolve({ id: "1e74662b-af45-4ef1-b267-156eb87329d5" }),
+      },
     );
     const body = await response.json();
 
@@ -372,19 +398,23 @@ describe("GET /api/v1/matches/[id]", () => {
     ]);
     const { GET } = await import("@/app/api/v1/matches/[id]/route");
     const response = await GET(
-      new Request("http://localhost/api/v1/matches/match-1"),
-      { params: Promise.resolve({ id: "match-1" }) },
+      new Request(
+        "http://localhost/api/v1/matches/1e74662b-af45-4ef1-b267-156eb87329d5",
+      ),
+      {
+        params: Promise.resolve({ id: "1e74662b-af45-4ef1-b267-156eb87329d5" }),
+      },
     );
     const body = await response.json();
 
     expect(matchesMock.getRelatedPublishedRecapsForMatch).toHaveBeenCalledWith({
       competitionSlug: "six-nations-2027",
-      excludeMatchId: "match-1",
+      excludeMatchId: "1e74662b-af45-4ef1-b267-156eb87329d5",
       round: 1,
     });
     expect(matchesMock.getNextMatchesForTeams).toHaveBeenCalledWith({
       afterIso: "2026-07-18T10:00:00.000Z",
-      excludeMatchId: "match-1",
+      excludeMatchId: "1e74662b-af45-4ef1-b267-156eb87329d5",
       teamIds: ["home-id", "away-id"],
     });
     expect(body.data.match.related_recaps).toEqual([
@@ -414,7 +444,7 @@ describe("GET /api/v1/matches/[id]", () => {
         factJa: null,
         fetchedAt: "2026-07-18T09:00:00.000Z",
         id: "pre-fact",
-        matchId: "match-1",
+        matchId: "1e74662b-af45-4ef1-b267-156eb87329d5",
         sourceDomain: "preview.example.com",
         sourceUrl: "https://preview.example.com/news",
       },
@@ -425,7 +455,7 @@ describe("GET /api/v1/matches/[id]", () => {
         factJa: null,
         fetchedAt: "2026-07-18T12:00:00.000Z",
         id: "post-fact",
-        matchId: "match-1",
+        matchId: "1e74662b-af45-4ef1-b267-156eb87329d5",
         sourceDomain: "recap.example.com",
         sourceUrl: "https://recap.example.com/news",
       },
@@ -443,24 +473,28 @@ describe("GET /api/v1/matches/[id]", () => {
     ]);
     const { GET } = await import("@/app/api/v1/matches/[id]/route");
     const response = await GET(
-      new Request("http://localhost/api/v1/matches/match-1"),
-      { params: Promise.resolve({ id: "match-1" }) },
+      new Request(
+        "http://localhost/api/v1/matches/1e74662b-af45-4ef1-b267-156eb87329d5",
+      ),
+      {
+        params: Promise.resolve({ id: "1e74662b-af45-4ef1-b267-156eb87329d5" }),
+      },
     );
     const body = await response.json();
 
     expect(
       sourcedFactsMock.getStorySourcedFactsForMatches,
-    ).toHaveBeenCalledWith(["match-1"]);
+    ).toHaveBeenCalledWith(["1e74662b-af45-4ef1-b267-156eb87329d5"]);
     expect(body.data.match.related_news).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           contains_result: false,
-          id: "match-1:news:pre-fact",
+          id: "1e74662b-af45-4ef1-b267-156eb87329d5:news:pre-fact",
           source_url: "https://preview.example.com/news",
         }),
         expect.objectContaining({
           contains_result: true,
-          id: "match-1:news:post-fact",
+          id: "1e74662b-af45-4ef1-b267-156eb87329d5:news:post-fact",
           source_url: "https://recap.example.com/news",
         }),
       ]),
@@ -471,10 +505,61 @@ describe("GET /api/v1/matches/[id]", () => {
   it("returns an empty related_news array when the match has no news", async () => {
     const { GET } = await import("@/app/api/v1/matches/[id]/route");
     const response = await GET(
-      new Request("http://localhost/api/v1/matches/match-1"),
-      { params: Promise.resolve({ id: "match-1" }) },
+      new Request(
+        "http://localhost/api/v1/matches/1e74662b-af45-4ef1-b267-156eb87329d5",
+      ),
+      {
+        params: Promise.resolve({ id: "1e74662b-af45-4ef1-b267-156eb87329d5" }),
+      },
     );
 
     expect((await response.json()).data.match.related_news).toEqual([]);
   });
+});
+
+describe("invalid match ID", () => {
+  beforeEach(() => vi.clearAllMocks());
+  it.each(["abc", "1e74662b-af45-4ef1-b267-156eb87329d"])(
+    "returns public 404 for %s before DB or authentication",
+    async (id) => {
+      const { GET } = await import("@/app/api/v1/matches/[id]/route");
+      const response = await GET(
+        new Request("http://localhost/api/v1/matches/" + id),
+        { params: Promise.resolve({ id }) },
+      );
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({
+        data: null,
+        error: "match not found",
+        success: false,
+      });
+      expect(response.headers.get("cache-control")).toBe(
+        "public, s-maxage=300, stale-while-revalidate=600",
+      );
+      for (const mocks of [
+        matchesMock,
+        eventsMock,
+        lineupsMock,
+        serverMock,
+        sourcedFactsMock,
+        bearerMock,
+      ]) {
+        for (const mock of Object.values(mocks))
+          expect(mock).not.toHaveBeenCalled();
+      }
+    },
+  );
+});
+
+it("preserves the response for a valid missing UUID", async () => {
+  vi.clearAllMocks();
+  const id = "00000000-0000-4000-8000-000000000000";
+  const { GET } = await import("@/app/api/v1/matches/[id]/route");
+  matchesMock.getMatchById.mockResolvedValue(null);
+  const response = await GET(
+    new Request("http://localhost/api/v1/matches/" + id),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(response.status).toBe(404);
+  expect(matchesMock.getMatchById).toHaveBeenCalledWith(id);
 });
