@@ -1,5 +1,7 @@
 import Image from "next/image";
+import { Suspense } from "react";
 
+import { PricingAuthResume } from "@/app/pricing/pricing-auth-resume";
 import { PricingForm } from "@/app/pricing/pricing-form";
 import { HeroTexture } from "@/components/hero-texture";
 import {
@@ -124,6 +126,9 @@ export default async function PricingPage() {
 
   return (
     <main className="tl-scope tl-pricing-page bg-paper min-h-screen">
+      <Suspense fallback={null}>
+        <PricingAuthResume />
+      </Suspense>
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(pricingVideoJsonLd),

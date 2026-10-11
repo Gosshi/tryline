@@ -7,7 +7,19 @@ import type { Database } from "@/lib/db/types";
 export async function GET(request: Request) {
   const { origin, searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next");
+  let returnPath = "/";
+
+  if (typeof next === "string" && next.startsWith("/")) {
+    try {
+      const parsed = new URL(next, origin);
+      if (parsed.origin === origin && !parsed.pathname.startsWith("/auth/")) {
+        returnPath = parsed.pathname + parsed.search + parsed.hash;
+      }
+    } catch {
+      // Invalid URLs fall back to the home page.
+    }
+  }
 
   if (code) {
     const cookieStore = await cookies();
@@ -28,7 +40,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      const redirectUrl = new URL(`${origin}${next}`);
+      const redirectUrl = new URL(`${origin}${returnPath}`);
       const userCreatedAt = data.user?.created_at;
       const isNewSignup = userCreatedAt
         ? Date.now() - new Date(userCreatedAt).getTime() <= 60_000

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-import { requireUser } from "@/lib/auth/server";
+import { isPremium, requireUser } from "@/lib/auth/server";
 import { BILLING_TERMS } from "@/lib/billing/terms";
 import { SITE_URL } from "@/lib/site";
 
@@ -17,6 +17,12 @@ function getStripe() {
 
 export async function POST() {
   const user = await requireUser();
+  if (await isPremium(user.id)) {
+    return NextResponse.redirect(`${SITE_URL}/pricing?already_premium=1`, {
+      status: 303,
+    });
+  }
+
   const stripe = getStripe();
   const siteUrl = SITE_URL;
   const session = await stripe.checkout.sessions.create({

@@ -51,6 +51,7 @@ vi.mock("@/lib/auth/client", () => ({
 }));
 
 vi.mock("@/lib/analytics", () => analyticsMocks);
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(location.search) }));
 
 vi.mock("@/lib/db/queries/matches", () => ({
   getRecentlyReviewedMatchById: matchMocks.getRecentlyReviewedMatchById,
@@ -427,4 +428,16 @@ describe("PricingForm", () => {
     });
     expect(analyticsMocks.trackBeginCheckout).not.toHaveBeenCalled();
   });
+  it.each(["subscribe", "login"] as const)("passes the expected return path for %s intent", async (intent) => {
+    history.replaceState(null, "", "/pricing?from=hero");
+    authMocks.getUser.mockResolvedValue({ data: { user: null } });
+    authMocks.signInWithOtp.mockResolvedValue({ error: null });
+    render(<PricingForm buttonLabel="Start" intent={intent} />);
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    fireEvent.change(await screen.findByPlaceholderText("メールアドレス"), { target: { value: "fan@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "Magic Link を送る" }));
+    const path = intent === "subscribe" ? "/pricing?resume=checkout" : "/pricing?from=hero";
+    await waitFor(() => expect(authMocks.signInWithOtp).toHaveBeenCalledWith({ email: "fan@example.com", options: { emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(path)}` } }));
+  });
+
 });
