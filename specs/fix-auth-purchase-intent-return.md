@@ -114,12 +114,14 @@
    - クエリなし：何も出ず、何も送られない。
 5. **料金ページが静的のまま：** `pnpm build` の出力で、`/pricing` が今と同じ静的（○ または ●）のまま。ビルド出力の該当行を PR 本文に貼る。
 6. **わざと壊して確かめる：** callback の検証を外す（`${origin}${next}` に戻す）と受け入れ条件1の `@evil.example` のケースが落ちる。checkout の Premium 確認を外すと受け入れ条件3が落ちる。どちらも出力を PR 本文に貼り、変更は戻す。
-7. **プレビューでの確認（Owner）：** Vercel プレビューで次を確認する。購入はしない。
-   - 未ログイン → 料金ページ「Premium を始める」→ Magic Link → メールのリンク → Stripe の**テスト** Checkout 画面が開く。
+7. **本番での確認（Owner、マージ・デプロイ後）：** 本番で次を確認する。**Checkout 画面が開いたところで止め、カード情報は入力しない（購入しない）。** プレビューでは確認できない（未解決の質問1の確認結果を参照）。
+   - 未ログイン → 料金ページ「Premium を始める」→ Magic Link → メールのリンク → Stripe の Checkout 画面が開く。
    - 同じことを Google ログインで行う。
    - Premium のアカウント（手動付与のもの）で同じことをすると、Checkout は開かず「すでに Premium をご利用中です。」が出る。
 
 ## 未解決の質問
 
-1. **【着手前に Owner が確認】Supabase の Redirect URLs：** Supabase の Authentication → URL Configuration の Redirect URLs に、`?next=...` 付きの callback が許可されているか確認する。許可されていないと、Supabase は既定の Site URL に戻すため、この修正は本番で効かない。本番は `https://www.trylinerugby.com/auth/callback**`、プレビューは Vercel のプレビュー用ドメインの同じ形を想定。登録されている値を貼ってもらえれば、Claude が足りるか判断する。
+1. **【解決済み 2026-10-11】Supabase の Redirect URLs：** Supabase ダッシュボード（Authentication → URL Configuration）で確認した。Site URL は `https://www.trylinerugby.com`、Redirect URLs は `https://www.trylinerugby.com/**` の1件だけ。
+   - 本番：`**` は任意の文字列に一致するので、`/auth/callback?next=...` も許可される。**設定の変更は不要。**
+   - プレビュー：Vercel のプレビュー用ドメインは許可されていない。プレビューでログインすると Supabase が Site URL（本番）に戻すため、プレビューではこの流れを最後まで確かめられない。そのため受け入れ条件7は、マージ後に本番で、Checkout 画面が開くところまで確認する形にした。プレビュー用ドメインを許可リストに足すのは、この修正の範囲外。
 2. **【Owner 確認】決定Aの「/account」：** 計画書では「すでに Premium の人は `/account` へ」としていたが、`/account` というページは存在しない（`app/account` が無い）。代わりに、この spec では「`/pricing?already_premium=1` で案内を出す」としている。お支払いの管理は今もヘッダーのメニュー（`components/user-menu.tsx:111`）から行える。これで良いか。
