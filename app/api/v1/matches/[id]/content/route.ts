@@ -1,8 +1,14 @@
-import { apiSuccess, PRIVATE_CACHE_CONTROL } from "@/lib/api/v1/response";
+import {
+  apiError,
+  apiSuccess,
+  PRIVATE_CACHE_CONTROL,
+  PUBLIC_CACHE_CONTROL,
+} from "@/lib/api/v1/response";
 import { getMobileUserProfile } from "@/lib/api/v1/server";
 import { getUserFromBearer, getSupabaseBearerClient } from "@/lib/auth/bearer";
 import { isProfilePremium } from "@/lib/auth/server";
 import { getPublishedContentForMatch } from "@/lib/db/queries/match-content";
+import { isUuid } from "@/lib/ids";
 import { splitRecapForPaywall } from "@/lib/match-content/markdown";
 import { isSampleMatch } from "@/lib/sample-matches";
 
@@ -29,6 +35,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  if (!isUuid(id)) {
+    return apiError("match not found", 404, PUBLIC_CACHE_CONTROL);
+  }
+
   const [content, user, sampleMatch] = await Promise.all([
     getPublishedContentForMatch(id),
     getUserFromBearer(request),

@@ -21,6 +21,7 @@ import {
 import { getStorySourcedFactsForMatches } from "@/lib/db/queries/sourced-facts";
 import { getCompetitionDisplayName } from "@/lib/format/competition";
 import { getTeamColorOrNull } from "@/lib/format/team-identity";
+import { isUuid } from "@/lib/ids";
 import {
   computeEventPointTotals,
   eventTotalsMatchFinalScore,
@@ -65,6 +66,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  if (!isUuid(id)) {
+    return apiError("match not found", 404, PUBLIC_CACHE_CONTROL);
+  }
+
   const match = await getMatchById(id);
 
   if (!match) {
