@@ -16,7 +16,6 @@ import {
   HomepageSpoilerScore,
 } from "@/components/home-user-state";
 import { NewsletterSignup } from "@/components/newsletter-signup";
-import { SignupSuccessTracker } from "@/components/signup-success-tracker";
 import { StandingsTable } from "@/components/standings-table";
 import {
   TouchlineMotion,
@@ -276,7 +275,6 @@ export default async function HomePage() {
         />
         <Suspense>
           <CheckoutSuccessTracker />
-          <SignupSuccessTracker />
         </Suspense>
         <section className="tl-home-hero relative min-h-[480px] overflow-clip bg-[var(--color-ink-strong)] py-14 sm:min-h-[560px] sm:py-20">
           <HeroTexture />

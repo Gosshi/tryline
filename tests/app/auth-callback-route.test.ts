@@ -125,4 +125,55 @@ describe("GET /auth/callback", () => {
       "https://tryline.test/pricing?resume=checkout&signup=success",
     );
   });
+  it.each([
+    ["/?auth_error=1", "existing", "/"],
+    [
+      "/pricing?resume=checkout&auth_error=1",
+      "existing",
+      "/pricing?resume=checkout",
+    ],
+    [
+      "/matches/1e74662b-af45-4ef1-b267-156eb87329d5?signup=success",
+      "existing",
+      "/matches/1e74662b-af45-4ef1-b267-156eb87329d5",
+    ],
+    [
+      "/pricing?resume=checkout",
+      "new",
+      "/pricing?resume=checkout&signup=success",
+    ],
+    ["/pricing?resume=checkout", "error", "/pricing?auth_error=1"],
+    [
+      "/c/urc/2025-26?tab=schedule#fixtures",
+      "error",
+      "/c/urc/2025-26?tab=schedule&auth_error=1#fixtures",
+    ],
+    [undefined, "error", "/?auth_error=1"],
+    ["@evil.example", "error", "/?auth_error=1"],
+    ["/auth/callback?code=x", "error", "/?auth_error=1"],
+    [
+      "/pricing?resume=checkout&signup=success&auth_error=old&from=hero#plans",
+      "missing",
+      "/pricing?from=hero&auth_error=1#plans",
+    ],
+  ])("cleans return flags for next=%s (%s)", async (next, result, expected) => {
+    supabaseMocks.exchangeCodeForSession.mockResolvedValue({
+      data: {
+        user: {
+          created_at:
+            result === "new"
+              ? "2026-07-07T23:59:30.000Z"
+              : "2026-07-07T23:58:00.000Z",
+        },
+      },
+      error: result === "error" ? { message: "expired code" } : null,
+    });
+    const url = new URL("https://tryline.test/auth/callback");
+    if (result !== "missing") url.searchParams.set("code", "abc");
+    if (next !== undefined) url.searchParams.set("next", next);
+    const { GET } = await import("@/app/auth/callback/route");
+    expect((await GET(new Request(url))).headers.get("location")).toBe(
+      `https://tryline.test${expected}`,
+    );
+  });
 });

@@ -2015,3 +2015,15 @@ html[data-spoiler-guard="on"] [data-match-spoiler="finished"]:not([data-match-re
   font-weight: 700;
 }
 /* End spoiler guard */
+
+.auth-return-notice {
+  margin: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-rule);
+  border-left: var(--space-1) solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-panel);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  line-height: 1.75;
+}

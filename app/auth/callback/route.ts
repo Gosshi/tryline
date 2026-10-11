@@ -21,6 +21,10 @@ export async function GET(request: Request) {
     }
   }
 
+  const redirectUrl = new URL(`${origin}${returnPath}`);
+  redirectUrl.searchParams.delete("auth_error");
+  redirectUrl.searchParams.delete("signup");
+
   if (code) {
     const cookieStore = await cookies();
     const supabase = createServerClient<Database>(
@@ -40,7 +44,6 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      const redirectUrl = new URL(`${origin}${returnPath}`);
       const userCreatedAt = data.user?.created_at;
       const isNewSignup = userCreatedAt
         ? Date.now() - new Date(userCreatedAt).getTime() <= 60_000
@@ -54,5 +57,7 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/?auth_error=1`);
+  redirectUrl.searchParams.delete("resume");
+  redirectUrl.searchParams.set("auth_error", "1");
+  return NextResponse.redirect(redirectUrl.toString());
 }
