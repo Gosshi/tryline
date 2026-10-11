@@ -1,7 +1,10 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { Noto_Sans_JP, Outfit, Shippori_Mincho_B1 } from "next/font/google";
+import { Suspense } from "react";
 
+import { AuthErrorNotice } from "@/components/auth-error-notice";
 import { ReturnVisitTracker } from "@/components/return-visit-tracker";
+import { SignupSuccessTracker } from "@/components/signup-success-tracker";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { IOS_APP_ID } from "@/lib/ios-app";
@@ -87,7 +90,13 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen">
         <SiteHeader />
+        <Suspense fallback={null}>
+          <AuthErrorNotice />
+        </Suspense>
         <ReturnVisitTracker />
+        <Suspense fallback={null}>
+          <SignupSuccessTracker />
+        </Suspense>
         {children}
         <SiteFooter />
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (

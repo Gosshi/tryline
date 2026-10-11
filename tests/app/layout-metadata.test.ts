@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 const shipporiOptions = vi.hoisted(() => vi.fn());
@@ -13,6 +14,8 @@ vi.mock("next/font/google", () => ({
 }));
 
 import RootLayout, { metadata } from "@/app/layout";
+import { AuthErrorNotice } from "@/components/auth-error-notice";
+import { SignupSuccessTracker } from "@/components/signup-success-tracker";
 
 describe("root metadata", () => {
   it("loads the heading font at weight 800 only", () => {
@@ -50,5 +53,15 @@ describe("root metadata", () => {
 
   it("declares the iOS Smart App Banner metadata", () => {
     expect(metadata.itunes).toEqual({ appId: "6791587357" });
+  });
+  it("places the auth notice and signup tracker in root Suspense boundaries", () => {
+    const layout = RootLayout({ children: null });
+    const children = layout.props.children[1].props.children;
+    expect(children[1].type).toBe(Suspense);
+    expect(children[1].props.fallback).toBeNull();
+    expect(children[1].props.children.type).toBe(AuthErrorNotice);
+    expect(children[3].type).toBe(Suspense);
+    expect(children[3].props.fallback).toBeNull();
+    expect(children[3].props.children.type).toBe(SignupSuccessTracker);
   });
 });

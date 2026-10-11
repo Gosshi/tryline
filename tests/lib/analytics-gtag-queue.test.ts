@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   trackBeginCheckout,
+  trackBeginCheckoutBeforeNavigation,
+  trackEventBeforeNavigation,
   trackCtaClick,
   trackEvent,
   trackFavoriteTeamAdded,
@@ -188,5 +190,100 @@ describe("analytics gtag queue", () => {
     trackBeginCheckout(params);
 
     expect(gtag).toHaveBeenCalledWith("event", "begin_checkout", params);
+  });
+});
+
+describe("analytics before navigation", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    setGtag(undefined);
+  });
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it("waits for the event callback and resolves only once", async () => {
+    const gtag = vi.fn();
+    setGtag(gtag);
+    const resolved = vi.fn();
+    const promise = trackEventBeforeNavigation("test", {
+      entry_surface: "test",
+    }).then(resolved);
+    await Promise.resolve();
+    expect(resolved).not.toHaveBeenCalled();
+    const params = gtag.mock.calls[0]![2];
+    expect(params).toMatchObject({
+      entry_surface: "test",
+      event_timeout: 1000,
+    });
+    params.event_callback();
+    params.event_callback();
+    await promise;
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(resolved).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("resolves after 1000ms if the callback never fires", async () => {
+    setGtag(vi.fn());
+    const resolved = vi.fn();
+    const promise = trackEventBeforeNavigation("test").then(resolved);
+    await vi.advanceTimersByTimeAsync(999);
+    expect(resolved).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    await promise;
+    expect(resolved).toHaveBeenCalledOnce();
+  });
+
+  it("flushes older signup before checkout when gtag appears at 800ms", async () => {
+    trackSignUp();
+    const params = {
+      cta_id: "pricing_auth_resume",
+      cta_location: "auth_resume",
+      destination: "/api/stripe/checkout",
+    };
+    const promise = trackBeginCheckoutBeforeNavigation(params);
+    await vi.advanceTimersByTimeAsync(800);
+    const gtag = vi.fn();
+    setGtag(gtag);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(gtag.mock.calls.map(([, name]) => name)).toEqual([
+      "sign_up",
+      "begin_checkout",
+    ]);
+    expect(gtag.mock.calls[1]![2]).toMatchObject(params);
+    for (const key of ["source", "medium", "campaign", "term", "content"])
+      expect(gtag.mock.calls[1]![2]).not.toHaveProperty(key);
+    gtag.mock.calls[1]![2].event_callback();
+    await promise;
+  });
+
+  it("resolves at 1500ms without gtag and keeps the event queued", async () => {
+    const resolved = vi.fn();
+    const promise = trackEventBeforeNavigation("test").then(resolved);
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(resolved).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    await promise;
+    expect(resolved).toHaveBeenCalledOnce();
+    const gtag = defineGtagAndFlush();
+    expect(gtag).toHaveBeenCalledWith("event", "test", {});
+  });
+
+  it("resolves even when gtag throws", async () => {
+    setGtag(
+      vi.fn(() => {
+        throw new Error("analytics unavailable");
+      }),
+    );
+    await expect(trackEventBeforeNavigation("test")).resolves.toBeUndefined();
+  });
+
+  it("resolves during server rendering without timers", async () => {
+    vi.stubGlobal("window", undefined);
+    await expect(trackEventBeforeNavigation("test")).resolves.toBeUndefined();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

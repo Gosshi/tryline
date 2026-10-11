@@ -37,6 +37,7 @@ describe("gtag load race trackers", () => {
     vi.useFakeTimers();
     navigationMocks.searchParams = new URLSearchParams();
     setGtag(undefined);
+    history.replaceState(null, "", "/");
   });
 
   afterEach(() => {
@@ -55,6 +56,7 @@ describe("gtag load race trackers", () => {
       "checkout=success&signup=success",
     );
 
+    history.replaceState(null, "", "/pricing?checkout=success&signup=success");
     render(
       <>
         <CheckoutSuccessTracker />
@@ -62,6 +64,7 @@ describe("gtag load race trackers", () => {
       </>,
     );
 
+    expect(location.search).toBe("?checkout=success");
     const gtag = defineGtagAndFlush();
 
     expect(gtag.mock.calls).toEqual([

@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { trackBeginCheckout } from "@/lib/analytics";
+import { trackBeginCheckoutBeforeNavigation } from "@/lib/analytics";
 import { getSupabaseBrowserClient } from "@/lib/auth/client";
 
 export function PricingAuthResume() {
@@ -38,11 +38,10 @@ export function PricingAuthResume() {
         error,
       } = await getSupabaseBrowserClient().auth.getUser();
       const form = formRef.current;
-      if (!user || !form) return;
-      if (error) throw error;
+      if (error || !user || !form) return;
 
       setMessage("決済ページへ移動しています…");
-      trackBeginCheckout({
+      await trackBeginCheckoutBeforeNavigation({
         cta_id: "pricing_auth_resume",
         cta_location: "auth_resume",
         destination: "/api/stripe/checkout",
@@ -55,7 +54,7 @@ export function PricingAuthResume() {
   return (
     <>
       {message && (
-        <p role="status" className="px-4 py-3 text-sm">
+        <p role="status" className="auth-return-notice">
           {message}
         </p>
       )}

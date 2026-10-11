@@ -104,6 +104,54 @@ export function trackEvent(
   startPolling();
 }
 
+export function trackEventBeforeNavigation(
+  eventName: string,
+  params: AnalyticsEventParams = {},
+): Promise<void> {
+  return new Promise((resolve) => {
+    let elapsedMs = 0;
+    let callbackTimer: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      if (callbackTimer !== undefined) clearTimeout(callbackTimer);
+      resolve();
+    };
+
+    function sendWhenReady() {
+      try {
+        if (typeof window === "undefined") {
+          finish();
+          return;
+        }
+        if (typeof window.gtag === "function") {
+          callbackTimer = setTimeout(finish, 1000);
+          flushQueue();
+          window.gtag("event", eventName, {
+            ...params,
+            event_callback: finish,
+            event_timeout: 1000,
+          });
+          return;
+        }
+        if (elapsedMs >= 1500) {
+          trackEvent(eventName, params);
+          finish();
+          return;
+        }
+        elapsedMs += GTAG_POLL_INTERVAL_MS;
+        setTimeout(sendWhenReady, GTAG_POLL_INTERVAL_MS);
+      } catch {
+        // Analytics failure must never prevent navigation.
+        finish();
+      }
+    }
+    sendWhenReady();
+  });
+}
+
+export function trackBeginCheckoutBeforeNavigation(params: CtaClickParams) {
+  return trackEventBeforeNavigation("begin_checkout", params);
+}
+
 export function trackCtaClick(params: CtaClickParams) {
   trackEvent("cta_click", params);
 }

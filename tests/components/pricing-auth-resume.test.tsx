@@ -10,7 +10,7 @@ import { PricingAuthResume } from "@/app/pricing/pricing-auth-resume";
 
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
-  trackBeginCheckout: vi.fn(),
+  trackBeginCheckoutBeforeNavigation: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(location.search),
@@ -19,12 +19,13 @@ vi.mock("@/lib/auth/client", () => ({
   getSupabaseBrowserClient: () => ({ auth: { getUser: mocks.getUser } }),
 }));
 vi.mock("@/lib/analytics", () => ({
-  trackBeginCheckout: mocks.trackBeginCheckout,
+  trackBeginCheckoutBeforeNavigation: mocks.trackBeginCheckoutBeforeNavigation,
 }));
 
 describe("PricingAuthResume", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.trackBeginCheckoutBeforeNavigation.mockResolvedValue(undefined);
     history.replaceState({ retained: true }, "", "/pricing");
     mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
   });
@@ -55,7 +56,7 @@ describe("PricingAuthResume", () => {
         expect(this.action).toBe(`${location.origin}/api/stripe/checkout`);
         expect(this.method).toBe("post");
         expect(location.search).toBe("?signup=success");
-        expect(mocks.trackBeginCheckout).toHaveBeenCalledOnce();
+        expect(mocks.trackBeginCheckoutBeforeNavigation).toHaveBeenCalledOnce();
       });
     const view = render(
       <StrictMode>
@@ -71,7 +72,9 @@ describe("PricingAuthResume", () => {
       resolveUser({ data: { user: { id: "user-1" } }, error: null }),
     );
     await waitFor(() => expect(submit).toHaveBeenCalledOnce());
-    expect(mocks.trackBeginCheckout).toHaveBeenCalledExactlyOnceWith({
+    expect(
+      mocks.trackBeginCheckoutBeforeNavigation,
+    ).toHaveBeenCalledExactlyOnceWith({
       cta_id: "pricing_auth_resume",
       cta_location: "auth_resume",
       destination: "/api/stripe/checkout",
@@ -82,7 +85,7 @@ describe("PricingAuthResume", () => {
     view.unmount();
     render(<PricingAuthResume />);
     expect(submit).toHaveBeenCalledOnce();
-    expect(mocks.trackBeginCheckout).toHaveBeenCalledOnce();
+    expect(mocks.trackBeginCheckoutBeforeNavigation).toHaveBeenCalledOnce();
   });
 
   it.each([null, { name: "AuthSessionMissingError" }])(
@@ -102,7 +105,7 @@ describe("PricingAuthResume", () => {
       expect(location.search).toBe("");
       expect(mocks.getUser).toHaveBeenCalledOnce();
       expect(submit).not.toHaveBeenCalled();
-      expect(mocks.trackBeginCheckout).not.toHaveBeenCalled();
+      expect(mocks.trackBeginCheckoutBeforeNavigation).not.toHaveBeenCalled();
       expect(screen.queryByRole("status")).toBeNull();
     },
   );
@@ -130,7 +133,7 @@ describe("PricingAuthResume", () => {
     expect(history.state).toEqual({ retained: true });
     expect(mocks.getUser).not.toHaveBeenCalled();
     expect(submit).not.toHaveBeenCalled();
-    expect(mocks.trackBeginCheckout).not.toHaveBeenCalled();
+    expect(mocks.trackBeginCheckoutBeforeNavigation).not.toHaveBeenCalled();
     expect(screen.queryByRole("link")).toBeNull();
   });
 
@@ -144,6 +147,52 @@ describe("PricingAuthResume", () => {
     expect(replace).not.toHaveBeenCalled();
     expect(mocks.getUser).not.toHaveBeenCalled();
     expect(submit).not.toHaveBeenCalled();
-    expect(mocks.trackBeginCheckout).not.toHaveBeenCalled();
+    expect(mocks.trackBeginCheckoutBeforeNavigation).not.toHaveBeenCalled();
+  });
+  it("waits for analytics before the single checkout POST", async () => {
+    history.replaceState(null, "", "/pricing?resume=checkout");
+    mocks.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+      error: null,
+    });
+    let finish!: () => void;
+    mocks.trackBeginCheckoutBeforeNavigation.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const submit = vi
+      .spyOn(HTMLFormElement.prototype, "submit")
+      .mockImplementation(() => undefined);
+    render(
+      <StrictMode>
+        <PricingAuthResume />
+      </StrictMode>,
+    );
+    await waitFor(() =>
+      expect(mocks.trackBeginCheckoutBeforeNavigation).toHaveBeenCalledOnce(),
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "決済ページへ移動しています…",
+    );
+    expect(submit).not.toHaveBeenCalled();
+    await act(async () => finish());
+    expect(submit).toHaveBeenCalledOnce();
+  });
+
+  it("does not resume when getUser returns an error with user data", async () => {
+    history.replaceState(null, "", "/pricing?resume=checkout");
+    mocks.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+      error: { message: "auth unavailable" },
+    });
+    const submit = vi
+      .spyOn(HTMLFormElement.prototype, "submit")
+      .mockImplementation(() => undefined);
+    render(<PricingAuthResume />);
+    await act(async () => undefined);
+    expect(submit).not.toHaveBeenCalled();
+    expect(mocks.trackBeginCheckoutBeforeNavigation).not.toHaveBeenCalled();
   });
 });

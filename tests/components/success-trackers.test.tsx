@@ -3,6 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup, render, waitFor } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CheckoutSuccessTracker } from "@/components/checkout-success-tracker";
@@ -30,6 +31,7 @@ function stubGtag() {
 describe("success trackers", () => {
   beforeEach(() => {
     navigationMocks.searchParams = new URLSearchParams();
+    history.replaceState(null, "", "/");
   });
 
   afterEach(() => {
@@ -58,10 +60,27 @@ describe("success trackers", () => {
     navigationMocks.searchParams = new URLSearchParams("signup=success");
     const gtag = stubGtag();
 
-    render(<SignupSuccessTracker />);
+    history.replaceState(
+      { retained: true },
+      "",
+      "/pricing?signup=success&resume=checkout#plans",
+    );
+    const view = render(
+      <StrictMode>
+        <SignupSuccessTracker />
+      </StrictMode>,
+    );
 
     await waitFor(() => {
-      expect(gtag).toHaveBeenCalledWith("event", "sign_up", {});
+      expect(gtag).toHaveBeenCalledExactlyOnceWith("event", "sign_up", {});
     });
+    expect(location.pathname + location.search + location.hash).toBe(
+      "/pricing?resume=checkout#plans",
+    );
+    expect(history.state).toEqual({ retained: true });
+    view.unmount();
+    navigationMocks.searchParams = new URLSearchParams(location.search);
+    render(<SignupSuccessTracker />);
+    expect(gtag).toHaveBeenCalledOnce();
   });
 });
