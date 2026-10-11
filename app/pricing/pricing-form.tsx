@@ -53,7 +53,13 @@ export function PricingForm({
   return (
     <>
       {showAuth && (
-        <AuthModal intent={intent} onClose={() => setShowAuth(false)} />
+        <AuthModal
+          intent={intent}
+          onClose={() => setShowAuth(false)}
+          returnPath={
+            intent === "subscribe" ? "/pricing?resume=checkout" : undefined
+          }
+        />
       )}
       <form
         action="/api/stripe/checkout"

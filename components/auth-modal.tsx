@@ -9,6 +9,7 @@ import { getSupabaseBrowserClient } from "@/lib/auth/client";
 type AuthModalProps = {
   intent?: "login" | "subscribe";
   onClose: () => void;
+  returnPath?: string;
 };
 
 const GENERIC_ERROR_MESSAGE = "エラーが発生しました。";
@@ -63,6 +64,7 @@ function isPlausibleEmail(email: string): boolean {
 export function AuthModal({
   intent = "login",
   onClose,
+  returnPath,
 }: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sent" | "error">("idle");
@@ -70,11 +72,13 @@ export function AuthModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
   const isSubmittingRef = useRef(false);
+  const returnPathRef = useRef<string | undefined>(returnPath);
 
   useEffect(() => {
+    returnPathRef.current = returnPath ?? location.pathname + location.search;
     setMounted(true);
     return () => setMounted(false);
-  }, []);
+  }, [returnPath]);
 
   async function submit() {
     const normalizedEmail = email.trim();
@@ -104,7 +108,9 @@ export function AuthModal({
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: normalizedEmail,
-        options: { emailRedirectTo: `${location.origin}/auth/callback` },
+        options: {
+          emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(returnPathRef.current ?? "/")}`,
+        },
       });
 
       if (error) {
@@ -136,7 +142,7 @@ export function AuthModal({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnPathRef.current ?? "/")}`,
         },
       });
 
@@ -171,14 +177,14 @@ export function AuthModal({
           )}
           {state === "sent" ? (
             <p className="mt-4 text-sm leading-6 text-slate-600">
-              メールを送りました。リンクをクリックしてログインしてください。
+              {intent === "subscribe"
+                ? "メールを送りました。リンクを開くと決済ページに進みます。"
+                : "メールを送りました。リンクをクリックしてログインしてください。"}
             </p>
           ) : (
             <>
               {state === "error" && (
-                <p className="mb-3 mt-4 text-sm text-red-600">
-                  {errorMessage}
-                </p>
+                <p className="mb-3 mt-4 text-sm text-red-600">{errorMessage}</p>
               )}
               <button
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"

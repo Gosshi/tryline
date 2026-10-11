@@ -29,6 +29,7 @@ vi.mock("@/lib/auth/client", () => ({
 
 describe("AuthModal", () => {
   beforeEach(() => {
+    history.replaceState(null, "", "/matches/test?view=recap");
     authMocks.signInWithOAuth.mockReset();
     authMocks.signInWithOtp.mockReset();
     authMocks.signInWithOAuth.mockResolvedValue({ error: null });
@@ -146,7 +147,9 @@ describe("AuthModal", () => {
     });
     render(<AuthModal onClose={() => undefined} />);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Google でログイン" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Google でログイン" }),
+    );
 
     expect(
       await screen.findByText("時間をおいてお試しください。"),
@@ -178,4 +181,85 @@ describe("AuthModal", () => {
     finishRequest({ error: { message: "Unexpected error" } });
     await waitFor(() => expect(submitButton).not.toBeDisabled());
   });
+  it.each(["magic", "google"])(
+    "passes explicit purchase returnPath through %s",
+    async (provider) => {
+      render(
+        <AuthModal
+          intent="subscribe"
+          returnPath="/pricing?resume=checkout"
+          onClose={() => undefined}
+        />,
+      );
+      const expected = `${location.origin}/auth/callback?next=%2Fpricing%3Fresume%3Dcheckout`;
+      if (provider === "magic") {
+        fireEvent.change(await screen.findByPlaceholderText("メールアドレス"), {
+          target: { value: "fan@example.com" },
+        });
+        fireEvent.click(
+          screen.getByRole("button", { name: "Magic Link を送る" }),
+        );
+        await waitFor(() =>
+          expect(authMocks.signInWithOtp).toHaveBeenCalledWith({
+            email: "fan@example.com",
+            options: { emailRedirectTo: expected },
+          }),
+        );
+        expect(
+          await screen.findByText(
+            "メールを送りました。リンクを開くと決済ページに進みます。",
+          ),
+        ).toBeInTheDocument();
+      } else {
+        fireEvent.click(
+          await screen.findByRole("button", { name: "Google でログイン" }),
+        );
+        await waitFor(() =>
+          expect(authMocks.signInWithOAuth).toHaveBeenCalledWith({
+            provider: "google",
+            options: { redirectTo: expected },
+          }),
+        );
+      }
+    },
+  );
+
+  it.each(["magic", "google"])(
+    "captures the page at modal opening for %s",
+    async (provider) => {
+      render(<AuthModal onClose={() => undefined} />);
+      await screen.findByRole("heading", { name: "ログイン" });
+      history.replaceState(null, "", "/pricing?later=1");
+      const expected = `${location.origin}/auth/callback?next=%2Fmatches%2Ftest%3Fview%3Drecap`;
+      if (provider === "magic") {
+        fireEvent.change(screen.getByPlaceholderText("メールアドレス"), {
+          target: { value: "fan@example.com" },
+        });
+        fireEvent.click(
+          screen.getByRole("button", { name: "Magic Link を送る" }),
+        );
+        await waitFor(() =>
+          expect(authMocks.signInWithOtp).toHaveBeenCalledWith({
+            email: "fan@example.com",
+            options: { emailRedirectTo: expected },
+          }),
+        );
+        expect(
+          await screen.findByText(
+            "メールを送りました。リンクをクリックしてログインしてください。",
+          ),
+        ).toBeInTheDocument();
+      } else {
+        fireEvent.click(
+          screen.getByRole("button", { name: "Google でログイン" }),
+        );
+        await waitFor(() =>
+          expect(authMocks.signInWithOAuth).toHaveBeenCalledWith({
+            provider: "google",
+            options: { redirectTo: expected },
+          }),
+        );
+      }
+    },
+  );
 });

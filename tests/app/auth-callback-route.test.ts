@@ -54,7 +54,9 @@ describe("GET /auth/callback", () => {
 
     const { GET } = await import("@/app/auth/callback/route");
     const response = await GET(
-      new Request("https://tryline.test/auth/callback?code=abc&next=/pricing?from=hero"),
+      new Request(
+        "https://tryline.test/auth/callback?code=abc&next=/pricing?from=hero",
+      ),
     );
 
     expect(response.headers.get("location")).toBe(
@@ -77,6 +79,50 @@ describe("GET /auth/callback", () => {
 
     expect(response.headers.get("location")).toBe(
       "https://tryline.test/pricing",
+    );
+  });
+  it.each([
+    [undefined, "/"],
+    ["/pricing?resume=checkout", "/pricing?resume=checkout"],
+    [
+      "/matches/1e74662b-af45-4ef1-b267-156eb87329d5",
+      "/matches/1e74662b-af45-4ef1-b267-156eb87329d5",
+    ],
+    ["@evil.example", "/"],
+    ["//evil.example", "/"],
+    ["/\\evil.example", "/"],
+    ["https://evil.example/", "/"],
+    ["javascript:alert(1)", "/"],
+    ["/auth/callback?code=x", "/"],
+    ["/pricing?from=hero#plans", "/pricing?from=hero#plans"],
+    ["/auth/login", "/"],
+    ["//[", "/"],
+  ])("validates next=%s as %s", async (next, expected) => {
+    supabaseMocks.exchangeCodeForSession.mockResolvedValue({
+      data: { user: { created_at: "2026-07-07T23:58:00.000Z" } },
+      error: null,
+    });
+    const url = new URL("https://tryline.test/auth/callback?code=abc");
+    if (next !== undefined) url.searchParams.set("next", next);
+    const { GET } = await import("@/app/auth/callback/route");
+    expect((await GET(new Request(url))).headers.get("location")).toBe(
+      `https://tryline.test${expected}`,
+    );
+  });
+
+  it("keeps checkout resume when marking a new signup", async () => {
+    supabaseMocks.exchangeCodeForSession.mockResolvedValue({
+      data: { user: { created_at: "2026-07-07T23:59:30.000Z" } },
+      error: null,
+    });
+    const { GET } = await import("@/app/auth/callback/route");
+    const response = await GET(
+      new Request(
+        "https://tryline.test/auth/callback?code=abc&next=%2Fpricing%3Fresume%3Dcheckout",
+      ),
+    );
+    expect(response.headers.get("location")).toBe(
+      "https://tryline.test/pricing?resume=checkout&signup=success",
     );
   });
 });
