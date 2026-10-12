@@ -15,6 +15,7 @@ const serverEnvSchema = publicEnvSchema.extend({
   DISCORD_BOT_TOKEN: z.string().min(1).optional(),
   DISCORD_X_REMINDER_CHANNEL_ID: z.string().min(1).optional(),
   OPENAI_API_KEY: z.string(),
+  OPS_OWNER_USER_IDS: z.string().min(1).optional(),
   RESEND_API_KEY: z.string().min(1).optional(),
   REVENUECAT_SECRET_API_KEY: z.string().optional(),
   REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
