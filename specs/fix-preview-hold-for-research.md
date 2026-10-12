@@ -37,9 +37,15 @@ Owner 決定（2026-10-12）: 「手動で事実を入れるまでは生成し�
 
 対象外:
 - レビュー（すでに 20:30 の締切を待っている。`recapCandidateUpperBound`）
-- 英語のプレビュー
 - `previewDueUpperBound` そのもの（`app/api/cron/audit-prekickoff-readiness/route.ts`・`app/api/cron/matches-with-late-lineups/route.ts` も使っているので変えない）
 - プレビュー通知の時刻（キックオフ前の最後の 22:30。`lib/push/notifications.ts` の `previewNotificationSlot`）
+
+### 英語のプレビュー（リーグワンだけ。2026-10-12 確定）
+
+`lib/cron/orchestrate.ts`（435 行あたり）は、リーグワンの試合だけ、日本語プレビューの直後に英語版を作っている（`generateLeagueOneEnglishContent`）。**英語版も日本語版と一緒に待つ**（日本語版を待たせた試合は、英語版も作らない）。
+
+- 理由: 英語版は日本語版と同じ流れで作っており、片方だけ従来の時刻にするには流れを分ける必要がある。事実が入ってから作るほうが英語版の中身も良くなる。リーグワンは 12〜5 月の開催で、今（10 月）は影響が無い。
+- 貼ったときに `"generate"`（初めて作る）になった試合がリーグワンなら、日本語版の後に英語版も作る（定期実行と同じ順）。`isLeagueOneMatch`（`orchestrate.ts:118`、今は非公開）を共通の場所に移して使う。`"regenerate"`（作り直し）では英語版を作らない（今の Discord の作り直しと同じ）。
 
 ## データモデル変更
 

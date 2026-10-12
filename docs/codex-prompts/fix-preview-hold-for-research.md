@@ -16,7 +16,7 @@
 
 ## 守ること
 - `previewDueUpperBound` と `previewCandidateUpperBound` の中身は変えない（他の cron も使っている）。
-- レビュー・英語のプレビュー・通知の時刻は変えない。
+- レビューと通知の時刻は変えない。リーグワンの英語プレビューは、日本語版と一緒に待たせる（仕様書の「英語のプレビュー」。2026-10-12 確定）。貼ったときの `"generate"` では、リーグワンなら英語版も作る。
 - 既存のテスト（`tests/cron/preview-window.test.ts`・`tests/cron/content-windows.test.ts`・`tests/cron/orchestrate.test.ts`）のアサーションを弱めない。
 - 本番 DB には触らない。テストでは時刻を `vi.setSystemTime` で固定する。
 
