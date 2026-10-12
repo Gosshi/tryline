@@ -3,10 +3,6 @@ import { createPublicKey, verify } from "node:crypto";
 
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { parseResearchPaste } from "@/lib/discord/research-paste";
-import {
-  OWNER_VERIFIABLE_SOURCE_URL_STATUSES,
-  validateSourceUrl,
-} from "@/lib/discord/source-url";
 import { getServerEnv } from "@/lib/env";
 import { generateMatchContent } from "@/lib/llm/pipeline";
 import {
@@ -14,6 +10,7 @@ import {
   MAX_MANUAL_FACTS_FOR_GENERATION,
   selectSourcedFactsForGeneration,
 } from "@/lib/llm/sourced-facts/fetch";
+import { decideManualFactRegeneration, saveManualResearchFacts } from "@/lib/sourced-facts/manual-entry";
 
 import type { ContentType } from "@/lib/llm/types";
 
@@ -446,151 +443,14 @@ async function processResearchFactEntry(
     return `保存できる事実がありませんでした。読み取れる事実がありません。${skippedSummary}`;
   }
 
-  const validatedSources = new Map<
-    string,
-    Awaited<ReturnType<typeof validateSourceUrl>>
-  >();
-  for (const source of sourceBlocks) {
-    if (!validatedSources.has(source.sourceUrl)) {
-      validatedSources.set(
-        source.sourceUrl,
-        await validateSourceUrl(source.sourceUrl),
-      );
-    }
+  const saved = await saveManualResearchFacts({ matchId: submission.matchId, paste: submission.paste, entryPath: "discord_research_paste" });
+  if (saved.matchMissing) return "対象の試合が見つかりません。";
+  const { contentType, savedCount, rejectedSources, ownerVerifiedSources } = saved;
+  if (!contentType) {
+    return (["保存できる事実がありませんでした。", ...rejectedSources.map(({ sourceUrl, reason }) => `保存しなかった出典: ${sourceUrl}（${reason}）`)].join("\n") + skippedSummary);
   }
-
-  const rejectedSources: Array<{ sourceUrl: string; reason: string }> = [];
-  const ownerVerifiedSources: Array<{
-    sourceDomain: string;
-    sourceUrl: string;
-    status: number;
-  }> = [];
-  const rows: Array<{
-    confidence: "high";
-    fact: string;
-    fact_ja: string;
-    match_id: string;
-    metadata: {
-      entry_method: "manual";
-      entry_path: "discord_research_paste";
-      paste_index: number;
-      source_url_check?: "owner_verified";
-      source_url_http_status?: number;
-    };
-    model_version: "manual";
-    source_domain: string;
-    source_url: string;
-  }> = [];
-  const acceptedSourceUrls = new Set<string>();
-  for (const source of sourceBlocks) {
-    const validation = validatedSources.get(source.sourceUrl);
-    if (!validation) continue;
-    const ownerVerifiedStatus =
-      !validation.ok &&
-      validation.status !== null &&
-      OWNER_VERIFIABLE_SOURCE_URL_STATUSES.has(validation.status)
-        ? validation.status
-        : null;
-    if (!validation.ok && ownerVerifiedStatus === null) {
-      if (
-        !rejectedSources.some(
-          (rejected) => rejected.sourceUrl === source.sourceUrl,
-        )
-      ) {
-        rejectedSources.push({
-          sourceUrl: source.sourceUrl,
-          reason: validation.reason,
-        });
-      }
-      continue;
-    }
-
-    acceptedSourceUrls.add(source.sourceUrl);
-    const sourceDomain = validation.ok
-      ? validation.sourceDomain
-      : new URL(source.sourceUrl).hostname;
-    if (
-      ownerVerifiedStatus !== null &&
-      !ownerVerifiedSources.some(
-        (verified) => verified.sourceUrl === source.sourceUrl,
-      )
-    ) {
-      ownerVerifiedSources.push({
-        sourceDomain,
-        sourceUrl: source.sourceUrl,
-        status: ownerVerifiedStatus,
-      });
-    }
-    for (const { fact } of source.facts) {
-      rows.push({
-        confidence: "high",
-        fact,
-        fact_ja: fact,
-        match_id: submission.matchId,
-        metadata: {
-          entry_method: "manual",
-          entry_path: "discord_research_paste",
-          paste_index: rows.length,
-          ...(ownerVerifiedStatus === null
-            ? {}
-            : {
-                source_url_check: "owner_verified",
-                source_url_http_status: ownerVerifiedStatus,
-              }),
-        },
-        model_version: "manual",
-        source_domain: sourceDomain,
-        source_url: source.sourceUrl,
-      });
-    }
-  }
-
-  if (rows.length === 0) {
-    return (
-      [
-        "保存できる事実がありませんでした。",
-        ...rejectedSources.map(
-          ({ sourceUrl, reason }) =>
-            `保存しなかった出典: ${sourceUrl}（${reason}）`,
-        ),
-      ].join("\n") + skippedSummary
-    );
-  }
-
-  const db = getSupabaseServerClient();
-  const { data: match, error: matchError } = await db
-    .from("matches")
-    .select("kickoff_at")
-    .eq("id", submission.matchId)
-    .maybeSingle();
-  if (matchError) {
-    throw matchError;
-  }
-  if (!match) {
-    return "対象の試合が見つかりません。";
-  }
-
-  const contentType: ContentType =
-    new Date(match.kickoff_at).getTime() > Date.now() ? "preview" : "recap";
-  const finalRows = rows.map((row) => ({ ...row, content_type: contentType }));
-  let savedRows: Array<{ fact: string }> = [];
-  if (finalRows.length > 0) {
-    const { data, error: upsertError } = await db
-      .from("match_sourced_facts")
-      .upsert(finalRows, {
-        ignoreDuplicates: true,
-        onConflict: "match_id,content_type,fact",
-      })
-      .select("fact");
-    if (upsertError) {
-      throw upsertError;
-    }
-    savedRows = data ?? [];
-  }
-
-  const savedCount = savedRows.length;
   const prefixLines = [
-    `保存: ${savedCount}件（出典 ${acceptedSourceUrls.size} 本）、重複スキップ: ${finalRows.length - savedCount}件`,
+    `保存: ${savedCount}件（出典 ${saved.acceptedSourceCount} 本）、重複スキップ: ${saved.duplicateCount}件`,
     ...ownerVerifiedSources.map(
       ({ sourceDomain, status }) =>
         `目視確認済みとして保存: ${sourceDomain}（HTTP ${status}）`,
@@ -600,7 +460,7 @@ async function processResearchFactEntry(
         `保存しなかった出典: ${sourceUrl}（${reason}）`,
     ),
   ];
-  if (savedCount === 0 && finalRows.length === 0) {
+  if (savedCount === 0 && saved.submittedCount === 0) {
     prefixLines.unshift("保存できる事実がありませんでした。");
   }
   const prefix = `${prefixLines.join("\n")}${skippedSummary}`;
@@ -611,18 +471,7 @@ async function processResearchFactEntry(
   ) {
     const contentLabel = contentType === "preview" ? "プレビュー" : "レビュー";
     try {
-      const { data: existingContent, error: contentError } = await db
-        .from("match_content")
-        .select("status")
-        .eq("match_id", submission.matchId)
-        .eq("content_type", contentType)
-        .eq("language", "ja")
-        .in("status", ["published", "draft"])
-        .maybeSingle();
-      if (contentError) {
-        throw contentError;
-      }
-      if (existingContent) {
+      if (await decideManualFactRegeneration({ matchId: submission.matchId, contentType }) === "regenerate") {
         try {
           await onRegenerationStart?.(contentType);
         } catch (error) {
@@ -664,7 +513,7 @@ async function processResearchFactEntry(
   const finalPrefix = regenerationNotice
     ? `${prefix}\n${regenerationNotice}`
     : prefix;
-  if (finalRows.length === 0) {
+  if (saved.submittedCount === 0) {
     return finalPrefix;
   }
   try {
