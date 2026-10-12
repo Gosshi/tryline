@@ -11,6 +11,7 @@
 - `lib/cron/orchestrate.ts` のプレビュー候補から、待つ条件に当たる試合を外す。手動の事実の有無は、候補の ID の一覧で `match_sourced_facts` を1回だけ引く。外した件数をログに出す。
 - `decideManualFactRegeneration` に `"generate"`（既存なし・D030 の時刻を過ぎている・`scheduled`・キックオフが未来）を足す。Discord と `/ops/facts` の結果の文言を、`"generate"` のときは「作りました」にする。
 - 受け入れ条件1〜4のテストを書く。
+- **ついでの修正（#935 の積み残し）:** `app/ops/facts/page.tsx` の `metadata.title` を `"Tryline"` にする。今は持ち主でない人が開いて 404 になっても、タブ名に「調査事実の一括入力」が出る（2026-10-12 本番で確認）。`robots` の noindex は残す。テストを1つ足す（`metadata.title` が `"Tryline"`）。
 
 ## 守ること
 - `previewDueUpperBound` と `previewCandidateUpperBound` の中身は変えない（他の cron も使っている）。
