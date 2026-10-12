@@ -13,6 +13,11 @@ if ! git cat-file -e "${previous_sha}^{commit}" 2>/dev/null; then
   exit 1
 fi
 
+if [ "$previous_sha" = "$(git rev-parse HEAD 2>/dev/null)" ]; then
+  printf '%s\n' "build: redeploying the same commit $previous_sha"
+  exit 1
+fi
+
 # Compare every commit since the last successful deployment, not only HEAD^.
 if git diff --quiet "$previous_sha" HEAD -- . ':(exclude)docs' ':(exclude)specs'; then
   printf '%s\n' "skip: only docs/ and specs/ changed since $previous_sha"

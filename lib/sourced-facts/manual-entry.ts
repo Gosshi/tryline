@@ -1,3 +1,5 @@
+import { previewCandidateUpperBound } from "@/lib/cron/content-windows";
+import { isLeagueOneMatch } from "@/lib/cron/league-one";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import {
   OWNER_VERIFIABLE_SOURCE_URL_STATUSES,
@@ -14,6 +16,7 @@ export type ManualFactSaveResult = {
   acceptedSourceCount: number;
   contentType: ContentType | null;
   matchMissing: boolean;
+  isLeagueOne: boolean;
   rejectedSources: Array<{ sourceUrl: string; reason: string }>;
   ownerVerifiedSources: Array<{
     sourceDomain: string;
@@ -34,6 +37,7 @@ export async function saveManualResearchFacts(input: {
     acceptedSourceCount: 0,
     contentType: null,
     matchMissing: false,
+    isLeagueOne: false,
     rejectedSources: [],
     ownerVerifiedSources: [],
   };
@@ -156,7 +160,7 @@ export async function saveManualResearchFacts(input: {
   const db = getSupabaseServerClient();
   const { data: match, error: matchError } = await db
     .from("matches")
-    .select("kickoff_at")
+    .select("kickoff_at, competition:competitions!matches_competition_id_fkey (family)")
     .eq("id", input.matchId)
     .maybeSingle();
   if (matchError) {
@@ -197,6 +201,7 @@ export async function saveManualResearchFacts(input: {
     acceptedSourceCount: acceptedSourceUrls.size,
     contentType,
     matchMissing: false,
+    isLeagueOne: isLeagueOneMatch(match.competition),
     rejectedSources,
     ownerVerifiedSources,
   };
@@ -206,7 +211,8 @@ export async function decideManualFactRegeneration(input: {
   matchId: string;
   contentType: ContentType;
 }): Promise<"regenerate" | "generate" | "none"> {
-  const { data, error } = await getSupabaseServerClient()
+  const db = getSupabaseServerClient();
+  const { data, error } = await db
     .from("match_content")
     .select("status")
     .eq("match_id", input.matchId)
@@ -215,5 +221,23 @@ export async function decideManualFactRegeneration(input: {
     .in("status", ["published", "draft"])
     .maybeSingle();
   if (error) throw error;
-  return data ? "regenerate" : "none";
+  if (data) return "regenerate";
+  if (input.contentType !== "preview") return "none";
+
+  const { data: match, error: matchError } = await db
+    .from("matches")
+    .select("status, kickoff_at")
+    .eq("id", input.matchId)
+    .maybeSingle();
+  if (matchError) throw matchError;
+  const now = new Date();
+  const kickoffAt = match ? new Date(match.kickoff_at).getTime() : NaN;
+  if (
+    match?.status === "scheduled" &&
+    kickoffAt > now.getTime() &&
+    kickoffAt < Date.parse(previewCandidateUpperBound(now))
+  ) {
+    return "generate";
+  }
+  return "none";
 }

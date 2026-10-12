@@ -423,7 +423,7 @@ async function openResearchFactEntryModal(interaction: DiscordInteraction) {
 
 async function processResearchFactEntry(
   interaction: DiscordInteraction,
-  onRegenerationStart?: (contentType: ContentType) => Promise<void>,
+  onRegenerationStart?: (contentType: ContentType, action: "generate" | "regenerate") => Promise<void>,
 ) {
   const submission = parseResearchModalSubmission(interaction);
   if (!submission) {
@@ -471,9 +471,10 @@ async function processResearchFactEntry(
   ) {
     const contentLabel = contentType === "preview" ? "プレビュー" : "レビュー";
     try {
-      if (await decideManualFactRegeneration({ matchId: submission.matchId, contentType }) === "regenerate") {
+      const action = await decideManualFactRegeneration({ matchId: submission.matchId, contentType });
+      if (action !== "none") {
         try {
-          await onRegenerationStart?.(contentType);
+          await onRegenerationStart?.(contentType, action);
         } catch (error) {
           console.error(
             "[discord] Failed to announce manual-fact content regeneration.",
@@ -487,9 +488,11 @@ async function processResearchFactEntry(
             "ja",
           );
           if (result.status === "published") {
-            regenerationNotice = `${contentLabel}を作り直しました（公開）`;
+            regenerationNotice = `${contentLabel}を${action === "generate" ? "作りました" : "作り直しました"}（公開）`;
           } else if (result.status === "draft") {
-            regenerationNotice = `${contentLabel}を作り直しましたが、QA で不合格のため公開中の版を残しました`;
+            regenerationNotice = action === "generate"
+              ? `${contentLabel}を作りましたが、QA で不合格のため下書きにしました`
+              : `${contentLabel}を作り直しましたが、QA で不合格のため公開中の版を残しました`;
           } else {
             const reason =
               result.skipReason === "events_unavailable"
@@ -497,12 +500,19 @@ async function processResearchFactEntry(
                 : result.skipReason === "score_mismatch"
                   ? "得点イベントとスコアが一致しません"
                   : "生成処理でスキップされました";
-            regenerationNotice = `作り直しを見送りました: ${reason}`;
+            regenerationNotice = `${action === "generate" ? "生成" : "作り直し"}を見送りました: ${reason}`;
+          }
+          if (action === "generate" && saved.isLeagueOne && result.status !== "skipped") {
+            try {
+              await generateMatchContent(submission.matchId, contentType, "en");
+            } catch (error) {
+              console.error("[discord] League One English generation failed", error);
+            }
           }
         } catch (error) {
           const reason =
             error instanceof Error ? error.message : "不明なエラー";
-          regenerationNotice = `${contentLabel}の作り直しに失敗しました: ${reason}`;
+          regenerationNotice = `${contentLabel}の${action === "generate" ? "生成" : "作り直し"}に失敗しました: ${reason}`;
         }
       }
     } catch (error) {
@@ -576,12 +586,12 @@ function deferResearchFactEntry(interaction: DiscordInteraction) {
     try {
       content = await processResearchFactEntry(
         interaction,
-        async (contentType) => {
+        async (contentType, action) => {
           const contentLabel =
             contentType === "preview" ? "プレビュー" : "レビュー";
           await editDeferredInteractionResponse({
             applicationId,
-            content: `保存しました。${contentLabel}を作り直しています…`,
+            content: `保存しました。${contentLabel}を${action === "generate" ? "作っています" : "作り直しています"}…`,
             token,
           });
         },

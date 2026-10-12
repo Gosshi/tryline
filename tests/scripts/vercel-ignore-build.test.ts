@@ -104,6 +104,12 @@ describe("vercel-ignore-build", () => {
     expect(result.stdout).toBe("build: VERCEL_GIT_PREVIOUS_SHA is empty\n");
   });
 
+  it("builds when redeploying the same commit", () => {
+    const result = runIgnore(previousSha);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe(`build: redeploying the same commit ${previousSha}\n`);
+  });
+
   it("builds when the previous deployment SHA is missing from local history", () => {
     const result = runIgnore("0123456789012345678901234567890123456789");
 

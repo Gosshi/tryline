@@ -147,6 +147,7 @@ describe("ops page", () => {
   );
   it("renders for a listed owner and is excluded from indexing", async () => {
     expect(await OpsFactsPage()).toBeTruthy();
+    expect(metadata.title).toBe("Tryline");
     expect(metadata.robots).toEqual({ index: false, follow: false });
     expect(robots().rules).toMatchObject({ disallow: "/ops" });
   });
@@ -208,6 +209,20 @@ it("regenerates eligible Japanese content once", async () => {
     "ja",
   );
   expect(maxDuration).toBe(300);
+});
+
+it("creates the first preview and its League One English version", async () => {
+  mocks.decide.mockResolvedValue("generate");
+  mocks.maybeSingle.mockResolvedValue({
+    data: { kickoff_at: "2999-01-01T00:00:00Z", competition: { family: "league-one" } },
+    error: null,
+  });
+  const body = await (await regenerate(request({ matchId: ids[0] }))).json();
+  expect(body).toEqual({ status: "published", message: "プレビューを作りました（公開）" });
+  expect(mocks.generate.mock.calls).toEqual([
+    [ids[0], "preview", "ja"],
+    [ids[0], "preview", "en"],
+  ]);
 });
 
 it("excludes missing matches and blocks without facts from saving", async () => {
