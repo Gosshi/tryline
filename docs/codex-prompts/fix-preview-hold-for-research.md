@@ -12,6 +12,7 @@
 - `decideManualFactRegeneration` に `"generate"`（既存なし・D030 の時刻を過ぎている・`scheduled`・キックオフが未来）を足す。Discord と `/ops/facts` の結果の文言を、`"generate"` のときは「作りました」にする。
 - 受け入れ条件1〜4のテストを書く。
 - **ついでの修正（#935 の積み残し）:** `app/ops/facts/page.tsx` の `metadata.title` を `"Tryline"` にする。今は持ち主でない人が開いて 404 になっても、タブ名に「調査事実の一括入力」が出る（2026-10-12 本番で確認）。`robots` の noindex は残す。テストを1つ足す（`metadata.title` が `"Tryline"`）。
+- **ついでの修正（2）:** `scripts/vercel-ignore-build.sh` で、`VERCEL_GIT_PREVIOUS_SHA` が今のコミット（`git rev-parse HEAD`）と同じときは `exit 1`（ビルドする）にする。今は Vercel の「Redeploy」で同じコミットを作り直すと「docs だけの変更」と判定されて必ず取り消され、環境変数を足しても反映できない（2026-10-12 本番で `OPS_OWNER_USER_IDS` が反映できなかった）。他の判定は変えない。PR 本文に、同じコミットを渡したときに `build:` と出て `exit 1` になる実行例を貼る。
 
 ## 守ること
 - `previewDueUpperBound` と `previewCandidateUpperBound` の中身は変えない（他の cron も使っている）。
