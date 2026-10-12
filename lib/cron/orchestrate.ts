@@ -5,6 +5,8 @@ import {
   recapCandidateUpperBound,
   RECAP_MAX_AGE_DAYS,
 } from "./content-windows";
+import { isLeagueOneMatch } from "./league-one";
+import { isPreviewHeldForResearch } from "./preview-research-hold";
 
 import type { Database } from "@/lib/db/types";
 import type { ContentLanguage, ContentType } from "@/lib/llm/types";
@@ -29,6 +31,7 @@ type Relation<T> = T | T[] | null;
 
 type MatchCandidate = {
   id: string;
+  kickoff_at: string;
   competition: Relation<{ family: string | null }>;
 };
 
@@ -115,10 +118,6 @@ function firstRelation<T>(relation: Relation<T>): T | null {
   return relation;
 }
 
-function isLeagueOneMatch(match: MatchCandidate): boolean {
-  return firstRelation(match.competition)?.family === "league-one";
-}
-
 async function getMatchIdsMissingContent(params: {
   db: SupabaseClient<Database>;
   status: "scheduled" | "finished";
@@ -130,7 +129,7 @@ async function getMatchIdsMissingContent(params: {
 }): Promise<{ eligibleMatches: MatchCandidate[]; skippedCount: number }> {
   let matchQuery = params.db
     .from("matches")
-    .select("id, competition:competitions!matches_competition_id_fkey (family)")
+    .select("id, kickoff_at, competition:competitions!matches_competition_id_fkey (family)")
     .eq("status", params.status);
 
   if (params.kickoffGte) {
@@ -204,7 +203,7 @@ async function generateLeagueOneEnglishContent(
   match: MatchCandidate,
   contentType: ContentType,
 ) {
-  if (!isLeagueOneMatch(match)) {
+  if (!isLeagueOneMatch(match.competition)) {
     return;
   }
 
@@ -329,6 +328,32 @@ export async function runOrchestrate(
     orderByKickoff: "asc",
   });
 
+  const previewIds = previewCandidates.eligibleMatches.map((match) => match.id);
+  const { data: manualPreviewFacts, error: manualFactsError } =
+    previewIds.length === 0
+      ? { data: [], error: null }
+      : await deps.db
+          .from("match_sourced_facts")
+          .select("match_id")
+          .eq("content_type", "preview")
+          .eq("model_version", "manual")
+          .in("match_id", previewIds);
+  if (manualFactsError) throw manualFactsError;
+  const manualFactIds = new Set(manualPreviewFacts.map((row) => row.match_id));
+  const readyPreviews = previewCandidates.eligibleMatches.filter(
+    (match) =>
+      !isPreviewHeldForResearch({
+        kickoffAt: new Date(match.kickoff_at),
+        now,
+        hasManualPreviewFacts: manualFactIds.has(match.id),
+      }),
+  );
+  const heldPreviewCount =
+    previewCandidates.eligibleMatches.length - readyPreviews.length;
+  console.info(
+    `[orchestrate] held ${heldPreviewCount} preview(s) for manual research`,
+  );
+
   const recapCandidates = await getMatchIdsMissingContent({
     db: deps.db,
     status: "finished",
@@ -371,7 +396,7 @@ export async function runOrchestrate(
   const result: OrchestrateResult = {
     previews: {
       triggered: 0,
-      skipped: previewCandidates.skippedCount,
+      skipped: previewCandidates.skippedCount + heldPreviewCount,
     },
     lineups: {
       triggered: 0,
@@ -392,7 +417,7 @@ export async function runOrchestrate(
   const timeBudgetSkipped = await processWithConcurrency({
     canStart: canStartGeneration,
     entries: [
-      ...previewCandidates.eligibleMatches.map((match) => ({
+      ...readyPreviews.map((match) => ({
         contentType: "preview" as const,
         match,
       })),

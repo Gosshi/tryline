@@ -4,7 +4,7 @@ import { requireOpsOwner } from "@/lib/auth/ops";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "調査事実の一括入力",
+  title: "Tryline",
   robots: { index: false, follow: false },
 };
 export default async function OpsFactsPage() {

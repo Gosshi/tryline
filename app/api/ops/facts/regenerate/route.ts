@@ -1,4 +1,5 @@
 import { authorizeOpsRequest } from "@/lib/auth/ops";
+import { isLeagueOneMatch } from "@/lib/cron/league-one";
 import { getSupabaseServerClient } from "@/lib/db/server";
 import { isUuid } from "@/lib/ids";
 import { generateMatchContent } from "@/lib/llm/pipeline";
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     );
   const { data: match, error } = await getSupabaseServerClient()
     .from("matches")
-    .select("kickoff_at")
+    .select("kickoff_at, competition:competitions!matches_competition_id_fkey (family)")
     .eq("id", input.matchId)
     .maybeSingle();
   if (error) throw error;
@@ -29,12 +30,11 @@ export async function POST(request: Request) {
     });
   const contentType: ContentType =
     new Date(match.kickoff_at).getTime() > Date.now() ? "preview" : "recap";
-  if (
-    (await decideManualFactRegeneration({
-      matchId: input.matchId,
-      contentType,
-    })) === "none"
-  )
+  const action = await decideManualFactRegeneration({
+    matchId: input.matchId,
+    contentType,
+  });
+  if (action === "none")
     return Response.json({
       status: "none",
       message: "作り直しの対象ではありません。",
@@ -42,15 +42,28 @@ export async function POST(request: Request) {
   const contentLabel = contentType === "preview" ? "プレビュー" : "レビュー";
   try {
     const result = await generateMatchContent(input.matchId, contentType, "ja");
+    if (
+      action === "generate" &&
+      isLeagueOneMatch(match.competition) &&
+      result.status !== "skipped"
+    ) {
+      try {
+        await generateMatchContent(input.matchId, contentType, "en");
+      } catch (englishError) {
+        console.error("[ops facts] League One English generation failed", englishError);
+      }
+    }
     if (result.status === "published")
       return Response.json({
         status: "published",
-        message: `${contentLabel}を作り直しました（公開）`,
+        message: `${contentLabel}を${action === "generate" ? "作りました" : "作り直しました"}（公開）`,
       });
     if (result.status === "draft")
       return Response.json({
         status: "draft",
-        message: `${contentLabel}を作り直しましたが、QA で不合格のため公開中の版を残しました`,
+        message: action === "generate"
+          ? `${contentLabel}を作りましたが、QA で不合格のため下書きにしました`
+          : `${contentLabel}を作り直しましたが、QA で不合格のため公開中の版を残しました`,
       });
     const reason =
       result.skipReason === "events_unavailable"
@@ -60,13 +73,13 @@ export async function POST(request: Request) {
           : "生成処理でスキップされました";
     return Response.json({
       status: "skipped",
-      message: `作り直しを見送りました: ${reason}`,
+      message: `${action === "generate" ? "生成" : "作り直し"}を見送りました: ${reason}`,
     });
   } catch (error) {
     const reason = error instanceof Error ? error.message : "不明なエラー";
     return Response.json({
       status: "failed",
-      message: `${contentLabel}の作り直しに失敗しました: ${reason}`,
+      message: `${contentLabel}の${action === "generate" ? "生成" : "作り直し"}に失敗しました: ${reason}`,
     });
   }
 }

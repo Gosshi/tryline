@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   from: vi.fn(),
@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   content: vi.fn(),
   eq: vi.fn(),
   statuses: vi.fn(),
+  match: vi.fn(),
 }));
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: () => ({ from: mocks.from }),
@@ -32,6 +33,7 @@ beforeEach(() => {
   mocks.eq.mockReturnValue(contentBuilder);
   mocks.statuses.mockReturnValue(contentBuilder);
   mocks.content.mockResolvedValue({ data: null, error: null });
+  mocks.match.mockResolvedValue({ data: { kickoff_at: "2999-01-01T00:00:00Z" }, error: null });
   mocks.from.mockImplementation((table) =>
     table === "match_content"
       ? contentBuilder
@@ -39,10 +41,7 @@ beforeEach(() => {
         ? {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
-            maybeSingle: vi.fn(async () => ({
-              data: { kickoff_at: "2999-01-01T00:00:00Z" },
-              error: null,
-            })),
+            maybeSingle: mocks.match,
           }
         : { upsert: mocks.upsert },
   );
@@ -53,6 +52,7 @@ beforeEach(() => {
     })),
   }));
 });
+afterEach(() => vi.useRealTimers());
 describe("manual entry", () => {
   it.each([null, { status: "published" }, { status: "draft" }])(
     "only regenerates existing Japanese content: %j",
@@ -71,6 +71,21 @@ describe("manual entry", () => {
       ]);
     },
   );
+  it.each([
+    ["2026-10-17T04:00:00.000Z", "2026-10-16T12:00:00.000Z", "generate"],
+    ["2026-10-17T04:00:00.000Z", "2026-10-16T05:00:00.000Z", "none"],
+  ] as const)("decides first preview generation at the D030 boundary: %s", async (kickoff, current, expected) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(current));
+    mocks.match.mockResolvedValue({ data: { status: "scheduled", kickoff_at: kickoff }, error: null });
+    expect(await decideManualFactRegeneration({ matchId: "match-id", contentType: "preview" })).toBe(expected);
+  });
+  it("does not generate a missing recap", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-16T12:00:00.000Z"));
+    expect(await decideManualFactRegeneration({ matchId: "match-id", contentType: "recap" })).toBe("none");
+    expect(mocks.match).not.toHaveBeenCalled();
+  });
   it("caps ops URL validation at four and preserves paste order and metadata", async () => {
     const pending: Array<() => void> = [];
     let active = 0;

@@ -14,6 +14,8 @@ type DbFixture = {
   finishedKickoffAt?: Record<string, string>;
   existingPreviewIds?: string[];
   existingRecapIds?: string[];
+  manualPreviewFactIds?: string[];
+  onManualFactLookup?: (matchIds: string[]) => void;
   scheduledKickoffAt?: Record<string, string>;
   matchDetails?: Record<
     string,
@@ -161,6 +163,7 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
               ? { family: fixture.competitionFamilies[id] }
               : null,
             id,
+            kickoff_at: fixture.scheduledKickoffAt?.[id] ?? fixture.finishedKickoffAt?.[id] ?? "2026-01-01T12:00:00.000Z",
           })),
           error: null,
         }),
@@ -239,6 +242,26 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
     },
   };
 
+  const manualFactsBuilder = {
+    state: { matchIds: [] as string[] },
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    in: vi.fn((column: string, value: string[]) => {
+      if (column === "match_id") {
+        manualFactsBuilder.state.matchIds = value;
+        fixture.onManualFactLookup?.(value);
+      }
+      return manualFactsBuilder;
+    }),
+    then: (resolve: (value: { data: { match_id: string }[]; error: null }) => unknown) =>
+      Promise.resolve(resolve({
+        data: (fixture.manualPreviewFactIds ?? [])
+          .filter((id) => manualFactsBuilder.state.matchIds.includes(id))
+          .map((match_id) => ({ match_id })),
+        error: null,
+      })),
+  };
+
   return {
     from: vi.fn((table: string) => {
       if (table === "matches") {
@@ -252,6 +275,7 @@ function createMockDb(fixture: DbFixture): SupabaseClient<Database> {
       if (table === "match_events") {
         return matchEventsBuilder;
       }
+      if (table === "match_sourced_facts") return manualFactsBuilder;
 
       throw new Error(`Unexpected table: ${table}`);
     }),
@@ -263,6 +287,43 @@ describe("runOrchestrate", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("holds only the researched match without manual facts and looks them up once", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-18T12:00:00.000Z")); // Sunday 21:00 JST
+    try {
+      const lookup = vi.fn();
+      const db = createMockDb({
+        scheduledIds: ["held", "researched", "unresearched"],
+        competitionFamilies: { held: "league-one", researched: "league-one" },
+        scheduledKickoffAt: {
+          held: "2026-10-19T02:00:00.000Z", // Monday 11:00 JST
+          researched: "2026-10-19T02:30:00.000Z", // Monday 11:30 JST
+          unresearched: "2026-10-19T03:00:00.000Z", // Monday 12:00 JST
+        },
+        manualPreviewFactIds: ["researched"],
+        onManualFactLookup: lookup,
+        finishedIds: [],
+      });
+      const generateContent = vi.fn().mockResolvedValue(undefined);
+      const result = await runOrchestrate({
+        db,
+        generateContent,
+        ingestLineups: vi.fn().mockResolvedValue("triggered"),
+        now: new Date(),
+      });
+      expect(generateContent).not.toHaveBeenCalledWith("held", "preview");
+      expect(generateContent).not.toHaveBeenCalledWith("held", "preview", "en");
+      expect(generateContent).toHaveBeenCalledWith("researched", "preview");
+      expect(generateContent).toHaveBeenCalledWith("researched", "preview", "en");
+      expect(generateContent).toHaveBeenCalledWith("unresearched", "preview");
+      expect(lookup).toHaveBeenCalledExactlyOnceWith(["held", "researched", "unresearched"]);
+      expect(db.from).toHaveBeenCalledWith("match_sourced_facts");
+      expect(result.previews).toEqual({ triggered: 2, skipped: 1 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("calls preview generation and lineup ingestion for T-48h matches", async () => {
@@ -327,6 +388,7 @@ describe("runOrchestrate", () => {
         "too-late": "2026-05-17T12:01:00.000Z",
         "too-soon": "2026-05-15T23:59:00.000Z",
       },
+      manualPreviewFactIds: ["srp-next-day", "too-soon"],
       finishedIds: [],
     });
     const generateContent = vi.fn().mockResolvedValue(undefined);
@@ -464,6 +526,7 @@ describe("runOrchestrate", () => {
         "target-day-last": "2026-09-12T14:59:59.999Z",
         "target-day-start": "2026-09-11T15:00:00.000Z",
       },
+      manualPreviewFactIds: ["target-day-start"],
       finishedIds: [],
     });
     const generateContent = vi.fn().mockResolvedValue(undefined);

@@ -472,6 +472,30 @@ describe("POST /api/discord/interactions", () => {
     expect(patchContents[1]).toContain("プレビューを作り直しました（公開）");
   });
 
+  it("creates a first League One preview in Japanese and English after manual facts arrive", async () => {
+    vi.setSystemTime(new Date("2026-08-28T12:00:00.000Z"));
+    const fetchMock = stubFetchWithStatuses();
+    supabaseMocks.matchMaybeSingle.mockResolvedValue({
+      data: {
+        kickoff_at: "2026-08-29T09:00:00.000Z",
+        status: "scheduled",
+        competition: { family: "league-one" },
+      },
+      error: null,
+    });
+    await POST(createRequest(researchSubmission("### 出典: https://example.com/story\n- 新事実")));
+    await runAfterCallbacks();
+    expect(pipelineMocks.generateMatchContent.mock.calls).toEqual([
+      [matchId, "preview", "ja"],
+      [matchId, "preview", "en"],
+    ]);
+    const patchContents = fetchMock.mock.calls
+      .filter(([, init]) => init?.method === "PATCH")
+      .map(([, init]) => JSON.parse(String(init?.body)).content as string);
+    expect(patchContents[0]).toBe("保存しました。プレビューを作っています…");
+    expect(patchContents[1]).toContain("プレビューを作りました（公開）");
+  });
+
   it("does not regenerate when the Japanese preview does not exist", async () => {
     stubFetchWithStatuses();
     supabaseMocks.sourcedFactsSelect.mockResolvedValue({
