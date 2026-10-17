@@ -4,7 +4,8 @@
 :root{--ink:#f7f3ea;--muted:rgba(247,243,234,.78);--accent:#d23a3a;--gold:#e9c46a}
 *{margin:0;box-sizing:border-box}
 html,body{width:1200px;height:675px;overflow:hidden;background:#111}
-.card{position:relative;width:1200px;height:675px;background:url(2026-10-17-bledisloe-preview-bg.jpg) 50% 60%/cover no-repeat;font-family:"Noto Sans JP",sans-serif;color:var(--ink)}
+.card{position:relative;width:1200px;height:675px;overflow:hidden;font-family:"Noto Sans JP",sans-serif;color:var(--ink)}
+.card::before{content:"";position:absolute;inset:0;background:url(2026-10-17-bledisloe-preview-bg.jpg) 50% 60%/cover no-repeat;filter:hue-rotate(-10deg) saturate(1.25)}
 .card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,16,0) 38%,rgba(10,12,16,.65) 55%,rgba(10,12,16,.92) 100%)}
 .body{position:absolute;left:64px;right:64px;bottom:52px;z-index:1}
 .eyebrow{font-family:"Outfit",sans-serif;font-weight:700;letter-spacing:.18em;font-size:18px;color:var(--gold)}
