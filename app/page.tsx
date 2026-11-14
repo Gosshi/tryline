@@ -23,6 +23,7 @@ import {
 } from "@/components/touchline-motion";
 import { TrackedLink } from "@/components/tracked-link";
 import { UserStateProvider } from "@/components/user-state-provider";
+import { isRetiredCompetitionFamily } from "@/lib/competitions/retired";
 import {
   listFamilies,
   listSeasonsByFamilies,
@@ -143,7 +144,7 @@ export default async function HomePage() {
   const homepageCompetitionLinks = sortHomepageCompetitionLinks(
     (
       await Promise.all(
-        families.map(async (family) => {
+        families.filter((family) => !isRetiredCompetitionFamily(family)).map(async (family) => {
           const latestSeason = selectLatestSeasonWithMatches(
             seasonsByFamily.get(family) ?? [],
           );

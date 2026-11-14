@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { runOrchestrate } from "@/lib/cron/orchestrate";
+import { getMatchIdsMissingContent, runOrchestrate } from "@/lib/cron/orchestrate";
 
 import type { Database } from "@/lib/db/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -1150,7 +1150,7 @@ describe("runOrchestrate", () => {
     ];
     const db = createMockDb({
       competitionFamilies: Object.fromEntries(
-        skippedIds.map((id) => [id, "top-14"]),
+        skippedIds.map((id) => [id, "premiership"]),
       ),
       scheduledIds: [],
       finishedIds,
@@ -1178,7 +1178,7 @@ describe("runOrchestrate", () => {
       batchSize: 10,
       excludedMatches: [],
       matches: skippedIds.map((matchId) => ({
-        competitionFamily: "top-14",
+        competitionFamily: "premiership",
         matchId,
         reason: "events_unavailable",
       })),
@@ -1296,4 +1296,14 @@ describe("runOrchestrate", () => {
 
     consoleErrorSpy.mockRestore();
   });
+});
+
+it("excludes retired candidates before querying existing content and counts them separately", async () => {
+  const db = createMockDb({ scheduledIds: ["top-1", "top-2", "urc"], finishedIds: [], competitionFamilies: { "top-1": "top-14", "top-2": "top-14", urc: "urc" } });
+  const result = await getMatchIdsMissingContent({ db, status: "scheduled", contentType: "preview" });
+  expect(result.eligibleMatches.map(m => m.id)).toEqual(["urc"]);
+  expect(result.retiredSkippedCount).toBe(2);
+  expect(result.skippedCount).toBe(0);
+  const query = db.from("match_content").select("match_id");
+  expect(query.in).toHaveBeenCalledWith("match_id", ["urc"]);
 });

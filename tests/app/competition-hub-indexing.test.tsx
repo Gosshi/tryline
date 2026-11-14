@@ -237,6 +237,13 @@ describe("competition hub indexing", () => {
     vi.clearAllMocks();
   });
 
+  it.each(["top-14", "urc"])("renders the retirement notice only for a retired hub: %s", async (family) => {
+    competitionMocks.listFamilies.mockResolvedValue([family]);
+    render(await CompetitionHubPage({ params: Promise.resolve({ competition: family }) }));
+    if (family === "top-14") expect(screen.getByText("トップ14の記事更新は2026年11月で終了しました。これまでの試合結果と記事は引き続きご覧いただけます。")).toBeInTheDocument();
+    else expect(screen.queryByText("トップ14の記事更新は2026年11月で終了しました。これまでの試合結果と記事は引き続きご覧いただけます。")).not.toBeInTheDocument();
+  });
+
   it("links the bare hub to the newest season with matches", async () => {
     const { container } = render(
       await CompetitionHubPage({

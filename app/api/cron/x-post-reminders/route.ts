@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isRetiredCompetitionFamily } from "@/lib/competitions/retired";
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { RECAP_MIN_AGE_HOURS } from "@/lib/cron/content-windows";
 import { getSupabaseServerClient } from "@/lib/db/server";
@@ -299,6 +300,7 @@ async function createTasks(
     const competition = firstRelation(match.competition);
     if (
       (match.status !== "scheduled" && match.status !== "finished") ||
+      isRetiredCompetitionFamily(competition?.family) ||
       !isInternationalCompetitionFamily(competition?.family ?? null)
     ) {
       return [];
@@ -433,7 +435,9 @@ async function loadPendingTasks(
     throw error;
   }
 
-  return (data ?? []) as unknown as ReminderTask[];
+  return ((data ?? []) as unknown as ReminderTask[]).filter((task) =>
+    !isRetiredCompetitionFamily(firstRelation(firstRelation(task.match)?.competition ?? null)?.family),
+  );
 }
 
 async function markExpiredTasks(

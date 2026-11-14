@@ -324,14 +324,14 @@ describe("/calendar page", () => {
   it("shows an incomplete competition only when it has no fixture in the selected week", async () => {
     competitionQueryMock.listCompetitionScheduleCoverage.mockResolvedValue([
       {
-        family: "top-14",
+        family: "league-one",
         ingestedRoundCount: 2,
         missingFixtures: null,
         missingRounds: 24,
-        name: "Top 14",
+        name: "League One",
         nameJa: null,
         season: "2026-27",
-        slug: "top-14-2026-27",
+        slug: "league-one-2026-27",
         totalRounds: 26,
       },
     ]);
@@ -340,7 +340,7 @@ describe("/calendar page", () => {
     render(await CalendarPage({}));
 
     expect(screen.getByLabelText("日程掲載状況")).toHaveTextContent(
-      "トップ14 2026-27",
+      "ジャパンラグビー リーグワン 2026-27",
     );
   });
 
@@ -348,25 +348,25 @@ describe("/calendar page", () => {
     matchQueryMock.getMatchesInRange.mockResolvedValue([
       createCalendarMatch({
         competition: {
-          family: "top-14",
-          id: "top-14-id",
-          name: "Top 14",
+          family: "league-one",
+          id: "league-one-id",
+          name: "League One",
           nameJa: null,
           season: "2026-27",
-          slug: "top-14-2026-27",
+          slug: "league-one-2026-27",
         },
       }),
     ]);
     competitionQueryMock.listCompetitionScheduleCoverage.mockResolvedValue([
       {
-        family: "top-14",
+        family: "league-one",
         ingestedRoundCount: 2,
         missingFixtures: null,
         missingRounds: 24,
-        name: "Top 14",
+        name: "League One",
         nameJa: null,
         season: "2026-27",
-        slug: "top-14-2026-27",
+        slug: "league-one-2026-27",
         totalRounds: 26,
       },
     ]);

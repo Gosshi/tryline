@@ -10,6 +10,7 @@ const dbMock = vi.hoisted(() => ({
   from: vi.fn(),
   matchRows: [] as unknown[],
   matchesBuilder: {
+    not: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     gte: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),

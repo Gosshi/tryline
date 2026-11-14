@@ -179,11 +179,9 @@ describe("generateMatchContent recap event guard", () => {
       columns === "id, content_md" ? recentContentQuery : existingContentQuery,
     );
     dbMock.upsert.mockResolvedValue({ error: null });
-    dbMock.from.mockReturnValue({
-      insert: dbMock.insert,
-      select: dbMock.select,
-      upsert: dbMock.upsert,
-    });
+    dbMock.from.mockImplementation((table) => table === "matches"
+      ? { select: () => ({ eq: () => ({ maybeSingle: dbMock.maybeSingle, single: async () => ({ data: { competition: { family: "urc" } }, error: null }) }) }) }
+      : { insert: dbMock.insert, select: dbMock.select, upsert: dbMock.upsert });
     assembleMock.assembleMatchContentInput.mockResolvedValue(
       assembledWithoutEvents,
     );

@@ -732,10 +732,10 @@ describe("HomePage", () => {
       const groups = Array.from({ length: count }, (_, index) => ({
         compact: [],
         competition: {
-          family: "top-14",
-          name: "Top 14",
+          family: "league-one",
+          name: "League One",
           season: "2026-27",
-          slug: `top-14-${index}`,
+          slug: `league-one-${index}`,
         },
         hero: {
           ...createCalendarMatch({
@@ -1194,6 +1194,17 @@ describe("HomePage", () => {
     ).toHaveAttribute("href", "/pricing");
   });
 
+  it("excludes retired families from homepage competition links", async () => {
+    competitionMocks.listFamilies.mockResolvedValue(["top-14", "urc"]);
+    competitionMocks.listSeasonsByFamily.mockImplementation(async (family: string) => [
+      { name: family, season: "2026-27", matchCount: 10 },
+    ]);
+    competitionMocks.selectLatestSeasonWithMatches.mockImplementation((seasons) => seasons[0] ?? null);
+    const { container } = render(await HomePage());
+    expect(container.querySelector('a[href^="/c/top-14"]')).not.toBeInTheDocument();
+    expect(container.querySelector('a[href^="/c/urc"]')).toBeInTheDocument();
+  });
+
   it("keeps all competition destinations, including reviews excluded from the three cards, and deduplicates the bottom list", async () => {
     competitionMocks.listFamilies.mockResolvedValue(["urc", "rwc"]);
     competitionMocks.listSeasonsByFamily.mockImplementation((family: string) =>
@@ -1212,7 +1223,7 @@ describe("HomePage", () => {
       { family: "urc", competitionSeason: "2025-26" },
       { family: "pnc", competitionSeason: "2026" },
     ]);
-    const groups = ["urc", "top-14", "premiership", "super-rugby-pacific"].map(
+    const groups = ["urc", "league-one", "premiership", "super-rugby-pacific"].map(
       (family, index) => ({
         compact: [],
         competition: {
@@ -1246,7 +1257,7 @@ describe("HomePage", () => {
         "/c/rwc/2023",
         "/c/rwc/2027",
         "/c/pnc/2026",
-        "/c/top-14/2025-26",
+        "/c/league-one/2025-26",
         "/c/premiership/2025-26",
         "/c/super-rugby-pacific/2025-26",
       ]),

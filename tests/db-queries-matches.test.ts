@@ -62,6 +62,7 @@ describe("getRoundFromExternalIds", () => {
 });
 
 const reviewQueryMock = {
+  not: vi.fn().mockReturnThis(),
   eq: vi.fn().mockReturnThis(),
   limit: vi.fn(),
   order: vi.fn().mockReturnThis(),
@@ -551,7 +552,7 @@ describe("recently reviewed match queries", () => {
       data: [
         ...latestRoundRows,
         buildReviewedContentRow({
-          family: "top-14",
+          family: "premiership",
           generatedAt: isoDaysAgo(1, 40),
           id: "top14-other-round",
           round: 1,
@@ -740,7 +741,7 @@ describe("recently reviewed match queries", () => {
       data: [
         buildReviewedContentRow({
           competitionId: "top14-id",
-          family: "top-14",
+          family: "premiership",
           generatedAt: isoDaysAgo(1),
           homeTeamId: "lower-home-id",
           awayTeamId: "lower-away-id",
@@ -750,7 +751,7 @@ describe("recently reviewed match queries", () => {
         }),
         buildReviewedContentRow({
           competitionId: "top14-id",
-          family: "top-14",
+          family: "premiership",
           generatedAt: isoDaysAgo(1, 10),
           homeTeamId: "top-home-id",
           awayTeamId: "top-away-id",

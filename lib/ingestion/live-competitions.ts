@@ -17,7 +17,6 @@ import {
   type ManualInternationalResultsResult,
 } from "@/lib/ingestion/manual-international-results";
 import { fetchLeagueOneSeason } from "@/lib/ingestion/sources/league-one-live";
-import { fetchTop14LnrLiveMatches } from "@/lib/ingestion/sources/top14-lnr-live";
 import { fetchAutumnNations2026 } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
 import { fetchBledisloeCup2026 } from "@/lib/ingestion/sources/wikipedia-bledisloe-cup";
 import { fetchGreatestRivalry2026 } from "@/lib/ingestion/sources/wikipedia-greatest-rivalry";
@@ -137,14 +136,6 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
     fetch: () => fetchUrc("2026-27"),
     season: "2026-27",
     sourceLabel: "wikipedia",
-  },
-  {
-    competitionName: "Top 14 2026-27",
-    competitionSlug: "top-14-2026-27",
-    family: "top-14",
-    fetch: fetchTop14LnrLiveMatches,
-    season: "2026-27",
-    sourceLabel: "lnr.fr",
   },
   {
     competitionName: "League One 2026-27",

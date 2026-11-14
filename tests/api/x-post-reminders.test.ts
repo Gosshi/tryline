@@ -223,6 +223,17 @@ beforeEach(() => {
 });
 
 describe("GET /api/cron/x-post-reminders", () => {
+  it("does not create or send reminders for retired matches including existing pending tasks", async () => {
+    const retired = makeMatch("retired", "top-14", "2026-09-26T18:00:00.000Z");
+    reminderMock.matches = [retired];
+    reminderMock.tasks = [makeTask("prematch", { match: retired, match_id: retired.id })];
+    const response = await runCron();
+    expect(response.status).toBe(200);
+    expect(reminderMock.upserts).toEqual([]);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(reminderMock.updates).toEqual([]);
+  });
+
   it("creates only representative tasks and upserts idempotently", async () => {
     reminderMock.matches = [
       makeMatch("international-match", "australia-south-africa-test", "2026-09-27T09:30:00.000Z"),

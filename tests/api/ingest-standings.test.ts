@@ -50,176 +50,34 @@ describe("/api/cron/ingest-standings", () => {
     expect(standingsMock.ingestWeeklyStandings).not.toHaveBeenCalled();
   });
 
-  it("ingests latest standings for the weekly cron", async () => {
-    standingsMock.ingestWeeklyStandings.mockResolvedValue({
-      failed: 0,
-      results: [
-        {
-          competitionSlug: "top-14-2025-26",
-          family: "top-14",
-          matched: 14,
-          parsed: 14,
-          season: "2025-26",
-          status: "updated",
-          upserted: 14,
-        },
-      ],
-      skipped: 0,
-      updated: 14,
-    });
-    calculationMock.calculateLatestTop14Standings.mockResolvedValue({
-      competitionSlug: "top-14-2025-26",
-      status: "updated",
-      upserted: 14,
-    });
-
+  it("only ingests weekly standings and omits the top14 result", async () => {
+    const weekly = { failed: 0, results: [], skipped: 0, updated: 4 };
+    standingsMock.ingestWeeklyStandings.mockResolvedValue(weekly);
     const { POST } = await import("@/app/api/cron/ingest-standings/route");
-
-    const response = await POST(
-      new Request("http://localhost/api/cron/ingest-standings", {
-        headers: {
-          authorization: "Bearer test-secret",
-        },
-        method: "POST",
-      }),
-    );
-    const body = await response.json();
-
+    const response = await POST(new Request("http://localhost/api/cron/ingest-standings", { method: "POST", headers: { authorization: "Bearer test-secret" } }));
     expect(response.status).toBe(200);
-    expect(body.status).toBe("ok");
-    expect(body.result.weekly.updated).toBe(14);
+    expect((await response.json()).result).toEqual({ weekly });
     expect(standingsMock.ingestWeeklyStandings).toHaveBeenCalledTimes(1);
-    expect(calculationMock.calculateLatestTop14Standings).toHaveBeenCalledTimes(
-      1,
-    );
+    expect(calculationMock.calculateLatestTop14Standings).not.toHaveBeenCalled();
+    expect(notificationMock.notifyStandingsIngestionIssue).not.toHaveBeenCalled();
   });
-
-  it("runs the Top 14 calculation even if Wikipedia ingestion fails", async () => {
-    standingsMock.ingestWeeklyStandings.mockRejectedValue(
-      new Error("wikipedia unavailable"),
-    );
-    calculationMock.calculateLatestTop14Standings.mockResolvedValue({
-      competitionSlug: "top-14-2025-26",
-      status: "updated",
-      upserted: 14,
-    });
-
+  it("returns 500 when weekly ingestion fails without invoking Top 14", async () => {
+    standingsMock.ingestWeeklyStandings.mockRejectedValue(new Error("wikipedia unavailable"));
     const { POST } = await import("@/app/api/cron/ingest-standings/route");
-    const response = await POST(
-      new Request("http://localhost/api/cron/ingest-standings", {
-        headers: { authorization: "Bearer test-secret" },
-        method: "POST",
-      }),
-    );
-
+    const response = await POST(new Request("http://localhost/api/cron/ingest-standings", { method: "POST", headers: { authorization: "Bearer test-secret" } }));
     expect(response.status).toBe(500);
-    expect(calculationMock.calculateLatestTop14Standings).toHaveBeenCalledTimes(
-      1,
-    );
-  });
-
-  it("returns 200 for pending Top 14 events without losing the weekly result", async () => {
-    standingsMock.ingestWeeklyStandings.mockResolvedValue({
-      failed: 0,
-      results: [],
-      skipped: 0,
-      updated: 0,
-    });
-    calculationMock.calculateLatestTop14Standings.mockResolvedValue({
-      competitionSlug: "top-14-2026-27",
-      status: "skipped",
-      reason: "events_pending",
-      pendingMatchIds: ["pending-match"],
-    });
-    const { POST } = await import("@/app/api/cron/ingest-standings/route");
-    const response = await POST(
-      new Request("http://localhost/api/cron/ingest-standings", {
-        method: "POST",
-        headers: { authorization: "Bearer test-secret" },
-      }),
-    );
-    expect(response.status).toBe(200);
-    expect((await response.json()).result.top14).toMatchObject({
-      status: "skipped",
-      pendingMatchIds: ["pending-match"],
-    });
-    expect(notificationMock.notifyStandingsIngestionIssue).toHaveBeenCalledWith(
-      expect.objectContaining({
-        competition: "top-14-2026-27",
-        status: "skipped",
-        reason: "events_pending",
-        pendingMatchIds: ["pending-match"],
-      }),
-    );
-  });
-  it("returns 500 and alerts once when the Top 14 calculation throws", async () => {
-    standingsMock.ingestWeeklyStandings.mockResolvedValue({
-      failed: 0,
-      results: [],
-      skipped: 0,
-      updated: 0,
-    });
-    calculationMock.calculateLatestTop14Standings.mockRejectedValue(
-      new Error("calculation unavailable"),
-    );
-    const { POST } = await import("@/app/api/cron/ingest-standings/route");
-    const response = await POST(
-      new Request("http://localhost/api/cron/ingest-standings", {
-        method: "POST",
-        headers: { authorization: "Bearer test-secret" },
-      }),
-    );
-    expect(response.status).toBe(500);
-    expect(
-      notificationMock.notifyStandingsIngestionIssue,
-    ).toHaveBeenCalledTimes(1);
-    expect(notificationMock.notifyStandingsIngestionIssue).toHaveBeenCalledWith(
-      {
-        competition: "top-14",
-        status: "failed",
-        error: "calculation unavailable",
-      },
-    );
+    expect(calculationMock.calculateLatestTop14Standings).not.toHaveBeenCalled();
   });
   it("returns 200 and alerts once for a failed Wikipedia family", async () => {
-    standingsMock.ingestWeeklyStandings.mockResolvedValue({
-      failed: 1,
-      results: [
-        {
-          family: "premiership",
-          status: "failed",
-          error: "Wikipedia unavailable",
-          matched: 0,
-          parsed: 0,
-          upserted: 0,
-        },
-        { family: "pnc", status: "skipped", reason: "no_rows_parsed" },
-      ],
-      skipped: 1,
-      updated: 0,
-    });
-    calculationMock.calculateLatestTop14Standings.mockResolvedValue({
-      status: "skipped",
-      reason: "competition_not_found",
-    });
+    standingsMock.ingestWeeklyStandings.mockResolvedValue({ failed: 1, results: [
+      { family: "premiership", status: "failed", error: "Wikipedia unavailable", matched: 0, parsed: 0, upserted: 0 },
+      { family: "pnc", status: "skipped", reason: "no_rows_parsed" },
+    ], skipped: 1, updated: 0 });
     const { POST } = await import("@/app/api/cron/ingest-standings/route");
-    const response = await POST(
-      new Request("http://localhost/api/cron/ingest-standings", {
-        method: "POST",
-        headers: { authorization: "Bearer test-secret" },
-      }),
-    );
+    const response = await POST(new Request("http://localhost/api/cron/ingest-standings", { method: "POST", headers: { authorization: "Bearer test-secret" } }));
     expect(response.status).toBe(200);
     expect((await response.json()).result.weekly.failed).toBe(1);
-    expect(
-      notificationMock.notifyStandingsIngestionIssue,
-    ).toHaveBeenCalledTimes(1);
-    expect(notificationMock.notifyStandingsIngestionIssue).toHaveBeenCalledWith(
-      expect.objectContaining({
-        competition: "premiership",
-        status: "failed",
-        error: "Wikipedia unavailable",
-      }),
-    );
+    expect(notificationMock.notifyStandingsIngestionIssue).toHaveBeenCalledExactlyOnceWith({ competition: "premiership", status: "failed", error: "Wikipedia unavailable" });
+    expect(calculationMock.calculateLatestTop14Standings).not.toHaveBeenCalled();
   });
 });
