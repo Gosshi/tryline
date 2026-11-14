@@ -67,21 +67,22 @@ function parseKickoffAt(params: {
     /^(\d{1,2}):(\d{2})$/,
   );
 
-  if (!dateMatch || !timeMatch) {
-    throw new Error(
-      `Unable to parse League One kickoff: ${params.dateText} ${params.timeText}`,
-    );
+  if (!dateMatch) {
+    return null;
   }
 
   const day = Number(dateMatch[1]);
   const month = Number(dateMatch[2]);
-  const hour = Number(timeMatch[1]);
-  const minute = Number(timeMatch[2]);
+  const hour = timeMatch ? Number(timeMatch[1]) : 12;
+  const minute = timeMatch ? Number(timeMatch[2]) : 0;
   const year = month >= 7 ? startYear : endYear;
 
-  return new Date(
-    Date.UTC(year, month - 1, day, hour - JST_OFFSET_HOURS, minute),
-  ).toISOString();
+  return {
+    kickoffAt: new Date(
+      Date.UTC(year, month - 1, day, hour - JST_OFFSET_HOURS, minute),
+    ).toISOString(),
+    kickoffTimeTbd: !timeMatch,
+  };
 }
 
 function parseRound(title: string) {
@@ -134,6 +135,8 @@ export function parseLeagueOneLiveHtml(
 ): ParsedLiveMatch[] {
   const $ = load(html);
   const entries: ParsedLiveMatch[] = [];
+  const unresolvedNames = new Set<string>();
+  const matchIdsWithoutDate: string[] = [];
 
   $(".c-schedule").each((_, element) => {
     const card = $(element);
@@ -162,6 +165,8 @@ export function parseLeagueOneLiveHtml(
     const awayTeamSlug = resolveTeamSlug(awayTeamName);
 
     if (!homeTeamName || !awayTeamName || !homeTeamSlug || !awayTeamSlug) {
+      if (!homeTeamSlug) unresolvedNames.add(homeTeamName);
+      if (!awayTeamSlug) unresolvedNames.add(awayTeamName);
       return;
     }
 
@@ -176,6 +181,19 @@ export function parseLeagueOneLiveHtml(
         ? `playoff_${slugEventPart(homeTeamName)}_v_${slugEventPart(awayTeamName)}`
         : `${round ?? "round"}_${slugEventPart(homeTeamName)}_v_${slugEventPart(awayTeamName)}`;
 
+    const kickoff = parseKickoffAt({
+      dateText: card.find(".datetime .date").first().text(),
+      season,
+      timeText: card.find(".datetime .time").first().text(),
+    });
+
+    if (!kickoff) {
+      matchIdsWithoutDate.push(
+        idMatch?.[1] ?? `${homeTeamName} vs ${awayTeamName}`,
+      );
+      return;
+    }
+
     entries.push({
       awayScore,
       awayTeamName,
@@ -184,11 +202,7 @@ export function parseLeagueOneLiveHtml(
       homeScore,
       homeTeamName,
       homeTeamSlug,
-      kickoffAt: parseKickoffAt({
-        dateText: card.find(".datetime .date").first().text(),
-        season,
-        timeText: card.find(".datetime .time").first().text(),
-      }),
+      ...kickoff,
       lineupTableHtml: null,
       rawHtml: "",
       round,
@@ -202,6 +216,20 @@ export function parseLeagueOneLiveHtml(
     });
   });
 
+  if (matchIdsWithoutDate.length > 0) {
+    console.warn("[league-one-live] skipped cards without date", {
+      matchIds: matchIdsWithoutDate,
+      season,
+    });
+  }
+
+  if (unresolvedNames.size > 0) {
+    console.error("[league-one-live] unresolved team names", {
+      names: [...unresolvedNames],
+      season,
+    });
+  }
+
   return entries.sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
 }
 
@@ -214,7 +242,12 @@ export async function fetchLeagueOne202425(): Promise<ParsedLiveMatch[]> {
 }
 
 export async function fetchLeagueOne202526(): Promise<ParsedLiveMatch[]> {
-  const season = "2025-26";
+  return fetchLeagueOneSeason("2025-26");
+}
+
+export async function fetchLeagueOneSeason(
+  season: string,
+): Promise<ParsedLiveMatch[]> {
   const scheduleUrl = buildScheduleUrl(season);
   const playoffsUrl = buildPlayoffsUrl(season);
   const [regularResponse, playoffResponse] = await Promise.all([

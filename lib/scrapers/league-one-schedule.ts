@@ -32,6 +32,8 @@ export const TEAM_SLUG_BY_LEAGUE_ONE_NAME: Record<string, string> = {
   "Shizuoka BlueRevs": "shizuoka-blue-revs",
   "Tokyo Suntory Sungoliath": "tokyo-suntory-sungoliath",
   "Tokyo Sungoliath": "tokyo-suntory-sungoliath",
+  "Tochigi Honda Heat": "honda-heat",
+  "Toshiba Brave Lupus Musashi": "toshiba-brave-lupus",
   "Toshiba Brave Lupus Tokyo": "toshiba-brave-lupus",
   "Toyota Verblitz": "toyota-verblitz",
   "Urayasu D-Rocks": "urayasu-d-rocks",
