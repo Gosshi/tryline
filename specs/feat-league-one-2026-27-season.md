@@ -10,7 +10,7 @@
 
 | 問題 | 実測（2026-11-14、`https://league-one.jp/en/schedule/?t1=3&year=2026`） | 今のコードの挙動 |
 |---|---|---|
-| 1. 時刻未定の試合 | DIVISION 1 の108試合中 **55試合** の時刻が `Undecided`（例 `20.02 Sat` / `Undecided`） | `parseKickoffAt` が例外を投げ、**リーグワン全体の取り込みが失敗する** |
+| 1. 時刻未定の試合 | DIVISION 1 の108試合中 **55試合** の時刻が `Undecided`（例 `20.02 Sat` / `Undecided`）。うち **7試合は日付も空**（試合ID 31194・31217・31218・31223・31224・31229・31230。2026-11-14 に Codex が取得した fixture で確認） | `parseKickoffAt` が例外を投げ、**リーグワン全体の取り込みが失敗する** |
 | 2. チーム名の変更 | 12チーム中2チームが既存の対応表に無い: `TOCHIGI Honda HEAT`（日本語ページでは 栃木ホンダヒート）、`TOSHIBA BRAVE LUPUS MUSASHI`（東芝ブレイブルーパス武蔵） | `resolveTeamSlug` が `null` を返し、その試合を**黙って捨てる**（ログも出ない） |
 
 他の10チームは既存の対応表で解決できる（2026-11-14 に確認）。
@@ -80,7 +80,14 @@
 - `kickoffAt`: その日付の **12:00 JST**（UTC 03:00）
 - `kickoffTimeTbd: true`
 
-時刻があるときは今と同じ値で `kickoffTimeTbd: false`。**日付**が読めないときは今と同じく例外を投げる（日付が無い試合は取り込めない）。
+時刻があるときは今と同じ値で `kickoffTimeTbd: false`。
+
+**日付が読めないカード（日付欄が空、または `D.M` 形式でない）は、例外を投げずにその試合だけを除く。**
+- 除いたカードは、試合ID（`/en/match/<id>` の数字。無ければ対戦カード名）を添えて `console.warn("[league-one-live] skipped cards without date", { matchIds, season })` で1回だけ出す
+- 理由: 1枚のカードの欠落で例外を投げると、時刻未定のときと同じく**リーグワン全体の取り込みが止まる**。日付が発表されれば、次の取り込みで同じ `eventId`（`match_<id>`）として入る
+- 2026-11-14 時点では7試合が該当し、返るのは101試合
+
+（2026-11-14 改訂: 当初は「日付が読めないときは例外」としていたが、実データに日付未定のカードがあり、受け入れ条件1・5と両立しなかった。Codex の停止報告による。）
 
 `parseLeagueOneLiveHtml` は `kickoffTimeTbd` を `ParsedLiveMatch` に入れる（`ParsedWikipediaMatch` に既にある項目。URC・プレミアシップの取り込みと同じ使い方）。後で時刻が発表されると、同じ `eventId`（`match_<id>`）の行が更新され、`kickoff_time_tbd` は `false` になる（`lib/ingestion/upsert.ts` の既存の処理）。
 
@@ -124,24 +131,24 @@ fixture: 2026-11-14 に取得した 2026-27 の日程ページから、次を含
 - `TOCHIGI Honda HEAT` と `TOSHIBA BRAVE LUPUS MUSASHI` が出るカード
 - DIVISION 2 のカード
 
-1. fixture を `parseLeagueOneLiveHtml(html, "2026-27")` に通すと**例外を投げない**
+1. fixture を `parseLeagueOneLiveHtml(html, "2026-27")` に通すと**例外を投げない**（日付も時刻も未定のカードを含む）
 2. 時刻ありのカードは `kickoffAt` が JST の時刻どおり（`12.12 Sat 12:00` → `2026-12-12T03:00:00.000Z`）、`kickoffTimeTbd === false`
 3. `Undecided` のカードは `kickoffAt` がその日付の 12:00 JST（`20.02` → `2027-02-20T03:00:00.000Z`）、`kickoffTimeTbd === true`。年は 2027（1〜6月は終了年）
 4. `TOCHIGI Honda HEAT` の試合は `honda-heat`、`TOSHIBA BRAVE LUPUS MUSASHI` の試合は `toshiba-brave-lupus` に解決される
-5. **ページ全体の fixture を使う場合**: DIVISION 1 のカード数と返った試合数が一致する（2026-11-14 時点で108）。部分 fixture の場合は、切り出した DIVISION 1 のカード数と一致する。どちらも「解決できなかった名前」は0件
+5. 返った試合数 = fixture の DIVISION 1 のカード数 − 日付が空のカード数（2026-11-14 取得のページ全体で 108 − 7 = **101**）。期待値はテスト内で fixture から数えて求めず、`101` と固定値で書く（fixture を取り直したら更新する）。「解決できなかった名前」は0件
 6. DIVISION 2 のカードは返らない（今と同じ）
 7. 対応表に無いチーム名（fixture のチーム名を1つ書き換えたもの）を渡すと、その試合は返らず、`console.error` が名前つきで1回呼ばれる（`vi.spyOn`）
-8. 日付が読めないカードは今と同じく例外を投げる
+8. 日付が空のカードは返らず、`console.warn` がその試合ID（2026-11-14 の fixture では上の7件）つきで**1回だけ**呼ばれる。同じ fixture で、日付のある他のカードはすべて返る（`vi.spyOn`）
 9. `LIVE_COMPETITION_SOURCES` に `league-one-2026-27` があり、`league-one-2025-26` が無い（テスト）
 10. `fetchLeagueOneSeason("2026-27")` が `t1=3&year=2026` と `t1=0&year=2026` の2つの URL を取得する。プレーオフページが0件でも例外を投げない（`fetchWithPolicy` をモック）
 11. 既存のテスト（`tests/ingestion/live-sources.test.ts`・`tests/scrapers/league-one-*.test.ts` 等）が通る。**2025-26 の既存 fixture の期待値は変えない**（時刻ありの試合の扱いは変わらない）
 12. マイグレーションのテスト（既存の `tests/db-migrations-*.test.ts` の形式）で、2チームの `name`・`name_ja`・`english_name` が上の表のとおりに更新され、`slug` で絞っていることを確認する
-13. **壊して確かめる:** (a) 2節の変更を戻す（時刻未定で例外を投げる）と、受け入れ条件1・3が落ちる。(b) 3節で足した2行を消すと、4・5が落ちる。両方の出力を PR 本文に貼る（変更は戻す）
+13. **壊して確かめる:** (a) 2節の変更を戻す（時刻未定で例外を投げる）と、受け入れ条件1・3が落ちる。(c) 日付が空のカードで例外を投げるように変えると、受け入れ条件1・8が落ちる。(b) 3節で足した2行を消すと、4・5が落ちる。3つの出力を PR 本文に貼る（変更は戻す）
 14. `pnpm tsc --noEmit`・`pnpm lint`・`pnpm test`・`pnpm build` が通る
 
 **マージ後の確認（Claude が行う）:**
 - マイグレーションが本番に適用済みであること（マージ前。Owner に確認）
-- 次の取り込み cron の後、本番 DB で `league-one-2026-27` の試合が108件、うち `kickoff_time_tbd = true` が取得時点の未定数と一致、チームが2つ以上の slug に分かれていない（SELECT で確認）
+- 次の取り込み cron の後、本番 DB で `league-one-2026-27` の試合数が「取得時点の DIVISION 1 のカード数 − 日付が空のカード数」と一致（11/14 時点なら101）、`kickoff_time_tbd = true` の件数が取得時点の「日付はあるが時刻未定」の数と一致（11/14 時点なら48）、チームが2つ以上の slug に分かれていない（SELECT で確認）
 - `/c/league-one` が 2026-27 を表示し、生 HTML（`curl`）に 2026-12-12 の試合へのリンクがある
 - 2026-12-11 の 15:00 JST 以降に、12/12 の試合の日本語・英語プレビューが生成されている
 
