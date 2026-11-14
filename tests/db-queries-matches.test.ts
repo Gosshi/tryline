@@ -62,6 +62,7 @@ describe("getRoundFromExternalIds", () => {
 });
 
 const reviewQueryMock = {
+  not: vi.fn().mockReturnThis(),
   eq: vi.fn().mockReturnThis(),
   limit: vi.fn(),
   order: vi.fn().mockReturnThis(),
@@ -570,7 +571,7 @@ describe("recently reviewed match queries", () => {
 
     expect(clientMock.from).toHaveBeenCalledWith("match_content");
     expect(reviewQueryMock.eq).toHaveBeenCalledWith("language", "ja");
-    expect(reviewQueryMock.limit).toHaveBeenCalledWith(1_000);
+    expect(reviewQueryMock.limit).toHaveBeenCalledWith(40);
     expect(matches.map((match) => match.id)).toEqual([
       "nations-round-1-1",
       "nations-round-1-2",

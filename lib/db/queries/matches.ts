@@ -2,7 +2,10 @@ import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
 import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
-import { isRetiredCompetitionFamily } from "@/lib/competitions/retired";
+import {
+  isRetiredCompetitionFamily,
+  RETIRED_COMPETITION_FAMILIES,
+} from "@/lib/competitions/retired";
 import { loadAllPages } from "@/lib/db/pagination";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import {
@@ -304,6 +307,7 @@ type RecentlyReviewedMatchRow = BaseMatchRow & {
 };
 
 const RECENTLY_REVIEWED_CANDIDATE_LIMIT = 40;
+const RETIRED_COMPETITION_FAMILY_FILTER = `(${RETIRED_COMPETITION_FAMILIES.join(",")})`;
 const RECENTLY_REVIEWED_ACTIVE_WINDOW_DAYS = 7;
 const RECENTLY_REVIEWED_GROUP_LIMIT = 4;
 const RECENTLY_REVIEWED_COMPETITION_CAP = 12;
@@ -423,7 +427,7 @@ type HeadToHeadPairQueryRow = {
 const RECENTLY_REVIEWED_MATCH_SELECT = `
   generated_at,
   content_md,
-  match:matches!match_content_match_id_fkey (
+  match:matches!match_content_match_id_fkey!inner (
     id,
     kickoff_at,
     kickoff_time_tbd,
@@ -446,7 +450,7 @@ const RECENTLY_REVIEWED_MATCH_SELECT = `
       short_code,
       world_ranking
     ),
-    competition:competitions!matches_competition_id_fkey (
+    competition:competitions!matches_competition_id_fkey!inner (
       id,
       family,
       slug,
@@ -853,6 +857,7 @@ async function getRecentlyReviewedEntries(
   let query = client
     .from("match_content")
     .select(RECENTLY_REVIEWED_MATCH_SELECT)
+    .not("match.competition.family", "in", RETIRED_COMPETITION_FAMILY_FILTER)
     .eq("content_type", "recap")
     .eq("status", "published")
     .order("generated_at", { ascending: false });
@@ -861,8 +866,7 @@ async function getRecentlyReviewedEntries(
     query = query.eq("language", language);
   }
 
-  // Overfetch before the display cap so retired reviews cannot consume its slots.
-  const { data, error } = await query.limit(1_000);
+  const { data, error } = await query.limit(RECENTLY_REVIEWED_CANDIDATE_LIMIT);
 
   if (error) {
     throw error;
@@ -872,9 +876,8 @@ async function getRecentlyReviewedEntries(
     .map((row) => ({ match: mapRecentlyReviewedContentRow(row), row }))
     .filter(
       (entry): entry is RecentlyReviewedEntry =>
-        entry.match !== null && entry.row.match !== null &&
-        !isRetiredCompetitionFamily(entry.match.competition.family),
-    ).slice(0, RECENTLY_REVIEWED_CANDIDATE_LIMIT);
+        entry.match !== null && entry.row.match !== null,
+    );
 }
 
 export async function getRecentlyReviewedCompetitionGroups(
@@ -940,8 +943,8 @@ export async function getRecentlyReviewedFamilies(
     .select(
       `
         generated_at,
-        match:matches!match_content_match_id_fkey (
-          competition:competitions!matches_competition_id_fkey (
+        match:matches!match_content_match_id_fkey!inner (
+          competition:competitions!matches_competition_id_fkey!inner (
             slug,
             name,
             season,
@@ -950,11 +953,12 @@ export async function getRecentlyReviewedFamilies(
         )
       `,
     )
+    .not("match.competition.family", "in", RETIRED_COMPETITION_FAMILY_FILTER)
     .eq("content_type", "recap")
     .eq("language", "ja")
     .eq("status", "published")
     .order("generated_at", { ascending: false })
-    .limit(1_000);
+    .limit(50);
 
   if (error) {
     throw error;
@@ -966,7 +970,7 @@ export async function getRecentlyReviewedFamilies(
   for (const row of data satisfies RecentlyReviewedFamilyContentRow[]) {
     const comp = row.match?.competition;
 
-    if (!comp || isRetiredCompetitionFamily(comp.family) || seen.has(comp.family)) {
+    if (!comp || seen.has(comp.family)) {
       continue;
     }
 
@@ -1156,7 +1160,7 @@ async function loadUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
           short_code,
           world_ranking
         ),
-        competition:competitions!matches_competition_id_fkey (
+        competition:competitions!matches_competition_id_fkey!inner (
           id,
           family,
           slug,
@@ -1165,18 +1169,18 @@ async function loadUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
         )
       `,
     )
+    .not("competition.family", "in", RETIRED_COMPETITION_FAMILY_FILTER)
     .eq("status", "scheduled")
     .gte("kickoff_at", now)
     .order("kickoff_at", { ascending: true })
-    .limit(Math.max(1_000, limit));
+    .limit(limit);
 
   if (error) {
     throw error;
   }
 
   return (data satisfies UpcomingMatchRow[])
-    .filter((row) => row.competition !== null && !isRetiredCompetitionFamily(row.competition.family))
-    .slice(0, limit)
+    .filter((row) => row.competition !== null)
     .map((row) => {
       if (!row.competition) {
         throw new Error("Upcoming match is missing competition.");
@@ -1305,16 +1309,17 @@ export async function getNextUpcomingMatch(): Promise<UpcomingMatch | null> {
         )
       `,
     )
+    .not("competition.family", "in", RETIRED_COMPETITION_FAMILY_FILTER)
     .eq("status", "scheduled")
     .gte("kickoff_at", now)
     .order("kickoff_at", { ascending: true })
-    .limit(1_000);
+    .limit(1);
 
   if (error) {
     throw error;
   }
 
-  const row = (data satisfies UpcomingMatchRow[]).find((row) => row.competition !== null && !isRetiredCompetitionFamily(row.competition.family)) ?? null;
+  const row = (data satisfies UpcomingMatchRow[])[0] ?? null;
 
   if (!row) {
     return null;

@@ -1,27 +1,71 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const fixture = vi.hoisted(() => ({ rows: {} as Record<string, unknown[]> }));
+const fixture = vi.hoisted(() => ({
+  rows: {} as Record<string, unknown[]>,
+  queries: [] as {
+    table: string;
+    select: string;
+    limit: number;
+    exclusions: { column: string; operator: string; value: string }[];
+  }[],
+}));
 vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }));
 vi.mock("@/lib/db/public-server", () => ({
   getSupabasePublicServerClient: () => ({
     from: (table: string) => {
-      let limit = Infinity;
+      const state = {
+        table,
+        select: "",
+        limit: Infinity,
+        exclusions: [] as { column: string; operator: string; value: string }[],
+      };
+      fixture.queries.push(state);
       const query = {
-        select: () => query,
+        select: (columns: string) => {
+          state.select = columns;
+          return query;
+        },
         eq: () => query,
         in: () => query,
-        not: () => query,
+        not: (column: string, operator: string, value: string) => {
+          state.exclusions.push({ column, operator, value });
+          return query;
+        },
         gte: () => query,
         lt: () => query,
         order: () => query,
         limit: (n: number) => {
-          limit = n;
+          state.limit = n;
           return query;
         },
         then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
           Promise.resolve(
             resolve({
-              data: (fixture.rows[table] ?? []).slice(0, limit),
+              data: (fixture.rows[table] ?? [])
+                .filter((row) =>
+                  state.exclusions.every(({ column, value }) => {
+                    const innerJoins =
+                      column === "match.competition.family"
+                        ? /match:matches![^()]*!inner\s*\(/.test(
+                            state.select,
+                          ) &&
+                          /competition:competitions![^()]*!inner\s*\(/.test(
+                            state.select,
+                          )
+                        : /competition:competitions![^()]*!inner\s*\(/.test(
+                            state.select,
+                          );
+                    if (!innerJoins) return true;
+                    let field: unknown = row;
+                    for (const part of column.split("."))
+                      field = (field as Record<string, unknown> | null)?.[part];
+                    return !value
+                      .slice(1, -1)
+                      .split(",")
+                      .includes(String(field));
+                  }),
+                )
+                .slice(0, state.limit),
               error: null,
             }),
           ),
@@ -89,6 +133,7 @@ const matches = [
   row("urc-2", "urc"),
 ];
 beforeEach(() => {
+  fixture.queries = [];
   fixture.rows = {
     matches,
     match_content: matches.map((match) => ({
@@ -144,4 +189,27 @@ describe("retired competitions in public queries", () => {
   it("listFamilies preserves the retired family for existing pages and APIs", async () => {
     expect(await listFamilies()).toEqual(["top-14", "urc"]);
   });
+});
+
+it("bounds the payload with DB-side retirement filters and inner joins", async () => {
+  await getUpcomingMatches(5);
+  await getNextUpcomingMatch();
+  await getRecentlyReviewedFamilies(5);
+  await getRecentlyReviewedCompetitionGroups();
+  expect(fixture.queries.map((q) => q.limit)).toEqual([5, 1, 50, 40]);
+  for (const query of fixture.queries) {
+    expect(query.exclusions).toEqual([
+      {
+        column:
+          query.table === "matches"
+            ? "competition.family"
+            : "match.competition.family",
+        operator: "in",
+        value: "(top-14)",
+      },
+    ]);
+    expect(query.select).toMatch(/competition:competitions![^()]*!inner\s*\(/);
+    if (query.table === "match_content")
+      expect(query.select).toMatch(/match:matches![^()]*!inner\s*\(/);
+  }
 });
