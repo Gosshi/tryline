@@ -16,7 +16,7 @@ import {
   applyManualInternationalResults,
   type ManualInternationalResultsResult,
 } from "@/lib/ingestion/manual-international-results";
-import { fetchLeagueOne202526 } from "@/lib/ingestion/sources/league-one-live";
+import { fetchLeagueOneSeason } from "@/lib/ingestion/sources/league-one-live";
 import { fetchTop14LnrLiveMatches } from "@/lib/ingestion/sources/top14-lnr-live";
 import { fetchAutumnNations2026 } from "@/lib/ingestion/sources/wikipedia-autumn-nations";
 import { fetchBledisloeCup2026 } from "@/lib/ingestion/sources/wikipedia-bledisloe-cup";
@@ -147,11 +147,11 @@ export const LIVE_COMPETITION_SOURCES: LiveCompetitionSource[] = [
     sourceLabel: "lnr.fr",
   },
   {
-    competitionName: "League One 2025-26",
-    competitionSlug: "league-one-2025-26",
+    competitionName: "League One 2026-27",
+    competitionSlug: "league-one-2026-27",
     family: "league-one",
-    fetch: fetchLeagueOne202526,
-    season: "2025-26",
+    fetch: () => fetchLeagueOneSeason("2026-27"),
+    season: "2026-27",
     sourceLabel: "league-one.jp",
   },
 ];
