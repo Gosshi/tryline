@@ -699,14 +699,6 @@ describe("live competition source adapters", () => {
           season: "2026-27",
           sourceLabel: "wikipedia",
         }),
-        expect.objectContaining({
-          competitionName: "Top 14 2026-27",
-          competitionSlug: "top-14-2026-27",
-          family: "top-14",
-          fetch: fetchTop14LnrLiveMatches,
-          season: "2026-27",
-          sourceLabel: "lnr.fr",
-        }),
       ]),
     );
     expect(

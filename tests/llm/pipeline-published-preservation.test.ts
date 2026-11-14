@@ -187,7 +187,9 @@ describe("generateMatchContent published preservation", () => {
       return { error: null };
     });
     dbMock.from.mockImplementation((table) =>
-      table === "match_content"
+      table === "matches"
+        ? { select: () => ({ eq: () => ({ maybeSingle: dbMock.maybeSingle, single: async () => ({ data: { competition: { family: "urc" } }, error: null }) }) }) }
+        : table === "match_content"
         ? { select: dbMock.select, upsert: dbMock.upsert }
         : { insert: dbMock.insert },
     );

@@ -2,14 +2,13 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 describe("Cron ingest Top 14 match events workflow", () => {
-  it("runs daily while preserving manual dispatch", async () => {
+  it("has no schedule while preserving manual dispatch", async () => {
     const workflow = await readFile(
       ".github/workflows/cron-ingest-top14-match-events.yml",
       "utf8",
     );
 
-    expect(workflow).toContain("schedule:");
-    expect(workflow).toContain('- cron: "0 5 * * *"');
+    expect(workflow).not.toContain("schedule:");
     expect(workflow).toContain("workflow_dispatch:");
   });
 

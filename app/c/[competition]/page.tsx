@@ -8,6 +8,7 @@ import { MatchCard } from "@/components/match-card";
 import { StandingsTable } from "@/components/standings-table";
 import { UserStateProvider } from "@/components/user-state-provider";
 import { getCompetitionHeroImage } from "@/lib/competition-hero-images";
+import { isRetiredCompetitionFamily } from "@/lib/competitions/retired";
 import {
   getCompetitionGuide,
   listFamilies,
@@ -200,6 +201,9 @@ export default async function CompetitionHubPage({ params }: Props) {
               <h1 className="font-heading text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
                 {formatFamilyName(competition)}
               </h1>
+              {isRetiredCompetitionFamily(competition) && (
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">トップ14の記事更新は2026年11月で終了しました。これまでの試合結果と記事は引き続きご覧いただけます。</p>
+              )}
               <p className="mt-1 text-sm text-white/70">全シーズン一覧</p>
               {COMPETITION_DESCRIPTIONS[competition] && (
                 <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">

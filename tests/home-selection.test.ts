@@ -26,10 +26,10 @@ function match(
     kickoffTimeTbd: false,
     status,
     competition: {
-      family: "top-14",
-      name: "Top 14",
+      family: "league-one",
+      name: "League One",
       season: "2026-27",
-      slug: "top-14-2026-27",
+      slug: "league-one-2026-27",
     },
     homeTeam: { slug: "toulouse", name: "トゥールーズ", shortCode: "TOU" },
     awayTeam: { slug: "montpellier", name: "モンペリエ", shortCode: "MHR" },

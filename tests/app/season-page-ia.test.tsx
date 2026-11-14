@@ -260,6 +260,14 @@ describe("season page information architecture", () => {
     ]);
   });
 
+  it.each(["top-14", "urc"])("shows the retirement notice only for a retired season: %s", async (family) => {
+    const comp = await competitionMocks.getCompetitionBySlug("urc-2026-27");
+    competitionMocks.getCompetitionBySlug.mockResolvedValue({ ...comp, family, slug: `${family}-2026-27` });
+    render(await SeasonPage({ params: Promise.resolve({ competition: family, season: "2026-27" }) }));
+    if (family === "top-14") expect(screen.getByText("トップ14の記事更新は2026年11月で終了しました。これまでの試合結果と記事は引き続きご覧いただけます。")).toBeInTheDocument();
+    else expect(screen.queryByText("トップ14の記事更新は2026年11月で終了しました。これまでの試合結果と記事は引き続きご覧いただけます。")).not.toBeInTheDocument();
+  });
+
   it.each([
     {
       expected: true,

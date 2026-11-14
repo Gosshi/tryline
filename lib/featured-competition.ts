@@ -1,3 +1,4 @@
+import { isRetiredCompetitionFamily } from "@/lib/competitions/retired";
 import { getNextMatchForTeamSlug } from "@/lib/db/queries/matches";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJstDate } from "@/lib/format/kickoff";
@@ -25,7 +26,7 @@ export async function getFeaturedCompetition(
     now.toISOString(),
   );
 
-  if (!nextJapanMatch) {
+  if (!nextJapanMatch || isRetiredCompetitionFamily(nextJapanMatch.competition.family)) {
     return FALLBACK_FEATURED_COMPETITION;
   }
 

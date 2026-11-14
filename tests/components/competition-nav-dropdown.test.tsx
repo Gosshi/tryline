@@ -9,6 +9,7 @@ import {
   CompetitionNavDropdown,
   HEADER_COMPETITIONS,
 } from "@/components/competition-nav-dropdown";
+import { SiteFooter } from "@/components/site-footer";
 import { getCompetitionFamilyColor } from "@/lib/format/competition";
 
 describe("CompetitionNavDropdown", () => {
@@ -55,11 +56,6 @@ describe("CompetitionNavDropdown", () => {
         family: "urc",
         href: "/c/urc",
         label: "ユナイテッド・ラグビー・チャンピオンシップ",
-      },
-      {
-        family: "top-14",
-        href: "/c/top-14",
-        label: "トップ14",
       },
       {
         family: "super-rugby-pacific",
@@ -149,4 +145,13 @@ describe("CompetitionNavDropdown", () => {
 
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
+});
+
+it("does not link to Top 14 from the footer and retains the active club leagues", () => {
+  const { container } = render(<SiteFooter />);
+  expect(container.querySelector('a[href="/c/top-14"]')).not.toBeInTheDocument();
+  for (const family of ["urc", "premiership", "league-one"]) {
+    expect(container.querySelector(`a[href="/c/${family}"]`)).toBeInTheDocument();
+  }
+  cleanup();
 });

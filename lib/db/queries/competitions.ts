@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
 import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
+import { isRetiredCompetitionFamily } from "@/lib/competitions/retired";
 import { chunkArray, loadAllPages } from "@/lib/db/pagination";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import { getRoundFromExternalIds } from "@/lib/db/queries/matches";
@@ -306,6 +307,7 @@ export async function listCompetitionScheduleCoverage(): Promise<
   }
 
   return ((data ?? []) as CompetitionScheduleCoverageDbRow[])
+    .filter((row) => !isRetiredCompetitionFamily(row.family))
     .map((row) => {
       const matches = row.matches ?? [];
       const ingestedRoundCount = new Set(

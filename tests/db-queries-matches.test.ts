@@ -551,7 +551,7 @@ describe("recently reviewed match queries", () => {
       data: [
         ...latestRoundRows,
         buildReviewedContentRow({
-          family: "top-14",
+          family: "premiership",
           generatedAt: isoDaysAgo(1, 40),
           id: "top14-other-round",
           round: 1,
@@ -570,7 +570,7 @@ describe("recently reviewed match queries", () => {
 
     expect(clientMock.from).toHaveBeenCalledWith("match_content");
     expect(reviewQueryMock.eq).toHaveBeenCalledWith("language", "ja");
-    expect(reviewQueryMock.limit).toHaveBeenCalledWith(40);
+    expect(reviewQueryMock.limit).toHaveBeenCalledWith(1_000);
     expect(matches.map((match) => match.id)).toEqual([
       "nations-round-1-1",
       "nations-round-1-2",
@@ -740,7 +740,7 @@ describe("recently reviewed match queries", () => {
       data: [
         buildReviewedContentRow({
           competitionId: "top14-id",
-          family: "top-14",
+          family: "premiership",
           generatedAt: isoDaysAgo(1),
           homeTeamId: "lower-home-id",
           awayTeamId: "lower-away-id",
@@ -750,7 +750,7 @@ describe("recently reviewed match queries", () => {
         }),
         buildReviewedContentRow({
           competitionId: "top14-id",
-          family: "top-14",
+          family: "premiership",
           generatedAt: isoDaysAgo(1, 10),
           homeTeamId: "top-home-id",
           awayTeamId: "top-away-id",

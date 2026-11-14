@@ -7,7 +7,6 @@ import {
 import { assertCronAuthorized, CronUnauthorizedError } from "@/lib/cron/auth";
 import { ingestWeeklyStandings } from "@/lib/ingestion/weekly-standings";
 import { notifyStandingsIngestionIssue } from "@/lib/llm/notify";
-import { calculateLatestTop14Standings } from "@/scripts/calculate-standings";
 
 export const maxDuration = 300;
 
@@ -17,58 +16,22 @@ export async function POST(request: Request) {
   try {
     assertCronAuthorized(request);
 
-    const [weeklyResult, top14Result] = await Promise.allSettled([
-      ingestWeeklyStandings(),
-      calculateLatestTop14Standings(),
-    ]);
+    const weeklyResult = await ingestWeeklyStandings();
+    revalidatePublicData(PUBLIC_DATA_CACHE_TAGS.standings);
 
-    if (
-      weeklyResult.status === "fulfilled" ||
-      top14Result.status === "fulfilled"
-    ) {
-      revalidatePublicData(PUBLIC_DATA_CACHE_TAGS.standings);
-    }
-
-    if (weeklyResult.status === "fulfilled") {
-      for (const result of weeklyResult.value.results) {
-        if (result.status === "failed") {
-          await notifyStandingsIngestionIssue({
-            competition: result.competitionSlug ?? result.family,
-            error: result.error,
-            status: "failed",
-          });
-        }
+    for (const result of weeklyResult.results) {
+      if (result.status === "failed") {
+        await notifyStandingsIngestionIssue({
+          competition: result.competitionSlug ?? result.family,
+          error: result.error,
+          status: "failed",
+        });
       }
-    }
-    if (top14Result.status === "rejected") {
-      await notifyStandingsIngestionIssue({
-        competition: "top-14",
-        error:
-          top14Result.reason instanceof Error
-            ? top14Result.reason.message
-            : String(top14Result.reason),
-        status: "failed",
-      });
-    } else if (
-      top14Result.value.status === "skipped" &&
-      top14Result.value.reason === "events_pending"
-    ) {
-      await notifyStandingsIngestionIssue({
-        ...top14Result.value,
-        competition: top14Result.value.competitionSlug,
-      });
-    }
-
-    if (weeklyResult.status === "rejected") {
-      throw weeklyResult.reason;
-    }
-    if (top14Result.status === "rejected") {
-      throw top14Result.reason;
     }
 
     return NextResponse.json({
       duration_ms: Date.now() - startedAt,
-      result: { top14: top14Result.value, weekly: weeklyResult.value },
+      result: { weekly: weeklyResult },
       status: "ok",
     });
   } catch (error) {

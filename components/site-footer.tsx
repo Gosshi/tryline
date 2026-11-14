@@ -8,7 +8,6 @@ export function SiteFooter() {
     { href: "/c/six-nations", label: "Six Nations" },
     { href: "/c/premiership", label: "Premiership" },
     { href: "/c/urc", label: "URC" },
-    { href: "/c/top-14", label: "Top 14" },
     { href: "/c/super-rugby-pacific", label: "Super Rugby Pacific" },
     { href: "/c/rugby-championship", label: "Rugby Championship" },
     { href: "/c/pnc", label: "Pacific Nations Cup" },

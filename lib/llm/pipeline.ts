@@ -4,6 +4,7 @@ import {
   PUBLIC_DATA_CACHE_TAGS,
   revalidatePublicData,
 } from "@/lib/cache/public-data";
+import { isRetiredCompetitionFamily } from "@/lib/competitions/retired";
 import {
   buildAllowedPersonEntities,
   buildKnownNonPersonNames,
@@ -144,7 +145,7 @@ export type PipelineResult = {
   status: "published" | "draft" | "skipped";
   qa: QaResult | null;
   cacheRevalidationSkipped?: boolean;
-  skipReason?: "events_unavailable" | "score_mismatch";
+  skipReason?: "events_unavailable" | "score_mismatch" | "competition_retired";
   trial?: PipelineTrialDetails;
 };
 
@@ -247,6 +248,15 @@ export async function generateMatchContent(
   const trialStartedAt = Date.now();
   const persist = options.persist !== false;
   const db = getSupabaseServerClient();
+  const { data: match, error: matchError } = await db
+    .from("matches")
+    .select("competition:competitions!matches_competition_id_fkey (family)")
+    .eq("id", matchId)
+    .single();
+  if (matchError) throw matchError;
+  if (isRetiredCompetitionFamily(match?.competition?.family)) {
+    return { status: "skipped", skipReason: "competition_retired", qa: null, matchId, contentType };
+  }
   const trialStageMetrics: PipelineTrialStageMetric[] = [];
   const recordPipelineRun = (entry: Parameters<typeof logPipelineRun>[0]) =>
     persist ? logPipelineRun(entry) : Promise.resolve();

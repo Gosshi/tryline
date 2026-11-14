@@ -283,7 +283,7 @@ describe("getMatchesInRange", () => {
     expect(dbMock.matchesBuilder.order).toHaveBeenCalledWith("kickoff_at", {
       ascending: true,
     });
-    expect(dbMock.matchesBuilder.limit).toHaveBeenCalledWith(1);
+    expect(dbMock.matchesBuilder.limit).toHaveBeenCalledWith(1_000);
     expect(dbMock.matchesBuilder.eq).not.toHaveBeenCalledWith(
       "competition.family",
       expect.anything(),

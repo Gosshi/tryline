@@ -5,6 +5,7 @@ import {
   apiSuccess,
   PRIVATE_CACHE_CONTROL,
 } from "@/lib/api/v1/response";
+import { isRetiredCompetitionFamily } from "@/lib/competitions/retired";
 import { CronUnauthorizedError, assertCronAuthorized } from "@/lib/cron/auth";
 import { getMatchesInRange } from "@/lib/db/queries/matches";
 import { sendPrematchPushNotifications } from "@/lib/push/notifications";
@@ -27,7 +28,9 @@ export async function GET(request: Request) {
     start.toISOString(),
     end.toISOString(),
   );
-  const summary = await sendPrematchPushNotifications(matches);
+  const summary = await sendPrematchPushNotifications(
+    matches.filter((match) => !isRetiredCompetitionFamily(match.competition.family)),
+  );
 
   if (summary.failedMatches > 0) {
     return NextResponse.json(

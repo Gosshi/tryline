@@ -24,11 +24,6 @@ export const HEADER_COMPETITIONS = [
     label: "ユナイテッド・ラグビー・チャンピオンシップ",
   },
   {
-    family: "top-14",
-    href: "/c/top-14",
-    label: "トップ14",
-  },
-  {
     family: "super-rugby-pacific",
     href: "/c/super-rugby-pacific",
     label: "スーパーラグビー・パシフィック",

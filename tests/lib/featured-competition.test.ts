@@ -68,3 +68,8 @@ describe("getFeaturedCompetition", () => {
     });
   });
 });
+
+it("does not feature a retired competition", async () => {
+  matchMocks.getNextMatchForTeamSlug.mockResolvedValue({ competition: { family: "top-14" } });
+  expect((await getFeaturedCompetition()).family).toBe("nations-championship");
+});

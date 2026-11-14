@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
 import { PUBLIC_DATA_CACHE_TAGS } from "@/lib/cache/public-data";
+import { isRetiredCompetitionFamily } from "@/lib/competitions/retired";
 import { loadAllPages } from "@/lib/db/pagination";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 import {
@@ -860,7 +861,8 @@ async function getRecentlyReviewedEntries(
     query = query.eq("language", language);
   }
 
-  const { data, error } = await query.limit(RECENTLY_REVIEWED_CANDIDATE_LIMIT);
+  // Overfetch before the display cap so retired reviews cannot consume its slots.
+  const { data, error } = await query.limit(1_000);
 
   if (error) {
     throw error;
@@ -870,8 +872,9 @@ async function getRecentlyReviewedEntries(
     .map((row) => ({ match: mapRecentlyReviewedContentRow(row), row }))
     .filter(
       (entry): entry is RecentlyReviewedEntry =>
-        entry.match !== null && entry.row.match !== null,
-    );
+        entry.match !== null && entry.row.match !== null &&
+        !isRetiredCompetitionFamily(entry.match.competition.family),
+    ).slice(0, RECENTLY_REVIEWED_CANDIDATE_LIMIT);
 }
 
 export async function getRecentlyReviewedCompetitionGroups(
@@ -951,7 +954,7 @@ export async function getRecentlyReviewedFamilies(
     .eq("language", "ja")
     .eq("status", "published")
     .order("generated_at", { ascending: false })
-    .limit(50);
+    .limit(1_000);
 
   if (error) {
     throw error;
@@ -963,7 +966,7 @@ export async function getRecentlyReviewedFamilies(
   for (const row of data satisfies RecentlyReviewedFamilyContentRow[]) {
     const comp = row.match?.competition;
 
-    if (!comp || seen.has(comp.family)) {
+    if (!comp || isRetiredCompetitionFamily(comp.family) || seen.has(comp.family)) {
       continue;
     }
 
@@ -1165,14 +1168,15 @@ async function loadUpcomingMatches(limit = 5): Promise<UpcomingMatch[]> {
     .eq("status", "scheduled")
     .gte("kickoff_at", now)
     .order("kickoff_at", { ascending: true })
-    .limit(limit);
+    .limit(Math.max(1_000, limit));
 
   if (error) {
     throw error;
   }
 
   return (data satisfies UpcomingMatchRow[])
-    .filter((row) => row.competition !== null)
+    .filter((row) => row.competition !== null && !isRetiredCompetitionFamily(row.competition.family))
+    .slice(0, limit)
     .map((row) => {
       if (!row.competition) {
         throw new Error("Upcoming match is missing competition.");
@@ -1304,13 +1308,13 @@ export async function getNextUpcomingMatch(): Promise<UpcomingMatch | null> {
     .eq("status", "scheduled")
     .gte("kickoff_at", now)
     .order("kickoff_at", { ascending: true })
-    .limit(1);
+    .limit(1_000);
 
   if (error) {
     throw error;
   }
 
-  const row = (data satisfies UpcomingMatchRow[])[0] ?? null;
+  const row = (data satisfies UpcomingMatchRow[]).find((row) => row.competition !== null && !isRetiredCompetitionFamily(row.competition.family)) ?? null;
 
   if (!row) {
     return null;
@@ -1608,7 +1612,7 @@ export async function getMatchesInRange(
   }
 
   const rows = (data satisfies UpcomingMatchRow[]).filter(
-    (row) => row.competition !== null,
+    (row) => row.competition !== null && !isRetiredCompetitionFamily(row.competition.family),
   );
   const matchIds = rows.map((row) => row.id);
   const previewMatchIds = new Set<string>();

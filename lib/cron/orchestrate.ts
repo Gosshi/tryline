@@ -1,3 +1,4 @@
+import { isRetiredCompetitionFamily } from "@/lib/competitions/retired";
 import { chunkArray } from "@/lib/db/pagination";
 
 import {
@@ -118,7 +119,7 @@ function firstRelation<T>(relation: Relation<T>): T | null {
   return relation;
 }
 
-async function getMatchIdsMissingContent(params: {
+export async function getMatchIdsMissingContent(params: {
   db: SupabaseClient<Database>;
   status: "scheduled" | "finished";
   contentType: ContentType;
@@ -126,7 +127,7 @@ async function getMatchIdsMissingContent(params: {
   kickoffLt?: string;
   kickoffLte?: string;
   orderByKickoff?: "asc" | "desc";
-}): Promise<{ eligibleMatches: MatchCandidate[]; skippedCount: number }> {
+}): Promise<{ eligibleMatches: MatchCandidate[]; skippedCount: number; retiredSkippedCount: number }> {
   let matchQuery = params.db
     .from("matches")
     .select("id, kickoff_at, competition:competitions!matches_competition_id_fkey (family)")
@@ -156,13 +157,18 @@ async function getMatchIdsMissingContent(params: {
     throw matchError;
   }
 
-  const allMatches = matches as unknown as MatchCandidate[];
+  const candidates = (matches ?? []) as unknown as MatchCandidate[];
+  const allMatches = candidates.filter(
+    (match) => !isRetiredCompetitionFamily(firstRelation(match.competition)?.family),
+  );
+  const retiredSkippedCount = candidates.length - allMatches.length;
   const allMatchIds = allMatches.map((match) => match.id);
 
   if (allMatchIds.length === 0) {
     return {
       eligibleMatches: [] as MatchCandidate[],
       skippedCount: 0,
+      retiredSkippedCount,
     };
   }
 
@@ -194,6 +200,7 @@ async function getMatchIdsMissingContent(params: {
 
   return {
     eligibleMatches,
+    retiredSkippedCount,
     skippedCount: allMatchIds.length - eligibleMatches.length,
   };
 }
@@ -363,6 +370,11 @@ export async function runOrchestrate(
     ).toISOString(),
     kickoffLte: recapCandidateUpperBound(now),
     orderByKickoff: "desc",
+  });
+  console.info("[orchestrate] retired competitions", {
+    retiredSkippedCount: previewCandidates.retiredSkippedCount + recapCandidates.retiredSkippedCount,
+    preview: previewCandidates.retiredSkippedCount,
+    recap: recapCandidates.retiredSkippedCount,
   });
   const recapEventLookupMatches = recapCandidates.eligibleMatches.slice(
     0,
