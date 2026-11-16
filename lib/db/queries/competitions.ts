@@ -376,6 +376,51 @@ export function sortHomepageCompetitionLinks(
   });
 }
 
+export async function listCompetitionLastModified(): Promise<
+  Map<string, string>
+> {
+  const client = getSupabasePublicServerClient();
+  const [matches, content] = await Promise.all([
+    loadAllPages({
+      loadPage: (from, to) =>
+        client
+          .from("matches")
+          .select("id, competition_id, updated_at")
+          .order("updated_at", { ascending: false })
+          .order("id")
+          .range(from, to),
+    }),
+    loadAllPages({
+      loadPage: (from, to) =>
+        client
+          .from("match_content")
+          .select("id, match_id, generated_at")
+          .eq("status", "published")
+          .order("generated_at", { ascending: false })
+          .order("id")
+          .range(from, to),
+    }),
+  ]);
+  const competitionByMatchId = new Map<string, string>();
+  const lastModified = new Map<string, string>();
+  for (const match of matches) {
+    competitionByMatchId.set(match.id, match.competition_id);
+    const previous = lastModified.get(match.competition_id);
+    if (!previous || Date.parse(match.updated_at) > Date.parse(previous)) {
+      lastModified.set(match.competition_id, match.updated_at);
+    }
+  }
+  for (const article of content) {
+    const competitionId = competitionByMatchId.get(article.match_id);
+    if (!competitionId) continue;
+    const previous = lastModified.get(competitionId);
+    if (!previous || Date.parse(article.generated_at) > Date.parse(previous)) {
+      lastModified.set(competitionId, article.generated_at);
+    }
+  }
+  return lastModified;
+}
+
 export async function listSeasonsByFamily(
   family: string,
 ): Promise<CompetitionRow[]> {

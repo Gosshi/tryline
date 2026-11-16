@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/db/queries/competitions", () => ({
+  listCompetitionLastModified: vi.fn().mockResolvedValue(new Map()),
   listFamilies: vi.fn().mockResolvedValue([]),
   listSeasonsByFamily: vi.fn().mockResolvedValue([]),
 }));
