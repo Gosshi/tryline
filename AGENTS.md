@@ -222,3 +222,18 @@ PWA = progressive web app（本プロダクトの配信形式）
 - 汎用抽象化・プラグイン機構・設定システムの先回り実装（`Three similar lines is better than a premature abstraction`）
 - エラーを握り潰して Promise を resolve する（throw が基本）
 - バックワード互換性のためだけの死にコード（`_unused` 変数・`// removed` コメント等）を残す
+
+## Research and production safety
+
+- Production systems, billing, subscriptions, users, DNS, analytics configuration,
+  Search Console, App Store Connect, and production databases are read-only
+  unless the task explicitly requests a write.
+- Read-only analytics/API/database queries may be performed without asking for
+  approval when credentials are already configured.
+- Never print secrets, tokens, API keys, customer payment information, or other
+  sensitive credentials.
+- For business or growth investigations, distinguish confirmed facts,
+  evidence-backed inference, hypotheses, and unavailable data.
+- Prefer actual Tryline data over generic industry benchmarks.
+- Do not optimize proxy metrics such as page count, impressions, or traffic
+  without relating them to the task's stated business outcome.
