@@ -149,7 +149,16 @@ describe("ops page", () => {
     expect(await OpsFactsPage()).toBeTruthy();
     expect(metadata.title).toBe("Tryline");
     expect(metadata.robots).toEqual({ index: false, follow: false });
-    expect(robots().rules).toMatchObject({ disallow: "/ops" });
+    expect(robots().rules).toMatchObject({
+      disallow: [
+        "/ops",
+        "/api/me/",
+        "/api/matches/",
+        "/api/home/",
+        "/api/user/",
+        "/api/chat/",
+      ],
+    });
   });
 });
 it("previews with one match query and no validation or writes", async () => {
