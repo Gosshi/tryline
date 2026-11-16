@@ -1814,10 +1814,12 @@ export async function listAllMatchIds(): Promise<SitemapMatch[]> {
 
 export async function listMatchIdsWithContent(): Promise<SitemapMatch[]> {
   const client = getSupabasePublicServerClient();
-  const { data, error } = await client
-    .from("match_content")
-    .select(
-      `
+  const rows = await loadAllPages({
+    loadPage: (from, to) =>
+      client
+        .from("match_content")
+        .select(
+          `
         generated_at,
         match_id,
         match:matches!match_content_match_id_fkey (
@@ -1827,17 +1829,14 @@ export async function listMatchIdsWithContent(): Promise<SitemapMatch[]> {
           )
         )
       `,
-    )
-    .eq("status", "published")
-    .order("generated_at", { ascending: false });
+        )
+        .eq("status", "published")
+        .order("generated_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+  });
 
-  if (error) {
-    throw error;
-  }
-
-  return mapSitemapContentRows(
-    (data ?? []) as unknown as SitemapContentMatchRow[],
-  );
+  return mapSitemapContentRows(rows as unknown as SitemapContentMatchRow[]);
 }
 
 function mapSitemapContentRows(rows: SitemapContentMatchRow[]): SitemapMatch[] {

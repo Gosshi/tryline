@@ -29,16 +29,25 @@ function createQuery({
     gte: vi.fn(),
     order: vi.fn(),
     select: vi.fn(),
+    range: vi.fn(),
+    then: vi.fn(),
   };
 
   query.eq.mockReturnValue(query);
   query.gte.mockReturnValue(query);
   query.select.mockReturnValue(query);
-  query.order.mockImplementation(() =>
-    Promise.resolve({
-      data: query.gte.mock.calls.length > 0 ? filteredRows : rows,
-      error: null,
-    }),
+  const result = () => ({
+    data: query.gte.mock.calls.length > 0 ? filteredRows : rows,
+    error: null,
+  });
+  query.order.mockReturnValue(query);
+  query.range.mockImplementation(async (from: number, to: number) => ({
+    ...result(),
+    data: result().data.slice(from, to + 1),
+  }));
+  query.then.mockImplementation(
+    (resolve: (value: ReturnType<typeof result>) => unknown) =>
+      Promise.resolve(result()).then(resolve),
   );
 
   return query;

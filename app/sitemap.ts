@@ -1,4 +1,5 @@
 import {
+  listCompetitionLastModified,
   listFamilies,
   listSeasonsByFamily,
 } from "@/lib/db/queries/competitions";
@@ -19,6 +20,7 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE_URL;
   const [
+    competitionLastModified,
     families,
     headToHeadPairs,
     matchIds,
@@ -27,6 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     standingsPageParams,
     teams,
   ] = await Promise.all([
+    listCompetitionLastModified(),
     listFamilies(),
     listHeadToHeadPairs(),
     listMatchIdsWithContent(),
@@ -35,23 +38,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     listStandingsPageParams(),
     listAllTeams(),
   ]);
+  const familyLastModified = new Map<string, string>();
   const seasonPages = (
     await Promise.all(
       families.map(async (family) => {
         const seasons = await listSeasonsByFamily(family);
 
-        return seasons.map((season) => ({
-          changeFrequency: "daily" as const,
-          lastModified: new Date(),
-          priority: 0.8,
-          url: `${base}/c/${family}/${season.season}`,
-        }));
+        return seasons.map((season) => {
+          const lastModified = competitionLastModified.get(season.id);
+          const previous = familyLastModified.get(family);
+          if (
+            lastModified &&
+            (!previous || Date.parse(lastModified) > Date.parse(previous))
+          ) {
+            familyLastModified.set(family, lastModified);
+          }
+          return {
+            changeFrequency: "daily" as const,
+            ...(lastModified ? { lastModified: new Date(lastModified) } : {}),
+            priority: 0.8,
+            url: `${base}/c/${family}/${season.season}`,
+          };
+        });
       }),
     )
   ).flat();
   const familyPages = families.map((family) => ({
     changeFrequency: "weekly" as const,
-    lastModified: new Date(),
+    ...(familyLastModified.has(family)
+      ? { lastModified: new Date(familyLastModified.get(family)!) }
+      : {}),
     priority: 0.6,
     url: `${base}/c/${family}`,
   }));
@@ -89,32 +105,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
   const teamPages = teams.map((team) => ({
     changeFrequency: "weekly" as const,
-    lastModified: new Date(),
     priority: 0.7,
     url: `${base}/teams/${team.slug}`,
   }));
   const playerPages = playerSlugs.map((slug) => ({
     changeFrequency: "weekly" as const,
-    lastModified: new Date(),
     priority: 0.6,
     url: `${base}/players/${slug}`,
   }));
   const staticPages = [
     {
       changeFrequency: "daily" as const,
-      lastModified: new Date(),
       priority: 0.8,
       url: `${base}/c/rwc/2027/bracket`,
     },
     {
       changeFrequency: "daily" as const,
-      lastModified: new Date(),
       priority: 0.8,
       url: `${base}/calendar`,
     },
     {
       changeFrequency: "monthly" as const,
-      lastModified: new Date(),
       priority: 0.5,
       url: `${base}/pricing`,
     },
@@ -123,7 +134,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     {
       changeFrequency: "daily",
-      lastModified: new Date(),
       priority: 1,
       url: base,
     },
