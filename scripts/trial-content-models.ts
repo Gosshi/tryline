@@ -11,7 +11,7 @@ import type { PipelineResult, PipelineTrialDetails } from "@/lib/llm/pipeline";
 import type { ContentType } from "@/lib/llm/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type TrialConfig = "current" | "gpt6";
+type TrialConfig = "current" | "gpt6" | "fast6" | "sol";
 
 type TrialArgs = {
   matches: string[];
@@ -71,7 +71,7 @@ export function parseTrialArgs(args: string[]): TrialArgs {
     .filter(Boolean);
   const contentType = values.get("--content-type")?.[0];
   const requestedConfigs = values.get("--config") ?? ["current", "gpt6"];
-  const configs = ["current", "gpt6"].filter((config) =>
+  const configs = ["current", "gpt6", "fast6", "sol"].filter((config) =>
     requestedConfigs.includes(config),
   ) as TrialConfig[];
   const maxUsd = Number(values.get("--max-usd")?.[0] ?? DEFAULT_MAX_USD);
@@ -87,12 +87,8 @@ export function parseTrialArgs(args: string[]): TrialArgs {
   if (contentType !== "preview" && contentType !== "recap") {
     throw new Error("--content-type must be preview or recap");
   }
-  if (
-    configs.length !== 2 ||
-    !configs.includes("current") ||
-    !configs.includes("gpt6")
-  ) {
-    throw new Error("Use both --config current and --config gpt6 for comparison");
+  if (configs.length < 2 || !configs.includes("current")) {
+    throw new Error("Use --config current and at least one other config for comparison");
   }
   if (!Number.isFinite(maxUsd) || maxUsd <= 0) {
     throw new Error("--max-usd must be a positive number");
@@ -181,9 +177,16 @@ export async function getRecentAverageArticleCost(
 }
 
 function getModels(config: TrialConfig): ContentModelOverrides | undefined {
-  return config === "gpt6"
-    ? { narrative: "gpt-6-sol", fast: "gpt-6-luna" }
-    : undefined;
+  switch (config) {
+    case "gpt6":
+      return { narrative: "gpt-6-sol", fast: "gpt-6-luna" };
+    case "fast6":
+      return { fast: "gpt-6-luna" };
+    case "sol":
+      return { narrative: "gpt-6-sol" };
+    default:
+      return undefined;
+  }
 }
 
 function safeFilePart(value: string): string {
@@ -391,7 +394,9 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
       generateMatchContent(matchId, contentType, "ja", {
         ...(getModels(config) ? { models: getModels(config) } : {}),
         persist: false,
-        ...(config === "gpt6" ? { comparisonQaModel: MODELS.FAST } : {}),
+        ...(config === "gpt6" || config === "fast6"
+          ? { comparisonQaModel: MODELS.FAST }
+          : {}),
       }),
     write: async (path, contents) => {
       await mkdir(outputDirectory, { recursive: true });

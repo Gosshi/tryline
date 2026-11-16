@@ -110,6 +110,22 @@ describe("chat daily rate limit", () => {
     vi.restoreAllMocks();
   });
 
+  it("uses GPT-6 Luna without reasoning and caps streaming completion output at 1024", async () => {
+    authMocks.getUserProfile.mockResolvedValue({ chat_daily_count: 0, chat_daily_reset_date: "2026-05-07" });
+    const { POST } = await import("@/app/api/chat/[matchId]/route");
+    const response = await POST(new Request("http://localhost/api/chat/match-1", {
+      method: "POST", body: JSON.stringify({ message: "この試合の注目点は？" }),
+    }), { params: Promise.resolve({ matchId: "match-1" }) });
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('"delta":"分析"');
+    expect(llmMocks.create).toHaveBeenCalledExactlyOnceWith({
+      max_completion_tokens: 1024,
+      messages: [{ role: "system", content: "system prompt" }, { role: "user", content: "この試合の注目点は？" }],
+      model: "gpt-6-luna", reasoning_effort: "none", stream: true,
+      stream_options: { include_usage: true },
+    });
+  });
+
   it("returns 429 when the premium user reaches the daily limit", async () => {
     const { POST } = await import("@/app/api/chat/[matchId]/route");
 
