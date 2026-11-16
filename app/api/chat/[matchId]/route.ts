@@ -101,9 +101,10 @@ export async function POST(
     { content: userMessage, role: "user" },
   ];
   const stream = await getOpenAIClient().chat.completions.create({
-    max_tokens: 1024,
+    max_completion_tokens: 1024,
     messages,
     model: MODELS.CHAT,
+    reasoning_effort: "none",
     stream: true,
     stream_options: { include_usage: true },
   });

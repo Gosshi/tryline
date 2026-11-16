@@ -196,3 +196,21 @@ describe("trial-content-models", () => {
     expect(db.from).toHaveBeenCalledWith("pipeline_runs");
   });
 });
+
+it("estimates four matches across three configs and includes their result and average rows", async () => {
+  const args = parseTrialArgs(["--matches", "a,b,c,d", "--content-type", "recap", "--config", "current", "--config", "fast6", "--config", "sol", "--max-usd", "4"]);
+  const generate = vi.fn().mockResolvedValue(result());
+  const write = vi.fn();
+  const run = await runTrialBatch(args, 0.14, { generate, write });
+  expect(run.estimateUsd).toBeCloseTo(3.36);
+  expect(generate).toHaveBeenCalledTimes(12);
+  expect(run.rows).toHaveLength(12);
+  for (const config of ["current", "fast6", "sol"]) {
+    expect(run.summary).toContain(`| a | ${config} |`);
+    expect(run.summary).toContain(`| ${config} | 4 |`);
+  }
+});
+
+it.each([["current"], ["fast6"], ["sol"], ["fast6", "sol"]])("requires current and another config: %j", (...configs) => {
+  expect(() => parseTrialArgs(["--matches", "a", "--content-type", "recap", ...configs.flatMap(config => ["--config", config])])).toThrow("current");
+});
