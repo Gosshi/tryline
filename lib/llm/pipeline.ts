@@ -216,6 +216,131 @@ async function logPipelineRun(entry: {
   }
 }
 
+export async function loadQualityGateInput(
+  matchId: string,
+  contentType: ContentType,
+  language: ContentLanguage,
+): Promise<{ usable: ReturnType<typeof buildUsableContentInput> } | { skipReason: string }> {
+  const db = getSupabaseServerClient();
+  const { data: match, error } = await db
+    .from("matches")
+    .select("competition:competitions!matches_competition_id_fkey (family)")
+    .eq("id", matchId)
+    .single();
+  if (error) throw error;
+  if (isRetiredCompetitionFamily(match?.competition?.family)) {
+    return { skipReason: "competition_retired" };
+  }
+  const assembled = await assembleMatchContentInput(matchId, language, contentType);
+  if (contentType === "recap" && assembled.eventIntegrity?.status === "mismatch") {
+    return { skipReason: "score_mismatch" };
+  }
+  if (contentType === "recap" && assembled.eventIntegrity?.reason === "events_unavailable") {
+    return { skipReason: "events_unavailable" };
+  }
+  return { usable: buildUsableContentInput(assembled) };
+}
+
+export async function runQualityGateForNarrative(input: {
+  usable: ReturnType<typeof buildUsableContentInput>;
+  contentType: ContentType;
+  language: ContentLanguage;
+  narrative: string;
+  retryCount: number;
+  qaModel?: string;
+  entityModel?: string;
+  verifyEntities?: boolean;
+  entityViolationFeedback?: string[];
+}) {
+  const { usable, contentType, language } = input;
+  const hasEvents = usable.match_events.length > 0;
+  const hasLineups = hasConfirmedProjectedLineups(usable.projected_lineups);
+  const hasSourcedFactLineup = hasConfirmedSourcedFactLineup(usable.sourced_facts);
+  const allowedEntities = buildAllowedPersonEntities(usable);
+  const knownNonPersonNames = buildKnownNonPersonNames(usable);
+  const [entityVerification, qaResponse] = await Promise.all([
+    input.verifyEntities === false
+      ? Promise.resolve(null)
+      : verifyNarrativeEntities({
+          allowedEntities,
+          knownNonPersonNames,
+          model: input.entityModel,
+          narrative: input.narrative,
+          sourcedFacts: usable.sourced_facts,
+        }),
+    evaluateNarrativeQuality({
+      contentType,
+      language,
+      matchContext: {
+        awayScore: usable.match.away_score,
+        awayTeam: usable.match.away_team?.name ?? "Away",
+        competitionName: usable.match.competition?.name ?? null,
+        ...(usable.competition_standings.length > 0
+          ? { competitionStandings: usable.competition_standings }
+          : {}),
+        derivedStats: usable.derived_stats,
+        formStats: {
+          away: {
+            avg_points_against_last_5:
+              usable.key_stats.away.avg_points_against_last_5,
+            avg_points_for_last_5:
+              usable.key_stats.away.avg_points_for_last_5,
+            record_last_5: buildRecentFormRecord(
+              usable.recent_form.away,
+              usable.match.away_team?.name ?? "Away",
+            ),
+            win_rate_last_5: usable.key_stats.away.win_rate_last_5,
+          },
+          home: {
+            avg_points_against_last_5:
+              usable.key_stats.home.avg_points_against_last_5,
+            avg_points_for_last_5:
+              usable.key_stats.home.avg_points_for_last_5,
+            record_last_5: buildRecentFormRecord(
+              usable.recent_form.home,
+              usable.match.home_team?.name ?? "Home",
+            ),
+            win_rate_last_5: usable.key_stats.home.win_rate_last_5,
+          },
+        },
+        homeScore: usable.match.home_score,
+        homeTeam: usable.match.home_team?.name ?? "Home",
+        h2h_last_5: usable.h2h_last_5,
+        kickoff_at_jst: usable.match.kickoff_at_jst,
+        japanese_name_glossary: usable.japanese_name_glossary,
+        match_events: usable.match_events,
+        projected_lineups: usable.projected_lineups,
+        recent_form: usable.recent_form,
+        score_timeline: usable.score_timeline,
+        sourcedFacts: usable.sourced_facts,
+        teamStats: usable.team_stats,
+        venue: usable.match.venue,
+      },
+      hasConfirmedSourcedFactLineup: hasSourcedFactLineup,
+      hasEvents,
+      hasLineups,
+      matchEvents: usable.match_events,
+      model: input.qaModel,
+      narrative: input.narrative,
+      retryCount: input.retryCount,
+    }),
+  ]);
+  const entityViolations =
+    entityVerification?.result.ungroundedSurfaces ?? input.entityViolationFeedback ?? [];
+
+  return {
+    entityVerification,
+    qaResponse: {
+      ...qaResponse,
+      result: applyEntityGroundingQaGuard(qaResponse.result, {
+        contentType,
+        entityViolations,
+        retryCount: input.retryCount,
+      }),
+    },
+  };
+}
+
 export async function generateMatchContent(
   matchId: string,
   contentType: ContentType,
@@ -343,13 +468,7 @@ export async function generateMatchContent(
   }
 
   const usable = buildUsableContentInput(assembled);
-  const hasEvents = usable.match_events.length > 0;
   const hasLineups = hasConfirmedProjectedLineups(usable.projected_lineups);
-  const hasSourcedFactLineup = hasConfirmedSourcedFactLineup(
-    usable.sourced_facts,
-  );
-  const allowedEntities = buildAllowedPersonEntities(usable);
-  const knownNonPersonNames = buildKnownNonPersonNames(usable);
   let totalCostUsd = 0;
 
   const stage2StartedAt = Date.now();
@@ -417,95 +536,6 @@ export async function generateMatchContent(
   let comparisonQa: QaResult | null = null;
   let comparisonQaCostUsd = 0;
 
-  async function runQualityGate(gateOptions: {
-    narrative: string;
-    retryCount: number;
-    qaModel?: string;
-    verifyEntities?: boolean;
-  }) {
-    const [entityVerification, qaResponse] = await Promise.all([
-      gateOptions.verifyEntities === false
-        ? Promise.resolve(null)
-        : verifyNarrativeEntities({
-            allowedEntities,
-            knownNonPersonNames,
-            model: options.models?.fast,
-            narrative: gateOptions.narrative,
-            sourcedFacts: usable.sourced_facts,
-          }),
-      evaluateNarrativeQuality({
-        contentType,
-        language,
-        matchContext: {
-          awayScore: usable.match.away_score,
-          awayTeam: usable.match.away_team?.name ?? "Away",
-          competitionName: usable.match.competition?.name ?? null,
-          ...(usable.competition_standings.length > 0
-            ? { competitionStandings: usable.competition_standings }
-            : {}),
-          derivedStats: usable.derived_stats,
-          formStats: {
-            away: {
-              avg_points_against_last_5:
-                usable.key_stats.away.avg_points_against_last_5,
-              avg_points_for_last_5:
-                usable.key_stats.away.avg_points_for_last_5,
-              record_last_5: buildRecentFormRecord(
-                usable.recent_form.away,
-                usable.match.away_team?.name ?? "Away",
-              ),
-              win_rate_last_5: usable.key_stats.away.win_rate_last_5,
-            },
-            home: {
-              avg_points_against_last_5:
-                usable.key_stats.home.avg_points_against_last_5,
-              avg_points_for_last_5:
-                usable.key_stats.home.avg_points_for_last_5,
-              record_last_5: buildRecentFormRecord(
-                usable.recent_form.home,
-                usable.match.home_team?.name ?? "Home",
-              ),
-              win_rate_last_5: usable.key_stats.home.win_rate_last_5,
-            },
-          },
-          homeScore: usable.match.home_score,
-          homeTeam: usable.match.home_team?.name ?? "Home",
-          h2h_last_5: usable.h2h_last_5,
-          kickoff_at_jst: usable.match.kickoff_at_jst,
-          japanese_name_glossary: usable.japanese_name_glossary,
-          match_events: usable.match_events,
-          projected_lineups: usable.projected_lineups,
-          recent_form: usable.recent_form,
-          score_timeline: usable.score_timeline,
-          sourcedFacts: usable.sourced_facts,
-          teamStats: usable.team_stats,
-          venue: usable.match.venue,
-        },
-        hasConfirmedSourcedFactLineup: hasSourcedFactLineup,
-        hasEvents,
-        hasLineups,
-        matchEvents: usable.match_events,
-        model: gateOptions.qaModel ?? options.models?.fast,
-        narrative: gateOptions.narrative,
-        retryCount: gateOptions.retryCount,
-      }),
-    ]);
-    const entityViolations =
-      entityVerification?.result.ungroundedSurfaces ?? entityViolationFeedback;
-
-    return {
-      entityVerification,
-      qaResponse: {
-        ...qaResponse,
-        result: applyEntityGroundingQaGuard(qaResponse.result, {
-          contentType,
-          entityViolations,
-          retryCount: gateOptions.retryCount,
-        }),
-      },
-    };
-  }
-
   const narrativeAttemptLimit = options.trialFirstAttemptOnly
     ? 1
     : NARRATIVE_GENERATION_ATTEMPTS;
@@ -570,7 +600,13 @@ export async function generateMatchContent(
     let entityVerification;
 
     try {
-      const result = await runQualityGate({
+      const result = await runQualityGateForNarrative({
+        usable,
+        contentType,
+        language,
+        entityViolationFeedback,
+        entityModel: options.models?.fast,
+        qaModel: options.models?.fast,
         narrative: narrative.content,
         retryCount: attempt,
       });
@@ -745,7 +781,13 @@ export async function generateMatchContent(
       let revisionEntityVerification;
       let revisionQaResponse;
       try {
-        const result = await runQualityGate({
+        const result = await runQualityGateForNarrative({
+          usable,
+          contentType,
+          language,
+          entityViolationFeedback,
+          entityModel: options.models?.fast,
+          qaModel: options.models?.fast,
           narrative: revised.content,
           retryCount: attempt + 1,
         });
@@ -934,7 +976,12 @@ export async function generateMatchContent(
 
   if (options.comparisonQaModel) {
     const comparisonStartedAt = Date.now();
-    const comparison = await runQualityGate({
+    const comparison = await runQualityGateForNarrative({
+      usable,
+      contentType,
+      language,
+      entityViolationFeedback,
+      entityModel: options.models?.fast,
       narrative: finalNarrative,
       retryCount: 0,
       qaModel: options.comparisonQaModel,
