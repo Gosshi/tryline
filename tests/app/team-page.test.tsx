@@ -95,6 +95,7 @@ describe("TeamPage", () => {
             {
               displayOrder: 0,
               kind: "streaming",
+              scope: "match",
               serviceName: "J SPORTSオンデマンド",
               sourceUrl: null,
               url: "https://example.com/watch",

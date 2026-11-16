@@ -780,6 +780,7 @@ describe("season page information architecture", () => {
             {
               displayOrder: 0,
               kind: "tv",
+              scope: "match",
               serviceName: "J SPORTS 3",
               sourceUrl: "https://example.com/source",
               url: "https://example.com/j-sports-3",

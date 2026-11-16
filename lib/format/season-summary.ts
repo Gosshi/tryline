@@ -45,27 +45,30 @@ export function getSeasonBroadcastGuide(
   broadcastsByMatch: Map<string, MatchBroadcast[]>,
 ): SeasonBroadcastGuide {
   const servicesByName = new Map<string, MatchBroadcast>();
-
+  const servicesByScope = {
+    match: new Map<string, MatchBroadcast>(),
+    competition: new Map<string, MatchBroadcast>(),
+  };
   for (const broadcasts of broadcastsByMatch.values()) {
     for (const broadcast of broadcasts) {
-      const existing = servicesByName.get(broadcast.serviceName);
-
-      if (
-        !existing ||
-        new Date(broadcast.verifiedAt).getTime() >
-          new Date(existing.verifiedAt).getTime()
-      ) {
-        servicesByName.set(broadcast.serviceName, broadcast);
+      for (const services of [
+        servicesByName,
+        servicesByScope[broadcast.scope],
+      ]) {
+        const existing = services.get(broadcast.serviceName);
+        if (
+          !existing ||
+          Date.parse(broadcast.verifiedAt) > Date.parse(existing.verifiedAt)
+        ) {
+          services.set(broadcast.serviceName, broadcast);
+        }
       }
     }
   }
-
-  const broadcasts = [...servicesByName.values()].sort(
-    (left, right) =>
-      left.displayOrder - right.displayOrder ||
-      left.serviceName.localeCompare(right.serviceName, "ja"),
-  );
-
+  const sortServices = (left: MatchBroadcast, right: MatchBroadcast) =>
+    left.displayOrder - right.displayOrder ||
+    left.serviceName.localeCompare(right.serviceName, "ja");
+  const broadcasts = [...servicesByName.values()].sort(sortServices);
   if (broadcasts.length === 0) {
     return {
       answer:
@@ -74,13 +77,40 @@ export function getSeasonBroadcastGuide(
     };
   }
 
+  const competitionBroadcasts = [...servicesByScope.competition.values()].sort(
+    sortServices,
+  );
+  const matchBroadcasts = [...servicesByScope.match.values()].sort(
+    sortServices,
+  );
+  const answers: string[] = [];
+  if (competitionBroadcasts.length > 0) {
+    const latestVerifiedAt = Math.max(
+      ...competitionBroadcasts.map((broadcast) =>
+        Date.parse(broadcast.verifiedAt),
+      ),
+    );
+    const verifiedDate = new Intl.DateTimeFormat("ja-JP", {
+      timeZone: "Asia/Tokyo",
+      month: "long",
+      day: "numeric",
+    }).format(new Date(latestVerifiedAt));
+    answers.push(
+      `このシーズンは${competitionBroadcasts.map((broadcast) => broadcast.serviceName).join("・")}で全試合を視聴できます（${verifiedDate}確認）。試合ごとのチャンネルや配信ページは各サービスの番組表でご確認ください。`,
+    );
+  }
+  if (matchBroadcasts.length > 0) {
+    answers.push(
+      `掲載中の一部試合に視聴情報があります。対象試合の案内をご確認ください。確認済みのサービス: ${matchBroadcasts
+        .map(
+          (broadcast) =>
+            `${broadcast.serviceName}（${broadcast.verifiedAt.slice(0, 10)}確認）`,
+        )
+        .join("、")}。`,
+    );
+  }
   return {
-    answer: `掲載中の一部試合に視聴情報があります。対象試合の案内をご確認ください。確認済みのサービス: ${broadcasts
-      .map(
-        (broadcast) =>
-          `${broadcast.serviceName}（${broadcast.verifiedAt.slice(0, 10)}確認）`,
-      )
-      .join("、")}。`,
+    answer: answers.join(""),
     services: broadcasts.map(({ displayOrder, kind, serviceName, url }) => ({
       displayOrder,
       kind,

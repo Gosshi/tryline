@@ -1,3 +1,4 @@
+import { chunkArray } from "@/lib/db/pagination";
 import { getSupabasePublicServerClient } from "@/lib/db/public-server";
 
 export type MatchBroadcastKind = "tv" | "streaming";
@@ -5,6 +6,7 @@ export type MatchBroadcastKind = "tv" | "streaming";
 export type MatchBroadcast = {
   displayOrder: number;
   kind: MatchBroadcastKind;
+  scope: "match" | "competition";
   serviceName: string;
   sourceUrl: string | null;
   url: string;
@@ -16,10 +18,9 @@ export type MatchBroadcastService = Pick<
   "displayOrder" | "kind" | "serviceName" | "url"
 >;
 
-type MatchBroadcastRow = {
+type BroadcastRow = {
   display_order: number;
   kind: string;
-  match_id: string;
   service_name: string;
   source_url: string | null;
   url: string;
@@ -34,10 +35,17 @@ function toBroadcastKind(kind: string): MatchBroadcastKind {
   return kind;
 }
 
-function mapBroadcastRow(row: MatchBroadcastRow): MatchBroadcast {
+type MatchBroadcastRow = BroadcastRow & { match_id: string };
+type CompetitionBroadcastRow = BroadcastRow & { competition_id: string };
+
+function mapBroadcastRow(
+  row: BroadcastRow,
+  scope: MatchBroadcast["scope"],
+): MatchBroadcast {
   return {
     displayOrder: row.display_order,
     kind: toBroadcastKind(row.kind),
+    scope,
     serviceName: row.service_name,
     sourceUrl: row.source_url,
     url: row.url,
@@ -53,25 +61,76 @@ export async function getMatchBroadcastsForMatches(
   }
 
   const client = getSupabasePublicServerClient();
-  const { data, error } = await client
-    .from("match_broadcasts")
-    .select(
-      "match_id, service_name, url, kind, display_order, verified_at, source_url",
-    )
-    .in("match_id", matchIds)
-    .order("display_order", { ascending: true })
-    .order("service_name", { ascending: true });
-
-  if (error) {
-    throw error;
+  const broadcastsByMatch = new Map<string, MatchBroadcast[]>();
+  for (const ids of chunkArray([...new Set(matchIds)], 200)) {
+    const { data, error } = await client
+      .from("match_broadcasts")
+      .select(
+        "match_id, service_name, url, kind, display_order, verified_at, source_url",
+      )
+      .in("match_id", ids)
+      .order("display_order", { ascending: true })
+      .order("service_name", { ascending: true });
+    if (error) throw error;
+    for (const row of (data ?? []) as MatchBroadcastRow[]) {
+      const broadcasts = broadcastsByMatch.get(row.match_id) ?? [];
+      broadcasts.push(mapBroadcastRow(row, "match"));
+      broadcastsByMatch.set(row.match_id, broadcasts);
+    }
   }
 
-  const broadcastsByMatch = new Map<string, MatchBroadcast[]>();
+  const missingMatchIds = [...new Set(matchIds)].filter(
+    (matchId) => !broadcastsByMatch.has(matchId),
+  );
+  if (missingMatchIds.length === 0) return broadcastsByMatch;
 
-  for (const row of (data ?? []) as MatchBroadcastRow[]) {
-    const broadcasts = broadcastsByMatch.get(row.match_id) ?? [];
-    broadcasts.push(mapBroadcastRow(row));
-    broadcastsByMatch.set(row.match_id, broadcasts);
+  try {
+    const matches: Array<{
+      id: string;
+      competition_id: string;
+      status: string;
+    }> = [];
+    for (const ids of chunkArray(missingMatchIds, 200)) {
+      const { data, error } = await client
+        .from("matches")
+        .select("id, competition_id, status")
+        .in("id", ids);
+      if (error) throw error;
+      matches.push(
+        ...(data ?? []).filter((match) => match.status !== "cancelled"),
+      );
+    }
+    const competitionIds = [
+      ...new Set(matches.map((match) => match.competition_id)),
+    ];
+    const broadcastsByCompetition = new Map<string, MatchBroadcast[]>();
+    for (const ids of chunkArray(competitionIds, 200)) {
+      const { data, error } = await client
+        .from("competition_broadcasts")
+        .select(
+          "competition_id, service_name, url, kind, display_order, verified_at, source_url",
+        )
+        .in("competition_id", ids)
+        .order("display_order", { ascending: true })
+        .order("service_name", { ascending: true });
+      if (error) throw error;
+      for (const row of (data ?? []) as CompetitionBroadcastRow[]) {
+        const broadcasts =
+          broadcastsByCompetition.get(row.competition_id) ?? [];
+        broadcasts.push(mapBroadcastRow(row, "competition"));
+        broadcastsByCompetition.set(row.competition_id, broadcasts);
+      }
+    }
+    // Commit defaults only after every fallback query succeeds.
+    for (const match of matches) {
+      const broadcasts = broadcastsByCompetition.get(match.competition_id);
+      if (broadcasts) broadcastsByMatch.set(match.id, broadcasts);
+    }
+  } catch (error) {
+    console.error("[match-broadcasts] competition fallback failed", {
+      matchIdCount: missingMatchIds.length,
+      error,
+    });
   }
 
   return broadcastsByMatch;
@@ -106,19 +165,6 @@ export async function getMatchBroadcastServicesForMatches(
 export async function getMatchBroadcastPresenceForMatches(
   matchIds: string[],
 ): Promise<Set<string>> {
-  if (matchIds.length === 0) {
-    return new Set();
-  }
-
-  const client = getSupabasePublicServerClient();
-  const { data, error } = await client
-    .from("match_broadcasts")
-    .select("match_id")
-    .in("match_id", matchIds);
-
-  if (error) {
-    throw error;
-  }
-
-  return new Set((data ?? []).map((row) => row.match_id));
+  const broadcastsByMatch = await getMatchBroadcastsForMatches(matchIds);
+  return new Set(broadcastsByMatch.keys());
 }
