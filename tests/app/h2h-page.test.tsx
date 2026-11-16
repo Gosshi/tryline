@@ -217,6 +217,7 @@ describe("H2H page", () => {
     {
       displayOrder: 1,
       kind: "tv",
+      scope: "match",
       serviceName: "WOWOWプライム",
       url: "https://example.test/wowow",
       sourceUrl: null,
@@ -225,6 +226,7 @@ describe("H2H page", () => {
     {
       displayOrder: 2,
       kind: "tv",
+      scope: "match",
       serviceName: "J SPORTS 1",
       url: "https://example.test/jsports",
       sourceUrl: null,
@@ -233,6 +235,7 @@ describe("H2H page", () => {
     {
       displayOrder: 3,
       kind: "streaming",
+      scope: "match",
       serviceName: "WOWOWオンデマンド",
       url: "https://example.test/wowow-ondemand",
       sourceUrl: null,
@@ -241,6 +244,7 @@ describe("H2H page", () => {
     {
       displayOrder: 4,
       kind: "streaming",
+      scope: "match",
       serviceName: "J SPORTSオンデマンド",
       url: "",
       sourceUrl: null,

@@ -298,6 +298,50 @@ export type Database = {
           },
         ];
       };
+      competition_broadcasts: {
+        Row: {
+          created_at: string;
+          display_order: number;
+          id: string;
+          kind: string;
+          competition_id: string;
+          service_name: string;
+          source_url: string;
+          url: string;
+          verified_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_order?: number;
+          id?: string;
+          kind: string;
+          competition_id: string;
+          service_name: string;
+          source_url: string;
+          url: string;
+          verified_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          display_order?: number;
+          id?: string;
+          kind?: string;
+          competition_id?: string;
+          service_name?: string;
+          source_url?: string;
+          url?: string;
+          verified_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "competition_broadcasts_competition_id_fkey";
+            columns: ["competition_id"];
+            isOneToOne: false;
+            referencedRelation: "competitions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       competition_guides: {
         Row: {
           family: string;

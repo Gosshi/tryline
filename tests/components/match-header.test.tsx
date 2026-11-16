@@ -343,6 +343,7 @@ describe("MatchHeader", () => {
             {
               displayOrder: 0,
               kind: "tv",
+              scope: "match",
               serviceName: "WOWOW プライム",
               sourceUrl: "https://source.example.com",
               url: "https://example.com/wowow",
@@ -351,6 +352,7 @@ describe("MatchHeader", () => {
             {
               displayOrder: 1,
               kind: "streaming",
+              scope: "match",
               serviceName: "J SPORTS オンデマンド",
               sourceUrl: null,
               url: "https://example.com/jsports",
@@ -501,5 +503,51 @@ describe("MatchHeader", () => {
       "href",
       "/teams/france",
     );
+  });
+});
+
+describe("MatchHeader competition broadcast explanation", () => {
+  const explanation =
+    "大会の全試合を中継するサービスです。チャンネル・配信ページは各サービスの番組表でご確認ください。";
+  it.each([
+    ["competition defaults", ["competition", "competition"], "ja", true],
+    ["mixed scopes", ["competition", "match"], "ja", false],
+    ["match rows", ["match"], "ja", false],
+    ["English defaults", ["competition"], "en", false],
+    ["empty rows", [], "ja", false],
+  ] as const)("handles %s", (_label, scopes, language, visible) => {
+    const broadcasts = scopes.map((scope, index) => ({
+      displayOrder: index,
+      kind: "streaming" as const,
+      scope,
+      serviceName: `Service ${index}`,
+      sourceUrl: "https://example.test/announcement",
+      url: `https://example.test/service-${index}`,
+      verifiedAt: "2026-11-16T12:00:00Z",
+    }));
+    const { container } = render(
+      <MatchHeader language={language} match={{ ...match, broadcasts }} />,
+    );
+    const text = screen.queryByText(explanation);
+    if (visible) {
+      expect(text).toBeInTheDocument();
+      expect(text).toHaveClass("text-[11px]", "text-white/80");
+    } else expect(text).not.toBeInTheDocument();
+    if (broadcasts.length > 0) {
+      const section = within(
+        container.querySelector("#broadcasts") as HTMLElement,
+      );
+      expect(
+        section.getByRole("heading", { name: "視聴方法" }),
+      ).toBeInTheDocument();
+      expect(section.getByText("確認日: 11/16")).toBeInTheDocument();
+      expect(section.getAllByRole("link")).toHaveLength(broadcasts.length);
+      for (const broadcast of broadcasts)
+        expect(
+          section.getByRole("link", {
+            name: new RegExp(broadcast.serviceName),
+          }),
+        ).toHaveAttribute("href", broadcast.url);
+    }
   });
 });

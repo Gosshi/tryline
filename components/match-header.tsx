@@ -251,6 +251,14 @@ export function MatchHeader({
               </a>
             ))}
           </div>
+          {language !== "en" &&
+            match.broadcasts.every(
+              (broadcast) => broadcast.scope === "competition",
+            ) && (
+              <p className="mt-3 text-[11px] text-white/80">
+                大会の全試合を中継するサービスです。チャンネル・配信ページは各サービスの番組表でご確認ください。
+              </p>
+            )}
         </div>
       )}
 

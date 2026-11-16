@@ -409,6 +409,7 @@ describe("getMatchById", () => {
             {
               displayOrder: 0,
               kind: "tv",
+              scope: "match",
               serviceName: "WOWOW プライム",
               sourceUrl: null,
               url: "https://example.com/wowow",
