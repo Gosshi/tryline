@@ -37,7 +37,8 @@
 
 - 呼ぶのは次の試合 1 件分だけ（`selectNextHeadToHeadMatch(data.matches, now)`、`app/h2h/[pair]/page.tsx:361` の結果）。次の試合がなければ呼ばない
 - `getMatchBroadcastsForMatches` が例外を投げたら、放送の一覧を出さずに表示を続ける（ページ全体を 500 にしない）。サーバーログに `console.error` を 1 行出す
-- `generateMetadata` とページ本体の両方で使う。どちらも `resolveHeadToHeadPage` と同じく、同一リクエスト内で重複して取得しないよう `react` の `cache` で包む
+- `generateMetadata` とページ本体の両方で使う。**新しく足す放送取得の関数だけ**を `react` の `cache` で包み、同一リクエスト内で重複して取得しないようにする。引数は次の試合の `match.id`（文字列 1 つ）にする。`cache` は引数の同一性で判定するので、配列を渡さない
+- 既存の `resolveHeadToHeadPage`（`:45`）と `getHeadToHeadPageData` は変えない（どちらも `cache` で包まれていない通常の async 関数のまま）
 
 ## UI サーフェス
 

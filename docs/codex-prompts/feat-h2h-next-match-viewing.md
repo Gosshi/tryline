@@ -6,7 +6,7 @@
 
 ## やること
 - `app/h2h/[pair]/page.tsx`
-  - 次の試合 1 件分の放送データを `getMatchBroadcastsForMatches`（`lib/db/queries/match-broadcasts.ts:48`）で読む。`react` の `cache` で包み、`generateMetadata` とページ本体で重複して取得しない。例外のときは空として扱い、`console.error` を 1 行出す
+  - 次の試合 1 件分の放送データを `getMatchBroadcastsForMatches`（`lib/db/queries/match-broadcasts.ts:48`）で読む。**新しい放送取得関数（引数は `match.id` の文字列）だけ**を `react` の `cache` で包み、`generateMetadata` とページ本体で重複して取得しない。既存の `resolveHeadToHeadPage`・`getHeadToHeadPageData` は変えない。例外のときは空として扱い、`console.error` を 1 行出す
   - `NextMatchCta`（`:432`）に、放送・配信の一覧、確認日、`hasPreview` のときだけ「プレビューを読む →」を足す（仕様書「UI サーフェス」）
   - `generateMetadata`（`:64`）で、14 日以内に次の試合があるときだけ、description の先頭に 1 文足す（仕様書「メタデータ」）。**title は変えない**
 - `components/match-header.tsx:50` の `formatBroadcastVerifiedDate` を `lib/` 側へ移して共通化する。`match-header.tsx` の表示は変えない
