@@ -8,6 +8,7 @@ import {
   fireEvent,
   render,
   screen,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -19,6 +20,29 @@ import { writeSpoilerGuard } from "@/lib/spoiler-guard";
 
 const authMock = vi.hoisted(() => ({ getClientUserState: vi.fn() }));
 vi.mock("@/lib/auth/client", () => authMock);
+
+const broadcastMocks = vi.hoisted(() => ({
+  getMatchBroadcastsForMatches: vi.fn(),
+}));
+vi.mock("@/lib/db/queries/match-broadcasts", () => broadcastMocks);
+
+// React.cache is request-scoped in RSC; model that scope explicitly in this jsdom suite.
+const requestCache = vi.hoisted(() => ({
+  stores: [] as Map<unknown, unknown>[],
+  calls: [] as unknown[][],
+}));
+vi.mock("react", async (original) => ({
+  ...(await original<typeof import("react")>()),
+  cache: (fn: (...args: unknown[]) => unknown) => {
+    const store = new Map<unknown, unknown>();
+    requestCache.stores.push(store);
+    return (...args: unknown[]) => {
+      requestCache.calls.push(args);
+      if (!store.has(args[0])) store.set(args[0], fn(...args));
+      return store.get(args[0]);
+    };
+  },
+}));
 
 const contentMocks = vi.hoisted(() => ({
   getContentStatusForMatches: vi.fn(),
@@ -124,6 +148,7 @@ vi.mock("@/components/tracked-link", () => ({
 }));
 vi.mock("next/navigation", () => navigationMock);
 
+import type { MatchBroadcast } from "@/lib/db/queries/match-broadcasts";
 import type { ReactNode } from "react";
 
 const pageData = {
@@ -160,6 +185,9 @@ const pageData = {
 describe("H2H page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    requestCache.stores.forEach((store) => store.clear());
+    requestCache.calls.length = 0;
+    broadcastMocks.getMatchBroadcastsForMatches.mockResolvedValue(new Map());
     authMock.getClientUserState.mockResolvedValue({
       favoriteTeamSlugs: [],
       isPremium: false,
@@ -175,6 +203,300 @@ describe("H2H page", () => {
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
+  });
+
+  const nextMatch = {
+    ...pageData.matches[0],
+    id: "scotland-japan-next",
+    kickoffAt: "2026-11-21T14:10:00.000Z",
+    status: "scheduled",
+    homeScore: null as number | null,
+    awayScore: null as number | null,
+  };
+  const broadcasts: MatchBroadcast[] = [
+    {
+      displayOrder: 1,
+      kind: "tv",
+      serviceName: "WOWOWプライム",
+      url: "https://example.test/wowow",
+      sourceUrl: null,
+      verifiedAt: "2026-11-14T15:10:00Z",
+    },
+    {
+      displayOrder: 2,
+      kind: "tv",
+      serviceName: "J SPORTS 1",
+      url: "https://example.test/jsports",
+      sourceUrl: null,
+      verifiedAt: "2026-11-14T12:00:00Z",
+    },
+    {
+      displayOrder: 3,
+      kind: "streaming",
+      serviceName: "WOWOWオンデマンド",
+      url: "https://example.test/wowow-ondemand",
+      sourceUrl: null,
+      verifiedAt: "2026-11-14T12:00:00Z",
+    },
+    {
+      displayOrder: 4,
+      kind: "streaming",
+      serviceName: "J SPORTSオンデマンド",
+      url: "",
+      sourceUrl: null,
+      verifiedAt: "2026-11-14T12:00:00Z",
+    },
+  ];
+  const baseDescription =
+    "ラグビー日本とスコットランドの通算対戦成績（1試合 1勝0敗）。過去の全対戦のスコアと、直近の日本語レビューへのリンク。";
+  const metadataTitle = {
+    absolute: "ラグビー 日本 対 スコットランド 対戦成績 | Tryline",
+  };
+  const params = () => ({
+    params: Promise.resolve({ pair: "japan-vs-scotland" }),
+  });
+  function arrangeNextMatch(
+    overrides: Partial<typeof nextMatch> & { kickoffTimeTbd?: boolean } = {},
+  ) {
+    vi.setSystemTime(new Date("2026-11-14T14:10:00.000Z"));
+    matchesMock.getHeadToHeadPageData.mockResolvedValue({
+      ...pageData,
+      canonicalSlug: "japan-vs-scotland",
+      teamA: { name: "日本", shortCode: "JPN", slug: "japan" },
+      teamB: { name: "スコットランド", shortCode: "SCO", slug: "scotland" },
+      matches: [{ ...nextMatch, ...overrides }],
+      history: [
+        {
+          playedOn: "1973-09-24",
+          teamSlug: "japan",
+          opponentSlug: "scotland",
+          teamScore: 10,
+          opponentScore: 7,
+          venue: null,
+          competitionLabel: null,
+        },
+      ],
+    });
+    // Deliberately unsorted to exercise the display_order contract in both surfaces.
+    broadcastMocks.getMatchBroadcastsForMatches.mockResolvedValue(
+      new Map([
+        [
+          nextMatch.id,
+          [broadcasts[3], broadcasts[1], broadcasts[0], broadcasts[2]],
+        ],
+      ]),
+    );
+  }
+  async function renderNextMatch() {
+    render(await HeadToHeadPage(params()));
+    return within(screen.getByText("次回対戦").closest("aside")!);
+  }
+
+  it("shows all four broadcasts in display order, with kind labels, safe links and JST verification date", async () => {
+    arrangeNextMatch();
+    const card = await renderNextMatch();
+    const items = card.getAllByRole("listitem");
+    expect(items).toHaveLength(4);
+    expect(items.map((item) => item.textContent)).toEqual([
+      "放送WOWOWプライム ↗",
+      "放送J SPORTS 1 ↗",
+      "配信WOWOWオンデマンド ↗",
+      "配信J SPORTSオンデマンド",
+    ]);
+    for (const broadcast of broadcasts.slice(0, 3)) {
+      const link = card.getByRole("link", { name: broadcast.serviceName });
+      expect(link).toHaveAttribute("href", broadcast.url);
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    }
+    expect(
+      card.queryByRole("link", { name: "J SPORTSオンデマンド" }),
+    ).not.toBeInTheDocument();
+    expect(card.getByText("確認日: 11/15")).toBeInTheDocument();
+    expect(
+      broadcastMocks.getMatchBroadcastsForMatches,
+    ).toHaveBeenCalledExactlyOnceWith([nextMatch.id]);
+  });
+
+  it("omits broadcasts and verification date without claiming that viewing is unannounced", async () => {
+    arrangeNextMatch();
+    broadcastMocks.getMatchBroadcastsForMatches.mockResolvedValue(new Map());
+    const card = await renderNextMatch();
+    expect(
+      card.queryByRole("list", { name: "放送・配信" }),
+    ).not.toBeInTheDocument();
+    expect(card.queryByText(/確認日|未定|未発表/)).not.toBeInTheDocument();
+    expect(card.getByText("日本 対 スコットランド")).toBeInTheDocument();
+  });
+
+  it("keeps the card and metadata when broadcasts fail and logs once for the request", async () => {
+    arrangeNextMatch();
+    broadcastMocks.getMatchBroadcastsForMatches.mockRejectedValue(
+      new Error("offline"),
+    );
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const metadata = await generateMetadata(params());
+      const card = await renderNextMatch();
+      expect(card.getByText("日本 対 スコットランド")).toBeInTheDocument();
+      expect(card.getByText("2026-11-21 (土) 23:10 JST")).toBeInTheDocument();
+      expect(card.queryByRole("list")).not.toBeInTheDocument();
+      expect(metadata.description).toBe(
+        "次戦は11月21日(土)23:10 JST キックオフ。" + baseDescription,
+      );
+      expect(error).toHaveBeenCalledExactlyOnceWith(
+        `[h2h] Failed to load broadcasts for match ${nextMatch.id}`,
+      );
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it.each([true, false])(
+    "shows the preview link only with hasPreview=%s and preserves the existing CTA",
+    async (hasPreview) => {
+      arrangeNextMatch();
+      contentMocks.getContentStatusForMatches.mockResolvedValue({
+        [nextMatch.id]: { hasPreview, hasRecap: false },
+      });
+      const card = await renderNextMatch();
+      const preview = card.queryByRole("link", { name: "プレビューを読む →" });
+      if (hasPreview) {
+        expect(preview).toHaveAttribute("href", `/matches/${nextMatch.id}`);
+        expect(trackedLinkMocks.calls).toContainEqual(
+          expect.objectContaining({
+            analytics: expect.objectContaining({
+              cta_id: "h2h_next_match_preview",
+              match_id: nextMatch.id,
+            }),
+          }),
+        );
+      } else {
+        expect(preview).not.toBeInTheDocument();
+        expect(
+          trackedLinkMocks.calls.some(
+            ({ analytics }) => analytics.cta_id === "h2h_next_match_preview",
+          ),
+        ).toBe(false);
+      }
+      expect(
+        card.getByRole("link", { name: "次回対戦の詳細を見る →" }),
+      ).toHaveAttribute("href", `/matches/${nextMatch.id}`);
+      expect(trackedLinkMocks.calls).toContainEqual(
+        expect.objectContaining({
+          analytics: expect.objectContaining({
+            cta_id: "h2h_next_match",
+            match_id: nextMatch.id,
+          }),
+        }),
+      );
+    },
+  );
+
+  it("does not query broadcasts without a future scheduled match in either surface", async () => {
+    matchesMock.getHeadToHeadPageData.mockResolvedValue(pageData);
+    await generateMetadata({
+      params: Promise.resolve({ pair: pageData.canonicalSlug }),
+    });
+    render(
+      await HeadToHeadPage({
+        params: Promise.resolve({ pair: pageData.canonicalSlug }),
+      }),
+    );
+    expect(broadcastMocks.getMatchBroadcastsForMatches).not.toHaveBeenCalled();
+  });
+
+  it("prefixes metadata seven days ahead with the first three ordered services and reuses broadcasts across surfaces", async () => {
+    arrangeNextMatch();
+    const metadata = await generateMetadata(params());
+    const description =
+      "次戦は11月21日(土)23:10 JST キックオフ、WOWOWプライム・J SPORTS 1・WOWOWオンデマンドなどで放送・配信。" +
+      baseDescription;
+    expect(metadata).toMatchObject({
+      title: metadataTitle,
+      description,
+      openGraph: { description },
+    });
+    await renderNextMatch();
+    expect(
+      broadcastMocks.getMatchBroadcastsForMatches,
+    ).toHaveBeenCalledExactlyOnceWith([nextMatch.id]);
+    expect(requestCache.calls).toEqual([[nextMatch.id], [nextMatch.id]]);
+  });
+
+  it("leaves description unchanged fifteen days ahead while preserving title", async () => {
+    arrangeNextMatch({ kickoffAt: "2026-11-29T14:10:00.000Z" });
+    expect(await generateMetadata(params())).toMatchObject({
+      title: metadataTitle,
+      description: baseDescription,
+      openGraph: { description: baseDescription },
+    });
+    expect(broadcastMocks.getMatchBroadcastsForMatches).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["2026-11-28T14:10:00.000Z", true],
+    ["2026-11-28T14:10:00.001Z", false],
+  ] as const)(
+    "handles the exact fourteen-day boundary at %s (included=%s)",
+    async (kickoffAt, included) => {
+      arrangeNextMatch({ kickoffAt });
+      const metadata = await generateMetadata(params());
+      const description = included
+        ? "次戦は11月28日(土)23:10 JST キックオフ、WOWOWプライム・J SPORTS 1・WOWOWオンデマンドなどで放送・配信。" +
+          baseDescription
+        : baseDescription;
+      expect(metadata).toMatchObject({
+        title: metadataTitle,
+        description,
+        openGraph: { description },
+      });
+    },
+  );
+
+  it("omits the time and kickoff wording when the kickoff time is TBD", async () => {
+    arrangeNextMatch({ kickoffTimeTbd: true });
+    const metadata = await generateMetadata(params());
+    const description =
+      "次戦は11月21日(土)、WOWOWプライム・J SPORTS 1・WOWOWオンデマンドなどで放送・配信。" +
+      baseDescription;
+    expect(metadata).toMatchObject({
+      title: metadataTitle,
+      description,
+      openGraph: { description },
+    });
+    expect(metadata.description).not.toContain("キックオフ");
+    expect(metadata.description).not.toContain("23:10");
+  });
+
+  it("omits viewing claims for metadata without broadcasts, including a date-only TBD kickoff", async () => {
+    arrangeNextMatch();
+    broadcastMocks.getMatchBroadcastsForMatches.mockResolvedValue(new Map());
+    expect(await generateMetadata(params())).toMatchObject({
+      title: metadataTitle,
+      description: "次戦は11月21日(土)23:10 JST キックオフ。" + baseDescription,
+    });
+    requestCache.stores.forEach((store) => store.clear());
+    arrangeNextMatch({ kickoffTimeTbd: true });
+    broadcastMocks.getMatchBroadcastsForMatches.mockResolvedValue(new Map());
+    const metadata = await generateMetadata(params());
+    expect(metadata).toMatchObject({
+      title: metadataTitle,
+      description: "次戦は11月21日(土)。" + baseDescription,
+    });
+    expect(metadata.description).not.toContain("放送・配信");
+  });
+
+  it("removes the next-match metadata prefix after kickoff or a status change", async () => {
+    arrangeNextMatch({ kickoffAt: "2026-11-14T14:09:59.999Z" });
+    expect((await generateMetadata(params())).description).toBe(
+      baseDescription,
+    );
+    arrangeNextMatch({ status: "finished", homeScore: 24, awayScore: 17 });
+    expect((await generateMetadata(params())).description).toBe(
+      baseDescription.replace("1試合 1勝0敗", "2試合 1勝1敗"),
+    );
+    expect(broadcastMocks.getMatchBroadcastsForMatches).not.toHaveBeenCalled();
   });
 
   it("hides individual results in the hero CTA, stored matches and history while retaining links", async () => {

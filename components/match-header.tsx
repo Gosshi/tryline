@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { SpoilerGuardToggle } from "@/components/spoiler-guard-toggle";
 import { MotionNumber } from "@/components/touchline-motion";
+import { formatBroadcastVerifiedDate } from "@/lib/format/broadcast";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import {
   formatKickoffJst,
@@ -45,23 +46,6 @@ function buildYouTubeSearchUrl(
 
 function getBroadcastKindLabel(kind: MatchBroadcast["kind"]): string {
   return kind === "tv" ? "放送" : "配信";
-}
-
-function formatBroadcastVerifiedDate(broadcasts: MatchBroadcast[]): string {
-  const latestVerifiedAt = broadcasts
-    .map((broadcast) => broadcast.verifiedAt)
-    .sort()
-    .at(-1);
-
-  if (!latestVerifiedAt) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat("ja-JP", {
-    day: "numeric",
-    month: "numeric",
-    timeZone: "Asia/Tokyo",
-  }).format(new Date(latestVerifiedAt));
 }
 
 function getTeamForegroundColor(color: string): string {

@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
+import { cache } from "react";
 
 import { HomepageSpoilerScore } from "@/components/home-user-state";
 import { TrackedLink } from "@/components/tracked-link";
 import { UserStateProvider } from "@/components/user-state-provider";
+import { getMatchBroadcastsForMatches } from "@/lib/db/queries/match-broadcasts";
 import { getContentStatusForMatches } from "@/lib/db/queries/match-content";
 import {
   getHeadToHeadPageData,
@@ -12,11 +14,13 @@ import {
   parseHeadToHeadSlug,
   summarizeHeadToHeadRecord,
 } from "@/lib/db/queries/matches";
+import { formatBroadcastVerifiedDate } from "@/lib/format/broadcast";
 import { formatCompetitionTitle } from "@/lib/format/competition";
 import { formatKickoffJst } from "@/lib/format/kickoff";
 import { getTeamColor } from "@/lib/format/team-identity";
 import { SITE_URL } from "@/lib/site";
 
+import type { MatchBroadcast } from "@/lib/db/queries/match-broadcasts";
 import type {
   HeadToHeadHistoryRow,
   HeadToHeadMatch,
@@ -33,6 +37,52 @@ type HeadToHeadPageProps = {
 };
 
 export const revalidate = 3600;
+
+const H2H_NEXT_MATCH_DESCRIPTION_WINDOW_DAYS = 14;
+
+const getNextMatchBroadcasts = cache(
+  async (matchId: string): Promise<MatchBroadcast[]> => {
+    try {
+      const byMatch = await getMatchBroadcastsForMatches([matchId]);
+      return [...(byMatch.get(matchId) ?? [])].sort(
+        (a, b) => a.displayOrder - b.displayOrder,
+      );
+    } catch {
+      console.error(`[h2h] Failed to load broadcasts for match ${matchId}`);
+      return [];
+    }
+  },
+);
+
+function formatNextMatchDescription(
+  match: HeadToHeadMatch,
+  broadcasts: MatchBroadcast[],
+): string {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("ja-JP", {
+      timeZone: "Asia/Tokyo",
+      month: "numeric",
+      day: "numeric",
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(new Date(match.kickoffAt))
+      .map((part) => [part.type, part.value]),
+  );
+  const kickoff = match.kickoffTimeTbd
+    ? ""
+    : `${parts.hour}:${parts.minute} JST キックオフ`;
+  const services = broadcasts
+    .slice(0, 3)
+    .map((broadcast) => broadcast.serviceName)
+    .join("・");
+  const viewing = services
+    ? `、${services}${broadcasts.length > 3 ? "など" : ""}で放送・配信`
+    : "";
+  return `次戦は${parts.month}月${parts.day}日(${parts.weekday})${kickoff}${viewing}。`;
+}
 
 export async function generateStaticParams() {
   const pairs = await listHeadToHeadPairs();
@@ -79,9 +129,21 @@ export async function generateMetadata({
     data.history.length > 0
       ? summarizeHeadToHeadRecord(data.history, data.matches, data.teamA)
       : null;
-  const description = summary
+  const existingDescription = summary
     ? `ラグビー${data.teamA.name}と${data.teamB.name}の通算対戦成績（${summary.total}試合 ${summary.wins}勝${summary.losses}敗${summary.draws ? `${summary.draws}分` : ""}）。過去の全対戦のスコアと、直近の日本語レビューへのリンク。`
     : `ラグビー${data.teamA.name}と${data.teamB.name}の対戦成績（Tryline 収録分）。直近の対戦結果とスコア、日本語レビューへのリンク。`;
+  const now = Date.now();
+  const nextMatch = selectNextHeadToHeadMatch(data.matches, now);
+  const nextMatchDescription =
+    !nextMatch ||
+    Date.parse(nextMatch.kickoffAt) - now >
+      H2H_NEXT_MATCH_DESCRIPTION_WINDOW_DAYS * 86_400_000
+      ? ""
+      : formatNextMatchDescription(
+          nextMatch,
+          await getNextMatchBroadcasts(nextMatch.id),
+        );
+  const description = nextMatchDescription + existingDescription;
   const canonical = `${SITE_URL}/h2h/${data.canonicalSlug}`;
 
   return {
@@ -114,6 +176,9 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
   const now = Date.now();
   const latestFinishedMatch = selectLatestFinishedMatch(data.matches);
   const nextHeadToHeadMatch = selectNextHeadToHeadMatch(data.matches, now);
+  const nextMatchBroadcasts = nextHeadToHeadMatch
+    ? await getNextMatchBroadcasts(nextHeadToHeadMatch.id)
+    : [];
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(data);
   const recordSummary =
     data.history.length > 0
@@ -236,6 +301,11 @@ export default async function HeadToHeadPage({ params }: HeadToHeadPageProps) {
                 )}
                 {nextHeadToHeadMatch && (
                   <NextMatchCta
+                    broadcasts={nextMatchBroadcasts}
+                    hasPreview={
+                      contentStatusMap[nextHeadToHeadMatch.id]?.hasPreview ??
+                      false
+                    }
                     match={nextHeadToHeadMatch}
                     teamA={data.teamA}
                     teamB={data.teamB}
@@ -430,14 +500,19 @@ function LatestReviewCta({
 }
 
 function NextMatchCta({
+  broadcasts,
+  hasPreview,
   match,
   teamA,
   teamB,
 }: {
+  broadcasts: MatchBroadcast[];
+  hasPreview: boolean;
   match: HeadToHeadMatch;
   teamA: HeadToHeadTeam;
   teamB: HeadToHeadTeam;
 }) {
+  const verifiedDate = formatBroadcastVerifiedDate(broadcasts);
   return (
     <aside className="tl-h2h-callout">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -449,18 +524,69 @@ function NextMatchCta({
       <p className="mt-1 text-sm text-slate-600">
         {formatKickoffJst(match.kickoffAt, match.kickoffTimeTbd)}
       </p>
-      <TrackedLink
-        analytics={{
-          cta_id: "h2h_next_match",
-          cta_location: "h2h_page",
-          destination: "match",
-          match_id: match.id,
-        }}
-        className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-        href={`/matches/${match.id}`}
-      >
-        次回対戦の詳細を見る →
-      </TrackedLink>
+      {broadcasts.length > 0 && (
+        <div className="mt-3">
+          <ul aria-label="放送・配信" className="space-y-1 text-sm">
+            {broadcasts.map((broadcast) => (
+              <li
+                key={`${broadcast.kind}:${broadcast.serviceName}`}
+                className="flex items-center gap-2"
+              >
+                <span className="text-xs text-[var(--color-ink-muted)]">
+                  {broadcast.kind === "tv" ? "放送" : "配信"}
+                </span>
+                {broadcast.url ? (
+                  <a
+                    className="inline-flex min-h-11 items-center gap-1 font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                    href={broadcast.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {broadcast.serviceName} <span aria-hidden="true">↗</span>
+                  </a>
+                ) : (
+                  <span className="inline-flex min-h-11 items-center font-bold">
+                    {broadcast.serviceName}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          {verifiedDate && (
+            <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
+              確認日: {verifiedDate}
+            </p>
+          )}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-x-4">
+        <TrackedLink
+          analytics={{
+            cta_id: "h2h_next_match",
+            cta_location: "h2h_page",
+            destination: "match",
+            match_id: match.id,
+          }}
+          className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          href={`/matches/${match.id}`}
+        >
+          次回対戦の詳細を見る →
+        </TrackedLink>
+        {hasPreview && (
+          <TrackedLink
+            analytics={{
+              cta_id: "h2h_next_match_preview",
+              cta_location: "h2h_page",
+              destination: "match",
+              match_id: match.id,
+            }}
+            className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-[var(--color-accent)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            href={`/matches/${match.id}`}
+          >
+            プレビューを読む →
+          </TrackedLink>
+        )}
+      </div>
     </aside>
   );
 }
