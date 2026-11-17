@@ -81,11 +81,13 @@ export function formatCompetitionBroadcastSentence(
      - `information`・最新シーズンが決まらない: なし
   2. `formatCompetitionBroadcastSentence(broadcastsByMatch)`（`null` ならなし）
   3. 今の `overview`（`COMPETITION_DESCRIPTIONS` か既定文）
-  4. 今の結び「最新シーズンの順位表・日程・試合結果と、日本での視聴方法を掲載。」は、1 が出たときは付けない。1 が出ないときは今どおり付ける
+  4. 今の結び「最新シーズンの順位表・日程・試合結果と、日本での視聴方法を掲載。」を、今どおり最後に付ける（`tests/app/competition-guide-metadata.test.ts:95` が「日本での視聴方法」を求めているため、常に残す）
 - データ取得のエラーは `console.error` し、今のタイトル・説明文で返す（ページを落とさない）
 
 期待値（リーグワン、2026-11-17 のデータ）:
-`ジャパンラグビー リーグワン 2026-27は12月12日開幕、全101試合の日程を日本時間で掲載。J SPORTS（BS）・J SPORTSオンデマンド・DAZNで全試合を視聴できます（11月16日確認）。ジャパンラグビー リーグワンは、日本の最高峰クラブが争う国内プロラグビーリーグです。シーズンを通じて上位進出と優勝を争います。`
+`ジャパンラグビー リーグワン 2026-27は12月12日開幕、全101試合の日程を日本時間で掲載。J SPORTS（BS）・J SPORTSオンデマンド・DAZNで全試合を視聴できます（11月16日確認）。ジャパンラグビー リーグワンは、日本の最高峰クラブが争う国内プロラグビーリーグです。シーズンを通じて上位進出と優勝を争います。 最新シーズンの順位表・日程・試合結果と、日本での視聴方法を掲載。`
+
+（`overview` と結びの間の半角スペースは今の `description` の組み立てと同じ）
 
 ### 3. シーズンページ `/c/{family}/{season}`（`app/c/[competition]/[season]/page.tsx`）
 
@@ -109,10 +111,13 @@ export function formatCompetitionBroadcastSentence(
 1. `formatCompetitionBroadcastSentence` が、大会単位の行 3 件で上の例と完全一致を返し、試合単位の行だけ・0 件では `null`
 2. `getSeasonBroadcastGuide` の既存テストが、期待値を変えずに通る
 3. `/c/rwc/2027` の `generateMetadata` が、日本戦 3 試合のモックで上の期待値と完全一致の説明文、上のタイトルを返す。日本戦 0 件・取得エラーのときは日本代表の文が無い説明文を返し、例外を投げない。説明文に「放送」「視聴」が含まれない
-4. `/c/league-one` の `generateMetadata` が、`pre` 状態・101 試合・大会単位の行 3 件のモックで上の期待値と完全一致の説明文とタイトルを返す。`active`・`post`・`information` の各状態で 1 文目が仕様どおり（`information` では今の結びが付く）。`lipovitan-challenge-cup` のタイトルが今のまま。データ取得エラーで今のタイトル・説明文を返す
+4. `/c/league-one` の `generateMetadata` が、`pre` 状態・101 試合・大会単位の行 3 件のモックで上の期待値と完全一致の説明文とタイトルを返す。`active`・`post`・`information` の各状態で 1 文目が仕様どおり（`information` では 1 文目が無い）。どの状態でも結びが最後に付く。`lipovitan-challenge-cup` のタイトルが今のまま。データ取得エラーで今のタイトル・説明文を返す
 5. `/c/pnc/2026` 相当（`post`・recap あり・順位表なし）の説明文に「日本語レビュー」がちょうど 1 回だけ含まれ、上の修正後の例と完全一致。順位表ありの `post` では「全試合結果・日本語レビュー・順位表を掲載。」のように順位表は残る（今の並びのまま）
 6. シーズンページの説明文に、大会単位の行があるときだけ視聴情報の 1 文が付く
-7. **`generateMetadata` に依存を足すと、同じ関数を呼ぶ既存テストのモックが足りずに落ちることがある**（PR #636 で発生）。`tests/app/` で `generateMetadata` を呼ぶ既存テストを `rg "generateMetadata" tests/app` で洗い出し、モックを足す。既存の期待値は変えない（重複の修正で変わる 1 件だけは、変更理由を PR 本文に書く）
+7. **`generateMetadata` に依存を足すと、同じ関数を呼ぶ既存テストのモックが足りずに落ちることがある**（PR #636 で発生）。`tests/app/` で `generateMetadata` を呼ぶ既存テストを `rg "generateMetadata" tests/app` で洗い出し、モックを足す。既存の期待値は、次の 2 つの例外を除いて変えない（変えた箇所と理由を PR 本文に書く）
+   - (a) 「日本語レビュー」の重複の修正で変わる期待値
+   - (b) `tests/app/competition-hub-indexing.test.tsx:666`「uses Japanese RWC 2027 metadata for schedule and viewing queries」。静的 `metadata` の import をやめて `generateMetadata` を呼ぶ形にし、`description` に「放送」「日本語レビュー」を含むことを求める 2 行を、**条件 3 の完全一致の期待値と「放送」「視聴」を含まないことの確認に置き換える**。タイトルの 3 つの `toContain`（「ラグビーワールドカップ2027」「日程」「出場国」）は新しいタイトルでも通るので残す
+     - 理由: 2027 大会の日本の放送局は未発表で、2027 大会の試合はまだ 1 試合も行われておらず日本語レビューも無い。どちらも説明文で約束できない（このテストは PR #274 の準備段階で書かれたもの）
 8. **壊して落ちる確認**（PR 本文に出力を貼る。コミットしない）: (a) 重複の修正を外す → 条件 5 が落ちる、(b) 大会トップの 1 文目を外す → 条件 4 が落ちる
 9. `pnpm tsc --noEmit`・`pnpm lint`・`pnpm test`・`pnpm build` が通り、CI が緑
 10. PR 本文に、プレビュー環境の `/c/rwc/2027`・`/c/league-one`・`/c/league-one/2026-27`・`/c/pnc/2026` の `<title>` と description を貼る（SSO で開けなければ保留と書く。Claude Code が確認する）
