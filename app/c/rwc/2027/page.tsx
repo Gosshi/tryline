@@ -30,11 +30,41 @@ const RWC2027_OFFICIAL_URL =
 const RWC2027_TOURNAMENT_DATES = "2027年10月1日〜11月13日";
 const RWC2027_TOURNAMENT_MATCH_COUNT = 52;
 
-export const metadata: Metadata = {
-  title: "ラグビーワールドカップ2027 日程・出場国・日本語ガイド",
-  description:
-    "ラグビーワールドカップ2027の試合日程、出場国、プール順位表、放送・視聴情報、ノックアウトブラケット、日本語レビューを掲載。",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const title =
+    "ラグビーワールドカップ2027 日程（日本時間）・日本代表の試合・出場国";
+  let japanSentence = "";
+  try {
+    const matches = await listMatchesForCompetition("rwc-2027");
+    const japanMatches = matches
+      .filter(isJapanMatch)
+      .sort(
+        (left, right) =>
+          Date.parse(left.kickoffAt) - Date.parse(right.kickoffAt),
+      );
+    if (japanMatches.length > 0) {
+      const formatter = new Intl.DateTimeFormat("ja-JP", {
+        timeZone: "Asia/Tokyo",
+        month: "long",
+        day: "numeric",
+      });
+      const opponents = japanMatches.map((match) => {
+        const opponent =
+          match.homeTeam.slug === "japan"
+            ? match.awayTeam.name
+            : match.homeTeam.name;
+        return `${opponent}（${formatter.format(new Date(match.kickoffAt))}）`;
+      });
+      japanSentence = `日本代表は${opponents.join("・")}と対戦。`;
+    }
+  } catch (error) {
+    console.error("[rwc-2027-metadata] Failed to load matches", error);
+  }
+  return {
+    title,
+    description: `${RWC2027_TOURNAMENT_DATES}にオーストラリアで開催。${japanSentence}全${RWC2027_TOURNAMENT_MATCH_COUNT}試合の日程を日本時間で掲載し、プール順位表・決勝トーナメント表も確認できます。`,
+  };
+}
 
 function isJapanMatch(match: MatchListItem): boolean {
   return match.homeTeam.slug === "japan" || match.awayTeam.slug === "japan";

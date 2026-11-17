@@ -20,6 +20,9 @@ const standingsMock = vi.hoisted(() => ({
   getStandingsForCompetition: vi.fn(),
 }));
 
+const broadcastsMock = vi.hoisted(() => ({ getMatchBroadcastsForMatches: vi.fn() }));
+vi.mock("@/lib/db/queries/match-broadcasts", () => broadcastsMock);
+
 vi.mock("@/lib/db/queries/competitions", () => competitionsMock);
 vi.mock("@/lib/db/queries/match-content", () => contentMock);
 vi.mock("@/lib/db/queries/matches", () => matchesMock);
@@ -80,6 +83,9 @@ function standingRow(teamName: string): StandingRow {
 describe("competition guide metadata", () => {
   beforeEach(() => {
     competitionsMock.getCompetitionBySlug.mockReset();
+    competitionsMock.listSeasonsByFamily.mockResolvedValue([]);
+    competitionsMock.selectLatestSeasonWithMatches.mockReturnValue(null);
+    broadcastsMock.getMatchBroadcastsForMatches.mockResolvedValue(new Map());
     contentMock.getContentStatusForMatches.mockResolvedValue({});
     matchesMock.listMatchesForCompetition.mockResolvedValue(scheduledMatches);
     standingsMock.getStandingsForCompetition.mockResolvedValue([]);

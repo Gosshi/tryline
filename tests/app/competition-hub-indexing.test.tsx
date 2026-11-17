@@ -13,7 +13,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CompetitionHubPage from "@/app/c/[competition]/page";
-import { metadata as rwc2027Metadata } from "@/app/c/rwc/2027/page";
+import { generateMetadata as generateRwc2027Metadata } from "@/app/c/rwc/2027/page";
 import { writeSpoilerGuard } from "@/lib/spoiler-guard";
 
 const authMock = vi.hoisted(() => ({ getClientUserState: vi.fn() }));
@@ -663,11 +663,19 @@ describe("competition hub indexing", () => {
     ]);
   });
 
-  it("uses Japanese RWC 2027 metadata for schedule and viewing queries", () => {
+  it("uses Japanese RWC 2027 metadata for schedule and viewing queries", async () => {
+    const japanMatches = [
+      { ...match("samoa", "2027-10-02T15:30:00Z", { homeSlug: "japan", awaySlug: "samoa" }), awayTeam: { name: "サモア", shortCode: "SAM", slug: "samoa" } },
+      { ...match("france", "2027-10-09T04:00:00Z", { awaySlug: "japan" }), homeTeam: { name: "フランス", shortCode: "FRA", slug: "france" } },
+      { ...match("usa", "2027-10-15T04:00:00Z", { homeSlug: "japan", awaySlug: "usa" }), awayTeam: { name: "アメリカ", shortCode: "USA", slug: "usa" } },
+    ];
+    matchMocks.listMatchesForCompetition.mockResolvedValue([japanMatches[2], japanMatches[0], japanMatches[1]]);
+    const rwc2027Metadata = await generateRwc2027Metadata();
     expect(rwc2027Metadata.title).toContain("ラグビーワールドカップ2027");
     expect(rwc2027Metadata.title).toContain("日程");
     expect(rwc2027Metadata.title).toContain("出場国");
-    expect(rwc2027Metadata.description).toContain("放送");
-    expect(rwc2027Metadata.description).toContain("日本語レビュー");
+    expect(rwc2027Metadata.description).toBe("2027年10月1日〜11月13日にオーストラリアで開催。日本代表はサモア（10月3日）・フランス（10月9日）・アメリカ（10月15日）と対戦。全52試合の日程を日本時間で掲載し、プール順位表・決勝トーナメント表も確認できます。");
+    expect(rwc2027Metadata.description).not.toContain("放送");
+    expect(rwc2027Metadata.description).not.toContain("視聴");
   });
 });

@@ -52,6 +52,7 @@ import {
 import {
   type CompetitionHubState,
   findNextScheduledMatch,
+  formatCompetitionBroadcastSentence,
   formatMatchKickoffJst,
   getCompetitionHubState,
   getJapanMatchesNote,
@@ -334,7 +335,7 @@ function formatCompetitionHubDescription({
       : `${teams.length}チーム`;
   const details = [
     hasStandings ? "順位表" : null,
-    hasRecap ? "日本語レビュー" : null,
+    hasRecap && !metadataCopy.title.includes("日本語レビュー") ? "日本語レビュー" : null,
   ]
     .filter((detail): detail is string => detail !== null)
     .join("・");
@@ -523,7 +524,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       totalRounds: comp.totalRounds,
     }),
   );
-  const description = formatCompetitionHubDescription({
+  let description = formatCompetitionHubDescription({
     competitionTitle: competitionDescriptionTitle,
     hasRecap: Object.values(contentStatusMap).some((status) => status.hasRecap),
     hasStandings: standings.length > 0,
@@ -532,6 +533,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     metadataCopy,
     teams,
   });
+  try {
+    const broadcastsByMatch = await getMatchBroadcastsForMatches(matchIds);
+    const broadcastSentence =
+      formatCompetitionBroadcastSentence(broadcastsByMatch);
+    if (broadcastSentence) description += broadcastSentence;
+  } catch (error) {
+    console.error(
+      "[competition-season-metadata] Failed to load broadcasts",
+      error,
+    );
+  }
 
   return {
     alternates: { canonical: `${SITE_URL}/c/${competition}/${season}` },

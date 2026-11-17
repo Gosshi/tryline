@@ -41,34 +41,51 @@ export type SeasonBroadcastGuide = {
   services: MatchBroadcastService[];
 };
 
+function getLatestBroadcastServices(
+  broadcasts: MatchBroadcast[],
+): MatchBroadcast[] {
+  const servicesByName = new Map<string, MatchBroadcast>();
+  for (const broadcast of broadcasts) {
+    const existing = servicesByName.get(broadcast.serviceName);
+    if (
+      !existing ||
+      Date.parse(broadcast.verifiedAt) > Date.parse(existing.verifiedAt)
+    ) {
+      servicesByName.set(broadcast.serviceName, broadcast);
+    }
+  }
+  return [...servicesByName.values()].sort(
+    (left, right) =>
+      left.displayOrder - right.displayOrder ||
+      left.serviceName.localeCompare(right.serviceName, "ja"),
+  );
+}
+
+export function formatCompetitionBroadcastSentence(
+  broadcastsByMatch: Map<string, MatchBroadcast[]>,
+): string | null {
+  const broadcasts = getLatestBroadcastServices(
+    [...broadcastsByMatch.values()]
+      .flat()
+      .filter((broadcast) => broadcast.scope === "competition"),
+  );
+  if (broadcasts.length === 0) return null;
+  const latestVerifiedAt = Math.max(
+    ...broadcasts.map((broadcast) => Date.parse(broadcast.verifiedAt)),
+  );
+  const verifiedDate = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(latestVerifiedAt));
+  return `${broadcasts.map((broadcast) => broadcast.serviceName).join("・")}で全試合を視聴できます（${verifiedDate}確認）。`;
+}
+
 export function getSeasonBroadcastGuide(
   broadcastsByMatch: Map<string, MatchBroadcast[]>,
 ): SeasonBroadcastGuide {
-  const servicesByName = new Map<string, MatchBroadcast>();
-  const servicesByScope = {
-    match: new Map<string, MatchBroadcast>(),
-    competition: new Map<string, MatchBroadcast>(),
-  };
-  for (const broadcasts of broadcastsByMatch.values()) {
-    for (const broadcast of broadcasts) {
-      for (const services of [
-        servicesByName,
-        servicesByScope[broadcast.scope],
-      ]) {
-        const existing = services.get(broadcast.serviceName);
-        if (
-          !existing ||
-          Date.parse(broadcast.verifiedAt) > Date.parse(existing.verifiedAt)
-        ) {
-          services.set(broadcast.serviceName, broadcast);
-        }
-      }
-    }
-  }
-  const sortServices = (left: MatchBroadcast, right: MatchBroadcast) =>
-    left.displayOrder - right.displayOrder ||
-    left.serviceName.localeCompare(right.serviceName, "ja");
-  const broadcasts = [...servicesByName.values()].sort(sortServices);
+  const rows = [...broadcastsByMatch.values()].flat();
+  const broadcasts = getLatestBroadcastServices(rows);
   if (broadcasts.length === 0) {
     return {
       answer:
@@ -76,27 +93,15 @@ export function getSeasonBroadcastGuide(
       services: [],
     };
   }
-
-  const competitionBroadcasts = [...servicesByScope.competition.values()].sort(
-    sortServices,
-  );
-  const matchBroadcasts = [...servicesByScope.match.values()].sort(
-    sortServices,
+  const matchBroadcasts = getLatestBroadcastServices(
+    rows.filter((broadcast) => broadcast.scope === "match"),
   );
   const answers: string[] = [];
-  if (competitionBroadcasts.length > 0) {
-    const latestVerifiedAt = Math.max(
-      ...competitionBroadcasts.map((broadcast) =>
-        Date.parse(broadcast.verifiedAt),
-      ),
-    );
-    const verifiedDate = new Intl.DateTimeFormat("ja-JP", {
-      timeZone: "Asia/Tokyo",
-      month: "long",
-      day: "numeric",
-    }).format(new Date(latestVerifiedAt));
+  const competitionSentence =
+    formatCompetitionBroadcastSentence(broadcastsByMatch);
+  if (competitionSentence) {
     answers.push(
-      `このシーズンは${competitionBroadcasts.map((broadcast) => broadcast.serviceName).join("・")}で全試合を視聴できます（${verifiedDate}確認）。試合ごとのチャンネルや配信ページは各サービスの番組表でご確認ください。`,
+      `このシーズンは${competitionSentence}試合ごとのチャンネルや配信ページは各サービスの番組表でご確認ください。`,
     );
   }
   if (matchBroadcasts.length > 0) {

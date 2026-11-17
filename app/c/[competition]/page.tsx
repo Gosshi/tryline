@@ -30,6 +30,7 @@ import {
   getCompetitionFamilyColor,
 } from "@/lib/format/competition";
 import {
+  formatCompetitionBroadcastSentence,
   formatMatchKickoffJst,
   getCompetitionHubState,
   getLeaderLabel,
@@ -88,11 +89,63 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const overview =
     COMPETITION_DESCRIPTIONS[competition] ??
     `${name} の全シーズン試合結果・順位表・日本語レビュー一覧。`;
-  const description = `${overview} 最新シーズンの順位表・日程・試合結果と、日本での視聴方法を掲載。`;
-  const title =
+  const fallbackDescription = `${overview} 最新シーズンの順位表・日程・試合結果と、日本での視聴方法を掲載。`;
+  const fallbackTitle =
     competition === "lipovitan-challenge-cup"
       ? `${name} オーストラリア・カナダ・フィジー代表`
       : `${name} 順位表・日程・日本での視聴方法`;
+
+  let title = fallbackTitle;
+  let description = fallbackDescription;
+  try {
+    const seasons = await listSeasonsByFamily(competition);
+    const latestSeason = selectLatestSeasonWithMatches(seasons);
+    if (latestSeason) {
+      const matches = await listMatchesForCompetition(latestSeason.slug);
+      const broadcastsByMatch = await getMatchBroadcastsForMatches(
+        matches.map((match) => match.id),
+      );
+      const state = getCompetitionHubState(matches);
+      const competitionTitle = formatCompetitionTitle(
+        latestSeason,
+        latestSeason.season,
+      );
+      const activeMatches = matches.filter(
+        (match) => match.status !== "cancelled",
+      );
+      let seasonSentence = "";
+      if (state === "pre") {
+        const first = [...activeMatches].sort(
+          (left, right) =>
+            Date.parse(left.kickoffAt) - Date.parse(right.kickoffAt),
+        )[0];
+        if (first) {
+          const date = new Intl.DateTimeFormat("ja-JP", {
+            timeZone: "Asia/Tokyo",
+            month: "long",
+            day: "numeric",
+          }).format(new Date(first.kickoffAt));
+          seasonSentence = `${competitionTitle}は${date}開幕、全${activeMatches.length}試合の日程を日本時間で掲載。`;
+        }
+      } else if (state === "active") {
+        seasonSentence = `${competitionTitle}の最新結果・次の試合・日程を日本時間で掲載。`;
+      } else if (state === "post") {
+        seasonSentence = `${competitionTitle}の全試合結果を掲載。`;
+      }
+      const broadcastSentence =
+        formatCompetitionBroadcastSentence(broadcastsByMatch);
+      description = `${seasonSentence}${broadcastSentence ?? ""}${fallbackDescription}`;
+      title =
+        competition === "lipovitan-challenge-cup"
+          ? fallbackTitle
+          : `${name} ${latestSeason.season} 日程・順位表・日本での視聴方法`;
+    }
+  } catch (error) {
+    console.error(
+      "[competition-hub-metadata] Failed to load season data",
+      error,
+    );
+  }
 
   return {
     description,
