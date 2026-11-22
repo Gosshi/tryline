@@ -262,25 +262,31 @@ export function parseNationsChampionshipLiveHtml(
     ...parseRoundTableMatches(html, wikipediaUrl),
     ...parseFinalsMatches(html, wikipediaUrl),
   ];
-  const kickoffTimeByTeams = new Map(
-    kickoffTimes.map((match) => [
-      `${match.homeTeamSlug}:${match.awayTeamSlug}`,
-      match,
-    ]),
-  );
   const resolvedMatches = mapWithTeamSlugs(
     parsedMatches,
     TEAM_SLUG_BY_WIKIPEDIA_NAME,
   );
 
   return resolvedMatches.map((match) => {
-    const kickoffTime = kickoffTimeByTeams.get(
-      `${match.homeTeamSlug}:${match.awayTeamSlug}`,
+    if (!match.kickoffAt) return match;
+    const nearbyTimes = kickoffTimes.filter(
+      (time) =>
+        time.homeTeamSlug === match.homeTeamSlug &&
+        time.awayTeamSlug === match.awayTeamSlug &&
+        Math.abs(Date.parse(time.kickoffAt) - Date.parse(match.kickoffAt)) <=
+          36 * 60 * 60 * 1000,
     );
-
-    if (!kickoffTime) {
+    if (nearbyTimes.length !== 1) {
+      if (nearbyTimes.length > 1) {
+        console.warn("Ambiguous Nations Championship kickoff times", {
+          homeTeamSlug: match.homeTeamSlug,
+          awayTeamSlug: match.awayTeamSlug,
+          kickoffAt: match.kickoffAt,
+        });
+      }
       return match;
     }
+    const kickoffTime = nearbyTimes[0]!;
 
     return {
       ...match,
