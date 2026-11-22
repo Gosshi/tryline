@@ -145,7 +145,11 @@ export type PipelineResult = {
   status: "published" | "draft" | "skipped";
   qa: QaResult | null;
   cacheRevalidationSkipped?: boolean;
-  skipReason?: "events_unavailable" | "score_mismatch" | "competition_retired";
+  skipReason?:
+    | "events_unavailable"
+    | "score_mismatch"
+    | "competition_retired"
+    | "match_finished";
   trial?: PipelineTrialDetails;
 };
 
@@ -375,12 +379,23 @@ export async function generateMatchContent(
   const db = getSupabaseServerClient();
   const { data: match, error: matchError } = await db
     .from("matches")
-    .select("competition:competitions!matches_competition_id_fkey (family)")
+    .select(
+      "status, competition:competitions!matches_competition_id_fkey (family)",
+    )
     .eq("id", matchId)
     .single();
   if (matchError) throw matchError;
   if (isRetiredCompetitionFamily(match?.competition?.family)) {
     return { status: "skipped", skipReason: "competition_retired", qa: null, matchId, contentType };
+  }
+  if (contentType === "preview" && match?.status === "finished") {
+    return {
+      status: "skipped",
+      skipReason: "match_finished",
+      qa: null,
+      matchId,
+      contentType,
+    };
   }
   const trialStageMetrics: PipelineTrialStageMetric[] = [];
   const recordPipelineRun = (entry: Parameters<typeof logPipelineRun>[0]) =>
