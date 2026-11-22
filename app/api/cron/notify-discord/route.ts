@@ -10,7 +10,6 @@ import {
 import { getTeamDisplayName } from "@/lib/format/team";
 import { buildMatchShareUrl } from "@/lib/x/match-url";
 import { buildLinklessReplyText, buildTweetText } from "@/lib/x/post";
-import { buildOfficialReplyText, type TryScorer } from "@/lib/x/reply-text";
 
 export const maxDuration = 60;
 
@@ -49,10 +48,6 @@ type ContentRow = {
   matches: Relation<MatchRow>;
 };
 
-type MatchEventRow = {
-  metadata: unknown;
-};
-
 type DiscordEmbed = {
   title: string;
   description: string;
@@ -68,9 +63,6 @@ type DiscordEmbed = {
 type DiscordPayload = {
   embeds: DiscordEmbed[];
 };
-
-const DISCORD_FIELD_VALUE_LIMIT = 1024;
-const CODE_BLOCK_OVERHEAD = "```\n\n```".length;
 
 function firstRelation<T>(relation: Relation<T>): T | null {
   if (Array.isArray(relation)) {
@@ -127,68 +119,6 @@ function requireDiscordWebhook(
   }
 
   return value;
-}
-
-function getPlayerNameFromMetadata(metadata: unknown): string {
-  if (!metadata || typeof metadata !== "object") {
-    return "";
-  }
-
-  const playerName = (metadata as { player_name?: unknown }).player_name;
-  return typeof playerName === "string" ? playerName.trim() : "";
-}
-
-function truncateDiscordCodeBlockValue(text: string): string {
-  const maxTextLength = DISCORD_FIELD_VALUE_LIMIT - CODE_BLOCK_OVERHEAD;
-  const trimmedText =
-    text.length > maxTextLength ? text.slice(0, maxTextLength).trimEnd() : text;
-
-  return `\`\`\`\n${trimmedText}\n\`\`\``;
-}
-
-function appendOfficialReplyFields(
-  embed: DiscordEmbed,
-  params: {
-    awayScore: number;
-    awayTeamNameEn: string;
-    awayTeamNameJa: string;
-    competitionFamily: string | null;
-    homeScore: number;
-    homeTeamNameEn: string;
-    homeTeamNameJa: string;
-    tryScorers: TryScorer[];
-  },
-): void {
-  const jaReply = buildOfficialReplyText({
-    awayScore: params.awayScore,
-    awayTeamName: params.awayTeamNameJa,
-    competitionFamily: params.competitionFamily,
-    homeScore: params.homeScore,
-    homeTeamName: params.homeTeamNameJa,
-    language: "ja",
-    tryScorers: params.tryScorers,
-  });
-  const enReply = buildOfficialReplyText({
-    awayScore: params.awayScore,
-    awayTeamName: params.awayTeamNameEn,
-    competitionFamily: params.competitionFamily,
-    homeScore: params.homeScore,
-    homeTeamName: params.homeTeamNameEn,
-    language: "en",
-    tryScorers: params.tryScorers,
-  });
-  embed.fields.push(
-    {
-      inline: false,
-      name: "④ 公式へのリプライ案 🇯🇵",
-      value: truncateDiscordCodeBlockValue(jaReply),
-    },
-    {
-      inline: false,
-      name: "⑤ 公式へのリプライ案 🇬🇧",
-      value: truncateDiscordCodeBlockValue(enReply),
-    },
-  );
 }
 
 async function postToDiscord(
@@ -301,33 +231,6 @@ export async function POST(request: Request) {
         content.language === "en"
           ? (awayTeam?.english_name ?? awayTeam?.name ?? "Away")
           : formatJapaneseTeamName(awayTeam, "Away");
-      let tryScorers: TryScorer[] = [];
-
-      if (content.content_type === "recap") {
-        const { data: events, error: eventsError } = await db
-          .from("match_events")
-          .select("metadata")
-          .eq("match_id", content.match_id)
-          .eq("type", "try");
-
-        if (eventsError) {
-          throw eventsError;
-        }
-
-        const scorerMap = new Map<string, number>();
-        for (const event of (events ?? []) as MatchEventRow[]) {
-          const playerName = getPlayerNameFromMetadata(event.metadata);
-          if (playerName) {
-            scorerMap.set(playerName, (scorerMap.get(playerName) ?? 0) + 1);
-          }
-        }
-        tryScorers = [...scorerMap.entries()]
-          .map(([playerName, count]) => ({ count, playerName }))
-          .sort(
-            (a, b) =>
-              b.count - a.count || a.playerName.localeCompare(b.playerName),
-          );
-      }
       const score =
         match.home_score !== null && match.away_score !== null
           ? `${match.home_score} - ${match.away_score}`
@@ -401,24 +304,6 @@ export async function POST(request: Request) {
           },
         ],
       };
-
-      if (content.content_type === "recap") {
-        const embed = payload.embeds[0];
-        if (!embed) {
-          throw new Error("Discord payload embed is missing.");
-        }
-
-        appendOfficialReplyFields(embed, {
-          awayScore: match.away_score ?? 0,
-          awayTeamNameEn: awayTeam?.english_name ?? awayTeam?.name ?? "Away",
-          awayTeamNameJa: formatJapaneseTeamName(awayTeam, "Away"),
-          competitionFamily: competition?.family ?? null,
-          homeScore: match.home_score ?? 0,
-          homeTeamNameEn: homeTeam?.english_name ?? homeTeam?.name ?? "Home",
-          homeTeamNameJa: formatJapaneseTeamName(homeTeam, "Home"),
-          tryScorers,
-        });
-      }
 
       const webhookUrl =
         content.language === "en"

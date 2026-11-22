@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fixture = vi.hoisted(() => ({
   rows: {} as Record<string, unknown[]>,
@@ -132,6 +132,13 @@ const matches = [
   row("urc-1", "urc"),
   row("urc-2", "urc"),
 ];
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-14T12:00:00Z"));
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 beforeEach(() => {
   fixture.queries = [];
   fixture.rows = {

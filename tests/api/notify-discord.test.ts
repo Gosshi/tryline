@@ -33,15 +33,10 @@ type ContentFixture = {
   x_tweet_id: string | null;
 };
 
-type EventFixture = {
-  metadata: { player_name?: string };
-  type: string;
-};
-
 const dbMock = vi.hoisted(() => ({
-  eventsByMatch: {} as Record<string, EventFixture[]>,
   filters: [] as Array<{ column: string; value: unknown }>,
   ors: [] as string[],
+  tables: [] as string[],
   rowsByLanguage: {
     en: [] as ContentFixture[],
     ja: [] as ContentFixture[],
@@ -66,12 +61,11 @@ const xMock = vi.hoisted(() => ({
 vi.mock("@/lib/db/server", () => ({
   getSupabaseServerClient: () => ({
     from: (table: string) => {
+      dbMock.tables.push(table);
       const state = {
         id: null as string | null,
         language: null as "ja" | "en" | null,
-        matchId: null as string | null,
         payload: null as Record<string, unknown> | null,
-        type: null as string | null,
       };
 
       const builder = {
@@ -82,14 +76,6 @@ vi.mock("@/lib/db/server", () => ({
 
           if (column === "id") {
             state.id = value;
-          }
-
-          if (column === "match_id") {
-            state.matchId = value;
-          }
-
-          if (column === "type") {
-            state.type = value;
           }
 
           return this;
@@ -119,7 +105,7 @@ vi.mock("@/lib/db/server", () => ({
         },
         then(
           resolve: (value: {
-            data?: ContentFixture[] | EventFixture[];
+            data?: ContentFixture[];
             error: null;
           }) => void,
         ) {
@@ -129,20 +115,6 @@ vi.mock("@/lib/db/server", () => ({
               payload: state.payload,
             });
             return Promise.resolve(resolve({ error: null }));
-          }
-
-          if (table === "match_events") {
-            const events = state.matchId
-              ? (dbMock.eventsByMatch[state.matchId] ?? [])
-              : [];
-            return Promise.resolve(
-              resolve({
-                data: state.type
-                  ? events.filter((event) => event.type === state.type)
-                  : events,
-                error: null,
-              }),
-            );
           }
 
           return Promise.resolve(
@@ -229,7 +201,7 @@ describe("/api/cron/notify-discord", () => {
     process.env.WIKIPEDIA_SQUAD_URL =
       "https://en.wikipedia.org/wiki/2025_Six_Nations_Championship_squads";
     dbMock.filters = [];
-    dbMock.eventsByMatch = {};
+    dbMock.tables = [];
     dbMock.ors = [];
     dbMock.rowsByLanguage.en = [];
     dbMock.rowsByLanguage.ja = [];
@@ -395,12 +367,6 @@ describe("/api/cron/notify-discord", () => {
         match_id: "match-4",
       }),
     ];
-    dbMock.eventsByMatch["match-4"] = [
-      { metadata: { player_name: "山田太郎" }, type: "try" },
-      { metadata: { player_name: "山田太郎" }, type: "try" },
-      { metadata: { player_name: "佐藤次郎" }, type: "try" },
-    ];
-
     const { POST } = await import("@/app/api/cron/notify-discord/route");
     const response = await POST(
       new Request("http://localhost/api/cron/notify-discord", {
@@ -414,22 +380,15 @@ describe("/api/cron/notify-discord", () => {
     const payload = JSON.parse(
       (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
     ) as { embeds: Array<{ fields: Array<{ name: string; value: string }> }> };
-    expect(payload.embeds[0]?.fields[3]).toEqual(
-      expect.objectContaining({
-        inline: false,
-        name: "④ 公式へのリプライ案 🇯🇵",
-        value: expect.stringContaining("山田太郎が2トライ"),
-      }),
-    );
-    expect(payload.embeds[0]?.fields[3]?.value).toContain("ホーム 24-17。");
-    expect(payload.embeds[0]?.fields[3]?.value).toContain("佐藤次郎がトライ");
-    expect(payload.embeds[0]?.fields[4]).toEqual(
-      expect.objectContaining({
-        inline: false,
-        name: "⑤ 公式へのリプライ案 🇬🇧",
-        value: expect.stringContaining("Home 24-17 Away."),
-      }),
-    );
+    expect(
+      dbMock.tables.filter((table) => table === "match_events"),
+    ).toHaveLength(0);
+    expect(payload.embeds[0]?.fields).toHaveLength(3);
+    expect(payload.embeds[0]?.fields.map((field) => field.name)).toEqual([
+      "① X に貼る（URLなし）",
+      "② リプライ案（URLなし）",
+      "③ 記事URL（必要なら本投稿に追加）",
+    ]);
     expect(payload.embeds[0]?.fields.map((field) => field.name)).not.toContain(
       "⑥ 読みどころ投稿案（URLなし）",
     );
@@ -534,42 +493,6 @@ describe("/api/cron/notify-discord", () => {
     );
   });
 
-
-  it("keeps official reply draft fields within the Discord value limit", async () => {
-    const longName = "長い選手名".repeat(220);
-    dbMock.rowsByLanguage.ja = [
-      buildContent({
-        content_type: "recap",
-        id: "finished-recap-long",
-        kickoff_at: "2026-05-21T11:00:00.000Z",
-        match_id: "match-long",
-      }),
-    ];
-    dbMock.eventsByMatch["match-long"] = [
-      { metadata: { player_name: longName }, type: "try" },
-    ];
-
-    const { POST } = await import("@/app/api/cron/notify-discord/route");
-    const response = await POST(
-      new Request("http://localhost/api/cron/notify-discord", {
-        headers: { Authorization: "Bearer test-cron-secret" },
-        method: "POST",
-      }),
-    );
-
-    expect(response.status).toBe(200);
-    const payload = JSON.parse(
-      (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
-    ) as { embeds: Array<{ fields: Array<{ name: string; value: string }> }> };
-    const officialFields = payload.embeds[0]?.fields.slice(3, 5) ?? [];
-    expect(officialFields.map((field) => field.name)).toEqual([
-      "④ 公式へのリプライ案 🇯🇵",
-      "⑤ 公式へのリプライ案 🇬🇧",
-    ]);
-    expect(officialFields.every((field) => field.value.length <= 1024)).toBe(
-      true,
-    );
-  });
 
   it("does not attempt X auto-posting for Japanese recaps", async () => {
     dbMock.rowsByLanguage.ja = [
