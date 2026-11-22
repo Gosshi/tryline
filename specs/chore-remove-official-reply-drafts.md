@@ -38,6 +38,7 @@ Discord の recap 通知の embed: fields は ①〜③ の 3 欄だけになる
    - 同ファイルの `keeps official reply draft fields within the Discord value limit` を消す
    - `tests/lib/x/reply-text.test.ts` を消す
    - 使われなくなった `eventsByMatch` 等のモックを消す
+   - （2026-11-22 追記）`tests/retired-competition-queries.test.ts` に時計を固定する。フィクスチャの `generated_at` が `2026-11-14T00:00:00Z` 固定で、実時間の「直近7日間」から外れると `getRecentlyReviewedCompetitionGroups`（:178 付近）が落ちる。変更前の main でも再現する時限式の失敗で、放置すると以後の全 PR の CI が赤になる。`vi.useFakeTimers({ toFake: ["Date"] })` と `vi.setSystemTime(new Date("2026-11-14T12:00:00Z"))` をファイル先頭の `beforeAll`（または `beforeEach`）に入れ、`afterAll` で `vi.useRealTimers()`（参考: `tests/app/home-page.test.tsx` の fake timers の使い方、PR #592）。**期待値は 1 つも変えない。** 固定後にこのファイルの全テストが通ること、固定を外すと :178 付近が落ちることを PR 本文に貼る
    上記以外の既存テストの期待値は変えない・弱めない
 6. 1 を壊す確認: route で 2 欄を足し直すと、5 の置き換えたテストが落ちる（出力を PR 本文に貼り、変更は戻す）
 7. `pnpm tsc --noEmit`・`pnpm lint`・`pnpm test`・`pnpm build` がすべて通る
